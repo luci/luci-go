@@ -469,7 +469,7 @@ func (f *fakeEngine) GetInvocation(c context.Context, job *engine.Job, invID int
 	panic("not implemented")
 }
 
-func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (engine.FutureInvocation, error) {
+func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (*engine.Invocation, error) {
 	panic("not implemented")
 }
 

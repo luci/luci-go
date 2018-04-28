@@ -32,7 +32,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
-	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/auth/identity"
@@ -49,6 +48,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -131,7 +131,7 @@ type Engine interface {
 	// triggers until it is resumed.
 	//
 	// For cron jobs it also replaces job's schedule with "triggered", effectively
-	// preventing it from running automatically (until it is resumed).
+	// preventing them from running automatically (until unpaused).
 	//
 	// Manual invocations (via ForceInvocation) are still allowed. Does nothing if
 	// the job is already paused. Any pending or running invocations are still
@@ -141,35 +141,35 @@ type Engine interface {
 	// ResumeJob resumes paused job. Does nothing if the job is not paused.
 	ResumeJob(c context.Context, job *Job) error
 
-	// AbortJob resets the job to scheduled state, aborting all currently pending
-	// or running invocations (if any).
+	// AbortJob aborts all currently pending or running invocations (if any).
 	AbortJob(c context.Context, job *Job) error
 
-	// AbortInvocation forcefully moves the invocation to failed state.
+	// AbortInvocation forcefully moves the invocation to a failed state.
 	//
 	// It opportunistically tries to send "abort" signal to a job runner if it
-	// supports cancellation, but it doesn't wait for reply. It proceeds to
-	// modifying local state in the scheduler service datastore immediately.
+	// supports cancellation, but it doesn't wait for reply (proceeds to
+	// modifying the local state in the scheduler service datastore immediately).
 	//
 	// AbortInvocation can be used to manually "unstuck" jobs that got stuck due
 	// to missing PubSub notifications or other kinds of unexpected conditions.
 	//
-	// Does nothing if invocation is already in some final state.
+	// Does nothing if the invocation is already in some final state.
 	AbortInvocation(c context.Context, job *Job, invID int64) error
 
-	// ForceInvocation launches job invocation right now if job isn't running now.
+	// ForceInvocation launches an invocation right now.
 	//
-	// Used by "Run now" UI button.
+	// Used by "Run now" UI button. Totally ignores triggering policies (e.g.
+	// launches the invocation even if some is already running) and paused state.
 	//
-	// Returns an object that can be waited on to grab a corresponding Invocation
-	// when it appears (if ever).
-	ForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
+	// Returns the new invocation object in its initial state.
+	ForceInvocation(c context.Context, job *Job) (*Invocation, error)
 
 	// EmitTriggers puts one or more triggers into pending trigger queues of the
 	// specified jobs.
 	//
 	// If the caller has no permission to trigger at least one job, the entire
-	// call is aborted. Otherwise, the call is NOT transactional.
+	// call is aborted. Otherwise, the call is NOT transactional, but can be
+	// safely retried (triggers are deduplicated based on their IDs).
 	EmitTriggers(c context.Context, perJob map[*Job][]*internal.Trigger) error
 
 	// ListTriggers returns list of job's pending triggers sorted by time, most
@@ -178,9 +178,6 @@ type Engine interface {
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
-//
-// Used by the scheduler service guts that executed outside of a context of some
-// end user.
 type EngineInternal interface {
 	// PublicAPI returns ACL-enforcing API.
 	PublicAPI() Engine
@@ -216,16 +213,6 @@ type ListInvocationsOpts struct {
 	ActiveOnly   bool
 }
 
-// FutureInvocation is returned by ForceInvocation.
-//
-// It can be used to wait for a triggered invocation to appear.
-type FutureInvocation interface {
-	// InvocationID returns an ID of the invocation or 0 if not started yet.
-	//
-	// Returns only transient errors.
-	InvocationID(context.Context) (int64, error)
-}
-
 // Config contains parameters for the engine.
 type Config struct {
 	Catalog        catalog.Catalog // provides task.Manager's to run tasks
@@ -250,16 +237,9 @@ type engineImpl struct {
 
 // init registers task queue handlers.
 func (e *engineImpl) init() {
-	// TODO(vadimsh): We probably need some non-default retry policies for all
-	// tasks, not just launchInvocationTask.
+	// TODO(vadimsh): Figure out retry parameters for all tasks.
 	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationsBatchTask{}, e.execLaunchInvocationsBatchTask, "batches", nil)
-	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationTask{}, e.execLaunchInvocationTask, "launches", &taskqueue.RetryOptions{
-		// Give 5 attempts to mark the job as failed. See 'launchInvocationTask'.
-		RetryLimit: invocationRetryLimit + 5,
-		MinBackoff: time.Second,
-		MaxBackoff: maxInvocationRetryBackoff,
-		AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
-	})
+	e.cfg.Dispatcher.RegisterTask(&internal.LaunchInvocationTask{}, e.execLaunchInvocationTask, "launches", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.TriageJobStateTask{}, e.execTriageJobStateTask, "triages", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.KickTriageTask{}, e.execKickTriageTask, "triages", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.InvocationFinishedTask{}, e.execInvocationFinishedTask, "completions", nil)
@@ -268,24 +248,6 @@ func (e *engineImpl) init() {
 	e.cfg.Dispatcher.RegisterTask(&internal.ScheduleTimersTask{}, e.execScheduleTimersTask, "timers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.TimerTask{}, e.execTimerTask, "timers", nil)
 	e.cfg.Dispatcher.RegisterTask(&internal.CronTickTask{}, e.execCronTickTask, "crons", nil)
-}
-
-// jobController is a part of engine that directly deals with state transitions
-// of a single job and its invocations.
-//
-// It is short-lived. It is instantiated, used and discarded. Never retained.
-//
-// All onJob* methods are called from within a Job transaction.
-// All onInv* methods are called from within an Invocation transaction.
-type jobController interface {
-	onJobScheduleChange(c context.Context, job *Job) error
-	onJobEnabled(c context.Context, job *Job) error
-	onJobDisabled(c context.Context, job *Job) error
-	onJobCronTick(c context.Context, job *Job, tick *internal.CronTickTask) error
-	onJobAbort(c context.Context, job *Job) (invs []int64, err error)
-	onJobForceInvocation(c context.Context, job *Job) (FutureInvocation, error)
-
-	onInvUpdating(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -443,26 +405,28 @@ func (e *engineImpl) ResumeJob(c context.Context, job *Job) error {
 	return e.setJobPausedFlag(c, job, false, auth.CurrentIdentity(c))
 }
 
-// AbortJob resets the job to scheduled state, aborting all currently pending
-// or running invocations (if any).
+// AbortJob aborts all currently pending or running invocations (if any).
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
-	// First, we check ACLs.
 	if err := job.CheckRole(c, acl.Owner); err != nil {
 		return err
 	}
 	jobID := job.JobID
 
-	// Second, we switch the job to the default state and disassociate the running
-	// invocations (if any) from the job entity.
 	var invs []int64
 	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
 		if isNew {
 			return errSkipPut // the job was removed, nothing to abort
 		}
-		invs, err = e.jobController().onJobAbort(c, job)
-		return err
+		// We just abort all active invocations. This should cause them to
+		// eventually move to Aborted state, which will kick them out of
+		// ActiveInvocations list.
+		invs = job.ActiveInvocations
+		// AbortJob is sometimes used manually to "reset" the job state if it got
+		// stuck for some reason. We initiate a triage for this purpose. This is not
+		// strictly necessary (but doesn't hurt either).
+		return e.kickTriageLater(c, job.JobID, 0)
 	})
 	if err != nil {
 		return err
@@ -487,7 +451,7 @@ func (e *engineImpl) AbortJob(c context.Context, job *Job) error {
 	return nil
 }
 
-// AbortInvocation forcefully moves the invocation to failed state.
+// AbortInvocation forcefully moves the invocation to a failed state.
 //
 // Part of the public interface, checks ACLs.
 func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) error {
@@ -497,23 +461,29 @@ func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) e
 	return e.abortInvocation(c, job.JobID, invID)
 }
 
-// ForceInvocation launches job invocation right now if job isn't running now.
+// ForceInvocation launches job invocation right now.
 //
 // Part of the public interface, checks ACLs.
-func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (FutureInvocation, error) {
+func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (*Invocation, error) {
 	if err := job.CheckRole(c, acl.Triggerer); err != nil {
 		return nil, err
 	}
 
 	var noSuchJob bool
-	var future FutureInvocation
+	var newInv *Invocation
 	err := e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) (err error) {
 		if isNew || !job.Enabled {
 			noSuchJob = true
 			return errSkipPut
 		}
-		future, err = e.jobController().onJobForceInvocation(c, job)
-		return err
+		invs, err := e.enqueueInvocations(c, job, []task.Request{
+			{TriggeredBy: auth.CurrentIdentity(c)},
+		})
+		if err != nil {
+			return err
+		}
+		newInv = invs[0]
+		return nil
 	})
 
 	switch {
@@ -523,7 +493,7 @@ func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (FutureInvocat
 		return nil, err
 	}
 
-	return future, nil
+	return newInv, nil
 }
 
 // EmitTriggers puts one or more triggers into pending trigger queues of the
@@ -746,13 +716,6 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 	})
 }
 
-// jobController returns an appropriate implementation of the jobController.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) jobController() jobController {
-	return &jobControllerV2{eng: e}
-}
-
 // getJob returns a job if it exists or nil if not.
 //
 // Doesn't check ACLs.
@@ -834,13 +797,29 @@ func (e *engineImpl) setJobPausedFlag(c context.Context, job *Job, paused bool, 
 		case job.Paused == paused:
 			return errSkipPut
 		}
+
 		if paused {
 			logging.Warningf(c, "Job is paused by %s", who)
 		} else {
 			logging.Warningf(c, "Job is resumed by %s", who)
 		}
 		job.Paused = paused
-		return e.jobController().onJobScheduleChange(c, job)
+
+		// Reschedule the tick if necessary.
+		err := pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+			m.OnScheduleChange()
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		// If paused, kick the triage to clear the pending triggers. We can pop them
+		// only from within the triage procedure.
+		if job.Paused {
+			return e.kickTriageLater(c, job.JobID, 0)
+		}
+		return nil
 	})
 }
 
@@ -851,6 +830,7 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		if !isNew && job.Enabled && job.MatchesDefinition(def) {
 			return errSkipPut
 		}
+
 		if isNew {
 			// JobID is <projectID>/<name>, it's ensured by Catalog.
 			chunks := strings.Split(def.JobID, "/")
@@ -861,13 +841,13 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				JobID:           def.JobID,
 				ProjectID:       chunks[0],
 				Flavor:          def.Flavor,
-				Enabled:         false, // to trigger 'if !oldEnabled' below
+				Enabled:         false, // to trigger 'if wasDisabled' below
 				Schedule:        def.Schedule,
 				Task:            def.Task,
 				TriggeredJobIDs: def.TriggeredJobIDs,
 			}
 		}
-		oldEnabled := job.Enabled
+		wasDisabled := !job.Enabled
 		oldEffectiveSchedule := job.EffectiveSchedule()
 
 		// Update the job in full before running any state changes.
@@ -880,32 +860,41 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Task = def.Task
 		job.TriggeredJobIDs = def.TriggeredJobIDs
 
-		// Kick off task queue tasks.
-		ctl := e.jobController()
-		if !oldEnabled {
-			if err := ctl.onJobEnabled(c, job); err != nil {
-				return err
+		// If the job was just enabled or its schedule changed, poke the cron
+		// machine to potentially schedule a new tick.
+		return pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+			if wasDisabled {
+				m.Enable()
 			}
-		}
-		if job.EffectiveSchedule() != oldEffectiveSchedule {
-			logging.Infof(c, "Job's schedule changed: %q -> %q",
-				job.EffectiveSchedule(), oldEffectiveSchedule)
-			if err := ctl.onJobScheduleChange(c, job); err != nil {
-				return err
+			if job.EffectiveSchedule() != oldEffectiveSchedule {
+				logging.Infof(c, "Job's schedule changed: %q -> %q", job.EffectiveSchedule(), oldEffectiveSchedule)
+				m.OnScheduleChange()
 			}
-		}
-		return nil
+			return nil
+		})
 	})
 }
 
-// disableJob moves a job to disabled state.
+// disableJob moves a job to the disabled state.
 func (e *engineImpl) disableJob(c context.Context, jobID string) error {
 	return e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew || !job.Enabled {
 			return errSkipPut
 		}
 		job.Enabled = false
-		return e.jobController().onJobDisabled(c, job)
+
+		// Stop the cron machine ticks.
+		err := pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+			m.Disable()
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		// Kick the triage to clear the pending triggers. We can pop them only
+		// from within the triage procedure.
+		return e.kickTriageLater(c, job.JobID, 0)
 	})
 }
 
@@ -919,11 +908,15 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 			return errSkipPut
 		}
 		logging.Infof(c, "Resetting job")
-		ctl := e.jobController()
-		if err := ctl.onJobDisabled(c, job); err != nil {
+		err := pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+			m.Disable()
+			m.Enable()
+			return nil
+		})
+		if err != nil {
 			return err
 		}
-		return ctl.onJobEnabled(c, job)
+		return e.kickTriageLater(c, job.JobID, 0)
 	})
 }
 
@@ -931,6 +924,9 @@ func (e *engineImpl) resetJobOnDevServer(c context.Context, jobID string) error 
 // Invocations related methods.
 
 // getInvocation returns an existing invocation or ErrNoSuchInvocation error.
+//
+// Double checks that the invocation belongs to the given job. Returns
+// ErrNoSuchInvocation if not.
 func (e *engineImpl) getInvocation(c context.Context, jobID string, invID int64) (*Invocation, error) {
 	inv := &Invocation{ID: invID}
 	switch err := ds.Get(c, inv); {
@@ -1046,9 +1042,9 @@ func (e *engineImpl) allocateInvocations(c context.Context, job *Job, req []task
 
 // initInvocation populates fields of Invocation struct.
 //
-// It allocates invocation ID and populates ID and JobID. It also copies data
-// from given task.Request object into corresponding fields of the invocation
-// (so they can be indexed etc).
+// It allocates invocation ID and populates ID and JobID fields. It also copies
+// data from the given task.Request object into the corresponding fields of the
+// invocation entity (so they can be indexed etc).
 //
 // On success returns exact same 'inv' for convenience. It doesn't Put it into
 // the datastore.
@@ -1095,16 +1091,12 @@ func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int6
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Task controller and invocation launch.
+// Task controller and invocation launch and finish.
 
 const (
 	// invocationRetryLimit is how many times to retry an invocation before giving
 	// up and resuming the job's schedule.
 	invocationRetryLimit = 5
-
-	// maxInvocationRetryBackoff is how long to wait before retrying a failed
-	// invocation.
-	maxInvocationRetryBackoff = 10 * time.Second
 )
 
 var (
@@ -1164,9 +1156,9 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 //
 // It returns a transient error if the launch attempt should be retried.
 func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
-	// Now we have a new Invocation entity in the datastore in StatusStarting
-	// state. Grab corresponding TaskManager and launch task through it, keeping
-	// track of the progress in created Invocation entity.
+	assertNotInTransaction(c)
+
+	// Grab the corresponding TaskManager to launch the task through it.
 	ctl, err := controllerForInvocation(c, e, inv)
 	if err != nil {
 		// Note: controllerForInvocation returns both ctl and err on errors, with
@@ -1197,7 +1189,7 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	// controller if necessary.
 	if ctl.State().Status == task.StatusStarting {
 		if transient.Tag.In(err) {
-			// This invocation will be reused for a retry.
+			// This invocation object will be reused for a retry later.
 			ctl.State().Status = task.StatusRetrying
 		} else {
 			ctl.State().Status = task.StatusFailed
@@ -1222,8 +1214,104 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	return nil
 }
 
+// invChanging is called within transactions that update Invocation entities (in
+// particular taskController.Save()) right before they are committed.
+//
+// The engine examines changes to the invocation state (comparing 'old' and
+// 'fresh'), looks at all emitted timers and triggers, and schedules a bunch
+// of TQ tasks accordingly.
+//
+// It can mutate 'fresh', which should be later saved to the datastore by the
+// caller.
+func (e *engineImpl) invChanging(c context.Context, old, fresh *Invocation, timers []*internal.Timer, triggers []*internal.Trigger) error {
+	assertInTransaction(c)
+
+	if fresh.Status.Final() && len(timers) > 0 {
+		panic("finished invocations must not emit timer, ensured by taskController")
+	}
+
+	// Register new timers in the Invocation entity. Used to reject duplicate
+	// task queue calls: only tasks that reference a timer in the pending timers
+	// set are accepted.
+	if len(timers) != 0 {
+		err := mutateTimersList(&fresh.PendingTimersRaw, func(out *[]*internal.Timer) {
+			*out = append(*out, timers...)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Register emitted triggers in the Invocation entity. Used mostly for UI.
+	if len(triggers) != 0 {
+		err := mutateTriggersList(&fresh.OutgoingTriggersRaw, func(out *[]*internal.Trigger) {
+			*out = append(*out, triggers...)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Prepare FanOutTriggersTask if we are emitting triggers for real. Skip this
+	// if no job is going to get them.
+	var fanOutTriggersTask *internal.FanOutTriggersTask
+	if len(triggers) != 0 && len(fresh.TriggeredJobIDs) != 0 {
+		fanOutTriggersTask = &internal.FanOutTriggersTask{
+			JobIds:   fresh.TriggeredJobIDs,
+			Triggers: triggers,
+		}
+	}
+
+	var tasks []*tq.Task
+
+	if !old.Status.Final() && fresh.Status.Final() {
+		// When invocation finishes, make it appear in the list of finished
+		// invocations (by setting the indexed field), and notify the parent job
+		// about the completion, so it can kick off a new one or otherwise react.
+		// Note that we can't open Job transaction here and have to use a task queue
+		// task. Bundle fanOutTriggersTask with this task, since we can. No need to
+		// create two separate tasks.
+		fresh.IndexedJobID = fresh.JobID
+		tasks = append(tasks, &tq.Task{
+			Payload: &internal.InvocationFinishedTask{
+				JobId:    fresh.JobID,
+				InvId:    fresh.ID,
+				Triggers: fanOutTriggersTask,
+			},
+		})
+	} else if fanOutTriggersTask != nil {
+		tasks = append(tasks, &tq.Task{Payload: fanOutTriggersTask})
+	}
+
+	// When emitting more than 1 timer (this is rare) use an intermediary task,
+	// to avoid getting close to limit of number of tasks in a transaction. When
+	// emitting 1 timer (most common case), don't bother, since we aren't winning
+	// anything.
+	switch {
+	case len(timers) == 1:
+		tasks = append(tasks, &tq.Task{
+			ETA: google.TimeFromProto(timers[0].Eta),
+			Payload: &internal.TimerTask{
+				JobId: fresh.JobID,
+				InvId: fresh.ID,
+				Timer: timers[0],
+			},
+		})
+	case len(timers) > 1:
+		tasks = append(tasks, &tq.Task{
+			Payload: &internal.ScheduleTimersTask{
+				JobId:  fresh.JobID,
+				InvId:  fresh.ID,
+				Timers: timers,
+			},
+		})
+	}
+
+	return e.cfg.Dispatcher.AddTask(c, tasks...)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
-// Task queue handlers for v2 engine.
+// Task queue handlers.
 
 // kickLaunchInvocationsBatchTask enqueues LaunchInvocationsBatchTask that
 // eventually launches new invocations.
@@ -1325,10 +1413,9 @@ func (e *engineImpl) execLaunchInvocationTask(c context.Context, tqTask proto.Me
 			lastInvState.debugLog(c, "Starting the invocation (attempt %d)", retryCount+1)
 		}
 
-		// Notify the job controller about the invocation state change. It may
-		// decide to update the corresponding job, e.g. if the invocation moves to
-		// StatusFailed state.
-		if err := e.jobController().onInvUpdating(c, &inv, &lastInvState, nil, nil); err != nil {
+		// Make sure to trigger all necessary side effects, particularly important
+		// if the invocation was moved to Failed state above.
+		if err := e.invChanging(c, &inv, &lastInvState, nil, nil); err != nil {
 			return err
 		}
 
@@ -1352,16 +1439,16 @@ func (e *engineImpl) execLaunchInvocationTask(c context.Context, tqTask proto.Me
 
 // execInvocationFinishedTask handles invocation completion notification.
 //
-// It is emitted by jobControllerV2.onInvUpdating when invocation switches into
-// a final state.
+// It is emitted by invChanging() when an invocation switches into a final
+// state.
 //
 // It adds the invocation ID to the set of recently finished invocations and
 // kicks off a job triage task that eventually updates Job.ActiveInvocations set
 // and moves the cron state machine.
 //
 // Note that we can't just open a Job transaction right here, since the rate
-// of invocation finish events is not controllable and can easily be over 1 QPS
-// limit, overwhelming the Job entity group.
+// of "invocation finished" events is not controllable and can easily be over
+// 1 QPS datastore limit, overwhelming the Job entity group.
 //
 // If the invocation emitted some triggers when it was finishing, we route them
 // here as well.
@@ -1412,7 +1499,7 @@ func (e *engineImpl) execInvocationFinishedTask(c context.Context, tqTask proto.
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Triggers handling (v2 engine).
+// Triggers handling.
 
 // execFanOutTriggersTask handles a batch enqueue of triggers.
 //
@@ -1475,7 +1562,7 @@ func (e *engineImpl) execEnqueueTriggersTask(c context.Context, tqTask proto.Mes
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Timers handling (v2 engine).
+// Timers handling.
 
 // execScheduleTimersTask adds a bunch of TimerTask tasks.
 //
@@ -1538,12 +1625,10 @@ func (e *engineImpl) execTimerTask(c context.Context, tqTask proto.Message) erro
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Cron handling (v2 engine).
+// Cron handling.
 
 // execCronTickTask corresponds to a delayed tick emitted by a cron state
 // machine.
-//
-// See jobTimerTick for (deprecated) v1 equivalent.
 func (e *engineImpl) execCronTickTask(c context.Context, tqTask proto.Message) error {
 	msg := tqTask.(*internal.CronTickTask)
 	return e.jobTxn(c, msg.JobId, func(c context.Context, job *Job, isNew bool) error {
@@ -1552,12 +1637,16 @@ func (e *engineImpl) execCronTickTask(c context.Context, tqTask proto.Message) e
 			return errSkipPut
 		}
 		logging.Infof(c, "Tick %d has arrived", msg.TickNonce)
-		return e.jobController().onJobCronTick(c, job, msg)
+		return pokeCron(c, job, e.cfg.Dispatcher, func(m *cron.Machine) error {
+			// OnTimerTick returns an error if the tick happened too soon. Mark this
+			// error as transient to trigger task queue retry at a later time.
+			return transient.Tag.Apply(m.OnTimerTick(msg.TickNonce))
+		})
 	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Triage procedure (v2 engine).
+// Triage procedure.
 
 // kickTriageNow enqueues a task to perform a triage for some job, if no such
 // task was enqueued recently.
@@ -1674,7 +1763,7 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 //
 // Called within a job transaction. Must not do any expensive calls.
 func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error) {
-	// TODO(vadimsh): This policy matches v1 behavior:
+	// TODO(vadimsh): This policy matches old v1 behavior:
 	//  * Don't start anything new if some invocation is already running.
 	//  * Otherwise consume all pending triggers at once.
 	if len(job.ActiveInvocations) != 0 {
@@ -1704,8 +1793,6 @@ var pubsubAuthToken = tokens.TokenKind{
 }
 
 // handlePubSubMessage routes the pubsub message to the invocation.
-//
-// See also invocationTimerTick, it is quite similar.
 func (e *engineImpl) handlePubSubMessage(c context.Context, msg *pubsub.PubsubMessage) error {
 	logging.Infof(c, "Received PubSub message %q", msg.MessageId)
 

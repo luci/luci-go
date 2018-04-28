@@ -62,7 +62,6 @@ func debugLog(c context.Context, str *string, format string, args ...interface{}
 // task queues, it is fine to retry more there.
 var defaultTransactionOptions = datastore.TransactionOptions{
 	Attempts: 10,
-	XG:       true, // TODO(vadimsh): remove after v1->v2 migration is over
 }
 
 // abortTransaction makes the error abort the transaction (even if it is marked

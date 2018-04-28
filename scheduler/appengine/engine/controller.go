@@ -35,15 +35,24 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
+// errUpdateConflict means Invocation is being modified by two TaskController's
+// concurrently. It should not be happening often. If it happens, task queue
+// call is retried to rerun the two-part transaction from scratch.
+//
+// This error is marked as transient, since it should trigger a retry on the
+// task queue level. At the same time we don't want the transaction itself to be
+// retried (it's useless to retry the second part of a two-part transaction, the
+// result will be the same), so we tag the error with abortTransaction. See
+// runTxn for more info.
+var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag, abortTransaction)
+
 // taskController manages execution of single invocation.
 //
 // It is short-lived object spawned to handle some single event in the lifecycle
 // of the invocation.
-//
-// Support both v1 and v2 invocations.
 type taskController struct {
 	ctx context.Context // for DebugLog logging only
-	eng *engineImpl     // for prepareTopic and jobController
+	eng *engineImpl     // for prepareTopic and invChanging
 
 	task    proto.Message // extracted from saved.Task blob
 	manager task.Manager
@@ -172,7 +181,7 @@ func (ctl *taskController) AddTimer(ctx context.Context, delay time.Duration, ti
 
 	now := clock.Now(ctx)
 	ctl.timers = append(ctl.timers, &internal.Timer{
-		Id:      timerID, // note: ignored in v1
+		Id:      timerID,
 		Created: google.NewTimestamp(now),
 		Eta:     google.NewTimestamp(now.Add(delay)),
 		Title:   title,
@@ -221,17 +230,6 @@ func (ctl *taskController) EmitTrigger(ctx context.Context, trigger *internal.Tr
 	ctl.triggers = append(ctl.triggers, trigger)
 	ctl.triggerIndex++ // note: this is NOT reset in Save, unlike ctl.triggers.
 }
-
-// errUpdateConflict means Invocation is being modified by two TaskController's
-// concurrently. It should not be happening often. If it happens, task queue
-// call is retried to rerun the two-part transaction from scratch.
-//
-// This error is marked as transient, since it should trigger a retry on the
-// task queue level. At the same time we don't want the transaction itself to be
-// retried (it's useless to retry the second part of a two-part transaction, the
-// result will be the same), so we tag the error with abortTransaction. See
-// runTxn for more info.
-var errUpdateConflict = errors.New("concurrent modifications of single Invocation", transient.Tag, abortTransaction)
 
 // Save uploads updated Invocation to the datastore, updating the state of the
 // corresponding job, if necessary.
@@ -329,8 +327,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 
 		// Notify the engine about the invocation state change and all timers and
 		// triggers. The engine may decide to update the corresponding job.
-		jobCtl := ctl.eng.jobController()
-		if err := jobCtl.onInvUpdating(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {
+		if err := ctl.eng.invChanging(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {
 			return err
 		}
 

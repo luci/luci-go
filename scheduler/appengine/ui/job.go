@@ -23,7 +23,6 @@ import (
 	"time"
 
 	mc "go.chromium.org/gae/service/memcache"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -184,38 +183,15 @@ func runJobAction(ctx *router.Context) {
 		})
 	}
 
-	// Enqueue new invocation request.
-	future, err := e.ForceInvocation(c, job)
+	// Start the new invocation and redirect the user to its page.
+	inv, err := e.ForceInvocation(c, job)
 	switch {
 	case err == engine.ErrNoPermission:
 		uiErrActionForbidden.render(ctx)
-		return
 	case err != nil:
 		genericReply(err)
-		return
-	}
-
-	// Wait for the corresponding invocation to appear. Give up if task queue or
-	// datastore indexes are lagging too much.
-	invID := int64(0)
-	deadline := clock.Now(c).Add(10 * time.Second)
-	for deadline.Sub(clock.Now(c)) > 0 {
-		// Grab the ID of the launched invocation (if any). Ignore errors here,
-		// since InvocationID can return only transient ones, which we treat as if
-		// the invocation is not available yet.
-		invID, _ = future.InvocationID(c)
-		if invID != 0 {
-			break // found it
-		}
-		if tr := clock.Sleep(c, 500*time.Millisecond); tr.Incomplete() {
-			break // context deadline
-		}
-	}
-
-	if invID != 0 {
-		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobName, invID), http.StatusFound)
-	} else {
-		genericReply(nil) // deadline
+	default:
+		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobName, inv.ID), http.StatusFound)
 	}
 }
 
