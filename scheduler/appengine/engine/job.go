@@ -98,11 +98,6 @@ type Job struct {
 	// ACLs are the latest ACLs applied to Job and all its invocations.
 	Acls acl.GrantsByRole `gae:",noindex"`
 
-	// State is the job's state machine state, see StateMachine.
-	//
-	// Used by v1 jobs only. TODO(vadimsh): Remove.
-	State JobState
-
 	// Cron holds the state of the cron state machine.
 	Cron cron.State `gae:",noindex"`
 
@@ -178,7 +173,6 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
-		e.State.Equal(&other.State) &&
 		e.Cron.Equal(&other.Cron) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
 		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
@@ -218,9 +212,6 @@ func (e *Job) CheckRole(c context.Context, role acl.Role) error {
 	}
 	return nil
 }
-
-////////////////////////////////////////////////////////////////////////////////
-// v2 stuff.
 
 // recentlyFinishedSet is a set with IDs of all recently finished invocations.
 //
