@@ -91,9 +91,8 @@ var (
 // generateInvocationID is called within a transaction to pick a new Invocation
 // ID and ensure it isn't taken yet.
 //
-// 'parent', if not nil, defines an entity group for the new Invocation entity.
-// It can be nil, in which case the Invocation entity will be in its own entity
-// group.
+// This function essentially pick root key for a new entity group, checking
+// that it hasn't been taken yet.
 //
 // Format of the invocation ID:
 //   - highest order bit set to 0 to keep the value positive.
@@ -106,7 +105,7 @@ var (
 // unnecessarily hitting multiple entity groups from a single transaction.
 //
 // Returns only transient errors.
-func generateInvocationID(c context.Context, parent *datastore.Key) (int64, error) {
+func generateInvocationID(c context.Context) (int64, error) {
 	// See http://play.golang.org/p/POpQzpT4Up.
 	invTs := int64(clock.Now(c).UTC().Sub(invocationIDEpoch) / time.Millisecond)
 	invTs = ^invTs & 8796093022207 // 0b111....1, 42 bits (clear highest bit)
@@ -114,7 +113,7 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 
 	randSuffix := mathrand.Int63n(c, 65536)
 	invID := invTs | (randSuffix << 4)
-	exists, err := datastore.Exists(c, datastore.NewKey(c, "Invocation", "", invID, parent))
+	exists, err := datastore.Exists(c, datastore.NewKey(c, "Invocation", "", invID, nil))
 	if err != nil {
 		return 0, transient.Tag.Apply(err)
 	}
@@ -125,8 +124,11 @@ func generateInvocationID(c context.Context, parent *datastore.Key) (int64, erro
 	return 0, errInvocationIDConflict
 }
 
-// Invocation entity stores single attempt to run a job. Its parent entity
-// is corresponding Job, its ID is generated based on time.
+// Invocation entity stores single invocation of a job (with perhaps multiple
+// attempts).
+//
+// Root entity. ID is generated based on time by generateInvocationID()
+// function.
 type Invocation struct {
 	_kind  string                `gae:"$kind,Invocation"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
@@ -136,16 +138,9 @@ type Invocation struct {
 	// with same InvocationNonce.
 	ID int64 `gae:"$id"`
 
-	// JobKey is the key of parent Job entity.
-	//
-	// For v1 Invocation entities it is set to the corresponding job key. For v2
-	// entities it is always nil.
-	JobKey *datastore.Key `gae:"$parent"`
-
 	// JobID is '<ProjectID>/<JobName>' string of a parent job.
 	//
-	// For v1 Invocation entities it is "". For v2 entities it is set when the
-	// invocation is created and never changes.
+	// Set when the invocation is created and never changes.
 	JobID string `gae:",noindex"`
 
 	// IndexedJobID is '<ProjectID>/<JobName>' string of a parent job, but it is
@@ -158,8 +153,6 @@ type Invocation struct {
 	// potentially generate orphaned "garbage" invocations in some edge cases (if
 	// Invocation transaction lands, but separate Job transaction doesn't). They
 	// are harmless, but we don't want them to show up in listings.
-	//
-	// Used only for v2 entities.
 	IndexedJobID string
 
 	// Started is time when this invocation was created.
@@ -210,7 +203,7 @@ type Invocation struct {
 	// Use OutgoingTriggers() function to grab them in deserialized form.
 	OutgoingTriggersRaw []byte `gae:",noindex"`
 
-	// PendingTimersRaw is a serialized list of pending invocation timers (v2).
+	// PendingTimersRaw is a serialized list of pending invocation timers.
 	//
 	// Timers are emitted by Controller's AddTimer call.
 	//
@@ -257,21 +250,10 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
-// jobID returns ID of the job the invocation belongs too.
-//
-// Supports both v1 and v2 invocations.
-func (e *Invocation) jobID() string {
-	if e.JobKey != nil {
-		return e.JobKey.StringID() // for v1
-	}
-	return e.JobID // for v2
-}
-
 // isEqual returns true iff 'e' is equal to 'other'
 func (e *Invocation) isEqual(other *Invocation) bool {
 	return e == other || (e.ID == other.ID &&
 		e.MutationsCount == other.MutationsCount && // compare it first, it changes most often
-		(e.JobKey == other.JobKey || e.JobKey.Equal(other.JobKey)) &&
 		e.JobID == other.JobID &&
 		e.IndexedJobID == other.IndexedJobID &&
 		e.Started.Equal(other.Started) &&
@@ -402,7 +384,7 @@ func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
 	keysToKill := make([]*datastore.Key, 0, len(invs))
 	for _, inv := range invs {
 		if inv != nil {
-			logging.Warningf(c, "Cleaning up inv %d of job %q", inv.ID, inv.jobID())
+			logging.Warningf(c, "Cleaning up inv %d of job %q", inv.ID, inv.JobID)
 			keysToKill = append(keysToKill, datastore.KeyForObj(c, inv))
 		}
 	}
@@ -414,7 +396,7 @@ func cleanupUnreferencedInvocations(c context.Context, invs []*Invocation) {
 // reportOverrunMetrics reports overrun to monitoring.
 // Should be called after transaction to save this invocation is completed.
 func (e *Invocation) reportOverrunMetrics(c context.Context) {
-	metricInvocationsOverrun.Add(c, 1, e.jobID())
+	metricInvocationsOverrun.Add(c, 1, e.JobID)
 }
 
 // reportCompletionMetrics reports invocation stats to monitoring.
@@ -424,5 +406,5 @@ func (e *Invocation) reportCompletionMetrics(c context.Context) {
 		panic(fmt.Errorf("reportCompletionMetrics on incomplete invocation: %q", e))
 	}
 	duration := e.Finished.Sub(e.Started)
-	metricInvocationsDurations.Add(c, duration.Seconds(), e.jobID(), string(e.Status))
+	metricInvocationsDurations.Add(c, duration.Seconds(), e.JobID, string(e.Status))
 }

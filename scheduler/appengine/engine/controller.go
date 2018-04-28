@@ -126,7 +126,7 @@ func (ctl *taskController) consumeTimer(timerID string) (bool, error) {
 
 // JobID is part of task.Controller interface.
 func (ctl *taskController) JobID() string {
-	return ctl.saved.jobID()
+	return ctl.saved.JobID
 }
 
 // InvocationID is part of task.Controller interface.
@@ -317,10 +317,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 	err = runTxn(ctx, func(c context.Context) error {
 		// Grab what's currently in the store to compare MutationsCount to what we
 		// expect it to be.
-		mostRecent := Invocation{
-			ID:     saving.ID,
-			JobKey: saving.JobKey, // may be nil for v2 invocations, this is OK
-		}
+		mostRecent := Invocation{ID: saving.ID}
 		switch err := datastore.Get(c, &mostRecent); {
 		case err == datastore.ErrNoSuchEntity: // should not happen
 			logging.Errorf(c, "Invocation is suddenly gone")
