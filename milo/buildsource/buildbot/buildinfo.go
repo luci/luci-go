@@ -101,10 +101,6 @@ func getLogDogAnnotationAddr(c context.Context, build *buildbot.Build) (*types.S
 	if v, ok := build.PropertyValue("log_location").(string); ok && v != "" {
 		return types.ParseURL(v)
 	}
-	// TODO(iannucci) - crbug.com/781040: remove this after 2017-12-01.
-	if v, ok := build.PropertyValue("logdog_annotation_url").(string); ok && v != "" {
-		return types.ParseURL(v)
-	}
 	return nil, grpcutil.Errf(codes.NotFound, "annotation stream not found")
 }
 
