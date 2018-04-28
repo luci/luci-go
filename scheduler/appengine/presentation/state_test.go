@@ -28,37 +28,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/urlfetch"
 )
 
-func TestGetPublicStateKind(t *testing.T) {
-	t.Parallel()
-
-	Convey("works", t, func() {
-		So(GetPublicStateKind(&engine.Job{
-			State: engine.JobState{State: engine.JobStateOverrun},
-		}, task.Traits{}), ShouldEqual, PublicStateOverrun)
-
-		So(GetPublicStateKind(&engine.Job{
-			State: engine.JobState{State: engine.JobStateSlowQueue},
-		}, task.Traits{}), ShouldEqual, PublicStateStarting)
-
-		So(GetPublicStateKind(&engine.Job{
-			State: engine.JobState{State: engine.JobStateSlowQueue, InvocationRetryCount: 1},
-		}, task.Traits{}), ShouldEqual, PublicStateRetrying)
-
-		So(GetPublicStateKind(&engine.Job{
-			Paused: true,
-			State:  engine.JobState{State: engine.JobStateSuspended},
-		}, task.Traits{}), ShouldEqual, PublicStatePaused)
-
-		So(GetPublicStateKind(&engine.Job{
-			State: engine.JobState{State: engine.JobStateQueued, InvocationID: 1},
-		}, task.Traits{Multistage: true}), ShouldEqual, PublicStateStarting)
-
-		So(GetPublicStateKind(&engine.Job{
-			State: engine.JobState{State: engine.JobStateQueued, InvocationID: 1},
-		}, task.Traits{Multistage: false}), ShouldEqual, PublicStateRunning)
-	})
-}
-
 func TestGetJobTraits(t *testing.T) {
 	t.Parallel()
 	Convey("works", t, func() {

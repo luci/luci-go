@@ -299,19 +299,10 @@ func (q *invDatastoreQuery) close() {
 // Smallest IDs are returned first. IDs smaller than or equal to lastScanned are
 // skipped (this is used for pagination).
 func finishedInvQuery(c context.Context, job *Job, lastScanned int64) *invDatastoreQuery {
-	var parent *datastore.Key
 	q := datastore.NewQuery("Invocation")
-	if job.IsV2() {
-		q = q.Eq("IndexedJobID", job.JobID)
-	} else {
-		parent = datastore.NewKey(c, "Job", job.JobID, 0, nil)
-		q = q.Ancestor(parent)
-	}
+	q = q.Eq("IndexedJobID", job.JobID)
 	if lastScanned > 0 {
-		q = q.Gt("__key__", datastore.KeyForObj(c, &Invocation{
-			ID:     lastScanned,
-			JobKey: parent,
-		}))
+		q = q.Gt("__key__", datastore.KeyForObj(c, &Invocation{ID: lastScanned}))
 	}
 	q = q.Order("__key__")
 	out := &invDatastoreQuery{}

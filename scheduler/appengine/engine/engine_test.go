@@ -152,26 +152,28 @@ func TestQueries(t *testing.T) {
 			IdentityGroups: []string{"administrators", "all"},
 		})
 
+		job1 := "abc/1"
+		job2 := "abc/2"
+		job3 := "abc/3"
+
 		So(datastore.Put(c,
-			&Job{JobID: "abc/1", ProjectID: "abc", Enabled: true, Acls: aclOne},
-			&Job{JobID: "abc/2", ProjectID: "abc", Enabled: true, Acls: aclSome},
-			&Job{JobID: "abc/3", ProjectID: "abc", Enabled: true, Acls: aclPublic},
+			&Job{JobID: job1, ProjectID: "abc", Enabled: true, Acls: aclOne},
+			&Job{JobID: job2, ProjectID: "abc", Enabled: true, Acls: aclSome},
+			&Job{JobID: job3, ProjectID: "abc", Enabled: true, Acls: aclPublic},
 			&Job{JobID: "def/1", ProjectID: "def", Enabled: true, Acls: aclPublic},
 			&Job{JobID: "def/2", ProjectID: "def", Enabled: false, Acls: aclPublic},
 			&Job{JobID: "secret/1", ProjectID: "secret", Enabled: true, Acls: aclAdmin},
 		), ShouldBeNil)
 
-		job1 := datastore.NewKey(c, "Job", "abc/1", 0, nil)
-		job2 := datastore.NewKey(c, "Job", "abc/2", 0, nil)
-		job3 := datastore.NewKey(c, "Job", "abc/3", 0, nil)
+		// Mocked invocations, all in finished state (IndexedJobID set).
 		So(datastore.Put(c,
-			&Invocation{ID: 1, JobKey: job1, InvocationNonce: 123},
-			&Invocation{ID: 2, JobKey: job1, InvocationNonce: 123},
-			&Invocation{ID: 3, JobKey: job1},
-			&Invocation{ID: 1, JobKey: job2},
-			&Invocation{ID: 2, JobKey: job2},
-			&Invocation{ID: 3, JobKey: job2},
-			&Invocation{ID: 1, JobKey: job3},
+			&Invocation{ID: 1, JobID: job1, IndexedJobID: job1},
+			&Invocation{ID: 2, JobID: job1, IndexedJobID: job1},
+			&Invocation{ID: 3, JobID: job1, IndexedJobID: job1},
+			&Invocation{ID: 4, JobID: job2, IndexedJobID: job2},
+			&Invocation{ID: 5, JobID: job2, IndexedJobID: job2},
+			&Invocation{ID: 6, JobID: job2, IndexedJobID: job2},
+			&Invocation{ID: 7, JobID: job3, IndexedJobID: job3},
 		), ShouldBeNil)
 
 		datastore.GetTestable(c).CatchupIndexes()
@@ -351,9 +353,9 @@ func TestProcessPubSubPush(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		inv := Invocation{
-			ID:     1,
-			JobKey: datastore.NewKey(c, "Job", "abc/1", 0, nil),
-			Task:   task,
+			ID:    1,
+			JobID: "abc/1",
+			Task:  task,
 		}
 		So(datastore.Put(c, &inv), ShouldBeNil)
 
@@ -483,7 +485,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		job := Job{JobID: "project/job-v2"}
+		job := Job{JobID: "project/job"}
 		So(datastore.Put(c, &job), ShouldBeNil)
 
 		var invs []*Invocation
@@ -512,7 +514,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		}
 		So(invsByTrigger, ShouldResemble, map[identity.Identity]Invocation{
 			"user:a@example.com": {
-				JobID:       "project/job-v2",
+				JobID:       "project/job",
 				Started:     epoch,
 				TriggeredBy: "user:a@example.com",
 				Status:      task.StatusStarting,
@@ -520,7 +522,7 @@ func TestEnqueueInvocations(t *testing.T) {
 					"[22:42:00.000] Triggered by user:a@example.com\n",
 			},
 			"user:b@example.com": {
-				JobID:       "project/job-v2",
+				JobID:       "project/job",
 				Started:     epoch,
 				TriggeredBy: "user:b@example.com",
 				Status:      task.StatusStarting,
@@ -541,7 +543,7 @@ func TestEnqueueInvocations(t *testing.T) {
 		batch := tasks[0].Payload.(*internal.LaunchInvocationsBatchTask)
 		So(len(batch.Tasks), ShouldEqual, 2)
 		for _, subtask := range batch.Tasks {
-			So(subtask.JobId, ShouldEqual, "project/job-v2")
+			So(subtask.JobId, ShouldEqual, "project/job")
 			So(invIDs[subtask.InvId], ShouldBeTrue)
 		}
 	})
@@ -614,7 +616,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		// Add the job.
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    "project/job-v2",
+				JobID:    "project/job",
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
@@ -623,7 +625,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 		}), ShouldBeNil)
 
 		// Prepare Invocation in Starting state.
-		job := Job{JobID: "project/job-v2"}
+		job := Job{JobID: "project/job"}
 		So(datastore.Get(c, &job), ShouldBeNil)
 		inv, err := e.allocateInvocation(c, &job, task.Request{
 			IncomingTriggers: []*internal.Trigger{{Id: "a"}},
@@ -665,8 +667,8 @@ func TestLaunchInvocationTask(t *testing.T) {
 			So(updated, ShouldResemble, &Invocation{
 				ID:              inv.ID,
 				InvocationNonce: inv.ID,
-				JobID:           "project/job-v2",
-				IndexedJobID:    "project/job-v2",
+				JobID:           "project/job",
+				IndexedJobID:    "project/job",
 				Started:         epoch,
 				Finished:        epoch,
 				Revision:        job.Revision,
@@ -719,7 +721,7 @@ func TestLaunchInvocationTask(t *testing.T) {
 	})
 }
 
-func TestForceInvocationV2(t *testing.T) {
+func TestForceInvocation(t *testing.T) {
 	t.Parallel()
 
 	Convey("with fake env", t, func() {
@@ -731,7 +733,7 @@ func TestForceInvocationV2(t *testing.T) {
 
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
-				JobID:    "project/job-v2",
+				JobID:    "project/job",
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
@@ -742,7 +744,7 @@ func TestForceInvocationV2(t *testing.T) {
 		Convey("happy path", func() {
 			const expectedInvID int64 = 9200093523825193008
 
-			job, err := e.getJob(c, "project/job-v2")
+			job, err := e.getJob(c, "project/job")
 			So(err, ShouldBeNil)
 			futureInv, err := e.ForceInvocation(auth.WithState(c, asUserOne), job)
 			So(err, ShouldBeNil)
@@ -753,16 +755,16 @@ func TestForceInvocationV2(t *testing.T) {
 			So(invID, ShouldEqual, expectedInvID)
 
 			// It is now marked as active in the job state, refetch it to check.
-			job, err = e.getJob(c, "project/job-v2")
+			job, err = e.getJob(c, "project/job")
 			So(err, ShouldBeNil)
 			So(job.ActiveInvocations, ShouldResemble, []int64{invID})
 
 			// All its fields are good.
-			inv, err := e.getInvocation(c, "project/job-v2", invID, true)
+			inv, err := e.getInvocation(c, "project/job", invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:              expectedInvID,
-				JobID:           "project/job-v2",
+				JobID:           "project/job",
 				InvocationNonce: expectedInvID,
 				Started:         epoch,
 				TriggeredBy:     "user:one@example.com",
@@ -785,24 +787,24 @@ func TestForceInvocationV2(t *testing.T) {
 			// The sequence of tasks we've just performed.
 			So(tasks.Payloads(), ShouldResemble, []proto.Message{
 				&internal.LaunchInvocationsBatchTask{
-					Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job-v2", InvId: expectedInvID}},
+					Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job", InvId: expectedInvID}},
 				},
 				&internal.LaunchInvocationTask{
-					JobId: "project/job-v2", InvId: expectedInvID,
+					JobId: "project/job", InvId: expectedInvID,
 				},
 				&internal.InvocationFinishedTask{
-					JobId: "project/job-v2", InvId: expectedInvID,
+					JobId: "project/job", InvId: expectedInvID,
 				},
-				&internal.TriageJobStateTask{JobId: "project/job-v2"},
+				&internal.TriageJobStateTask{JobId: "project/job"},
 			})
 
 			// The invocation is in finished state.
-			inv, err = e.getInvocation(c, "project/job-v2", invID, true)
+			inv, err = e.getInvocation(c, "project/job", invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:              expectedInvID,
-				JobID:           "project/job-v2",
-				IndexedJobID:    "project/job-v2", // set for finished tasks!
+				JobID:           "project/job",
+				IndexedJobID:    "project/job", // set for finished tasks!
 				InvocationNonce: expectedInvID,
 				Started:         epoch,
 				Finished:        epoch.Add(time.Second),
@@ -819,7 +821,7 @@ func TestForceInvocationV2(t *testing.T) {
 			})
 
 			// The job state is updated (the invocation is no longer active).
-			job, err = e.getJob(c, "project/job-v2")
+			job, err = e.getJob(c, "project/job")
 			So(err, ShouldBeNil)
 			So(job.ActiveInvocations, ShouldBeNil)
 
@@ -837,7 +839,7 @@ func TestAbortJob(t *testing.T) {
 	t.Parallel()
 
 	Convey("with fake env", t, func() {
-		const jobID = "project/job-v2"
+		const jobID = "project/job"
 		const expectedInvID int64 = 9200093523825193008
 
 		c := newTestContext(epoch)
@@ -872,7 +874,7 @@ func TestAbortJob(t *testing.T) {
 			So(e.AbortJob(asOne, job), ShouldBeNil)
 
 			// It is dead right away.
-			inv, err := e.getInvocation(c, jobID, invID, true)
+			inv, err := e.getInvocation(c, jobID, invID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:              expectedInvID,
@@ -965,7 +967,7 @@ func TestAbortJob(t *testing.T) {
 			So(e.AbortJob(asOne, job), ShouldBeNil)
 
 			// It is dead right away.
-			inv, err := e.getInvocation(c, jobID, invID, true)
+			inv, err := e.getInvocation(c, jobID, invID)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
 
 			// Run all processes to completion.
@@ -993,7 +995,7 @@ func TestAbortJob(t *testing.T) {
 					JobId: jobID,
 					InvId: expectedInvID,
 					Timer: &internal.Timer{
-						Id:      "project/job-v2:9200093523825193008:1:0",
+						Id:      "project/job:9200093523825193008:1:0",
 						Created: google.NewTimestamp(epoch.Add(time.Second)),
 						Eta:     google.NewTimestamp(epoch.Add(time.Minute + time.Second)),
 						Title:   "1 min",
@@ -1008,7 +1010,7 @@ func TestEmitTriggers(t *testing.T) {
 	t.Parallel()
 
 	Convey("with fake env", t, func() {
-		const testingJob = "project/job-v2"
+		const testingJob = "project/job"
 
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1129,28 +1131,20 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		triggeringJob := "project/triggering-job-v2"
-		triggeredJobV1 := "project/triggered-job-v1"
-		triggeredJobV2 := "project/triggered-job-v2"
+		triggeringJob := "project/triggering-job"
+		triggeredJob := "project/triggered-job"
 
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:           triggeringJob,
-				TriggeredJobIDs: []string{triggeredJobV1, triggeredJobV2},
+				TriggeredJobIDs: []string{triggeredJob},
 				Revision:        "rev1",
 				Schedule:        "triggered",
 				Task:            noopTaskBytes(),
 				Acls:            aclOne,
 			},
 			{
-				JobID:    triggeredJobV1,
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
-			},
-			{
-				JobID:    triggeredJobV2,
+				JobID:    triggeredJob,
 				Revision: "rev1",
 				Schedule: "triggered",
 				Task:     noopTaskBytes(),
@@ -1159,8 +1153,8 @@ func TestOneJobTriggersAnother(t *testing.T) {
 		}), ShouldBeNil)
 
 		Convey("happy path", func() {
-			const triggeringInvID int64 = 9200093523825364688
-			const triggeredInvID int64 = 9200093521727660480
+			const triggeringInvID int64 = 9200093523824911856
+			const triggeredInvID int64 = 9200093521728457040
 
 			// Force launch the triggering job.
 			job, err := e.getJob(c, triggeringJob)
@@ -1220,68 +1214,31 @@ func TestOneJobTriggersAnother(t *testing.T) {
 
 				// It emits a trigger in the middle.
 				&internal.FanOutTriggersTask{
-					JobIds:   []string{triggeredJobV1, triggeredJobV2},
+					JobIds:   []string{triggeredJob},
 					Triggers: []*internal.Trigger{expectedTrigger1},
 				},
 				&internal.EnqueueTriggersTask{
-					JobId:    triggeredJobV2,
+					JobId:    triggeredJob,
 					Triggers: []*internal.Trigger{expectedTrigger1},
 				},
-				nil, // unrecognized v1 task EnqueueTriggersAction, checked below
 
 				// Triggering job finishes execution, emitting another trigger.
 				&internal.InvocationFinishedTask{
 					JobId: triggeringJob,
 					InvId: triggeringInvID,
 					Triggers: &internal.FanOutTriggersTask{
-						JobIds:   []string{triggeredJobV1, triggeredJobV2},
+						JobIds:   []string{triggeredJob},
 						Triggers: []*internal.Trigger{expectedTrigger2},
 					},
 				},
 				&internal.EnqueueTriggersTask{
-					JobId:    triggeredJobV2,
+					JobId:    triggeredJob,
 					Triggers: []*internal.Trigger{expectedTrigger2},
 				},
-				nil, // unrecognized v1 task EnqueueTriggersAction, checked below
 			})
 
-			// Ensure v1 tasks that emit triggers for v1 job were enqueued. Their
-			// handling is tested in v1 tests.
-			So(len(v1tasks), ShouldEqual, 2)
-			So(v1tasks[0].Path, ShouldEqual, "/invs")
-			So(beatifyJSON(v1tasks[0].Payload, "			"), ShouldEqual, `{
-				"JobID": "project/triggered-job-v1",
-				"Kind": "EnqueueTriggersAction",
-				"Triggers": {
-					"triggers": [
-						{
-							"created": "2015-09-14T22:42:01.000Z",
-							"id": "t1",
-							"invocationId": "9200093523825364688",
-							"jobId": "project/triggering-job-v2"
-						}
-					]
-				}
-			}`)
-			So(v1tasks[1].Path, ShouldEqual, "/invs")
-			So(beatifyJSON(v1tasks[1].Payload, "			"), ShouldEqual, `{
-				"JobID": "project/triggered-job-v1",
-				"Kind": "EnqueueTriggersAction",
-				"Triggers": {
-					"triggers": [
-						{
-							"created": "2015-09-14T22:42:01.000Z",
-							"id": "t2",
-							"invocationId": "9200093523825364688",
-							"jobId": "project/triggering-job-v2",
-							"orderInBatch": "1"
-						}
-					]
-				}
-			}`)
-
 			// Triggering invocation has finished (with triggers recorded).
-			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID, true)
+			triggeringInv, err := e.getInvocation(c, triggeringJob, triggeringInvID)
 			So(err, ShouldBeNil)
 			So(triggeringInv.Status, ShouldEqual, task.StatusSucceeded)
 			outgoing, err := triggeringInv.OutgoingTriggers()
@@ -1291,7 +1248,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// At this point triggered job's triage is about to start. Before it does,
 			// verify emitted trigger (sitting in the pending triggers set) is
 			// discoverable through ListTriggers.
-			tj, _ := e.getJob(c, triggeredJobV2)
+			tj, _ := e.getJob(c, triggeredJob)
 			triggers, err := e.ListTriggers(c, tj)
 			So(err, ShouldBeNil)
 			So(triggers, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
@@ -1311,7 +1268,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(tasks.Payloads(), ShouldResemble, []proto.Message{
 				// Triggered job is getting triaged (because pending triggers).
 				&internal.TriageJobStateTask{
-					JobId: triggeredJobV2,
+					JobId: triggeredJob,
 				},
 				// Triggering job is getting triaged (because it has just finished).
 				&internal.TriageJobStateTask{
@@ -1319,23 +1276,23 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				},
 				// The triggered job begins execution.
 				&internal.LaunchInvocationsBatchTask{
-					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJobV2, InvId: triggeredInvID}},
+					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeredJob, InvId: triggeredInvID}},
 				},
 				&internal.LaunchInvocationTask{
-					JobId: triggeredJobV2, InvId: triggeredInvID,
+					JobId: triggeredJob, InvId: triggeredInvID,
 				},
 				// ...and finishes. Note that the triage doesn't launch new invocation.
 				&internal.InvocationFinishedTask{
-					JobId: triggeredJobV2, InvId: triggeredInvID,
+					JobId: triggeredJob, InvId: triggeredInvID,
 				},
-				&internal.TriageJobStateTask{JobId: triggeredJobV2},
+				&internal.TriageJobStateTask{JobId: triggeredJob},
 			})
 
 			// Verify LaunchTask callback saw the triggers.
 			So(seen, ShouldResemble, []*internal.Trigger{expectedTrigger1, expectedTrigger2})
 
 			// And they are recoded in IncomingTriggers set.
-			triggeredInv, err := e.getInvocation(c, triggeredJobV2, triggeredInvID, true)
+			triggeredInv, err := e.getInvocation(c, triggeredJob, triggeredInvID)
 			So(err, ShouldBeNil)
 			So(triggeredInv.Status, ShouldEqual, task.StatusSucceeded)
 			incoming, err := triggeredInv.IncomingTriggers()
@@ -1355,7 +1312,7 @@ func TestInvocationTimers(t *testing.T) {
 		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
 		tq.CreateQueues()
 
-		const testJobID = "project/job-v2"
+		const testJobID = "project/job"
 		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
 			{
 				JobID:    testJobID,
@@ -1475,7 +1432,7 @@ func TestCron(t *testing.T) {
 	t.Parallel()
 
 	Convey("with fake env", t, func() {
-		const testJobID = "project/job-v2"
+		const testJobID = "project/job"
 
 		c := newTestContext(epoch)
 		e, mgr := newTestEngine()
@@ -1688,7 +1645,7 @@ func TestCron(t *testing.T) {
 
 				// Simulate "long" task with timers.
 				mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
-					ctl.AddTimer(ctx, 5*time.Second, "5 sec", nil)
+					ctl.AddTimer(ctx, 6*time.Second, "6 sec", nil)
 					ctl.State().Status = task.StatusRunning
 					return nil
 				}
@@ -1713,7 +1670,7 @@ func TestCron(t *testing.T) {
 				// invocation yet, just submits a trigger.
 				expect.cronTickSequence(2673062197574995716, 6, 10*time.Second)
 				// A scheduled invocation timer arrives and finishes the invocation.
-				expect.invocationTimer(9200093517533908688, 1, "5 sec", 7*time.Second, 12*time.Second)
+				expect.invocationTimer(9200093517533908688, 1, "6 sec", 7*time.Second, 13*time.Second)
 				expect.invocationEnd(9200093517533908688)
 				expect.triage()
 				// The triage detects pending cron trigger and launches a new invocation
@@ -1724,19 +1681,6 @@ func TestCron(t *testing.T) {
 			})
 		})
 	})
-}
-
-// TODO: remove when v1 is gone.
-func beatifyJSON(b []byte, prefix string) string {
-	body := map[string]interface{}{}
-	if err := json.Unmarshal(b, &body); err != nil {
-		panic(err)
-	}
-	blob, err := json.MarshalIndent(body, prefix, "\t")
-	if err != nil {
-		panic(err)
-	}
-	return string(blob)
 }
 
 func noopTaskBytes() []byte {

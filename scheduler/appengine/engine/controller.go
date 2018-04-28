@@ -290,18 +290,11 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 		if err != nil {
 			return
 		}
-
 		ctl.saved = saving
 		ctl.debugLog = ""        // debug log was successfully flushed
 		ctl.timers = nil         // new timers were successfully scheduled
 		ctl.triggers = nil       // new triggers were successfully emitted
 		ctl.consumedTimers = nil // pending timers were consumed
-
-		// Store finished v1 invocation as v2 to start populating v2 history before
-		// the full switch to v2, to have at least something there.
-		if hasFinished && !ctl.saved.IsV2() {
-			ctl.saved.bestEffortSaveAsV2(ctx)
-		}
 	}()
 
 	if hasFinished {
@@ -344,7 +337,7 @@ func (ctl *taskController) Save(ctx context.Context) (err error) {
 
 		// Notify the engine about the invocation state change and all timers and
 		// triggers. The engine may decide to update the corresponding job.
-		jobCtl := ctl.eng.jobController(saving.IsV2())
+		jobCtl := ctl.eng.jobController()
 		if err := jobCtl.onInvUpdating(c, &ctl.saved, &saving, ctl.timers, ctl.triggers); err != nil {
 			return err
 		}
