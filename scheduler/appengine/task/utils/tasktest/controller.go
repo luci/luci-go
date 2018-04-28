@@ -38,9 +38,8 @@ type TimerSpec struct {
 
 // TestController implements task.Controller and can be used in unit tests.
 type TestController struct {
-	OverrideJobID    string // return value of JobID() if not ""
-	OverrideInvID    int64  // return value of InvocationID() if not 0
-	OverrideInvNonce int64  // return value of InvocationNonce() if not 0
+	OverrideJobID string // return value of JobID() if not ""
+	OverrideInvID int64  // return value of InvocationID() if not 0
 
 	Req task.Request // return value of Request
 
@@ -70,14 +69,6 @@ func (c *TestController) InvocationID() int64 {
 		return c.OverrideInvID
 	}
 	return 1
-}
-
-// InvocationNonce is part of Controller interface.
-func (c *TestController) InvocationNonce() int64 {
-	if c.OverrideInvNonce != 0 {
-		return c.OverrideInvNonce
-	}
-	return 2
 }
 
 // Request is part of Controller interface.

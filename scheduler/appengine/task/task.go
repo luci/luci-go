@@ -140,14 +140,13 @@ type Manager interface {
 	//    progress to eventually move it to some final state. It can be a status
 	//    check via a timer (see `AddTimer` below), or a PubSub callback (see
 	//    `PrepareTopic` below).
-	//  * Be idempotent, if possible, using ctl.InvocationNonce() as an operation
+	//  * Be idempotent, if possible, using ctl.InvocationID() as an operation
 	//    key.
 	//  * Not to use supplied controller outside of LaunchTask call.
 	//  * Not to use supplied controller concurrently without synchronization.
 	//
 	// If `LaunchTask` crashes before returning or returns a transient error, it
-	// will be called again later, receiving exact same ctl.InvocationNonce(), but
-	// different ctl.InvocationID().
+	// will be called again later, receiving exact same ctl.InvocationID().
 	//
 	// TaskManager may optionally use ctl.Save() to checkpoint progress and save
 	// debug log. ctl.Save() is also implicitly called by the engine when
@@ -199,16 +198,6 @@ type Controller interface {
 
 	// InvocationID returns unique identifier of this particular invocation.
 	InvocationID() int64
-
-	// InvocationNonce returns an identifier for the task launch request.
-	//
-	// If for whatever reason LaunchTask crashed or returned transient error, the
-	// engine will create new invocation (with new InvocationID), that has same
-	// InvocationNonce. TaskManager implementation thus can use it to add
-	// idempotency to LaunchTask calls.
-	//
-	// TODO(vadimsh): Remove in v2, use InvocationID instead.
-	InvocationNonce() int64
 
 	// Request contains parameters of the invocation supplied when it was created.
 	Request() Request

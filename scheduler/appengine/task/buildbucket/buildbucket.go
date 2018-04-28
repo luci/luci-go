@@ -201,7 +201,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	// Prepare the request.
 	request := bbv1.ApiPutRequestMessage{
 		Bucket:            cfg.Bucket,
-		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationNonce()),
+		ClientOperationId: fmt.Sprintf("%d", ctl.InvocationID()),
 		ParametersJson:    paramsJSON,
 		Tags:              tags,
 		PubsubCallback: &bbv1.ApiPubSubCallbackMessage{
