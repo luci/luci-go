@@ -140,36 +140,6 @@ func TestBuildInfo(t *testing.T) {
 			})
 		})
 
-		Convey("Can load a BuildBot build by deprecated logdog_annotation_url.", func() {
-			build.Properties = append(build.Properties, []*buildbot.Property{
-				{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
-			}...)
-			importBuild(c, &build)
-			writeDatagram(testClient, "foo/bar", "baz/annotations", &logdogStep)
-
-			resp, err := GetBuildInfo(c, biReq.GetBuildbot(), "")
-			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, &milo.BuildInfoResponse{
-				Project: "proj-foo",
-				Step: &miloProto.Step{
-					Command: &miloProto.Step_Command{
-						CommandLine: []string{"foo", "bar", "baz"},
-					},
-					Text: []string{"test step"},
-					Property: []*miloProto.Step_Property{
-						{Name: "bar", Value: "log-bar"},
-						{Name: "foo", Value: "build-foo"},
-						{Name: "logdog_annotation_url", Value: "logdog://example.com/proj-foo/foo/bar/+/baz/annotations"},
-					},
-				},
-				AnnotationStream: &miloProto.LogdogStream{
-					Server: "example.com",
-					Prefix: "foo/bar",
-					Name:   "baz/annotations",
-				},
-			})
-		})
-
 		Convey("Fails to load a BuildBot build by query if no project hint is provided.", func() {
 			importBuild(c, &build)
 
