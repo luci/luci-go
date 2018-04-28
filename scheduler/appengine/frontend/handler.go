@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 
@@ -152,13 +151,9 @@ func init() {
 	globalCatalog.RegisterConfigRules(&validation.Rules)
 
 	globalEngine = engine.NewEngine(engine.Config{
-		Catalog:              globalCatalog,
-		Dispatcher:           &globalDispatcher,
-		TimersQueuePath:      "/internal/tasks/timers",
-		TimersQueueName:      "timers",
-		InvocationsQueuePath: "/internal/tasks/invocations",
-		InvocationsQueueName: "invocations",
-		PubSubPushPath:       "/pubsub",
+		Catalog:        globalCatalog,
+		Dispatcher:     &globalDispatcher,
+		PubSubPushPath: "/pubsub",
 	})
 
 	// Do global init before handling requests.
@@ -183,8 +178,6 @@ func init() {
 
 	r.POST("/pubsub", base, pubsubPushHandler) // auth is via custom tokens
 	r.GET("/internal/cron/read-config", base.Extend(gaemiddleware.RequireCron), readConfigCron)
-	r.POST("/internal/tasks/timers", base.Extend(gaemiddleware.RequireTaskQueue("timers")), actionTask)
-	r.POST("/internal/tasks/invocations", base.Extend(gaemiddleware.RequireTaskQueue("invocations")), actionTask)
 
 	// Devserver can't accept PubSub pushes, so allow manual pulls instead to
 	// simplify local development.
@@ -301,22 +294,4 @@ func readProjectConfig(c context.Context, task proto.Message) error {
 	}
 
 	return nil
-}
-
-// actionTask is used to route actions emitted by job state transitions back
-// into Engine (see enqueueActions).
-func actionTask(c *router.Context) {
-	rc := requestContext(*c)
-	body, err := ioutil.ReadAll(rc.Request.Body)
-	if err != nil {
-		rc.fail(500, "Failed to read request body: %s", err)
-		return
-	}
-	count, _ := strconv.Atoi(rc.Request.Header.Get("X-AppEngine-TaskExecutionCount"))
-	err = globalEngine.ExecuteSerializedAction(rc.Context, body, count)
-	if err != nil {
-		rc.err(err, "Error when executing the action")
-		return
-	}
-	rc.ok()
 }

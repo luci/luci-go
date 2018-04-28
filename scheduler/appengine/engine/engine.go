@@ -16,7 +16,6 @@
 package engine
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -26,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
@@ -199,18 +197,6 @@ type EngineInternal interface {
 	// preserved between appserver restarts and it messes everything.
 	ResetAllJobsOnDevServer(c context.Context) error
 
-	// ExecuteSerializedAction is called via a task queue to execute an action
-	// produced by job state machine transition.
-	//
-	// These actions are POSTed to TimersQueue and InvocationsQueue defined in
-	// Config by Engine.
-	//
-	// 'retryCount' is 0 on first attempt, 1 if task queue service retries
-	// request once, 2 - if twice, and so on.
-	//
-	// Returning transient errors here causes the task queue to retry the task.
-	ExecuteSerializedAction(c context.Context, body []byte, retryCount int) error
-
 	// ProcessPubSubPush is called whenever incoming PubSub message is received.
 	ProcessPubSubPush(c context.Context, body []byte) error
 
@@ -242,13 +228,9 @@ type FutureInvocation interface {
 
 // Config contains parameters for the engine.
 type Config struct {
-	Catalog              catalog.Catalog // provides task.Manager's to run tasks
-	Dispatcher           *tq.Dispatcher  // dispatcher for task queue tasks
-	TimersQueuePath      string          // URL of a task queue handler for timer ticks
-	TimersQueueName      string          // queue name for timer ticks
-	InvocationsQueuePath string          // URL of a task queue handler that starts jobs
-	InvocationsQueueName string          // queue name for job starts
-	PubSubPushPath       string          // URL to use in PubSub push config
+	Catalog        catalog.Catalog // provides task.Manager's to run tasks
+	Dispatcher     *tq.Dispatcher  // dispatcher for task queue tasks
+	PubSubPushPath string          // URL to use in PubSub push config
 }
 
 // NewEngine returns default implementation of EngineInternal.
@@ -695,21 +677,6 @@ func (e *engineImpl) ResetAllJobsOnDevServer(c context.Context) error {
 	return transient.Tag.Apply(errs.Get())
 }
 
-// ExecuteSerializedAction is called via a task queue to execute an action
-// produced by job state machine transition.
-//
-// Part of the internal interface, doesn't check ACLs.
-func (e *engineImpl) ExecuteSerializedAction(c context.Context, action []byte, retryCount int) error {
-	payload := actionTaskPayload{}
-	if err := json.Unmarshal(action, &payload); err != nil {
-		return err
-	}
-	if payload.InvID == 0 {
-		return e.executeJobAction(c, &payload, retryCount)
-	}
-	return e.executeInvAction(c, &payload, retryCount)
-}
-
 // ProcessPubSubPush is called whenever incoming PubSub message is received.
 //
 // Part of the internal interface, doesn't check ACLs.
@@ -1142,255 +1109,6 @@ func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int6
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Job related task queue messages and routing.
-
-// actionTaskPayload is payload for task queue jobs emitted by the engine.
-//
-// Serialized as JSON, produced by enqueueJobActions, enqueueInvTimers, and
-// enqueueTriggers, used as inputs in ExecuteSerializedAction.
-//
-// Union of all possible payloads for simplicity.
-type actionTaskPayload struct {
-	JobID string `json:",omitempty"` // ID of relevant Job
-	InvID int64  `json:",omitempty"` // ID of relevant Invocation
-
-	// For Job actions and timers (InvID == 0).
-	Kind                string           `json:",omitempty"` // defines what fields below to examine
-	TickNonce           int64            `json:",omitempty"` // valid for "TickLaterAction" kind
-	InvocationNonce     int64            `json:",omitempty"` // valid for "StartInvocationAction" kind
-	TriggeredBy         string           `json:",omitempty"` // valid for "StartInvocationAction" kind
-	Triggers            triggersJSONList `json:",omitempty"` // valid for "StartInvocationAction", "EnqueueTriggersAction", and "EnqueueBatchOfTriggersAction"
-	TriggeredJobIDs     []string         `json:",omitempty"` // Valid for "EnqueueBatchOfTriggersAction" kind only.
-	Overruns            int              `json:",omitempty"` // valid for "RecordOverrunAction" kind
-	RunningInvocationID int64            `json:",omitempty"` // valid for "RecordOverrunAction" kind
-
-	// For Invocation actions and timers (InvID != 0).
-	InvTimer *invocationTimer `json:",omitempty"` // used for AddTimer calls
-}
-
-// triggersJSONList is JSON-serializable list of triggers.
-type triggersJSONList []*internal.Trigger
-
-var (
-	jsonPBMarshaller   = &jsonpb.Marshaler{}
-	jsonPBUnmarshaller = &jsonpb.Unmarshaler{AllowUnknownFields: true}
-)
-
-func (l triggersJSONList) MarshalJSON() ([]byte, error) {
-	out, err := jsonPBMarshaller.MarshalToString(&internal.TriggerList{Triggers: l})
-	if err != nil {
-		return nil, err
-	}
-	return []byte(out), nil
-}
-
-func (l *triggersJSONList) UnmarshalJSON(data []byte) error {
-	list := internal.TriggerList{}
-	err := jsonPBUnmarshaller.Unmarshal(bytes.NewReader(data), &list)
-	if err != nil {
-		return err
-	}
-	*l = list.Triggers
-	return nil
-}
-
-// invocationTimer is carried as part of task queue task payload for tasks
-// created by AddTimer calls.
-//
-// It will be serialized to JSON, so all fields are public.
-type invocationTimer struct {
-	Delay   time.Duration
-	Name    string
-	Payload []byte
-}
-
-// enqueueJobActions submits all actions emitted by a job state transition by
-// adding corresponding tasks to task queues.
-//
-// See executeJobAction for a place where these actions are interpreted.
-func (e *engineImpl) enqueueJobActions(c context.Context, jobID string, actions []Action) error {
-	// AddMulti can't put tasks into multiple queues at once, split by queue name.
-	qs := map[string][]*taskqueue.Task{}
-	for _, a := range actions {
-		switch a := a.(type) {
-		case TickLaterAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:     jobID,
-				Kind:      "TickLaterAction",
-				TickNonce: a.TickNonce,
-			})
-			if err != nil {
-				return err
-			}
-			logging.Infof(c, "Scheduling tick %d after %.1f sec", a.TickNonce, a.When.Sub(time.Now()).Seconds())
-			qs[e.cfg.TimersQueueName] = append(qs[e.cfg.TimersQueueName], &taskqueue.Task{
-				Path:    e.cfg.TimersQueuePath,
-				ETA:     a.When,
-				Payload: payload,
-			})
-		case StartInvocationAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:           jobID,
-				Kind:            "StartInvocationAction",
-				InvocationNonce: a.InvocationNonce,
-				TriggeredBy:     string(a.TriggeredBy),
-				Triggers:        a.Triggers,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Delay:   time.Second, // give the transaction time to land
-				Payload: payload,
-				RetryOptions: &taskqueue.RetryOptions{
-					// Give 5 attempts to mark the job as failed. See 'startInvocation'.
-					RetryLimit: invocationRetryLimit + 5,
-					MinBackoff: time.Second,
-					MaxBackoff: maxInvocationRetryBackoff,
-					AgeLimit:   time.Duration(invocationRetryLimit+5) * maxInvocationRetryBackoff,
-				},
-			})
-		case EnqueueBatchOfTriggersAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:           jobID,
-				Kind:            "EnqueueBatchOfTriggersAction",
-				Triggers:        a.Triggers,
-				TriggeredJobIDs: a.TriggeredJobIDs,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Payload: payload,
-			})
-		case EnqueueTriggersAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:    jobID,
-				Kind:     "EnqueueTriggersAction",
-				Triggers: a.Triggers,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Payload: payload,
-			})
-		case RecordOverrunAction:
-			payload, err := json.Marshal(actionTaskPayload{
-				JobID:               jobID,
-				Kind:                "RecordOverrunAction",
-				Overruns:            a.Overruns,
-				RunningInvocationID: a.RunningInvocationID,
-			})
-			if err != nil {
-				return err
-			}
-			qs[e.cfg.InvocationsQueueName] = append(qs[e.cfg.InvocationsQueueName], &taskqueue.Task{
-				Path:    e.cfg.InvocationsQueuePath,
-				Delay:   time.Second, // give the transaction time to land
-				Payload: payload,
-			})
-		default:
-			logging.Errorf(c, "Unexpected action type %T, skipping", a)
-		}
-	}
-	wg := sync.WaitGroup{}
-	errs := errors.NewLazyMultiError(len(qs))
-	i := 0
-	for queueName, tasks := range qs {
-		wg.Add(1)
-		go func(i int, queueName string, tasks []*taskqueue.Task) {
-			errs.Assign(i, taskqueue.Add(c, queueName, tasks...))
-			wg.Done()
-		}(i, queueName, tasks)
-		i++
-	}
-	wg.Wait()
-	return transient.Tag.Apply(errs.Get())
-}
-
-// executeJobAction routes an action that targets a job.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) executeJobAction(c context.Context, payload *actionTaskPayload, retryCount int) error {
-	panic("must not be called")
-}
-
-// jobTimerTick is invoked via task queue in a task with some ETA. It what makes
-// cron tick.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) jobTimerTick(c context.Context, jobID string, tickNonce int64) error {
-	panic("must not be called")
-}
-
-// recordOverrun is invoked via task queue when a job should have been started,
-// but previous invocation was still running.
-//
-// It creates new phony Invocation entity (in 'FAILED' state) in the datastore,
-// to keep record of all overruns. Doesn't modify Job entity.
-//
-// Supports only v1 jobs currently! Harmless (and also does nothing visible) if
-// called for v2 job.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) recordOverrun(c context.Context, jobID string, overruns int, runningInvID int64) error {
-	panic("must not be called")
-}
-
-// newBatchOfTriggers splits a batch of triggers into individual per-job async
-// tasks by means of EnqueueTriggersAction.
-//
-// It should run outside of a transaction, since transaction limits
-// us to just 5 task queue items hereby limiting len(triggeredJobID) to 5.
-//
-// Used by v1 engine only!
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) newBatchOfTriggers(c context.Context, triggeredJobIDs []string, triggers []*internal.Trigger) error {
-	panic("must not be called")
-}
-
-// newTriggers is invoked via task queue when a job receives new Triggers.
-//
-// It adds these triggers to job's state. If job isn't yet running, this may
-// result in StartInvocationAction being emitted.
-//
-// Used by v1 engine only!
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) newTriggers(c context.Context, jobID string, triggers []*internal.Trigger) error {
-	panic("must not be called")
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Invocation related task queue routing.
-
-// executeInvAction routes an action that targets an invocation.
-func (e *engineImpl) executeInvAction(c context.Context, payload *actionTaskPayload, retryCount int) error {
-	switch {
-	case payload.InvTimer != nil:
-		return e.invocationTimerTick(c, payload.JobID, payload.InvID, payload.InvTimer)
-	default:
-		return fmt.Errorf("unexpected invocation action kind %q", payload)
-	}
-}
-
-// invocationTimerTick is called via Task Queue to handle AddTimer callbacks.
-//
-// See also handlePubSubMessage, it is quite similar.
-//
-// v1 only! See timerTask for v2, it is slightly different.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) invocationTimerTick(c context.Context, jobID string, invID int64, timer *invocationTimer) error {
-	panic("must not be called")
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Task controller and invocation launch.
 
 const (
@@ -1455,18 +1173,6 @@ func (e *engineImpl) withController(c context.Context, jobID string, invID int64
 	return nil
 }
 
-// startInvocation is called via task queue to start running a job.
-//
-// This call may be retried by task queue service.
-//
-// Used by v1 engine only!
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) startInvocation(c context.Context, jobID string, invocationNonce int64,
-	triggeredBy identity.Identity, triggers []*internal.Trigger, retryCount int) error {
-	panic("must not be called")
-}
-
 // launchTask instantiates an invocation controller and calls its LaunchTask
 // method, saving the invocation state when its done.
 //
@@ -1528,51 +1234,6 @@ func (e *engineImpl) launchTask(c context.Context, inv *Invocation) error {
 	}
 
 	return nil
-}
-
-// enqueueInvTimers submits all timers emitted by an invocation manager by
-// adding corresponding tasks to the task queue.
-//
-// Called from a transaction around corresponding Invocation entity.
-//
-// See executeInvAction for a place where these actions are interpreted.
-//
-// Used by v1 engine only!
-func (e *engineImpl) enqueueInvTimers(c context.Context, jobID string, invID int64, timers []invocationTimer) error {
-	assertInTransaction(c)
-	tasks := make([]*taskqueue.Task, len(timers))
-	for i, timer := range timers {
-		payload, err := json.Marshal(actionTaskPayload{
-			JobID:    jobID,
-			InvID:    invID,
-			InvTimer: &timer,
-		})
-		if err != nil {
-			return err
-		}
-		tasks[i] = &taskqueue.Task{
-			Path:    e.cfg.TimersQueuePath,
-			ETA:     clock.Now(c).Add(timer.Delay),
-			Payload: payload,
-		}
-	}
-	return transient.Tag.Apply(taskqueue.Add(c, e.cfg.TimersQueueName, tasks...))
-}
-
-// enqueueTriggers submits all triggers emitted by an invocation manager by
-// adding corresponding tasks to the task queue.
-//
-// Called from a transaction around corresponding Invocation entity.
-//
-// See executeJobAction for a place where these actions are interpreted.
-//
-// Used by v1 engine only!
-func (e *engineImpl) enqueueTriggers(c context.Context, triggeredJobIDs []string, triggers []*internal.Trigger) error {
-	assertInTransaction(c)
-	return transient.Tag.Apply(e.enqueueJobActions(c, "", []Action{EnqueueBatchOfTriggersAction{
-		Triggers:        triggers,
-		TriggeredJobIDs: triggeredJobIDs,
-	}}))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -12,10 +12,6 @@ queue:
 - name: crons
   rate: 500/s
 
-# TODO(vadimsh): Remove once switched to v2.
-- name: invocations
-  rate: 500/s
-
 - name: launches
   rate: 500/s
 
