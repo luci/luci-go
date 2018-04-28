@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54c32f5e_3c806074",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T22:09:22Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 9,
+        "startChar": 36,
+        "endLine": 9,
+        "endChar": 37
+      },
+      "revId": "56257ed8f41869e0ca7a8381035d3f4a91e35477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1b61045_16b61052",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-28T22:09:22Z",
+      "side": 1,
+      "message": ":D somehow \"collateral\" is associated with damage in my mind...",
+      "range": {
+        "startLine": 11,
+        "startChar": 29,
+        "endLine": 11,
+        "endChar": 34
+      },
+      "revId": "56257ed8f41869e0ca7a8381035d3f4a91e35477",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
