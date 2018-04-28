@@ -29,7 +29,6 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/taskqueue"
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
@@ -96,9 +95,6 @@ func newTestContext(now time.Time) context.Context {
 	})
 	datastore.GetTestable(c).CatchupIndexes()
 
-	// TODO(vadimsh): Remove once v1 is fully gone.
-	taskqueue.GetTestable(c).CreateQueue("timers-q")
-	taskqueue.GetTestable(c).CreateQueue("invs-q")
 	return c
 }
 
@@ -107,13 +103,9 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 	cat := catalog.New()
 	cat.RegisterTaskManager(mgr)
 	return NewEngine(Config{
-		Catalog:              cat,
-		Dispatcher:           &tq.Dispatcher{},
-		TimersQueuePath:      "/timers",
-		TimersQueueName:      "timers-q",
-		InvocationsQueuePath: "/invs",
-		InvocationsQueueName: "invs-q",
-		PubSubPushPath:       "/push-url",
+		Catalog:        cat,
+		Dispatcher:     &tq.Dispatcher{},
+		PubSubPushPath: "/push-url",
 	}).(*engineImpl), mgr
 }
 
