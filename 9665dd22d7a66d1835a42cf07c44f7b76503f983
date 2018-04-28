@@ -16,6 +16,24 @@
       "revId": "9665dd22d7a66d1835a42cf07c44f7b76503f983",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f655fbf3_f4258e75",
+        "filename": "scheduler/appengine/engine/helpers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-28T22:50:35Z",
+      "side": 1,
+      "message": "It is used by various tests, and it was defined in statemachine_test.go which is deleted in this CL, so I had to move it here.",
+      "parentUuid": "6e1f741b_c6dfd3da",
+      "revId": "9665dd22d7a66d1835a42cf07c44f7b76503f983",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
