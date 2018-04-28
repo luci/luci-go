@@ -48,13 +48,11 @@ func jobPage(ctx *router.Context) {
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	// We show active invocations only on the first page of the results, and only
-	// in v2 mode. In v1 mode, active invocations are intermixed with finished
-	// ones.
+	// We show active invocations only on the first page of the results.
 	var invsActive []*engine.Invocation
 	var invsActiveErr error
 	var haveInvsActive bool
-	if cursor == "" && job.IsV2() {
+	if cursor == "" {
 		haveInvsActive = true
 		wg.Add(1)
 		go func() {
@@ -74,7 +72,7 @@ func jobPage(ctx *router.Context) {
 		invsLog, nextCursor, invsLogErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
 			PageSize:     50,
 			Cursor:       cursor,
-			FinishedOnly: job.IsV2(), // in v2 active invocations are displayed separately
+			FinishedOnly: true,
 		})
 	}()
 

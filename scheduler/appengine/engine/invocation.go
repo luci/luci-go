@@ -257,11 +257,6 @@ type Invocation struct {
 	MutationsCount int64 `gae:",noindex"`
 }
 
-// IsV2 is true if the invocation is in v2 format.
-func (e *Invocation) IsV2() bool {
-	return e.JobKey == nil
-}
-
 // jobID returns ID of the job the invocation belongs too.
 //
 // Supports both v1 and v2 invocations.
@@ -430,27 +425,4 @@ func (e *Invocation) reportCompletionMetrics(c context.Context) {
 	}
 	duration := e.Finished.Sub(e.Started)
 	metricInvocationsDurations.Add(c, duration.Seconds(), e.jobID(), string(e.Status))
-}
-
-// bestEffortSaveAsV2 saves the v1 invocation in v2 format.
-//
-// There's a very small but non-zero chance that two different v1 Jobs happen
-// to use exact same InvID for their invocations. We let the last one win.
-//
-// Non-transactional, means there may be "ghost" v2 invocations or some missing
-// ones. This is fine for old historical stuff.
-func (e *Invocation) bestEffortSaveAsV2(c context.Context) {
-	if e.IsV2() {
-		logging.Errorf(c, "Using bestEffortSaveAsV2 with v2 invocation. Ignoring.")
-		return
-	}
-	v2 := *e
-	v2.JobKey = nil
-	v2.JobID = e.jobID()
-	if v2.Status.Final() {
-		v2.IndexedJobID = e.jobID() // must be set only for finished v2 invocations
-	}
-	if err := datastore.Put(datastore.WithoutTransaction(c), &v2); err != nil {
-		logging.WithError(err).Errorf(c, "Failed to save v1 invocation as v2, skipping it")
-	}
 }

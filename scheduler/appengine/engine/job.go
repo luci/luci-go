@@ -75,8 +75,6 @@ type Job struct {
 	//
 	// Paused jobs ignore incoming triggers. They are completely skipped (not even
 	// enqueued). Pausing a job clears the pending triggers set.
-	//
-	// TODO(vadimsh): Handling of paused state is not implemented for v2 jobs yet.
 	Paused bool `gae:",noindex"`
 
 	// Revision is last seen job definition revision.
@@ -102,20 +100,16 @@ type Job struct {
 
 	// State is the job's state machine state, see StateMachine.
 	//
-	// Used by v1 jobs only.
+	// Used by v1 jobs only. TODO(vadimsh): Remove.
 	State JobState
 
 	// Cron holds the state of the cron state machine.
-	//
-	// Used by v2 jobs only.
 	Cron cron.State `gae:",noindex"`
 
 	// ActiveInvocations is ordered set of active invocation IDs.
 	//
 	// It contains IDs of pending, running or recently finished invocations,
 	// the most recent at the end.
-	//
-	// Used by v2 jobs only.
 	ActiveInvocations []int64 `gae:",noindex"`
 
 	// FinishedInvocationsRaw is a list of recently finished invocations, along
@@ -132,18 +126,7 @@ type Job struct {
 	// during triages. We assume that FinishedInvocationsHorizon is enough for
 	// datastore indexes to catch up, so all recent invocations older than the
 	// horizon can be fetched using a regular datastore query.
-	//
-	// Used by v2 jobs only.
 	FinishedInvocationsRaw []byte `gae:",noindex"`
-
-	// EligibleForV2 is true if the job is eligible for conversion to v2 and
-	// should be converted at an earliest convenience.
-	//
-	// Ignored for v2 jobs. There's no automated way back from v2 to v1.
-	EligibleForV2 bool `gae:",noindex"`
-
-	// ConvertedToV2 is true if this job has been converted to v2 format.
-	ConvertedToV2 bool `gae:",noindex"`
 }
 
 // JobName returns name of this Job as defined its project's config.
@@ -198,30 +181,15 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.State.Equal(&other.State) &&
 		e.Cron.Equal(&other.Cron) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
-		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw) &&
-		e.EligibleForV2 == other.EligibleForV2 &&
-		e.ConvertedToV2 == other.ConvertedToV2)
-}
-
-// IsV2 returns true for v2 jobs.
-func (e *Job) IsV2() bool {
-	return strings.HasSuffix(e.JobID, "-v2") || e.ConvertedToV2
-}
-
-// JobDefinition is used during v1->v2 migration to carry job-related bits
-// fetched from the migration settings.
-type JobDefinition struct {
-	catalog.Definition      // as read from the catalog
-	EligibleForV2      bool // as read from migration settings
+		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
 }
 
 // MatchesDefinition returns true if job definition in the entity matches the
 // one specified by catalog.Definition struct.
-func (e *Job) MatchesDefinition(def JobDefinition) bool {
+func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 	return e.JobID == def.JobID &&
 		e.Flavor == def.Flavor &&
 		e.Schedule == def.Schedule &&
-		e.EligibleForV2 == def.EligibleForV2 &&
 		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
@@ -233,11 +201,8 @@ func (e *Job) MatchesDefinition(def JobDefinition) bool {
 //  Zero time if the job is using relative schedule, or not a cron job at all.
 //  schedule.DistantFuture if the job is paused.
 func (e *Job) CronTickTime() time.Time {
-	if e.IsV2() {
-		// Note: LastTick is "last scheduled tick", it is in the future.
-		return e.Cron.LastTick.When
-	}
-	return e.State.TickTime
+	// Note: LastTick is "last scheduled tick", it is in the future.
+	return e.Cron.LastTick.When
 }
 
 // CheckRole returns nil if the caller has the given role or ErrNoPermission

@@ -63,18 +63,19 @@ func TestGetJobsApi(t *testing.T) {
 			fakeEng.getVisibleJobs = func() ([]*engine.Job, error) {
 				return []*engine.Job{
 					{
-						JobID:     "bar/foo",
-						ProjectID: "bar",
-						Schedule:  "0 * * * * * *",
-						State:     engine.JobState{State: engine.JobStateRunning},
-						Task:      fakeTaskBlob,
+						JobID:             "bar/foo",
+						ProjectID:         "bar",
+						Enabled:           true,
+						Schedule:          "0 * * * * * *",
+						ActiveInvocations: []int64{1},
+						Task:              fakeTaskBlob,
 					},
 					{
 						JobID:     "baz/faz",
-						Paused:    true,
 						ProjectID: "baz",
+						Enabled:   true,
+						Paused:    true,
 						Schedule:  "with 1m interval",
-						State:     engine.JobState{State: engine.JobStateSuspended},
 						Task:      fakeTaskBlob,
 					},
 				}, nil
@@ -102,11 +103,12 @@ func TestGetJobsApi(t *testing.T) {
 				So(projectID, ShouldEqual, "bar")
 				return []*engine.Job{
 					{
-						JobID:     "bar/foo",
-						ProjectID: "bar",
-						Schedule:  "0 * * * * * *",
-						State:     engine.JobState{State: engine.JobStateRunning},
-						Task:      fakeTaskBlob,
+						JobID:             "bar/foo",
+						ProjectID:         "bar",
+						Enabled:           true,
+						Schedule:          "0 * * * * * *",
+						ActiveInvocations: []int64{1},
+						Task:              fakeTaskBlob,
 					},
 				}, nil
 			}
@@ -128,12 +130,13 @@ func TestGetJobsApi(t *testing.T) {
 				return []*engine.Job{
 					{
 						// Job which is paused but its latest invocation still running.
-						JobID:     "bar/foo",
-						ProjectID: "bar",
-						Schedule:  "0 * * * * * *",
-						State:     engine.JobState{State: engine.JobStateRunning},
-						Paused:    true,
-						Task:      fakeTaskBlob,
+						JobID:             "bar/foo",
+						ProjectID:         "bar",
+						Enabled:           true,
+						Schedule:          "0 * * * * * *",
+						ActiveInvocations: []int64{1},
+						Paused:            true,
+						Task:              fakeTaskBlob,
 					},
 				}, nil
 			}
@@ -392,6 +395,7 @@ func (f *fakeEngine) mockJob(jobID string) *engine.Job {
 	j := &engine.Job{
 		JobID:     jobID,
 		ProjectID: strings.Split(jobID, "/")[0],
+		Enabled:   true,
 	}
 	f.getVisibleJob = func(jobID string) (*engine.Job, error) {
 		if jobID == j.JobID {

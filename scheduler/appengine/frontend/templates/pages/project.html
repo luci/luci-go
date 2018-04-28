@@ -44,7 +44,7 @@
         </thead>
         <tbody>
         {{range .Jobs }}
-          <tr class="{{if .IsV2}}v2-job-row{{end}}">
+          <tr>
             <td class="long">{{template "job-id-ref" .}}</td>
             <td>{{.Schedule}}</td>
             <td><span class="label {{.LabelClass}}">{{.State}}</span></td>

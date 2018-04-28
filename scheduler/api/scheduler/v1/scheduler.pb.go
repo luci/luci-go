@@ -321,13 +321,9 @@ func (m *Job) GetPaused() bool {
 
 // JobState describes current Job state as one of these strings:
 //   "DISABLED"
-//   "OVERRUN"
 //   "PAUSED"
-//   "RETRYING"
 //   "RUNNING"
 //   "SCHEDULED"
-//   "STARTING"
-//   "SUSPENDED"
 //   "WAITING"
 type JobState struct {
 	UiStatus string `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus" json:"ui_status,omitempty"`

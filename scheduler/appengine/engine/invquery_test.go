@@ -240,20 +240,7 @@ func TestInvDatastoreIter(t *testing.T) {
 	})
 }
 
-func insertV1Inv(c context.Context, jobID string, invID int64, status task.Status) *Invocation {
-	inv := &Invocation{
-		ID:     invID,
-		JobKey: datastore.KeyForObj(c, &Job{JobID: jobID}),
-		Status: status,
-	}
-	if err := datastore.Put(c, inv); err != nil {
-		panic(err)
-	}
-	datastore.GetTestable(c).CatchupIndexes()
-	return inv
-}
-
-func insertV2Inv(c context.Context, jobID string, invID int64, status task.Status) *Invocation {
+func insertInv(c context.Context, jobID string, invID int64, status task.Status) *Invocation {
 	inv := &Invocation{
 		ID:     invID,
 		JobID:  jobID,
@@ -297,11 +284,10 @@ func TestFinishedInvQuery(t *testing.T) {
 			So(fetchAll(q), ShouldBeEmpty)
 		})
 
-		Convey("v1 job", func() {
-			insertV1Inv(c, "proj/job", 3, task.StatusSucceeded)
-			insertV1Inv(c, "proj/job", 2, task.StatusSucceeded)
-			insertV1Inv(c, "proj/job", 1, task.StatusSucceeded)
-			insertV2Inv(c, "proj/job", 4, task.StatusSucceeded) // should be ignored
+		Convey("Non empty", func() {
+			insertInv(c, "proj/job", 3, task.StatusSucceeded)
+			insertInv(c, "proj/job", 2, task.StatusSucceeded)
+			insertInv(c, "proj/job", 1, task.StatusSucceeded)
 
 			Convey("no cursor", func() {
 				q := finishedInvQuery(c, &Job{JobID: "proj/job"}, 0)
@@ -313,23 +299,6 @@ func TestFinishedInvQuery(t *testing.T) {
 				So(invIDs(fetchAll(q)), ShouldResemble, []int64{2, 3})
 			})
 		})
-
-		Convey("v2 job", func() {
-			insertV2Inv(c, "proj/job-v2", 3, task.StatusSucceeded)
-			insertV2Inv(c, "proj/job-v2", 2, task.StatusSucceeded)
-			insertV2Inv(c, "proj/job-v2", 1, task.StatusSucceeded)
-			insertV1Inv(c, "proj/job-v2", 4, task.StatusSucceeded) // should be ignored
-
-			Convey("no cursor", func() {
-				q := finishedInvQuery(c, &Job{JobID: "proj/job-v2"}, 0)
-				So(invIDs(fetchAll(q)), ShouldResemble, []int64{1, 2, 3})
-			})
-
-			Convey("with cursor", func() {
-				q := finishedInvQuery(c, &Job{JobID: "proj/job-v2"}, 1)
-				So(invIDs(fetchAll(q)), ShouldResemble, []int64{2, 3})
-			})
-		})
 	})
 }
 
@@ -337,7 +306,7 @@ func TestFetchInvsPage(t *testing.T) {
 	t.Parallel()
 
 	Convey("With context", t, func() {
-		const jobID = "proj/job-v2"
+		const jobID = "proj/job"
 
 		c := memory.Use(context.Background())
 
@@ -375,13 +344,13 @@ func TestFetchInvsPage(t *testing.T) {
 
 		Convey("ActiveInvocations list is consistent with datastore", func() {
 			// List of finished invocations, oldest to newest.
-			i6 := insertV2Inv(c, jobID, 6, task.StatusSucceeded)
-			i5 := insertV2Inv(c, jobID, 5, task.StatusFailed)
-			i4 := insertV2Inv(c, jobID, 4, task.StatusSucceeded)
+			i6 := insertInv(c, jobID, 6, task.StatusSucceeded)
+			i5 := insertInv(c, jobID, 5, task.StatusFailed)
+			i4 := insertInv(c, jobID, 4, task.StatusSucceeded)
 			// List of still running invocations, oldest to newest.
-			i3 := insertV2Inv(c, jobID, 3, task.StatusRunning)
-			i2 := insertV2Inv(c, jobID, 2, task.StatusRunning)
-			i1 := insertV2Inv(c, jobID, 1, task.StatusRunning)
+			i3 := insertInv(c, jobID, 3, task.StatusRunning)
+			i2 := insertInv(c, jobID, 2, task.StatusRunning)
+			i1 := insertInv(c, jobID, 1, task.StatusRunning)
 
 			job := &Job{
 				JobID: jobID,
@@ -458,13 +427,13 @@ func TestFetchInvsPage(t *testing.T) {
 
 		Convey("ActiveInvocations list is stale", func() {
 			// List of finished invocations, oldest to newest.
-			i6 := insertV2Inv(c, jobID, 6, task.StatusSucceeded)
-			i5 := insertV2Inv(c, jobID, 5, task.StatusFailed)
-			i4 := insertV2Inv(c, jobID, 4, task.StatusSucceeded)
+			i6 := insertInv(c, jobID, 6, task.StatusSucceeded)
+			i5 := insertInv(c, jobID, 5, task.StatusFailed)
+			i4 := insertInv(c, jobID, 4, task.StatusSucceeded)
 			// List of still invocations referenced by ActiveInvocations.
-			i3 := insertV2Inv(c, jobID, 3, task.StatusSucceeded) // actually done!
-			i2 := insertV2Inv(c, jobID, 2, task.StatusRunning)
-			i1 := insertV2Inv(c, jobID, 1, task.StatusRunning)
+			i3 := insertInv(c, jobID, 3, task.StatusSucceeded) // actually done!
+			i2 := insertInv(c, jobID, 2, task.StatusRunning)
+			i1 := insertInv(c, jobID, 1, task.StatusRunning)
 
 			job := &Job{
 				JobID:             jobID,
