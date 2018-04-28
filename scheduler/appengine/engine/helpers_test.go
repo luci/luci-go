@@ -48,6 +48,8 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
+var epoch = time.Unix(1442270520, 0).UTC()
+
 // getSentMetric returns sent value or nil if value wasn't sent.
 func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
 	return tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)

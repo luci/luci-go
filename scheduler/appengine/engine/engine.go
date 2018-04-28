@@ -746,16 +746,6 @@ func (e *engineImpl) jobTxn(c context.Context, jobID string, callback txnCallbac
 	})
 }
 
-// rollSM is called under transaction to perform a single state machine step.
-//
-// It sets up StateMachine instance, calls the callback, mutates job.State in
-// place (with a new state) and enqueues all emitted actions to task queues.
-//
-// TODO(vadimsh): Remove.
-func (e *engineImpl) rollSM(c context.Context, job *Job, cb func(*StateMachine) error) error {
-	panic("should not be called anymore")
-}
-
 // jobController returns an appropriate implementation of the jobController.
 //
 // TODO(vadimsh): Remove.
@@ -874,7 +864,6 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				Enabled:         false, // to trigger 'if !oldEnabled' below
 				Schedule:        def.Schedule,
 				Task:            def.Task,
-				State:           JobState{State: JobStateDisabled},
 				TriggeredJobIDs: def.TriggeredJobIDs,
 			}
 		}
