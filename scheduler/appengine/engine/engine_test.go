@@ -737,22 +737,10 @@ func TestForceInvocation(t *testing.T) {
 
 			job, err := e.getJob(c, "project/job")
 			So(err, ShouldBeNil)
-			futureInv, err := e.ForceInvocation(auth.WithState(c, asUserOne), job)
+			inv, err := e.ForceInvocation(auth.WithState(c, asUserOne), job)
 			So(err, ShouldBeNil)
 
-			// Invocation ID is resolved right away.
-			invID, err := futureInv.InvocationID(c)
-			So(err, ShouldBeNil)
-			So(invID, ShouldEqual, expectedInvID)
-
-			// It is now marked as active in the job state, refetch it to check.
-			job, err = e.getJob(c, "project/job")
-			So(err, ShouldBeNil)
-			So(job.ActiveInvocations, ShouldResemble, []int64{invID})
-
-			// All its fields are good.
-			inv, err := e.getInvocation(c, "project/job", invID)
-			So(err, ShouldBeNil)
+			// New invocation looks good.
 			So(inv, ShouldResemble, &Invocation{
 				ID:          expectedInvID,
 				JobID:       "project/job",
@@ -764,6 +752,11 @@ func TestForceInvocation(t *testing.T) {
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
 					"[22:42:00.000] Triggered by user:one@example.com\n",
 			})
+
+			// It is now marked as active in the job state, refetch it to check.
+			job, err = e.getJob(c, "project/job")
+			So(err, ShouldBeNil)
+			So(job.ActiveInvocations, ShouldResemble, []int64{inv.ID})
 
 			// Eventually it runs the task, which then cleans up job state.
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
@@ -789,7 +782,7 @@ func TestForceInvocation(t *testing.T) {
 			})
 
 			// The invocation is in finished state.
-			inv, err = e.getInvocation(c, "project/job", invID)
+			inv, err = e.getInvocation(c, "project/job", inv.ID)
 			So(err, ShouldBeNil)
 			So(inv, ShouldResemble, &Invocation{
 				ID:             expectedInvID,
@@ -852,10 +845,9 @@ func TestAbortJob(t *testing.T) {
 		// Force launch a new invocation.
 		job, err := e.getJob(c, jobID)
 		So(err, ShouldBeNil)
-		futureInv, err := e.ForceInvocation(asOne, job)
+		inv, err := e.ForceInvocation(asOne, job)
 		So(err, ShouldBeNil)
-		invID, err := futureInv.InvocationID(c)
-		So(err, ShouldBeNil)
+		invID := inv.ID
 		So(invID, ShouldEqual, expectedInvID)
 
 		Convey("inv aborted before it starts", func() {
@@ -1153,7 +1145,6 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			// Eventually it runs the task which emits a bunch of triggers, which
 			// causes the triggered job triage. We stop right before it and examine
 			// what we see.
-			var v1tasks []*taskqueue.Task
 			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
 				ctl.EmitTrigger(ctx, &internal.Trigger{Id: "t1"})
 				So(ctl.Save(ctx), ShouldBeNil)
@@ -1165,12 +1156,6 @@ func TestOneJobTriggersAnother(t *testing.T) {
 				ShouldStopBefore: func(t tqtesting.Task) bool {
 					_, ok := t.Payload.(*internal.TriageJobStateTask)
 					return ok
-				},
-				// v1 task queue tasks do not use tq.Dispatcher and appear as unknown
-				// tasks. Collect them.
-				UnknownTaskHandler: func(t *taskqueue.Task) error {
-					v1tasks = append(v1tasks, t)
-					return nil
 				},
 			})
 			So(err, ShouldBeNil)
