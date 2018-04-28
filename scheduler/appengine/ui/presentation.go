@@ -47,7 +47,6 @@ import (
 type schedulerJob struct {
 	ProjectID      string
 	JobName        string
-	IsV2           bool
 	Schedule       string
 	Definition     string
 	Revision       string
@@ -65,14 +64,10 @@ type schedulerJob struct {
 }
 
 var stateToLabelClass = map[presentation.PublicStateKind]string{
-	presentation.PublicStateRetrying:  "label-danger",
 	presentation.PublicStatePaused:    "label-default",
 	presentation.PublicStateScheduled: "label-primary",
-	presentation.PublicStateSuspended: "label-default",
 	presentation.PublicStateRunning:   "label-info",
-	presentation.PublicStateOverrun:   "label-warning",
 	presentation.PublicStateWaiting:   "label-warning",
-	presentation.PublicStateStarting:  "label-default",
 }
 
 var flavorToIconClass = []string{
@@ -118,7 +113,6 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 	return &schedulerJob{
 		ProjectID:      j.ProjectID,
 		JobName:        j.JobName(),
-		IsV2:           j.IsV2(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
 		Revision:       j.Revision,

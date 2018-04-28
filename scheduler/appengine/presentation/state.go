@@ -15,8 +15,6 @@
 package presentation
 
 import (
-	"fmt"
-
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
@@ -35,78 +33,15 @@ type PublicStateKind string
 // doc for `JobState`.
 const (
 	PublicStateDisabled  PublicStateKind = "DISABLED"
-	PublicStateOverrun   PublicStateKind = "OVERRUN"
 	PublicStatePaused    PublicStateKind = "PAUSED"
-	PublicStateRetrying  PublicStateKind = "RETRYING"
 	PublicStateRunning   PublicStateKind = "RUNNING"
 	PublicStateScheduled PublicStateKind = "SCHEDULED"
-	PublicStateStarting  PublicStateKind = "STARTING"
-	PublicStateSuspended PublicStateKind = "SUSPENDED"
 	PublicStateWaiting   PublicStateKind = "WAITING"
 )
 
-// jobStateInternalToPublic translates some internal states to public ones.
-// However, this map is not sufficient, so see and use GetPublicStateKind
-// function to handle the translation.
-var jobStateInternalToPublic = map[engine.StateKind]PublicStateKind{
-	engine.JobStateDisabled:  PublicStateDisabled,
-	engine.JobStateScheduled: PublicStateScheduled,
-	engine.JobStateSuspended: PublicStateSuspended,
-	engine.JobStateRunning:   PublicStateRunning,
-	engine.JobStateOverrun:   PublicStateOverrun,
-}
-
 // GetPublicStateKind returns user-friendly state for a job.
 func GetPublicStateKind(j *engine.Job, traits task.Traits) PublicStateKind {
-	if j.IsV2() {
-		return getPublicStateKindV2(j, traits)
-	}
-	switch {
-	case j.State.IsRetrying():
-		// Retries happen when invocation fails to launch (move from "STARTING" to
-		// "RUNNING" state). Such invocation is retried (as new invocation). When
-		// a retry is enqueued, we display the job state as "RETRYING" (even though
-		// technically it is still "QUEUED").
-		return PublicStateRetrying
-	case !traits.Multistage && j.State.InvocationID != 0:
-		// The job has an active invocation and the engine has called LaunchTask for
-		// it already. Jobs with Multistage == false trait do all their work in
-		// LaunchTask, so we display them as "RUNNING" (instead of "STARTING").
-		return PublicStateRunning
-	case j.State.State == engine.JobStateQueued:
-		// An invocation has been added to the task queue, and the engine hasn't
-		// attempted to launch it yet.
-		return PublicStateStarting
-	case j.State.State == engine.JobStateSlowQueue:
-		// Job invocation is still in the task queue, but new invocation should be
-		// starting now (so the queue is lagging for some reason).
-		return PublicStateStarting
-	case j.Paused && j.State.State == engine.JobStateSuspended:
-		// Paused jobs don't have a schedule, so they are always in "SUSPENDED"
-		// state. Make it clearer that they are just paused. This applies to both
-		// triggered and periodic jobs.
-		return PublicStatePaused
-	case j.State.State == engine.JobStateSuspended && j.Flavor == catalog.JobFlavorTriggered:
-		// Triggered jobs don't run on a schedule. They are in "SUSPENDED" state
-		// between triggering events, rename it to "WAITING" for clarity.
-		return PublicStateWaiting
-	default:
-		if r, ok := jobStateInternalToPublic[j.State.State]; !ok {
-			panic(fmt.Errorf("unknown state: %q", j.State.State))
-		} else {
-			return r
-		}
-	}
-}
-
-// getPublicStateKindV2 implements GetPublicStateKind for v2 jobs.
-//
-// Very rough for now. The following states are never reported by v2 currently:
-//   PublicStateOverrun
-//   PublicStateRetrying
-//   PublicStateStarting
-//   PublicStateSuspended
-func getPublicStateKindV2(j *engine.Job, traits task.Traits) PublicStateKind {
+	// TODO(vadimsh): Expose more states.
 	cronTick := j.CronTickTime()
 	switch {
 	case len(j.ActiveInvocations) != 0:
