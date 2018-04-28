@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -56,8 +57,8 @@ func TestFullFlow(t *testing.T) {
 			Status: task.StatusSucceeded,
 		})
 		So(ctl.Triggers, ShouldResemble, []*internal.Trigger{
-			{Id: "noop:2:0"},
-			{Id: "noop:2:1"},
+			{Id: "noop:1:0", Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{}}},
+			{Id: "noop:1:1", Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{}}},
 		})
 	})
 }
