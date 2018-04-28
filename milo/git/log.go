@@ -33,6 +33,11 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 )
 
+type LogOptions struct {
+	Limit     int
+	WithFiles bool
+}
+
 // Log returns ancestors commits of the given repository
 // host (e.g. "chromium.googlesource.scom"), project (e.g. "chromium/src") and
 // descendant committish (e.g. "refs/heads/master" or commit hash).
@@ -43,7 +48,8 @@ import (
 //
 // Returns an error if a client factory is not installed in c. See UseFactory.
 // May return gRPC errors returned by the underlying Gitiles service.
-func Log(c context.Context, host, project, commitish string, limit int) ([]*gitpb.Commit, error) {
+func Log(c context.Context, host, project, commitish string, options *LogOptions) ([]*gitpb.Commit, error) {
+	limit := options.Limit
 	if limit <= 0 {
 		limit = 50
 	}
@@ -73,6 +79,7 @@ func Log(c context.Context, host, project, commitish string, limit int) ([]*gitp
 		host:      host,
 		project:   project,
 		commitish: commitish,
+		withFiles: options.WithFiles,
 		min:       100,
 	}
 
@@ -151,6 +158,7 @@ type logReq struct {
 	host      string
 	project   string
 	commitish string
+	withFiles bool
 	min       int // must be in [1..100]
 
 	// fields below are set in call()
@@ -169,7 +177,11 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		"project":   l.project,
 		"commitish": l.commitish,
 	})
-	c, err := info.Namespace(c, "git-log-v2")
+	namespace := "git-log-v2"
+	if l.withFiles {
+		namespace = "git-log-v2-with-files"
+	}
+	c, err := info.Namespace(c, namespace)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not set namespace").Err()
 	}

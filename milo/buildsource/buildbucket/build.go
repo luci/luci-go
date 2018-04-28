@@ -146,7 +146,6 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 			AuthorEmail: c.Author.Email,
 			Repo:        gc.RepoURL(),
 			Description: c.Message,
-			// TODO(iannucci): also include the diffstat.
 
 			// TODO(iannucci): this use of links is very sloppy; the frontend should
 			// know how to render a Commit without having Links embedded in it.
@@ -156,6 +155,10 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 		}
 
 		commit.CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
+		commit.File = make([]string, len(c.TreeDiff))
+		for i, td := range c.TreeDiff {
+			commit.File[i] = td.NewPath
+		}
 		result = append(result, commit)
 	}
 
