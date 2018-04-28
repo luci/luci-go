@@ -32,10 +32,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
-// Cron schedules implementation helpers for v2.
-//
-// See engine_v2.go and triage.go for places where this is used.
-
 // pokeCron instantiates a cron state machine and calls the callback to advance
 // its state.
 //
