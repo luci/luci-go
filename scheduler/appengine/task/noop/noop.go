@@ -27,6 +27,8 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/config/validation"
+
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -70,7 +72,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 	for i := int64(0); i < cfg.TriggersCount; i++ {
 		ctl.EmitTrigger(c, &internal.Trigger{
-			Id: fmt.Sprintf("noop:%d:%d", ctl.InvocationNonce(), i),
+			Id:      fmt.Sprintf("noop:%d:%d", ctl.InvocationID(), i),
+			Payload: &internal.Trigger_Noop{Noop: &api.NoopTrigger{}},
 		})
 	}
 

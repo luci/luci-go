@@ -125,7 +125,7 @@ func generateInvocationID(c context.Context) (int64, error) {
 }
 
 // Invocation entity stores single invocation of a job (with perhaps multiple
-// attempts).
+// attempts due retries if the invocation fails to start).
 //
 // Root entity. ID is generated based on time by generateInvocationID()
 // function.
@@ -133,9 +133,7 @@ type Invocation struct {
 	_kind  string                `gae:"$kind,Invocation"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
-	// ID is identifier of this particular attempt to run a job. Multiple attempts
-	// to start an invocation result in multiple entities with different IDs, but
-	// with same InvocationNonce.
+	// ID is identifier of this particular attempt to run a job.
 	ID int64 `gae:"$id"`
 
 	// JobID is '<ProjectID>/<JobName>' string of a parent job.
@@ -160,12 +158,6 @@ type Invocation struct {
 
 	// Finished is time when this invocation transitioned to a terminal state.
 	Finished time.Time `gae:",noindex"`
-
-	// InvocationNonce identifies a request to start a job, produced by
-	// StateMachine.
-	//
-	// TODO(vadimsh): Remove in v2.
-	InvocationNonce int64
 
 	// TriggeredBy is identity of whoever triggered the invocation, if it was
 	// triggered via ForceInvocation ("Run now" button).
@@ -258,7 +250,6 @@ func (e *Invocation) isEqual(other *Invocation) bool {
 		e.IndexedJobID == other.IndexedJobID &&
 		e.Started.Equal(other.Started) &&
 		e.Finished.Equal(other.Finished) &&
-		e.InvocationNonce == other.InvocationNonce &&
 		e.TriggeredBy == other.TriggeredBy &&
 		bytes.Equal(e.PropertiesRaw, other.PropertiesRaw) &&
 		equalSortedLists(e.Tags, other.Tags) &&
