@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b5606359_8bd3bd5f",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1648,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-28T04:22:07Z",
+      "side": 1,
+      "message": "Turns out there were two task queue task (triage and timer tick) scheduled at exact same moment, and their ordering was based on task names (ultimately derived from JobID, see dedup key in kickTriageNow). When I renamed job from \"project/job-v2\" to \"project/job\", order of the tasks changes, breaking this test, and confusing me greatly. I adjuster timer tick slightly so tasks are ordered only by time now.",
+      "range": {
+        "startLine": 1648,
+        "startChar": 23,
+        "endLine": 1648,
+        "endChar": 36
+      },
+      "revId": "8196ba65657134c507e3918582fb2ba717acf24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

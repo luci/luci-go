@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a51c7da_39f4b0b7",
+        "filename": "scheduler/appengine/presentation/state_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-04-28T04:22:07Z",
+      "side": 0,
+      "message": "this test is kind of very stupid now, I don\u0027t think it is needed any more",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 27
+      },
+      "revId": "3975dbf8ff1561a4e1bc13e98d895809d39ff489",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
