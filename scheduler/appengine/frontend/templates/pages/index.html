@@ -36,7 +36,7 @@
         </thead>
         <tbody>
         {{range .Jobs }}
-          <tr class="{{if .IsV2}}v2-job-row{{end}}">
+          <tr>
             <td><a href="/jobs/{{.ProjectID}}">{{.ProjectID}}</a></td>
             <td class="long">{{template "job-id-ref" .}}</td>
             <td>{{.Schedule}}</td>
