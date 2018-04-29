@@ -26,6 +26,8 @@ message SimpleFields {
   float f32 = 7;
   double f64 = 8;
   string s = 9;
+  bytes bs = 10;
+  repeated bytes bs_rep = 11;
 }
 
 message MessageFields {
