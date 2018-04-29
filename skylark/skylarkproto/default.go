@@ -37,8 +37,7 @@ func newDefaultValue(typ reflect.Type) (skylark.Value, error) {
 	case reflect.String:
 		return skylark.String(""), nil
 
-	case reflect.Slice:
-		// TODO: detect []byte as special
+	case reflect.Slice: // this is either a repeated field or 'bytes'
 		return skylark.NewList(nil), nil
 
 	case reflect.Ptr: // a message field

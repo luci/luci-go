@@ -24,14 +24,15 @@ import (
 
 // intRanges describes ranges of integer types that can appear in *.pb.go code.
 //
-// Note that platform-dependent 'int' is not possible there, nor int16 or int8.
-// Only (s|u)int(32|64).
+// Note that platform-dependent 'int' is not possible there, nor (s|u)int16 or
+// sint8. Only (s|u)int(32|64) and uint8 (when using 'bytes' field).
 var intRanges = map[reflect.Kind]struct {
 	signed      bool
 	minSigned   int64
 	maxSigned   int64
 	maxUnsigned uint64
 }{
+	reflect.Uint8:  {false, 0, 0, math.MaxUint8},
 	reflect.Int32:  {true, math.MinInt32, math.MaxInt32, 0},
 	reflect.Uint32: {false, 0, 0, math.MaxUint32},
 	reflect.Int64:  {true, math.MinInt64, math.MaxInt64, 0},
