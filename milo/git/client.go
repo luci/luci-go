@@ -15,17 +15,14 @@
 package git
 
 import (
-	gitilespb "go.chromium.org/luci/common/proto/gitiles"
-)
-
-import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
+	"golang.org/x/net/context"
 )
 
 // ClientFactory creates a Gitiles client.
@@ -38,14 +35,32 @@ func UseFactory(c context.Context, f ClientFactory) context.Context {
 	return context.WithValue(c, &factoryKey, f)
 }
 
+// TODO(tandrii): remove the following per https://crbug.com/796317.
+// Until Milo properly supports ACLs for blamelists, we have a hack; if the git
+// repo being log'd is in this list, use `auth.AsSelf`. Otherwise use
+// `auth.Anonymous`.
+//
+// The reason to do this is that we currently do blamelist calculation in the
+// backend, so we can't accurately determine if the requesting user has access
+// to these repos or not. For now, we use this whitelist to indicate domains
+// that we know have full public read-access so that we can use milo's
+// credentials (instead of anonymous) in order to avoid hitting gitiles'
+// anonymous quota limits.
+var whitelistPublicDomains = stringset.NewFromSlice(
+	"chromium.googlesource.com",
+)
+
 // AuthenticatedProdClient returns a production Gitiles client,
 // authenticated as self. Implements ClientFactory.
 func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	t, err := auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	asWho := auth.NoAuth
+	if whitelistPublicDomains.Has(host) {
+		asWho = auth.AsSelf
+	}
+	t, err := auth.GetRPCTransport(c, asWho, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-
 	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
 }
 
