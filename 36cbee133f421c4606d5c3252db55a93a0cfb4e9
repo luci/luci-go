@@ -1,0 +1,382 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d38eca3_a0a19361",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "redundant with the check below",
+      "range": {
+        "startLine": 40,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 70
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6084d7cf_1d430c2d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "GerritClient",
+      "range": {
+        "startLine": 57,
+        "startChar": 30,
+        "endLine": 57,
+        "endChar": 43
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "112e87ce_a42e5d0e",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "i know that you based this code on mine gitiles/rest.go, but in the retrospect it seems that BaseURL should have end with /, otherwise the path that we append to BaseURL \"look\" absolute (start with /), but actually are relative.\n\nIt is not a big deal though",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "62103fc8_88794c7b",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "since this is _inlined_ _request_ message, the strongly-typeness doesn\u0027t really help here and, potentially, using map[string]string might be less code. Up to you",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "560785e0_508d52d7",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "strictly speaking, errors returned by gRPC methods must be gRPC errors, e.g. status.Errof(...)\neither wrap this with a status error, or document (and make) c.post to return grpc errors",
+      "range": {
+        "startLine": 84,
+        "startChar": 14,
+        "endLine": 84,
+        "endChar": 17
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4797633a_d235d021",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "nit: http.StatusOK\nsame below",
+      "range": {
+        "startLine": 89,
+        "startChar": 6,
+        "endLine": 89,
+        "endChar": 9
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66299db7_010aec16",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "this is an anti-pattern: \"Only handle errors once\" https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully\n\nit assumes that the caller won\u0027t log the error. If they do, it would be logged twice",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9067557_db879532",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 102,
+        "startChar": 8,
+        "endLine": 102,
+        "endChar": 15
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52fd2804_030705e3",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "nit: unnecessary",
+      "range": {
+        "startLine": 106,
+        "startChar": 63,
+        "endLine": 106,
+        "endChar": 75
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5f662dd_59293a66",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "this is fine because it logs things that it does not return as an error",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc696d51_bbc02c09",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "?",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa058d65_44ae180e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "given",
+      "range": {
+        "startLine": 20,
+        "startChar": 54,
+        "endLine": 20,
+        "endChar": 58
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fbfc0f6_366b5183",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "note that this is proto and it does not require you to start your comment with the symbol name, \nhttps://cloud.google.com/apis/design/documentation\nso comments can be shortened.\n\n\napplies to all comments in this file",
+      "range": {
+        "startLine": 31,
+        "startChar": 2,
+        "endLine": 31,
+        "endChar": 25
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ab787b3_ebe4da3c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "typo",
+      "range": {
+        "startLine": 37,
+        "startChar": 17,
+        "endLine": 37,
+        "endChar": 22
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7280d324_bec0eb54",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "what are other examples of permissions? why is this not a enum?",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 24
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95467a43_b389f389",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "note that this is proto and it does not require you to start your comment with the symbol name.\nhttps://cloud.google.com/apis/design/documentation#field_and_parameter_descriptions",
+      "range": {
+        "startLine": 43,
+        "startChar": 5,
+        "endLine": 43,
+        "endChar": 16
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66c2a25c_c4e0e3a1",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "nit: space",
+      "range": {
+        "startLine": 49,
+        "startChar": 13,
+        "endLine": 49,
+        "endChar": 14
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "90ed9170_42d14c68",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T18:16:32Z",
+      "side": 1,
+      "message": "nit: blank line before this",
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
