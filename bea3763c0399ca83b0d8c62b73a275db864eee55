@@ -354,6 +354,24 @@
     },
     {
       "key": {
+        "uuid": "80dd2338_b4fa6b53",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T23:22:30Z",
+      "side": 1,
+      "message": "err yes it does :)",
+      "parentUuid": "fc674d10_976254f6",
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c0783cf_f2c723ef",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 13
