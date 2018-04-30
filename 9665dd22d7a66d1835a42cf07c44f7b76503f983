@@ -34,6 +34,24 @@
       "revId": "9665dd22d7a66d1835a42cf07c44f7b76503f983",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0dbbbf83_83cdb846",
+        "filename": "scheduler/appengine/engine/helpers_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-30T17:06:51Z",
+      "side": 1,
+      "message": "Hm, i searched for it the whole CL, but didn\u0027t find so posted why. Now I (\u003dChrome) can find, weird.",
+      "parentUuid": "f655fbf3_f4258e75",
+      "revId": "9665dd22d7a66d1835a42cf07c44f7b76503f983",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
