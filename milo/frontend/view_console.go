@@ -165,7 +165,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "invalid repo URL %q in the config", def.RepoUrl).Err()
 	}
-	rawCommits, err := git.Log(c, repoHost, repoProject, def.Ref, limit)
+	rawCommits, err := git.Log(c, repoHost, repoProject, def.Ref, &git.LogOptions{Limit: limit})
 	if err != nil {
 		return nil, nil, err
 	}

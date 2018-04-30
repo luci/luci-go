@@ -138,7 +138,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	// next build number bump.
 
 	// we don't really need a blamelist with a length > 50
-	commits, err := git.Log(c, host, project, b.Sourcestamp.Revision, 50)
+	commits, err := git.Log(c, host, project, b.Sourcestamp.Revision, &git.LogOptions{Limit: 50})
 	switch status.Code(err) {
 	case codes.OK:
 		for _, commit := range commits {
