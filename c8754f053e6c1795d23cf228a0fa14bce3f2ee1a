@@ -42,6 +42,53 @@
     },
     {
       "key": {
+        "uuid": "f6d04d14_8ce47495",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T17:52:22Z",
+      "side": 1,
+      "message": "this will be \"\" if file is deleted, which is not useful",
+      "parentUuid": "63e0b184_5623df4f",
+      "range": {
+        "startLine": 157,
+        "startChar": 2,
+        "endLine": 161,
+        "endChar": 3
+      },
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7360b6b_6b509e40",
+        "filename": "milo/git/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T17:52:22Z",
+      "side": 1,
+      "message": "this will panic if options is nil",
+      "range": {
+        "startLine": 52,
+        "startChar": 17,
+        "endLine": 52,
+        "endChar": 23
+      },
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "de7c60ea_af0a1b13",
         "filename": "milo/git/log.go",
         "patchSetId": 1
@@ -62,6 +109,30 @@
       "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f376a25_7985d986",
+        "filename": "milo/git/log.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T17:52:22Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "de7c60ea_af0a1b13",
+      "range": {
+        "startLine": 181,
+        "startChar": 1,
+        "endLine": 183,
+        "endChar": 2
+      },
+      "revId": "c8754f053e6c1795d23cf228a0fa14bce3f2ee1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
