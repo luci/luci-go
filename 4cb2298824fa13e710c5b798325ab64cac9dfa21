@@ -70,6 +70,30 @@
       "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e26a6964_af2e30bc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 14
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T22:00:14Z",
+      "side": 1,
+      "message": "I tested the two endpoints for performance by uploading a 144MB log and curling it 10 times.\n\nThe results are in seconds\n\nserver.Get() (This one):\n2.812253\n3.044217\n3.269969\n3.322050\n3.445983\n3.450356\n3.632683\n3.635545\n4.624599\n4.904788\n\nfetcher/renderer:\n3.202007\n3.243374\n3.268037\n3.494634\n3.574223\n3.586072\n3.610375\n3.751684\n3.796055\n4.083352\n\nOn average they\u0027re approximately the same.",
+      "parentUuid": "67845a3f_77391b6b",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 55
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
