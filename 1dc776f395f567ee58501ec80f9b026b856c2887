@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "336b3a2f_bb596130",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "swarmingAPI is fine. Normally go packages are alllowercasethough",
+      "parentUuid": "bab0d449_5ac1f842",
+      "range": {
+        "startLine": 26,
+        "startChar": 2,
+        "endLine": 26,
+        "endChar": 4
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "44f79721_29c5197e",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -671,6 +695,30 @@
     },
     {
       "key": {
+        "uuid": "f53eff8e_49633b23",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "b3de8d12_d6a32aff",
+      "range": {
+        "startLine": 117,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 0
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d20e7d1b_8a76868d",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 10
@@ -1067,6 +1115,30 @@
       "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "120381a0_780c553e",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "ah nice",
+      "parentUuid": "36cc6ea5_d90b4a93",
+      "range": {
+        "startLine": 76,
+        "startChar": 9,
+        "endLine": 76,
+        "endChar": 23
+      },
+      "revId": "1dc776f395f567ee58501ec80f9b026b856c2887",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

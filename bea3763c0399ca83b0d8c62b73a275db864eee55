@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5b0f0443_cf2862d2",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "not longer true",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 55
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fc4cdaf_4c7bce67",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "doesn\u0027t",
+      "range": {
+        "startLine": 90,
+        "startChar": 58,
+        "endLine": 90,
+        "endChar": 86
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "28359224_7e66ac30",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "please use WorkPool, otherwise we might have unbounded number of simultaneously outgoing RPCs",
+      "range": {
+        "startLine": 131,
+        "startChar": 17,
+        "endLine": 131,
+        "endChar": 25
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c618bb40_2bd30df2",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "perhaps this should be updated",
+      "range": {
+        "startLine": 145,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36942c2a_d9f2a0f2",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "please add a doc\nit should explain dimensions string format (colon-separated key-value pair, etc)",
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9443d9db_c3ebd1ca",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "what if someone wants strpair.Map of dimensions? They\u0027d have to reparse it. Let\u0027s do less work here by returning strpair.Map. If someone needs it formatted, they can do so by calling .Format()",
+      "range": {
+        "startLine": 60,
+        "startChar": 24,
+        "endLine": 60,
+        "endChar": 34
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e48e785_72885c8e",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "nit: Both PoolID and Descriptor fields are singular (not plural), and that already guarantees 1:1 relationship. I think what you mean is that the PoolID must match the Descriptor",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 62
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec8c3928_e8f3b078",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "[no action needed] note that we\u0027ve essentially added a whole new entity kind just to store extra field of a builder. The reason for this is that BuilderSummary is updated in a pubsub. What would be more natural is to have BuilderSummary entity that is updated infrequently, and have a BuilderSummary/LatestBuild entity that is updated in pubsub.\n\njust my 2c",
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4c0783cf_f2c723ef",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:09:29Z",
+      "side": 1,
+      "message": "i think this became incorrect. This sentence means that the wrapped handler can just return the error instead of rendering it",
+      "range": {
+        "startLine": 240,
+        "startChar": 57,
+        "endLine": 240,
+        "endChar": 64
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
