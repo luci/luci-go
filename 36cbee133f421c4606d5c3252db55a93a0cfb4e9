@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5cc91aa7_31100754",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T20:38:36Z",
+      "side": 1,
+      "message": "nit: gRPC\n\nthis code has nothing to do with prpc actually. It uses true gRPC interfaces",
+      "range": {
+        "startLine": 7,
+        "startChar": 12,
+        "endLine": 7,
+        "endChar": 16
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3d38eca3_a0a19361",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 2
