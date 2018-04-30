@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2a7a3a34_b5df60d0",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b0f0443_cf2862d2",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 55
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fc4cdaf_4c7bce67",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 13
@@ -45,6 +69,30 @@
       "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d77f0db_30a16bf5",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fc4cdaf_4c7bce67",
+      "range": {
+        "startLine": 90,
+        "startChar": 58,
+        "endLine": 90,
+        "endChar": 86
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "91b293e9_cc998928",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28359224_7e66ac30",
+      "range": {
+        "startLine": 131,
+        "startChar": 17,
+        "endLine": 131,
+        "endChar": 25
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c618bb40_2bd30df2",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 13
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "16c21946_2a1821d9",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c618bb40_2bd30df2",
+      "range": {
+        "startLine": 145,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 45
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36942c2a_d9f2a0f2",
         "filename": "milo/common/model/bots.go",
         "patchSetId": 13
@@ -108,6 +204,24 @@
       "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61cbfaf7_07923eca",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36942c2a_d9f2a0f2",
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "3040a68f_c32e90c6",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9443d9db_c3ebd1ca",
+      "range": {
+        "startLine": 60,
+        "startChar": 24,
+        "endLine": 60,
+        "endChar": 34
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4e48e785_72885c8e",
         "filename": "milo/common/model/bots.go",
         "patchSetId": 13
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "54ee9084_c7afe45f",
+        "filename": "milo/common/model/bots.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e48e785_72885c8e",
+      "range": {
+        "startLine": 73,
+        "startChar": 11,
+        "endLine": 73,
+        "endChar": 62
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec8c3928_e8f3b078",
         "filename": "milo/common/model/builder_summary.go",
         "patchSetId": 13
@@ -168,6 +330,24 @@
       "writtenOn": "2018-04-30T21:09:29Z",
       "side": 1,
       "message": "[no action needed] note that we\u0027ve essentially added a whole new entity kind just to store extra field of a builder. The reason for this is that BuilderSummary is updated in a pubsub. What would be more natural is to have BuilderSummary entity that is updated infrequently, and have a BuilderSummary/LatestBuild entity that is updated in pubsub.\n\njust my 2c",
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc674d10_976254f6",
+        "filename": "milo/common/model/builder_summary.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Doesn\u0027t that still require two separate entities?  I think I see what you mean though.",
+      "parentUuid": "ec8c3928_e8f3b078",
       "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -194,6 +374,30 @@
       "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c86747c_8ddbf139",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-04-30T23:10:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c0783cf_f2c723ef",
+      "range": {
+        "startLine": 240,
+        "startChar": 57,
+        "endLine": 240,
+        "endChar": 64
+      },
+      "revId": "bea3763c0399ca83b0d8c62b73a275db864eee55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
