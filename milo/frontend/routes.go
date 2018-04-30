@@ -73,9 +73,10 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 
 	// Cron endpoints
-	r.GET("/internal/cron/fix-datastore", cronMW, cronFixDatastore)
-	r.GET("/internal/cron/stats", cronMW, StatsHandler)
+	r.GET("/internal/cron/fix-datastore", cronMW, cronHandler(fixDatastoreHandler))
+	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
+	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Builds.
 	r.GET("/p/:project/builds/b:id", projectMW, handleError(func(c *router.Context) error {
@@ -237,13 +238,26 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 	return c, nil
 }
 
-// handleError is a wrapper for a handler so that it can return an error
+// handleError is a wrapper for a handler so that the handler can return an error
 // rather than call ErrorHandler directly.
+// This should be used for handlers that render webpages.
 func handleError(handler func(c *router.Context) error) func(c *router.Context) {
 	return func(c *router.Context) {
 		if err := handler(c); err != nil {
 			ErrorHandler(c, err)
 		}
+	}
+}
+
+// cronHandler is a wrapper for cron handlers which do not require template rendering.
+func cronHandler(handler func(c context.Context) error) func(c *router.Context) {
+	return func(ctx *router.Context) {
+		if err := handler(ctx.Context); err != nil {
+			logging.WithError(err).Errorf(ctx.Context, "failed to run")
+			ctx.Writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		ctx.Writer.WriteHeader(http.StatusOK)
 	}
 }
 

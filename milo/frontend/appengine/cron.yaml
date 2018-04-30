@@ -8,6 +8,9 @@ cron:
  - description: Update configs
    url: /internal/cron/update-config
    schedule: every 1 minutes
+ - description: Update swarming bot pool information
+   url: /internal/cron/update-pools
+   schedule: every 1 minutes
  - description: Send app specific metrics
    url: /internal/cron/stats
    schedule: every 1 minutes

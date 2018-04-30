@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type=Status
+//go:generate stringer -type=Status,BotStatus
 
 package model
 
@@ -81,3 +81,17 @@ func (s Status) Terminal() bool {
 func (s Status) MarshalJSON() ([]byte, error) {
 	return json.Marshal(s.String())
 }
+
+// BotStatus indicates the status of a machine.
+type BotStatus int
+
+const (
+	// Idle means the bot is ready to accept a job.
+	Idle BotStatus = iota
+	// Busy means the bot is currently running a job, or recently finished
+	// a job and may not be ready to accept a new job yet.
+	Busy
+	// Offline means the bot is neither ready to accept a job nor
+	// currently running a job.  The bot could be dead or quarantined.
+	Offline
+)

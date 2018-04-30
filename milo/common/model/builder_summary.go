@@ -29,6 +29,10 @@ import (
 // InvalidBuilderIDURL is returned if a BuilderID cannot be parsed and a URL generated.
 const InvalidBuilderIDURL = "#invalid-builder-id"
 
+// BuilderSummaryKind is the name of the datastore entity kind of the
+// entity represented by the BuilderSummary struct.
+const BuilderSummaryKind = "BuilderSummary"
+
 // BuilderSummary holds builder state for the purpose of representing e.g. header consoles.
 type BuilderSummary struct {
 	// BuilderID is the global identifier for the builder that this Build belongs to, i.e.:
@@ -56,6 +60,20 @@ type BuilderSummary struct {
 
 	// Ignore unrecognized fields and strip in future writes.
 	_ datastore.PropertyMap `gae:"-,extra"`
+}
+
+// BuilderPool is a datastore entity that associates a BuilderSummary entity
+// with a BotPool entity.  BuilderPool is a separate entity from BuilderSummary
+// to allow for transaction-less updates.
+type BuilderPool struct {
+	// _entityID is always 1, as each BuildSummary entity only has a single BuilderPool child.
+	_entityID int `gae:"$id,1"`
+
+	// BuilderID is a datastore key pointing to the parent BuilderSummary entity.
+	BuilderID *datastore.Key `gae:"$parent"`
+
+	// PoolKey is a datastore key pointing to the BotPool associated with this Builder.
+	PoolKey *datastore.Key
 }
 
 // LastFinishedBuildIDLink returns a link to the last finished build.
