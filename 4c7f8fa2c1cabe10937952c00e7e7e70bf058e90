@@ -131,6 +131,24 @@
       "revId": "4c7f8fa2c1cabe10937952c00e7e7e70bf058e90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8314fb65_78eb04d9",
+        "filename": "milo/git/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-04-30T21:12:27Z",
+      "side": 1,
+      "message": "yeah, i was referring to another comment in another CL where I\u0027ve explained this.\n\nlogging is a form of handling an error. If the caller logs the returned error, the first log entry would be redundant. I think we should let the caller decide if this should be logged",
+      "parentUuid": "83873efe_71f1b1e5",
+      "revId": "4c7f8fa2c1cabe10937952c00e7e7e70bf058e90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
