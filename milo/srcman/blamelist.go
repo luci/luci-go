@@ -20,7 +20,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"strings"
 	"sync/atomic"
 
@@ -30,12 +29,11 @@ import (
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/base128"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
-	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/milo/git"
 )
 
 // DiffOptions allows the caller of DiffWithBlamelist to opt-in to including git
@@ -96,20 +94,6 @@ func mdCacheItem(c context.Context, hashA, hashB []byte, options *DiffOptions) m
 		base128.EncodeToString(hashB)))
 }
 
-// HACK(iannucci,hinoka,tandrii) - Until Milo properly supports ACLs for
-// blamelists, we have a hack; if the git repo being diff'd is in this list, use
-// `auth.AsSelf`. Otherwise use `auth.Anonymous`.
-//
-// The reason to do this is that we currently do blamelist calculation in the
-// backend, so we can't accurately determine if the requesting user has access
-// to these repos or not. For now, we use this whitelist to indicate domains
-// that we know have full public read-access so that we can use milo's
-// credentials (instead of anonymous) in order to avoid hitting gitiles'
-// anonymous quota limits.
-var whitelistDomains = stringset.NewFromSlice(
-	"chromium.googlesource.com",
-)
-
 // PopulateHistory attempts to populate the git histories for any DIFF-status
 // GitCheckouts in the ManifestDiff.
 //
@@ -124,25 +108,6 @@ var whitelistDomains = stringset.NewFromSlice(
 // object be cached).
 func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool) (ok bool) {
 	logging.Infof(c, "populating git history in ManifestDiff")
-
-	var noauthClient *http.Client
-	if t, err := auth.GetRPCTransport(c, auth.NoAuth); err != nil {
-		logging.WithError(err).Errorf(c, "getting NoAuth transport")
-	} else {
-		noauthClient = &http.Client{Transport: t}
-	}
-
-	var selfClient *http.Client
-	if t, err := auth.GetRPCTransport(c, auth.AsSelf); err != nil {
-		logging.WithError(err).Errorf(c, "getting AsSelf transport")
-	} else {
-		selfClient = &http.Client{Transport: t}
-	}
-
-	if selfClient == nil && noauthClient == nil {
-		logging.Warningf(c, "could not build any HTTP clients, aborting")
-		return
-	}
 
 	// hadErrors will be set to 1 if there were any errors.
 	hadErrors := uint32(0)
@@ -174,18 +139,13 @@ func PopulateHistory(c context.Context, diff *milo.ManifestDiff, withFiles bool)
 				}
 
 				ch <- func() error {
-					httpClient := noauthClient
-					if whitelistDomains.Has(host) && selfClient != nil {
-						httpClient = selfClient
-					}
-					client, err := gitiles.NewRESTClient(httpClient, host, httpClient == selfClient)
+					client, err := git.Client(c, host)
 					if err != nil {
 						logging.WithError(err).Warningf(c, "creating gitiles client")
 						atomic.StoreUint32(&hadErrors, 1)
 						return nil
 					}
 
-					// TODO(nodir): use git package to share cache.
 					res, err := client.Log(c, &gitilespb.LogRequest{
 						Project:  project,
 						Ancestor: diff.Old.Directories[dirname].GitCheckout.Revision,
