@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1e697f1_c5b83e07",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-04-30T17:22:31Z",
+      "side": 1,
+      "message": "oops, this wans\u0027t supposed to be in this CL.",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 1
+      },
+      "revId": "6add95ad45c2f590b53a60683820626349457734",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
