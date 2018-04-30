@@ -21,13 +21,16 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
+	"go.chromium.org/luci/logdog/appengine/coordinator/flex/view"
 
+	"go.chromium.org/luci/appengine/gaeauth/server"
 	flexMW "go.chromium.org/luci/appengine/gaemiddleware/flex"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"golang.org/x/net/context"
@@ -70,11 +73,16 @@ func main() {
 
 	// Standard HTTP endpoints using flex LogDog services singleton.
 	r := router.NewWithRootContext(c)
-	mw := flexMW.ReadOnlyFlex
+	mw := &flexMW.ReadOnlyFlex
 	mw.InstallHandlers(r)
 
 	base := mw.Base().Extend(gsvc.Base)
 	svr.InstallHandlers(r, base)
+
+	// Handler for fetching logs.
+	httpMW := base.Extend(
+		auth.Authenticate(server.CookieAuth))
+	r.GET("/logs/text", httpMW, view.HandleTextLogs)
 
 	logging.Infof(c, "Listening on port 8080...")
 	if err := http.ListenAndServe(":8080", r); err != nil {
