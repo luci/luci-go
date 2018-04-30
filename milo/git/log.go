@@ -33,6 +33,12 @@ import (
 	"go.chromium.org/luci/common/tsmon/metric"
 )
 
+// LogOptions are options for Log function.
+type LogOptions struct {
+	Limit     int
+	WithFiles bool
+}
+
 // Log returns ancestors commits of the given repository
 // host (e.g. "chromium.googlesource.scom"), project (e.g. "chromium/src") and
 // descendant committish (e.g. "refs/heads/master" or commit hash).
@@ -43,13 +49,17 @@ import (
 //
 // Returns an error if a client factory is not installed in c. See UseFactory.
 // May return gRPC errors returned by the underlying Gitiles service.
-func Log(c context.Context, host, project, commitish string, limit int) ([]*gitpb.Commit, error) {
-	if limit <= 0 {
-		limit = 50
+func Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error) {
+	var opts LogOptions
+	if inputOptions != nil {
+		opts = *inputOptions
+	}
+	if opts.Limit <= 0 {
+		opts.Limit = 50
 	}
 
 	var commits []*gitpb.Commit
-	remaining := limit // defined as (limit - len(commits))
+	remaining := opts.Limit // defined as (limit - len(commits))
 	// add appends page to commits and updates remaining.
 	// If page starts with commits' last commit, page's first commit
 	// is skipped.
@@ -66,13 +76,14 @@ func Log(c context.Context, host, project, commitish string, limit int) ([]*gitp
 			}
 			commits = append(commits, page[1:]...)
 		}
-		remaining = limit - len(commits)
+		remaining = opts.Limit - len(commits)
 	}
 
 	req := &logReq{
 		host:      host,
 		project:   project,
 		commitish: commitish,
+		withFiles: opts.WithFiles,
 		min:       100,
 	}
 
@@ -109,8 +120,8 @@ func Log(c context.Context, host, project, commitish string, limit int) ([]*gitp
 
 	// we may end up with more than we were asked for because
 	// gitReq's parameter is minimum, not limit.
-	if len(commits) > limit {
-		commits = commits[:limit]
+	if len(commits) > opts.Limit {
+		commits = commits[:opts.Limit]
 	}
 	return commits, nil
 }
@@ -151,6 +162,7 @@ type logReq struct {
 	host      string
 	project   string
 	commitish string
+	withFiles bool
 	min       int // must be in [1..100]
 
 	// fields below are set in call()
@@ -169,7 +181,11 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		"project":   l.project,
 		"commitish": l.commitish,
 	})
-	c, err := info.Namespace(c, "git-log-v2")
+	namespace := "git-log-v2"
+	if l.withFiles {
+		namespace = "git-log-v2-with-files"
+	}
+	c, err := info.Namespace(c, namespace)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not set namespace").Err()
 	}

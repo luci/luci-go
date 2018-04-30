@@ -65,7 +65,7 @@ func TestLog(t *testing.T) {
 				Log: fakeCommits[1:101], // return 100 commits
 			}
 			gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
-			commits, err := Log(c, "host", "project", "refs/heads/master", 100)
+			commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, res.Log)
 
@@ -74,25 +74,25 @@ func TestLog(t *testing.T) {
 			// so another call with cause a test failure.
 
 			Convey("with ref in cache", func() {
-				commits, err := Log(c, "host", "project", "refs/heads/master", 50)
+				commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[:50])
 			})
 
 			Convey("with top commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[1].Id, 50)
+				commits, err := Log(c, "host", "project", fakeCommits[1].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[:50])
 			})
 
 			Convey("with ancestor commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[2].Id, 50)
+				commits, err := Log(c, "host", "project", fakeCommits[2].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[1:51])
 			})
 
 			Convey("with second ancestor commit in cache", func() {
-				commits, err := Log(c, "host", "project", fakeCommits[3].Id, 50)
+				commits, err := Log(c, "host", "project", fakeCommits[3].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res.Log[2:52])
 			})
@@ -108,7 +108,7 @@ func TestLog(t *testing.T) {
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
 
-				commits, err := Log(c, "host", "project", fakeCommits[2].Id, 100)
+				commits, err := Log(c, "host", "project", fakeCommits[2].Id, &LogOptions{Limit: 100})
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 100)
 				So(commits, ShouldResemble, res2.Log)
@@ -124,7 +124,7 @@ func TestLog(t *testing.T) {
 					Log: fakeCommits[101:201],
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
-				commits, err := Log(c, "host", "project", fakeCommits[101].Id, 50)
+				commits, err := Log(c, "host", "project", fakeCommits[101].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 50)
 				So(commits, ShouldResemble, res2.Log[:50])
@@ -149,7 +149,7 @@ func TestLog(t *testing.T) {
 					Log: fakeCommits[:100],
 				}
 				gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
-				commits, err := Log(c, "host", "project", "refs/heads/master", 50)
+				commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
 				So(commits, ShouldResemble, res2.Log[:50])
 			})
@@ -174,7 +174,7 @@ func TestLog(t *testing.T) {
 			gitilesMock.EXPECT().Log(gomock.Any(), req1).Return(res1, nil)
 			gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
 
-			commits, err := Log(c, "host", "project", "refs/heads/master", 150)
+			commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 150})
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[:150])
 		})

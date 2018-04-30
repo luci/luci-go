@@ -314,7 +314,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// i.e. some commits may not have builds.
 
 	// We don't really need a blamelist longer than 50 commits.
-	commits, err = git.Log(c, gc.Host, gc.Project, gc.Id, 50)
+	commits, err = git.Log(c, gc.Host, gc.Project, gc.Id, &git.LogOptions{Limit: 50, WithFiles: true})
 	if err != nil || len(commits) == 0 {
 		return
 	}

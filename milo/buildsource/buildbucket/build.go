@@ -146,7 +146,6 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 			AuthorEmail: c.Author.Email,
 			Repo:        gc.RepoURL(),
 			Description: c.Message,
-			// TODO(iannucci): also include the diffstat.
 
 			// TODO(iannucci): this use of links is very sloppy; the frontend should
 			// know how to render a Commit without having Links embedded in it.
@@ -156,6 +155,18 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 		}
 
 		commit.CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
+		commit.File = make([]string, 0, len(c.TreeDiff))
+		// Only lists new files, but not deleted or renamed ones.
+		for _, td := range c.TreeDiff {
+			// If file is moved, there is both new and old path, from which we take
+			// only new path.
+			switch {
+			case td.NewPath != "":
+				commit.File = append(commit.File, td.NewPath)
+			case td.OldPath != "":
+				commit.File = append(commit.File, td.OldPath)
+			}
+		}
 		result = append(result, commit)
 	}
 
