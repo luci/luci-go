@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "45008f8b_978b657b",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T14:30:59Z",
+      "side": 1,
+      "message": "nit: fmt knows about error type and calls its Error() for you, so this is unnecessary. https://cs.chromium.org/search/?q\u003dlogging.%2Berr%5C)+lang:go\u0026sq\u003dpackage:chromium\u0026type\u003dcs\nbelow too",
+      "range": {
+        "startLine": 109,
+        "startChar": 89,
+        "endLine": 109,
+        "endChar": 97
+      },
+      "revId": "b523aff14fb71a965919ef25bb1f69bdfe6ce1fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
