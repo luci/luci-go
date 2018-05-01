@@ -328,6 +328,7 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 		if err = datastore.GetAll(c, q.Eq("BuildSet", curGC.BuildSetString()), &builds); err != nil {
 			return
 		}
+		builds = filterBuilds(builds, InfraFailure, Expired, Cancelled)
 		if len(builds) > 0 {
 			logging.Infof(c, "I found %d builds. build[0]: %q", len(builds), builds[0].BuildID)
 			sort.Slice(builds, func(i, j int) bool {
@@ -391,4 +392,20 @@ func buildIDLink(b string, project string) string {
 	default:
 		return InvalidBuildIDURL
 	}
+}
+
+// filterBuilds returns a truncated slice, filtering out builds with the given
+// statuses.
+func filterBuilds(builds []*BuildSummary, without ...Status) []*BuildSummary {
+	filtered := builds[:0]
+outer:
+	for _, build := range builds {
+		for _, status := range without {
+			if status == build.Summary.Status {
+				continue outer
+			}
+		}
+		filtered = append(filtered, build)
+	}
+	return filtered
 }
