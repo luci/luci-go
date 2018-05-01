@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3becea2_be7c97ea",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Reformulated.",
+      "parentUuid": "11e9dde0_3e76a757",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a7fa92a_cbd8f80b",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "93640774_2d023ac8",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "This function will be used by UpdateMetadata in the next CL.",
+      "parentUuid": "8a7fa92a_cbd8f80b",
+      "range": {
+        "startLine": 52,
+        "startChar": 9,
+        "endLine": 52,
+        "endChar": 21
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb3f56e5_e96bac24",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee5cf6da_5b5d13e2",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb3f56e5_e96bac24",
+      "range": {
+        "startLine": 94,
+        "startChar": 27,
+        "endLine": 94,
+        "endChar": 31
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "77fe2f49_d821593b",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e72320a1_13ff0a8a",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 11
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "133adc17_15755ed3",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -138,6 +234,30 @@
       "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "664a9829_3e130923",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "133adc17_15755ed3",
+      "range": {
+        "startLine": 156,
+        "startChar": 27,
+        "endLine": 156,
+        "endChar": 28
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -164,6 +284,30 @@
     },
     {
       "key": {
+        "uuid": "3efb225c_964c4c06",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Because modTime will have to be separate anyhow, because the value in the proto is uncomfortable to work with (it is not time.Time). But whatever...",
+      "parentUuid": "26077079_bb229655",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 192,
+        "endChar": 61
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f89214e_36322047",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -184,6 +328,30 @@
       "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "624cc876_49cb2aec",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "Yes, it works fine because identities are ASCII strings (as enforced by regexp in components.auth code), and thus map to utf-8 strings just fine.",
+      "parentUuid": "9f89214e_36322047",
+      "range": {
+        "startLine": 208,
+        "startChar": 11,
+        "endLine": 208,
+        "endChar": 28
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -231,6 +399,30 @@
       "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6e4ef2b_2852d2e9",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T20:16:23Z",
+      "side": 1,
+      "message": "You misread the comment. Returning len(acls) \u003d\u003d 0 is fine and expected, this is what comment was trying to say. \n\nIf I add add an ACL, and then remove it, I want to get PrefixMetadata{} that says \"the ACLs are empty, last modified by user:... at timestamp T\". This is different from completely empty PrefixMetadata{} which indicate the ACLs never were defined at all.\n\nTried to clarify this in the comment better.\n\nAlso note there\u0027s a test for it already, see \"Empty ACLs for \"a/b\".\". Line 238 is also covered by tests (via completely missing \"a/b/c\" metadata in the test). All lines except panics are covered by tests.",
+      "parentUuid": "4a6cda79_b0dee836",
+      "range": {
+        "startLine": 233,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 22
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
