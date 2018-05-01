@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "f13ad457_1d892e24",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-01T23:24:35Z",
+      "side": 1,
+      "message": "I see, this is about this case:\nmessage A {\n  message C {\n  }\n  C c \u003d 1;\n}\nmessage B {\n  message C {\n  }\n  C c \u003d 1;\n}\nIn which case I agree that A.C !\u003d B.C.",
+      "parentUuid": "517f022e_e2e61265",
+      "range": {
+        "startLine": 60,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 63
+      },
+      "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd5f1a85_ca015ba4",
         "filename": "skylark/skylarkproto/testdata/nested_msg.sky",
         "patchSetId": 1
