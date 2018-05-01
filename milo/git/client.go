@@ -61,16 +61,18 @@ var whitelistPublicDomains = stringset.NewFromSlice(
 func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
 	var t http.RoundTripper
 	var err error
+	authenticate := true
 	if whitelistPublicDomains.Has(host) {
 		t, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
 	} else {
+		authenticate = false
 		// No scopes if we aren't authenticating.
 		t, err = auth.GetRPCTransport(c, auth.NoAuth)
 	}
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, true)
+	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, authenticate)
 }
 
 // Client creates a new Gitiles client using the ClientFactory installed in c.
