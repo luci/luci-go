@@ -55,11 +55,11 @@ var _ = ctxhttp.Do
 const apiId = "machine:v1"
 const apiName = "machine"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/_ah/api/machine/v1/"
+const basePath = "http://localhost:8080/api/machine/v1"
 
 // OAuth2 scopes used by this API.
 const (
-	// View your email address
+	// https://www.googleapis.com/auth/userinfo.email
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
@@ -220,16 +220,16 @@ func (s *ComponentsMachineProviderRpcMessagesPollResponse) MarshalJSON() ([]byte
 
 type AckCall struct {
 	s                                              *Service
-	componentsmachineproviderrpcmessagesackrequest *ComponentsMachineProviderRpcMessagesAckRequest
+	componentsMachineProviderRpcMessagesAckrequest *ComponentsMachineProviderRpcMessagesAckRequest
 	urlParams_                                     gensupport.URLParams
 	ctx_                                           context.Context
 	header_                                        http.Header
 }
 
 // Ack: Handles an incoming AckRequest.
-func (s *Service) Ack(componentsmachineproviderrpcmessagesackrequest *ComponentsMachineProviderRpcMessagesAckRequest) *AckCall {
+func (s *Service) Ack(componentsMachineProviderRpcMessagesAckrequest *ComponentsMachineProviderRpcMessagesAckRequest) *AckCall {
 	c := &AckCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsmachineproviderrpcmessagesackrequest = componentsmachineproviderrpcmessagesackrequest
+	c.componentsMachineProviderRpcMessagesAckrequest = componentsMachineProviderRpcMessagesAckrequest
 	return c
 }
 
@@ -265,7 +265,7 @@ func (c *AckCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagesackrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesAckrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -296,7 +296,7 @@ func (c *AckCall) Do(opts ...googleapi.CallOption) error {
 	//   "id": "machine.ack",
 	//   "path": "ack",
 	//   "request": {
-	//     "$ref": "ComponentsMachineProviderRpcMessagesAckRequest",
+	//     "$ref": "components.machine_provider.rpc_messages.AckRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "scopes": [
@@ -310,16 +310,16 @@ func (c *AckCall) Do(opts ...googleapi.CallOption) error {
 
 type PollCall struct {
 	s                                               *Service
-	componentsmachineproviderrpcmessagespollrequest *ComponentsMachineProviderRpcMessagesPollRequest
+	componentsMachineProviderRpcMessagesPollrequest *ComponentsMachineProviderRpcMessagesPollRequest
 	urlParams_                                      gensupport.URLParams
 	ctx_                                            context.Context
 	header_                                         http.Header
 }
 
 // Poll: Handles an incoming PollRequest.
-func (s *Service) Poll(componentsmachineproviderrpcmessagespollrequest *ComponentsMachineProviderRpcMessagesPollRequest) *PollCall {
+func (s *Service) Poll(componentsMachineProviderRpcMessagesPollrequest *ComponentsMachineProviderRpcMessagesPollRequest) *PollCall {
 	c := &PollCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsmachineproviderrpcmessagespollrequest = componentsmachineproviderrpcmessagespollrequest
+	c.componentsMachineProviderRpcMessagesPollrequest = componentsMachineProviderRpcMessagesPollrequest
 	return c
 }
 
@@ -355,7 +355,7 @@ func (c *PollCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagespollrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesPollrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -413,11 +413,11 @@ func (c *PollCall) Do(opts ...googleapi.CallOption) (*ComponentsMachineProviderR
 	//   "id": "machine.poll",
 	//   "path": "poll",
 	//   "request": {
-	//     "$ref": "ComponentsMachineProviderRpcMessagesPollRequest",
+	//     "$ref": "components.machine_provider.rpc_messages.PollRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "ComponentsMachineProviderRpcMessagesPollResponse"
+	//     "$ref": "components.machine_provider.rpc_messages.PollResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"

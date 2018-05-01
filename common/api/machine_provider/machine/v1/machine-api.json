@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/machine/v1/",
-  "baseUrl": "https://machine-provider.appspot.com/_ah/api/machine/v1/",
+  "basePath": "/api/machine/v1",
+  "baseUrl": "https://machine-provider.appspot.com/api/machine/v1",
   "batchPath": "batch",
   "description": "Implements cloud endpoints for Machine Provider's machines.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/vEtCoY9gX2E5PYTcWbtUKQCbv3g\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "machine:v1",
   "kind": "discovery#restDescription",
@@ -27,7 +26,7 @@
       "id": "machine.ack",
       "path": "ack",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesAckRequest",
+        "$ref": "components.machine_provider.rpc_messages.AckRequest",
         "parameterName": "resource"
       },
       "scopes": [
@@ -40,11 +39,11 @@
       "id": "machine.poll",
       "path": "poll",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesPollRequest",
+        "$ref": "components.machine_provider.rpc_messages.PollRequest",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ComponentsMachineProviderRpcMessagesPollResponse"
+        "$ref": "components.machine_provider.rpc_messages.PollResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -98,11 +97,11 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://machine-provider.appspot.com/_ah/api/",
+  "rootUrl": "https://machine-provider.appspot.com/api/",
   "schemas": {
-    "ComponentsMachineProviderInstructionsInstruction": {
+    "components.machine_provider.instructions.Instruction": {
       "description": "Represents instructions for a machine.",
-      "id": "ComponentsMachineProviderInstructionsInstruction",
+      "id": "components.machine_provider.instructions.Instruction",
       "properties": {
         "swarming_server": {
           "type": "string"
@@ -110,9 +109,9 @@
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesAckRequest": {
+    "components.machine_provider.rpc_messages.AckRequest": {
       "description": "Represents a request to ack an instruction received by a machine.",
-      "id": "ComponentsMachineProviderRpcMessagesAckRequest",
+      "id": "components.machine_provider.rpc_messages.AckRequest",
       "properties": {
         "backend": {
           "enum": [
@@ -120,22 +119,18 @@
             "GCE",
             "VSPHERE"
           ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
-          ],
           "type": "string"
         },
         "hostname": {
+          "required": true,
           "type": "string"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesPollRequest": {
+    "components.machine_provider.rpc_messages.PollRequest": {
       "description": "Represents a request to poll for instructions given to a machine.",
-      "id": "ComponentsMachineProviderRpcMessagesPollRequest",
+      "id": "components.machine_provider.rpc_messages.PollRequest",
       "properties": {
         "backend": {
           "enum": [
@@ -143,25 +138,21 @@
             "GCE",
             "VSPHERE"
           ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
-          ],
           "type": "string"
         },
         "hostname": {
+          "required": true,
           "type": "string"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesPollResponse": {
+    "components.machine_provider.rpc_messages.PollResponse": {
       "description": "Represents a response to a request for instructions given to a machine.",
-      "id": "ComponentsMachineProviderRpcMessagesPollResponse",
+      "id": "components.machine_provider.rpc_messages.PollResponse",
       "properties": {
         "instruction": {
-          "$ref": "ComponentsMachineProviderInstructionsInstruction",
+          "$ref": "components.machine_provider.instructions.Instruction",
           "description": "Represents instructions for a machine."
         },
         "state": {
