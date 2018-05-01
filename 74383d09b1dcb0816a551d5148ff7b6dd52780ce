@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6534b968_bfdf5be2",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T01:13:57Z",
+      "side": 1,
+      "message": "See https://github.com/luci/luci-go/blob/master/cipd/appengine/impl/metadata/metadata.go#L32 \n\nIt documents pretty clearly what\u0027s expected of the implementation.",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 40,
+        "endChar": 44
+      },
+      "revId": "74383d09b1dcb0816a551d5148ff7b6dd52780ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
