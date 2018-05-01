@@ -22,6 +22,30 @@
       "revId": "83dd2cccc0d29e69fa891d4b6ed0045feff096b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f5c1fac_3bff79f9",
+        "filename": "milo/git/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T19:32:34Z",
+      "side": 1,
+      "message": "yeah, i figured, see CL...\noops, forgot to upload, no wonder nobody reviewed it.",
+      "parentUuid": "f3e29470_761951c1",
+      "range": {
+        "startLine": 73,
+        "startChar": 64,
+        "endLine": 73,
+        "endChar": 68
+      },
+      "revId": "83dd2cccc0d29e69fa891d4b6ed0045feff096b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
