@@ -48,6 +48,7 @@ func UseFactory(c context.Context, f ClientFactory) context.Context {
 // anonymous quota limits.
 var whitelistPublicDomains = stringset.NewFromSlice(
 	"chromium.googlesource.com",
+	"fuchsia.googlesource.com",
 )
 
 // AuthenticatedProdClient returns a production Gitiles client.
