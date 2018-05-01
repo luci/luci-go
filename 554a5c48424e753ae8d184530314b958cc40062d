@@ -16,6 +16,40 @@
       "revId": "554a5c48424e753ae8d184530314b958cc40062d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef449ef8_a54be800",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-01T17:35:23Z",
+      "side": 1,
+      "message": "filterBuilds returns a copy of the slice, filtering out builds with the given statuses",
+      "revId": "554a5c48424e753ae8d184530314b958cc40062d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e730c64f_971176b3",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-01T17:35:23Z",
+      "side": 1,
+      "message": "maybe just make a stringset out of without, so:\n\nexclude :\u003d stringset.NewFromSlice(without)\nfor ... {\n  if exclude.Has(build.Summary.Status) {\n    continue  // We don\u0027t want this.\n  }\n  filtered \u003d append(...)\n}\n\n\n(You\u0027ll notice something that might be weird from my suggestion - It\u0027s one extra line than necessary.  This is because I think \"!exclude\" is very hard for a person to parse, so the extra line is worth the comprehension.)",
+      "revId": "554a5c48424e753ae8d184530314b958cc40062d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
