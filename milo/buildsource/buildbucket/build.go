@@ -434,7 +434,7 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 	bs := &model.BuildSummary{
 		BuildKey:  MakeBuildKey(c, host, tags.Get("build_address")),
 		BuildSet:  bSet,
-		BuilderID: fmt.Sprintf("buildbucket/%s/%s", msg.Bucket, tags.Get("builder")),
+		BuilderID: NewBuilderID(msg.Bucket, tags.Get("builder")).String(),
 	}
 	return simplisticBlamelist(c, bs)
 }
