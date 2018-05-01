@@ -68,6 +68,24 @@
       "revId": "554a5c48424e753ae8d184530314b958cc40062d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98553822_d817076f",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-01T17:54:38Z",
+      "side": 1,
+      "message": "In that case what about\nfor _, status :\u003d ... {\n  if ... {\n    continue  // Skip this\n  }\n}\nfiltered \u003d append(...)",
+      "parentUuid": "4be13f1c_f21dcf1a",
+      "revId": "554a5c48424e753ae8d184530314b958cc40062d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
