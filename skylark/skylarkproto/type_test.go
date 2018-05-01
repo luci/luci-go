@@ -44,6 +44,7 @@ func TestGetMessageType(t *testing.T) {
 			"i64",
 			"i64_rep",
 			"msg_val",
+			"msg_val_rep",
 			"oneof_val", // TODO: this is wrong and will be fixed with oneof support
 		})
 
@@ -78,6 +79,10 @@ func TestGetMessageType(t *testing.T) {
 		desc = mt.fields["msg_val"]
 		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.MsgVal))
 		So(desc.value(val).Interface().(*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgVal)
+
+		desc = mt.fields["msg_val_rep"]
+		So(desc.typ, ShouldEqual, reflect.TypeOf(msg.MsgValRep))
+		So(desc.value(val).Interface().([]*testprotos.Complex_InnerMessage), ShouldEqual, msg.MsgValRep)
 
 		// TODO: add oneof tests.
 	})

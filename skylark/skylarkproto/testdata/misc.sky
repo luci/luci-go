@@ -58,3 +58,16 @@ assert.fails(set_unknown, 'proto message "testprotos.Simple" has no field "zzz"'
 def use_as_key():
   d = {m: 123}
 assert.fails(use_as_key, 'proto message "testprotos.Simple" is not hashable')
+
+# dir(...) on a message namespace works.
+assert.eq(dir(testprotos.Complex), ["InnerMessage"])
+
+# Attempting to access undefined inner message type fails.
+def unknown_inner():
+  testprotos.Complex.Blah()
+assert.fails(unknown_inner, 'testprotos.Complex has no .Blah field or method')
+
+# Attempting to replace inner message type fails.
+def replace_inner():
+  testprotos.Complex.InnerMessage = None
+assert.fails(replace_inner, 'can\'t assign to .InnerMessage field of testprotos.Complex')

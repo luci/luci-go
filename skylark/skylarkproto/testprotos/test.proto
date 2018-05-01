@@ -55,9 +55,10 @@ message Complex {
 
   InnerEnum enum_val = 3;
   InnerMessage msg_val = 4;
+  repeated InnerMessage msg_val_rep = 5;
 
   oneof oneof_val {
-    Simple simple = 5;
-    InnerMessage inner_msg = 6;
+    Simple simple = 6;
+    InnerMessage inner_msg = 7;
   }
 }

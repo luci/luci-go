@@ -55,11 +55,12 @@ func LoadProtoModule(name string) (skylark.StringDict, error) {
 	}, nil
 }
 
-// messageCtor returns a skylark function that acts as constructor of new
-// proto messages of a type described by the given descriptor.
-func messageCtor(pkg string, desc *descpb.DescriptorProto) (skylark.Value, error) {
+// messageCtor returns a skylark callable that acts as constructor of new
+// proto messages (of a type described by the given descriptor) and has
+// constructors for the nested messages available as attributes.
+func messageCtor(ns string, desc *descpb.DescriptorProto) (skylark.Value, error) {
 	// Get type descriptor for the proto message.
-	name := pkg + "." + desc.GetName()
+	name := ns + "." + desc.GetName()
 	typ := proto.MessageType(name)
 	if typ == nil {
 		return nil, fmt.Errorf("could not find %q in the protobuf lib type registry", name)
@@ -70,7 +71,7 @@ func messageCtor(pkg string, desc *descpb.DescriptorProto) (skylark.Value, error
 	}
 
 	// Constructor function that uses the type to instantiate the messages.
-	return skylark.NewBuiltin(desc.GetName(), func(_ *skylark.Thread, _ *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
+	ctor := skylark.NewBuiltin(name, func(_ *skylark.Thread, _ *skylark.Builtin, args skylark.Tuple, kwargs []skylark.Tuple) (skylark.Value, error) {
 		if len(args) != 0 {
 			return nil, fmt.Errorf("proto message constructors accept only keyword arguments")
 		}
@@ -84,7 +85,16 @@ func messageCtor(pkg string, desc *descpb.DescriptorProto) (skylark.Value, error
 			}
 		}
 		return msg, nil
-	}), nil
+	})
+
+	// Attach constructors of the nested messages to it as attributes.
+	attrs := skylark.StringDict{}
+	for _, nested := range desc.NestedType {
+		if attrs[nested.GetName()], err = messageCtor(name, nested); err != nil {
+			return nil, err
+		}
+	}
+	return &builtinWithAttrs{ctor, attrs}, nil
 }
 
 // loadFileDesc loads a FileDescriptorProto for a give proto module, specified
