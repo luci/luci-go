@@ -42,6 +42,7 @@ import (
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
+	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -92,7 +93,145 @@ func TestGetAllProjects(t *testing.T) {
 func TestUpdateProjectJobs(t *testing.T) {
 	t.Parallel()
 
-	// TODO(vadimsh): Write once v1 is fully gone.
+	Convey("with test context", t, func() {
+		c := newTestContext(epoch)
+		e, _ := newTestEngine()
+
+		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
+		tq.CreateQueues()
+
+		jobDef := catalog.Definition{
+			JobID:    "proj/1",
+			Revision: "rev1",
+			Schedule: "*/5 * * * * * *",
+			Acls:     acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+		}
+
+		Convey("noop", func() {
+			So(e.UpdateProjectJobs(c, "proj", nil), ShouldBeNil)
+			So(allJobs(c), ShouldResemble, []Job{})
+		})
+
+		Convey("adding a job", func() {
+			// Adding a job that ticks each 5 sec.
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+
+			// Added.
+			So(allJobs(c), ShouldResemble, []Job{
+				{
+					JobID:     "proj/1",
+					ProjectID: "proj",
+					Revision:  "rev1",
+					Enabled:   true,
+					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+					Schedule:  "*/5 * * * * * *",
+					Cron: cron.State{
+						Enabled:    true,
+						Generation: 2,
+						LastRewind: epoch,
+						LastTick: cron.TickLaterAction{
+							When:      epoch.Add(5 * time.Second),
+							TickNonce: 6278013164014963328,
+						},
+					},
+				},
+			})
+
+			// The first tick is scheduled.
+			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
+			})
+
+			// Again, should be noop.
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			So(len(tq.GetScheduledTasks()), ShouldEqual, 1) // no new tasks
+		})
+
+		Convey("adding a job with txn retry", func() {
+			// Simulate the transaction retry.
+			datastore.GetTestable(c).SetTransactionRetryCount(2)
+			// Add a job.
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			// Added only one task, even though we had 2 retries.
+			So(len(tq.GetScheduledTasks()), ShouldEqual, 1)
+		})
+
+		Convey("adding a job with txn collision", func() {
+			// Simulate the transaction refusing to land even after many tries.
+			datastore.GetTestable(c).SetTransactionRetryCount(15)
+			// Attempt to add a job.
+			err := e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef})
+			// Failed transiently, nothing in the datastore or in TQ.
+			So(transient.Tag.In(err), ShouldBeTrue)
+			So(allJobs(c), ShouldResemble, []Job{})
+			So(len(tq.GetScheduledTasks()), ShouldEqual, 0)
+		})
+
+		Convey("updating a job", func() {
+			// Adding a job that ticks every 5 sec. Make sure its tick is scheduled.
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
+			})
+
+			// Changing it to tick every 30 sec.
+			newDef := jobDef
+			newDef.Schedule = "*/30 * * * * * *"
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{newDef}), ShouldBeNil)
+
+			// The job is updated now.
+			So(allJobs(c), ShouldResemble, []Job{
+				{
+					JobID:     "proj/1",
+					ProjectID: "proj",
+					Revision:  "rev1",
+					Enabled:   true,
+					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+					Schedule:  "*/30 * * * * * *",
+					Cron: cron.State{
+						Enabled:    true,
+						Generation: 3,
+						LastRewind: epoch,
+						LastTick: cron.TickLaterAction{
+							When:      epoch.Add(30 * time.Second), // new tick time
+							TickNonce: 2673062197574995716,
+						},
+					},
+				},
+			})
+
+			// The new tick is scheduled now too.
+			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
+				&internal.CronTickTask{JobId: "proj/1", TickNonce: 2673062197574995716},
+			})
+		})
+
+		Convey("removing a job", func() {
+			// Adding a job first.
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
+			datastore.GetTestable(c).CatchupIndexes()
+
+			// And now removing it.
+			So(e.UpdateProjectJobs(c, "proj", nil), ShouldBeNil)
+
+			// Switched to disabled state.
+			So(allJobs(c), ShouldResemble, []Job{
+				{
+					JobID:     "proj/1",
+					ProjectID: "proj",
+					Revision:  "rev1",
+					Enabled:   false,
+					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+					Schedule:  "*/5 * * * * * *",
+					Cron: cron.State{
+						Enabled:    false,
+						Generation: 3,
+					},
+				},
+			})
+		})
+	})
 }
 
 func TestGenerateInvocationID(t *testing.T) {

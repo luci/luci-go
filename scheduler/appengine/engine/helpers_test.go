@@ -68,6 +68,26 @@ func getSentDistrValue(c context.Context, m types.Metric, fieldVals ...interface
 	}
 }
 
+func allJobs(c context.Context) []Job {
+	datastore.GetTestable(c).CatchupIndexes()
+	entities := []Job{}
+	if err := datastore.GetAll(c, datastore.NewQuery("Job"), &entities); err != nil {
+		panic(err)
+	}
+	// Strip UTC location pointers from zero time.Time{} so that ShouldResemble
+	// can compare it to default time.Time{}. nil location is UTC too.
+	for i := range entities {
+		ent := &entities[i]
+		if ent.Cron.LastRewind.IsZero() {
+			ent.Cron.LastRewind = time.Time{}
+		}
+		if ent.Cron.LastTick.When.IsZero() {
+			ent.Cron.LastTick.When = time.Time{}
+		}
+	}
+	return entities
+}
+
 func sortedJobIds(jobs []*Job) []string {
 	ids := stringset.New(len(jobs))
 	for _, j := range jobs {
