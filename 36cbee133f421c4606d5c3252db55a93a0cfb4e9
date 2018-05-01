@@ -756,6 +756,30 @@
     },
     {
       "key": {
+        "uuid": "5a11266c_071dc8c0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T16:35:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6236ce0_0337c729",
+      "range": {
+        "startLine": 40,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 24
+      },
+      "revId": "36cbee133f421c4606d5c3252db55a93a0cfb4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95467a43_b389f389",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
