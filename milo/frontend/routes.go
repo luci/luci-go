@@ -147,7 +147,7 @@ func Run(templatePath string) {
 		// simply passes project=chromium.
 
 		return BuilderHandler(c, buildsource.BuilderID(
-			fmt.Sprintf("buildbucket/%s/%s", c.Params.ByName("bucket"), c.Params.ByName("builder"))))
+			buildbucket.NewBuilderID(c.Params.ByName("bucket"), c.Params.ByName("builder")).String()))
 	}))
 	// TODO(nodir): delete this redirect and the chromium project assumption with it
 	r.GET("/buildbucket/:bucket/:builder", baseMW, movedPermanently("/p/chromium/builders/:bucket/:builder"))
