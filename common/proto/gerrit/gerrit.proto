@@ -1,0 +1,71 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package gerrit;
+
+service Gerrit {
+  // Checks if a user has a permission on given repo and ref.
+  //
+  // Using this API requires ViewAccess capability on Gerrit server.
+  // If and only if the caller doesn't have such capability, the result is error
+  // forbidden.
+  //
+  // Note, providing non-existent project name is not an error, but resulting
+  // CheckAccessResponse will state that project was not found.
+  rpc CheckAccess(CheckAccessRequest) returns (CheckAccessResponse) {};
+}
+
+// Request message for gerrit.CheckAccess.
+message CheckAccessRequest {
+  // Gerrit project, e.g. "chromium/src" part in
+  // https://chromium.googlesource.com/chromium/src/+/master
+  // Required.
+  string project = 1;
+  // The ref for which to check access.
+  // Required for most permissions.
+  string ref = 2;
+  // Gerrit permission.
+  //
+  // Frequently checked permissions are:
+  //  * read
+  //  * push
+  //  * label-<Label>-<Name> (e.g., label-Code-Review)
+  //  * submit
+  // For others, consult Gerrit docs:
+  // https://gerrit-review.googlesource.com/Documentation/access-control.html#access_categories
+  //
+  // Required.
+  string permission = 3;
+  // Gerrit account identifier such as email or account_id.
+  string account = 4;
+}
+
+// Response message for gerrit.CheckAccess.
+message CheckAccessResponse {
+  enum Status {
+    // ALLOWED means user has the permission being checked.
+    ALLOWED = 0;
+    // FORBIDDEN means user does not have the permission being checked.
+    FORBIDDEN = 1;
+    // PROJECT_NOT_FOUND means project doesn't exist.
+    PROJECT_NOT_FOUND = 2;
+  }
+
+  // Status is the status of the inquery.
+  Status status = 1;
+  // Reason is human readable clarifying message if not allowed.
+  string reason = 2;
+}
