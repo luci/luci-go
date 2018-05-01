@@ -221,6 +221,14 @@ func (crw *capturingResponseWriter) maybeRecordStatus(s int) {
 	}
 }
 
+// Flush implements http.Flusher by passing through the flush call if the underlying
+// ResponseWriter implements it.
+func (crw *capturingResponseWriter) Flush() {
+	if f, ok := crw.Inner.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // scopedRequestPanicTag
 ////////////////////////////////////////////////////////////////////////////////
