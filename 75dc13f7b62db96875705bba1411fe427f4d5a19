@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb3f56e5_e96bac24",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T04:58:53Z",
+      "side": 1,
+      "message": "of this map\n(took me \u003e1 minute to figure out)",
+      "range": {
+        "startLine": 94,
+        "startChar": 27,
+        "endLine": 94,
+        "endChar": 31
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82f4d222_d252babc",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T04:58:53Z",
+      "side": 1,
+      "message": "how about simpler:\n\nout :\u003d ...\nfor i, rune :\u003d range p{\n  if rune \u003d\u003d \u0027/\u0027{\n     out \u003d append(out, p[:i])\n  }\n}",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 11
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "133adc17_15755ed3",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T04:58:53Z",
+      "side": 1,
+      "message": "the, presumably there is just one.",
+      "range": {
+        "startLine": 156,
+        "startChar": 27,
+        "endLine": 156,
+        "endChar": 28
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44deba1c_e7b09f28",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T04:58:53Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be\n  if modTime.IsZero() ||  acls \u003d\u003d nil {\n?\nbecause it is possible (judging based on this code only) that ModifiedTS.IsZero() is false (line 200),\nbut there are 0 principals. In this case, 238 line won\u0027t be executed, despite what above comment says.\nDid I misread something? Note that you don\u0027t have test for line 238 taken, so it\u0027s hard for me to figure out what\u0027s going on :)",
+      "range": {
+        "startLine": 233,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 22
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
