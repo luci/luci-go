@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "11e9dde0_3e76a757",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "when I read this, I thought for each a, b and c in a/b/c\nmaybe say \"For each component prefix of prefix\" or something",
+      "range": {
+        "startLine": 42,
+        "startChar": 17,
+        "endLine": 42,
+        "endChar": 27
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a7fa92a_cbd8f80b",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "nit: i cannot imagine where else would you use this function. It is quite specific. The overall amount of code would be less if you inline this. But if you really want a bit of decomposition, I\u0027d rather extract creation of a single packageAcl entity to a separate function.",
+      "range": {
+        "startLine": 52,
+        "startChar": 9,
+        "endLine": 52,
+        "endChar": 21
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eb3f56e5_e96bac24",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -48,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "e72320a1_13ff0a8a",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "Andrii\u0027s solution is simpler and its correctness is more obvious.\ndon\u0027t forget to add the full path though",
+      "parentUuid": "82f4d222_d252babc",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 132,
+        "endChar": 11
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "133adc17_15755ed3",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -71,6 +141,52 @@
     },
     {
       "key": {
+        "uuid": "26077079_bb229655",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "why keep 2 variables and document them if you can keep one PrefixMetadata var",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 192,
+        "endChar": 61
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f89214e_36322047",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "in python Identity is serialized with IdentityProperty which is a BytesSerializableProperty\nDoes this work?\n\nsame with Users below",
+      "range": {
+        "startLine": 208,
+        "startChar": 11,
+        "endLine": 208,
+        "endChar": 28
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "44deba1c_e7b09f28",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
@@ -82,6 +198,30 @@
       "writtenOn": "2018-05-01T04:58:53Z",
       "side": 1,
       "message": "shouldn\u0027t this be\n  if modTime.IsZero() ||  acls \u003d\u003d nil {\n?\nbecause it is possible (judging based on this code only) that ModifiedTS.IsZero() is false (line 200),\nbut there are 0 principals. In this case, 238 line won\u0027t be executed, despite what above comment says.\nDid I misread something? Note that you don\u0027t have test for line 238 taken, so it\u0027s hard for me to figure out what\u0027s going on :)",
+      "range": {
+        "startLine": 233,
+        "startChar": 0,
+        "endLine": 237,
+        "endChar": 22
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a6cda79_b0dee836",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T15:06:05Z",
+      "side": 1,
+      "message": "I\u0027d add that\n\n  (len(acls) \u003e 0) \u003d\u003e !modTime.IsZero\n\nso perhaps checking len(acls) would be sufficient",
+      "parentUuid": "44deba1c_e7b09f28",
       "range": {
         "startLine": 233,
         "startChar": 0,
