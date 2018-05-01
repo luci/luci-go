@@ -240,7 +240,7 @@ func (l *logReq) readCache(c context.Context) (cacheResult string, commits []*gi
 	for {
 		switch err := memcache.Get(c, e); {
 		case err == memcache.ErrCacheMiss:
-			logging.Warningf(c, "cache miss")
+			logging.Infof(c, "cache miss")
 			cacheResult = cacheMiss
 
 		case err != nil:
