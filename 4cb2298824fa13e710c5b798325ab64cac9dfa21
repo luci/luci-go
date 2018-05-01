@@ -94,6 +94,52 @@
       "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "815f0f8d_41008bfc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-01T16:53:42Z",
+      "side": 1,
+      "message": "This is a pretty general name; are there no other http handlers in the \"logs\" service?",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ec2ee30_3c3c4b12",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-01T16:53:42Z",
+      "side": 1,
+      "message": "parsePathAndProject from the other CL (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1036365/1/logdog/appengine/coordinator/flex/view/textlogs.go#256) also does a bit of error handling. Maybe we could use a helper function for splitting the path into parts. If we give the parts names this might also clarify what parts[1] and parts[2] are below.",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 38
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
