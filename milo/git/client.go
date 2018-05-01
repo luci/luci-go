@@ -53,11 +53,14 @@ var whitelistPublicDomains = stringset.NewFromSlice(
 // AuthenticatedProdClient returns a production Gitiles client,
 // authenticated as self. Implements ClientFactory.
 func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	asWho := auth.NoAuth
+	var t http.RoundTripper
+	var err error
 	if whitelistPublicDomains.Has(host) {
-		asWho = auth.AsSelf
+		t, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	} else {
+		// No scopes if we aren't authenticating.
+		t, err = auth.GetRPCTransport(c, auth.NoAuth)
 	}
-	t, err := auth.GetRPCTransport(c, asWho, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
