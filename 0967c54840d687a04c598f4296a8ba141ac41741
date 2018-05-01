@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4097706c_580e3289",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-01T22:58:41Z",
+      "side": 1,
+      "message": "What if A and B both have nested type C, then C\u0027s constructor is duplicated in A and B. Is it worth keeping a struct similar to typeRegistry in which you deduplicate constructor functions?",
+      "range": {
+        "startLine": 60,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 63
+      },
+      "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd5f1a85_ca015ba4",
+        "filename": "skylark/skylarkproto/testdata/nested_msg.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-01T22:58:41Z",
+      "side": 1,
+      "message": "outer",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 6
+      },
+      "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
