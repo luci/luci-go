@@ -311,10 +311,12 @@
               <td class="left">Branch</td>
               <td class="value">{{ .Branch }}</td>
             </tr>
-            <tr>
-              <td class="left">Revision</td>
-              <td class="value">{{ .Revision.HTML }}</td>
-            </tr>
+            {{ with .Revision }}
+              <tr>
+                <td class="left">Revision</td>
+                <td class="value">{{ .HTML }}</td>
+              </tr>
+            {{ end }}
           </tbody>
         </table>
 
