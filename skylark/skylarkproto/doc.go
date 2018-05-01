@@ -52,7 +52,6 @@ package skylarkproto
 // TODO: Investigate how to load proto packages consisting of multiple files.
 
 // TODO: support enums.
-// TODO: support nested types.
 // TODO: support oneof fields.
 // TODO: support known types (maps, any, struct).
 
