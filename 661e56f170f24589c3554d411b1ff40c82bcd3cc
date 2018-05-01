@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "164f9b6a_1df3968a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T18:11:20Z",
+      "side": 1,
+      "message": "wrong bug",
+      "range": {
+        "startLine": 13,
+        "startChar": 5,
+        "endLine": 13,
+        "endChar": 11
+      },
+      "revId": "661e56f170f24589c3554d411b1ff40c82bcd3cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
