@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "b07a0f52_f04c5208",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T23:03:58Z",
+      "side": 1,
+      "message": "err, I meant to leave this comment at prefixACls call. I can imagine enumPrefixes call in another function.\n\nit is a nit anyway",
+      "parentUuid": "d29b25d7_a769d746",
+      "range": {
+        "startLine": 52,
+        "startChar": 9,
+        "endLine": 52,
+        "endChar": 21
+      },
+      "revId": "75dc13f7b62db96875705bba1411fe427f4d5a19",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb3f56e5_e96bac24",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 3
