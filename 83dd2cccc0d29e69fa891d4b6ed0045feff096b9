@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3e29470_761951c1",
+        "filename": "milo/git/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T18:54:44Z",
+      "side": 1,
+      "message": "should be false  for no auth\n\ni know, it is not very readable",
+      "range": {
+        "startLine": 73,
+        "startChar": 64,
+        "endLine": 73,
+        "endChar": 68
+      },
+      "revId": "83dd2cccc0d29e69fa891d4b6ed0045feff096b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
