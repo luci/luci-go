@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1943e189_d6f5281f",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T18:22:29Z",
+      "side": 1,
+      "message": "I don\u0027t think we should change this timeout. \n\nDue to the way GAE works, flushes are handled synchronously with handling user requests: whenever we flush, we block some (random) user request until the flush completes. \n\nI believe faulty monitoring must not degrade the performance (99% response time percentile in this case, but still...) of the service being monitoring. Thus I think we should not increase this deadline. A slow flush \u003d\u003d\u003d failed flush.",
+      "range": {
+        "startLine": 242,
+        "startChar": 35,
+        "endLine": 242,
+        "endChar": 49
+      },
+      "revId": "8af19840c928cf64b2355a1adb50175ca7af5413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2639409_5d96ccd6",
+        "filename": "server/tsmon/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T18:22:29Z",
+      "side": 1,
+      "message": "Strictly speaking, bad things will start to happen if we don\u0027t call TaskNumAllocator.NotifyTaskIsAlive frequently enough (at least once in 30 min, see https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/appengine/tsmon/tasknum.go?q\u003dTaskNumAllocator.NotifyTaskIsAlive\u0026sq\u003dpackage:chromium\u0026l\u003d141).\n\nIf we care about extended tsmon outages, it might be necessary to refactor the flush to ping NotifyTaskIsAlive independently of flushing to tsmon (note that TaskNumAllocator thingy is completely independent of tsmon and fails at a different time (if datastore is down)).\n\nThis can be done in a separate CL though (if at all).",
+      "range": {
+        "startLine": 271,
+        "startChar": 4,
+        "endLine": 271,
+        "endChar": 21
+      },
+      "revId": "8af19840c928cf64b2355a1adb50175ca7af5413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
