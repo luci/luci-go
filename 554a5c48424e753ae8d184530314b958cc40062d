@@ -50,6 +50,24 @@
       "revId": "554a5c48424e753ae8d184530314b958cc40062d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4be13f1c_f21dcf1a",
+        "filename": "milo/common/model/build_summary.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-01T17:43:16Z",
+      "side": 1,
+      "message": "i considered stringset as more readable, but decided against it because it\u0027s actually slower and allocates more memory.\nas for extra line, with 2 for loops it\u0027s required (or I use a loop label)",
+      "parentUuid": "e730c64f_971176b3",
+      "revId": "554a5c48424e753ae8d184530314b958cc40062d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
