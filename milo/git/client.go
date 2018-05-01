@@ -50,14 +50,23 @@ var whitelistPublicDomains = stringset.NewFromSlice(
 	"chromium.googlesource.com",
 )
 
-// AuthenticatedProdClient returns a production Gitiles client,
-// authenticated as self. Implements ClientFactory.
+// AuthenticatedProdClient returns a production Gitiles client.
+//
+// Currently, it is authenticated as self only for a whitelistPublicDomains.
+// For all other repos, the client will not use authentication to avoid
+// information leaks.
+// TODO(tandrii): fix this per https://crbug.com/796317.
+//
+// Implements ClientFactory.
 func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	asWho := auth.NoAuth
+	var t http.RoundTripper
+	var err error
 	if whitelistPublicDomains.Has(host) {
-		asWho = auth.AsSelf
+		t, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+	} else {
+		// No scopes if we aren't authenticating.
+		t, err = auth.GetRPCTransport(c, auth.NoAuth)
 	}
-	t, err := auth.GetRPCTransport(c, asWho, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
