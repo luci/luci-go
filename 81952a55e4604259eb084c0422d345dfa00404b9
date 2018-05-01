@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07c255b6_2d46825c",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T23:14:58Z",
+      "side": 1,
+      "message": "is this supposed to work only for LUCI builds?\nif so, please use https://godoc.org/go.chromium.org/luci/buildbucket/proto#Builder_ID\n\nnote that this proto uses short bucket names, e.g. \"try\" instead of \"luci.chromium.try\", but there is Project field too. I am dragging to update milo code to use these new protos...\n\nsee also https://godoc.org/go.chromium.org/luci/buildbucket#BuildToV2",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 15
+      },
+      "revId": "81952a55e4604259eb084c0422d345dfa00404b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8322255c_bdf1ed6c",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-01T23:14:58Z",
+      "side": 1,
+      "message": "if v2 proto are used (I will have to do that soon anyway), then we will probably need some helper functions to read v1 bucket name from a V2 BuilderID message in https://godoc.org/go.chromium.org/luci/buildbucket#BuildToV2 package",
+      "revId": "81952a55e4604259eb084c0422d345dfa00404b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
