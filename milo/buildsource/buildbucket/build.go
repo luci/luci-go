@@ -466,6 +466,7 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	if blame, err := getBlame(c, bbBuildMessage); err == nil {
 		mb.Blame = blame
 	} else {
+		logging.WithError(err).Warningf(c, "failed to fetch blame information")
 		mb.Blame = []*ui.Commit{{
 			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
 		}}
