@@ -203,21 +203,28 @@ func extractEmail(msg *bbv1.ApiCommonBuildMessage) (string, error) {
 	return "", nil
 }
 
-// extractInfo extracts the resulting info text from a build message.
+// extractDetails extracts the following from a build message's ResultDetailsJson:
+// * Build Info Text
+// * Swarming Bot ID
 // TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractInfo(msg *bbv1.ApiCommonBuildMessage) (string, error) {
+func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string, err error) {
 	var resultDetails struct {
 		// TODO(nodir,iannucci): define a proto for build UI data
 		UI struct {
-			Info string
-		}
+			Info string `json:"info"`
+		} `json:"ui"`
+		Swarming struct {
+			TaskResult struct {
+				BotID string `json:"bot_id"`
+			} `json:"task_result"`
+		} `json:"swarming"`
 	}
 	if msg.ResultDetailsJson != "" {
-		if err := json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails); err != nil {
-			return "", errors.Annotate(err, "failed to parse result_details_json").Err()
-		}
+		err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails)
+		info = resultDetails.UI.Info
+		botID = resultDetails.Swarming.TaskResult.BotID
 	}
-	return resultDetails.UI.Info, nil
+	return
 }
 
 // toMiloBuild converts a buildbucket build to a milo build.
@@ -239,7 +246,7 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		return nil, err
 	}
 	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
-	info, err := extractInfo(msg)
+	info, botID, err := extractDetails(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -248,6 +255,7 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		return nil, err
 	}
 
+	// Now that all the data is parsed, put them all in the correct places.
 	pendingEnd := b.StartTime
 	if pendingEnd.IsZero() {
 		// Maybe the build expired and never started.  Use the expiration time, if any.
@@ -274,6 +282,13 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 	}
 	if info != "" {
 		result.Summary.Text = append(result.Summary.Text, strings.Split(info, "\n")...)
+	}
+	if botID != "" {
+		result.Summary.Bot = ui.NewLink(
+			botID,
+			fmt.Sprintf(
+				"https://%s/bot?id=%s", b.Tags.Get("swarming_hostname"), botID),
+			fmt.Sprintf("Swarming Bot %s", botID))
 	}
 
 	for _, bs := range b.BuildSets {
@@ -305,7 +320,6 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		"Task "+task,
 		swarming.TaskPageURL(b.Tags.Get("swarming_hostname"), task).String(),
 		"Swarming task page for task "+task)
-	// TODO(hinoka): Add in Swarming Bot ID when it is surfaced in buildbucket.
 
 	result.Summary.ParentLabel = ui.NewLink(
 		b.Builder,
