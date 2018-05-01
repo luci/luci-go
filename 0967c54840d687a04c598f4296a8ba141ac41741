@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "517f022e_e2e61265",
+        "filename": "skylark/skylarkproto/loader.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T23:12:07Z",
+      "side": 1,
+      "message": "This would be totally different types (A.C and B.C) with different constructors. Protobuf lib itself identifies them internally using full dotted names, see line 362 in test.pb.go.\n\nCaching constructors may be helpful if we anticipate loading same protobuf module into multiple Skylark environments, since we generate constructors only when loading modules. But we don\u0027t do currently anticipate this...\n\n(In contrast, typeRegistry is useful to avoid rescanning proto message properties each time we instantiate a message or access its field, which happens often even in single skylark script).",
+      "parentUuid": "4097706c_580e3289",
+      "range": {
+        "startLine": 60,
+        "startChar": 3,
+        "endLine": 60,
+        "endChar": 63
+      },
+      "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd5f1a85_ca015ba4",
         "filename": "skylark/skylarkproto/testdata/nested_msg.sky",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ec13e7b_c8b7e390",
+        "filename": "skylark/skylarkproto/testdata/nested_msg.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-01T23:12:07Z",
+      "side": 1,
+      "message": "Done.\n\nhttps://www.doi.gov/sites/doi.gov/files/uploads/seaotterkodiaknwrlisahuppusfws.jpg",
+      "parentUuid": "cd5f1a85_ca015ba4",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 6
+      },
+      "revId": "0967c54840d687a04c598f4296a8ba141ac41741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
