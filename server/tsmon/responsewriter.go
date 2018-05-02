@@ -36,6 +36,14 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
+// Flush implements http.Flusher, and just passes through the Flush() call to
+// the underlying http.ResponseWriter.
+func (rw *responseWriter) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 func newResponseWriter(rw http.ResponseWriter) *responseWriter {
 	return &responseWriter{
 		ResponseWriter: rw,
