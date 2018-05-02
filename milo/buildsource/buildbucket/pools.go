@@ -42,7 +42,11 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 	seen := stringset.New(0)
 	for _, bucket := range r.Buckets {
 		for _, builder := range bucket.Builders {
-			id := fmt.Sprintf("buildbucket/%s/%s", bucket.Name, builder.Name)
+			bid, err := NewBuilderID(bucket.Name, builder.Name)
+			if err != nil {
+				return nil, err
+			}
+			id := bid.String()
 			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, builder.SwarmingDimensions)
 			dID := descriptor.PoolID()
 			builderPools = append(builderPools, model.BuilderPool{
