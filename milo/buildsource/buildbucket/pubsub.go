@@ -83,12 +83,16 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 	swarmTags := strpair.ParseMap(build.Tags["swarming_tag"])
 	project := swarmTags.Get("luci_project")
 
+	bid, err := NewBuilderID(build.Bucket, build.Builder)
+	if err != nil {
+		return nil, err
+	}
 	ret := &model.BuildSummary{
 		ProjectID:     project,
 		AnnotationURL: swarmTags.Get("log_location"),
 		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
-		BuilderID:     fmt.Sprintf("buildbucket/%s/%s", build.Bucket, build.Builder),
-		BuildID:       fmt.Sprintf("buildbucket/%s", build.Address()),
+		BuilderID:     bid.String(),
+		BuildID:       "buildbucket/" + build.Address(),
 		BuildSet:      build.Tags[bbv1.TagBuildSet],
 		ContextURI: []string{
 			fmt.Sprintf("buildbucket://%s/build/%d", hostname, build.ID),
