@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ca5430f7_689dfa58",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0f12b256_113966e1",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 27
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a908660_6d1da368",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ae72852_d82e368e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a908660_6d1da368",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "bb73224f_46e3f8c3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "I reduced the number of times ls.State() is called.",
+      "parentUuid": "5e28a07c_b1571d18",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 46
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46c6553d_6b48093b",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -85,6 +151,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dfcd0e1_7a552582",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Moved this to coordinator.WithAccess(), which rolls up all of the required ACL checks.\n\nIt doesn\u0027t work very well with the GRPC paradigm though, unless I remove the check from the prelude and do it in the handler, so I didn\u0027t change it in get.go.",
+      "parentUuid": "46c6553d_6b48093b",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 50
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "018b9fdd_cbe590c5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Removed getTerminalIndex()",
+      "parentUuid": "18c4270c_5d584306",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78188b5e_fe87bd80",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -131,6 +245,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faf557cf_c6448384",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "derp.  Fixed.",
+      "parentUuid": "78188b5e_fe87bd80",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 17
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "12d06157_92060a32",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "TIL clock.Sleep(c, ...) exists, which does this natively :D",
+      "parentUuid": "44fc0e96_882297ca",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 42
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7e0d55aa_3ad72eb8",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -177,6 +339,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2cf527b_cd5118af",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7e0d55aa_3ad72eb8",
+      "range": {
+        "startLine": 129,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 4
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "cbc02e52_87061b4a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca4a0e34_739cbd5f",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 14
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5277feda_b4c8df90",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -223,6 +433,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b6c62f4_38bbd533",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "it seemed like a cool thing to do :P\n\nRemoved this block of code anyways.",
+      "parentUuid": "5277feda_b4c8df90",
+      "range": {
+        "startLine": 144,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 14
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -249,6 +483,30 @@
     },
     {
       "key": {
+        "uuid": "ed33a77b_447cff9a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc911f1d_4d857a14",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 8
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7fc2e7ef_3d6d2ec3",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -269,6 +527,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "951f4f0b_f36b6d9c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "It\u0027s an empty string, I\u0027m not actually sure why.",
+      "parentUuid": "7fc2e7ef_3d6d2ec3",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -295,6 +577,30 @@
     },
     {
       "key": {
+        "uuid": "2edee832_f0575e28",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "The goroutine exits if the context is cancelled now.  It looks like the base middleware already takes care of canceling the context when the request finishes.",
+      "parentUuid": "2cbd60bc_6c4259d8",
+      "range": {
+        "startLine": 194,
+        "startChar": 0,
+        "endLine": 194,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc77b15a_d75b5b23",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -315,6 +621,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efc6ab53_b72f6a60",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc77b15a_d75b5b23",
+      "range": {
+        "startLine": 196,
+        "startChar": 25,
+        "endLine": 196,
+        "endChar": 28
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -341,6 +671,30 @@
     },
     {
       "key": {
+        "uuid": "03bebc27_0ab2b120",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Moved all error handling into writeErrHeaders",
+      "parentUuid": "03d36bda_79bb6828",
+      "range": {
+        "startLine": 197,
+        "startChar": 0,
+        "endLine": 197,
+        "endChar": 38
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0d34c9d0_5c43192b",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -361,6 +715,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7f7feb5_7cdb7d1a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d34c9d0_5c43192b",
+      "range": {
+        "startLine": 206,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 32
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -387,6 +765,30 @@
     },
     {
       "key": {
+        "uuid": "43f8b8d0_54cfeb64",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Rearranged all this.",
+      "parentUuid": "a22a89c8_2d2e5bfc",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 213,
+        "endChar": 11
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53653bb1_3f23c8bb",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -401,6 +803,24 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82789600_2984f179",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53653bb1_3f23c8bb",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -450,6 +870,54 @@
     },
     {
       "key": {
+        "uuid": "1e53fcd6_c5cd3ea3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "the http.ResponseWriter already buffers, so this doesn\u0027t actually write to TCP.",
+      "parentUuid": "feb8ab2a_1503ff1c",
+      "range": {
+        "startLine": 221,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 53
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a65e383c_c6afe7d5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "you mean if lines.GetValue() is nil? It should never happen?  Done.",
+      "parentUuid": "be0f9ff0_20e57bbc",
+      "range": {
+        "startLine": 221,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 15
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "302c6e02_999f370f",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -473,6 +941,30 @@
     },
     {
       "key": {
+        "uuid": "222ee590_0f4f2a93",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "302c6e02_999f370f",
+      "range": {
+        "startLine": 225,
+        "startChar": 0,
+        "endLine": 225,
+        "endChar": 46
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9765b886_35a3c30f",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -487,6 +979,24 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb781435_45f03ee2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T22:13:34Z",
+      "side": 1,
+      "message": "Flush() doesn\u0027t return an error :/",
+      "parentUuid": "9765b886_35a3c30f",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
