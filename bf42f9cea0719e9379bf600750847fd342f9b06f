@@ -1,0 +1,492 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f12b256_113966e1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: separate section",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 27
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a908660_6d1da368",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "note: the buffer may be backed up based on our client\u0027s read speed, which could definitely be slow. Maximum log entry size is 1MB (?), so this is effectively 1GB buffer per request. This will nuke our memory if it ever gets stopped up over a bunch of phones.\n\nI\u0027d lower to something more like 10 :)",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e28a07c_b1571d18",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "Consider generating a \"LogStream\" just once in the main handler and passing it here to refresh. This could be \"refreshLogStream\", accepting \"ls\". This would avoid recalculating the ID constantly, and would merge nicely with \"getTerminalIndex\".",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 45,
+        "endChar": 46
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46c6553d_6b48093b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "WDYT about generalizing this to \"coordinator/\" space? \"CheckUserCanViewLog(c context.Context, ls *LogStream) error\", then sharing this between \"get.go\" and \"http.go\"?",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 50
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18c4270c_5d584306",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit, \"i.e.\". Document that it returns \"-1\" if the log is still streaming.",
+      "range": {
+        "startLine": 79,
+        "startChar": 4,
+        "endLine": 79,
+        "endChar": 7
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78188b5e_fe87bd80",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "This will close \"st\" immediately when \"startFetch\" returns, since it is not owned by the goroutine. You need to do this Close as a defer in the \"go\" clause, or in \"fetch\".",
+      "range": {
+        "startLine": 96,
+        "startChar": 0,
+        "endLine": 96,
+        "endChar": 17
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44fc0e96_882297ca",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "Check Context.Done at the beginning of each loop, in order to stop if the Context is cancelled.\n\nselect {\ncase \u003c-c.Done():\n  ch \u003c- logResp{nil, c.Err()}:\n  return\ndefault:\n}\n\nAlternatively, since I\u0027m not 100% sure that the consumer will always be running at this point, you may want to have a separate \"overall\" buffered error channel that you can write to, to stop goroutines from blocking forever if their consumer loops have terminated.\n\nYou can do this by:\n1) Making \"fetch\" return an error.\n2) Having \"startFetch\" return a \"chan error\", with buffer size 1.\n3) Changing \"go fetch(...)\" to: \"go func() { errC \u003c- fetch(...) }\"\n4) Having consumer consume this value at the end of its loop, for an overall fetch status.",
+      "range": {
+        "startLine": 114,
+        "startChar": 0,
+        "endLine": 114,
+        "endChar": 42
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e0d55aa_3ad72eb8",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "Note that there is a stream state, ArchivedComplete, which means that the stream has been archived and will never get more entries. You should configure the Storage to allow non-contiguous entries when in this state.",
+      "range": {
+        "startLine": 129,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 4
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca4a0e34_739cbd5f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "req.Index \u003d le.StreamIndex + 1\n\n++ will not work if we\u0027re doing a spare log stream.",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 14
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5277feda_b4c8df90",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "This is weird - fallthrough to a break? \"break\" here will break out of the switch, right?",
+      "range": {
+        "startLine": 144,
+        "startChar": 0,
+        "endLine": 144,
+        "endChar": 14
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc911f1d_4d857a14",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "(If you use close channel as signal (see below), you can just return here to exit this function).",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 151,
+        "endChar": 8
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fc2e7ef_3d6d2ec3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "What\u0027s parts[0]?",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2cbd60bc_6c4259d8",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "It\u0027s important that you make sure this gets cleaned up and responds to Cancel (which can happen if the user aborts their request, which many will do), else we could leak fetching goroutines. Consider having your own derivative WithCancel Context and using \"defer\" to cancel it, then making sure \"startFetch\"\u0027s goroutine will terminate if the Context is cancelled.",
+      "range": {
+        "startLine": 194,
+        "startChar": 0,
+        "endLine": 194,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc77b15a_d75b5b23",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: http.StatusInternalServerError?",
+      "range": {
+        "startLine": 196,
+        "startChar": 25,
+        "endLine": 196,
+        "endChar": 28
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03d36bda_79bb6828",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: consider http.Error?\n\nAlso we may want to shield the user from the verbatim contents of \"err\", since it could leak internal details. Also I\u0027d log the error if we see one (here and elsewhere).",
+      "range": {
+        "startLine": 197,
+        "startChar": 0,
+        "endLine": 197,
+        "endChar": 38
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d34c9d0_5c43192b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "Rather than serving a nil log, just close the channel in the producer goroutine. The range loop will break out naturally.",
+      "range": {
+        "startLine": 206,
+        "startChar": 2,
+        "endLine": 206,
+        "endChar": 32
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a22a89c8_2d2e5bfc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: consider renaming \"sentHeaders\" or something? Just a thought.",
+      "range": {
+        "startLine": 213,
+        "startChar": 6,
+        "endLine": 213,
+        "endChar": 11
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53653bb1_3f23c8bb",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: http.StatusOK",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "feb8ab2a_1503ff1c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "Consider wrapping \"ctx.Writer\" in a *bufio.Writer and flushing at the end of each range iteration. No need to shove each log entry write over TCP.",
+      "range": {
+        "startLine": 221,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 53
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be0f9ff0_20e57bbc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "You need to catch the error here and consider it a hard failure if it\u0027s not nil.",
+      "range": {
+        "startLine": 221,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 15
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "302c6e02_999f370f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "nit: consider evaluating this once, up front:\n\nflusher, ok :\u003d ctx.Writer.(http.Flusher)\n\n...\n\nif flusher !\u003d nil {\n  err :\u003d flusher.Flush(); ...\n}",
+      "range": {
+        "startLine": 225,
+        "startChar": 0,
+        "endLine": 225,
+        "endChar": 46
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9765b886_35a3c30f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T01:08:03Z",
+      "side": 1,
+      "message": "You should catch the error here and consider it a hard failure if it\u0027s not nil.",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
