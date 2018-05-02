@@ -1,0 +1,584 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8145764_d6b70fe4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Might as well just throw the channel in here too, and rename it \"fetchInProgress\" or something. You can make \"fetch\" a member function and reduce the number of inputs, too.",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6fc39d2d_5b519065",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: \"%q\" will do some meaningful escapes, which might be useful if the path is really crap.",
+      "range": {
+        "startLine": 58,
+        "startChar": 34,
+        "endLine": 58,
+        "endChar": 35
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27d2fd6e_12bcd66b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "WDYT about doing this in the handler, then passing the project/path in here? It seems like a good precondition check.",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 37
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9cd86ed_6bfc48a7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: note that \"st\" will be closed in \"fetch\".\n\nAlternatively, close it here via:\n\ngo func() {\n  defer st.Close()\n  fetch(...)\n}()\n\nWhatever makes more sense to you. I like the latter option.",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14b3d394_d029540a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: AFAIK we don\u0027t split lines like this?",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 15
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f791c28e_58ebd8de",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "I believe (feel free to double-check, been a while) that the backends will handle retries.",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 99
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cb47419_6643413e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: since you\u0027re not re-using \"req\", I find it weird to use \"req.Index\" in this capacity. Please consider declaring a variable, \"expectedNextIndex\" or something, that tracks this and advances accordingly.\n\nThe only reason \"req.Index\" was updated in the \"get.go\" code is b/c when the request failed, we re-issued the (now updated) req.",
+      "range": {
+        "startLine": 135,
+        "startChar": 13,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47b50369_a3b66b41",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: maybe swap order w/ fetchOnce so a reader can read down : startFetch -\u003e fetch -\u003e fetchOnce",
+      "range": {
+        "startLine": 153,
+        "startChar": 0,
+        "endLine": 153,
+        "endChar": 126
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b729cccf_18fa7dc0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: TBH I\u0027d just write the error here and return (and elsewhere). I think it\u0027s cleaner. Your call.",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 9
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "614975b7_8b18a5f6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "0 is a valid terminal index. It sucks, because it means no logs, but it\u0027s valid. Just make this 0 \u003c\u003d, or (better for clarify) \"lst.TerminalIndex \u003e\u003d 0\".",
+      "range": {
+        "startLine": 173,
+        "startChar": 5,
+        "endLine": 173,
+        "endChar": 26
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16677a45_db1879fe",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: you may want to add a log: \"debug(finished streaming at %index)\"",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 9
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3edb96b_b1faad29",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: consider exponential backoff. The UI does this. You can actually use \"retry\" library to do this by using a retry condition with a sentinel error (e.g., \"errLogStillStreaming\"). It\u0027ll handle the sleep and backoff, so highly recommended.",
+      "range": {
+        "startLine": 179,
+        "startChar": 26,
+        "endLine": 179,
+        "endChar": 37
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7aed1e47_a0c51c24",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Not actually used?",
+      "range": {
+        "startLine": 190,
+        "startChar": 43,
+        "endLine": 190,
+        "endChar": 56
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4161c0f7_59c20eef",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "lol",
+      "range": {
+        "startLine": 191,
+        "startChar": 9,
+        "endLine": 191,
+        "endChar": 14
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0affa020_d4d7a87c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "I\u0027m not sure there is any value here. What\u0027s returning gRPC error codes? Storage? Those should probably not be propagated to the user directly, but rather be internal.",
+      "range": {
+        "startLine": 201,
+        "startChar": 23,
+        "endLine": 201,
+        "endChar": 39
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "42dd50e7_3f05adb7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "http.Error handles this, and also lets you add text. This text will be useful to a user.\n\nhttp.Error: https://golang.org/pkg/net/http/#Error\nhttp.StatusText: https://golang.org/pkg/net/http/#StatusText",
+      "range": {
+        "startLine": 203,
+        "startChar": 0,
+        "endLine": 203,
+        "endChar": 46
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "952fb51a_01367668",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "I think we do not want to panic, just in case some middleware passes something other than a Flusher ResponseWriter?\n\nMaybe:\nflusher, hasFlusher :\u003d w.(http.Flusher)\nif !hasFlusher {\n  flusher \u003d nopFlusher{}\n}\n\n\n...\n\n\ntype nopFlusher struct{}\nfunc (nf nopFlusher) Flush() {}",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 210,
+        "endChar": 28
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d63e8c9_3a2b278c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: fmt.Fprintln(lines.GetValue())",
+      "range": {
+        "startLine": 221,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 43
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd3bec4b_1f74f2d1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Catch the error here:\n\nif _, err :\u003d fmt.Fprintf(...); err !\u003d nil {\n  // handle err\n}\n\nerr can happen notably if \"w\" is not able to be written to.",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be87dc93_bdf5cc46",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "(I wouldn\u0027t put a number here).\n\nIt\u0027s odd that the client wouldn\u0027t see anything if the HTTP request completes, but there is no log data? Maybe say \"if the log is still streaming\"? Maybe only flush if the log is still streaming? Buffering is useful, might as well use it.",
+      "range": {
+        "startLine": 224,
+        "startChar": 27,
+        "endLine": 224,
+        "endChar": 31
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e54b8b54_eb62e7a5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: \"an\"",
+      "range": {
+        "startLine": 230,
+        "startChar": 17,
+        "endLine": 230,
+        "endChar": 18
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92b2047a_faef2b0a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: not sure this is useful.",
+      "range": {
+        "startLine": 231,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 46
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13647c19_eba02f66",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Yeah I\u0027d totes parse this here, before passing it to such a powerful function.",
+      "range": {
+        "startLine": 234,
+        "startChar": 42,
+        "endLine": 234,
+        "endChar": 67
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88e64ddb_8c8a1f71",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: logs should be full sentences, so \"Failed to start fetch.\" or something.",
+      "range": {
+        "startLine": 236,
+        "startChar": 46,
+        "endLine": 236,
+        "endChar": 47
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d7bd26a_f7eba61e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nit: add a \".\"",
+      "range": {
+        "startLine": 244,
+        "startChar": 65,
+        "endLine": 244,
+        "endChar": 69
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a17b02c_67d3d1da",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "This seems like a bad idea. Why would we want to do this?",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 68
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

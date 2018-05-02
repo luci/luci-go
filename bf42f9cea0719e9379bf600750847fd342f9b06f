@@ -554,6 +554,30 @@
     },
     {
       "key": {
+        "uuid": "d99695e6_89a6311f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Oh I guess the first \"/\"? That\u0027s dump. Maybe run strings.TrimLeft(pathStr, \"/\") first and then use [0] and [1]?",
+      "parentUuid": "951f4f0b_f36b6d9c",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2cbd60bc_6c4259d8",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -918,6 +942,54 @@
     },
     {
       "key": {
+        "uuid": "8626562a_08189b19",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Oh interesting.",
+      "parentUuid": "1e53fcd6_c5cd3ea3",
+      "range": {
+        "startLine": 221,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 53
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "413cfdb3_4e1119e2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "nono like \"fmt.Fprintf\" can return an error, when writing to the ctx.Writer fails. This could happen if, e.g., the underlying connection is closed.",
+      "parentUuid": "a65e383c_c6afe7d5",
+      "range": {
+        "startLine": 221,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 15
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "302c6e02_999f370f",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -994,6 +1066,24 @@
       "side": 1,
       "message": "Flush() doesn\u0027t return an error :/",
       "parentUuid": "9765b886_35a3c30f",
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc99c1df_4060d385",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-02T22:46:24Z",
+      "side": 1,
+      "message": "Oh http.Flusher ... so many Flushes :/",
+      "parentUuid": "bb781435_45f03ee2",
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
