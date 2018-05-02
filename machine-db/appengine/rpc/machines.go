@@ -95,10 +95,10 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 			return status.Errorf(codes.AlreadyExists, "duplicate machine %q", m.Name)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'platform_id'"):
 			// e.g. "Error 1048: Column 'platform_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown platform %q", m.Platform)
+			return status.Errorf(codes.NotFound, "platform %q does not exist", m.Platform)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'rack_id'"):
 			// e.g. "Error 1048: Column 'rack_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown rack %q", m.Rack)
+			return status.Errorf(codes.NotFound, "rack %q does not exist", m.Rack)
 		}
 		return errors.Annotate(err, "failed to create machine").Err()
 	}
@@ -129,7 +129,7 @@ func deleteMachine(c context.Context, name string) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
-		return status.Errorf(codes.NotFound, "unknown machine %q", name)
+		return status.Errorf(codes.NotFound, "machine %q does not exist", name)
 	}
 	return nil
 }
@@ -223,7 +223,7 @@ func renameMachine(c context.Context, name, newName string) (*crimson.Machine, e
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown machine %q", name)
+		return nil, status.Errorf(codes.NotFound, "machine %q does not exist", name)
 	}
 
 	machines, err := listMachines(c, tx, &crimson.ListMachinesRequest{
@@ -284,10 +284,10 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'platform_id'"):
 			// e.g. "Error 1048: Column 'platform_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown platform %q", m.Platform)
+			return nil, status.Errorf(codes.NotFound, "platform %q does not exist", m.Platform)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'rack_id'"):
 			// e.g. "Error 1048: Column 'rack_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown rack %q", m.Rack)
+			return nil, status.Errorf(codes.NotFound, "rack %q does not exist", m.Rack)
 		}
 		return nil, errors.Annotate(err, "failed to update machine").Err()
 	}
@@ -301,7 +301,7 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated machine").Err()
 	case len(machines) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown machine %q", m.Name)
+		return nil, status.Errorf(codes.NotFound, "machine %q does not exist", m.Name)
 	}
 
 	if err := tx.Commit(); err != nil {

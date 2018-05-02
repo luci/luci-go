@@ -74,7 +74,8 @@ func TestCreateMachine(t *testing.T) {
 				State:    common.State_FREE,
 			}
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
-			So(createMachine(c, machine), ShouldErrLike, "unknown platform")
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
+			So(createMachine(c, machine), ShouldErrLike, "does not exist")
 		})
 
 		Convey("invalid rack", func() {
@@ -85,7 +86,7 @@ func TestCreateMachine(t *testing.T) {
 				State:    common.State_FREE,
 			}
 			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
-			So(createMachine(c, machine), ShouldErrLike, "unknown rack")
+			So(createMachine(c, machine), ShouldErrLike, "does not exist")
 		})
 
 		Convey("unexpected invalid", func() {
@@ -144,7 +145,7 @@ func TestDeleteMachine(t *testing.T) {
 
 		Convey("invalid", func() {
 			m.ExpectExec(deleteStmt).WithArgs("machine").WillReturnResult(sqlmock.NewResult(1, 0))
-			So(deleteMachine(c, "machine"), ShouldErrLike, "unknown machine")
+			So(deleteMachine(c, "machine"), ShouldErrLike, "does not exist")
 		})
 
 		Convey("ok", func() {
@@ -320,7 +321,7 @@ func TestRenameMachine(t *testing.T) {
 			m.ExpectExec(updateStmt).WithArgs("new machine", "old machine").WillReturnResult(sqlmock.NewResult(1, 0))
 			m.ExpectRollback()
 			machine, err := renameMachine(c, "old machine", "new machine")
-			So(err, ShouldErrLike, "unknown machine")
+			So(err, ShouldErrLike, "does not exist")
 			So(machine, ShouldBeNil)
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})

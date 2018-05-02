@@ -170,7 +170,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*configPB
 			}
 			c.Enter("kvm %q", kvm.Name)
 			if !racks.Has(kvm.Rack) {
-				c.Errorf("unknown rack %q", kvm.Rack)
+				c.Errorf("rack %q does not exist", kvm.Rack)
 			}
 			_, err := common.ParseMAC48(kvm.MacAddress)
 			if err != nil {
@@ -186,7 +186,7 @@ func validateDatacenters(c *validation.Context, datacenters map[string]*configPB
 			if rack.Kvm != "" {
 				c.Enter("rack %q", rack.Name)
 				if !kvms.Has(rack.Kvm) {
-					c.Errorf("unknown KVM %q", rack.Kvm)
+					c.Errorf("KVM %q does not exist", rack.Kvm)
 				}
 				c.Exit()
 			}

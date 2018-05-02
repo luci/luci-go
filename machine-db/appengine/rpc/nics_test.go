@@ -77,7 +77,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
-			So(createNIC(c, nic), ShouldErrLike, "unknown machine")
+			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
 
 		Convey("duplicate MAC address", func() {
@@ -101,7 +101,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
-			So(createNIC(c, nic), ShouldErrLike, "unknown switch")
+			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
 
 		Convey("unexpected invalid", func() {
@@ -158,7 +158,7 @@ func TestDeleteNIC(t *testing.T) {
 
 		Convey("invalid", func() {
 			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 0))
-			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "unknown NIC")
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "does not exist")
 		})
 
 		Convey("ok", func() {

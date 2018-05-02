@@ -92,10 +92,10 @@ func createVM(c context.Context, v *crimson.VM) (*crimson.VM, error) {
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'physical_host_id'"):
 			// e.g. "Error 1048: Column 'physical_host_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
+			return nil, status.Errorf(codes.NotFound, "physical host %q does not exist on VLAN %d", v.Host, v.HostVlan)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
+			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", v.Os)
 		}
 		return nil, errors.Annotate(err, "failed to create VM").Err()
 	}
@@ -222,10 +222,10 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*cr
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'physical_host_id'"):
 			// e.g. "Error 1048: Column 'physical_host_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", v.Host, v.HostVlan)
+			return nil, status.Errorf(codes.NotFound, "physical host %q does not exist on VLAN %d", v.Host, v.HostVlan)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", v.Os)
+			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", v.Os)
 		}
 		return nil, errors.Annotate(err, "failed to update VM").Err()
 	}
@@ -240,7 +240,7 @@ func updateVM(c context.Context, v *crimson.VM, mask *field_mask.FieldMask) (*cr
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated VM").Err()
 	case len(vms) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown VM %q for VLAN %d", v.Name, v.Vlan)
+		return nil, status.Errorf(codes.NotFound, "VM %q does not exist on VLAN %d", v.Name, v.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {

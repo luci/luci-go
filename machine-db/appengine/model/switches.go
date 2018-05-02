@@ -80,7 +80,7 @@ func (t *SwitchesTable) computeChanges(c context.Context, datacenters []*config.
 			for _, cfg := range rack.Switch {
 				id, ok := t.racks[rack.Name]
 				if !ok {
-					return errors.Reason("failed to determine rack ID for switch %q: unknown rack %q", cfg.Name, rack.Name).Err()
+					return errors.Reason("failed to determine rack ID for switch %q: rack %q does not exist", cfg.Name, rack.Name).Err()
 				}
 				cfgs[cfg.Name] = &Switch{
 					Switch: config.Switch{

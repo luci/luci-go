@@ -83,7 +83,7 @@ func (t *RackKVMsTable) computeChanges(c context.Context, datacenters []*config.
 			if cfg.Kvm != "" {
 				id, ok := t.kvms[cfg.Kvm]
 				if !ok {
-					return errors.Reason("failed to determine KVM ID for rack %q: unknown KVM %q", cfg.Name, cfg.Kvm).Err()
+					return errors.Reason("failed to determine KVM ID for rack %q: KVM %q does not exist", cfg.Name, cfg.Kvm).Err()
 				}
 				cfgs[cfg.Name].KVMId.Int64 = id
 				cfgs[cfg.Name].KVMId.Valid = true
