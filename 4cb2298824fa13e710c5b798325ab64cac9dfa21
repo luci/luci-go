@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "fed38dfd_cb0f69ed",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T18:38:26Z",
+      "side": 1,
+      "message": "Correct, the other set of handlers are grpc endpoints (which are i guess technically http too).\n\nI\u0027d use \"plaintext\", but actually the handler will also handle datagram and binary data too.\n\"Logs\" or \"stream\" would work, but every other thing in logdog is alraedy named some combination of \"log\" or \"stream\".\n\nMaybe GetHandler()? GetLogHandler()? GetStreamHandler()?  Which of these sounds the least confusing to you?",
+      "parentUuid": "815f0f8d_41008bfc",
+      "range": {
+        "startLine": 77,
+        "startChar": 3,
+        "endLine": 77,
+        "endChar": 7
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ec2ee30_3c3c4b12",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 14
@@ -131,6 +155,30 @@
       "writtenOn": "2018-05-01T16:53:42Z",
       "side": 1,
       "message": "parsePathAndProject from the other CL (https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1036365/1/logdog/appengine/coordinator/flex/view/textlogs.go#256) also does a bit of error handling. Maybe we could use a helper function for splitting the path into parts. If we give the parts names this might also clarify what parts[1] and parts[2] are below.",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 38
+      },
+      "revId": "4cb2298824fa13e710c5b798325ab64cac9dfa21",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65b98f73_684cba2f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-02T18:38:26Z",
+      "side": 1,
+      "message": "I\u0027ll clean up the path parsing a bit.",
+      "parentUuid": "4ec2ee30_3c3c4b12",
       "range": {
         "startLine": 82,
         "startChar": 1,
