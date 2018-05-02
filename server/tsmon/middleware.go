@@ -76,10 +76,11 @@ type State struct {
 	state        *tsmon.State
 	lastSettings tsmonSettings
 
-	instanceID  string    // cached result of InstanceID() call
-	flushingNow bool      // true if some goroutine is flushing right now
-	nextFlush   time.Time // next time we should do the flush
-	lastFlush   time.Time // last successful flush
+	instanceID  string        // cached result of InstanceID() call
+	flushingNow bool          // true if some goroutine is flushing right now
+	nextFlush   time.Time     // next time we should do the flush
+	lastFlush   time.Time     // last successful flush
+	flushRetry  time.Duration // flush retry delay
 
 	testingMonitor  monitor.Monitor // mocked in unit tests
 	testingSettings *tsmonSettings  // mocked in unit tests
@@ -90,8 +91,15 @@ const (
 	// the last successful flush (if ever) was too long ago.
 	noFlushErrorThreshold = 5 * time.Minute
 
-	// flushTimeout defines a deadline for the flush operation.
+	// flushTimeout defines the deadline for the flush operation.
 	flushTimeout = 5 * time.Second
+
+	// flushMaxRetry defines the maximum delay between flush retries.
+	flushMaxRetry = 10 * time.Minute
+
+	// flushInitialRetry defines the initial retry delay. This
+	// is doubled every retry, up to flushMaxRetry.
+	flushInitialRetry = 5 * time.Second
 )
 
 // Middleware is a middleware that collects request metrics and triggers metric
@@ -185,6 +193,8 @@ func (s *State) enableTsMon(c context.Context) {
 	// invalid logging that the last flush was long time ago.
 	s.nextFlush = clock.Now(c)
 	s.lastFlush = s.nextFlush
+	// Set initial value for retry delay.
+	s.flushRetry = flushInitialRetry
 }
 
 // disableTsMon puts nil metrics store in the context's tsmon state.
@@ -236,19 +246,27 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 		runtimestats.Report(c)
 	}
 
-	// Unset 'flushingNow' no matter what (even on panics). Update 'nextFlush'
-	// only on successful flush or when we are still waiting for the task number.
-	// Unsuccessful flush thus will be retried ASAP.
+	// Unset 'flushingNow' no matter what (even on panics).
+	// If flush has failed, retry with back off to avoid
+	// hammering the receiver.
 	var err error
 	defer func() {
 		s.lock.Lock()
 		defer s.lock.Unlock()
 		s.flushingNow = false
 		if err == nil || err == ErrNoTaskNumber {
+			// Reset retry delay.
+			s.flushRetry = flushInitialRetry
 			s.nextFlush = now.Add(time.Duration(settings.FlushIntervalSec) * time.Second)
 			if err == nil {
 				s.lastFlush = now
 			}
+		} else {
+			// Flush has failed, back off the next flush.
+			if s.flushRetry < flushMaxRetry {
+				s.flushRetry *= 2
+			}
+			s.nextFlush = now.Add(s.flushRetry)
 		}
 	}()
 

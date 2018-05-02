@@ -125,6 +125,26 @@ func TestMiddleware(t *testing.T) {
 				So(store.IsNilStore(tsmon.Store(c.Context)), ShouldBeTrue)
 			})
 		})
+
+		Convey("Check error backoff", func() {
+			// Flush now.
+			state.nextFlush = clock.Now()
+			runMiddlware(c, state, incrMetric)
+			// Break the monitor.
+			monitor.SendErr = http.ErrServerClosed
+			clock.Add(time.Minute)
+			flushTime := clock.Now()
+			lastRetry := state.flushRetry
+			state.nextFlush = flushTime
+			runMiddlware(c, state, incrMetric)
+			// lastFlush should not have changed.
+			So(state.lastFlush, ShouldNotEqual, flushTime)
+			So(state.flushRetry, ShouldEqual, lastRetry*2)
+			clock.Add(time.Minute)
+			runMiddlware(c, state, incrMetric)
+			// Check retry is doubling.
+			So(state.flushRetry, ShouldEqual, lastRetry*4)
+		})
 	})
 }
 

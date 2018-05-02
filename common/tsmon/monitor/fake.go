@@ -23,6 +23,7 @@ import (
 type Fake struct {
 	CS    int
 	Cells [][]types.Cell
+	SendErr error
 }
 
 // ChunkSize returns the fake value.
@@ -30,8 +31,11 @@ func (m *Fake) ChunkSize() int {
 	return m.CS
 }
 
-// Send appends the cells to Cells.
+// Send appends the cells to Cells, unless SendErr is set.
 func (m *Fake) Send(c context.Context, cells []types.Cell) error {
+	if m.SendErr != nil {
+		return m.SendErr
+	}
 	m.Cells = append(m.Cells, cells)
 	return nil
 }
