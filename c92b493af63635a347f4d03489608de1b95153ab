@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6d230973_0565f412",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Added channel, that makes sense.  I\u0027ve been on the fence about this for a while, but right now I don\u0027t think I want to make fetch a member of this because LogStream isn\u0027t strictly needed by fetch, so it\u0027s easier to reason about it if it wasn\u0027t accessable from fetch.",
+      "parentUuid": "d8145764_d6b70fe4",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6fc39d2d_5b519065",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -39,6 +57,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "80fe5f7a_26ae2ec1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6fc39d2d_5b519065",
+      "range": {
+        "startLine": 58,
+        "startChar": 34,
+        "endLine": 58,
+        "endChar": 35
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "cbbe87be_12cf4a9b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "I could go either way, but I picked this way because startFetch() could do all the things that return all validation errors, which results in less error handling code in the handler.\n\nThis way all of the error processing wrt to printing error messages and status codes are more centralized.",
+      "parentUuid": "27d2fd6e_12bcd66b",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 37
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e9cd86ed_6bfc48a7",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -79,6 +145,24 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8339984b_86548a1c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e9cd86ed_6bfc48a7",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "5d431ba7_52109daf",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14b3d394_d029540a",
+      "range": {
+        "startLine": 115,
+        "startChar": 0,
+        "endLine": 115,
+        "endChar": 15
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f791c28e_58ebd8de",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "045d5555_55ae5efe",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Aha, you\u0027re right\nhttps://godoc.org/cloud.google.com/go/bigtable#hdr-Retries",
+      "parentUuid": "f791c28e_58ebd8de",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 125,
+        "endChar": 99
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0cb47419_6643413e",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -148,6 +280,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43202ec5_f9a175b6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Actually might as well just re-use index.",
+      "parentUuid": "0cb47419_6643413e",
+      "range": {
+        "startLine": 135,
+        "startChar": 13,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "165884d1_dc8c022d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "It\u0027s more lines, but I can see how it\u0027s more clear.",
+      "parentUuid": "b729cccf_18fa7dc0",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 9
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "614975b7_8b18a5f6",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -217,6 +397,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6251d19f_be306ba3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done.\n\nI wrote it this way to make it clear that small is on the left and big is on the right.",
+      "parentUuid": "614975b7_8b18a5f6",
+      "range": {
+        "startLine": 173,
+        "startChar": 5,
+        "endLine": 173,
+        "endChar": 26
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +447,30 @@
     },
     {
       "key": {
+        "uuid": "8022b01d_5ec3fee8",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "16677a45_db1879fe",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 9
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3edb96b_b1faad29",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -266,6 +494,30 @@
     },
     {
       "key": {
+        "uuid": "878aefe6_3507f9f0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f3edb96b_b1faad29",
+      "range": {
+        "startLine": 179,
+        "startChar": 26,
+        "endLine": 179,
+        "endChar": 37
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7aed1e47_a0c51c24",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -286,6 +538,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dffbd7f3_1cb68b55",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7aed1e47_a0c51c24",
+      "range": {
+        "startLine": 190,
+        "startChar": 43,
+        "endLine": 190,
+        "endChar": 56
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -335,6 +611,30 @@
     },
     {
       "key": {
+        "uuid": "a0218313_477e41b7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "From what I can tell logdog uses grpc error codes to internally propogate if it should be returning 400\u0027s, 401s, 403s, 404s, etc.  If that\u0027s the case, this would be where it bubbles up to and turn into a user status code.",
+      "parentUuid": "0affa020_d4d7a87c",
+      "range": {
+        "startLine": 201,
+        "startChar": 23,
+        "endLine": 201,
+        "endChar": 39
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42dd50e7_3f05adb7",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -358,6 +658,30 @@
     },
     {
       "key": {
+        "uuid": "15f7b97d_5270d2f8",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42dd50e7_3f05adb7",
+      "range": {
+        "startLine": 203,
+        "startChar": 0,
+        "endLine": 203,
+        "endChar": 46
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "952fb51a_01367668",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -378,6 +702,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32ff8bba_d51a3c4b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "I think we definitely want to panic if a middleware passes a non-flushable ResponseWriter.  Because that means live-streaming logs would likely have otherwise been silently broken.\n\nFlushing was added in because if logs were streaming, and there were less that say 30 or so lines, nothing would show up until after the logs were done streaming.",
+      "parentUuid": "952fb51a_01367668",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 210,
+        "endChar": 28
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -421,6 +769,48 @@
     },
     {
       "key": {
+        "uuid": "d2a3b17a_4a25ff2f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd3bec4b_1f74f2d1",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "376ad5ae_1b4be3a4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d63e8c9_3a2b278c",
+      "range": {
+        "startLine": 221,
+        "startChar": 0,
+        "endLine": 221,
+        "endChar": 43
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be87dc93_bdf5cc46",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -441,6 +831,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ae30db3_a49e8ff7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be87dc93_bdf5cc46",
+      "range": {
+        "startLine": 224,
+        "startChar": 27,
+        "endLine": 224,
+        "endChar": 31
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -467,6 +881,30 @@
     },
     {
       "key": {
+        "uuid": "dd947b67_0cbe33dc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e54b8b54_eb62e7a5",
+      "range": {
+        "startLine": 230,
+        "startChar": 17,
+        "endLine": 230,
+        "endChar": 18
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92b2047a_faef2b0a",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -487,6 +925,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "631d4f5d_87b85825",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92b2047a_faef2b0a",
+      "range": {
+        "startLine": 231,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 46
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -536,6 +998,30 @@
     },
     {
       "key": {
+        "uuid": "c713e052_6273ecfc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88e64ddb_8c8a1f71",
+      "range": {
+        "startLine": 236,
+        "startChar": 46,
+        "endLine": 236,
+        "endChar": 47
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7d7bd26a_f7eba61e",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -559,6 +1045,30 @@
     },
     {
       "key": {
+        "uuid": "108c977d_46381255",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d7bd26a_f7eba61e",
+      "range": {
+        "startLine": 244,
+        "startChar": 65,
+        "endLine": 244,
+        "endChar": 69
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7a17b02c_67d3d1da",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -579,6 +1089,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "597ca0f1_8902cdd7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "use case is to signal to (for example) curl that a transfer failed, even if the original status was 200.  So that we don\u0027t silently serve someone 50% of a file.",
+      "parentUuid": "7a17b02c_67d3d1da",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 68
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

@@ -578,6 +578,30 @@
     },
     {
       "key": {
+        "uuid": "26a94951_880004fe",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Yeah routes really should\u0027ve eaten the leftmost slash :/.  Oh well.\n\nDone.",
+      "parentUuid": "d99695e6_89a6311f",
+      "range": {
+        "startLine": 161,
+        "startChar": 1,
+        "endLine": 161,
+        "endChar": 41
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2cbd60bc_6c4259d8",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
@@ -987,6 +1011,30 @@
       "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9811052_9ef493a3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T17:02:36Z",
+      "side": 1,
+      "message": "Aha. Done.",
+      "parentUuid": "413cfdb3_4e1119e2",
+      "range": {
+        "startLine": 221,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 15
+      },
+      "revId": "bf42f9cea0719e9379bf600750847fd342f9b06f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
