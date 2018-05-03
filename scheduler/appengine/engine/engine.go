@@ -1843,7 +1843,7 @@ func (e *engineImpl) genTopicAndSubNames(c context.Context, manager, publisher s
 	// them, so replace "@" with "~". URL encoding could have been used too, but
 	// Cloud Console confuses %40 with its own URL encoding and doesn't display
 	// all pages correctly.
-	id := fmt.Sprintf("%s+%s+%s",
+	id := fmt.Sprintf("%s.%s.%s",
 		prefix,
 		manager,
 		strings.Replace(publisher, "@", "~", -1))
