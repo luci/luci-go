@@ -1,0 +1,227 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b64ce153_e174b311",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "Nit: the verb form is a phrasal verb that can be split apart, so it\u0027s written with a space, as \"set up\".",
+      "range": {
+        "startLine": 64,
+        "startChar": 4,
+        "endLine": 64,
+        "endChar": 9
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7979e2ed_b459a035",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "Nit: for consistency with other comments, add a period.",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "822bf5ff_6bb341d8",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "Does nc stand for \"new context\"? (I\u0027m pretty slow to adjust to this ultra-short variable name convention in Go...)",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3fa8b620_f0caeb9e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "Bikeshedding about function order:\n\nI advocate putting public functions at the top, and helper functions nearby below; when first scanning a file, I think most people start at the top, and want to get an overall idea of the main public functions there. Then, when digging into the implementation, they may look below to see the implementation of a helper function.\n\nI think that the main reason for the tradition of putting helper functions above main functions is that some languages required declarations/definitions before use (e.g. C).",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c50dc715_707be91b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "why not const? Is it because maxBackoff is of a type that can\u0027t be made global const?",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85ddee70_966b36f4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "I notice this way of logging is done elsewhere in logdog code, and I think it looks nice. I guess the fields get attached to the app engine log entry, but not necessarily embedded in the log text?",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "94396ff7_6830d4a9",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "between fetches from storage.",
+      "range": {
+        "startLine": 126,
+        "startChar": 44,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7139b26d_9fd0ddb2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "Formatting nit: I think that in the resulting formatted godoc html page, this will all be put into one paragraph if there are no blank lines. Some godoc comments start with one short summary sentence, followed by a blank line, followed by a paragraph with details; here you could add a blank line after the first sentence.",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 29
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92682d38_eddd0a72",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "I think this name is good. Perhaps the file name could be adjusted to get.go or such.",
+      "range": {
+        "startLine": 258,
+        "startChar": 3,
+        "endLine": 258,
+        "endChar": 13
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09be4332_a0ad0bf5",
+        "filename": "logdog/common/storage/archive/storage.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "This sentence could probably be removed.",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56c1844d_c68788c3",
+        "filename": "logdog/common/types/sizes.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T18:05:10Z",
+      "side": 1,
+      "message": "I think there\u0027s no need to say in the comment what the number is below. By repeating the specific number below in the comment above, it\u0027s possible for the two to get out of sync, like what happened before.",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
