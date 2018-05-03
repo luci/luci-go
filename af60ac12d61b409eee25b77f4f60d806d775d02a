@@ -76,6 +76,24 @@
     },
     {
       "key": {
+        "uuid": "110fb012_7e676b73",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-03T20:07:09Z",
+      "side": 1,
+      "message": "Follow-up note: If the general convention in the code-base the helper-then-main order, then it\u0027s alright to put functions in that order to keep the code consistent.\n\nAnyway, just something to think about.",
+      "parentUuid": "3fa8b620_f0caeb9e",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c50dc715_707be91b",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
