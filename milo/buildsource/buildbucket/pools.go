@@ -27,11 +27,31 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 )
+
+func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
+	// Get PoolKey
+	builderPool := model.BuilderPool{
+		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, bid.String()),
+	}
+	if err := datastore.Get(c, &builderPool); err != nil {
+		return nil, err
+	}
+	// Get BotPool
+	botPool := model.BotPool{
+		PoolID: builderPool.PoolKey.StringID(),
+	}
+	if err := datastore.Get(c, &botPool); err != nil {
+		return nil, err
+	}
+	return ui.NewMachinePool(c, botPool.Bots), nil
+}
 
 // processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
 // and saves the BuilderPool information into the datastore.
@@ -44,7 +64,10 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 		for _, builder := range bucket.Builders {
 			bid, err := NewBuilderID(bucket.Name, builder.Name)
 			if err != nil {
-				return nil, err
+				// This may happen if the bucket or builder does not fulfill the LUCI
+				// naming convention.
+				logging.WithError(err).Warningf(c, "invalid bucket/builder %s/%s, skipping", bucket.Name, builder.Name)
+				continue
 			}
 			id := bid.String()
 			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, builder.SwarmingDimensions)
@@ -67,13 +90,14 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 // * A bot with TaskID is Busy
 // * A bot that is dead or quarantined is Offline
 // * Otherwise, it is implicitly connected and Idle.
-func parseBot(c context.Context, botInfo *swarmingAPI.SwarmingRpcsBotInfo) (*model.Bot, error) {
+func parseBot(c context.Context, host string, botInfo *swarmingAPI.SwarmingRpcsBotInfo) (*model.Bot, error) {
 	lastSeen, err := time.Parse(swarming.SwarmingTimeLayout, botInfo.LastSeenTs)
 	if err != nil {
 		return nil, err
 	}
 	result := &model.Bot{
 		Name:     botInfo.BotId,
+		URL:      fmt.Sprintf("https://%s/bot?id=%s", host, botInfo.BotId),
 		LastSeen: lastSeen,
 	}
 
@@ -111,7 +135,7 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 		if botInfo.Deleted {
 			continue
 		}
-		bot, err := parseBot(c, botInfo)
+		bot, err := parseBot(c, desc.Host(), botInfo)
 		if err != nil {
 			return err
 		}
