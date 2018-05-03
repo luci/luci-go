@@ -15,6 +15,8 @@
 package grpcutil
 
 import (
+	"net/http"
+
 	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
@@ -140,6 +142,25 @@ var (
 	UnavailableTag        = Tag.With(codes.Unavailable)
 	DataLossTag           = Tag.With(codes.DataLoss)
 )
+
+// Shortcuts for mapping GRPC codes to http codes.
+var HttpCode = map[codes.Code]int{
+	codes.Canceled:           http.StatusRequestTimeout,
+	codes.Unknown:            http.StatusInternalServerError,
+	codes.InvalidArgument:    http.StatusBadRequest,
+	codes.DeadlineExceeded:   http.StatusRequestTimeout,
+	codes.NotFound:           http.StatusNotFound,
+	codes.AlreadyExists:      http.StatusConflict,
+	codes.PermissionDenied:   http.StatusForbidden,
+	codes.ResourceExhausted:  http.StatusServiceUnavailable,
+	codes.FailedPrecondition: http.StatusPreconditionFailed,
+	codes.Aborted:            http.StatusFailedDependency,
+	codes.OutOfRange:         http.StatusRequestedRangeNotSatisfiable,
+	codes.Unimplemented:      http.StatusNotImplemented,
+	codes.Internal:           http.StatusInternalServerError,
+	codes.DataLoss:           http.StatusGone,
+	codes.Unauthenticated:    http.StatusUnauthorized,
+}
 
 // Code returns the gRPC code for a given error.
 //
