@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "58b3f355_9f54c2c6",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T01:24:41Z",
+      "side": 1,
+      "message": "This is now in numerical order based on the actual enum definition, instead of alphabetical order. Should be irrelevant since enum values are set by name.",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96f61ea9_6307236c",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T01:24:41Z",
+      "side": 1,
+      "message": "Endpoints v1 doesn\u0027t include this information but v2 does.",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dae21863_bfba3f55",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T01:24:41Z",
+      "side": 1,
+      "message": "Also in v2 but not v1.",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

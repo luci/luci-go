@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "048da708_9d90316b",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T01:24:41Z",
+      "side": 0,
+      "message": "Should be unnecessary. Endpoints v2 doesn\u0027t even include this information.",
+      "revId": "c3574ce6ac7dd126f29cd08f9885c9ebb3aabee3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
