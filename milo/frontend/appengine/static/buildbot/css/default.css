@@ -304,7 +304,7 @@ li.sublink:nth-child(odd) {
   background-color: #fd3;
 }
 
-.disconnected {
+.offline {
   background-color: #c6c;
 }
 
@@ -495,7 +495,7 @@ div.BuildWaterfall {
   border-color: #AADDEE;
 }
 
-.exception, .retry, .status-Exception, .status-Disconnected, .tree-status-maintenance {
+.exception, .retry, .status-Exception, .status-Offline, .tree-status-maintenance {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;

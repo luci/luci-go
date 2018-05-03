@@ -94,29 +94,30 @@ func TestPools(t *testing.T) {
 			})
 
 			Convey(`Parsing Bot Status`, func() {
+				fakeHost := "fakehost.com"
 				bot := &sv1.SwarmingRpcsBotInfo{
 					LastSeenTs: RefTime.Format(swarming.SwarmingTimeLayout),
 				}
 				Convey(`Empty is Idle`, func() {
-					s, err := parseBot(c, bot)
+					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
 					So(s.Status, ShouldEqual, model.Idle)
 				})
 				Convey(`With TaskID is Busy`, func() {
 					bot.TaskId = "someID"
-					s, err := parseBot(c, bot)
+					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
 					So(s.Status, ShouldEqual, model.Busy)
 				})
 				Convey(`Died is Offline`, func() {
 					bot.IsDead = true
-					s, err := parseBot(c, bot)
+					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
 					So(s.Status, ShouldEqual, model.Offline)
 				})
 				Convey(`Quarantined is Offline`, func() {
 					bot.Quarantined = true
-					s, err := parseBot(c, bot)
+					s, err := parseBot(c, fakeHost, bot)
 					So(err, ShouldBeNil)
 					So(s.Status, ShouldEqual, model.Offline)
 				})
