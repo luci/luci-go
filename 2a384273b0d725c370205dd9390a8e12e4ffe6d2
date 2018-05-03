@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa74c049_4f592ee3",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-03T15:59:47Z",
+      "side": 1,
+      "message": "let\u0027s leave a TODO in the generator code to explicitly ack that we don\u0027t care because it is not important.\n\nIn general, ideally, I\u0027d prefer all such discrepancies to be reflected in our generator code in form of comments, so we a reader doesn\u0027t think that we just forgot about it, but didn\u0027t do that deliberately.\n\nAnd even \"more ideally\", we have 0 discrepancies. Currently i have hard time reviewing this file: too many little diffs",
+      "parentUuid": "58b3f355_9f54c2c6",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96f61ea9_6307236c",
         "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "1fcf50cd_83a8c480",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-03T15:59:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "96f61ea9_6307236c",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dae21863_bfba3f55",
         "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
         "patchSetId": 1
@@ -47,6 +83,64 @@
       "writtenOn": "2018-05-03T01:24:41Z",
       "side": 1,
       "message": "Also in v2 but not v1.",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "772305f7_73938219",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-03T15:59:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "dae21863_bfba3f55",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "866c21ae_09d278f6",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 660,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-03T15:59:47Z",
+      "side": 1,
+      "message": "this actually got better",
+      "range": {
+        "startLine": 660,
+        "startChar": 1,
+        "endLine": 660,
+        "endChar": 71
+      },
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f8f5f927_581ba92b",
+        "filename": "mp/cmd/mpagent/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-03T15:59:47Z",
+      "side": 1,
+      "message": "this seems to be out of the scope of this CL",
       "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
