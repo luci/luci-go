@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "89675640_3b6a0b44",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I think this is a good addition. Could you update the \"prpc\" library to use this definition?\n\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/32cba3ac2ed647858e5fbdd7c2b05642c9c6745b/grpc/prpc/encoding.go",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 34
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b64ce153_e174b311",
         "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
         "patchSetId": 7
@@ -42,6 +65,23 @@
     },
     {
       "key": {
+        "uuid": "be90c353_3cdef161",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: Note that this returns a gRPC error on failure.",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "822bf5ff_6bb341d8",
         "filename": "logdog/appengine/coordinator/context.go",
         "patchSetId": 7
@@ -53,6 +93,52 @@
       "writtenOn": "2018-05-03T18:05:10Z",
       "side": 1,
       "message": "Does nc stand for \"new context\"? (I\u0027m pretty slow to adjust to this ultra-short variable name convention in Go...)",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e9409c2_e56be1ea",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "What\u0027s the point of this? Why not just update \"c\"?\n\nTraditionally, the reason we would leave original \"c\" around is so we could return it in the error case, e.g., \"return c, err\". This stabilizes misuse cases:\n\nc, err :\u003d doSomething(c)\nif err !\u003d nil {\n  logging.Errorf(c, \"FAILED!\") // Broken if \"c\" is returned as nil in error cases.\n  return err\n}\n\n---\n\nThis is why, for some functions, we actually pass \"c\" by reference and update it on success; that way, there\u0027s no failed expectation of \"c\"\u0027s validity. This is a method that I preferred, and I\u0027d recommend that you use it here:\n\nfunc WithAccess(c *context.Context, ...) {\n  nc :\u003d *c\n  ...\n  if err :\u003d WithProjectNamespace(\u0026nc, ...)\n  if err :\u003d datastore.Get(nc, ...)\n\n  // (On success, update reference)\n  *c \u003d nc\n  return nil\n}\n\nAlternatively, you can make sure you return original \"c\" in your error-case returns. Your choice.",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6f9d451_748e4589",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Rather than pass \"path\" in, pass the *LogStream in. No point in regenerating the ID.",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 38
+      },
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -117,6 +203,99 @@
     },
     {
       "key": {
+        "uuid": "e4a2fe0a_ec6a8f3c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "c50dc715_707be91b",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "817be578_f94e6731",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: rename \"logFetchOperation\" or something more declarative of its larger purpose and role. This isn\u0027t just log data.",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e0d19b7_943582e5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: Go errors should begin with lower case letters.\nnit: use errors.Reason(\"...\") instead of fmt.Errorf (here and elsewhere).",
+      "range": {
+        "startLine": 67,
+        "startChar": 20,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0815365f_6f7112f0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: \"active logFetchOperation\" see works nicely :)",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 81,
+        "endChar": 29
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "85ddee70_966b36f4",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -140,6 +319,145 @@
     },
     {
       "key": {
+        "uuid": "6d7851d3_930b03f6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Sort of - the logging system is formatted-message-plus-fields, borrowed from Logrus. In GAE, the tags are output as part of the log message, so the gain is (ATM) pretty low:\n\nLog Message :: {\"err\": \"some error\"}\n\nHowever, keeping them separate enables a cleaner logging message and offers the possibility of putting them in a better place if such an opportunity arose. Now that you mention it, before LogDog moved to Flex, we were going through the GAE logging API, which is text-only, but now that we\u0027re in Flex we can actually output the logs better, e.g., in User Labels or some other place:\n\nhttps://chromium.googlesource.com/infra/luci/gae/+/master/impl/cloud/logger.go\n\nI was hastily implementing \"logging.go\", so I forgot that this was an option, but it would be a really good idea to do.",
+      "parentUuid": "85ddee70_966b36f4",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "58c8c233_fb5c75df",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Following previous comment in \"context.go\", generate this first, pass \"\u0026ls\" to coordinator.WithAccess, avoids regenerating the log ID multiple times.",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 69
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e02dd782_0ea2ecca",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "You should have a special provision here for \"not found\". Like, if the user asks for a non-existent log, this will reflect as a datastore miss. More specifically, this will be a MultiError (b/c two parameters) with at least one miss in it. You\u0027ll want to return 404 for this.\n\nSee \"isNoSuchEntity\", used by \"get.go\": https://chromium.googlesource.com/infra/luci/luci-go/+/32cba3ac2ed647858e5fbdd7c2b05642c9c6745b/logdog/appengine/coordinator/flex/logs/util.go#46",
+      "range": {
+        "startLine": 104,
+        "startChar": 0,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6b7e908_7f159f9b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: consider renaming to \"logFetchChannelSize\" or something more utilitarian.",
+      "range": {
+        "startLine": 113,
+        "startChar": 26,
+        "endLine": 113,
+        "endChar": 35
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31800a54_131d2e76",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Previous comment: Please note in comment that \"fetch\" will close \"st\" on completion, or close it explicitly here:\n\ngo func() {\n  defer st.Close()\n  fetch(...)\n}\n\nI prefer this b/c the resource is destroyed in the same function as it\u0027s created, but either will do.",
+      "range": {
+        "startLine": 114,
+        "startChar": 10,
+        "endLine": 114,
+        "endChar": 18
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7aba6e25_b6f97e0e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I actually want to double back on making these members of \"logData\" (or \"logFetchOperation\"). At this point, we have a collection of variables representing a well-defined state. This is exactly what structs and struct methods are for. I\u0027d make the operation contain all of these variables. Nice benefit: you don\u0027t have to forward most of them to \"fetchOnce\".",
+      "range": {
+        "startLine": 122,
+        "startChar": 5,
+        "endLine": 122,
+        "endChar": 10
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "94396ff7_6830d4a9",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -156,6 +474,98 @@
         "startChar": 44,
         "endLine": 126,
         "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1da1b20_a664f8df",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I mentioned in a previous comment that you should use the \"retry\" library for this. Is there a reason you chose not to? It will handle error cases, sleeping, Context cancellation, and backoff execution and tuning, and the rest of LogDog code uses it for this reason.",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ba84f0e_0c9f9560",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I believe that technically \"\u003c0\" is the qualifier for undefined, but I may be misremembering.",
+      "range": {
+        "startLine": 131,
+        "startChar": 23,
+        "endLine": 131,
+        "endChar": 28
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1f7f7a0_671a6b04",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Note: if you want, you can define a helper function for this. Just a thought, up to you.\n\nsendError :\u003d func(err error) { ch \u003c- logResp{nil, err} }\n\n...\n\nsendError(err)\nreturn",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f1da24e_21208d42",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: capital \"F\".",
+      "range": {
+        "startLine": 150,
+        "startChar": 16,
+        "endLine": 150,
+        "endChar": 17
       },
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -186,6 +596,121 @@
     },
     {
       "key": {
+        "uuid": "3cd0b73c_5e6f49b1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "zzz so much state passed in. srsly make most of this a struct.",
+      "range": {
+        "startLine": 177,
+        "startChar": 14,
+        "endLine": 177,
+        "endChar": 135
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "89f44737_3c3b1e64",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Not necessary? Plus this comment leaves the Google Cloud Storage operation undefined. Storage is intentionally abstract - you have a storage, just say \"the Storage layer is responsible for performing low-level retries\" maybe?",
+      "range": {
+        "startLine": 184,
+        "startChar": 40,
+        "endLine": 184,
+        "endChar": 45
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02d7a4e4_54f63d91",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I don\u0027t think we should forward verbatim internal error messages to the user. This could include any amount of data from any of the underlying layers. I don\u0027t know a good way to control for this, so I\u0027d prefer to just avoid doing it altogether.",
+      "range": {
+        "startLine": 232,
+        "startChar": 25,
+        "endLine": 232,
+        "endChar": 36
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13b43178_1c2fcc3c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "nit: %q",
+      "range": {
+        "startLine": 248,
+        "startChar": 45,
+        "endLine": 248,
+        "endChar": 46
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c431c271_efaa7261",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "You might want to add a \"defer flusher.Flush\" just to squeeze out the last of anything in case there\u0027s an error before we fall back to standard HTTP handler.\n\nNote that one flush per LogEntry may be pretty aggressive; some log streams have millions of them. Perhaps you should only force a flush prior to retrying? This could be done as follows:\n\n1) Specify that if logResp.log and logResp.err are both nil, it is a signal that you are sleeping pending more logs.\n2) Have this react to that signal by flushing and continuing.",
+      "range": {
+        "startLine": 250,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "92682d38_eddd0a72",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -197,6 +722,30 @@
       "writtenOn": "2018-05-03T18:05:10Z",
       "side": 1,
       "message": "I think this name is good. Perhaps the file name could be adjusted to get.go or such.",
+      "range": {
+        "startLine": 258,
+        "startChar": 3,
+        "endLine": 258,
+        "endChar": 13
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a975fd23_562be9dd",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "(\"get.go\" already exists in this package and is used for the \"Get\" RPC :) )",
+      "parentUuid": "92682d38_eddd0a72",
       "range": {
         "startLine": 258,
         "startChar": 3,
@@ -226,6 +775,24 @@
     },
     {
       "key": {
+        "uuid": "20a1c2be_9f9386c6",
+        "filename": "logdog/common/storage/archive/storage.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "I don\u0027t think so. Maybe enhanced? If we have a constant, it\u0027s good to define why we chose it.",
+      "parentUuid": "09be4332_a0ad0bf5",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "56c1844d_c68788c3",
         "filename": "logdog/common/types/sizes.go",
         "patchSetId": 7
@@ -237,6 +804,47 @@
       "writtenOn": "2018-05-03T18:05:10Z",
       "side": 1,
       "message": "I think there\u0027s no need to say in the comment what the number is below. By repeating the specific number below in the comment above, it\u0027s possible for the two to get out of sync, like what happened before.",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5124d7cd_d22c43b7",
+        "filename": "logdog/common/types/sizes.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "It is a possibility, but it also increases readability. It\u0027s a double-edged sword, and the worst case isn\u0027t too bad, so I would opt to leave it in *shrug*",
+      "parentUuid": "56c1844d_c68788c3",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b05bf79a_7ba123bf",
+        "filename": "server/tsmon/responsewriter.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "(This is the sort of middleware mistake that is easy to make that I am referring to in my earlier comment!)",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 77
+      },
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

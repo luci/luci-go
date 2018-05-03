@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "8a434e09_5c8a76e4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "*shrug* I think it\u0027s cleaner, and readability is nice, but up to you :)",
+      "parentUuid": "6d230973_0565f412",
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6fc39d2d_5b519065",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -119,6 +137,30 @@
       "side": 1,
       "message": "I could go either way, but I picked this way because startFetch() could do all the things that return all validation errors, which results in less error handling code in the handler.\n\nThis way all of the error processing wrt to printing error messages and status codes are more centralized.",
       "parentUuid": "27d2fd6e_12bcd66b",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 37
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3e52d965_990ee6a6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Understood. I\u0027m used to the pattern of parameter validation before processing in handlers. Leaving it up to you.",
+      "parentUuid": "cbbe87be_12cf4a9b",
       "range": {
         "startLine": 74,
         "startChar": 0,
@@ -635,6 +677,30 @@
     },
     {
       "key": {
+        "uuid": "b828eee0_59a59844",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Hmm - some parts do, like the \"coordinator\" library, but most of the failure-prone components do not. OK makes sense.",
+      "parentUuid": "a0218313_477e41b7",
+      "range": {
+        "startLine": 201,
+        "startChar": 23,
+        "endLine": 201,
+        "endChar": 39
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "42dd50e7_3f05adb7",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -726,6 +792,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "86071be6_09aebf6c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Understood, but neither our middleware nor the ResponseWriter interface (and this handler) does not require it to be a Flusher. It is a violation of expectation to require that middleware conform to a non-explicit interface. I would recommend either:\n\n1) Update the router.Context to ensure that the ResponseWriter that is used must be a Flusher.\n\ntype ResponseWriter interface {\n  http.ResponseWriter\n  http.Flusher\n}\n\nThis would ensure that all of our middleware will propagate the Flusher interface.\n\nOr,\n\n2) Make it a soft failure (or maybe emit a warning log).\n\nI think asserting that our various, externally-defined middleware chains opt into an interface that is not enforced at compile-time is not a good direction.",
+      "parentUuid": "32ff8bba_d51a3c4b",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 210,
+        "endChar": 28
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -1113,6 +1203,30 @@
       "revId": "c92b493af63635a347f4d03489608de1b95153ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83c8a46a_82626e04",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-03T21:30:23Z",
+      "side": 1,
+      "message": "Oh neat idea. Could you include this use case in the comment so it\u0027s clear what the intent is?",
+      "parentUuid": "597ca0f1_8902cdd7",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 68
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
