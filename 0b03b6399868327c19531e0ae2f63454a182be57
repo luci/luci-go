@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bddcd293_3a43cf3d",
+        "filename": "cipd/appengine/impl/metadata/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-03T02:07:30Z",
+      "side": 1,
+      "message": "mutates the metadata and doesn\u0027t return an error\n(easier to read)",
+      "range": {
+        "startLine": 59,
+        "startChar": 12,
+        "endLine": 59,
+        "endChar": 65
+      },
+      "revId": "0b03b6399868327c19531e0ae2f63454a182be57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1fc035f_8af12784",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-03T02:07:30Z",
+      "side": 1,
+      "message": "didn\u0027t (its existence was checked before callback, and yet say \"wasn\u0027t\" about callback)",
+      "range": {
+        "startLine": 122,
+        "startChar": 50,
+        "endLine": 122,
+        "endChar": 57
+      },
+      "revId": "0b03b6399868327c19531e0ae2f63454a182be57",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
