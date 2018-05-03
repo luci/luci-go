@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c24dd705_c05df913",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T21:00:26Z",
+      "side": 1,
+      "message": "(No action required)  I\u0027ll be looking out for feedback and I may be playing around with the min-width later if I hear from anyone that it looks too thin.",
+      "range": {
+        "startLine": 447,
+        "startChar": 13,
+        "endLine": 447,
+        "endChar": 14
+      },
+      "revId": "87dc7accc22a759415e864773013b60420fc3430",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a8f972f9_2da26e9a",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-03T21:00:26Z",
+      "side": 1,
+      "message": "In this usage, this may run up to O(N^2) in total.  Caching the result in Category will bring this down to O(N)",
+      "revId": "87dc7accc22a759415e864773013b60420fc3430",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
