@@ -17,6 +17,7 @@ package coordinator
 import (
 	"fmt"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
@@ -72,6 +73,31 @@ func WithConfigProvider(c context.Context, s ConfigProvider) context.Context {
 // If no Services has been installed, it will panic.
 func GetConfigProvider(c context.Context) ConfigProvider {
 	return c.Value(&configProviderKey).(ConfigProvider)
+}
+
+// WithAccess performs all ACL checks on a stream, including:
+// * Project Namespace check
+// * Logs purged check
+func WithAccess(c context.Context, project types.ProjectName, path types.StreamPath, at NamespaceAccessType) (context.Context, error) {
+	nc := c
+	// Do the project namespace check.  If successful, the namespace is installed
+	// into the resulting context.
+	if err := WithProjectNamespace(&nc, project, at); err != nil {
+		return nil, err
+	}
+	// Check to see if the log is purged.
+	ls := &LogStream{ID: LogStreamID(path)}
+	if err := datastore.Get(nc, ls); err != nil {
+		return nil, err
+	}
+	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
+	if ls.Purged {
+		if authErr := IsAdminUser(c); authErr != nil {
+			return nil, grpcutil.Errf(codes.NotFound, "path not found")
+		}
+	}
+	// Everything is fine.
+	return nc, nil
 }
 
 // WithProjectNamespace sets the current namespace to the project name.
