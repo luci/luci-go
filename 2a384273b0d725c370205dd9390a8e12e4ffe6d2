@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "1a6811b3_e222b8ed",
+        "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T21:46:01Z",
+      "side": 1,
+      "message": "Agreed there\u0027s value in having a conversion be a no-op. Here it\u0027s not too bad because when you look at the .go you see that the changes are largely in comments, demonstrating that most of the .json differences are irrelevant. Also, some of the discrepancies are improvements, for example required fields and enum default values were not displayed for Endpoints v1, but since they\u0027re displayed for v2 I included them. However, I agree that there is value in not simultaneously doing a conversion + feature improvements.\n\nAdded TODO in https://chromium-review.googlesource.com/c/infra/luci/luci-py/+/1041272.",
+      "parentUuid": "fa74c049_4f592ee3",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "96f61ea9_6307236c",
         "filename": "common/api/machine_provider/catalog/v1/catalog-api.json",
         "patchSetId": 1
@@ -144,6 +162,24 @@
       "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b045b089_474533f4",
+        "filename": "mp/cmd/mpagent/utils.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-03T21:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8f5f927_581ba92b",
+      "revId": "2a384273b0d725c370205dd9390a8e12e4ffe6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
