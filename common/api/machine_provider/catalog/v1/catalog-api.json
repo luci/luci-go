@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/catalog/v1/",
-  "baseUrl": "https://machine-provider.appspot.com/_ah/api/catalog/v1/",
+  "basePath": "/api/catalog/v1",
+  "baseUrl": "https://machine-provider.appspot.com/api/catalog/v1",
   "batchPath": "batch",
   "description": "Implements cloud endpoints for the Machine Provider Catalog.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/iCLdUueAdH-dwKXi0uyRnx6Mn-s\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "catalog:v1",
   "kind": "discovery#restDescription",
@@ -27,11 +26,11 @@
       "id": "catalog.add_machine",
       "path": "add_machine",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest",
+        "$ref": "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse"
+        "$ref": "components.machine_provider.rpc_messages.CatalogManipulationResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -43,11 +42,11 @@
       "id": "catalog.add_machines",
       "path": "add_machines",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest",
+        "$ref": "components.machine_provider.rpc_messages.CatalogMachineBatchAdditionRequest",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogBatchManipulationResponse"
+        "$ref": "components.machine_provider.rpc_messages.CatalogBatchManipulationResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -59,11 +58,11 @@
       "id": "catalog.delete_machine",
       "path": "delete_machine",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest",
+        "$ref": "components.machine_provider.rpc_messages.CatalogMachineDeletionRequest",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse"
+        "$ref": "components.machine_provider.rpc_messages.CatalogManipulationResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -75,11 +74,11 @@
       "id": "catalog.get",
       "path": "get",
       "request": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest",
+        "$ref": "components.machine_provider.rpc_messages.CatalogMachineRetrievalRequest",
         "parameterName": "resource"
       },
       "response": {
-        "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse"
+        "$ref": "components.machine_provider.rpc_messages.CatalogMachineRetrievalResponse"
       },
       "scopes": [
         "https://www.googleapis.com/auth/userinfo.email"
@@ -133,22 +132,17 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://machine-provider.appspot.com/_ah/api/",
+  "rootUrl": "https://machine-provider.appspot.com/api/",
   "schemas": {
-    "ComponentsMachineProviderDimensionsDimensions": {
+    "components.machine_provider.dimensions.Dimensions": {
       "description": "Represents the dimensions of a machine.",
-      "id": "ComponentsMachineProviderDimensionsDimensions",
+      "id": "components.machine_provider.dimensions.Dimensions",
       "properties": {
         "backend": {
           "enum": [
             "DUMMY",
             "GCE",
             "VSPHERE"
-          ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
           ],
           "type": "string"
         },
@@ -161,12 +155,8 @@
         },
         "linux_flavor": {
           "enum": [
-            "DEBIAN",
-            "UBUNTU"
-          ],
-          "enumDescriptions": [
-            "",
-            ""
+            "UBUNTU",
+            "DEBIAN"
           ],
           "type": "string"
         },
@@ -184,11 +174,6 @@
             "OSX",
             "WINDOWS"
           ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
-          ],
           "type": "string"
         },
         "os_version": {
@@ -200,11 +185,12 @@
       },
       "type": "object"
     },
-    "ComponentsMachineProviderPoliciesKeyValuePair": {
+    "components.machine_provider.policies.KeyValuePair": {
       "description": "Represents a key-value pair.",
-      "id": "ComponentsMachineProviderPoliciesKeyValuePair",
+      "id": "components.machine_provider.policies.KeyValuePair",
       "properties": {
         "key": {
+          "required": true,
           "type": "string"
         },
         "value": {
@@ -213,14 +199,14 @@
       },
       "type": "object"
     },
-    "ComponentsMachineProviderPoliciesPolicies": {
+    "components.machine_provider.policies.Policies": {
       "description": "Represents the policies for a machine. There are two Pub/Sub channels of communication for each machine. One is the backend-level channel which the Machine Provider will use to tell the backend that the machine has been leased, or that the machine needs to be reclaimed. The other is the channel between the Machine Provider and the machine itself. The machine should listen for instructions from the Machine Provider on this channel. Since the machine itself is what's being leased out to untrusted users, we will assign this Cloud Pub/Sub topic and give it restricted permissions which only allow it to subscribe to the one topic. On the other hand, the backend is trusted so we allow it to choose its own topic. When a backend adds a machine to the Catalog, it should provide the Pub/Sub topic and project to communicate on regarding the machine, as well as the service account on the machine itself which will be used to authenticate pull requests on the subscription created by the Machine Provider for the machine.",
-      "id": "ComponentsMachineProviderPoliciesPolicies",
+      "id": "components.machine_provider.policies.Policies",
       "properties": {
         "backend_attributes": {
           "description": "Represents a key-value pair.",
           "items": {
-            "$ref": "ComponentsMachineProviderPoliciesKeyValuePair"
+            "$ref": "components.machine_provider.policies.KeyValuePair"
           },
           "type": "array"
         },
@@ -234,78 +220,77 @@
           "type": "string"
         },
         "on_reclamation": {
+          "default": "MAKE_AVAILABLE",
           "enum": [
-            "DELETE",
             "MAKE_AVAILABLE",
-            "RECLAIM"
-          ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
+            "RECLAIM",
+            "DELETE"
           ],
           "type": "string"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogBatchManipulationResponse": {
+    "components.machine_provider.rpc_messages.CatalogBatchManipulationResponse": {
       "description": "Represents a response to a batched catalog manipulation request.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogBatchManipulationResponse",
+      "id": "components.machine_provider.rpc_messages.CatalogBatchManipulationResponse",
       "properties": {
         "responses": {
           "description": "Represents a response to a catalog manipulation request.",
           "items": {
-            "$ref": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse"
+            "$ref": "components.machine_provider.rpc_messages.CatalogManipulationResponse"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest": {
+    "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest": {
       "description": "Represents a request to add a machine to the catalog. dimensions.backend must be specified. dimensions.hostname must be unique per backend.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest",
+      "id": "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest",
       "properties": {
         "dimensions": {
-          "$ref": "ComponentsMachineProviderDimensionsDimensions",
-          "description": "Represents the dimensions of a machine."
+          "$ref": "components.machine_provider.dimensions.Dimensions",
+          "description": "Represents the dimensions of a machine.",
+          "required": true
         },
         "policies": {
-          "$ref": "ComponentsMachineProviderPoliciesPolicies",
-          "description": "Represents the policies for a machine. There are two Pub/Sub channels of communication for each machine. One is the backend-level channel which the Machine Provider will use to tell the backend that the machine has been leased, or that the machine needs to be reclaimed. The other is the channel between the Machine Provider and the machine itself. The machine should listen for instructions from the Machine Provider on this channel. Since the machine itself is what's being leased out to untrusted users, we will assign this Cloud Pub/Sub topic and give it restricted permissions which only allow it to subscribe to the one topic. On the other hand, the backend is trusted so we allow it to choose its own topic. When a backend adds a machine to the Catalog, it should provide the Pub/Sub topic and project to communicate on regarding the machine, as well as the service account on the machine itself which will be used to authenticate pull requests on the subscription created by the Machine Provider for the machine."
+          "$ref": "components.machine_provider.policies.Policies",
+          "description": "Represents the policies for a machine. There are two Pub/Sub channels of communication for each machine. One is the backend-level channel which the Machine Provider will use to tell the backend that the machine has been leased, or that the machine needs to be reclaimed. The other is the channel between the Machine Provider and the machine itself. The machine should listen for instructions from the Machine Provider on this channel. Since the machine itself is what's being leased out to untrusted users, we will assign this Cloud Pub/Sub topic and give it restricted permissions which only allow it to subscribe to the one topic. On the other hand, the backend is trusted so we allow it to choose its own topic. When a backend adds a machine to the Catalog, it should provide the Pub/Sub topic and project to communicate on regarding the machine, as well as the service account on the machine itself which will be used to authenticate pull requests on the subscription created by the Machine Provider for the machine.",
+          "required": true
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest": {
+    "components.machine_provider.rpc_messages.CatalogMachineBatchAdditionRequest": {
       "description": "Represents a batched set of CatalogMachineAdditionRequests. dimensions.backend must be specified in each CatalogMachineAdditionRequest. dimensions.hostname must be unique per backend.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest",
+      "id": "components.machine_provider.rpc_messages.CatalogMachineBatchAdditionRequest",
       "properties": {
         "requests": {
           "description": "Represents a request to add a machine to the catalog. dimensions.backend must be specified. dimensions.hostname must be unique per backend.",
           "items": {
-            "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest"
+            "$ref": "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest"
           },
           "type": "array"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest": {
+    "components.machine_provider.rpc_messages.CatalogMachineDeletionRequest": {
       "description": "Represents a request to delete a machine in the catalog.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest",
+      "id": "components.machine_provider.rpc_messages.CatalogMachineDeletionRequest",
       "properties": {
         "dimensions": {
-          "$ref": "ComponentsMachineProviderDimensionsDimensions",
-          "description": "Represents the dimensions of a machine."
+          "$ref": "components.machine_provider.dimensions.Dimensions",
+          "description": "Represents the dimensions of a machine.",
+          "required": true
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest": {
+    "components.machine_provider.rpc_messages.CatalogMachineRetrievalRequest": {
       "description": "Represents a request to retrieve a machine from the catalog.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest",
+      "id": "components.machine_provider.rpc_messages.CatalogMachineRetrievalRequest",
       "properties": {
         "backend": {
           "enum": [
@@ -313,25 +298,21 @@
             "GCE",
             "VSPHERE"
           ],
-          "enumDescriptions": [
-            "",
-            "",
-            ""
-          ],
           "type": "string"
         },
         "hostname": {
+          "required": true,
           "type": "string"
         }
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse": {
+    "components.machine_provider.rpc_messages.CatalogMachineRetrievalResponse": {
       "description": "Represents a response to a catalog machine retrieval request.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse",
+      "id": "components.machine_provider.rpc_messages.CatalogMachineRetrievalResponse",
       "properties": {
         "dimensions": {
-          "$ref": "ComponentsMachineProviderDimensionsDimensions",
+          "$ref": "components.machine_provider.dimensions.Dimensions",
           "description": "Represents the dimensions of a machine."
         },
         "lease_expiration_ts": {
@@ -339,7 +320,7 @@
           "type": "string"
         },
         "policies": {
-          "$ref": "ComponentsMachineProviderPoliciesPolicies",
+          "$ref": "components.machine_provider.policies.Policies",
           "description": "Represents the policies for a machine. There are two Pub/Sub channels of communication for each machine. One is the backend-level channel which the Machine Provider will use to tell the backend that the machine has been leased, or that the machine needs to be reclaimed. The other is the channel between the Machine Provider and the machine itself. The machine should listen for instructions from the Machine Provider on this channel. Since the machine itself is what's being leased out to untrusted users, we will assign this Cloud Pub/Sub topic and give it restricted permissions which only allow it to subscribe to the one topic. On the other hand, the backend is trusted so we allow it to choose its own topic. When a backend adds a machine to the Catalog, it should provide the Pub/Sub topic and project to communicate on regarding the machine, as well as the service account on the machine itself which will be used to authenticate pull requests on the subscription created by the Machine Provider for the machine."
         },
         "pubsub_subscription": {
@@ -360,41 +341,30 @@
       },
       "type": "object"
     },
-    "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse": {
+    "components.machine_provider.rpc_messages.CatalogManipulationResponse": {
       "description": "Represents a response to a catalog manipulation request.",
-      "id": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse",
+      "id": "components.machine_provider.rpc_messages.CatalogManipulationResponse",
       "properties": {
         "error": {
           "enum": [
-            "ENTRY_NOT_FOUND",
             "HOSTNAME_REUSE",
-            "INVALID_PROJECT",
-            "INVALID_TOPIC",
-            "LEASED",
-            "MISMATCHED_BACKEND",
+            "ENTRY_NOT_FOUND",
             "UNSPECIFIED_BACKEND",
+            "MISMATCHED_BACKEND",
             "UNSPECIFIED_HOSTNAME",
-            "UNSPECIFIED_TOPIC"
-          ],
-          "enumDescriptions": [
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            ""
+            "INVALID_TOPIC",
+            "INVALID_PROJECT",
+            "UNSPECIFIED_TOPIC",
+            "LEASED"
           ],
           "type": "string"
         },
         "machine_addition_request": {
-          "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest",
+          "$ref": "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest",
           "description": "Represents a request to add a machine to the catalog. dimensions.backend must be specified. dimensions.hostname must be unique per backend."
         },
         "machine_deletion_request": {
-          "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest",
+          "$ref": "components.machine_provider.rpc_messages.CatalogMachineDeletionRequest",
           "description": "Represents a request to delete a machine in the catalog."
         }
       },
