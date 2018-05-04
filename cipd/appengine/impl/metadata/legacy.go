@@ -16,8 +16,10 @@ package metadata
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -33,6 +35,18 @@ import (
 
 // legacyStorageImpl implements Storage on top of PackageACL entities inherited
 // from Python version of CIPD backend.
+//
+// This implementation stores api.PrefixMetadata in a deconstructed form as a
+// bunch of datastore entities to be compatible with Python version of the
+// backend that has no idea about PrefixMetadata abstraction.
+//
+// The processes of constructing and deconstructing PrefixMetadata are not
+// perfectly reversible:
+//   * Order of ACL entries in PrefixMetadata is not preserved.
+//   * Order of principals in ACLs is also not preserved.
+//   * Empty ACLs are removed from PrefixMetadata.
+//
+// These differences shouldn't have semantic importance for users through.
 type legacyStorageImpl struct {
 }
 
@@ -80,8 +94,80 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 }
 
 // UpdateMetadata is part of Storage interface.
+//
+// It assembles prefix metadata from a bunch of packageACL entities, passes it
+// to the callback for modification, then deconstructs it back into a bunch of
+// packageACL entities, to be saved in the datastore. All done transactionally.
 func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb func(m *api.PrefixMetadata) error) (*api.PrefixMetadata, error) {
-	return nil, fmt.Errorf("not implemented")
+	prefix, err := common.ValidatePackagePrefix(prefix)
+	if err != nil {
+		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
+	}
+
+	var cbErr error                 // error from 'cb'
+	var updated *api.PrefixMetadata // updated metadata to return
+
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
+		cbErr = nil // reset in case the transaction is being retried
+		updated = nil
+
+		// Fetch the existing metadata.
+		ents := prefixACLs(c, prefix, nil)
+		if err := datastore.Get(c, ents); isInternalDSError(err) {
+			return errors.Annotate(err, "datastore error when fetching PackageACL").Err()
+		}
+
+		// Convert it to PrefixMetadata object. This will be nil if there's no
+		// existing metadata, in which case we construct the default metadata
+		// with no fingerprint (to indicate it is new), see UpdateMetadata doc in
+		// Storage interface.
+		updated = mergeIntoPrefixMetadata(c, prefix, ents)
+		if updated == nil {
+			updated = &api.PrefixMetadata{Prefix: prefix}
+		}
+
+		// Let the callback update the metadata. Retain the old copy for diff later.
+		before := proto.Clone(updated).(*api.PrefixMetadata)
+		if cbErr = cb(updated); cbErr != nil {
+			return cbErr
+		}
+
+		// Don't let the callback mess with the prefix or the fingerprint.
+		updated.Prefix = before.Prefix
+		updated.Fingerprint = before.Fingerprint
+		if proto.Equal(before, updated) {
+			return nil // no changes whatsoever, don't touch anything
+		}
+
+		// Apply changes to the datastore. This updates 'ents' to match the metadata
+		// stored in 'updated'. We then rederive PrefixMetadata (including the new
+		// fingerprint) from them. We do it this way (instead of calculating the
+		// fingerprint using 'updated' directly), to be absolutely sure that the
+		// fingerprint returned by GetMetadata after this transaction lands matches
+		// the fingerprint we return from UpdateMetadata. In particular, the way
+		// we store ACLs in legacy entities doesn't preserve order of Acls entries
+		// in the proto, or order of principals inside Acls, so we need to
+		// "reformat" the updated metadata before calculating its fingerprint.
+		if err := applyACLDiff(c, ents, updated); err != nil {
+			return errors.Annotate(err, "failed to update PackageACL entities").Err()
+		}
+		updated = mergeIntoPrefixMetadata(c, prefix, ents)
+		return nil
+	}, nil)
+
+	switch {
+	case cbErr != nil:
+		// The callback itself failed, need to return the error as is, as promised.
+		return nil, cbErr
+	case err != nil:
+		// All other errors are from the datastore, consider them transient.
+		return nil, errors.Annotate(err, "transaction failed").Tag(transient.Tag).Err()
+	case updated == nil || updated.Fingerprint == "":
+		// This happens if there's no existing metadata and the callback didn't
+		// create it. Return nil to indicate that the metadata is still missing.
+		return nil, nil
+	}
+	return updated, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -233,4 +319,70 @@ func mergeIntoPrefixMetadata(c context.Context, prefix string, ents []*packageAC
 	// Calculate the fingerprint now that we have assembled everything.
 	md.Fingerprint = CalculateFingerprint(md)
 	return &md
+}
+
+// applyACLDiff extracts ACLs from 'md', compares them to 'ents', and Puts all
+// updated entities into the datastore, updating 'ents'.
+//
+// In the end 'ents' together contain the new updated metadata.
+//
+// 'ents' are expected to have len(legacyRoles) entries, ordered by legacyRoles
+// roles. Panics otherwise.
+func applyACLDiff(c context.Context, ents []*packageACL, md *api.PrefixMetadata) error {
+	if len(ents) != len(legacyRoles) {
+		panic(fmt.Sprintf("expecting %d entities, got %d", len(legacyRoles), len(ents)))
+	}
+
+	// Convert md.ACLs to a map role -> principals, for easier access.
+	perRole := make(map[api.Role][]string, len(md.Acls))
+	for _, acl := range md.Acls {
+		perRole[acl.Role] = acl.Principals
+	}
+
+	// Entities to put into the datastore.
+	toPut := []*packageACL{}
+
+	for i, r := range legacyRoles {
+		oldACL := ents[i] // an instance of *packageACL
+		if expectedID := r + ":" + md.Prefix; oldACL.ID != expectedID {
+			panic(fmt.Sprintf("expecting key %q, got %q", expectedID, oldACL.ID))
+		}
+
+		// Grab Users and Group from the updated metadata (in 'md') to compare them
+		// to what's in the oldACL.
+		users := make([]string, 0, len(oldACL.Users))
+		groups := make([]string, 0, len(oldACL.Groups))
+		for _, pr := range perRole[legacyRoleMap[r]] {
+			if strings.HasPrefix(pr, "group:") {
+				groups = append(groups, strings.TrimPrefix(pr, "group:"))
+			} else {
+				users = append(users, pr)
+			}
+		}
+		if isEqualStrSlice(users, oldACL.Users) && isEqualStrSlice(groups, oldACL.Groups) {
+			continue // no changes, do not touch this entity
+		}
+
+		// This ACL was modified! Update it.
+		oldACL.Rev++
+		oldACL.Users = users
+		oldACL.Groups = groups
+		oldACL.ModifiedBy = md.UpdateUser
+		oldACL.ModifiedTS = google.TimeFromProto(md.UpdateTime)
+		toPut = append(toPut, oldACL)
+	}
+
+	return datastore.Put(c, toPut)
+}
+
+func isEqualStrSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

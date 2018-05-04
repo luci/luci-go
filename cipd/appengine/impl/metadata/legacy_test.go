@@ -15,8 +15,11 @@
 package metadata
 
 import (
+	"errors"
 	"testing"
 	"time"
+
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -136,6 +139,162 @@ func TestLegacyMetadata(t *testing.T) {
 		Convey("GetMetadata fails on bad prefix", func() {
 			_, err := impl.GetMetadata(ctx, "")
 			So(err, ShouldErrLike, "invalid package prefix")
+		})
+
+		Convey("UpdateMetadata noop call with existing metadata", func() {
+			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
+				So(md, ShouldResemble, expected["a"])
+				return nil
+			})
+			So(err, ShouldBeNil)
+			So(updated, ShouldResemble, expected["a"])
+		})
+
+		Convey("UpdateMetadata updates existing metadata", func() {
+			modTime := ts.Add(10 * time.Second)
+
+			newMD := proto.Clone(expected["a"]).(*api.PrefixMetadata)
+			newMD.UpdateTime = google.NewTimestamp(modTime)
+			newMD.UpdateUser = "user:updater@example.com"
+			newMD.Acls[0].Principals = []string{
+				"group:new-owning-group",
+				"user:new-owner@example.com",
+				"group:another-group",
+			}
+
+			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
+				So(md, ShouldResemble, expected["a"])
+				*md = *newMD
+				return nil
+			})
+			So(err, ShouldBeNil)
+
+			// The returned metadata is different from newMD: order of principals is
+			// not preserved, and the fingerprint is populated.
+			newMD.Acls[0].Principals = []string{
+				"user:new-owner@example.com",
+				"group:new-owning-group",
+				"group:another-group",
+			}
+			newMD.Fingerprint = "MCRIAGe9tfXGxAZ-mTQbjQiJAlA" // new FP
+			So(updated, ShouldResemble, newMD)
+
+			// GetMetadata sees the new metadata.
+			md, err := impl.GetMetadata(ctx, "a")
+			So(err, ShouldBeNil)
+			So(md, ShouldResemble, []*api.PrefixMetadata{newMD})
+
+			// Only touched "OWNER:..." legacy entity, since only owners changed.
+			legacy := prefixACLs(ctx, "a", nil)
+			So(datastore.Get(ctx, legacy), ShouldBeNil)
+			So(legacy, ShouldResemble, []*packageACL{
+				{
+					ID:         "OWNER:a",
+					Parent:     root,
+					Users:      []string{"user:new-owner@example.com"},
+					Groups:     []string{"new-owning-group", "another-group"},
+					ModifiedBy: "user:updater@example.com",
+					ModifiedTS: modTime,
+					Rev:        1,
+				},
+				// Untouched.
+				{
+					ID:         "WRITER:a",
+					Parent:     root,
+					Users:      []string{"user:a-writer@example.com"},
+					Groups:     []string{"a-writer"},
+					ModifiedBy: "user:a-writer-mod@example.com",
+					ModifiedTS: ts.Add(5 * time.Second),
+				},
+				// Untouched.
+				{
+					ID:         "READER:a",
+					Parent:     root,
+					Users:      []string{"user:a-reader@example.com"},
+					Groups:     []string{"a-reader"},
+					ModifiedBy: "user:a-reader-mod@example.com",
+					ModifiedTS: ts,
+				},
+			})
+		})
+
+		Convey("UpdateMetadata noop call with missing metadata", func() {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+				So(md, ShouldResemble, &api.PrefixMetadata{Prefix: "z"})
+				return nil
+			})
+			So(err, ShouldBeNil)
+			So(updated, ShouldBeNil)
+
+			// Still missing.
+			md, err := impl.GetMetadata(ctx, "z")
+			So(err, ShouldBeNil)
+			So(md, ShouldHaveLength, 0)
+		})
+
+		Convey("UpdateMetadata creates new metadata", func() {
+			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+				So(md, ShouldResemble, &api.PrefixMetadata{Prefix: "z"})
+				md.UpdateTime = google.NewTimestamp(ts)
+				md.UpdateUser = "user:updater@example.com"
+				md.Acls = []*api.PrefixMetadata_ACL{
+					{
+						Role: api.Role_READER,
+					},
+					{
+						Role:       api.Role_WRITER,
+						Principals: []string{"group:a", "user:a@example.com"},
+					},
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"group:b"},
+					},
+				}
+				return nil
+			})
+			So(err, ShouldBeNil)
+
+			// Changes compared to what was stored in the callback:
+			//  * Acls are ordered by Role now.
+			//  * READER is missing, the principals list was empty.
+			//  * Principals are sorted by "users first, then groups".
+			expected := &api.PrefixMetadata{
+				Prefix:      "z",
+				Fingerprint: "ppDqWKGcl8Pu1hMiXQ1hac0vAH0",
+				UpdateTime:  google.NewTimestamp(ts),
+				UpdateUser:  "user:updater@example.com",
+				Acls: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"group:b"},
+					},
+					{
+						Role:       api.Role_WRITER,
+						Principals: []string{"user:a@example.com", "group:a"},
+					},
+				},
+			}
+			So(updated, ShouldResemble, expected)
+
+			// Stored indeed.
+			md, err := impl.GetMetadata(ctx, "z")
+			So(err, ShouldBeNil)
+			So(md, ShouldResemble, []*api.PrefixMetadata{expected})
+		})
+
+		Convey("UpdateMetadata call with failing callback", func() {
+			cbErr := errors.New("blah")
+			updated, err := impl.UpdateMetadata(ctx, "z", func(md *api.PrefixMetadata) error {
+				md.UpdateUser = "user:must-be-ignored@example.com"
+				return cbErr
+			})
+			So(err, ShouldEqual, cbErr) // exact same error object
+			So(updated, ShouldBeNil)
+
+			// Still missing.
+			md, err := impl.GetMetadata(ctx, "z")
+			So(err, ShouldBeNil)
+			So(md, ShouldHaveLength, 0)
 		})
 	})
 }
