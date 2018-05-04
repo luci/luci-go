@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "64b597eb_1d5d6ea2",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T17:23:50Z",
+      "side": 1,
+      "message": "Is there a reason we need an accessor that makes a copy?",
+      "revId": "e191c1ab97805e2a2e05366b7006a8b5ab48f782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40773b2f_c856861a",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T17:23:50Z",
+      "side": 1,
+      "message": "nit: I prefer doing the if logic reversed, to minimize nesting.  IE\n\nif c.cachedNumLeafNodes !\u003d -1 {\n  return c.cachedNumLeafNodes\n}\n\n...other stuff...\n\nThis way the max nesting is 1, instead of 2.",
+      "revId": "e191c1ab97805e2a2e05366b7006a8b5ab48f782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
