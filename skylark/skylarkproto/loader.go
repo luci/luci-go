@@ -37,17 +37,20 @@ func LoadProtoModule(name string) (skylark.StringDict, error) {
 	}
 
 	pkg := desc.GetPackage()
-	messages := desc.GetMessageType()
+	dict := skylark.StringDict{}
 
-	// TODO: enums.
-
-	dict := make(skylark.StringDict, len(messages))
-	for _, msg := range messages {
+	// Add constructors for all messages defined at the package level.
+	for _, msg := range desc.MessageType {
 		val, err := messageCtor(pkg, msg)
 		if err != nil {
 			return nil, err
 		}
 		dict[msg.GetName()] = val
+	}
+
+	// Inject enum constants for enums defined at the package level.
+	for _, enum := range desc.EnumType {
+		injectEnumValues(dict, enum)
 	}
 
 	return skylark.StringDict{
@@ -94,7 +97,21 @@ func messageCtor(ns string, desc *descpb.DescriptorProto) (skylark.Value, error)
 			return nil, err
 		}
 	}
+
+	// Inject enum constants for nested enums.
+	for _, enum := range desc.EnumType {
+		injectEnumValues(attrs, enum)
+	}
+
 	return &builtinWithAttrs{ctor, attrs}, nil
+}
+
+// injectEnumValues takes enum constants defined in 'enum' and puts them
+// directly into the given dict as integers.
+func injectEnumValues(d skylark.StringDict, enum *descpb.EnumDescriptorProto) {
+	for _, val := range enum.Value {
+		d[val.GetName()] = skylark.MakeInt(int(val.GetNumber()))
+	}
 }
 
 // loadFileDesc loads a FileDescriptorProto for a give proto module, specified
