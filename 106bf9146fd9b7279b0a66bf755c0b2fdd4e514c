@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "882b96c2_59ac6bdb",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "nit: v1Bucket",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 24
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e710d77f_f86fe3f1",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "this is already implemented in https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/buildbucket/v1.go?sq\u003dpackage:chromium\u0026l\u003d252\nplease change that code to expose this functionality",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 2
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "44a51f9d_97722dfa",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "maybe \"V1Bucket\"",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 13
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9f41433_03431822",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "this is not specific to milo, should be somewhere in https://chromium.googlesource.com/infra/luci/luci-go/+/f160ecfad9831737c3c270a0c44f7be68f6611c1/buildbucket/v1.go\n\nif we have too many v1 functions there, we might want to extract v1\u003c-\u003ev2 interop code to a separate package",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 54
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e51c026_ac1e681c",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "looks like we have conflicting terminology:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/f160ecfad9831737c3c270a0c44f7be68f6611c1/buildbucket/proto/build.proto#223\n\ni don\u0027t have suggestions :( I assume changing the datastore is hard",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 52
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9814bc3_d9002b13",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-04T17:17:22Z",
+      "side": 1,
+      "message": "note that I was planning to change all Milo code that uses buildbucket.Build to use buildbucketpb.Build which uses BuilderID directly, so this line will change to\n\n  bid :\u003d BuilderID{build.Builder}\n\nconsider refactoring milo code to use buildbucketpb before this CL. It might make this CL simpler.",
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
