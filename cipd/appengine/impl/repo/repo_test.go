@@ -261,7 +261,9 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		Convey("Deleted concurrently", func() {
-			m := meta.Populate("a/b", &api.PrefixMetadata{})
+			m := meta.Populate("a/b", &api.PrefixMetadata{
+				UpdateUser: "user:someone@example.com",
+			})
 			meta.Purge("a/b")
 
 			// If the caller is a prefix owner, they see NotFound.
@@ -276,7 +278,9 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		Convey("Creating existing", func() {
-			m := meta.Populate("a/b", &api.PrefixMetadata{})
+			m := meta.Populate("a/b", &api.PrefixMetadata{
+				UpdateUser: "user:someone@example.com",
+			})
 
 			m.Fingerprint = "" // indicates the caller is expecting to create a new one
 			meta, err := callUpdate("user:top-owner@example.com", m)
@@ -285,7 +289,9 @@ func TestMetadataUpdating(t *testing.T) {
 		})
 
 		Convey("Changed midway", func() {
-			m := meta.Populate("a/b", &api.PrefixMetadata{})
+			m := meta.Populate("a/b", &api.PrefixMetadata{
+				UpdateUser: "user:someone@example.com",
+			})
 
 			// Someone comes and updates it.
 			updated, err := callUpdate("user:top-owner@example.com", m)

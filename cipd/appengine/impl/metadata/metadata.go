@@ -49,19 +49,22 @@ type Storage interface {
 	GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error)
 
 	// UpdateMetadata transactionally updates or creates metadata of some
-	// prefix.
+	// prefix and returns it.
 	//
 	// Does not check permissions. Does not check the format of the updated
 	// metadata.
 	//
-	// If fetches the metadata object and calls the callback to modify it. The
+	// It fetches the metadata object and calls the callback to modify it. The
 	// callback may be called multiple times when retrying the transaction. If the
-	// callback doesn't return an error, the new metadata's fingerprint is updated
-	// and the metadata is saved to the storage and returned to the caller.
+	// callback mutates the metadata and doesn't return an error, the metadata's
+	// fingerprint is updated, the metadata is saved to the storage and returned
+	// to the caller.
 	//
 	// If the metadata object doesn't exist yet, the callback will be called with
 	// an empty object that has only 'Prefix' field populated. The callback then
-	// can populate the rest of the fields.
+	// can populate the rest of the fields. If it doesn't touch any fields
+	// (but still succeeds), UpdateMetadata will return nil PrefixMetadata, to
+	// indicate the metadata is still absent.
 	//
 	// If the callback returns an error, it will be returned as is. If the
 	// transaction itself fails, returns a transient error.
