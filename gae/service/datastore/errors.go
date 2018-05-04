@@ -48,6 +48,19 @@ func MakeErrInvalidKey(reason string, args ...interface{}) *errors.Annotator {
 // error.
 func IsErrInvalidKey(err error) bool { return errors.Unwrap(err) == datastore.ErrInvalidKey }
 
+// IsErrNoSuchEntity tests if an error is ErrNoSuchEntity,
+// or is a MultiError that contains ErrNoSuchEntity and no other errors.
+func IsErrNoSuchEntity(err error) (found bool) {
+	errors.Walk(err, func(err error) bool {
+		found = err == ErrNoSuchEntity
+		// If we found an ErrNoSuchEntity, continue walking.
+		// If we found a different type of error, signal Walk to stop walking by returning false.
+		// Walk does not walk nil errors.
+		return found
+	})
+	return
+}
+
 // ErrFieldMismatch is returned when a field is to be loaded into a different
 // type than the one it was stored from, or when a field is missing or
 // unexported in the destination struct.
