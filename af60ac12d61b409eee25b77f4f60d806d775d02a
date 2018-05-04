@@ -131,6 +131,24 @@
     },
     {
       "key": {
+        "uuid": "b118628b_40a0057f",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-04T20:01:30Z",
+      "side": 1,
+      "message": "That sounds like it would be pretty fun to implement, but probably surprisingly tricky, since there are some phrases where people wouldn\u0027t intend to put periods. :-)",
+      "parentUuid": "f0fee2d5_c89c37f6",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be90c353_3cdef161",
         "filename": "logdog/appengine/coordinator/context.go",
         "patchSetId": 7
@@ -348,6 +366,24 @@
     },
     {
       "key": {
+        "uuid": "26a7b35c_12958959",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-04T20:01:30Z",
+      "side": 1,
+      "message": "Alright, although I still have a personal preference for the \"main methods followed by helper methods\" way :-P",
+      "parentUuid": "646850a0_a72389df",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c50dc715_707be91b",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -513,6 +549,30 @@
     },
     {
       "key": {
+        "uuid": "5b58535d_f4b460fa",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-04T20:01:30Z",
+      "side": 1,
+      "message": "What\u0027s the difference? Looks like errors.Reason is in luci-go, and fmt.Errorf is the original native way?",
+      "parentUuid": "95b98f1d_f5756186",
+      "range": {
+        "startLine": 67,
+        "startChar": 20,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0815365f_6f7112f0",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -619,6 +679,30 @@
       "side": 1,
       "message": "Yeah in GKE we actually pass the log straight to fluentd via the JSON format (Where fields are first class and machine readable), and this shows up as structured data in Stackdriver!  eg you can filter/search on these fields or bubble them up as faucets.\n\nIn flex this gives us the option of using the stackdriver logging api to get structured logs.",
       "parentUuid": "6d7851d3_930b03f6",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "597fc80e_fe669d88",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-05-04T20:01:30Z",
+      "side": 1,
+      "message": "Neat, so using Fields/WithError is the recommended way of logging in general for Go code that uses go.chromium.org/luci/common/logging, including plain old GAE apps, right?",
+      "parentUuid": "6b9db843_e39a7134",
       "range": {
         "startLine": 87,
         "startChar": 1,
