@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ccdc6c51_304346b1",
+        "filename": "milo/frontend/appengine/static/common/css/console.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-04T10:36:22Z",
+      "side": 1,
+      "message": "Thanks. V8 devs would prefer to keep min-width at 1em, but I understand that you have to consider wider Chromium feedback as well. Even at 1.1em is already too wide to fit V8 main console into a vertical 24\" screen.",
+      "parentUuid": "c24dd705_c05df913",
+      "range": {
+        "startLine": 447,
+        "startChar": 13,
+        "endLine": 447,
+        "endChar": 14
+      },
+      "revId": "87dc7accc22a759415e864773013b60420fc3430",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8f972f9_2da26e9a",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 9
@@ -39,6 +63,24 @@
       "revId": "87dc7accc22a759415e864773013b60420fc3430",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69465c75_6b420df7",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 466,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-04T10:36:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8f972f9_2da26e9a",
+      "revId": "87dc7accc22a759415e864773013b60420fc3430",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
