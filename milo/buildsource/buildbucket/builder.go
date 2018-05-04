@@ -16,11 +16,14 @@ package buildbucket
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
 	"golang.org/x/net/context"
 
+	bb "go.chromium.org/luci/buildbucket"
+	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
@@ -33,16 +36,42 @@ import (
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
+// BuilderID represents a buildbucket builder.  We wrap the underlying representation
+// since we represent builder IDs slightly differently in Milo vs. Buildbucket.
+// I.E. Builders can source from either BuildBot or Buildbucket.
+type BuilderID struct {
+	// Builder_ID is the buildbucket v2 representation of the builder ID.  Note
+	// that the v2 representation uses short bucket names.
+	buildbucketpb.Builder_ID
+}
+
+func NewBuilderID(v1Bucket, builder string) (bid BuilderID, err error) {
+	bid.Project, bid.Bucket, err = bb.BucketNameToV2(v1Bucket)
+	bid.Builder = builder
+	return
+}
+
+// V1Bucket returns the buildbucket v1 representation of the bucket name, which
+// is what we use in Milo.
+func (b BuilderID) V1Bucket() string {
+	return bb.V1Bucket(b.Builder_ID)
+}
+
+// String returns the canonical format of BuilderID.
+func (b BuilderID) String() string {
+	return fmt.Sprintf("buildbucket/%s/%s", b.V1Bucket(), b.Builder)
+}
+
 // fetchBuilds fetches builds given a criteria.
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
-func fetchBuilds(c context.Context, client *bbv1.Service, bucket, builder,
+func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	status string, limit int) ([]*bbv1.ApiCommonBuildMessage, error) {
 
 	search := client.Search()
-	search.Bucket(bucket)
+	search.Bucket(bid.V1Bucket())
 	search.Status(status)
-	search.Tag(strpair.Format(bbv1.TagBuilder, builder))
+	search.Tag(strpair.Format(bbv1.TagBuilder, bid.Builder))
 	search.IncludeExperimental(true)
 
 	if limit < 0 {
@@ -58,12 +87,12 @@ func fetchBuilds(c context.Context, client *bbv1.Service, bucket, builder,
 	return msgs, nil
 }
 
-func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *ui.Builder) error {
+func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
 	// ../buildbucket below assumes that
 	// - this code is not executed by tests outside of this dir
 	// - this dir is a sibling of frontend dir
 	resFile, err := os.Open(filepath.Join(
-		"..", "buildbucket", "testdata", bucket, builder+".json"))
+		"..", "buildbucket", "testdata", bid.V1Bucket(), bid.Builder+".json"))
 	if err != nil {
 		return err
 	}
@@ -108,7 +137,7 @@ func getHost(c context.Context) (string, error) {
 }
 
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Builder, error) {
+func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -119,10 +148,10 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 	}
 
 	result := &ui.Builder{
-		Name: builder,
+		Name: bid.Builder,
 	}
 	if host == "debug" {
-		return result, getDebugBuilds(c, bucket, builder, limit, result)
+		return result, getDebugBuilds(c, bid, limit, result)
 	}
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
@@ -130,7 +159,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 	}
 
 	fetch := func(statusFilter string, limit int) error {
-		msgs, err := fetchBuilds(c, client, bucket, builder, statusFilter, limit)
+		msgs, err := fetchBuilds(c, client, bid, statusFilter, limit)
 		if err != nil {
 			logging.Errorf(c, "Could not fetch %s builds: %s", statusFilter, err)
 			return err

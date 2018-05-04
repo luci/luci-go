@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -139,7 +140,9 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 	}
 
 	builder, err := builderToV2(msg, tags, params)
-	if err != nil {
+	// We only care about MalformedBuild errors.  Other errors, such as buckets not
+	// being filled in, we can ignore.  We'll just pass a partial response back.
+	if MalformedBuild.In(err) {
 		return nil, err
 	}
 
@@ -235,35 +238,46 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) {
 	}
 }
 
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (*buildbucketpb.Builder_ID, error) {
-	ret := &buildbucketpb.Builder_ID{
-		Project: msg.Project,
-		Bucket:  msg.Bucket,
-		Builder: params.Builder,
+// BucketNameToV2 converts a v1 Bucket name to the v2 constituent parts.
+// An error is returned if the bucketname does not match the expected format.
+// The difference between the bucket name is that v2 uses short names, for example:
+// v1: luci.chromium.try
+// v2: try
+// "luci" is dropped, "chromium" is recorded as the project, "try" is the name.
+func BucketNameToV2(v1Bucket string) (project string, bucket string, err error) {
+	p := strings.SplitN(v1Bucket, ".", 3)
+	if len(p) != 3 {
+		err = errors.Reason("%s does not have 3 parts", v1Bucket).Err()
+		return
 	}
-
-	if ret.Project == "" {
-		ret.Project = v1.ProjectFromBucket(msg.Bucket)
+	project = p[1]
+	bucket = p[2]
+	if p[0] != "luci" {
+		err = errors.Reason("first part '%s' is not 'luci'", p[0]).Err()
 	}
+	return
+}
 
-	// v2 uses short names for LUCI buckets,
-	// e.g. "try" for "luci.chromium.try"
-	// Strip "luci.<project>." prefix from bucket.
-	if p := strings.SplitN(ret.Bucket, ".", 3); len(p) == 3 && p[0] == "luci" {
-		switch {
-		case ret.Project == "":
-			ret.Project = p[1]
-		case ret.Project != p[1]:
-			return nil, errors.Reason("inconsistent bucket %q and project %q", ret.Bucket, ret.Project).
-				Tag(MalformedBuild).Err()
-		}
-		ret.Bucket = p[2]
-	}
-
+func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *buildbucketpb.Builder_ID, err error) {
+	ret = &buildbucketpb.Builder_ID{Builder: params.Builder}
 	if ret.Builder == "" {
-		ret.Builder = tags.Get(v1.TagBuilder)
+		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
 	}
-	return ret, nil
+
+	switch ret.Project, ret.Bucket, err = BucketNameToV2(msg.Bucket); {
+	case err != nil:
+		err = errors.Annotate(err, "parsing bucket name").Err()
+	case ret.Project != msg.Project:
+		err = errors.Reason(
+			"message project %s does not match bucket project %s", msg.Project, ret.Project).Tag(MalformedBuild).Err()
+	}
+
+	return
+}
+
+// V1Bucket returns the v1 bucket name of a proto Builder_ID.
+func V1Bucket(b buildbucketpb.Builder_ID) string {
+	return fmt.Sprintf("luci.%s.%s", b.Project, b.Bucket)
 }
 
 func timestampToV2(ts int64) *tspb.Timestamp {
