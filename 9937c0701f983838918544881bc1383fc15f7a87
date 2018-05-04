@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2bcf0791_60e470d0",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T19:35:54Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 43,
+        "startChar": 67,
+        "endLine": 43,
+        "endChar": 69
+      },
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32317a13_102e4c78",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T19:35:54Z",
+      "side": 1,
+      "message": "when does this happen? When callback changes smth in updated, but which is effectively a no-op?",
+      "range": {
+        "startLine": 165,
+        "startChar": 24,
+        "endLine": 165,
+        "endChar": 49
+      },
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22ded71a_eb168280",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T19:35:54Z",
+      "side": 1,
+      "message": "why not sort groups and users?",
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
