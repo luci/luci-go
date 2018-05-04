@@ -436,7 +436,7 @@ type consoleRenderer struct {
 func (c consoleRenderer) ConsoleTable() template.HTML {
 	var buffer bytes.Buffer
 	// The first node is a dummy node
-	for _, column := range c.Table.Children {
+	for _, column := range c.Table.Children() {
 		column.RenderHTML(&buffer, 1, c.MaxDepth)
 	}
 	return template.HTML(buffer.String())
@@ -447,7 +447,7 @@ func (c consoleRenderer) ConsoleTable() template.HTML {
 // It is similar to ConsoleTable, but flattens the structure.
 func (c consoleRenderer) ConsoleSummary() template.HTML {
 	var buffer bytes.Buffer
-	for _, column := range c.Table.Children {
+	for _, column := range c.Table.Children() {
 		column.RenderHTML(&buffer, 1, -1)
 	}
 	return template.HTML(buffer.String())
