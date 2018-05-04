@@ -62,6 +62,29 @@
       "revId": "9937c0701f983838918544881bc1383fc15f7a87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82c8f850_4b5110ae",
+        "filename": "cipd/appengine/impl/metadata/legacy_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T19:51:22Z",
+      "side": 1,
+      "message": "why isn\u0027t revision set in entities below? Is it because Python code didn\u0027t have Rev?\nor is it because it\u0027s actually there but 0, and hence can be omitted from ShouldResemble?",
+      "range": {
+        "startLine": 198,
+        "startChar": 5,
+        "endLine": 198,
+        "endChar": 19
+      },
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
