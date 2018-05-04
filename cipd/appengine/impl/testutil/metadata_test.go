@@ -37,8 +37,20 @@ func TestMetadataStore(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(metas, ShouldBeNil)
 
-		// Create metadata for 'a'.
+		// Start creating metadata for 'a', but don't actually touch it.
 		meta, err := s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
+			return nil
+		})
+		So(err, ShouldBeNil)
+		So(meta, ShouldBeNil) // it is missing
+
+		// Still missing.
+		metas, err = s.GetMetadata(ctx, "a/b/c")
+		So(err, ShouldBeNil)
+		So(metas, ShouldBeNil)
+
+		// Create metadata for 'a' for real this time.
+		meta, err = s.UpdateMetadata(ctx, "a/", func(m *api.PrefixMetadata) error {
 			So(m.Prefix, ShouldEqual, "a")
 			So(m.Fingerprint, ShouldEqual, "")
 			m.UpdateUser = "user:a@example.com"

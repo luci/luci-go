@@ -36,7 +36,7 @@ type MetadataStore struct {
 // Populate adds a metadata entry to the storage.
 //
 // If populates Prefix and Fingerprint. Returns the added item. Panics if the
-// prefix is bad.
+// prefix is bad or the given metadata is empty.
 func (s *MetadataStore) Populate(prefix string, m *api.PrefixMetadata) *api.PrefixMetadata {
 	meta, err := s.UpdateMetadata(context.Background(), prefix, func(e *api.PrefixMetadata) error {
 		*e = *m
@@ -44,6 +44,9 @@ func (s *MetadataStore) Populate(prefix string, m *api.PrefixMetadata) *api.Pref
 	})
 	if err != nil {
 		panic(err)
+	}
+	if meta == nil {
+		panic("Populate should be used only with non-empty metadata")
 	}
 	return meta
 }
@@ -101,25 +104,36 @@ func (s *MetadataStore) UpdateMetadata(c context.Context, prefix string, cb func
 	defer s.l.Unlock()
 
 	key := prefix + "/"
-	meta := s.metas[key]
-	if meta == nil {
-		meta = &api.PrefixMetadata{Prefix: prefix}
-	} else {
-		// Don't let the callback to modify or retain the internal data.
-		meta = cloneMetadata(meta)
+	before := s.metas[key] // the metadata before the callback
+	if before == nil {
+		before = &api.PrefixMetadata{Prefix: prefix}
 	}
 
+	// Don't let the callback modify or retain the internal data.
+	meta := cloneMetadata(before)
 	if err := cb(meta); err != nil {
 		return nil, err
 	}
-	meta.Prefix = prefix
-	meta.Fingerprint = metadata.CalculateFingerprint(*meta)
 
+	// Don't let the callback mess with the prefix or the fingerprint.
+	meta.Prefix = before.Prefix
+	meta.Fingerprint = before.Fingerprint
+
+	// No changes at all? Return nil if the metadata didn't exist and wasn't
+	// created by the callback. Otherwise return the existing metadata.
+	if proto.Equal(before, meta) {
+		if before.Fingerprint == "" {
+			return nil, nil
+		}
+		return meta, nil
+	}
+
+	// Calculate the new fingerprint and put the metadata into the storage.
+	meta.Fingerprint = metadata.CalculateFingerprint(*meta)
 	if s.metas == nil {
 		s.metas = make(map[string]*api.PrefixMetadata, 1)
 	}
 	s.metas[key] = cloneMetadata(meta)
-
 	return meta, nil
 }
 
