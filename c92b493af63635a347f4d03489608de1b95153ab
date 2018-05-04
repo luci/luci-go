@@ -819,6 +819,30 @@
     },
     {
       "key": {
+        "uuid": "cdb5bda4_7b22c87f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "(Please do this)",
+      "parentUuid": "86071be6_09aebf6c",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 210,
+        "endChar": 28
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9d63e8c9_3a2b278c",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -1218,6 +1242,30 @@
       "side": 1,
       "message": "Oh neat idea. Could you include this use case in the comment so it\u0027s clear what the intent is?",
       "parentUuid": "597ca0f1_8902cdd7",
+      "range": {
+        "startLine": 246,
+        "startChar": 0,
+        "endLine": 248,
+        "endChar": 68
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e3d2180_533e2125",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "(Please do this)",
+      "parentUuid": "83c8a46a_82626e04",
       "range": {
         "startLine": 246,
         "startChar": 0,

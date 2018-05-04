@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cda4236c_3603d331",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Do you really not like passing by reference? All of the other LogDog functions that take Contexts and can fail use reference setting. Unless you are really opposed to this style, I would recommend doing it for consistency.",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 147
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b546029_beee32c0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "nit: document that \"log \u003d\u003d nil \u0026\u0026 err \u003d\u003d nil means sleeping\".",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 20
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7670560_6fe8eab1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Embedding StreamPath doesn\u0027t make sense to me. \"fetchParams\" isn\u0027t an extension of StreamPath. StreamPath is a member.",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 17
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c60e73f6_64eb6e46",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Pass by reference? No need to clone it here.",
+      "range": {
+        "startLine": 141,
+        "startChar": 56,
+        "endLine": 141,
+        "endChar": 67
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f69d42df_035faab7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "You really don\u0027t like struct methods? :x",
+      "range": {
+        "startLine": 141,
+        "startChar": 5,
+        "endLine": 141,
+        "endChar": 10
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5373751_64464ff3",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Please document that the text for non-\"Internal\" errors is considered intended for public.",
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

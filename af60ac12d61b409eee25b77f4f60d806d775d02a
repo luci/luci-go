@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "28807046_fd70b4fe",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "ty",
+      "parentUuid": "1a87d190_d9953838",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 34
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b64ce153_e174b311",
         "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
         "patchSetId": 7
@@ -573,6 +597,30 @@
     },
     {
       "key": {
+        "uuid": "75ee8376_3a1c1f89",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "The LUCI errors library:\n1) Captures stack.\n2) Is extensible.\n3) Is used by all other LogDog (and most LUCI) code.",
+      "parentUuid": "5b58535d_f4b460fa",
+      "range": {
+        "startLine": 67,
+        "startChar": 20,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0815365f_6f7112f0",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -703,6 +751,30 @@
       "side": 1,
       "message": "Neat, so using Fields/WithError is the recommended way of logging in general for Go code that uses go.chromium.org/luci/common/logging, including plain old GAE apps, right?",
       "parentUuid": "6b9db843_e39a7134",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a9cd343c_2672cfa4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Yes, writing logging using fields lets the environment processing the logs decide what to do with the structured data. May be text dumping, may be something better, but expressing it is the first step.\n\nIt\u0027d be a fun project to do something more useful than text inlining with some for Logger implementations that allow this. If you\u0027d like to get more familiar with this package, I\u0027d be happy to support.",
+      "parentUuid": "597fc80e_fe669d88",
       "range": {
         "startLine": 87,
         "startChar": 1,
@@ -1044,6 +1116,30 @@
     },
     {
       "key": {
+        "uuid": "65dc96ac_75bedf68",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Retry is pretty fundamental, and is used everywhere else in LogDog application and library code. Rolling your own sort of violates the existing style, and obviates the library\u0027s purpose, which is to handle retries.\n\nIf you feel strongly that \"retry\" is difficult to read, I\u0027d suggest that you improve it (or, alternatively, tear it out and implement custom retries everywhere); however, I don\u0027t think it\u0027s a good idea to have case by case reimplementations of an otherwise pervasive standard.\n\nI think the readability is pretty straightforward:\n\nretryParams :\u003d retry.ExponentialBackoff{}\nretry.Retry(c, func(...) { ... }, retryParams, untilLogIsFinished)\n\nTo me, that reads \"retry using exponential backoff until the log is finished\".",
+      "parentUuid": "185ae55b_e048777b",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8ba84f0e_0c9f9560",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -1091,6 +1187,30 @@
     },
     {
       "key": {
+        "uuid": "72977c6d_8afe65cf",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Oh nice.",
+      "parentUuid": "adceb347_e43a2200",
+      "range": {
+        "startLine": 131,
+        "startChar": 23,
+        "endLine": 131,
+        "endChar": 28
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f1f7f7a0_671a6b04",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -1126,6 +1246,30 @@
       "side": 1,
       "message": "Hm... not a huge fan.  More indirection for little benefit.  If the code to send stuff back on a channel was 3 or more lines then I\u0027d probably do it, but this is just one line.",
       "parentUuid": "f1f7f7a0_671a6b04",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ca6ec8b6_6ed0de2e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a1995d80_364bb796",
       "range": {
         "startLine": 133,
         "startChar": 0,
@@ -1373,6 +1517,30 @@
     },
     {
       "key": {
+        "uuid": "46d25074_76e3788f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "There are a lot of call sites that don\u0027t use InternalReason, either b/c they were implemented before it was created or because they are third-party libraries (e.g., BigTable, GCS, etc.) and don\u0027t understand our error uage. A Storage implementation error, for example, would be forwarded directly here. I think this is something that you need to address, and should not be visible to the user.\n\nI see in your new code that you only show the text for non-internal errors.",
+      "parentUuid": "84d434be_46ad3bc2",
+      "range": {
+        "startLine": 232,
+        "startChar": 25,
+        "endLine": 232,
+        "endChar": 36
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "13b43178_1c2fcc3c",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -1526,6 +1694,30 @@
       "side": 1,
       "message": "Names are hard :(",
       "parentUuid": "a975fd23_562be9dd",
+      "range": {
+        "startLine": 258,
+        "startChar": 3,
+        "endLine": 258,
+        "endChar": 13
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9f8037e_9d9d1775",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-04T23:03:46Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1be5f398_a0a54025",
       "range": {
         "startLine": 258,
         "startChar": 3,
