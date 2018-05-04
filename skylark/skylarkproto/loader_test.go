@@ -48,6 +48,8 @@ func TestLoader(t *testing.T) {
 		sort.Strings(keys)
 		So(keys, ShouldResemble, []string{
 			"Complex",
+			"ENUM_DEFAULT",
+			"ENUM_VAL_1",
 			"MessageFields",
 			"Simple",
 			"SimpleFields",

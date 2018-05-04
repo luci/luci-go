@@ -16,6 +16,11 @@ syntax = "proto3";
 
 package testprotos;
 
+enum Enum {
+  ENUM_DEFAULT = 0;
+  ENUM_VAL_1   = 1;
+}
+
 message SimpleFields {
   int64 i64 = 1;
   repeated int64 i64_rep = 2;
