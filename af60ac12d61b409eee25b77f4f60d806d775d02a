@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1a87d190_d9953838",
+        "filename": "grpc/grpcutil/errors.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Darn it, I didn\u0027t know another map existed somewhere else :(\n\nNow that I look at that one, it looks like it\u0027s actually based on a publish mapping.  I don\u0027t necessarily agree with all of them, but I think it\u0027s better to be consistent.  I\u0027ll remove this one and adapt the prpc encoding.\n\nIt looks like the prpc encoding is missing DataLoss, Unknown, and Internal, so I\u0027ll add those in.",
+      "parentUuid": "89675640_3b6a0b44",
+      "range": {
+        "startLine": 147,
+        "startChar": 0,
+        "endLine": 147,
+        "endChar": 34
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b64ce153_e174b311",
         "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "7ca64bd3_c0b15ebd",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b64ce153_e174b311",
+      "range": {
+        "startLine": 64,
+        "startChar": 4,
+        "endLine": 64,
+        "endChar": 9
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7979e2ed_b459a035",
         "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
         "patchSetId": 7
@@ -65,6 +113,24 @@
     },
     {
       "key": {
+        "uuid": "f0fee2d5_c89c37f6",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done. Can this be made into a tricium plugin? :)",
+      "parentUuid": "7979e2ed_b459a035",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be90c353_3cdef161",
         "filename": "logdog/appengine/coordinator/context.go",
         "patchSetId": 7
@@ -79,6 +145,24 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d49c662_de8a3f7c",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be90c353_3cdef161",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -122,6 +206,48 @@
     },
     {
       "key": {
+        "uuid": "715ba887_32191655",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Makes sense. I didn\u0027t know that. But you\u0027re right that would\u0027ve been a bug.\n\nI\u0027m not super attached to one way or another, but I want to keep this as consistent as possible with the rest of luci-go, which is why I picked to use a pass-by-value context.",
+      "parentUuid": "1e9409c2_e56be1ea",
+      "range": {
+        "startLine": 82,
+        "startChar": 1,
+        "endLine": 82,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e2062d2f_aeac5593",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Yep.  I\u0027m not sure if this is canonical but I\u0027m pretty sure I\u0027ve seen this at least one other time before.",
+      "parentUuid": "822bf5ff_6bb341d8",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6f9d451_748e4589",
         "filename": "logdog/appengine/coordinator/context.go",
         "patchSetId": 7
@@ -142,6 +268,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "689fb5a7_7740bb44",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "It\u0027s true that LogStream is initialized and calculated twice.  I did it this way because otherwise the function signature would get super confusing (okay some of these are inputs, but this one is actually an output?  Which direction does data go??\n\nBut the same thing can be achieved in a simpler way by making LogStream an output of this function.\n\nIt does make the signature kind of long, but I think it would make it easier to follow.",
+      "parentUuid": "d6f9d451_748e4589",
+      "range": {
+        "startLine": 88,
+        "startChar": 0,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -177,6 +327,24 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "646850a0_a72389df",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "My general convention (coming from python) is\n\n\u003cimports\u003e\n\n\u003cconsts\u003e\n\n\u003cstructs\u003e\n\n\u003cstuff\u003e\n\n\u003cmain entry point implementation\u003e\n\n\u003cmain entry point redirector\u003e\n\nThis is because I start scanning a file from the bottom and go upwards.  I think i\u0027ve seen this ordering in some other parts of LogDog code also.",
+      "parentUuid": "110fb012_7e676b73",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -227,6 +395,30 @@
     },
     {
       "key": {
+        "uuid": "c8d603b3_7a0a7b1d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4a2fe0a_ec6a8f3c",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "817be578_f94e6731",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -247,6 +439,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acd9d099_b84739f6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "It\u0027s only purpose in life is to transmit log data to the caller.  It\u0027s the canonical output format for startFetch().  Everything in here is basically to be treated as read-only (It only has the output end of a channel, and lst is frozen at the state of the first call).  I don\u0027t think it has a larger role in the fetch operation.\n\nI\u0027ll make everything embedded to make that clear.",
+      "parentUuid": "817be578_f94e6731",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 54,
+        "endChar": 10
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -273,6 +489,30 @@
     },
     {
       "key": {
+        "uuid": "95b98f1d_f5756186",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e0d19b7_943582e5",
+      "range": {
+        "startLine": 67,
+        "startChar": 20,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0815365f_6f7112f0",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -293,6 +533,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "341b111f_945614ee",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Rewrote this a bit.",
+      "parentUuid": "0815365f_6f7112f0",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 81,
+        "endChar": 29
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -343,6 +607,30 @@
     },
     {
       "key": {
+        "uuid": "6b9db843_e39a7134",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Yeah in GKE we actually pass the log straight to fluentd via the JSON format (Where fields are first class and machine readable), and this shows up as structured data in Stackdriver!  eg you can filter/search on these fields or bubble them up as faucets.\n\nIn flex this gives us the option of using the stackdriver logging api to get structured logs.",
+      "parentUuid": "6d7851d3_930b03f6",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58c8c233_fb5c75df",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -363,6 +651,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f246bc0_a341c9ba",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "I fixed this by making it an output of WithAccess, and renaming it to WithStream.",
+      "parentUuid": "58c8c233_fb5c75df",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 99,
+        "endChar": 69
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -389,6 +701,30 @@
     },
     {
       "key": {
+        "uuid": "d4ea9d6f_7748060b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e02dd782_0ea2ecca",
+      "range": {
+        "startLine": 104,
+        "startChar": 0,
+        "endLine": 104,
+        "endChar": 17
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6b7e908_7f159f9b",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -409,6 +745,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "320ad646_0e519971",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "I think maxBuffer conforms to https://talks.golang.org/2014/names.slide#3 better\n\nNamely, it\u0027s still accurate, and is a maxBuffer of a size of an arbitrary unit, where the unit is documented in the comments.",
+      "parentUuid": "a6b7e908_7f159f9b",
+      "range": {
+        "startLine": 113,
+        "startChar": 26,
+        "endLine": 113,
+        "endChar": 35
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -435,6 +795,30 @@
     },
     {
       "key": {
+        "uuid": "23f7df5f_e98c7775",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done\n\nIf only I can do\nch :\u003d go fetch(...)\n\nWhich doesn\u0027t actually make any sense in Go, but made sense in my head.",
+      "parentUuid": "31800a54_131d2e76",
+      "range": {
+        "startLine": 114,
+        "startChar": 10,
+        "endLine": 114,
+        "endChar": 18
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7aba6e25_b6f97e0e",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -455,6 +839,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bb4d37d_09ed7a51",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "I made logData a copy of ls and lst instead.  I did this explicitly to signal to the reader what the lifecycle of each variable is supposed to be.  I think it\u0027s easier to follow this way.",
+      "parentUuid": "7aba6e25_b6f97e0e",
+      "range": {
+        "startLine": 122,
+        "startChar": 5,
+        "endLine": 122,
+        "endChar": 10
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -504,6 +912,54 @@
     },
     {
       "key": {
+        "uuid": "185ae55b_e048777b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Yes.  I did it for readability.  From a reader\u0027s view, using retry requires understanding the intricacies of two additional libraries, following an anonymous function, and adding several layers of indentation to the code.  As a reader of logdog code, following the flow for retry.Retry was one of my biggest pain points, and I wanted to avoid that.\n\nIn python, this was a simple decorator\n@retry(a, b, c, d)\ndef foo(...):\n  ...\n\nBut in Go, the boilerplate code for adding in a retry.Retry is almost as much as the code to inline it.  But by inlining the code, the reader does not have to context-switch to figure out what is going on.",
+      "parentUuid": "d1da1b20_a664f8df",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11bff115_8765e577",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94396ff7_6830d4a9",
+      "range": {
+        "startLine": 126,
+        "startChar": 44,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ba84f0e_0c9f9560",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -524,6 +980,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "adceb347_e43a2200",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "I just found Terminated().  derp.",
+      "parentUuid": "8ba84f0e_0c9f9560",
+      "range": {
+        "startLine": 131,
+        "startChar": 23,
+        "endLine": 131,
+        "endChar": 28
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -550,6 +1030,30 @@
     },
     {
       "key": {
+        "uuid": "a1995d80_364bb796",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Hm... not a huge fan.  More indirection for little benefit.  If the code to send stuff back on a channel was 3 or more lines then I\u0027d probably do it, but this is just one line.",
+      "parentUuid": "f1f7f7a0_671a6b04",
+      "range": {
+        "startLine": 133,
+        "startChar": 0,
+        "endLine": 133,
+        "endChar": 27
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f1da24e_21208d42",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -570,6 +1074,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61e5fa35_d0650753",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f1da24e_21208d42",
+      "range": {
+        "startLine": 150,
+        "startChar": 16,
+        "endLine": 150,
+        "endChar": 17
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -596,6 +1124,30 @@
     },
     {
       "key": {
+        "uuid": "8df182ec_5dc678ab",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7139b26d_9fd0ddb2",
+      "range": {
+        "startLine": 172,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 29
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3cd0b73c_5e6f49b1",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -607,6 +1159,30 @@
       "writtenOn": "2018-05-03T21:30:23Z",
       "side": 1,
       "message": "zzz so much state passed in. srsly make most of this a struct.",
+      "range": {
+        "startLine": 177,
+        "startChar": 14,
+        "endLine": 177,
+        "endChar": 135
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cb63c583_6fe6c4f6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cd0b73c_5e6f49b1",
       "range": {
         "startLine": 177,
         "startChar": 14,
@@ -642,6 +1218,30 @@
     },
     {
       "key": {
+        "uuid": "88318adf_e9b2d295",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "89f44737_3c3b1e64",
+      "range": {
+        "startLine": 184,
+        "startChar": 40,
+        "endLine": 184,
+        "endChar": 45
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "02d7a4e4_54f63d91",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -662,6 +1262,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84d434be_46ad3bc2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "From what I could see in the what I\u0027ve read, if we\u0027re explicitly passing in anything that isn\u0027t an Internal error, that\u0027s a pretty clear signal that the author intended the error to surface back up through the layers to the user.  This is why I made internal errors opaque but print everything else.",
+      "parentUuid": "02d7a4e4_54f63d91",
+      "range": {
+        "startLine": 232,
+        "startChar": 25,
+        "endLine": 232,
+        "endChar": 36
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -688,6 +1312,30 @@
     },
     {
       "key": {
+        "uuid": "7c63d22c_04fbd662",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13b43178_1c2fcc3c",
+      "range": {
+        "startLine": 248,
+        "startChar": 45,
+        "endLine": 248,
+        "endChar": 46
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c431c271_efaa7261",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -708,6 +1356,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a99ba05f_ce46b4e4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "sgtm. Done.",
+      "parentUuid": "c431c271_efaa7261",
+      "range": {
+        "startLine": 250,
+        "startChar": 0,
+        "endLine": 250,
+        "endChar": 3
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -758,6 +1430,30 @@
     },
     {
       "key": {
+        "uuid": "1be5f398_a0a54025",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Names are hard :(",
+      "parentUuid": "a975fd23_562be9dd",
+      "range": {
+        "startLine": 258,
+        "startChar": 3,
+        "endLine": 258,
+        "endChar": 13
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "09be4332_a0ad0bf5",
         "filename": "logdog/common/storage/archive/storage.go",
         "patchSetId": 7
@@ -790,6 +1486,24 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e55b7d8_350865c7",
+        "filename": "logdog/common/storage/archive/storage.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Revised wording.",
+      "parentUuid": "20a1c2be_9f9386c6",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -828,6 +1542,24 @@
     },
     {
       "key": {
+        "uuid": "8780851a_e06b1ce9",
+        "filename": "logdog/common/types/sizes.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "Looking at the generated godoc:\nhttps://godoc.org/go.chromium.org/luci/logdog/common/types#pkg-constants\n\nSince it does actually show the actual value, i\u0027ll opt for removing the comment portion in general, unless the actual value is super cryptic or something. (10 * 1024 * 1024 is fairly straightforward to read)",
+      "parentUuid": "5124d7cd_d22c43b7",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b05bf79a_7ba123bf",
         "filename": "server/tsmon/responsewriter.go",
         "patchSetId": 7
@@ -848,6 +1580,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c9ffe21_6473f996",
+        "filename": "server/tsmon/responsewriter.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-04T18:45:31Z",
+      "side": 1,
+      "message": "I think I like the router.ResponseWriter idea, but that\u0027s going to be a big change.  I\u0027ll fix that in a later CL, and rely on the jerry-rigged canary mechanism for now (panics if someone swaps out the responseWriter).",
+      "parentUuid": "b05bf79a_7ba123bf",
+      "range": {
+        "startLine": 39,
+        "startChar": 0,
+        "endLine": 39,
+        "endChar": 77
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
