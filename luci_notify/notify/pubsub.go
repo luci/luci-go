@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/luci_notify/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 )
 
 var (
@@ -42,7 +42,7 @@ var (
 )
 
 func getBuilderID(b *Build) string {
-	return "buildbucket/" + b.Builder.IDString()
+	return "buildbucket/" + b.BuildBucket.Builder.IDString()
 }
 
 func commitIndex(commits []*gitpb.Commit, revision string) int {
@@ -54,27 +54,24 @@ func commitIndex(commits []*gitpb.Commit, revision string) int {
 	return -1
 }
 
-func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
+type emailNotify struct {
+	Email    string `json:"email"`
+	Template string `json:"template"`
+}
+
+func extractEmailNotifyValues(parametersJSON string) ([]emailNotify, error) {
 	if parametersJSON == "" {
 		return nil, nil
 	}
-
 	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
 	var output struct {
-		EmailNotify []struct {
-			Email string `json:"email"`
-		} `json:"email_notify"`
+		EmailNotify []emailNotify `json:"email_notify"`
 	}
 
 	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
-
-	result := make([]string, len(output.EmailNotify))
-	for i, r := range output.EmailNotify {
-		result[i] = r.Email
-	}
-	return result, nil
+	return output.EmailNotify, nil
 }
 
 // handleBuild processes a Build and sends appropriate notifications.
@@ -88,8 +85,8 @@ func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
 // for testing.
 func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
 	builderID := getBuilderID(build)
-	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
-	notifiers, err := config.LookupNotifiers(c, build.Builder.Project, builderID)
+	logging.Infof(c, "Finding config for %q, %s", builderID, build.BuildBucket.Status)
+	notifiers, err := notifyConfig.LookupNotifiers(c, build.BuildBucket.Builder.Project, builderID)
 	if err != nil {
 		return errors.Annotate(err, "looking up notifiers").Err()
 	}
@@ -100,11 +97,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return Notify(c, d, notifiers, StatusUnknown, build)
 	}
 
-	if len(build.Input.GetGitilesCommits()) == 0 {
+	if len(build.BuildBucket.Input.GetGitilesCommits()) == 0 {
 		logging.Infof(c, "No revision information found for this build, ignoring...")
 		return nil
 	}
-	gCommit := build.Input.GitilesCommits[0]
+	gCommit := build.BuildBucket.Input.GitilesCommits[0]
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builder := &Builder{ID: builderID}
@@ -122,7 +119,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 					return err
 				}
 				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build)); err != nil {
+				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.BuildBucket)); err != nil {
 					return err
 				}
 				return nil
@@ -162,13 +159,13 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 
 		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
+		if build.BuildBucket.Status == builder.Status {
 			return nil
 		}
 
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
-		createTime, _ := ptypes.Timestamp(build.CreateTime)
+		createTime, _ := ptypes.Timestamp(build.BuildBucket.CreateTime)
 		switch {
 		// If the revision is not found, we can conclude that the Builder has
 		// advanced beyond gCommit.Revision. This is because:
@@ -193,7 +190,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
 			return err
 		}
-		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build))
+		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.BuildBucket))
 	}, nil)
 }
 
@@ -211,7 +208,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
 	case err != nil:
 		logging.WithError(err).Errorf(c, "error while extracting build")
-	case !build.Status.Completed():
+	case !build.BuildBucket.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
 	default:
 		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
@@ -228,8 +225,8 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
-	buildbucketpb.Build
-	EmailNotify []string
+	BuildBucket buildbucketpb.Build
+	EmailNotify []emailNotify
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
@@ -259,7 +256,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	if bv2, err := buildbucket.BuildToV2(&message.Build); err != nil {
 		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
 	} else {
-		build.Build = *bv2
+		build.BuildBucket = *bv2
 	}
 
 	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
