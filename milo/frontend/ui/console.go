@@ -186,6 +186,9 @@ type ConsoleElement interface {
 	// The two integer parameters represent useful pieces of metadata in
 	// rendering: current depth, and maximum depth.
 	RenderHTML(*bytes.Buffer, int, int)
+
+	// Returns number of leaf nodes in this console element.
+	NumLeafNodes() int
 }
 
 // Category represents an interior node in a category tree for builders.
@@ -195,18 +198,22 @@ type Category struct {
 	Name string
 
 	// The node's children, which can be any console element.
-	Children []ConsoleElement
+	children []ConsoleElement
 
 	// The node's children in a map to simplify insertion.
 	childrenMap map[string]ConsoleElement
+
+	// Cached value for the NumLeftNode function.
+	cachedNumLeafNodes int
 }
 
 // NewCategory allocates a new Category struct with no children.
 func NewCategory(name string) *Category {
 	return &Category{
-		Name:        name,
-		childrenMap: make(map[string]ConsoleElement),
-		Children:    make([]ConsoleElement, 0),
+		Name:               name,
+		childrenMap:        make(map[string]ConsoleElement),
+		children:           make([]ConsoleElement, 0),
+		cachedNumLeafNodes: -1,
 	}
 }
 
@@ -217,19 +224,41 @@ func NewCategory(name string) *Category {
 // made a child of the deepest such Category.
 func (c *Category) AddBuilder(categories []string, builder *BuilderRef) {
 	current := c
+	current.cachedNumLeafNodes = -1
 	for _, category := range categories {
 		if child, ok := current.childrenMap[category]; ok {
 			original := child.(*Category)
+			original.cachedNumLeafNodes = -1
 			current = original
 		} else {
 			newChild := NewCategory(category)
 			current.childrenMap[category] = ConsoleElement(newChild)
-			current.Children = append(current.Children, ConsoleElement(newChild))
+			current.children = append(current.children, ConsoleElement(newChild))
 			current = newChild
 		}
 	}
 	current.childrenMap[builder.ID] = ConsoleElement(builder)
-	current.Children = append(current.Children, ConsoleElement(builder))
+	current.children = append(current.children, ConsoleElement(builder))
+}
+
+// Children returns a list of child console elements.
+func (c *Category) Children() []ConsoleElement {
+	// Copy the slice to make it immutable by callers.
+	return append([]ConsoleElement{}, c.children...)
+}
+
+// NumLeafNodes calculates the number of leaf nodes in Category.
+func (c *Category) NumLeafNodes() int {
+	if c.cachedNumLeafNodes != -1 {
+		return c.cachedNumLeafNodes
+	}
+
+	leafNodes := 0
+	for _, child := range c.children {
+		leafNodes += child.NumLeafNodes()
+	}
+	c.cachedNumLeafNodes = leafNodes
+	return c.cachedNumLeafNodes
 }
 
 // BuilderRef is an unambiguous reference to a builder.
@@ -297,7 +326,7 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 		return
 	}
 
-	must(buffer.WriteString(`<div class="console-builder-column" style="flex-grow: 1">`))
+	must(buffer.WriteString(`<div class="console-builder-column">`))
 	// Add spaces if we haven't hit maximum depth to keep the grid consistent.
 	for i := 0; i < (maxDepth - depth); i++ {
 		must(buffer.WriteString(`<div class="console-space"></div>`))
@@ -434,18 +463,23 @@ func (br BuilderRef) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	must(buffer.WriteString(`</div></div>`))
 }
 
+// NumLeafNodes always returns 1 for BuilderDef since it is a leaf node.
+func (br BuilderRef) NumLeafNodes() int {
+	return 1
+}
+
 // RenderHTML renders the Category struct and its children as HTML into a buffer.
 // If maxDepth is negative, skip the labels to render the HTML as flat rather than nested.
 func (c Category) RenderHTML(buffer *bytes.Buffer, depth int, maxDepth int) {
 	if maxDepth > 0 {
-		must(buffer.WriteString(`<div class="console-column">`))
+		must(fmt.Fprintf(buffer, `<div class="console-column" style="flex: %d">`, c.NumLeafNodes()))
 		must(fmt.Fprintf(buffer, `<div class="console-top-item">%s</div>
 						<div class="console-top-row">`,
 			template.HTMLEscapeString(c.Name),
 		))
 	}
 
-	for _, child := range c.Children {
+	for _, child := range c.children {
 		child.RenderHTML(buffer, depth+1, maxDepth)
 	}
 
