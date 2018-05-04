@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "a44570ef_04559e22",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T21:25:01Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f285f52f_98e4675e",
+      "range": {
+        "startLine": 165,
+        "startChar": 24,
+        "endLine": 165,
+        "endChar": 49
+      },
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "22ded71a_eb168280",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 4
@@ -125,6 +149,24 @@
       "side": 1,
       "message": "Because Metadata API is \"compare the fingerprints and replace the entire PrefixMetadata object if fingreprints is still same\". Non-legacy metadata API will store protos as is, without mutating them at all.",
       "parentUuid": "22ded71a_eb168280",
+      "revId": "9937c0701f983838918544881bc1383fc15f7a87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6702579_1d33275e",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-04T21:25:01Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "9d0a55d4_745f4449",
       "revId": "9937c0701f983838918544881bc1383fc15f7a87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
