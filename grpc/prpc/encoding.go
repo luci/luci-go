@@ -33,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/grpc/grpcutil"
 )
 
 const (
@@ -133,34 +134,6 @@ func errorCode(err error) codes.Code {
 	}
 }
 
-// codeToStatus maps gRPC codes to HTTP statuses.
-// Based on https://cloud.google.com/apis/design/errors
-var codeToStatus = map[codes.Code]int{
-	codes.OK:                 http.StatusOK,
-	codes.Canceled:           499,
-	codes.InvalidArgument:    http.StatusBadRequest,
-	codes.DeadlineExceeded:   http.StatusGatewayTimeout,
-	codes.NotFound:           http.StatusNotFound,
-	codes.AlreadyExists:      http.StatusConflict,
-	codes.PermissionDenied:   http.StatusForbidden,
-	codes.Unauthenticated:    http.StatusUnauthorized,
-	codes.ResourceExhausted:  http.StatusTooManyRequests,
-	codes.FailedPrecondition: http.StatusBadRequest,
-	codes.OutOfRange:         http.StatusBadRequest,
-	codes.Unimplemented:      http.StatusNotImplemented,
-	codes.Unavailable:        http.StatusServiceUnavailable,
-	codes.Aborted:            http.StatusConflict,
-}
-
-// codeStatus maps gRPC codes to HTTP status codes.
-// Falls back to http.StatusInternalServerError.
-func codeStatus(code codes.Code) int {
-	if status, ok := codeToStatus[code]; ok {
-		return status
-	}
-	return http.StatusInternalServerError
-}
-
 // writeError writes err to w and logs it.
 func writeError(c context.Context, w http.ResponseWriter, err error) {
 	var code codes.Code
@@ -173,7 +146,7 @@ func writeError(c context.Context, w http.ResponseWriter, err error) {
 	} else {
 		code = errorCode(err)
 		msg = grpc.ErrorDesc(err)
-		httpStatus = codeStatus(code)
+		httpStatus = grpcutil.CodeStatus(code)
 	}
 
 	body := msg
