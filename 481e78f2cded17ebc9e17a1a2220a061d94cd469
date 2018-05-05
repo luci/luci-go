@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "410f1407_35aae24f",
+        "filename": "skylark/skylarkproto/message.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-05T01:40:15Z",
+      "side": 1,
+      "message": "This is renamed to indicate that is can have side effects now\n\nWhen picking an alternative for a oneof field, we should instantiate a wrapping type first before we can get a reflect.Value to a settable field. See more comments in type.go.",
+      "range": {
+        "startLine": 61,
+        "startChar": 22,
+        "endLine": 61,
+        "endChar": 39
+      },
+      "revId": "481e78f2cded17ebc9e17a1a2220a061d94cd469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6206173f_995246f8",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-05T01:40:15Z",
+      "side": 1,
+      "message": "This write up was helpful for me to track what\u0027s going on...",
+      "range": {
+        "startLine": 130,
+        "startChar": 3,
+        "endLine": 130,
+        "endChar": 34
+      },
+      "revId": "481e78f2cded17ebc9e17a1a2220a061d94cd469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
