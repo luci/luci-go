@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "241db19b_9afb8179",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-05T02:26:12Z",
+      "side": 1,
+      "message": "Is it actually not possible to implicitly default a oneof?\n\nI find it surprising that setting multiple members of a oneof is silently ignored rather than being a runtime error:\nhttps://developers.google.com/protocol-buffers/docs/reference/python-generated#oneof\n\nGiven such behavior I would not be extra surprised if they also had something strange like \"whichever oneof you look at first is auto-initialized\".",
+      "revId": "481e78f2cded17ebc9e17a1a2220a061d94cd469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6206173f_995246f8",
         "filename": "skylark/skylarkproto/type.go",
         "patchSetId": 1
@@ -45,6 +62,29 @@
       "revId": "481e78f2cded17ebc9e17a1a2220a061d94cd469",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9665641d_8a15995a",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-05T02:26:12Z",
+      "side": 1,
+      "message": "Docs suggest this doesn\u0027t happen:\nhttps://developers.google.com/protocol-buffers/docs/reference/python-generated#oneof\n\nInstead it seems like the user must clear the oneof to set a different member of it.",
+      "range": {
+        "startLine": 184,
+        "startChar": 43,
+        "endLine": 184,
+        "endChar": 75
+      },
+      "revId": "481e78f2cded17ebc9e17a1a2220a061d94cd469",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
