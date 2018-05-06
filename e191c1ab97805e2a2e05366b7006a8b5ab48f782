@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "192cd889_758af50d",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-06T07:24:41Z",
+      "side": 1,
+      "message": "Go does not support returning const values back to callers like C++ does (e.g. const std::vector\u003cConsoleElement\u003e\u0026), hence the copy. We need to ensure values are not modified by users since we need to invalidate the cached number of child nodes in this case.",
+      "parentUuid": "64b597eb_1d5d6ea2",
+      "revId": "e191c1ab97805e2a2e05366b7006a8b5ab48f782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40773b2f_c856861a",
         "filename": "milo/frontend/ui/console.go",
         "patchSetId": 11
@@ -33,6 +51,24 @@
       "revId": "e191c1ab97805e2a2e05366b7006a8b5ab48f782",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cbe512a2_75e1bba1",
+        "filename": "milo/frontend/ui/console.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-06T07:24:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40773b2f_c856861a",
+      "revId": "e191c1ab97805e2a2e05366b7006a8b5ab48f782",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
