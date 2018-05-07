@@ -15,9 +15,3 @@
 //go:generate cproto
 
 package messages
-
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
