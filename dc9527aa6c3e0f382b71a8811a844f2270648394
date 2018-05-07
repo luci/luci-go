@@ -1,0 +1,434 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "81bf2ea3_895d2033",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "please add a helper function to retrieve config interface from the context, something like \n\n  func GetConfigService(c context.Context) configInterface.Interface",
+      "range": {
+        "startLine": 122,
+        "startChar": 12,
+        "endLine": 122,
+        "endChar": 67
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df138b8c_211ff730",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "we always hide context keys, so that the only way to read/write context values are via functions such as GetConfigService/WithConfigService\n\nYou seem to already have it in L173. Why this line doesn\u0027t use that variable?",
+      "range": {
+        "startLine": 122,
+        "startChar": 20,
+        "endLine": 122,
+        "endChar": 38
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf3174ae_e251527c",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "nit: this name doesn\u0027t hint that it is about config service. Consider \"WithRemoteConfigService\" or something",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 20
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4df56a2_0b1a917c",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 2
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a2f3a34_7aaeb098",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/config/appengine/gaeconfig#FetchCachedSettings",
+      "range": {
+        "startLine": 180,
+        "startChar": 6,
+        "endLine": 180,
+        "endChar": 34
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88098087_d241deab",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "this isn\u0027t going to work. Default HTTP client doesn\u0027t work on GAE.\nPlease pass a function that returns an http.Client with a transport returned by\nhttps://godoc.org/go.chromium.org/luci/server/auth#GetRPCTransport\nwith https://godoc.org/go.chromium.org/luci/server/auth#AsSelf",
+      "range": {
+        "startLine": 181,
+        "startChar": 54,
+        "endLine": 181,
+        "endChar": 57
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffb69e61_e5f17fe1",
+        "filename": "luci_notify/config/settings.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "use the helper function here",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96fa1c60_481bc0be",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "here we compile all templates instead of only the ones that we actually care about in recipients[i].Template. Let\u0027s load and compile only the ones that we care about. This will simplify the implementation.\n\nNote that this means ListFiles won\u0027t be used in this CL. We will still need it later when we cache all files in datastore",
+      "range": {
+        "startLine": 88,
+        "startChar": 19,
+        "endLine": 88,
+        "endChar": 43
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7958fc72_1cb8658f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "template.Must must not be used with user-supplied data. This may panic and kill the handler",
+      "range": {
+        "startLine": 103,
+        "startChar": 8,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d84f431_3e33501e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "let\u0027s compile and execute the same template only once, not for each recipient",
+      "range": {
+        "startLine": 109,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e972f2cc_6e3573ae",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "let\u0027s pass template name here",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e57a180_816b5d40",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "after reading this, I still don\u0027t understand what this function is doing",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8a82bbf_0f44de39",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "use helper function",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "99d0c3c1_d61ae36c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "this is equivalent to simpler\n\n  tp :\u003d strings.Split(strings.TrimSuffix(path, \".template\"), \"/\")\n\nhowever I think we also wanted to trim \"luci-notify/email-templates/\" prefix",
+      "range": {
+        "startLine": 142,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 49
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2275f581_96e198c1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "this is constant true",
+      "range": {
+        "startLine": 149,
+        "startChar": 35,
+        "endLine": 149,
+        "endChar": 47
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5160c941_622a7a94",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "I think you meant SplitN. Currently the code below uses only first line of the body",
+      "range": {
+        "startLine": 150,
+        "startChar": 17,
+        "endLine": 150,
+        "endChar": 22
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8de8e0b_0fb522cd",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "returning a map[string]subjectAndTemplate would be more useful because one can lookup a template faster",
+      "range": {
+        "startLine": 153,
+        "startChar": 5,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d8c28c5_d3216b59",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "the spec defines a blank line between subject and body, this must be tc[2].\n\nHowever, I am worried that this code can easily panic, killing the handler, if there is a malformed file. Please extract template parsing to a separate function that returns, among other things, an error",
+      "range": {
+        "startLine": 155,
+        "startChar": 15,
+        "endLine": 155,
+        "endChar": 20
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93552fad_d4a3c630",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "this no longer dedups email recipients\n\nthere is a case that we have two different templates for the same recipient. I think we should not send two emails for the same build for the same user with two different templates.",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "548016c8_28e1e161",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T20:37:51Z",
+      "side": 1,
+      "message": "what was the motivation of this change?\nit made some lines longer",
+      "range": {
+        "startLine": 228,
+        "startChar": 1,
+        "endLine": 228,
+        "endChar": 12
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
