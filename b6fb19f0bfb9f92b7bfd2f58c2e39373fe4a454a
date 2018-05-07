@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "059c5e67_50b8990c",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-07T23:41:17Z",
+      "side": 1,
+      "message": "no changes here, just moved to top",
+      "revId": "b6fb19f0bfb9f92b7bfd2f58c2e39373fe4a454a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
