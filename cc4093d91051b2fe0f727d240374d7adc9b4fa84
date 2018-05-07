@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "829154fe_86ce348d",
+        "filename": "buildbucket/testdata/v1_builds.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T23:29:12Z",
+      "side": 1,
+      "message": "this case intended to test parsing when project is not available, so this shouldn\u0027t be there",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca3cc5cd_6bbfd5a6",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T23:29:12Z",
+      "side": 1,
+      "message": "this assumes that the error is necessarily \"bucket not filled in\" or other kind of ignorable error\n\nbuilderToV2 call on a partial response should not return an error",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb4e4ba0_3ad374b0",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T23:29:12Z",
+      "side": 1,
+      "message": "this is a breaking change from the prev behavior that should work for non-luci buckets. The goal is to use v2 protos even for buildbot builds, so that we can delete buildbucket.Build type (which works for Buildbot)\n\nIf it is not a luci bucket, please return \"\" project and return bucket unchanged",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db882380_3fa99ec1",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-07T23:29:12Z",
+      "side": 1,
+      "message": "this works only for LUCI builds. Please inline into its only caller",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
