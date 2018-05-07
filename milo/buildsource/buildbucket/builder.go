@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"golang.org/x/net/context"
 
@@ -118,6 +119,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 		limit = 20
 	}
 
+	var lock sync.Mutex
 	result := &ui.Builder{
 		Name: builder,
 	}
@@ -141,6 +143,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 			}
 			bs := mb.BuildSummary()
+			lock.Lock()
 			switch mb.Summary.Status {
 			case model.NotRun:
 				result.PendingBuilds = append(result.PendingBuilds, bs)
@@ -149,6 +152,7 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 			default:
 				result.FinishedBuilds = append(result.FinishedBuilds, bs)
 			}
+			lock.Unlock()
 		}
 		return nil
 	}
