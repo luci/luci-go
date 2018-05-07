@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b31cf74e_73993d7b",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "882b96c2_59ac6bdb",
+      "range": {
+        "startLine": 46,
+        "startChar": 18,
+        "endLine": 46,
+        "endChar": 24
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e710d77f_f86fe3f1",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 6
@@ -45,6 +69,30 @@
       "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "199a3347_1a3649bd",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e710d77f_f86fe3f1",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 2
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b43f9000_2ebf8192",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44a51f9d_97722dfa",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 13
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9f41433_03431822",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 6
@@ -91,6 +163,30 @@
       "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b113809_4355a7d4",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9f41433_03431822",
+      "range": {
+        "startLine": 84,
+        "startChar": 1,
+        "endLine": 84,
+        "endChar": 54
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "b0b289f4_0b7138fa",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "Clearified that it is Milo specific.",
+      "parentUuid": "4e51c026_ac1e681c",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 52
+      },
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9814bc3_d9002b13",
         "filename": "milo/buildsource/buildbucket/pubsub.go",
         "patchSetId": 6
@@ -131,6 +251,24 @@
       "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21b530f0_55ffc8a3",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-07T23:09:03Z",
+      "side": 1,
+      "message": "I feel like wrapping the buildbucketpb.Build is a good solution, since it\u0027s the cleanest way to expose Milo-specific methods on it.  That\u0027ll make the other refactor simpler too.\n\nRefactoring Milo to use buildbucketpb natively seems like a pretty large change, I\u0027m not sure if ordering it that way makes much sense.",
+      "parentUuid": "f9814bc3_d9002b13",
+      "revId": "106bf9146fd9b7279b0a66bf755c0b2fdd4e514c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
