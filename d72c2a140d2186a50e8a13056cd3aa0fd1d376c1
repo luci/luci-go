@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5429aa2_e43334bc",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-07T22:37:42Z",
+      "side": 1,
+      "message": "80 chars for consistency.",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 112
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5708b8d6_56ab9dce",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-07T22:37:42Z",
+      "side": 1,
+      "message": "tl;dr s/id/number, and simpler doc.\n\n1. Change ID is confusing with Change-Id, which isn\u0027t unique.\n2. Even proejct~branch~change-id isn\u0027t unique (I\u0027ve managed to create such a case :), but is still unresolved).\n\u003d\u003e So, let\u0027s force users use the only valid unique id here.",
+      "range": {
+        "startLine": 115,
+        "startChar": 9,
+        "endLine": 115,
+        "endChar": 11
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afe0a9ee_6bdb187b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-07T22:37:42Z",
+      "side": 1,
+      "message": "can you add a warning here to note use this field? Same reasoning as above.\nAnd also add a \"number\" field :)",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 22
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
