@@ -16,6 +16,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -838,17 +839,19 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 				return fmt.Errorf("unexpected jobID format: %s", def.JobID)
 			}
 			*job = Job{
-				JobID:           def.JobID,
-				ProjectID:       chunks[0],
-				Flavor:          def.Flavor,
-				Enabled:         false, // to trigger 'if wasDisabled' below
-				Schedule:        def.Schedule,
-				Task:            def.Task,
-				TriggeredJobIDs: def.TriggeredJobIDs,
+				JobID:               def.JobID,
+				ProjectID:           chunks[0],
+				Flavor:              def.Flavor,
+				Enabled:             false, // to trigger 'if wasDisabled' below
+				Schedule:            def.Schedule,
+				Task:                def.Task,
+				TriggeringPolicyRaw: def.TriggeringPolicy,
+				TriggeredJobIDs:     def.TriggeredJobIDs,
 			}
 		}
 		wasDisabled := !job.Enabled
 		oldEffectiveSchedule := job.EffectiveSchedule()
+		oldTriggeringPolicy := job.TriggeringPolicyRaw
 
 		// Update the job in full before running any state changes.
 		job.Flavor = def.Flavor
@@ -858,7 +861,17 @@ func (e *engineImpl) updateJob(c context.Context, def catalog.Definition) error 
 		job.Enabled = true
 		job.Schedule = def.Schedule
 		job.Task = def.Task
+		job.TriggeringPolicyRaw = def.TriggeringPolicy
 		job.TriggeredJobIDs = def.TriggeredJobIDs
+
+		// If job triggering policy has changed, schedule a triage to potentially
+		// act based on the new policy.
+		if !bytes.Equal(oldTriggeringPolicy, job.TriggeringPolicyRaw) {
+			logging.Infof(c, "Job's triggering policy has changed, scheduling a triage")
+			if err := e.kickTriageLater(c, job.JobID, 0); err != nil {
+				return err
+			}
+		}
 
 		// If the job was just enabled or its schedule changed, poke the cron
 		// machine to potentially schedule a new tick.
