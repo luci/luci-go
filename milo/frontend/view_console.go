@@ -510,13 +510,7 @@ func ConsoleHandler(c *router.Context) error {
 		return errors.Annotate(err, "error getting console").Err()
 	}
 
-	// If group is a tryserver group, redirect to builders view.
-	if strings.Contains(group, "tryserver") || con.Def.BuilderViewOnly {
-		// TODO(tandrii): remove string matching once everybody migrates to
-		// builder_view_only config option.
-		if !con.Def.BuilderViewOnly {
-			logging.Warningf(c.Context, "project %q group %s is missing 'builder_view_only'", project, group)
-		}
+	if con.Def.BuilderViewOnly {
 		redirect("/p/:project/g/:group/builders", http.StatusFound)(c)
 		return nil
 	}
