@@ -31,3 +31,13 @@ func (r *CheckAccessRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *GetChangeRequest) Validate() error {
+	switch {
+	case r.Id == "":
+		return errors.New("id is required")
+	default:
+		return nil
+	}
+}

@@ -34,6 +34,24 @@ func (m *MockGerritClient) EXPECT() *MockGerritClientMockRecorder {
 	return m.recorder
 }
 
+// GetChange mocks base method
+func (m *MockGerritClient) GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetChange", varargs...)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChange indicates an expected call of GetChange
+func (mr *MockGerritClientMockRecorder) GetChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritClient)(nil).GetChange), varargs...)
+}
+
 // CheckAccess mocks base method
 func (m *MockGerritClient) CheckAccess(ctx context.Context, in *CheckAccessRequest, opts ...grpc.CallOption) (*CheckAccessResponse, error) {
 	varargs := []interface{}{ctx, in}
@@ -73,6 +91,19 @@ func NewMockGerritServer(ctrl *gomock.Controller) *MockGerritServer {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockGerritServer) EXPECT() *MockGerritServerMockRecorder {
 	return m.recorder
+}
+
+// GetChange mocks base method
+func (m *MockGerritServer) GetChange(arg0 context.Context, arg1 *GetChangeRequest) (*ChangeInfo, error) {
+	ret := m.ctrl.Call(m, "GetChange", arg0, arg1)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetChange indicates an expected call of GetChange
+func (mr *MockGerritServerMockRecorder) GetChange(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritServer)(nil).GetChange), arg0, arg1)
 }
 
 // CheckAccess mocks base method
