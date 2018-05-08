@@ -17,6 +17,9 @@ syntax = "proto3";
 package gerrit;
 
 service Gerrit {
+  // Loads a change by id.
+  rpc GetChange(GetChangeRequest) returns (ChangeInfo);
+
   // Checks if a user has a permission on given repo and ref.
   //
   // Using this API requires ViewAccess capability on Gerrit server.
@@ -26,6 +29,92 @@ service Gerrit {
   // Note, providing non-existent project name is not an error, but resulting
   // CheckAccessResponse will state that project was not found.
   rpc CheckAccess(CheckAccessRequest) returns (CheckAccessResponse) {};
+}
+
+// Specifies what extra information to include in the response.
+//
+// Source of truth:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#query-options
+enum QueryOption {
+  OPTION_UNSPECIFIED = 0;
+  // A summary of each label required for submit, and approvers that have
+  // granted (or rejected) with that label.
+  LABELS = 1;
+  // Detailed label information, including numeric values of all existing
+  // approvals, recognized label values, values permitted to be set by the
+  // current user, all reviewers by state, and reviewers that may be removed by
+  // the current user.
+  DETAILED_LABELS = 2;
+  // Describe the current revision (patch set) of the change, including the
+  // commit SHA-1 and URLs to fetch from.
+  CURRENT_REVISION = 4;
+  // Describe all revisions, not just current.
+  ALL_REVISIONS = 8;
+  // Parse and output all header fields from the commit object, including
+  // message. Only valid when the CURRENT_REVISION or ALL_REVISIONS option is
+  // selected.
+  CURRENT_COMMIT = 16;
+  // Parse and output all header fields from the output revisions. If only
+  // CURRENT_REVISION was requested then only the current revision’s commit data
+  // will be output.
+  ALL_COMMITS = 32;
+  // List files modified by the commit and magic files, including basic line
+  // counts inserted/deleted per file. Only valid when the CURRENT_REVISION or
+  // ALL_REVISIONS option is selected.
+  CURRENT_FILES = 64;
+  // List files modified by the commit and magic files, including basic line
+  // counts inserted/deleted per file. If only the CURRENT_REVISION was
+  // requested then only that commit’s modified files will be output.
+  ALL_FILES = 128;
+  // Include _account_id, email and username fields when referencing accounts.
+  DETAILED_ACCOUNTS = 256;
+  // Include updates to reviewers set as ReviewerUpdateInfo entities.
+  REVIEWER_UPDATES = 512;
+  // Include messages associated with the change.
+  MESSAGES = 1024;
+  // Include information on available actions for the change and its current
+  // revision. Ignored if the caller is not authenticated.
+  CURRENT_ACTIONS = 2048;
+  // Include information on available change actions for the change. Ignored if
+  // the caller is not authenticated.
+  CHANGE_ACTIONS = 4096;
+  // Include the reviewed field if all of the following are true:
+  // - the change is open
+  // - the caller is authenticated
+  // - the caller has commented on the change more recently than the last update
+  //   from the change owner, i.e. this change would show up in the results of
+  //   reviewedby:self.
+  REVIEWED = 8192;
+  // Skip the mergeable field in ChangeInfo. For fast moving projects, this
+  // field must be recomputed often, which is slow for projects with big trees.
+  SKIP_MERGEABLE = 16384;
+  // Include the submittable field in ChangeInfo, which can be used to tell if
+  // the change is reviewed and ready for submit.
+  SUBMITTABLE = 32768;
+  // Include the web_links field in CommitInfo, therefore only valid in
+  // combination with CURRENT_COMMIT or ALL_COMMITS.
+  WEB_LINKS = 65536;
+  // Include potential problems with the change.
+  CHECK = 131072;
+  // Include the full commit message with Gerrit-specific commit footers in the
+  // RevisionInfo.
+  COMMIT_FOOTERS = 262144;
+  // Include push certificate information in the RevisionInfo. Ignored if signed
+  // push is not enabled on the server.
+  PUSH_CERTIFICATES = 524288;
+  // Include references to external tracking systems as TrackingIdInfo.
+  TRACKING_IDS = 1048576;
+  // Include the commands field in the FetchInfo for revisions. Only valid when
+  // the CURRENT_REVISION or ALL_REVISIONS option is selected.
+  DOWNLOAD_COMMANDS = 2097152;
+}
+
+message GetChangeRequest {
+  // Change number.
+  int64 number = 1;
+
+  // What to include in the response.
+  repeated QueryOption options = 2;
 }
 
 // Request message for gerrit.CheckAccess.
@@ -68,4 +157,43 @@ message CheckAccessResponse {
   Status status = 1;
   // Reason is human readable clarifying message if not allowed.
   string reason = 2;
+}
+
+// Information about an account.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-accounts.html#account-info
+message AccountInfo {
+  // The full name of the user.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and option DETAILS for account queries.
+  string name = 1;
+
+  // The email address the user prefers to be contacted through.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and options DETAILS and ALL_EMAILS for account queries.
+  string email = 2;
+
+  // A list of the secondary email addresses of the user.
+  // Only set for account queries when the ALL_EMAILS option or the suggest
+  // parameter is set. Secondary emails are only included if the calling user
+  // has the Modify Account, and hence is allowed to see secondary emails of
+  // other users.
+  repeated string secondary_emails = 3;
+
+  // The username of the user.
+  // Only set if detailed account information is requested.
+  // See option DETAILED_ACCOUNTS for change queries
+  // and option DETAILS for account queries.
+  string username = 4;
+}
+
+// Information about a change.
+// Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
+message ChangeInfo {
+  // The change number.
+  int64 number = 1;
+
+  // The owner of the change.
+  AccountInfo owner = 2;
 }

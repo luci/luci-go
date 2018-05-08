@@ -60,6 +60,35 @@ type client struct {
 	BaseURL string
 }
 
+// changeInfo is JSON representation of gerritpb.ChangeInfo on the wire.
+type changeInfo struct {
+	Number int64                 `json:"_number"`
+	Owner  *gerritpb.AccountInfo `json:"owner"`
+}
+
+func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
+	*gerritpb.ChangeInfo, error) {
+
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+
+	var resp changeInfo
+	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
+	path := fmt.Sprintf("/changes/%d", req.Number)
+
+	params := url.Values{}
+	for _, o := range req.Options {
+		params.Add("o", o.String())
+	}
+	if _, err := c.call(ctx, "GET", path, params, nil, &resp); err != nil {
+		return nil, err
+	}
+
+	ret := (gerritpb.ChangeInfo)(resp)
+	return &ret, nil
+}
+
 func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessRequest, opts ...grpc.CallOption) (
 	*gerritpb.CheckAccessResponse, error) {
 	if err := checkArgs(opts, req); err != nil {
@@ -80,7 +109,7 @@ func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessReque
 	}
 	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	path := fmt.Sprintf("/projects/%s/check.access", url.QueryEscape(req.Project))
-	if _, err := c.post(ctx, path, &input, &resp); err != nil {
+	if _, err := c.call(ctx, "POST", path, nil, &input, &resp); err != nil {
 		return nil, err
 	}
 
@@ -98,55 +127,68 @@ func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessReque
 	return res, nil
 }
 
-// post executes POST request to Gerrit REST API with JSON input/output.
+// call executes a request to Gerrit REST API with JSON input/output.
 //
-// post returns HTTP status code and gRPC error.
+// call returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
-func (c *client) post(ctx context.Context, urlPath string, data, dest interface{}, expectedHTTPCodes ...int) (int, error) {
-	var buffer bytes.Buffer
-	if err := json.NewEncoder(&buffer).Encode(data); err != nil {
-		return -1, status.Errorf(codes.Internal, "failed to serialize request message: %s", err)
+func (c *client) call(ctx context.Context, method, urlPath string, params url.Values, data, dest interface{}, expectedHTTPCodes ...int) (int, error) {
+	url := c.BaseURL + urlPath
+	if len(params) > 0 {
+		url += "?" + params.Encode()
 	}
-	r, err := ctxhttp.Post(ctx, c.Client, c.BaseURL+urlPath, contentType, &buffer)
+
+	var buffer bytes.Buffer
+	req, err := http.NewRequest(method, url, &buffer)
+	if err != nil {
+		return 0, status.Errorf(codes.Internal, "failed to create an HTTP request: %s", err)
+	}
+	if data != nil {
+		req.Header.Set("Content-Type", contentType)
+		if err := json.NewEncoder(&buffer).Encode(data); err != nil {
+			return -1, status.Errorf(codes.Internal, "failed to serialize request message: %s", err)
+		}
+	}
+
+	res, err := ctxhttp.Do(ctx, c.Client, req)
 	if err != nil {
 		return -1, status.Errorf(codes.Internal, "failed to execute Post HTTP request: %s", err)
 	}
-	defer r.Body.Close()
+	defer res.Body.Close()
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return r.StatusCode, status.Errorf(codes.Internal, "failed to read response: %s", err)
+		return res.StatusCode, status.Errorf(codes.Internal, "failed to read response: %s", err)
 	}
 
 	expectedHTTPCodes = append(expectedHTTPCodes, http.StatusOK)
 	for _, s := range expectedHTTPCodes {
-		if r.StatusCode == s {
+		if res.StatusCode == s {
 			body = bytes.TrimPrefix(body, jsonPrefix)
 			if err = json.Unmarshal(body, dest); err != nil {
-				return r.StatusCode, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
+				return res.StatusCode, status.Errorf(codes.Internal, "failed to desirealize response: %s", err)
 			}
-			return r.StatusCode, nil
+			return res.StatusCode, nil
 		}
 	}
 
-	switch r.StatusCode {
+	switch res.StatusCode {
 	case http.StatusTooManyRequests:
 		logging.Errorf(ctx, "Gerrit quota error.\nResponse headers: %v\nResponse body: %s",
-			r.Header, body)
-		return r.StatusCode, status.Errorf(codes.ResourceExhausted, "insufficient Gerrit quota")
+			res.Header, body)
+		return res.StatusCode, status.Errorf(codes.ResourceExhausted, "insufficient Gerrit quota")
 
 	case http.StatusForbidden:
-		return r.StatusCode, status.Errorf(codes.PermissionDenied, "permission denied")
+		return res.StatusCode, status.Errorf(codes.PermissionDenied, "permission denied")
 
 	case http.StatusNotFound:
-		return r.StatusCode, status.Errorf(codes.NotFound, "not found")
+		return res.StatusCode, status.Errorf(codes.NotFound, "not found")
 
 	default:
 		logging.Errorf(ctx, "gerrit: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
-			r.StatusCode,
-			r.Header, body)
-		return r.StatusCode, status.Errorf(codes.Internal, "unexpected HTTP %d from Gerrit", r.StatusCode)
+			res.StatusCode,
+			res.Header, body)
+		return res.StatusCode, status.Errorf(codes.Internal, "unexpected HTTP %d from Gerrit", res.StatusCode)
 	}
 }
 

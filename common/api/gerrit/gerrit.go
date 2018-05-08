@@ -39,6 +39,9 @@ const contentType = "application/json; charset=UTF-8"
 // query options, and not all fields exposed by Gerrit are captured by this
 // struct. Adding more fields to this struct should be okay (but only
 // Gerrit-supported keys will be populated).
+//
+// TODO(nodir): replace this type with
+// https://godoc.org/go.chromium.org/luci/common/proto/gerrit#ChangeInfo.
 type Change struct {
 	ChangeNumber           int                  `json:"_number"`
 	ID                     string               `json:"id"`
