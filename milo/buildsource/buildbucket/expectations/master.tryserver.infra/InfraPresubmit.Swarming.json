@@ -44,7 +44,7 @@
       "Blame": [
         {
           "AuthorName": "",
-          "AuthorEmail": "recipe-roller@chromium.org",
+          "AuthorEmail": "johndoe@example.com",
           "CommitTime": "0001-01-01T00:00:00Z",
           "Repo": "",
           "Branch": "",
@@ -112,7 +112,7 @@
       "Blame": [
         {
           "AuthorName": "",
-          "AuthorEmail": "recipe-roller@chromium.org",
+          "AuthorEmail": "johndoe@example.com",
           "CommitTime": "0001-01-01T00:00:00Z",
           "Repo": "",
           "Branch": "",

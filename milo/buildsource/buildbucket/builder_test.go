@@ -24,11 +24,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/config"
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+
 	"go.chromium.org/luci/milo/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -50,6 +55,17 @@ func TestBuilder(t *testing.T) {
 		c := gaetesting.TestingContextWithAppID("luci-milo-dev")
 		c, _ = testclock.UseTime(c, RecentTimeUTC)
 		c = testconfig.WithCommonClient(c, memcfg.New(bktConfigFull))
+
+		ctrl := gomock.NewController(t)
+		gerrit := gerritpb.NewMockGerritClient(ctrl)
+		c = common.WithGerritFactory(c, func(context.Context, string) (gerritpb.GerritClient, error) {
+			return gerrit, nil
+		})
+		mockChange := &gerritpb.ChangeInfo{
+			Owner: &gerritpb.AccountInfo{Email: "johndoe@example.com"},
+		}
+		gerrit.EXPECT().GetChange(gomock.Any(), gomock.Any()).AnyTimes().Return(mockChange, nil)
+
 		// Update the service config so that the settings are loaded.
 		_, err := common.UpdateServiceConfig(c)
 		So(err, ShouldBeNil)
