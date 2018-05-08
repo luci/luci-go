@@ -198,6 +198,23 @@
       "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5455ecbe_7c34110e",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T17:40:46Z",
+      "side": 1,
+      "message": "please leave a comment why checking BucketPermissions is unnecessary here",
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
