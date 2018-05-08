@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/skylark"
@@ -60,10 +61,6 @@ func TestAllSkylark(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load assertion module - %s", err)
 	}
-	testprotosMod, err := LoadProtoModule("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto")
-	if err != nil {
-		t.Fatalf("failed to load testprotos/test.proto - %s", err)
-	}
 
 	predeclared := skylark.StringDict{}
 	importMod := func(m skylark.StringDict) {
@@ -74,7 +71,6 @@ func TestAllSkylark(t *testing.T) {
 
 	importMod(assertMod)
 	importMod(ProtoLib())
-	importMod(testprotosMod)
 
 	// Enumerate all test cases.
 	files, err := filepath.Glob("testdata/*.sky")
@@ -94,6 +90,12 @@ func TestAllSkylark(t *testing.T) {
 
 func runSingleTest(t *testing.T, script string, predeclared skylark.StringDict) {
 	thread := skylark.Thread{
+		Load: func(thread *skylark.Thread, module string) (skylark.StringDict, error) {
+			if strings.HasSuffix(module, ".proto") {
+				return LoadProtoModule(module)
+			}
+			return nil, fmt.Errorf("don't know how to load skylark module %q", module)
+		},
 		Print: func(th *skylark.Thread, msg string) { t.Logf("%s", msg) },
 	}
 	skylarktest.SetReporter(&thread, t)

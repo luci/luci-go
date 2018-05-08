@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", "testprotos")
+
 # Repeated 'bytes' field is represented by a list of lists.
 
 m = testprotos.SimpleFields()

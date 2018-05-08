@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", "testprotos")
+
 # Note: this test also covers all other scalar types, since the implementation
 # of repeated fields is identical for all of them.
 
