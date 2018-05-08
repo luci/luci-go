@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1052cc11_6e094d55",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5429aa2_e43334bc",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 112
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5708b8d6_56ab9dce",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "438a5b99_13a8aaf7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:08:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5708b8d6_56ab9dce",
+      "range": {
+        "startLine": 115,
+        "startChar": 9,
+        "endLine": 115,
+        "endChar": 11
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "afe0a9ee_6bdb187b",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca5ded42_f81890d7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:08:24Z",
+      "side": 1,
+      "message": "replaced with number",
+      "parentUuid": "afe0a9ee_6bdb187b",
+      "range": {
+        "startLine": 197,
+        "startChar": 21,
+        "endLine": 197,
+        "endChar": 22
+      },
+      "revId": "d72c2a140d2186a50e8a13056cd3aa0fd1d376c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
