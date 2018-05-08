@@ -15,8 +15,9 @@
 package buildbot
 
 import (
-	"context"
 	"testing"
+
+	"golang.org/net/x/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"

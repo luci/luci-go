@@ -53,7 +53,7 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withGitilesMiddleware)
+	baseMW := standard.Base().Extend(withGitilesMiddleware, withGerritMiddleware)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth),

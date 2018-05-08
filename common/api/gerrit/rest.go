@@ -20,6 +20,10 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
+// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
+// access token for Gerrit RPCs.
+const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
+
 // This file implements Gerrit proto service client
 // on top of Gerrit REST API.
 
