@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", "testprotos")
+
 # 'bytes' fields are represented as lists of integers on the Skylark side and
 # generally indistinguishable from repeated integer fields (except 0-255 range
 # validation when serializing).

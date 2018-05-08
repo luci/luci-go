@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", "testprotos")
+
 # Enum constants follow C++ namespacing rules: they directly live in a namespace
 # that defines the enum type itself. This also matches how proto enum are
 # exposed in Python code.

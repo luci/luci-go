@@ -51,6 +51,7 @@ func TestLoader(t *testing.T) {
 			"ENUM_DEFAULT",
 			"ENUM_VAL_1",
 			"MessageFields",
+			"RefsOtherProtos",
 			"Simple",
 			"SimpleFields",
 		})

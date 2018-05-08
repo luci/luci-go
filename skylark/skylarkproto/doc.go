@@ -48,10 +48,6 @@ package skylarkproto
 // TODO: Detect version2 protos and bail, our reflection magic expects proto3
 // messages.
 
-// TODO: Support proto package with.dotted.names.
-// TODO: Investigate how to load proto packages consisting of multiple files.
-
 // TODO: support known types (maps, any, struct).
-
 // TODO: support freezing.
 // TODO: support '==' ?
