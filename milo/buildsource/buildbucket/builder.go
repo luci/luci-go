@@ -23,6 +23,7 @@ import (
 	"golang.org/x/net/context"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	swbv1 "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -57,6 +58,24 @@ func fetchBuilds(c context.Context, client *bbv1.Service, bucket, builder,
 	}
 	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
 	return msgs, nil
+}
+
+// isStillDefined checks if a builder is defined in a swarmbucket.
+func isStillDefined(c context.Context, client *swbv1.Service, bucketName, builderName string) (bool, error) {
+	getBuilders := client.GetBuilders()
+	getBuilders.Bucket(bucketName)
+	res, err := getBuilders.Do()
+	if err != nil {
+		return false, err
+	}
+	for _, bucket := range res.Buckets {
+		for _, builder := range bucket.Builders {
+			if builder.Name == builderName {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func getDebugBuilds(c context.Context, bucket, builder string, maxCompletedBuilds int, target *ui.Builder) error {
@@ -165,6 +184,19 @@ func GetBuilder(c context.Context, bucket, builder string, limit int) (*ui.Build
 		}
 		work <- func() error {
 			return fetch(bbv1.StatusCompleted, limit)
+		}
+		work <- func() error {
+			swarmbucketClient, err := newSwarmbucketClient(c, host)
+			if err != nil {
+				return err
+			}
+			switch yes, err := isStillDefined(c, swarmbucketClient, bucket, builder); {
+			case err != nil:
+				return err
+			case !yes:
+				return errors.Reason("builder %q not found", builder).Tag(common.CodeNotFound).Err()
+			}
+			return nil
 		}
 	})
 }
