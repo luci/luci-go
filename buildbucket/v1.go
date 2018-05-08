@@ -258,7 +258,9 @@ func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Para
 	if ret.Builder == "" {
 		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
 	}
-	if ret.Project, ret.Bucket = BucketNameToV2(msg.Bucket); msg.Project != "" && ret.Project != msg.Project {
+
+	ret.Project, ret.Bucket = BucketNameToV2(msg.Bucket)
+	if msg.Project != "" && ret.Project != "" && ret.Project != msg.Project {
 		err = errors.Reason(
 			"message project %q does not match bucket project %q", msg.Project, ret.Project).Tag(MalformedBuild).Err()
 	}
