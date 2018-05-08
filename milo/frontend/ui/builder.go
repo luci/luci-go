@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type=BotStatus
-
 package ui
 
 import (
+	"time"
+
+	"golang.org/x/net/context"
+
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
 )
 
@@ -79,26 +82,51 @@ type Builder struct {
 	NextCursor string `json:",omitempty"`
 }
 
-type BotStatus int
-
-const (
-	UnknownStatus BotStatus = iota
-	Idle
-	Busy
-	Disconnected
-)
-
-// Bot represents a single bot.
+// Bot wraps a model.Bot to provide a UI specific statuses.
 type Bot struct {
-	Name   Link
-	Status BotStatus
+	model.Bot
+	Status model.BotStatus
+}
+
+func (b *Bot) Label() *Link {
+	if b == nil {
+		return nil
+	}
+	return NewLink(b.Name, b.URL, "bot "+b.Name)
 }
 
 // MachinePool represents the capacity and availability of a builder.
 type MachinePool struct {
-	Total        int
-	Disconnected int
-	Idle         int
-	Busy         int
-	Bots         []Bot
+	Total   int
+	Offline int
+	Idle    int
+	Busy    int
+	Bots    []Bot
+}
+
+// NewMachinePool calculates stats from a model.Bot and generates a MachinePool.
+// This requires a context because setting the UI Status field requires the current time.
+func NewMachinePool(c context.Context, bots []model.Bot) *MachinePool {
+	fiveMinAgo := clock.Now(c).Add(-time.Minute * 5)
+	result := &MachinePool{
+		Total: len(bots),
+		Bots:  make([]Bot, len(bots)),
+	}
+	for i, bot := range bots {
+		uiBot := Bot{bot, bot.Status} // Wrap the model.Bot
+		if bot.Status == model.Offline && bot.LastSeen.After(fiveMinAgo) {
+			// If the bot has been offline for less than 5 minutes, mark it as busy.
+			uiBot.Status = model.Busy
+		}
+		switch bot.Status {
+		case model.Idle:
+			result.Idle++
+		case model.Busy:
+			result.Busy++
+		case model.Offline:
+			result.Offline++
+		}
+		result.Bots[i] = uiBot
+	}
+	return result
 }
