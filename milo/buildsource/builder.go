@@ -76,7 +76,8 @@ func (b BuilderID) Get(c context.Context, limit int, cursor string) (*ui.Builder
 			case "buildbot":
 				builder, err = buildbot.GetBuilder(c, group, builderName, limit, cursor)
 			case "buildbucket":
-				builder, err = buildbucket.GetBuilder(c, group, builderName, limit)
+				bid := buildbucket.NewBuilderID(group, builderName)
+				builder, err = buildbucket.GetBuilder(c, bid, limit)
 			default:
 				panic(fmt.Errorf("unexpected build source %q", source))
 			}

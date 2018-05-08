@@ -1,0 +1,139 @@
+{
+  "Name": "InfraPresubmit.Swarming",
+  "HasBlamelist": false,
+  "Warning": "",
+  "CurrentBuilds": [
+    {
+      "Link": {
+        "Label": "100",
+        "URL": "/p//builders/luci.infra.try/Infra Presubmit (Swarming)/100",
+        "AriaLabel": "build #100"
+      },
+      "Status": "Running",
+      "PendingTime": {
+        "Started": "2016-06-30T23:23:32.89983Z",
+        "Finished": "2016-06-30T23:25:02.96203Z",
+        "Duration": 90062200000
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-30T23:25:02.96203Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 297037970000
+      },
+      "Revision": {
+        "AuthorName": "",
+        "AuthorEmail": "",
+        "CommitTime": "0001-01-01T00:00:00Z",
+        "Repo": "",
+        "Branch": "",
+        "RequestRevision": {
+          "Label": "HEAD",
+          "URL": ""
+        },
+        "Revision": null,
+        "Description": "",
+        "Changelist": {
+          "Label": "Gerrit CL 1 (ps#2)",
+          "URL": "https://chromium-review.googlesource.com/c/1/2",
+          "AriaLabel": "gerrit changelist number 1 patchset 2"
+        },
+        "CommitURL": "",
+        "File": null
+      },
+      "Text": null,
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "johndoe@example.com",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": "",
+            "AriaLabel": "request revision HEAD"
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Gerrit CL 1 (ps#2)",
+            "URL": "https://chromium-review.googlesource.com/c/1/2",
+            "AriaLabel": "gerrit changelist number 1 patchset 2"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ]
+    }
+  ],
+  "PendingBuilds": null,
+  "PendingBuildNum": 0,
+  "FinishedBuilds": [
+    {
+      "Link": {
+        "Label": "9008388977193267696",
+        "URL": "/p//builds/b9008388977193267696",
+        "AriaLabel": "build #9008388977193267696"
+      },
+      "Status": "Success",
+      "PendingTime": {
+        "Started": "2016-06-30T23:03:49.30446Z",
+        "Finished": "2016-06-30T23:03:50.30446Z",
+        "Duration": 1000000000
+      },
+      "ExecutionTime": {
+        "Started": "2016-06-30T23:03:50.30446Z",
+        "Finished": "2016-06-30T23:05:24.93059Z",
+        "Duration": 94626130000
+      },
+      "Revision": {
+        "AuthorName": "",
+        "AuthorEmail": "",
+        "CommitTime": "0001-01-01T00:00:00Z",
+        "Repo": "",
+        "Branch": "",
+        "RequestRevision": {
+          "Label": "HEAD",
+          "URL": ""
+        },
+        "Revision": null,
+        "Description": "",
+        "Changelist": {
+          "Label": "Gerrit CL 2 (ps#2)",
+          "URL": "https://chromium-review.googlesource.com/c/2/2",
+          "AriaLabel": "gerrit changelist number 2 patchset 2"
+        },
+        "CommitURL": "",
+        "File": null
+      },
+      "Text": [
+        "Build succeeded"
+      ],
+      "Blame": [
+        {
+          "AuthorName": "",
+          "AuthorEmail": "johndoe@example.com",
+          "CommitTime": "0001-01-01T00:00:00Z",
+          "Repo": "",
+          "Branch": "",
+          "RequestRevision": {
+            "Label": "HEAD",
+            "URL": "",
+            "AriaLabel": "request revision HEAD"
+          },
+          "Revision": null,
+          "Description": "",
+          "Changelist": {
+            "Label": "Gerrit CL 2 (ps#2)",
+            "URL": "https://chromium-review.googlesource.com/c/2/2",
+            "AriaLabel": "gerrit changelist number 2 patchset 2"
+          },
+          "CommitURL": "",
+          "File": null
+        }
+      ]
+    }
+  ],
+  "MachinePool": null,
+  "Groups": null
+}
