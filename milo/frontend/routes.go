@@ -220,10 +220,11 @@ func Run(templatePath string) {
 }
 
 func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	deprecatable, ok := req.(interface {
+	bReq, ok := req.(interface {
 		GetExcludeDeprecated() bool
+		GetNoEmulation() bool
 	})
-	if ok && !deprecatable.GetExcludeDeprecated() {
+	if ok && !bReq.GetExcludeDeprecated() {
 		ua := "-"
 		if md, ok := metadata.FromIncomingContext(c); ok {
 			if m := md["user-agent"]; len(m) > 0 {
@@ -232,10 +233,13 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		}
 		logging.Warningf(c, "user agent %q might be using deprecated API!", ua)
 	}
+	emulation := true
+	if ok && bReq.GetNoEmulation() {
+		emulation = false
+	}
 
-	c = buildstore.WithEmulation(c, true)
+	return buildstore.WithEmulation(c, emulation), nil
 
-	return c, nil
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error
