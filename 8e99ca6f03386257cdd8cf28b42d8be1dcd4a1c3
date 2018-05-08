@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc045665_6a0c481f",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T07:01:10Z",
+      "side": 1,
+      "message": "shouldn\u0027t return HTTP 500 just because the builder is not found (yet) because it is eventual",
+      "range": {
+        "startLine": 44,
+        "startChar": 14,
+        "endLine": 44,
+        "endChar": 17
+      },
+      "revId": "8e99ca6f03386257cdd8cf28b42d8be1dcd4a1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6988bec_4796e511",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T07:01:10Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 51,
+        "startChar": 14,
+        "endLine": 51,
+        "endChar": 17
+      },
+      "revId": "8e99ca6f03386257cdd8cf28b42d8be1dcd4a1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43b354ae_6f65c836",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T07:01:10Z",
+      "side": 1,
+      "message": "%q/%q",
+      "range": {
+        "startLine": 69,
+        "startChar": 63,
+        "endLine": 69,
+        "endChar": 68
+      },
+      "revId": "8e99ca6f03386257cdd8cf28b42d8be1dcd4a1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf7b0e2d_871a755d",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T07:01:10Z",
+      "side": 1,
+      "message": "swarmingHost, otherwise one may think it is the bot host",
+      "range": {
+        "startLine": 93,
+        "startChar": 33,
+        "endLine": 93,
+        "endChar": 37
+      },
+      "revId": "8e99ca6f03386257cdd8cf28b42d8be1dcd4a1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb20d3b2_27f65f88",
+        "filename": "milo/frontend/ui/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T07:01:10Z",
+      "side": 1,
+      "message": "let\u0027s call now before the loop. The 5min subtraction can be done outside of the loop too, e.g.\n\n  fiveMinAgo :\u003d ...",
+      "range": {
+        "startLine": 116,
+        "startChar": 36,
+        "endLine": 116,
+        "endChar": 48
+      },
+      "revId": "8e99ca6f03386257cdd8cf28b42d8be1dcd4a1c3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
