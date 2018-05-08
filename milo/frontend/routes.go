@@ -233,9 +233,14 @@ func buildbotAPIPrelude(c context.Context, methodName string, req proto.Message)
 		logging.Warningf(c, "user agent %q might be using deprecated API!", ua)
 	}
 
-	c = buildstore.WithEmulation(c, true)
+	noemu, ok := req.(interface {
+		GetNoEmulation() bool
+	})
+	// Turn off emulation mode if the request sets the no emulation flag to true.
+	emulation := !(ok && noemu.GetNoEmulation())
 
-	return c, nil
+	return buildstore.WithEmulation(c, emulation), nil
+
 }
 
 // handleError is a wrapper for a handler so that the handler can return an error
