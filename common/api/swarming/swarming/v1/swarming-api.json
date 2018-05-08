@@ -13,7 +13,7 @@
   "batchPath": "batch",
   "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/IotzaHxbp65Zj5DZelvwCWcRCio\"",
+  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/2q9qyIY5_O6rLXgDD3S_uTz4Wc8\"",
   "icons": {
     "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
     "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
@@ -189,79 +189,9 @@
           "httpMethod": "GET",
           "id": "swarming.bots.count",
           "parameters": {
-            "cursor": {
-              "location": "query",
-              "type": "string"
-            },
             "dimensions": {
               "location": "query",
               "repeated": true,
-              "type": "string"
-            },
-            "is_busy": {
-              "default": "NONE",
-              "enum": [
-                "FALSE",
-                "NONE",
-                "TRUE"
-              ],
-              "enumDescriptions": [
-                "",
-                "",
-                ""
-              ],
-              "location": "query",
-              "type": "string"
-            },
-            "is_dead": {
-              "default": "NONE",
-              "enum": [
-                "FALSE",
-                "NONE",
-                "TRUE"
-              ],
-              "enumDescriptions": [
-                "",
-                "",
-                ""
-              ],
-              "location": "query",
-              "type": "string"
-            },
-            "is_mp": {
-              "default": "NONE",
-              "enum": [
-                "FALSE",
-                "NONE",
-                "TRUE"
-              ],
-              "enumDescriptions": [
-                "",
-                "",
-                ""
-              ],
-              "location": "query",
-              "type": "string"
-            },
-            "limit": {
-              "default": "200",
-              "format": "int64",
-              "location": "query",
-              "type": "string"
-            },
-            "quarantined": {
-              "default": "NONE",
-              "enum": [
-                "FALSE",
-                "NONE",
-                "TRUE"
-              ],
-              "enumDescriptions": [
-                "",
-                "",
-                ""
-              ],
-              "location": "query",
               "type": "string"
             }
           },
@@ -297,6 +227,21 @@
             "dimensions": {
               "location": "query",
               "repeated": true,
+              "type": "string"
+            },
+            "in_maintenance": {
+              "default": "NONE",
+              "enum": [
+                "FALSE",
+                "NONE",
+                "TRUE"
+              ],
+              "enumDescriptions": [
+                "",
+                "",
+                ""
+              ],
+              "location": "query",
               "type": "string"
             },
             "is_busy": {
@@ -369,6 +314,33 @@
           "path": "bots/list",
           "response": {
             "$ref": "SwarmingRpcsBotList"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email"
+          ]
+        }
+      }
+    },
+    "queues": {
+      "methods": {
+        "list": {
+          "httpMethod": "GET",
+          "id": "swarming.queues.list",
+          "parameters": {
+            "cursor": {
+              "location": "query",
+              "type": "string"
+            },
+            "limit": {
+              "default": "200",
+              "format": "int64",
+              "location": "query",
+              "type": "string"
+            }
+          },
+          "path": "queues/list",
+          "response": {
+            "$ref": "SwarmingRpcsTaskQueueList"
           },
           "scopes": [
             "https://www.googleapis.com/auth/userinfo.email"
@@ -874,6 +846,9 @@
         "external_ip": {
           "type": "string"
         },
+        "maintenance_msg": {
+          "type": "string"
+        },
         "message": {
           "type": "string"
         },
@@ -962,6 +937,9 @@
         "machine_type": {
           "type": "string"
         },
+        "maintenance_msg": {
+          "type": "string"
+        },
         "quarantined": {
           "type": "boolean"
         },
@@ -1038,6 +1016,10 @@
           "type": "string"
         },
         "dead": {
+          "format": "int64",
+          "type": "string"
+        },
+        "maintenance": {
           "format": "int64",
           "type": "string"
         },
@@ -1515,6 +1497,41 @@
         },
         "secret_bytes": {
           "format": "byte",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsTaskQueue": {
+      "id": "SwarmingRpcsTaskQueue",
+      "properties": {
+        "dimensions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "valid_until_ts": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsTaskQueueList": {
+      "id": "SwarmingRpcsTaskQueueList",
+      "properties": {
+        "cursor": {
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "SwarmingRpcsTaskQueue"
+          },
+          "type": "array"
+        },
+        "now": {
+          "format": "date-time",
           "type": "string"
         }
       },

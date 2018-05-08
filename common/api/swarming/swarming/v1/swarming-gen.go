@@ -70,6 +70,7 @@ func New(client *http.Client) (*Service, error) {
 	s := &Service{client: client, BasePath: basePath}
 	s.Bot = NewBotService(s)
 	s.Bots = NewBotsService(s)
+	s.Queues = NewQueuesService(s)
 	s.Server = NewServerService(s)
 	s.Task = NewTaskService(s)
 	s.Tasks = NewTasksService(s)
@@ -84,6 +85,8 @@ type Service struct {
 	Bot *BotService
 
 	Bots *BotsService
+
+	Queues *QueuesService
 
 	Server *ServerService
 
@@ -114,6 +117,15 @@ func NewBotsService(s *Service) *BotsService {
 }
 
 type BotsService struct {
+	s *Service
+}
+
+func NewQueuesService(s *Service) *QueuesService {
+	rs := &QueuesService{s: s}
+	return rs
+}
+
+type QueuesService struct {
 	s *Service
 }
 
@@ -185,6 +197,8 @@ type SwarmingRpcsBotEvent struct {
 	EventType string `json:"event_type,omitempty"`
 
 	ExternalIp string `json:"external_ip,omitempty"`
+
+	MaintenanceMsg string `json:"maintenance_msg,omitempty"`
 
 	Message string `json:"message,omitempty"`
 
@@ -282,6 +296,8 @@ type SwarmingRpcsBotInfo struct {
 	MachineLease string `json:"machine_lease,omitempty"`
 
 	MachineType string `json:"machine_type,omitempty"`
+
+	MaintenanceMsg string `json:"maintenance_msg,omitempty"`
 
 	Quarantined bool `json:"quarantined,omitempty"`
 
@@ -402,6 +418,8 @@ type SwarmingRpcsBotsCount struct {
 	Count int64 `json:"count,omitempty,string"`
 
 	Dead int64 `json:"dead,omitempty,string"`
+
+	Maintenance int64 `json:"maintenance,omitempty,string"`
 
 	Now string `json:"now,omitempty"`
 
@@ -1204,6 +1222,68 @@ type SwarmingRpcsTaskProperties struct {
 
 func (s *SwarmingRpcsTaskProperties) MarshalJSON() ([]byte, error) {
 	type NoMethod SwarmingRpcsTaskProperties
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+type SwarmingRpcsTaskQueue struct {
+	Dimensions []string `json:"dimensions,omitempty"`
+
+	ValidUntilTs string `json:"valid_until_ts,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Dimensions") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Dimensions") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsTaskQueue) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsTaskQueue
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+type SwarmingRpcsTaskQueueList struct {
+	Cursor string `json:"cursor,omitempty"`
+
+	Items []*SwarmingRpcsTaskQueue `json:"items,omitempty"`
+
+	Now string `json:"now,omitempty"`
+
+	// ServerResponse contains the HTTP response code and headers from the
+	// server.
+	googleapi.ServerResponse `json:"-"`
+
+	// ForceSendFields is a list of field names (e.g. "Cursor") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Cursor") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *SwarmingRpcsTaskQueueList) MarshalJSON() ([]byte, error) {
+	type NoMethod SwarmingRpcsTaskQueueList
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -2352,65 +2432,9 @@ func (r *BotsService) Count() *BotsCountCall {
 	return c
 }
 
-// Cursor sets the optional parameter "cursor":
-func (c *BotsCountCall) Cursor(cursor string) *BotsCountCall {
-	c.urlParams_.Set("cursor", cursor)
-	return c
-}
-
 // Dimensions sets the optional parameter "dimensions":
 func (c *BotsCountCall) Dimensions(dimensions ...string) *BotsCountCall {
 	c.urlParams_.SetMulti("dimensions", append([]string{}, dimensions...))
-	return c
-}
-
-// IsBusy sets the optional parameter "is_busy":
-//
-// Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
-func (c *BotsCountCall) IsBusy(isBusy string) *BotsCountCall {
-	c.urlParams_.Set("is_busy", isBusy)
-	return c
-}
-
-// IsDead sets the optional parameter "is_dead":
-//
-// Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
-func (c *BotsCountCall) IsDead(isDead string) *BotsCountCall {
-	c.urlParams_.Set("is_dead", isDead)
-	return c
-}
-
-// IsMp sets the optional parameter "is_mp":
-//
-// Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
-func (c *BotsCountCall) IsMp(isMp string) *BotsCountCall {
-	c.urlParams_.Set("is_mp", isMp)
-	return c
-}
-
-// Limit sets the optional parameter "limit":
-func (c *BotsCountCall) Limit(limit int64) *BotsCountCall {
-	c.urlParams_.Set("limit", fmt.Sprint(limit))
-	return c
-}
-
-// Quarantined sets the optional parameter "quarantined":
-//
-// Possible values:
-//   "FALSE"
-//   "NONE" (default)
-//   "TRUE"
-func (c *BotsCountCall) Quarantined(quarantined string) *BotsCountCall {
-	c.urlParams_.Set("quarantined", quarantined)
 	return c
 }
 
@@ -2509,79 +2533,9 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 	//   "httpMethod": "GET",
 	//   "id": "swarming.bots.count",
 	//   "parameters": {
-	//     "cursor": {
-	//       "location": "query",
-	//       "type": "string"
-	//     },
 	//     "dimensions": {
 	//       "location": "query",
 	//       "repeated": true,
-	//       "type": "string"
-	//     },
-	//     "is_busy": {
-	//       "default": "NONE",
-	//       "enum": [
-	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
-	//       ],
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "is_dead": {
-	//       "default": "NONE",
-	//       "enum": [
-	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
-	//       ],
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "is_mp": {
-	//       "default": "NONE",
-	//       "enum": [
-	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
-	//       ],
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "limit": {
-	//       "default": "200",
-	//       "format": "int64",
-	//       "location": "query",
-	//       "type": "string"
-	//     },
-	//     "quarantined": {
-	//       "default": "NONE",
-	//       "enum": [
-	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
-	//       ],
-	//       "location": "query",
 	//       "type": "string"
 	//     }
 	//   },
@@ -2746,6 +2700,17 @@ func (c *BotsListCall) Dimensions(dimensions ...string) *BotsListCall {
 	return c
 }
 
+// InMaintenance sets the optional parameter "in_maintenance":
+//
+// Possible values:
+//   "FALSE"
+//   "NONE" (default)
+//   "TRUE"
+func (c *BotsListCall) InMaintenance(inMaintenance string) *BotsListCall {
+	c.urlParams_.Set("in_maintenance", inMaintenance)
+	return c
+}
+
 // IsBusy sets the optional parameter "is_busy":
 //
 // Possible values:
@@ -2900,6 +2865,21 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "repeated": true,
 	//       "type": "string"
 	//     },
+	//     "in_maintenance": {
+	//       "default": "NONE",
+	//       "enum": [
+	//         "FALSE",
+	//         "NONE",
+	//         "TRUE"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
+	//       "type": "string"
+	//     },
 	//     "is_busy": {
 	//       "default": "NONE",
 	//       "enum": [
@@ -2970,6 +2950,150 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//   "path": "bots/list",
 	//   "response": {
 	//     "$ref": "SwarmingRpcsBotList"
+	//   },
+	//   "scopes": [
+	//     "https://www.googleapis.com/auth/userinfo.email"
+	//   ]
+	// }
+
+}
+
+// method id "swarming.queues.list":
+
+type QueuesListCall struct {
+	s            *Service
+	urlParams_   gensupport.URLParams
+	ifNoneMatch_ string
+	ctx_         context.Context
+	header_      http.Header
+}
+
+// List:
+func (r *QueuesService) List() *QueuesListCall {
+	c := &QueuesListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
+	return c
+}
+
+// Cursor sets the optional parameter "cursor":
+func (c *QueuesListCall) Cursor(cursor string) *QueuesListCall {
+	c.urlParams_.Set("cursor", cursor)
+	return c
+}
+
+// Limit sets the optional parameter "limit":
+func (c *QueuesListCall) Limit(limit int64) *QueuesListCall {
+	c.urlParams_.Set("limit", fmt.Sprint(limit))
+	return c
+}
+
+// Fields allows partial responses to be retrieved. See
+// https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
+// for more information.
+func (c *QueuesListCall) Fields(s ...googleapi.Field) *QueuesListCall {
+	c.urlParams_.Set("fields", googleapi.CombineFields(s))
+	return c
+}
+
+// IfNoneMatch sets the optional parameter which makes the operation
+// fail if the object's ETag matches the given value. This is useful for
+// getting updates only after the object has changed since the last
+// request. Use googleapi.IsNotModified to check whether the response
+// error from Do is the result of In-None-Match.
+func (c *QueuesListCall) IfNoneMatch(entityTag string) *QueuesListCall {
+	c.ifNoneMatch_ = entityTag
+	return c
+}
+
+// Context sets the context to be used in this call's Do method. Any
+// pending HTTP request will be aborted if the provided context is
+// canceled.
+func (c *QueuesListCall) Context(ctx context.Context) *QueuesListCall {
+	c.ctx_ = ctx
+	return c
+}
+
+// Header returns an http.Header that can be modified by the caller to
+// add HTTP headers to the request.
+func (c *QueuesListCall) Header() http.Header {
+	if c.header_ == nil {
+		c.header_ = make(http.Header)
+	}
+	return c.header_
+}
+
+func (c *QueuesListCall) doRequest(alt string) (*http.Response, error) {
+	reqHeaders := make(http.Header)
+	for k, v := range c.header_ {
+		reqHeaders[k] = v
+	}
+	reqHeaders.Set("User-Agent", c.s.userAgent())
+	if c.ifNoneMatch_ != "" {
+		reqHeaders.Set("If-None-Match", c.ifNoneMatch_)
+	}
+	var body io.Reader = nil
+	c.urlParams_.Set("alt", alt)
+	urls := googleapi.ResolveRelative(c.s.BasePath, "queues/list")
+	urls += "?" + c.urlParams_.Encode()
+	req, _ := http.NewRequest("GET", urls, body)
+	req.Header = reqHeaders
+	return gensupport.SendRequest(c.ctx_, c.s.client, req)
+}
+
+// Do executes the "swarming.queues.list" call.
+// Exactly one of *SwarmingRpcsTaskQueueList or error will be non-nil.
+// Any non-2xx status code is an error. Response headers are in either
+// *SwarmingRpcsTaskQueueList.ServerResponse.Header or (if a response
+// was returned at all) in error.(*googleapi.Error).Header. Use
+// googleapi.IsNotModified to check whether the returned error was
+// because http.StatusNotModified was returned.
+func (c *QueuesListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskQueueList, error) {
+	gensupport.SetOptions(c.urlParams_, opts...)
+	res, err := c.doRequest("json")
+	if res != nil && res.StatusCode == http.StatusNotModified {
+		if res.Body != nil {
+			res.Body.Close()
+		}
+		return nil, &googleapi.Error{
+			Code:   res.StatusCode,
+			Header: res.Header,
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer googleapi.CloseBody(res)
+	if err := googleapi.CheckResponse(res); err != nil {
+		return nil, err
+	}
+	ret := &SwarmingRpcsTaskQueueList{
+		ServerResponse: googleapi.ServerResponse{
+			Header:         res.Header,
+			HTTPStatusCode: res.StatusCode,
+		},
+	}
+	target := &ret
+	if err := gensupport.DecodeResponse(target, res); err != nil {
+		return nil, err
+	}
+	return ret, nil
+	// {
+	//   "httpMethod": "GET",
+	//   "id": "swarming.queues.list",
+	//   "parameters": {
+	//     "cursor": {
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "limit": {
+	//       "default": "200",
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     }
+	//   },
+	//   "path": "queues/list",
+	//   "response": {
+	//     "$ref": "SwarmingRpcsTaskQueueList"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
