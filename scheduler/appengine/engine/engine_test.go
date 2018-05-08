@@ -45,6 +45,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
+	"go.chromium.org/luci/scheduler/appengine/schedule"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/noop"
 
@@ -101,10 +102,12 @@ func TestUpdateProjectJobs(t *testing.T) {
 		tq.CreateQueues()
 
 		jobDef := catalog.Definition{
-			JobID:    "proj/1",
-			Revision: "rev1",
-			Schedule: "*/5 * * * * * *",
-			Acls:     acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+			JobID:            "proj/1",
+			Revision:         "rev1",
+			Schedule:         "*/5 * * * * * *",
+			Acls:             acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+			Task:             []uint8{1, 2, 3}, // note: this is actually gibberish, but we don't care here
+			TriggeringPolicy: []uint8{4, 5, 6}, // same
 		}
 
 		Convey("noop", func() {
@@ -134,6 +137,8 @@ func TestUpdateProjectJobs(t *testing.T) {
 							TickNonce: 6278013164014963328,
 						},
 					},
+					Task:                jobDef.Task,
+					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
 			})
 
@@ -167,7 +172,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			So(len(tq.GetScheduledTasks()), ShouldEqual, 0)
 		})
 
-		Convey("updating a job", func() {
+		Convey("updating job's schedule", func() {
 			// Adding a job that ticks every 5 sec. Make sure its tick is scheduled.
 			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
 			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
@@ -197,6 +202,8 @@ func TestUpdateProjectJobs(t *testing.T) {
 							TickNonce: 2673062197574995716,
 						},
 					},
+					Task:                jobDef.Task,
+					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
 			})
 
@@ -204,6 +211,48 @@ func TestUpdateProjectJobs(t *testing.T) {
 			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 2673062197574995716},
+			})
+		})
+
+		Convey("updating job's triggering policy", func() {
+			// Adding a job that is triggered externally (doesn't tick). Schedules no
+			// tasks.
+			job := jobDef
+			job.Schedule = "triggered"
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), ShouldBeNil)
+			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{})
+
+			// Update its triggering policy. It should emit a triage to evaluate
+			// the state of the job using this new policy.
+			job.TriggeringPolicy = []uint8{1, 1, 1, 1}
+			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), ShouldBeNil)
+
+			// The job is updated now.
+			So(allJobs(c), ShouldResemble, []Job{
+				{
+					JobID:     "proj/1",
+					ProjectID: "proj",
+					Revision:  "rev1",
+					Enabled:   true,
+					Acls:      acl.GrantsByRole{Readers: []string{"group:r"}, Owners: []string{"groups:o"}},
+					Schedule:  "triggered",
+					Cron: cron.State{
+						Enabled:    true,
+						Generation: 2,
+						LastRewind: epoch,
+						LastTick: cron.TickLaterAction{
+							When:      schedule.DistantFuture,
+							TickNonce: 6278013164014963328,
+						},
+					},
+					Task:                jobDef.Task,
+					TriggeringPolicyRaw: job.TriggeringPolicy,
+				},
+			})
+
+			// Kicked the triage indeed.
+			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+				&internal.KickTriageTask{JobId: "proj/1"},
 			})
 		})
 
@@ -228,6 +277,8 @@ func TestUpdateProjectJobs(t *testing.T) {
 						Enabled:    false,
 						Generation: 3,
 					},
+					Task:                jobDef.Task,
+					TriggeringPolicyRaw: jobDef.TriggeringPolicy,
 				},
 			})
 		})

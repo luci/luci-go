@@ -101,6 +101,12 @@ type Job struct {
 	// Cron holds the state of the cron state machine.
 	Cron cron.State `gae:",noindex"`
 
+	// TriggeringPolicyRaw is job's TriggeringPolicy proto in serialized form.
+	//
+	// It is taken from the job definition stored in the catalog. Used during
+	// the triage.
+	TriggeringPolicyRaw []byte `gae:",noindex"`
+
 	// ActiveInvocations is ordered set of active invocation IDs.
 	//
 	// It contains IDs of pending, running or recently finished invocations,
@@ -174,6 +180,7 @@ func (e *Job) IsEqual(other *Job) bool {
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
 		e.Cron.Equal(&other.Cron) &&
+		bytes.Equal(e.TriggeringPolicyRaw, other.TriggeringPolicyRaw) &&
 		equalInt64Lists(e.ActiveInvocations, other.ActiveInvocations) &&
 		bytes.Equal(e.FinishedInvocationsRaw, other.FinishedInvocationsRaw))
 }
@@ -186,6 +193,7 @@ func (e *Job) MatchesDefinition(def catalog.Definition) bool {
 		e.Schedule == def.Schedule &&
 		e.Acls.Equal(&def.Acls) &&
 		bytes.Equal(e.Task, def.Task) &&
+		bytes.Equal(e.TriggeringPolicyRaw, def.TriggeringPolicy) &&
 		equalSortedLists(e.TriggeredJobIDs, def.TriggeredJobIDs)
 }
 

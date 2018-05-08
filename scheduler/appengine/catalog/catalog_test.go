@@ -96,6 +96,18 @@ func TestProtoValidation(t *testing.T) {
 			Id:       "good",
 			Schedule: "* * * * *",
 		}), ShouldErrLike, "can't find a recognized task definition")
+		So(call(&messages.Job{
+			Id:               "good",
+			Schedule:         "* * * * *",
+			Noop:             &messages.NoopTask{},
+			TriggeringPolicy: &messages.TriggeringPolicy{Kind: 111111},
+		}), ShouldErrLike, "unrecognized policy kind 111111")
+		So(call(&messages.Job{
+			Id:               "good",
+			Schedule:         "* * * * *",
+			Noop:             &messages.NoopTask{},
+			TriggeringPolicy: &messages.TriggeringPolicy{MaxConcurrentInvocations: -1},
+		}), ShouldErrLike, "max_concurrent_invocations should be positive, got -1")
 	})
 
 	Convey("extractTaskProto works", t, func() {
@@ -230,6 +242,8 @@ func TestConfigReading(t *testing.T) {
 		})
 
 		Convey("GetProjectJobs works", func() {
+			const expectedRev = "1075744c09274d3db00cf707729f2058b446f85d"
+
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
 			So(defs, ShouldResemble, []Definition{
@@ -240,10 +254,11 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
-					RevisionURL: "https://example.com/view/here/app.cfg",
-					Schedule:    "*/10 * * * * * *",
-					Task:        []uint8{0xa, 0x0},
+					Revision:         expectedRev,
+					RevisionURL:      "https://example.com/view/here/app.cfg",
+					Schedule:         "*/10 * * * * * *",
+					Task:             []uint8{10, 0},
+					TriggeringPolicy: []uint8{16, 4},
 				},
 				{
 					JobID: "project1/noop-job-2",
@@ -252,10 +267,10 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
+					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
-					Task:        []uint8{0xa, 0x0},
+					Task:        []uint8{10, 0},
 				},
 				{
 					JobID: "project1/urlfetch-job-1",
@@ -264,7 +279,7 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{"group:triggerers"},
 						Owners:     []string{"group:debuggers", "group:some-admins"},
 					},
-					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
+					Revision:    expectedRev,
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{18, 21, 18, 19, 104, 116, 116, 112, 115, 58, 47, 47, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109},
@@ -276,11 +291,12 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Owners:     []string{"group:some-admins"},
 					},
-					Flavor:      JobFlavorTrigger,
-					Revision:    "0d4b5ef300618b89e57414ced2062a2b40250521",
-					RevisionURL: "https://example.com/view/here/app.cfg",
-					Schedule:    "with 30s interval",
-					Task:        []uint8{10, 0},
+					Flavor:           JobFlavorTrigger,
+					Revision:         expectedRev,
+					RevisionURL:      "https://example.com/view/here/app.cfg",
+					Schedule:         "with 30s interval",
+					Task:             []uint8{10, 0},
+					TriggeringPolicy: []uint8{8, 1, 16, 2},
 					TriggeredJobIDs: []string{
 						"project1/noop-job-1",
 						"project1/noop-job-2",
@@ -509,6 +525,10 @@ job {
 	schedule: "*/10 * * * * * *"
 	acl_sets: "public"
 
+	triggering_policy {
+		max_concurrent_invocations: 4
+	}
+
 	noop: {}
 }
 
@@ -549,6 +569,11 @@ job {
 trigger {
 	id: "trigger"
 	acl_sets: "public"
+
+	triggering_policy {
+		kind: GREEDY_BATCHING
+		max_concurrent_invocations: 2
+	}
 
 	noop: {}
 
