@@ -215,6 +215,24 @@
       "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06078295_fa1eb4a4",
+        "filename": "milo/frontend/view_builder.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T17:49:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5455ecbe_7c34110e",
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
