@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "21b37b1c_38316cca",
+        "filename": "buildbucket/testdata/v1_builds.json",
+        "patchSetId": 8
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T00:18:12Z",
+      "side": 1,
+      "message": "I see, that wasn\u0027t clear.  Fixed.",
+      "parentUuid": "829154fe_86ce348d",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca3cc5cd_6bbfd5a6",
         "filename": "buildbucket/v1.go",
         "patchSetId": 8
@@ -33,6 +51,24 @@
       "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a607ac0b_73f9fec3",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T00:18:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca3cc5cd_6bbfd5a6",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "e3d67962_cd2a5b73",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T00:18:12Z",
+      "side": 1,
+      "message": "I see, I thought v2 was supposed to be luci only.  Done.",
+      "parentUuid": "bb4e4ba0_3ad374b0",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "db882380_3fa99ec1",
         "filename": "buildbucket/v1.go",
         "patchSetId": 8
@@ -67,6 +121,24 @@
       "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a68bea01_a092e3b5",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T00:18:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "db882380_3fa99ec1",
+      "revId": "cc4093d91051b2fe0f727d240374d7adc9b4fa84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
