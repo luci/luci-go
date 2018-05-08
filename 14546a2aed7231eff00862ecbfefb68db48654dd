@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "a187a157_b4bea109",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-08T18:02:28Z",
+      "side": 1,
+      "message": "Actually, can\u0027t do that if we still want to do best-effort project parsing.",
+      "parentUuid": "9b07f520_a4f0c12c",
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93f8434d_717f2637",
         "filename": "buildbucket/v1.go",
         "patchSetId": 10
