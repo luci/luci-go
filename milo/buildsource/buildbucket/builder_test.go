@@ -48,7 +48,7 @@ func TestBuilder(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct{ bucket, builder string }{
-		{"master.tryserver.infra", "InfraPresubmit.Swarming"},
+		{"luci.infra.try", "InfraPresubmit.Swarming"},
 	}
 
 	Convey("Builder", t, func() {
@@ -77,7 +77,8 @@ func TestBuilder(t *testing.T) {
 				err := os.MkdirAll(filepath.Dir(expectationFilePath), 0777)
 				So(err, ShouldBeNil)
 
-				actual, err := GetBuilder(c, tc.bucket, tc.builder, 20)
+				bid := NewBuilderID(tc.bucket, tc.builder)
+				actual, err := GetBuilder(c, bid, 20)
 				So(err, ShouldBeNil)
 				actualJSON, err := json.MarshalIndent(actual, "", "  ")
 				So(err, ShouldBeNil)
