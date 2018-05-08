@@ -27,11 +27,38 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common/model"
+	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
 )
+
+func getPool(c context.Context, bid BuilderID) (*ui.MachinePool, error) {
+	// Get PoolKey
+	builderPool := model.BuilderPool{
+		BuilderID: datastore.MakeKey(c, model.BuilderSummaryKind, bid.String()),
+	}
+	// These are eventually consistent, so just log an error and pass if not found.
+	switch err := datastore.Get(c, &builderPool); {
+	case datastore.IsErrNoSuchEntity(err):
+		logging.Warningf(c, "builder pool not found")
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	// Get BotPool
+	botPool := model.BotPool{PoolID: builderPool.PoolKey.StringID()}
+	switch err := datastore.Get(c, &botPool); {
+	case datastore.IsErrNoSuchEntity(err):
+		logging.Warningf(c, "bot pool not found")
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	return ui.NewMachinePool(c, botPool.Bots), nil
+}
 
 // processBuilders parses out all of the builder pools from the Swarmbucket get_builders response,
 // and saves the BuilderPool information into the datastore.
@@ -42,7 +69,14 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 	seen := stringset.New(0)
 	for _, bucket := range r.Buckets {
 		for _, builder := range bucket.Builders {
-			id := NewBuilderID(bucket.Name, builder.Name).String()
+			bid := NewBuilderID(bucket.Name, builder.Name)
+			if bid.Project == "" {
+				// This may happen if the bucket or builder does not fulfill the LUCI
+				// naming convention.
+				logging.Warningf(c, "invalid bucket/builder %q/%q, skipping", bucket.Name, builder.Name)
+				continue
+			}
+			id := bid.String()
 			descriptor := model.NewPoolDescriptor(bucket.SwarmingHostname, builder.SwarmingDimensions)
 			dID := descriptor.PoolID()
 			builderPools = append(builderPools, model.BuilderPool{
@@ -63,13 +97,14 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 // * A bot with TaskID is Busy
 // * A bot that is dead or quarantined is Offline
 // * Otherwise, it is implicitly connected and Idle.
-func parseBot(c context.Context, botInfo *swarmingAPI.SwarmingRpcsBotInfo) (*model.Bot, error) {
+func parseBot(c context.Context, swarmingHost string, botInfo *swarmingAPI.SwarmingRpcsBotInfo) (*model.Bot, error) {
 	lastSeen, err := time.Parse(swarming.SwarmingTimeLayout, botInfo.LastSeenTs)
 	if err != nil {
 		return nil, err
 	}
 	result := &model.Bot{
 		Name:     botInfo.BotId,
+		URL:      fmt.Sprintf("https://%s/bot?id=%s", swarmingHost, botInfo.BotId),
 		LastSeen: lastSeen,
 	}
 
@@ -107,7 +142,7 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 		if botInfo.Deleted {
 			continue
 		}
-		bot, err := parseBot(c, botInfo)
+		bot, err := parseBot(c, desc.Host(), botInfo)
 		if err != nil {
 			return err
 		}

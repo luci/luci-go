@@ -50,11 +50,11 @@
             {{ end }}
           </td>
         </tr><tr>
-          <td>Disconnected</td><td>{{ .Disconnected }}</td>
+          <td>Offline</td><td>{{ .Offline }}</td>
           <td class="graph">
-            {{ if gt .Disconnected 0 }}
-              <div class="bar disconnected"
-                   style="width: {{ percent .Disconnected .Total }}%"></div>
+            {{ if gt .Offline 0 }}
+              <div class="bar offline"
+                   style="width: {{ percent .Offline .Total }}%"></div>
             {{ end }}
           </td>
         </tr>
@@ -62,11 +62,12 @@
       <details>
         <summary>{{ .Total }} bots</summary>
         <table class="info">
-          <tr><th>Name</th><th>Status</th></tr>
+          <tr><th>Name</th><th>Status</th><th>Last Seen</th></tr>
           {{ range .Bots }}
             <tr>
-              <td>{{ .Name.HTML }}</td>
+              <td>{{ .Label.HTML }}</td>
               <td class="status-{{ .Status.String }}">{{ .Status.String }}</td>
+              <td>{{ .LastSeen | localTime "N/A" }}</td>
             </tr>
           {{ end }}
         </table>

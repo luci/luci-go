@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	swarmingTestdata "go.chromium.org/luci/milo/buildsource/swarming/testdata"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/testdata"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/server/auth"
@@ -189,10 +190,13 @@ func buildbotBuilderTestData() []common.TestBundle {
 					Name:         "Sample Builder",
 					HasBlamelist: true,
 					MachinePool: &ui.MachinePool{
-						Total:        15,
-						Disconnected: 13,
-						Idle:         5,
-						Busy:         8,
+						Total:   15,
+						Offline: 13,
+						Idle:    5,
+						Busy:    8,
+						Bots: []ui.Bot{
+							{Bot: model.Bot{Name: "botname", URL: "http://example.com/botname"}},
+						},
 					},
 					CurrentBuilds:  []*ui.BuildSummary{sum},
 					PendingBuilds:  []*ui.BuildSummary{sum},

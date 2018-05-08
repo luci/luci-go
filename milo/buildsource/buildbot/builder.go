@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
 )
 
@@ -78,36 +79,31 @@ func mergeText(text []string) []string {
 }
 
 func summarizeSlavePool(
-	baseURL string, slaves []string, slaveMap map[string]*buildbot.Slave) *ui.MachinePool {
+	c context.Context, baseURL string, slaves []string, slaveMap map[string]*buildbot.Slave) *ui.MachinePool {
 
-	mp := &ui.MachinePool{
-		Total: len(slaves),
-		Bots:  make([]ui.Bot, 0, len(slaves)),
-	}
-	for _, slaveName := range slaves {
-		slave, ok := slaveMap[slaveName]
-		bot := ui.Bot{
-			Name: *ui.NewLink(
-				slaveName,
-				fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
-				fmt.Sprintf("buildslave %s", slaveName)),
+	bots := make([]model.Bot, len(slaves))
+	for i, slaveName := range slaves {
+		bot := model.Bot{
+			Name: slaveName,
+			URL:  fmt.Sprintf("%s/buildslaves/%s", baseURL, slaveName),
 		}
+
+		slave, ok := slaveMap[slaveName]
 		switch {
 		case !ok:
-			// This shouldn't happen
+			// This shouldn't happen.  Just log an error and count it as offline.
+			logging.Errorf(c, "Slave %s not found", slaveName)
+			fallthrough
 		case !slave.Connected:
-			bot.Status = ui.Disconnected
-			mp.Disconnected++
+			bot.Status = model.Offline
 		case len(slave.RunningbuildsMap) > 0:
-			bot.Status = ui.Busy
-			mp.Busy++
+			bot.Status = model.Busy
 		default:
-			bot.Status = ui.Idle
-			mp.Idle++
+			bot.Status = model.Idle
 		}
-		mp.Bots = append(mp.Bots, bot)
+		bots[i] = bot
 	}
-	return mp
+	return ui.NewMachinePool(c, bots)
 }
 
 // GetBuilder is the implementation for getting a milo builder page from
@@ -170,7 +166,7 @@ func GetBuilder(c context.Context, masterName, builderName string, limit int, cu
 	if master.Internal {
 		baseURL = "https://uberchromegw.corp.google.com/i/"
 	}
-	result.MachinePool = summarizeSlavePool(baseURL+master.Name, builder.Slaves, master.Slaves)
+	result.MachinePool = summarizeSlavePool(c, baseURL+master.Name, builder.Slaves, master.Slaves)
 
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		q := buildstore.Query{

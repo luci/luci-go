@@ -93,6 +93,8 @@ type BotPool struct {
 type Bot struct {
 	// Name is an identifier for the Bot.  This is usually a short hostname.
 	Name string
+	// URL is a link to a bot page, if available.
+	URL string
 	// Status is the current status of the Bot.
 	Status BotStatus
 	// LastSeen denotes when the Bot was last seen.

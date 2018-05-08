@@ -186,6 +186,10 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 		return nil
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (err error) {
+			result.MachinePool, err = getPool(c, bid)
+			return
+		}
 		work <- func() error {
 			return fetch(bbv1.StatusScheduled, -1)
 		}
