@@ -16,77 +16,15 @@ package engine
 
 import (
 	"sort"
-	"strings"
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/buildbucket/proto"
-	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/scheduler/api/scheduler/v1"
-	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 	"go.chromium.org/luci/scheduler/appengine/task/utils"
 )
-
-// TODO(vadimsh): This is temporary dumb logic until v2 is fully implemented.
-// This design most likely will change.
-
-// TODO(vadimsh): Needs more tests. Postponed until v2, since this file will
-// likely be largely rewritten.
-
-// requestBuilder is a task.Request in a process of being prepared.
-//
-// This type exists mostly to group a bunch of utility methods together.
-type requestBuilder struct {
-	task.Request
-
-	ctx context.Context // for logging
-}
-
-// requestFromTriggers examines zero or more triggers and derives a request for
-// new invocation based on them.
-//
-// Currently picks the values from most recent trigger and disregards properties
-// of the rest of them.
-//
-// TODO(vadimsh): Allow returning errors and handle them somehow? By skipping
-// "broken" triggers?
-func requestFromTriggers(c context.Context, t []*internal.Trigger) task.Request {
-	if len(t) == 0 {
-		// A force-triggered job, nowhere to derive Properties from.
-		return task.Request{}
-	}
-
-	req := requestBuilder{ctx: c}
-
-	// 't' is semantically a set. Sort triggers by the creation time, most recent
-	// last, so the task manager (and UI) sees them ordered already.
-	req.IncomingTriggers = append(req.IncomingTriggers, t...)
-	sortTriggers(req.IncomingTriggers)
-
-	// Derive properties and tags from the most recent trigger for now.
-	newest := req.IncomingTriggers[len(req.IncomingTriggers)-1]
-	switch p := newest.Payload.(type) {
-	case *internal.Trigger_Cron:
-		req.prepareCronRequest(p.Cron)
-	case *internal.Trigger_Noop:
-		req.prepareNoopRequest(p.Noop)
-	case *internal.Trigger_Gitiles:
-		req.prepareGitilesRequest(p.Gitiles)
-	case *internal.Trigger_Buildbucket:
-		req.prepareBuildbucketRequest(p.Buildbucket)
-	default:
-		req.debugLog("Unrecognized trigger payload of type %T, ignoring", p)
-	}
-
-	req.TriggeredBy = identity.Identity(newest.EmittedByUser)
-	return req.Request
-}
 
 // putRequestIntoInv copies task.Request fields into Invocation.
 //
@@ -133,49 +71,4 @@ func getRequestFromInv(inv *Invocation) (r task.Request, err error) {
 	}
 	r.Tags = inv.Tags
 	return
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// requestBuilder methods
-
-func (r *requestBuilder) debugLog(format string, args ...interface{}) {
-	debugLog(r.ctx, &r.DebugLog, format, args...)
-}
-
-func (r *requestBuilder) prepareCronRequest(t *scheduler.CronTrigger) {
-	// nothing here for now
-}
-
-func (r *requestBuilder) prepareNoopRequest(t *scheduler.NoopTrigger) {
-	r.Properties = structFromMap(map[string]string{
-		"noop_trigger_data": t.Data, // for testing
-	})
-}
-
-func (r *requestBuilder) prepareGitilesRequest(t *scheduler.GitilesTrigger) {
-	repo, err := gitiles.NormalizeRepoURL(t.Repo, false)
-	if err != nil {
-		r.debugLog("Bad repo URL %q in the trigger - %s", t.Repo, err)
-		return
-	}
-	commit := buildbucketpb.GitilesCommit{
-		Host:    repo.Host,
-		Project: strings.TrimPrefix(repo.Path, "/"),
-		Id:      t.Revision,
-	}
-
-	r.Properties = structFromMap(map[string]string{
-		"revision":   t.Revision,
-		"branch":     t.Ref,
-		"repository": t.Repo,
-	})
-	r.Tags = []string{
-		"buildset:" + commit.BuildSetString(),
-		"gitiles_ref:" + t.Ref,
-	}
-}
-
-func (r *requestBuilder) prepareBuildbucketRequest(t *scheduler.BuildbucketTrigger) {
-	r.Properties = t.Properties
-	r.Tags = t.Tags
 }

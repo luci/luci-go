@@ -15,8 +15,10 @@
 package engine
 
 import (
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/tq"
@@ -28,7 +30,9 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
@@ -52,13 +56,14 @@ type triageOp struct {
 	// dispatcher routes task queue tasks.
 	dispatcher *tq.Dispatcher
 
-	// triggeringPolicy decides how to convert a set of pending triggers into
-	// a bunch of new invocations.
+	// policyFactory knows how to instantiate triggering policies.
 	//
-	// TODO(vadimsh): Convert to interface. Document the contract.
-	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error)
+	// Usually it is policy.New, but may be replaced in tests.
+	policyFactory func(messages.TriggeringPolicy) (policy.Func, error)
 
 	// enqueueInvocations transactionally creates and starts new invocations.
+	//
+	// Implemented by the engine, see engineImpl.enqueueInvocations.
 	enqueueInvocations func(c context.Context, job *Job, req []task.Request) error
 
 	// The rest of fields are used internally.
@@ -310,23 +315,61 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 	}
 
 	// Otherwise ask the policy to convert triggers into invocations.
-	requests, err := op.triggeringPolicy(c, job, triggers)
-	if err != nil {
-		return nil, err
-	}
+	out := op.triggeringPolicy(c, job, triggers)
 
 	// Actually pop all consumed triggers and start the corresponding invocations.
 	// Note that this modifies job.ActiveInvocations list.
-	if len(requests) != 0 {
-		for _, r := range requests {
+	if len(out.Requests) != 0 {
+		for _, r := range out.Requests {
 			for _, t := range r.IncomingTriggers {
 				popOp.Pop(t.Id)
 			}
 		}
-		if err := op.enqueueInvocations(c, job, requests); err != nil {
+		if err := op.enqueueInvocations(c, job, out.Requests); err != nil {
 			return nil, err
 		}
 	}
 
 	return popOp, nil
+}
+
+// triggeringPolicy decides how to convert a set of pending triggers into
+// a bunch of new invocations.
+//
+// Called within a job transaction. Must not do any expensive calls.
+func (op *triageOp) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) policy.Out {
+	var p messages.TriggeringPolicy
+	if job.TriggeringPolicyRaw != nil {
+		err := proto.Unmarshal(job.TriggeringPolicyRaw, &p)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to unmarshal TriggeringPolicy, using the default policy instead")
+			p = messages.TriggeringPolicy{}
+		}
+	}
+
+	policyFunc, err := op.policyFactory(p)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to instantiate the triggering policy function, using the default policy instead")
+		policyFunc, err = op.policyFactory(messages.TriggeringPolicy{})
+		if err != nil {
+			panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
+		}
+	}
+
+	return policyFunc(policyFuncEnv{c, op}, policy.In{
+		ActiveInvocations: job.ActiveInvocations,
+		Triggers:          triggers,
+	})
+}
+
+// policyFuncEnv implements policy.Environment through triageOp.
+type policyFuncEnv struct {
+	ctx context.Context
+	op  *triageOp
+}
+
+func (e policyFuncEnv) DebugLog(format string, args ...interface{}) {
+	// TODO(vadimsh): Log this into datastore too, so that we have access to
+	// the triage log in the UI.
+	logging.Infof(e.ctx, format, args...)
 }
