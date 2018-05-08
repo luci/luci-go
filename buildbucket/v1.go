@@ -235,35 +235,34 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) {
 	}
 }
 
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (*buildbucketpb.Builder_ID, error) {
-	ret := &buildbucketpb.Builder_ID{
-		Project: msg.Project,
-		Bucket:  msg.Bucket,
-		Builder: params.Builder,
+// BucketNameToV2 converts a v1 Bucket name to the v2 constituent parts.
+// An error is returned if the bucketname does not match the expected format.
+// The difference between the bucket name is that v2 uses short names, for example:
+// v1: luci.chromium.try
+// v2: try
+// "luci" is dropped, "chromium" is recorded as the project, "try" is the name.
+// If the bucket does not conform to this convention, or if it is not a luci bucket,
+// then this return and empty string for both project and bucket.
+func BucketNameToV2(v1Bucket string) (project string, bucket string) {
+	p := strings.SplitN(v1Bucket, ".", 3)
+	if len(p) != 3 || p[0] != "luci" {
+		return "", ""
 	}
+	return p[1], p[2]
+}
 
-	if ret.Project == "" {
-		ret.Project = v1.ProjectFromBucket(msg.Bucket)
-	}
-
-	// v2 uses short names for LUCI buckets,
-	// e.g. "try" for "luci.chromium.try"
-	// Strip "luci.<project>." prefix from bucket.
-	if p := strings.SplitN(ret.Bucket, ".", 3); len(p) == 3 && p[0] == "luci" {
-		switch {
-		case ret.Project == "":
-			ret.Project = p[1]
-		case ret.Project != p[1]:
-			return nil, errors.Reason("inconsistent bucket %q and project %q", ret.Bucket, ret.Project).
-				Tag(MalformedBuild).Err()
-		}
-		ret.Bucket = p[2]
-	}
-
+// builderToV2 attempts to parse as many fields into bucket and project as possible,
+// and do project name validation if the project is available.
+func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *buildbucketpb.Builder_ID, err error) {
+	ret = &buildbucketpb.Builder_ID{Builder: params.Builder}
 	if ret.Builder == "" {
-		ret.Builder = tags.Get(v1.TagBuilder)
+		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
 	}
-	return ret, nil
+	if ret.Project, ret.Bucket = BucketNameToV2(msg.Bucket); msg.Project != "" && ret.Project != msg.Project {
+		err = errors.Reason(
+			"message project %q does not match bucket project %q", msg.Project, ret.Project).Tag(MalformedBuild).Err()
+	}
+	return
 }
 
 func timestampToV2(ts int64) *tspb.Timestamp {
