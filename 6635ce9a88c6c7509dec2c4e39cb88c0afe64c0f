@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc0d3c37_4ba28dc6",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-08T06:18:36Z",
+      "side": 1,
+      "message": "why not adopt the same code used for gitiles above? Then you don\u0027t have issue with information leakage.",
+      "range": {
+        "startLine": 385,
+        "startChar": 1,
+        "endLine": 392,
+        "endChar": 3
+      },
+      "revId": "6635ce9a88c6c7509dec2c4e39cb88c0afe64c0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
