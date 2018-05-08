@@ -1,9 +1,6 @@
 [
     {},
     {
-        "bucket": "luci.chromium.try"
-    },
-    {
     	"id": "1",
     	"project": "chromium",
     	"bucket": "luci.chromium.try",

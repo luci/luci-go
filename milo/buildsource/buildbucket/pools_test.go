@@ -51,7 +51,7 @@ func TestPools(t *testing.T) {
 			Buckets: []*swarmbucket.SwarmingSwarmbucketApiBucketMessage{
 				{
 					SwarmingHostname: "swarming.example.com",
-					Name:             "foobucket",
+					Name:             "luci.infra.foobucket",
 					Builders: []*swarmbucket.SwarmingSwarmbucketApiBuilderMessage{
 						{
 							Name:               "foobuilder",
@@ -80,12 +80,12 @@ func TestPools(t *testing.T) {
 				So(len(descriptors), ShouldEqual, 2)
 				Convey(`And builders should be there`, func() {
 					b1 := model.BuilderPool{
-						BuilderID: datastore.MakeKey(c, "BuilderSummary", "buildbucket/foobucket/foobuilder"),
+						BuilderID: datastore.MakeKey(c, "BuilderSummary", "buildbucket/luci.infra.foobucket/foobuilder"),
 					}
 					So(datastore.Get(c, &b1), ShouldBeNil)
 					So(b1.PoolKey.StringID(), ShouldEqual, md1.PoolID())
 					b2 := model.BuilderPool{
-						BuilderID: datastore.MakeKey(c, "BuilderSummary", "buildbucket/foobucket/foobuilder3"),
+						BuilderID: datastore.MakeKey(c, "BuilderSummary", "buildbucket/luci.infra.foobucket/foobuilder3"),
 					}
 					So(datastore.Get(c, &b2), ShouldBeNil)
 					So(b2.PoolKey.StringID(), ShouldEqual, md2.PoolID())
