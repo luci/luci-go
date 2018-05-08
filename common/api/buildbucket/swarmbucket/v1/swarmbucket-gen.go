@@ -347,10 +347,16 @@ type GetBuildersCall struct {
 	header_      http.Header
 }
 
-// GetBuilders: Returns defined swarmbucket builders. Can be used by
-// code review tool to discover builders.
+// GetBuilders: Returns defined swarmbucket builders. Can be used to
+// discover builders.
 func (s *Service) GetBuilders() *GetBuildersCall {
 	c := &GetBuildersCall{s: s, urlParams_: make(gensupport.URLParams)}
+	return c
+}
+
+// Bucket sets the optional parameter "bucket":
+func (c *GetBuildersCall) Bucket(bucket ...string) *GetBuildersCall {
+	c.urlParams_.SetMulti("bucket", append([]string{}, bucket...))
 	return c
 }
 
@@ -447,9 +453,16 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 	}
 	return ret, nil
 	// {
-	//   "description": "Returns defined swarmbucket builders. Can be used by code review tool to discover builders.",
+	//   "description": "Returns defined swarmbucket builders. Can be used to discover builders.",
 	//   "httpMethod": "GET",
 	//   "id": "swarmbucket.get_builders",
+	//   "parameters": {
+	//     "bucket": {
+	//       "location": "query",
+	//       "repeated": true,
+	//       "type": "string"
+	//     }
+	//   },
 	//   "path": "builders",
 	//   "response": {
 	//     "$ref": "SwarmingSwarmbucketApiGetBuildersResponseMessage"
