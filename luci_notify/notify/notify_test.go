@@ -25,41 +25,63 @@ import (
 	"go.chromium.org/gae/service/user"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
-	"go.chromium.org/luci/luci_notify/config"
+	config "go.chromium.org/luci/config"
+	memImpl "go.chromium.org/luci/config/impl/memory"
+	apiConfig "go.chromium.org/luci/luci_notify/api/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func extractNotifiers(c context.Context, projectID string, cfg *notifyConfig.ProjectConfig) []*config.Notifier {
-	var notifiers []*config.Notifier
+func extractNotifiers(c context.Context, projectID string, cfg *apiConfig.ProjectConfig) []*notifyConfig.Notifier {
+	var notifiers []*notifyConfig.Notifier
 	parentKey := datastore.MakeKey(c, "Project", projectID)
 	for _, n := range cfg.Notifiers {
-		notifiers = append(notifiers, config.NewNotifier(parentKey, n))
+		notifiers = append(notifiers, notifyConfig.NewNotifier(parentKey, n))
 	}
 	return notifiers
 }
 
-func notifyDummyBuild(status buildbucketpb.Status, notifyEmails ...string) *Build {
+func notifyDummyBuild(status buildbucketpb.Status, notifyEmails ...[]emailNotify) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", "test-builder", status)
-	build.EmailNotify = notifyEmails
-
+	for _, en := range notifyEmails {
+		build.EmailNotify = append(build.EmailNotify, en...)
+	}
 	return &build
 }
 
-func verifyStringSliceResembles(actual, expect []string) {
+func verifyStringSliceResembles(actual []string, expect []emailNotify) {
 	// Put the strings into sets so prevent flakiness.
 	actualSet := stringset.NewFromSlice(actual...)
-	expectSet := stringset.NewFromSlice(expect...)
+	var addresses []string
+	for _, en := range expect {
+		addresses = append(addresses, en.Email)
+	}
+	expectSet := stringset.NewFromSlice(addresses...)
 	So(actualSet, ShouldResemble, expectSet)
+}
+
+func verifyEmailContent(recipients []emailNotify, task tqtesting.Task) {
+	tr, ok := task.Payload.(*internal.EmailTask)
+	So(ok, ShouldEqual, true)
+	for _, email := range tr.Recipients {
+		for _, en := range recipients {
+			if en.Email == email {
+				if en.Template == "minimal" {
+					So(tr.Subject, ShouldEqual, "Test Subject")
+					So(tr.Body, ShouldEqual, "Test Content")
+				}
+			}
+		}
+	}
 }
 
 func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable) {
@@ -70,19 +92,23 @@ func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable)
 	return dispatcher, taskqueue
 }
 
-func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, emailExpect []string) {
+func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, emailExpect []emailNotify) {
 	// Make sure a task either was or wasn't scheduled.
 	tasks := taskqueue.GetScheduledTasks()
 	if len(emailExpect) == 0 {
 		So(len(tasks), ShouldEqual, 0)
 		return
 	}
-	So(len(tasks), ShouldEqual, 1)
 
+	var actual []string
 	// Extract and check the task.
-	task, ok := tasks[0].Payload.(*internal.EmailTask)
-	So(ok, ShouldEqual, true)
-	verifyStringSliceResembles(task.Recipients, emailExpect)
+	for _, task := range tasks {
+		t, ok := task.Payload.(*internal.EmailTask)
+		So(ok, ShouldEqual, true)
+		actual = append(actual, t.Recipients...)
+		verifyEmailContent(emailExpect, task)
+	}
+	verifyStringSliceResembles(actual, emailExpect)
 
 	// Simulate running the tasks.
 	done, pending, err := taskqueue.RunSimulation(c, nil)
@@ -95,7 +121,7 @@ func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, ema
 		So(len(pending), ShouldEqual, 0)
 		So(len(messages), ShouldEqual, 0)
 	} else {
-		verifyStringSliceResembles(messages[0].To, emailExpect)
+		So(len(messages), ShouldEqual, len(emailExpect))
 	}
 
 	// Reset messages sent for other tasks.
@@ -103,7 +129,7 @@ func verifyTasksAndMessages(c context.Context, taskqueue tqtesting.Testable, ema
 }
 
 func TestNotify(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	Convey(`Test Environment for Notify`, t, func() {
 		cfgName := "basic"
@@ -113,15 +139,36 @@ func TestNotify(t *testing.T) {
 		c := memory.UseWithAppID(context.Background(), "luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
+		impl := memImpl.New(map[config.Set]memImpl.Files{
+			"projects/test": {
+				"file": "file content",
+				"email_templates/minimal.template": `Test Subject
+
+				Test Content`,
+				"minimal": `Invalid Template Name
+
+				Will be rejected`,
+			},
+		})
+		c = context.WithValue(c, configInterfaceKey, impl)
 
 		// Get notifiers from test config.
 		notifiers := extractNotifiers(c, cfgName, cfg)
 
 		// Re-usable builds and builders for running Notify.
+		emails := []emailNotify{
+			{
+				Email:    "property@google.com",
+				Template: "minimal",
+			},
+			{
+				Email: "bogus@gmail.com",
+			},
+		}
 		goodBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS)
-		goodEmailBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS, "property@google.com", "bogus@gmail.com")
+		goodEmailBuild := notifyDummyBuild(buildbucketpb.Status_SUCCESS, emails)
 		badBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE)
-		badEmailBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE, "property@google.com", "bogus@gmail.com")
+		badEmailBuild := notifyDummyBuild(buildbucketpb.Status_FAILURE, emails)
 		goodBuilder := &Builder{
 			StatusBuildTime: time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC),
 			Status:          buildbucketpb.Status_SUCCESS,
@@ -133,23 +180,51 @@ func TestNotify(t *testing.T) {
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
 
-		test := func(notifiers []*config.Notifier, build *Build, builder *Builder, emailExpect ...string) {
+		test := func(notifiers []*notifyConfig.Notifier, build *Build, builder *Builder, emailExpect ...[]emailNotify) {
 			// Test Notify.
 			err := Notify(c, dispatcher, notifiers, builder.Status, build)
 			So(err, ShouldBeNil)
 
+			// Flatten email notify array of arrays
+			notifyEmail := []emailNotify{}
+			for _, ena := range emailExpect {
+				notifyEmail = append(notifyEmail, ena...)
+			}
+
 			// Verify sent messages.
-			verifyTasksAndMessages(c, taskqueue, emailExpect)
+			verifyTasksAndMessages(c, taskqueue, notifyEmail)
+		}
+
+		propEmail := []emailNotify{
+			{
+				Email:    "property@google.com",
+				Template: "minimal",
+			},
+		}
+		successEmail := []emailNotify{
+			{
+				Email: "test-example-success@google.com",
+			},
+		}
+		failEmail := []emailNotify{
+			{
+				Email: "test-example-failure@google.com",
+			},
+		}
+		changeEmail := []emailNotify{
+			{
+				Email: "test-example-change@google.com",
+			},
 		}
 
 		Convey(`empty`, func() {
-			var noNotifiers []*config.Notifier
+			var noNotifiers []*notifyConfig.Notifier
 			test(noNotifiers, goodBuild, goodBuilder)
 			test(noNotifiers, goodBuild, badBuilder)
 			test(noNotifiers, badBuild, goodBuilder)
 			test(noNotifiers, badBuild, badBuilder)
-			test(noNotifiers, goodEmailBuild, goodBuilder, "property@google.com")
-			test(noNotifiers, badEmailBuild, goodBuilder, "property@google.com")
+			test(noNotifiers, goodEmailBuild, goodBuilder, propEmail)
+			test(noNotifiers, badEmailBuild, goodBuilder, propEmail)
 		})
 
 		Convey(`on success`, func() {
@@ -157,14 +232,14 @@ func TestNotify(t *testing.T) {
 				notifiers,
 				goodBuild,
 				goodBuilder,
-				"test-example-success@google.com",
+				successEmail,
 			)
 			test(
 				notifiers,
 				goodEmailBuild,
 				goodBuilder,
-				"test-example-success@google.com",
-				"property@google.com",
+				successEmail,
+				propEmail,
 			)
 		})
 
@@ -173,14 +248,14 @@ func TestNotify(t *testing.T) {
 				notifiers,
 				badBuild,
 				badBuilder,
-				"test-example-failure@google.com",
+				failEmail,
 			)
 			test(
 				notifiers,
 				badEmailBuild,
 				badBuilder,
-				"test-example-failure@google.com",
-				"property@google.com",
+				failEmail,
+				propEmail,
 			)
 		})
 
@@ -189,16 +264,16 @@ func TestNotify(t *testing.T) {
 				notifiers,
 				badBuild,
 				goodBuilder,
-				"test-example-failure@google.com",
-				"test-example-change@google.com",
+				failEmail,
+				changeEmail,
 			)
 			test(
 				notifiers,
 				badEmailBuild,
 				goodBuilder,
-				"test-example-failure@google.com",
-				"test-example-change@google.com",
-				"property@google.com",
+				failEmail,
+				changeEmail,
+				propEmail,
 			)
 		})
 
@@ -207,16 +282,16 @@ func TestNotify(t *testing.T) {
 				notifiers,
 				goodBuild,
 				badBuilder,
-				"test-example-success@google.com",
-				"test-example-change@google.com",
+				successEmail,
+				changeEmail,
 			)
 			test(
 				notifiers,
 				goodEmailBuild,
 				badBuilder,
-				"test-example-success@google.com",
-				"test-example-change@google.com",
-				"property@google.com",
+				successEmail,
+				changeEmail,
+				propEmail,
 			)
 		})
 	})
