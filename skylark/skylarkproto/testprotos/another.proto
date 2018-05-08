@@ -17,4 +17,5 @@ syntax = "proto3";
 package testprotos;
 
 message AnotherMessage {
+  int64 i = 1;
 }
