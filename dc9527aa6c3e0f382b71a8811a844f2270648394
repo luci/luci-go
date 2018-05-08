@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "c839d271_592fcd5b",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "It was missed in converting to using a key.  \n\nThat said, most examples I found were a simple string variable in a module that was referenced.  Not sure I am following the \"hiding\" aspect. \n\nFixed.",
+      "parentUuid": "df138b8c_211ff730",
+      "range": {
+        "startLine": 122,
+        "startChar": 20,
+        "endLine": 122,
+        "endChar": 38
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b86a3be7_3c62d909",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81bf2ea3_895d2033",
+      "range": {
+        "startLine": 122,
+        "startChar": 12,
+        "endLine": 122,
+        "endChar": 67
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cf3174ae_e251527c",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47cd5728_2aef2cae",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cf3174ae_e251527c",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 20
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "02248c6b_32ef03c1",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "This was for testing as there are points in which an interface is set up but we have defaulted to memory in the tests; do not overwrite the interface type if already set.",
+      "parentUuid": "e4df56a2_0b1a917c",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 2
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a2f3a34_7aaeb098",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 4
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "15492390_b5f3b41f",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "I forgot to change this back when initially testing.",
+      "parentUuid": "8a2f3a34_7aaeb098",
+      "range": {
+        "startLine": 180,
+        "startChar": 6,
+        "endLine": 180,
+        "endChar": 34
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88098087_d241deab",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 4
@@ -137,6 +257,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "099e88d9_0af784ff",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Fixed",
+      "parentUuid": "88098087_d241deab",
+      "range": {
+        "startLine": 181,
+        "startChar": 54,
+        "endLine": 181,
+        "endChar": 57
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +324,30 @@
     },
     {
       "key": {
+        "uuid": "fa763b6e_4aff2c8d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "This is retrieving a list of all available templates, but no compiling happens unless the template is used. \n\nThere are two ways of approaching this; retrieve a list of all templates and match to what was requested, or pulling the template contents one by one for each recipient.  It results in one call versus multiple calls for the config. \n\nWould that simplify the implementation?",
+      "parentUuid": "96fa1c60_481bc0be",
+      "range": {
+        "startLine": 88,
+        "startChar": 19,
+        "endLine": 88,
+        "endChar": 43
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7958fc72_1cb8658f",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -200,6 +368,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cee81980_24741c7a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7958fc72_1cb8658f",
+      "range": {
+        "startLine": 103,
+        "startChar": 8,
+        "endLine": 103,
+        "endChar": 21
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +418,30 @@
     },
     {
       "key": {
+        "uuid": "d74163c3_57ad0f81",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "I refactored this to associate recipients with a template, reducing the number of templates compiled and eliminating duplicates.",
+      "parentUuid": "8d84f431_3e33501e",
+      "range": {
+        "startLine": 109,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e972f2cc_6e3573ae",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -237,6 +453,24 @@
       "writtenOn": "2018-05-07T20:37:51Z",
       "side": 1,
       "message": "let\u0027s pass template name here",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66253cb1_298696db",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Subject is a single line in the email template, per the design doc.  I\u0027m not following the use of template name here.",
+      "parentUuid": "e972f2cc_6e3573ae",
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -260,6 +494,24 @@
     },
     {
       "key": {
+        "uuid": "41f61180_7eee2f14",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "I updated the function name and description",
+      "parentUuid": "4e57a180_816b5d40",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8a82bbf_0f44de39",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -274,6 +526,24 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd519fa7_0e267c9a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8a82bbf_0f44de39",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -300,6 +570,30 @@
     },
     {
       "key": {
+        "uuid": "968fa566_51c47989",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Good call.  \n\nFixed",
+      "parentUuid": "99d0c3c1_d61ae36c",
+      "range": {
+        "startLine": 142,
+        "startChar": 2,
+        "endLine": 148,
+        "endChar": 49
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2275f581_96e198c1",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -320,6 +614,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2839099d_e998135a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "2275f581_96e198c1",
+      "range": {
+        "startLine": 149,
+        "startChar": 35,
+        "endLine": 149,
+        "endChar": 47
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -346,6 +664,30 @@
     },
     {
       "key": {
+        "uuid": "cef46708_c93ed1c2",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "You\u0027re right.  Fixed.\n\nAlso updated tests to reflect how a template would look to ensure this is captured.",
+      "parentUuid": "5160c941_622a7a94",
+      "range": {
+        "startLine": 150,
+        "startChar": 17,
+        "endLine": 150,
+        "endChar": 22
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a8de8e0b_0fb522cd",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -366,6 +708,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "244bbd52_cdb4846e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Changed.",
+      "parentUuid": "a8de8e0b_0fb522cd",
+      "range": {
+        "startLine": 153,
+        "startChar": 5,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -392,6 +758,30 @@
     },
     {
       "key": {
+        "uuid": "9bbd4101_48709925",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d8c28c5_d3216b59",
+      "range": {
+        "startLine": 155,
+        "startChar": 15,
+        "endLine": 155,
+        "endChar": 20
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "93552fad_d4a3c630",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
@@ -406,6 +796,24 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51998662_035a24a4",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "This has been fixed.",
+      "parentUuid": "93552fad_d4a3c630",
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -429,6 +837,30 @@
       "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ab35d04_8f49c0a9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-08T17:12:13Z",
+      "side": 1,
+      "message": "Agree.  Initially this was due to an issue I was experiencing that I attested to the naming but in the end it was unrelated and this change was never backed out.  \n\nRemoved/Fixed.",
+      "parentUuid": "548016c8_28e1e161",
+      "range": {
+        "startLine": 228,
+        "startChar": 1,
+        "endLine": 228,
+        "endChar": 12
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
