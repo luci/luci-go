@@ -31,3 +31,13 @@ func (r *CheckAccessRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *GetChangeRequest) Validate() error {
+	switch {
+	case r.Number <= 0:
+		return errors.New("number must be positive")
+	default:
+		return nil
+	}
+}
