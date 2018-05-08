@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0525d6dd_ed463336",
+        "filename": "scheduler/appengine/engine/policy/request_builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-08T03:03:14Z",
+      "side": 1,
+      "message": "This was previously defined in engine/request.go. I moved it here and renamed some methods, and extracted the big type switch into FromTrigger.",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 19
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
