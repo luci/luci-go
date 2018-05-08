@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "602dbf59_63373318",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:00:38Z",
+      "side": 1,
+      "message": "now that we\u0027ve decided in chat that we won\u0027t use this for Buildbot, let\u0027s return an error, (\"\", \"\") or panic of it is not a LUCI bucket",
+      "range": {
+        "startLine": 244,
+        "startChar": 3,
+        "endLine": 245,
+        "endChar": 56
+      },
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a21cd81c_a09f817d",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:00:38Z",
+      "side": 1,
+      "message": "let\u0027s wrap this statement with `if msg.Bucket !\u003d\"\"`",
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93f8434d_717f2637",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:00:38Z",
+      "side": 1,
+      "message": "%q",
+      "range": {
+        "startLine": 261,
+        "startChar": 20,
+        "endLine": 261,
+        "endChar": 22
+      },
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5d4e027_f9c36e7b",
+        "filename": "buildbucket/v1.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:00:38Z",
+      "side": 1,
+      "message": "%q",
+      "range": {
+        "startLine": 261,
+        "startChar": 53,
+        "endLine": 261,
+        "endChar": 55
+      },
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ba205cc_d7af5aad",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T01:00:38Z",
+      "side": 1,
+      "message": "inline?",
+      "range": {
+        "startLine": 434,
+        "startChar": 1,
+        "endLine": 434,
+        "endChar": 4
+      },
+      "revId": "14546a2aed7231eff00862ecbfefb68db48654dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
