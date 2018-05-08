@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ca28169_7482e093",
+        "filename": "scheduler/appengine/catalog/catalog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 565,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-08T00:17:14Z",
+      "side": 1,
+      "message": "_BATCHING",
+      "range": {
+        "startLine": 565,
+        "startChar": 44,
+        "endLine": 565,
+        "endChar": 50
+      },
+      "revId": "25462bd506a783a432284f58e73277e5ebe21d4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b782afc_62ed9a60",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-08T00:17:14Z",
+      "side": 1,
+      "message": "imo, this test should refactored eventually. serialized bytes aren\u0027t really useful...",
+      "revId": "25462bd506a783a432284f58e73277e5ebe21d4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0dba3464_0a6e67db",
+        "filename": "scheduler/appengine/catalog/catalog_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-08T00:17:14Z",
+      "side": 1,
+      "message": "maybe don\u0027t specify it here, s.t. we have a test for default case?",
+      "revId": "25462bd506a783a432284f58e73277e5ebe21d4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aea1820_88032e76",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-08T00:17:14Z",
+      "side": 1,
+      "message": "why not just jobDef.Task? easier to understand the idea.",
+      "range": {
+        "startLine": 140,
+        "startChar": 26,
+        "endLine": 140,
+        "endChar": 43
+      },
+      "revId": "25462bd506a783a432284f58e73277e5ebe21d4b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
