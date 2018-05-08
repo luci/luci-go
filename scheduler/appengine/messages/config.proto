@@ -17,6 +17,18 @@ syntax = "proto3";
 package messages;
 
 
+// ProjectConfig defines a schema for a config file that describe jobs belonging
+// to some project.
+message ProjectConfig {
+  // Job is a set of jobs defined in the project.
+  repeated Job job = 1;
+  // Trigger is a set of triggering jobs defined in the project.
+  repeated Trigger trigger = 2;
+  // A list of ACL sets. Names must be unique.
+  repeated AclSet acl_sets = 3;
+}
+
+
 // A single access control rule.
 message Acl {
   enum Role {
@@ -50,6 +62,38 @@ message AclSet {
   repeated Acl acls = 2;
 }
 
+
+// TriggeringPolicy defines a function that decides when and how to launch a
+// job invocation, given the job's current state and a set of pending triggers.
+message TriggeringPolicy {
+  enum Kind {
+    // A placeholder for unrecognized policy kind.
+    UNDEFINED = 0;
+
+    // A greedy triggering function that takes all pending triggers and
+    // collapses them into one new invocation, deriving its properties from the
+    // most recent trigger alone.
+    GREEDY_BATCHING = 1;
+  }
+
+  // Defines an algorithm to use for the triggering decisions.
+  //
+  // See comments for Kind enum field.
+  //
+  // Default is GREEDY_BATCHING.
+  Kind kind = 1;
+
+  // Limits number of job invocations running at the same time.
+  //
+  // If the number of current active invocations is more or equal to this
+  // setting, the triggering function will be skipped completely, since it isn't
+  // allowed to trigger anything anyway.
+  //
+  // Default is 1.
+  int64 max_concurrent_invocations = 2;
+}
+
+
 // Job specifies a single regular job belonging to a project.
 //
 // Such jobs runs on a schedule or can be triggered by some trigger.
@@ -59,7 +103,7 @@ message Job {
 
   // Id is a name of the job (unique for the project).
   //
-  // Must match '^[0-9A-Za-z_\-\.]{1,100}$'.
+  // Must match '^[0-9A-Za-z_\-\. \)\(]{1,100}$'.
   string id = 1;
 
   // Schedule describes when to run the job.
@@ -91,6 +135,12 @@ message Job {
   string schedule = 2;
 
   // Disabled is true to disable this job.
+  //
+  // Disabled job is equivalent to a deleted job: it can't be triggered, it
+  // can't be referenced by other jobs and it doesn't show up in UI or API.
+  //
+  // Use this instead of commenting out the definition in case you want to
+  // temporarily git rid of the job.
   bool disabled = 3;
 
   // List of access control rules for the Job.
@@ -102,6 +152,12 @@ message Job {
   // included in this Job.
   // The order does not matter.
   repeated string acl_sets = 6;
+
+  // TriggeringPolicy defines how job handles incoming triggering events.
+  //
+  // If not specified defaults to GREEDY_BATCHING with 1 max concurrent
+  // invocation. See comments in TriggeringPolicy for more details.
+  TriggeringPolicy triggering_policy = 7;
 
   // One and only one field below must be set. It defines what this job does.
 
@@ -116,50 +172,49 @@ message Job {
 
 // Trigger specifies a job that triggers other jobs.
 //
-// It is a special kind of job that periodically checks the state of the world
+// It is a special kind of a job that periodically checks the state of the world
 // and triggers other jobs.
 message Trigger {
   // Id is a name of the job (unique for the project).
   //
-  // Must match '^[0-9A-Za-z_\-\.]{1,100}$'. It's in the same namespace as
+  // Must match '^[0-9A-Za-z_\-\. \)\(]{1,100}$'. It's in the same namespace as
   // regular jobs.
   string id = 1;
 
   // Schedule describes when to run this triggering job.
   //
-  // See Job.schedule fro more info. Default is "with 30s interval".
+  // See Job.schedule for more info. Default is "with 30s interval".
   string schedule = 2;
 
   // Disabled is true to disable this job.
+  //
+  // Se Job.disabled for more info.
   bool disabled = 3;
 
-  // List of access control rules for the Job.
-  //
-  // At least OWNER and READER roles must be defined either by acls or by
-  // acl_sets references.
-  //
-  // The order does not matter.
-  // There can be at most 32 different acls for a Job, including those from
-  // acl_sets.
+  // ACLs, see Job.acls and Job.acl_sets.
   repeated Acl acls = 4;
-  // A list of ACL set names. Each ACL in each referenced ACL set will be
-  // included in this Job.
-  // The order does not matter.
   repeated string acl_sets = 5;
 
-  // One and only one field below must be set. It defines what this job does.
+  // TriggeringPolicy defines how job handles incoming triggering events.
+  //
+  // It is rare for a trigger itself to have a non-default triggering policy,
+  // so most likely you should not touch this field.
+  TriggeringPolicy triggering_policy = 6;
+
+  // Triggers are IDs of jobs triggered by this trigger.
+  repeated string triggers = 200;
+
+  // One and only one field below must be set. It defines what this trigger
+  // polls.
 
   // Noop is used for testing. It is "do nothing" trigger.
   NoopTask noop = 100;
   // Gitiles is used to trigger jobs for new commits on Gitiles.
   GitilesTask gitiles = 101;
-
-  // Triggers are IDs of jobs triggered by this trigger.
-  repeated string triggers = 200;
 }
 
 
-// NoopTask is used for testing. It is "do nothing" task that can emit fake
+// NoopTask is used for testing. It is a "do nothing" task that can emit fake
 // triggers.
 message NoopTask {
   int64 sleep_ms = 1;
@@ -214,20 +269,6 @@ message BuildbucketTask {
   repeated string properties = 4;
   // Tags is a list of tags (as "key:value" pairs) to assign to the task.
   repeated string tags = 5;
-}
-
-
-// ProjectConfig defines a schema for config file that describe jobs belonging
-// to some project.
-message ProjectConfig {
-  // Job is a set of jobs defined in the project.
-  repeated Job job = 1;
-
-  // Trigger is a set of triggering jobs defined in the project.
-  repeated Trigger trigger = 2;
-
-  // A list of ACL sets. Names must be unique.
-  repeated AclSet acl_sets = 3;
 }
 
 

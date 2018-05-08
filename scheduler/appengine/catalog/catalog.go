@@ -162,6 +162,13 @@ type Definition struct {
 	// an opaque byte blob.
 	Task []byte
 
+	// TriggeringPolicy is serialized TriggeringPolicy proto that defines a
+	// function that decides when to trigger invocations.
+	//
+	// It is taken verbatim from the config if defined there, or set to nil
+	// if not there.
+	TriggeringPolicy []byte
+
 	// TriggeredJobIDs is a list of jobIDs which this job triggers.
 	// It's set only for triggering jobs.
 	TriggeredJobIDs []string
@@ -320,13 +327,14 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			continue
 		}
 		out = append(out, Definition{
-			JobID:       fmt.Sprintf("%s/%s", projectID, job.Id),
-			Acls:        *acls,
-			Flavor:      flavor,
-			Revision:    meta.Revision,
-			RevisionURL: revisionURL,
-			Schedule:    schedule,
-			Task:        packed,
+			JobID:            fmt.Sprintf("%s/%s", projectID, job.Id),
+			Acls:             *acls,
+			Flavor:           flavor,
+			Revision:         meta.Revision,
+			RevisionURL:      revisionURL,
+			Schedule:         schedule,
+			Task:             packed,
+			TriggeringPolicy: marshalTriggeringPolicy(job.TriggeringPolicy),
 		})
 	}
 
@@ -362,14 +370,15 @@ func (cat *catalog) GetProjectJobs(c context.Context, projectID string) ([]Defin
 			continue
 		}
 		out = append(out, Definition{
-			JobID:           fmt.Sprintf("%s/%s", projectID, trigger.Id),
-			Acls:            *acls,
-			Flavor:          JobFlavorTrigger,
-			Revision:        meta.Revision,
-			RevisionURL:     revisionURL,
-			Schedule:        schedule,
-			Task:            packed,
-			TriggeredJobIDs: normalizeTriggeredJobIDs(projectID, trigger),
+			JobID:            fmt.Sprintf("%s/%s", projectID, trigger.Id),
+			Acls:             *acls,
+			Flavor:           JobFlavorTrigger,
+			Revision:         meta.Revision,
+			RevisionURL:      revisionURL,
+			Schedule:         schedule,
+			Task:             packed,
+			TriggeringPolicy: marshalTriggeringPolicy(trigger.TriggeringPolicy),
+			TriggeredJobIDs:  normalizeTriggeredJobIDs(projectID, trigger),
 		})
 	}
 
@@ -452,6 +461,7 @@ func (cat *catalog) validateJobProto(ctx *validation.Context, j *messages.Job) p
 		}
 		ctx.Exit()
 	}
+	cat.validateTriggeringPolicy(ctx, j.TriggeringPolicy)
 	return cat.validateTaskProto(ctx, j)
 }
 
@@ -491,6 +501,7 @@ func (cat *catalog) validateTriggerProto(ctx *validation.Context, t *messages.Tr
 		}
 	}
 	t.Triggers = filtered
+	cat.validateTriggeringPolicy(ctx, t.TriggeringPolicy)
 	return cat.validateTaskProto(ctx, t)
 }
 
@@ -539,6 +550,32 @@ func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) 
 		return nil
 	}
 	return taskMsg
+}
+
+// validateTriggeringPolicy validates TriggeringPolicy proto.
+//
+// Errors are returned via validation.Context.
+func (cat *catalog) validateTriggeringPolicy(ctx *validation.Context, p *messages.TriggeringPolicy) {
+	if p == nil {
+		return // not defined, this is fine, we'll use default
+	}
+	ctx.Enter("triggering_policy")
+	defer ctx.Exit()
+
+	// Validate the kind. UNDEFINED is same as GREEDY_BATCHING.
+	switch p.Kind {
+	case
+		messages.TriggeringPolicy_UNDEFINED,
+		messages.TriggeringPolicy_GREEDY_BATCHING:
+		// ok
+	default:
+		ctx.Errorf("unrecognized policy kind %d", p.Kind)
+	}
+
+	// Note: 0 is fine. It is default and it actually means 1.
+	if p.MaxConcurrentInvocations < 0 {
+		ctx.Errorf("max_concurrent_invocations should be positive, got %d", p.MaxConcurrentInvocations)
+	}
 }
 
 // extractTaskProto visits all fields of a proto and sniffs ones that correspond
@@ -601,5 +638,17 @@ func normalizeTriggeredJobIDs(projectID string, t *messages.Trigger) []string {
 	}
 	out := set.ToSlice()
 	sort.Strings(out)
+	return out
+}
+
+// marshalTriggeringPolicy serializes TriggeringPolicy proto.
+func marshalTriggeringPolicy(p *messages.TriggeringPolicy) []byte {
+	if p == nil {
+		return nil
+	}
+	out, err := proto.Marshal(p)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal TriggeringPolicy - %s", err))
+	}
 	return out
 }
