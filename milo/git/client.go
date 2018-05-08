@@ -16,6 +16,7 @@ package git
 
 import (
 	"net/http"
+	"strings"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
@@ -46,34 +47,47 @@ func UseFactory(c context.Context, f ClientFactory) context.Context {
 // that we know have full public read-access so that we can use milo's
 // credentials (instead of anonymous) in order to avoid hitting gitiles'
 // anonymous quota limits.
-var whitelistPublicDomains = stringset.NewFromSlice(
-	"chromium.googlesource.com",
-	"fuchsia.googlesource.com",
+var whitelistPublicHosts = stringset.NewFromSlice(
+	"chromium",
+	"fuchsia",
 )
 
-// AuthenticatedProdClient returns a production Gitiles client.
+func isPublicHost(host string) bool {
+	const gs = ".googlesource.com"
+	if !strings.HasSuffix(host, gs) {
+		return false
+	}
+
+	host = strings.TrimSuffix(host, gs)
+	host = strings.TrimSuffix(host, "-review")
+	return whitelistPublicHosts.Has(host)
+}
+
+// Transport returns an HTTP transport to be used for the given host.
 //
-// Currently, it is authenticated as self only for a whitelistPublicDomains.
-// For all other repos, the client will not use authentication to avoid
+// Currently, it is authenticated as self only for a whitelistPublicHosts.
+// For all other repos, the transport will not use authentication to avoid
 // information leaks.
 // TODO(tandrii): fix this per https://crbug.com/796317.
-//
-// Implements ClientFactory.
-func AuthenticatedProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	var t http.RoundTripper
-	var err error
-	authenticate := true
-	if whitelistPublicDomains.Has(host) {
-		t, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+func Transport(c context.Context, host string) (transport http.RoundTripper, authenticated bool, err error) {
+	if isPublicHost(host) {
+		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
+		authenticated = true
 	} else {
-		authenticate = false
-		// No scopes if we aren't authenticating.
-		t, err = auth.GetRPCTransport(c, auth.NoAuth)
+		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
+		authenticated = false
 	}
+	return
+}
+
+// GitilesProdClient returns a production Gitiles client.
+// Implements ClientFactory.
+func GitilesProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
+	t, auth, err := Transport(c, host)
 	if err != nil {
 		return nil, errors.Annotate(err, "getting RPC Transport").Err()
 	}
-	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, authenticate)
+	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, auth)
 }
 
 // Client creates a new Gitiles client using the ClientFactory installed in c.

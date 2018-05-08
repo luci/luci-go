@@ -27,14 +27,17 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	logDogTypes "go.chromium.org/luci/logdog/common/types"
+
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/common"
@@ -184,23 +187,31 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 	return result, nil
 }
 
-// extractEmail extracts the CL author email from a build message, if available.
-// TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractEmail(msg *bbv1.ApiCommonBuildMessage) (string, error) {
-	var params struct {
-		Changes []struct {
-			Author struct{ Email string }
-		}
+// fetchGerritChangeEmail fetches the CL author email.
+func fetchGerritChangeEmail(c context.Context, change *buildbucketpb.GerritChange) (string, error) {
+	cache := memcache.NewItem(c, fmt.Sprintf("gerrit-change-owner/%s/%d", change.Host, change.Change))
+	if err := memcache.Get(c, cache); err == nil {
+		return string(cache.Value()), nil
 	}
-	if msg.ParametersJson != "" {
-		if err := json.NewDecoder(strings.NewReader(msg.ParametersJson)).Decode(&params); err != nil {
-			return "", errors.Annotate(err, "failed to parse parameters_json").Err()
-		}
+
+	client, err := common.CreateGerritClient(c, change.Host)
+	if err != nil {
+		return "", err
 	}
-	if len(params.Changes) == 1 {
-		return params.Changes[0].Author.Email, nil
+
+	// TODO(nodir, tandrii): check ACLs
+	changeInfo, err := client.GetChange(c, &gerritpb.GetChangeRequest{
+		Number:  change.Change,
+		Options: []gerritpb.QueryOption{gerritpb.QueryOption_DETAILED_ACCOUNTS},
+	})
+	if err != nil && status.Code(err) != codes.NotFound {
+		return "", err
 	}
-	return "", nil
+
+	email := changeInfo.GetOwner().GetEmail()
+	cache.SetValue([]byte(email))
+	memcache.Set(c, cache)
+	return email, nil
 }
 
 // extractDetails extracts the following from a build message's ResultDetailsJson:
@@ -247,10 +258,6 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 	}
 	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
 	info, botID, err := extractDetails(msg)
-	if err != nil {
-		return nil, err
-	}
-	email, err := extractEmail(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -306,7 +313,10 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		}}
 		result.Trigger.Changelist = link
 
-		result.Blame[0].AuthorEmail = email
+		result.Blame[0].AuthorEmail, err = fetchGerritChangeEmail(c, cl)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.ID)
+		}
 		break
 	}
 

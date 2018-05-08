@@ -22,8 +22,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 )
 
-// OAuthScope is OAuth 2.0 scope that must be included when acquiring an access
-// token for Gitiles RPCs.
+// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
+// access token for Gitiles RPCs.
 const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
 
 // ValidateRepoURL validates gitiles repository URL.
