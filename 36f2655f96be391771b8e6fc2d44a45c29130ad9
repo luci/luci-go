@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8c4d85d6_7fa71128",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T22:47:54Z",
+      "side": 1,
+      "message": "this breaks RPCs that have exclude_deprecated but not no_emulation",
+      "revId": "36f2655f96be391771b8e6fc2d44a45c29130ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d4b046e_bdd282e8",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-08T22:47:54Z",
+      "side": 1,
+      "message": "!(ok \u0026\u0026 bReq.GetNoEmulation())",
+      "range": {
+        "startLine": 236,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 2
+      },
+      "revId": "36f2655f96be391771b8e6fc2d44a45c29130ad9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
