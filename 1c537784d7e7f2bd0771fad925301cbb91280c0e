@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "ef7fccb8_95c5ebb7",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-09T17:32:07Z",
+      "side": 1,
+      "message": "Yes, failures here are hard to surface. Also, this error should not happen normally. We have validation when loading configs. Added TODO.",
+      "parentUuid": "9169753c_f2abe9ac",
+      "range": {
+        "startLine": 345,
+        "startChar": 3,
+        "endLine": 345,
+        "endChar": 109
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b50569bb_2056bd4a",
         "filename": "scheduler/appengine/engine/triage.go",
         "patchSetId": 1
@@ -71,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "0247de6e_389653c4",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-09T17:32:07Z",
+      "side": 1,
+      "message": "Same reason.",
+      "parentUuid": "b50569bb_2056bd4a",
+      "range": {
+        "startLine": 352,
+        "startChar": 2,
+        "endLine": 352,
+        "endChar": 124
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77ea9c73_af9a0ee4",
         "filename": "scheduler/appengine/engine/triage.go",
         "patchSetId": 1
@@ -82,6 +130,30 @@
       "writtenOn": "2018-05-09T01:18:49Z",
       "side": 1,
       "message": "not yet, but in the future, we have to be careful who can see it as we may leak capacity numbers here...",
+      "range": {
+        "startLine": 373,
+        "startChar": 4,
+        "endLine": 373,
+        "endChar": 29
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26d14226_022816d8",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-09T17:32:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "77ea9c73_af9a0ee4",
       "range": {
         "startLine": 373,
         "startChar": 4,
