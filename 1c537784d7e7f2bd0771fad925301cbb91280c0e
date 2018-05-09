@@ -22,6 +22,75 @@
       "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9169753c_f2abe9ac",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-09T01:18:49Z",
+      "side": 1,
+      "message": "why not panic? is that because of retries forever? I guess we need a TODO to monitor this + alert. WDYT?",
+      "range": {
+        "startLine": 345,
+        "startChar": 3,
+        "endLine": 345,
+        "endChar": 109
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b50569bb_2056bd4a",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-09T01:18:49Z",
+      "side": 1,
+      "message": "same here.",
+      "range": {
+        "startLine": 352,
+        "startChar": 2,
+        "endLine": 352,
+        "endChar": 124
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ea9c73_af9a0ee4",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 373,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-09T01:18:49Z",
+      "side": 1,
+      "message": "not yet, but in the future, we have to be careful who can see it as we may leak capacity numbers here...",
+      "range": {
+        "startLine": 373,
+        "startChar": 4,
+        "endLine": 373,
+        "endChar": 29
+      },
+      "revId": "1c537784d7e7f2bd0771fad925301cbb91280c0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
