@@ -29,12 +29,17 @@ func Walk(err error, fn func(error) bool) {
 	_ = walkVisit(err, fn)
 }
 
-func walkVisit(err error, fn func(error) bool) bool {
+// WalkLeaves is like Walk, but only calls fn on leaf nodes.
+func WalkLeaves(err error, fn func(error) bool) {
+}
+
+func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 	if err == nil {
 		return true
 	}
 
-	if !fn(err) {
+	// Call fn if we are not in leavesOnly mode.
+	if !(leavesOnly || fn(err)) {
 		return false
 	}
 
@@ -45,12 +50,14 @@ func walkVisit(err error, fn func(error) bool) bool {
 				return false
 			}
 		}
+		return true
 
 	case Wrapped:
 		return walkVisit(t.InnerError(), fn)
-	}
 
-	return true
+	default:
+		return fn(err)
+	}
 }
 
 // Any performs a Walk traversal of an error, returning true (and
