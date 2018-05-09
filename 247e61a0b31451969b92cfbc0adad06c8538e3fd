@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9676bc48_909e1b6a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-09T19:37:03Z",
+      "side": 1,
+      "message": "Proof:\nhttps://3030-c59d551-tainted-tandrii-dot-luci-milo-dev.appspot.com/p/infra-experimental/builders/luci.chromium.try/lemur_fake_bot2",
+      "revId": "247e61a0b31451969b92cfbc0adad06c8538e3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
