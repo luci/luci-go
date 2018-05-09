@@ -308,7 +308,7 @@
 .console-space {
   display: flex;
   border: 1px solid transparent;
-  min-width: 2em;
+  min-width: 1em;
   min-height: 2em;
 }
 
