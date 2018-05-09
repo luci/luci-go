@@ -22,10 +22,12 @@ import (
 	"sync"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	swbv1 "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -86,6 +88,29 @@ func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	}
 	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
 	return msgs, nil
+}
+
+// isStillDefined checks if a builder is still defined in its swarmbucket.
+func isStillDefined(c context.Context, client *swbv1.Service, bid BuilderID) (bool, error) {
+	getBuilders := client.GetBuilders()
+	getBuilders.Bucket(bid.V1Bucket())
+	getBuilders.Fields(googleapi.Field("buckets/(builders/name,name)"))
+	res, err := getBuilders.Do()
+	if err != nil {
+		return false, err
+	}
+
+	for _, bucket := range res.Buckets {
+		if bucket.Name != bid.V1Bucket() {
+			continue // defensive programming; shouldn't happen in practice.
+		}
+		for _, builder := range bucket.Builders {
+			if builder.Name == bid.Builder {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
 
 func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
@@ -186,6 +211,20 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 		return nil
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error {
+			swarmbucketClient, err := newSwarmbucketClient(c, host)
+			if err != nil {
+				return err
+			}
+			switch yes, err := isStillDefined(c, swarmbucketClient, bid); {
+			case err != nil:
+				return err
+			case !yes:
+				// Return 404 even regardless of existence of associated builds.
+				return errors.Reason("builder %q not found", bid.Builder).Tag(common.CodeNotFound).Err()
+			}
+			return nil
+		}
 		work <- func() (err error) {
 			result.MachinePool, err = getPool(c, bid)
 			return
