@@ -16,6 +16,52 @@
       "revId": "247e61a0b31451969b92cfbc0adad06c8538e3fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b011099e_9b710e7a",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-09T20:38:56Z",
+      "side": 1,
+      "message": "nit: \"still\" is redundant.  This request lives in the moment, and it just care if it is or isn\u0027t.  The past is of no matter to it.",
+      "range": {
+        "startLine": 93,
+        "startChar": 5,
+        "endLine": 93,
+        "endChar": 10
+      },
+      "revId": "247e61a0b31451969b92cfbc0adad06c8538e3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24654913_70379424",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-09T20:38:56Z",
+      "side": 1,
+      "message": "I prefer keeping nested code inside parallel.FanOutIn as little as possible.  I personally find that difficult of reading code correlates to O((number of lines) ^ (nested level)).  Since it\u0027s just calling an internal function, can you just make this. \n\nwork \u003c- func() error {\n  return isDefined(c, bid)\n}",
+      "range": {
+        "startLine": 219,
+        "startChar": 22,
+        "endLine": 219,
+        "endChar": 36
+      },
+      "revId": "247e61a0b31451969b92cfbc0adad06c8538e3fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
