@@ -26,28 +26,39 @@ package errors
 //
 // If err is nil, the callback will not be invoked.
 func Walk(err error, fn func(error) bool) {
-	_ = walkVisit(err, fn)
+	_ = walkVisit(err, fn, false)
 }
 
-func walkVisit(err error, fn func(error) bool) bool {
+// WalkLeaves is like Walk, but only calls fn on leaf nodes.
+func WalkLeaves(err error, fn func(error) bool) {
+	_ = walkVisit(err, fn, true)
+}
+
+func walkVisit(err error, fn func(error) bool, leavesOnly bool) bool {
 	if err == nil {
 		return true
 	}
 
-	if !fn(err) {
+	// Call fn if we are not in leavesOnly mode.
+	if !(leavesOnly || fn(err)) {
 		return false
 	}
 
 	switch t := err.(type) {
 	case MultiError:
 		for _, e := range t {
-			if !walkVisit(e, fn) {
+			if !walkVisit(e, fn, leavesOnly) {
 				return false
 			}
 		}
 
 	case Wrapped:
-		return walkVisit(t.InnerError(), fn)
+		return walkVisit(t.InnerError(), fn, leavesOnly)
+
+	default:
+		if leavesOnly {
+			return fn(err)
+		}
 	}
 
 	return true
