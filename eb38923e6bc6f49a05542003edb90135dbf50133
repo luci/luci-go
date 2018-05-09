@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "774bf16b_253fe7a6",
+        "filename": "skylark/skylarkproto/testdata/oneof.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-09T21:51:59Z",
+      "side": 1,
+      "message": "Does Skylark have the Python canonical \"is None\" (and \"is not None\")?",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c55a521_a411175d",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-09T21:51:59Z",
+      "side": 1,
+      "message": "I\u0027m not sure I understand this. Shouldn\u0027t the wrapper just be a new object of type alt.outerType which you make the message point to? Looks like that\u0027s the second branch. Under what circumstances is the wrapper already set up? If this is called twice? What\u0027s the harm in always creating a new wrapper and discarding the old one?",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "702e9d81_9451dc04",
+        "filename": "skylark/skylarkproto/type_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-09T21:51:59Z",
+      "side": 1,
+      "message": "I should\u0027ve said to only add the oneof to the proto when oneof implementation was ready, now I have to look up the proto separately to remember. Leaving this comment for the future.",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
