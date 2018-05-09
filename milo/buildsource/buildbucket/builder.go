@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"golang.org/x/net/context"
+	"google.golang.org/api/googleapi"
 
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
@@ -86,6 +87,34 @@ func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	}
 	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
 	return msgs, nil
+}
+
+// ensureDefined returns common.CodeNotFound tagged error if a builder is not
+// defined in its swarmbucket.
+func ensureDefined(c context.Context, host string, bid BuilderID) error {
+	client, err := newSwarmbucketClient(c, host)
+	if err != nil {
+		return err
+	}
+	getBuilders := client.GetBuilders()
+	getBuilders.Bucket(bid.V1Bucket())
+	getBuilders.Fields(googleapi.Field("buckets/(builders/name,name)"))
+	res, err := getBuilders.Do()
+	if err != nil {
+		return err
+	}
+
+	for _, bucket := range res.Buckets {
+		if bucket.Name != bid.V1Bucket() {
+			continue // defensive programming; shouldn't happen in practice.
+		}
+		for _, builder := range bucket.Builders {
+			if builder.Name == bid.Builder {
+				return nil
+			}
+		}
+	}
+	return errors.Reason("builder %q not found", bid.Builder).Tag(common.CodeNotFound).Err()
 }
 
 func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, target *ui.Builder) error {
@@ -186,6 +215,9 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 		return nil
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error {
+			return ensureDefined(c, host, bid)
+		}
 		work <- func() (err error) {
 			result.MachinePool, err = getPool(c, bid)
 			return
