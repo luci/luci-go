@@ -51,11 +51,11 @@ func IsErrInvalidKey(err error) bool { return errors.Unwrap(err) == datastore.Er
 // IsErrNoSuchEntity tests if an error is ErrNoSuchEntity,
 // or is a MultiError that contains ErrNoSuchEntity and no other errors.
 func IsErrNoSuchEntity(err error) (found bool) {
-	errors.Walk(err, func(err error) bool {
-		found = err == ErrNoSuchEntity
+	errors.WalkLeaves(err, func(ierr error) bool {
+		found = ierr == ErrNoSuchEntity
 		// If we found an ErrNoSuchEntity, continue walking.
-		// If we found a different type of error, signal Walk to stop walking by returning false.
-		// Walk does not walk nil errors.
+		// If we found a different type of error, signal WalkLeaves to stop walking by returning false.
+		// WalkLeaves does not walk nil errors nor wrapper errors.
 		return found
 	})
 	return
