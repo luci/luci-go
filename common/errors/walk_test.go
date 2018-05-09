@@ -48,9 +48,39 @@ func TestWalk(t *testing.T) {
 			So(count, ShouldEqual, 2)
 		})
 
-		Convey(`Will short-circuit if the walk funciton returns false.`, func() {
+		Convey(`Will short-circuit if the walk function returns false.`, func() {
 			keepWalking = false
 			Walk(testWrap(New("sup")), walkFn)
+			So(count, ShouldEqual, 1)
+		})
+	})
+
+	Convey(`Testing the WalkLeaves function`, t, func() {
+		count := 0
+		keepWalking := true
+		walkFn := func(err error) bool {
+			count++
+			return keepWalking
+		}
+
+		Convey(`Will not walk at all for a nil error.`, func() {
+			WalkLeaves(nil, walkFn)
+			So(count, ShouldEqual, 0)
+		})
+
+		Convey(`Will traverse leaves of a wrapped MultiError.`, func() {
+			WalkLeaves(MultiError{nil, testWrap(New("sup")), New("sup")}, walkFn)
+			So(count, ShouldEqual, 2)
+		})
+
+		Convey(`Will unwrap a Wrapped error.`, func() {
+			WalkLeaves(testWrap(New("sup")), walkFn)
+			So(count, ShouldEqual, 1)
+		})
+
+		Convey(`Will short-circuit if the walk function returns false.`, func() {
+			keepWalking = false
+			WalkLeaves(MultiError{testWrap(New("sup")), New("foo")}, walkFn)
 			So(count, ShouldEqual, 1)
 		})
 	})
