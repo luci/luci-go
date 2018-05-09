@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "970089a5_8b24a348",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-09T19:17:11Z",
+      "side": 1,
+      "message": "fun fact: bl.Cursor() modifies bl, but also returns its own pointer, so that calls can be chained.  So this is the same as writing just \"bl.Cursor(...)\".  But I think it looks better this way.",
+      "revId": "65577909874e5151d63f6244696a75fbae236cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
