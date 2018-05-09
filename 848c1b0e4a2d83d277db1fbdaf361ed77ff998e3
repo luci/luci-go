@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2ef8cabb_cf8c4484",
+        "filename": "common/errors/walk_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-09T20:35:48Z",
+      "side": 1,
+      "message": "This should test that if you pass a multi error with two leaf errors, it will visit only one of them.\n\nOtherwise this test is mostly identical to \"Will unwrap a Wrapped error\" and doesn\u0027t test that we actually stop on first error (because there\u0027s only one error).",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 63
+      },
+      "revId": "848c1b0e4a2d83d277db1fbdaf361ed77ff998e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
