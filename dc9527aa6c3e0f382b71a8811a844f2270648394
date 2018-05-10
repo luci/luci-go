@@ -372,6 +372,30 @@
     },
     {
       "key": {
+        "uuid": "3671f33c_23ad0a6a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-10T21:07:00Z",
+      "side": 1,
+      "message": "We make one call for templates, not caring about the path to said templates, whereas you\u0027re suggesting that we make a single call for each template requested?  If we argue that a large number of templates would mean a large number to process, that same argument could be made that it would mean a large number of calls as there would be the same number of templates potentially in use.  \n\nI will change the implementation as you ultimately own the code but I am not seeing where there is a large benefit of making one call versus multiple individual calls.",
+      "parentUuid": "8458bc04_e4ddcd29",
+      "range": {
+        "startLine": 88,
+        "startChar": 19,
+        "endLine": 88,
+        "endChar": 43
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7958fc72_1cb8658f",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
