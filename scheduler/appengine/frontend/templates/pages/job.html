@@ -14,6 +14,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+nav.top-pager ul.pager {
+  margin-top: 0px;
+  margin-bottom: 10px;
+}
+
+nav.bottom-pager ul.pager {
+  margin-top: 10px;
+  margin-bottom: 0px;
+}
 </style>
 {{template "job-action-scripts" .}}
 {{end}}
@@ -35,6 +45,38 @@
       </td>
     </tr>
   {{end}}
+{{end}}
+
+
+{{define "pager"}}
+  <ul class="pager">
+    {{if .PrevCursor}}
+      <li class="previous">
+        {{if eq .PrevCursor "NULL"}}
+        <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}">
+        {{else}}
+        <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.PrevCursor}}">
+        {{end}}
+          <span aria-hidden="true">&larr;</span> Newer
+        </a>
+      </li>
+    {{else}}
+      <li class="previous disabled">
+        <a href="#"><span aria-hidden="true">&larr;</span> Newer</a>
+      </li>
+    {{end}}
+    {{if .NextCursor}}
+      <li class="next">
+        <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.NextCursor}}">
+          Older <span aria-hidden="true">&rarr;</span>
+        </a>
+      </li>
+    {{else}}
+      <li class="next disabled">
+        <a href="#">Older <span aria-hidden="true">&rarr;</span></a>
+      </li>
+    {{end}}
+  </ul>
 {{end}}
 
 
@@ -60,36 +102,60 @@
     <hr>
   </div>
 
-  <h4>Definition
-  {{if .Job.RevisionURL}}
-    (rev <a href="{{.Job.RevisionURL}}" target="_blank">{{.Job.Revision}}</a>)
-  {{else}}
-    (rev {{.Job.Revision}})
-  {{end}}
-  </h4>
-  <div class="row">
-    <div class="col-sm-6">
-      <h5>Task</h5>
-      <pre>{{.Job.Definition}}</pre>
-    </div>
-    <div class="col-sm-6">
-      <h5>Triggering policy</h5>
-      <pre>{{.Job.Policy}}</pre>
-    </div>
-  </div>
+  {{if .ShowJobHeader}}
 
-  {{if .PendingTriggers}}
-  <h4>Pending triggers</h4>
-  <div class="row">
+    <h4>Definition
+    {{if .Job.RevisionURL}}
+      (rev <a href="{{.Job.RevisionURL}}" target="_blank">{{.Job.Revision}}</a>)
+    {{else}}
+      (rev {{.Job.Revision}})
+    {{end}}
+    </h4>
+    <div class="row">
+      <div class="col-sm-6">
+        <h5>Task</h5>
+        <pre>{{.Job.Definition}}</pre>
+      </div>
+      <div class="col-sm-6">
+        <h5>Triggering policy</h5>
+        <pre>{{.Job.Policy}}</pre>
+      </div>
+    </div>
+
+    {{if .Job.TriageLog.Available}}
+    <div class="row">
+      <div class="col-sm-12">
+        <h5>Last triage ({{.Job.TriageLog.LastTriage}})</h5>
+        {{if .Job.TriageLog.Stale}}
+        <div class="alert alert-danger" role="alert">
+          This log is stale! The log is {{.Job.TriageLog.Staleness}} older than
+          the expected. Please investigate GAE logs to see why the triage log is
+          not being updated.
+        </div>
+        {{end}}
+        <pre>{{.Job.TriageLog.DebugLog}}</pre>
+      </div>
+    </div>
+    {{end}}
+
+    {{if .PendingTriggers}}
+    <h4>Pending triggers</h4>
+    <div class="row">
+      <div class="col-sm-12">
+        {{template "triggers-list" .PendingTriggers}}
+      </div>
+    </div>
+    {{end}}
+
     <div class="col-sm-12">
-      {{template "triggers-list" .PendingTriggers}}
       <hr>
     </div>
-  </div>
+
   {{end}}
 
   <div class="row">
     <div class="col-sm-12">
+      <nav class="top-pager">{{template "pager" .}}</nav>
       <table class="table table-condensed" id="invocations-table">
         <thead>
           <tr>
@@ -112,36 +178,7 @@
         {{template "invocations-list" Pair .Job .InvocationsLog}}
         </tbody>
       </table>
-      <nav>
-        <ul class="pager">
-          {{if .PrevCursor}}
-            <li class="previous">
-              {{if eq .PrevCursor "NULL"}}
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}">
-              {{else}}
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.PrevCursor}}">
-              {{end}}
-                <span aria-hidden="true">&larr;</span> Newer
-              </a>
-            </li>
-          {{else}}
-            <li class="previous disabled">
-              <a href="#"><span aria-hidden="true">&larr;</span> Newer</a>
-            </li>
-          {{end}}
-          {{if .NextCursor}}
-            <li class="next">
-              <a href="/jobs/{{$.Job.ProjectID}}/{{$.Job.JobName}}?c={{.NextCursor}}">
-                Older <span aria-hidden="true">&rarr;</span>
-              </a>
-            </li>
-          {{else}}
-            <li class="next disabled">
-              <a href="#">Older <span aria-hidden="true">&rarr;</span></a>
-            </li>
-          {{end}}
-        </ul>
-      </nav>
+      <nav class="bottom-pager">{{template "pager" .}}</nav>
     </div>
   </div>
 

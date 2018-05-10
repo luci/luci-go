@@ -1003,6 +1003,12 @@ func TestForceInvocation(t *testing.T) {
 				PageSize: 100,
 			})
 			So(invs, ShouldResemble, []*Invocation{inv})
+
+			// The triage log from the last triage is available.
+			log, err := e.GetJobTriageLog(c, job)
+			So(err, ShouldBeNil)
+			So(log, ShouldNotBeNil)
+			So(log.Stale(), ShouldBeFalse)
 		})
 	})
 }
