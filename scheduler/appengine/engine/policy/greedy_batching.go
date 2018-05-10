@@ -16,36 +16,53 @@ package policy
 
 import (
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
 // GreedyBatchingPolicy instantiates new GREEDY_BATCHING policy function.
 //
 // It takes all pending triggers and collapses them into one new invocation,
 // deriving its properties from the most recent trigger alone.
-func GreedyBatchingPolicy(maxConcurrentInvs int) (Func, error) {
-	if maxConcurrentInvs <= 0 {
-		return nil, errors.Reason("'max concurrent invocations' should be positive").Err()
+func GreedyBatchingPolicy(maxConcurrentInvs, maxBatchSize int) (Func, error) {
+	switch {
+	case maxConcurrentInvs <= 0:
+		return nil, errors.Reason("max_concurrent_invocations should be positive").Err()
+	case maxBatchSize <= 0:
+		return nil, errors.Reason("max_batch_size should be positive").Err()
 	}
+
 	return func(env Environment, in In) (out Out) {
+		slots := maxConcurrentInvs - len(in.ActiveInvocations)
 		switch {
 		case len(in.Triggers) == 0:
 			return // nothing new to launch
-		case len(in.ActiveInvocations) >= maxConcurrentInvs:
+		case slots <= 0:
 			env.DebugLog(
 				"Max concurrent invocations is %d and there's %d running => refusing to launch more",
 				maxConcurrentInvs, len(in.ActiveInvocations))
 			return // maxed all available slots
 		}
 
-		// Construct a single request from all incoming triggers, deriving the
-		// properties from the most recent one (which is last in the list, since
-		// in.Triggers are sorted by time already).
-		req := RequestBuilder{env: env}
-		req.FromTrigger(in.Triggers[len(in.Triggers)-1])
-		req.IncomingTriggers = in.Triggers
+		triggers := in.Triggers
+		for slots > 0 && len(triggers) != 0 {
+			// Grab up to maxBatchSize triggers.
+			size := maxBatchSize
+			if size > len(triggers) {
+				size = len(triggers)
+			}
+			batch := triggers[:size]
+			triggers = triggers[size:]
 
-		out.Requests = []task.Request{req.Request}
+			// Put them into the new invocation, deriving its properties from the most
+			// recent trigger (which is last in the list, since triggers are sorted by
+			// time already)
+			req := RequestBuilder{env: env}
+			req.FromTrigger(batch[len(batch)-1])
+			req.IncomingTriggers = batch
+
+			out.Requests = append(out.Requests, req.Request)
+			slots -= 1
+		}
+
 		return
 	}, nil
 }
