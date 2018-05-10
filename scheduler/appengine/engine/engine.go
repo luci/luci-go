@@ -177,6 +177,11 @@ type Engine interface {
 	// ListTriggers returns list of job's pending triggers sorted by time, most
 	// recent last.
 	ListTriggers(c context.Context, job *Job) ([]*internal.Trigger, error)
+
+	// GetJobTriageLog returns a log from the latest job triage procedure.
+	//
+	// Returns nil if it is not available (for example, the job was just created).
+	GetJobTriageLog(c context.Context, job *Job) (*JobTriageLog, error)
 }
 
 // EngineInternal is a variant of engine API that skips ACL checks.
@@ -536,6 +541,29 @@ func (e *engineImpl) ListTriggers(c context.Context, job *Job) ([]*internal.Trig
 	}
 	sortTriggers(triggers)
 	return triggers, nil
+}
+
+// GetJobTriageLog returns a log from the latest job triage procedure.
+func (e *engineImpl) GetJobTriageLog(c context.Context, job *Job) (*JobTriageLog, error) {
+	log := JobTriageLog{JobID: job.JobID}
+	switch err := ds.Get(c, &log); {
+	case err == ds.ErrNoSuchEntity:
+		return nil, nil
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	}
+
+	// We assume the log is stale if the latest triage transaction has landed
+	// sufficiently log time ago, but JobTriageLog is still old. 1 second here
+	// really means "we assume the log is stored no slower than 1 sec after the
+	// triage transaction lands". In practice the log is stored immediately after
+	// the transaction, so most of the time there should be no false positives
+	// (but they are still possible).
+	if !job.LastTriage.IsZero() && clock.Since(c, job.LastTriage) > time.Second {
+		log.stale = log.LastTriage.Before(job.LastTriage)
+	}
+
+	return &log, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1736,12 +1764,6 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 
 	c = logging.SetField(c, "JobID", jobID)
 
-	startedTs := clock.Now(c)
-	defer func() {
-		logging.Infof(c, "Triage took %s", clock.Now(c).Sub(startedTs))
-	}()
-
-	// There's error logging inside of triageOp already.
 	op := triageOp{
 		jobID:         jobID,
 		dispatcher:    e.cfg.Dispatcher,
@@ -1751,6 +1773,12 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 			return err
 		},
 	}
+
+	// Store the triage log no matter what (even if 'prepare' fails or the
+	// transaction fails to land). We want to surface these conditions if they
+	// happen consistently.
+	defer func() { op.finalize(c) }()
+
 	if err := op.prepare(c); err != nil {
 		return err
 	}
@@ -1763,13 +1791,9 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 		return op.transaction(c, job)
 	})
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to perform triage transaction")
-		return err
+		op.debugErrLog(c, err, "The triage transaction FAILED")
 	}
-
-	// Best effort cleanup.
-	op.finalize(c)
-	return nil
+	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
