@@ -15,7 +15,6 @@
 package ui
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -49,6 +48,7 @@ type schedulerJob struct {
 	JobName        string
 	Schedule       string
 	Definition     string
+	Policy         string
 	Revision       string
 	RevisionURL    string
 	State          string
@@ -115,6 +115,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		JobName:        j.JobName(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
+		Policy:         policyToText(j.TriggeringPolicyRaw),
 		Revision:       j.Revision,
 		RevisionURL:    j.RevisionURL,
 		State:          string(state),
@@ -138,11 +139,23 @@ func taskToText(task []byte) string {
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return fmt.Sprintf("Failed to unmarshal the task - %s", err)
 	}
-	buf := bytes.Buffer{}
-	if err := proto.MarshalText(&buf, &msg); err != nil {
-		return fmt.Sprintf("Failed to marshal the task - %s", err)
+	return proto.MarshalTextString(&msg)
+}
+
+func policyToText(p []byte) string {
+	msg := messages.TriggeringPolicy{}
+	if len(p) != 0 {
+		if err := proto.Unmarshal(p, &msg); err != nil {
+			return fmt.Sprintf("Failed to unmarshal the triggering policy - %s", err)
+		}
 	}
-	return buf.String()
+	if msg.Kind == 0 {
+		msg.Kind = messages.TriggeringPolicy_GREEDY_BATCHING
+	}
+	if msg.MaxConcurrentInvocations == 0 {
+		msg.MaxConcurrentInvocations = 1
+	}
+	return proto.MarshalTextString(&msg)
 }
 
 type sortedJobs []*schedulerJob
