@@ -29,6 +29,8 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
+
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
@@ -237,6 +239,7 @@ func (e *Environment) Base() router.MiddlewareChain {
 
 		// Apply production settings.
 		c.Context = e.With(c.Context, c.Request)
+		c.Context = notifyConfig.WithRemoteConfigService(c.Context)
 
 		next(c)
 	}
