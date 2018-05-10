@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "ab60748c_f4efe10f",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:22:04Z",
+      "side": 1,
+      "message": "nit: this allocates a slice of capacity 0, which is useless",
+      "revId": "65577909874e5151d63f6244696a75fbae236cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e1aee9b_c3bcbe72",
+        "filename": "milo/buildsource/buildbucket/pools.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:22:04Z",
+      "side": 1,
+      "message": "move to L136",
+      "range": {
+        "startLine": 139,
+        "startChar": 20,
+        "endLine": 139,
+        "endChar": 62
+      },
+      "revId": "65577909874e5151d63f6244696a75fbae236cd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "970089a5_8b24a348",
         "filename": "milo/buildsource/buildbucket/pools.go",
         "patchSetId": 2
