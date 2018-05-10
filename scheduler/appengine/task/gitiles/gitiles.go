@@ -108,12 +108,19 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.GitilesTask)
 	ctl.DebugLog("Repo: %s, Refs: %s", cfg.Repo, cfg.Refs)
+
+	g, err := m.getGitilesClient(c, ctl, cfg)
+	if err != nil {
+		return err
+	}
+	// TODO(tandrii): use g.host, g.project for saving/loading state
+	// instead of repoURL.
 	repoURL, err := url.Parse(cfg.Repo)
 	if err != nil {
 		return err
 	}
 
-	refs, err := m.fetchRefsState(c, ctl, cfg, repoURL)
+	refs, err := m.fetchRefsState(c, ctl, cfg, g, repoURL)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return err
@@ -122,12 +129,16 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	refs.pruneKnown(ctl)
 	leftToProcess := m.emitTriggersRefAtATime(c, ctl, cfg.Repo, refs)
 
-	if refs.changed == 0 {
+	switch {
+	case leftToProcess == 0 && refs.changed == 0:
 		ctl.DebugLog("No changes detected")
 		ctl.State().Status = task.StatusSucceeded
 		return nil
+	case leftToProcess == 0:
+		ctl.DebugLog("All %d changed refs processed", refs.changed)
+	default:
+		ctl.DebugLog("%d changed refs processed, %d refs not yet examined", refs.changed, leftToProcess)
 	}
-	ctl.DebugLog("%d changed refs processed, %d refs not yet examined", refs.changed, leftToProcess)
 	// Force save to ensure triggers are actually emitted.
 	if err := ctl.Save(c); err != nil {
 		// At this point, triggers have not been sent, so bail now and don't save
@@ -157,7 +168,7 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 	return errors.New("not implemented")
 }
 
-func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, repoURL *url.URL) (*refsState, error) {
+func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
 	refs := &refsState{}
 	refs.watched.init(cfg.GetRefs())
 	return refs, parallel.FanOutIn(func(work chan<- func() error) {
@@ -167,24 +178,14 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg 
 		}
 		work <- func() (refsErr error) {
 			// Merge getRefsTips here.
-			refs.current, refsErr = m.getRefsTips(c, ctl, cfg.Repo, refs.watched)
+			refs.current, refsErr = m.getRefsTips(c, ctl, g, refs.watched)
 			return
 		}
 	})
 }
 
 // getRefsTips returns tip for each ref being watched.
-func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repoURL string, watched watchedRefs) (map[string]string, error) {
-	host, project, err := gitiles.ParseRepoURL(repoURL)
-	if err != nil {
-		return nil, errors.Annotate(err, "invalid repo URL %q", repoURL).Err()
-	}
-
-	g, err := m.getGitilesClient(c, ctl, host)
-	if err != nil {
-		return nil, err
-	}
-
+func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, g *gitilesClient, watched watchedRefs) (map[string]string, error) {
 	// Query gitiles for each namespace in parallel.
 	var wg sync.WaitGroup
 	var lock sync.Mutex
@@ -196,7 +197,7 @@ func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repoURL
 		go func(wrs *watchedRefNamespace) {
 			defer wg.Done()
 			res, err := g.Refs(c, &gitilespb.RefsRequest{
-				Project:  project,
+				Project:  g.project,
 				RefsPath: wrs.namespace,
 			})
 			lock.Lock()
@@ -284,19 +285,35 @@ func (m TaskManager) emitTriggersForRef(c context.Context, ctl task.Controller, 
 	return 1
 }
 
-func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, host string) (gitilespb.GitilesClient, error) {
+func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cfg *messages.GitilesTask) (*gitilesClient, error) {
+	host, project, err := gitiles.ParseRepoURL(cfg.Repo)
+	if err != nil {
+		return nil, errors.Annotate(err, "invalid repo URL %q", cfg.Repo).Err()
+	}
+	r := &gitilesClient{host: host, project: project}
+
 	if m.mockGitilesClient != nil {
 		// Used for testing only.
 		logging.Infof(c, "using mockGitilesClient")
-		return m.mockGitilesClient, nil
+		r.GitilesClient = m.mockGitilesClient
+		return r, nil
 	}
 
 	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, err
 	}
+	if r.GitilesClient, err = gitiles.NewRESTClient(httpClient, host, true); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
 
-	return gitiles.NewRESTClient(httpClient, host, true)
+// gitilesClient embeds GitilesClient with useful metadata.
+type gitilesClient struct {
+	gitilespb.GitilesClient
+	host    string // Gitiles host
+	project string // Gitiles project
 }
 
 type refsState struct {
