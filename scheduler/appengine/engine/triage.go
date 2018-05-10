@@ -15,8 +15,10 @@
 package engine
 
 import (
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/tq"
@@ -28,9 +30,13 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
 	"go.chromium.org/luci/scheduler/appengine/engine/dsset"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
+
+// TODO(vadimsh): Surface triage log and status in UI and Monitoring.
 
 // errTriagePrepareFail is returned by 'prepare' on errors.
 var errTriagePrepareFail = errors.New("error while fetching sets, see logs", transient.Tag)
@@ -52,13 +58,14 @@ type triageOp struct {
 	// dispatcher routes task queue tasks.
 	dispatcher *tq.Dispatcher
 
-	// triggeringPolicy decides how to convert a set of pending triggers into
-	// a bunch of new invocations.
+	// policyFactory knows how to instantiate triggering policies.
 	//
-	// TODO(vadimsh): Convert to interface. Document the contract.
-	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error)
+	// Usually it is policy.New, but may be replaced in tests.
+	policyFactory func(messages.TriggeringPolicy) (policy.Func, error)
 
 	// enqueueInvocations transactionally creates and starts new invocations.
+	//
+	// Implemented by the engine, see engineImpl.enqueueInvocations.
 	enqueueInvocations func(c context.Context, job *Job, req []task.Request) error
 
 	// The rest of fields are used internally.
@@ -267,12 +274,6 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 
 // processTriggers pops pending triggers, converting them into invocations.
 func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, error) {
-	// Note that per dsset API we need to do BeginPop if there's some garbage,
-	// even if Items is empty. We can skip this if both lists are empty though.
-	if len(op.readyTriggers) == 0 && len(op.triggersList.Garbage) == 0 {
-		return nil, nil
-	}
-
 	popOp, err := op.triggersSet.BeginPop(c, op.triggersList)
 	if err != nil {
 		return nil, err
@@ -286,47 +287,86 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 		}
 	}
 
-	if len(triggers) == 0 {
-		return popOp, nil
-	}
-
 	// Look at what's left and decide what invocations to start (if any).
-	now := clock.Now(c)
-	logging.Infof(c, "Pending triggers:")
-	for _, t := range triggers {
-		logging.Infof(c, "  %q submitted %s ago by %q inv %d",
-			t.Id, now.Sub(google.TimeFromProto(t.Created)), t.JobId, t.InvocationId)
-	}
-
-	// If the job is paused or disabled, just pop all triggers without starting
-	// anything. Note: there's a best-effort shortcut for ignoring triggers
-	// for paused jobs in execEnqueueTriggersTask.
-	if job.Paused || !job.Enabled {
-		logging.Infof(c, "The job is inactive, clearing the pending triggers queue")
+	if len(triggers) != 0 {
+		now := clock.Now(c)
+		logging.Infof(c, "Pending triggers:")
 		for _, t := range triggers {
-			popOp.Pop(t.Id)
+			logging.Infof(c, "  %q submitted %s ago by %q inv %d",
+				t.Id, now.Sub(google.TimeFromProto(t.Created)), t.JobId, t.InvocationId)
 		}
-		return popOp, nil
+
+		// If the job is paused or disabled, just pop all triggers without starting
+		// anything. Note: there's a best-effort shortcut for ignoring triggers
+		// for paused jobs in execEnqueueTriggersTask.
+		if job.Paused || !job.Enabled {
+			logging.Infof(c, "The job is inactive, clearing the pending triggers queue")
+			for _, t := range triggers {
+				popOp.Pop(t.Id)
+			}
+			return popOp, nil
+		}
 	}
 
-	// Otherwise ask the policy to convert triggers into invocations.
-	requests, err := op.triggeringPolicy(c, job, triggers)
-	if err != nil {
-		return nil, err
-	}
+	// Otherwise ask the policy to convert triggers into invocations. Note that
+	// triggers is not the only input to the triggering policy, so we call it
+	// on each triage, even if there's no pending triggers.
+	out := op.triggeringPolicy(c, job, triggers)
 
 	// Actually pop all consumed triggers and start the corresponding invocations.
 	// Note that this modifies job.ActiveInvocations list.
-	if len(requests) != 0 {
-		for _, r := range requests {
+	if len(out.Requests) != 0 {
+		for _, r := range out.Requests {
 			for _, t := range r.IncomingTriggers {
 				popOp.Pop(t.Id)
 			}
 		}
-		if err := op.enqueueInvocations(c, job, requests); err != nil {
+		if err := op.enqueueInvocations(c, job, out.Requests); err != nil {
 			return nil, err
 		}
 	}
 
 	return popOp, nil
+}
+
+// triggeringPolicy decides how to convert a set of pending triggers into
+// a bunch of new invocations.
+//
+// Called within a job transaction. Must not do any expensive calls.
+func (op *triageOp) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) policy.Out {
+	var p messages.TriggeringPolicy
+	if job.TriggeringPolicyRaw != nil {
+		err := proto.Unmarshal(job.TriggeringPolicyRaw, &p)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Failed to unmarshal TriggeringPolicy, using the default policy instead")
+			p = messages.TriggeringPolicy{}
+		}
+	}
+
+	policyFunc, err := op.policyFactory(p)
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to instantiate the triggering policy function, using the default policy instead")
+		policyFunc, err = op.policyFactory(messages.TriggeringPolicy{})
+		if err != nil {
+			panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
+		}
+	}
+
+	return policyFunc(policyFuncEnv{c, op}, policy.In{
+		Now:               clock.Now(c).UTC(),
+		ActiveInvocations: job.ActiveInvocations,
+		Triggers:          triggers,
+	})
+}
+
+// policyFuncEnv implements policy.Environment through triageOp.
+type policyFuncEnv struct {
+	ctx context.Context
+	op  *triageOp
+}
+
+func (e policyFuncEnv) DebugLog(format string, args ...interface{}) {
+	// TODO(vadimsh): Log this into datastore too, so that we have access to
+	// the triage log in the UI.
+	logging.Infof(e.ctx, format, args...)
 }
