@@ -45,7 +45,6 @@ func jobPage(ctx *router.Context) {
 	}
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
 
 	// We show active invocations only on the first page of the results.
 	var invsActive []*engine.Invocation
@@ -66,6 +65,7 @@ func jobPage(ctx *router.Context) {
 	var invsLog []*engine.Invocation
 	var nextCursor string
 	var invsLogErr error
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		invsLog, nextCursor, invsLogErr = e.ListInvocations(c, job, engine.ListInvocationsOpts{
@@ -77,9 +77,18 @@ func jobPage(ctx *router.Context) {
 
 	var triggers []*internal.Trigger
 	var triErr error
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		triggers, triErr = e.ListTriggers(c, job)
+	}()
+
+	var triageLog *engine.JobTriageLog
+	var triageLogErr error
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		triageLog, triageLogErr = e.GetJobTriageLog(c, job)
 	}()
 
 	wg.Wait()
@@ -91,6 +100,8 @@ func jobPage(ctx *router.Context) {
 		panic(errors.Annotate(invsLogErr, "failed to fetch invocation log").Err())
 	case triErr != nil:
 		panic(errors.Annotate(triErr, "failed to fetch triggers").Err())
+	case triageLogErr != nil:
+		panic(errors.Annotate(triageLogErr, "failed to fetch triage log").Err())
 	}
 
 	// memcacheKey hashes cursor to reduce its length, since full cursor doesn't
@@ -138,7 +149,7 @@ func jobPage(ctx *router.Context) {
 		job.ActiveInvocations = ids
 	}
 
-	jobUI := makeJob(c, job)
+	jobUI := makeJob(c, job, triageLog)
 	invsActiveUI := make([]*invocation, len(invsActive))
 	for i, inv := range invsActive {
 		invsActiveUI[i] = makeInvocation(jobUI, inv)

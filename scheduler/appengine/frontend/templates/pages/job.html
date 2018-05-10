@@ -78,6 +78,22 @@
     </div>
   </div>
 
+  {{if .Job.TriageLog.Available}}
+  <div class="row">
+    <div class="col-sm-12">
+      <h5>Last triage log</h5>
+      {{if .Job.TriageLog.Stale}}
+      <div class="alert alert-danger" role="alert">
+        This log is stale! The log is {{.Job.TriageLog.Staleness}} older than
+        the expected. Please investigate GAE logs to see why the triage log is
+        not being updated.
+      </div>
+      {{end}}
+      <pre>{{.Job.TriageLog.DebugLog}}</pre>
+    </div>
+  </div>
+  {{end}}
+
   {{if .PendingTriggers}}
   <h4>Pending triggers</h4>
   <div class="row">
