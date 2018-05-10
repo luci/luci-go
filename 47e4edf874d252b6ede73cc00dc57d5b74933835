@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "33ea5fc9_01f89b42",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-10T21:55:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb0484e8_6eeff65a",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "47e4edf874d252b6ede73cc00dc57d5b74933835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bdd2c57e_bb36fe97",
         "filename": "scheduler/appengine/engine/triage.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "47e4edf874d252b6ede73cc00dc57d5b74933835",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9974bdff_350e7634",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-10T21:55:52Z",
+      "side": 1,
+      "message": "Added halfassed limiter. But there\u0027s currently no way the log gets so large. Each transaction attempt logs only summaries (e.g. \"we have 10 triggers\" instead of listing each trigger), and number of attempts is limited.\n\nAnd regardless, staleness check would catch old logs.",
+      "parentUuid": "bdd2c57e_bb36fe97",
+      "range": {
+        "startLine": 239,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 35
+      },
+      "revId": "47e4edf874d252b6ede73cc00dc57d5b74933835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
