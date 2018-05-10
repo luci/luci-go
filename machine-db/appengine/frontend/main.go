@@ -31,29 +31,27 @@ import (
 	"go.chromium.org/luci/machine-db/appengine/config"
 	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/machine-db/appengine/rpc"
+	"go.chromium.org/luci/machine-db/appengine/ui"
 )
 
 func init() {
 	mathrand.SeedRandomly()
 	databaseMiddleware := standard.Base().Extend(database.WithMiddleware)
 
+	srv := rpc.NewServer()
+
 	r := router.New()
 	standard.InstallHandlers(r)
 	config.InstallHandlers(r, databaseMiddleware)
-	r.GET("/", standard.Base(), handler)
+	ui.InstallHandlers(r, databaseMiddleware, srv, "templates")
 
 	api := prpc.Server{
 		// Install an interceptor capable of reporting tsmon metrics.
 		UnaryServerInterceptor: grpcmon.NewUnaryServerInterceptor(nil),
 	}
-	crimson.RegisterCrimsonServer(&api, rpc.NewServer())
+	crimson.RegisterCrimsonServer(&api, srv)
 	discovery.Enable(&api)
 	api.InstallHandlers(r, databaseMiddleware)
 
 	http.DefaultServeMux.Handle("/", r)
-}
-
-func handler(c *router.Context) {
-	c.Writer.Header().Set("Content-Type", "text/plain")
-	c.Writer.WriteHeader(http.StatusOK)
 }
