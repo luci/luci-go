@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
 
@@ -106,77 +107,42 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.GitilesTask)
-
 	ctl.DebugLog("Repo: %s, Refs: %s", cfg.Repo, cfg.Refs)
-	u, err := url.Parse(cfg.Repo)
+	repoURL, err := url.Parse(cfg.Repo)
 	if err != nil {
 		return err
 	}
 
-	watchedRefs := watchedRefs{}
-	watchedRefs.init(cfg.GetRefs())
-
-	var wg sync.WaitGroup
-
-	var heads map[string]string
-	var headsErr error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		heads, headsErr = loadState(c, ctl.JobID(), u)
-	}()
-
-	var refs map[string]string
-	var refsErr error
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		refs, refsErr = m.getRefsTips(c, ctl, cfg.Repo, watchedRefs)
-	}()
-
-	wg.Wait()
-
-	if headsErr != nil {
-		ctl.DebugLog("Failed to fetch heads - %s", headsErr)
-		return fmt.Errorf("failed to fetch heads: %v", headsErr)
-	}
-	if refsErr != nil {
-		ctl.DebugLog("Failed to fetch refs - %s", refsErr)
-		return fmt.Errorf("failed to fetch refs: %v", refsErr)
-	}
-
-	refsChanged := 0
-
-	// Delete all previously known refs which are either no longer watched or no
-	// longer exist in repo.
-	for ref := range heads {
-		switch {
-		case !watchedRefs.hasRef(ref):
-			ctl.DebugLog("Ref %s is no longer watched", ref)
-			delete(heads, ref)
-			refsChanged++
-		case refs[ref] == "":
-			ctl.DebugLog("Ref %s deleted", ref)
-			delete(heads, ref)
-			refsChanged++
+	refs := refsState{}
+	refs.watched.init(cfg.GetRefs())
+	err = parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (loadErr error) {
+			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
+			return
 		}
+		work <- func() (refsErr error) {
+			refs.current, refsErr = m.getRefsTips(c, ctl, cfg.Repo, refs.watched)
+			return
+		}
+	})
+	if err != nil {
+		ctl.DebugLog("Error fetching state of the world: %s", err)
+		return err
 	}
-	// For determinism, sort keys of current refs.
-	sortedRefs := make([]string, 0, len(refs))
-	for ref := range refs {
-		sortedRefs = append(sortedRefs, ref)
-	}
-	sort.Strings(sortedRefs)
+
+	// This also increments refs.changed.
+	refs.pruneKnown(ctl)
 
 	emittedTriggers := 0
 	maxTriggersPerInvocation := m.maxTriggersPerInvocation
 	if maxTriggersPerInvocation == 0 {
 		maxTriggersPerInvocation = defaultMaxTriggersPerInvocation
 	}
-	// Note, that current `refs` contain only watched refs (see getRefsTips).
-	for _, ref := range sortedRefs {
-		newHead := refs[ref]
-		oldHead, existed := heads[ref]
+	// Note, that current `refs` contains only watched refs (see getRefsTips).
+	// For determinism, sort refs by name.
+	for _, ref := range refs.sortedCurrentRefNames() {
+		newHead := refs.current[ref]
+		oldHead, existed := refs.known[ref]
 		switch {
 		case !existed:
 			ctl.DebugLog("Ref %s is new: %s", ref, newHead)
@@ -186,8 +152,8 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 			// No change.
 			continue
 		}
-		heads[ref] = newHead
-		refsChanged++
+		refs.known[ref] = newHead
+		refs.changed++
 		emittedTriggers++
 		// TODO(tandrii): actually look at commits between current and previously
 		// known tips of each ref.
@@ -213,20 +179,20 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		}
 	}
 
-	if refsChanged == 0 {
+	if refs.changed == 0 {
 		ctl.DebugLog("No changes detected")
 	} else {
-		ctl.DebugLog("%d refs changed", refsChanged)
+		ctl.DebugLog("%d refs changed", refs.changed)
 		// Force save to ensure triggers are actually emitted.
 		if err := ctl.Save(c); err != nil {
 			// At this point, triggers have not been sent, so bail now and don't save
 			// the refs' heads newest values.
 			return err
 		}
-		if err := saveState(c, ctl.JobID(), u, heads); err != nil {
+		if err := saveState(c, ctl.JobID(), repoURL, refs.known); err != nil {
 			return err
 		}
-		ctl.DebugLog("Saved %d known refs", len(heads))
+		ctl.DebugLog("Saved %d known refs", len(refs.known))
 	}
 
 	ctl.State().Status = task.StatusSucceeded
@@ -308,6 +274,37 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, ho
 	}
 
 	return gitiles.NewRESTClient(httpClient, host, true)
+}
+
+type refsState struct {
+	watched watchedRefs
+	known   map[string]string // HEADs we saw before
+	current map[string]string // HEADs available now
+	changed int
+}
+
+func (s *refsState) pruneKnown(ctl task.Controller) {
+	for ref := range s.known {
+		switch {
+		case !s.watched.hasRef(ref):
+			ctl.DebugLog("Ref %s is no longer watched", ref)
+			delete(s.known, ref)
+			s.changed++
+		case s.current[ref] == "":
+			ctl.DebugLog("Ref %s deleted", ref)
+			delete(s.known, ref)
+			s.changed++
+		}
+	}
+}
+
+func (s *refsState) sortedCurrentRefNames() []string {
+	sortedRefs := make([]string, 0, len(s.current))
+	for ref := range s.current {
+		sortedRefs = append(sortedRefs, ref)
+	}
+	sort.Strings(sortedRefs)
+	return sortedRefs
 }
 
 type watchedRefNamespace struct {
