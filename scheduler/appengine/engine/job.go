@@ -128,6 +128,43 @@ type Job struct {
 	// datastore indexes to catch up, so all recent invocations older than the
 	// horizon can be fetched using a regular datastore query.
 	FinishedInvocationsRaw []byte `gae:",noindex"`
+
+	// LastTriage is a time when the last triage transaction was committed.
+	LastTriage time.Time `gae:",noindex"`
+}
+
+// JobTriageLog contains information about the most recent triage.
+//
+// To avoid increasing the triage transaction size, and to allow logging triage
+// transaction collisions, this entity is saved non-transactionally in a
+// separate entity group on a best effort basis.
+//
+// It means it may occasionally be stale. To detect staleness we duplicate
+// LastTriage timestamp here. If Job.LastTriage indicates the triage happened
+// sufficiently log ago (by wall clock), but JobTriageLog.LastTriage is still
+// old, then the log is stale (since JobTriageLog commit should have landed
+// already). When this happens consistently we'll have to use real GAE logs to
+// figure out what's wrong.
+type JobTriageLog struct {
+	_kind  string                `gae:"$kind,JobTriageLog"`
+	_extra datastore.PropertyMap `gae:"-,extra"`
+
+	// JobID is '<ProjectID>/<JobName>' string, matches corresponding Job.JobID.
+	JobID string `gae:"$id"`
+	// LastTriage is set to exact same value as corresponding Job.LastTriage.
+	LastTriage time.Time `gae:",noindex"`
+	// DebugLog is short free form text log with debug messages.
+	DebugLog string `gae:",noindex"`
+
+	// stale is populated by GetJobTriageLog if it thinks the log is stale.
+	stale bool `gae:"-"`
+}
+
+// Stale is true if the engine thinks the log is stale.
+//
+// It does it by comparing LastTriage to the job's LastTriage.
+func (j *JobTriageLog) Stale() bool {
+	return j.stale
 }
 
 // JobName returns name of this Job as defined its project's config.
@@ -176,6 +213,7 @@ func (e *Job) IsEqual(other *Job) bool {
 		e.Revision == other.Revision &&
 		e.RevisionURL == other.RevisionURL &&
 		e.Schedule == other.Schedule &&
+		e.LastTriage.Equal(other.LastTriage) &&
 		e.Acls.Equal(&other.Acls) &&
 		bytes.Equal(e.Task, other.Task) &&
 		equalSortedLists(e.TriggeredJobIDs, other.TriggeredJobIDs) &&
