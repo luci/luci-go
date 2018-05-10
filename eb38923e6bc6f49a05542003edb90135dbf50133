@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "0f009b6b_0ecccd01",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-10T00:50:59Z",
+      "side": 1,
+      "message": "Yeah I think so. Better to remove unnecessary complexity.",
+      "parentUuid": "3d7d6675_6811375f",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "702e9d81_9451dc04",
         "filename": "skylark/skylarkproto/type_test.go",
         "patchSetId": 2
