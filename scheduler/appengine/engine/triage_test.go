@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -48,7 +49,35 @@ func TestTriageOp(t *testing.T) {
 			}
 			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
-			So(after, ShouldResemble, before)
+
+			// Only LastTriage timestamp is bumped.
+			expected := *before
+			expected.LastTriage = epoch
+			So(after, ShouldResemble, &expected)
+
+			// Have some triage log.
+			job := JobTriageLog{JobID: "job"}
+			So(datastore.Get(c, &job), ShouldBeNil)
+			So(job, ShouldResemble, JobTriageLog{
+				JobID:      "job",
+				LastTriage: epoch,
+				DebugLog: strings.Join([]string{
+					"[000 ms] Starting",
+					"[000 ms] Pending triggers set:  0 items, 0 garbage",
+					"[000 ms] Recently finished set: 0 items, 0 garbage",
+					"[000 ms] The preparation is finished",
+					"[000 ms] Started the transaction",
+					"[000 ms] Number of active invocations: 3",
+					"[000 ms] Number of recently finished:  0",
+					"[000 ms] Triggers available in this txn: 0",
+					"[000 ms] Invoking the triggering policy function",
+					"[000 ms] The policy requested 0 new invocations",
+					"[000 ms] Removing consumed dsset items",
+					"[000 ms] Landing the transaction",
+					"[000 ms] Done",
+					"",
+				}, "\n"),
+			})
 		})
 
 		Convey("pops finished invocations", func() {
@@ -203,6 +232,8 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 			return nil
 		},
 	}
+
+	defer op.finalize(c)
 	if err := op.prepare(c); err != nil {
 		return nil, err
 	}
@@ -220,8 +251,6 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 	if err != nil {
 		return nil, err
 	}
-
-	op.finalize(c)
 
 	after = &Job{JobID: before.JobID}
 	if err := datastore.Get(c, after); err != nil {

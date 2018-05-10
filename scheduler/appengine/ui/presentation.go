@@ -59,6 +59,14 @@ type schedulerJob struct {
 	JobFlavorIcon  string
 	JobFlavorTitle string
 
+	TriageLog struct {
+		Available  bool
+		LastTriage string // e.g. "10 sec ago"
+		Stale      bool
+		Staleness  time.Duration
+		DebugLog   string
+	}
+
 	sortGroup string      // used only for sorting, doesn't show up in UI
 	now       time.Time   // as passed to makeJob
 	traits    task.Traits // as extracted from corresponding task.Manager
@@ -84,7 +92,7 @@ var flavorToTitle = []string{
 }
 
 // makeJob builds UI presentation for engine.Job.
-func makeJob(c context.Context, j *engine.Job) *schedulerJob {
+func makeJob(c context.Context, j *engine.Job, log *engine.JobTriageLog) *schedulerJob {
 	traits, err := presentation.GetJobTraits(c, config(c).Catalog, j)
 	if err != nil {
 		logging.WithError(err).Warningf(c, "Failed to get task traits for %s", j.JobID)
@@ -111,7 +119,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		sortGroup = "B"
 	}
 
-	return &schedulerJob{
+	out := &schedulerJob{
 		ProjectID:      j.ProjectID,
 		JobName:        j.JobName(),
 		Schedule:       j.Schedule,
@@ -130,6 +138,18 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		now:       now,
 		traits:    traits,
 	}
+
+	// Fill in job triage log details if available. They are not available in
+	// job listings, for example.
+	if log != nil {
+		out.TriageLog.Available = true
+		out.TriageLog.LastTriage = humanize.RelTime(log.LastTriage, now, "ago", "")
+		out.TriageLog.Stale = log.Stale()
+		out.TriageLog.Staleness = j.LastTriage.Sub(log.LastTriage)
+		out.TriageLog.DebugLog = log.DebugLog
+	}
+
+	return out
 }
 
 func taskToText(task []byte) string {
@@ -168,7 +188,7 @@ func (s sortedJobs) Less(i, j int) bool {
 func sortJobs(c context.Context, jobs []*engine.Job) sortedJobs {
 	out := make(sortedJobs, len(jobs))
 	for i, job := range jobs {
-		out[i] = makeJob(c, job)
+		out[i] = makeJob(c, job, nil)
 	}
 	sort.Sort(out)
 	return out
