@@ -176,49 +176,14 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg 
 			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
 			return
 		}
-		work <- func() (refsErr error) {
-			// Merge getRefsTips here.
-			refs.current, refsErr = m.getRefsTips(c, ctl, g, refs.watched)
-			return
+		// Group all refs by their namespace to reduce # of RPCs to gitiles.
+		for _, wrs := range refs.watched.namespaces {
+			wrs := wrs
+			work <- func() error {
+				return refs.fetchCurrentTips(c, wrs.namespace, g)
+			}
 		}
 	})
-}
-
-// getRefsTips returns tip for each ref being watched.
-func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, g *gitilesClient, watched watchedRefs) (map[string]string, error) {
-	// Query gitiles for each namespace in parallel.
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	errs := []error{}
-	allTips := map[string]string{}
-	// Group all refs by their namespace to reduce # of RPCs.
-	for _, wrs := range watched.namespaces {
-		wg.Add(1)
-		go func(wrs *watchedRefNamespace) {
-			defer wg.Done()
-			res, err := g.Refs(c, &gitilespb.RefsRequest{
-				Project:  g.project,
-				RefsPath: wrs.namespace,
-			})
-			lock.Lock()
-			defer lock.Unlock()
-			if err != nil {
-				ctl.DebugLog("failed to fetch %q namespace tips for %q: %q", wrs.namespace, err)
-				errs = append(errs, err)
-				return
-			}
-			for ref, tip := range res.Revisions {
-				if watched.hasRef(ref) {
-					allTips[ref] = tip
-				}
-			}
-		}(wrs)
-	}
-	wg.Wait()
-	if len(errs) > 0 {
-		return nil, errors.NewMultiError(errs...)
-	}
-	return allTips, nil
 }
 
 // emitTriggersRefAtATime processes refs one a time and emits triggers if ref
@@ -317,10 +282,32 @@ type gitilesClient struct {
 }
 
 type refsState struct {
-	watched watchedRefs
-	known   map[string]string // HEADs we saw before
-	current map[string]string // HEADs available now
-	changed int
+	watched     watchedRefs
+	known       map[string]string // HEADs we saw before
+	current     map[string]string // HEADs available now
+	changed     int
+	currentLock sync.Mutex // Used because fetching current is in parallel
+}
+
+func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *gitilesClient) error {
+	resp, err := g.Refs(c, &gitilespb.RefsRequest{
+		Project:  g.project,
+		RefsPath: refsPath,
+	})
+	if err != nil {
+		return err
+	}
+	s.currentLock.Lock()
+	defer s.currentLock.Unlock()
+	if s.current == nil {
+		s.current = map[string]string{}
+	}
+	for ref, tip := range resp.Revisions {
+		if s.watched.hasRef(ref) {
+			s.current[ref] = tip
+		}
+	}
+	return nil
 }
 
 func (s *refsState) pruneKnown(ctl task.Controller) {
