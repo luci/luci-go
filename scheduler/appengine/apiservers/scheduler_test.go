@@ -476,3 +476,7 @@ func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (*engin
 func (f *fakeEngine) InternalAPI() engine.EngineInternal {
 	panic("not implemented")
 }
+
+func (f *fakeEngine) GetJobTriageLog(c context.Context, job *engine.Job) (*engine.JobTriageLog, error) {
+	panic("not implemented")
+}
