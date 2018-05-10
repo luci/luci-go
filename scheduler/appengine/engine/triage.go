@@ -15,10 +15,8 @@
 package engine
 
 import (
-	"fmt"
 	"sync"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/tq"
@@ -61,7 +59,7 @@ type triageOp struct {
 	// policyFactory knows how to instantiate triggering policies.
 	//
 	// Usually it is policy.New, but may be replaced in tests.
-	policyFactory func(messages.TriggeringPolicy) (policy.Func, error)
+	policyFactory func(*messages.TriggeringPolicy) (policy.Func, error)
 
 	// enqueueInvocations transactionally creates and starts new invocations.
 	//
@@ -334,24 +332,15 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 //
 // Called within a job transaction. Must not do any expensive calls.
 func (op *triageOp) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) policy.Out {
-	var p messages.TriggeringPolicy
-	if job.TriggeringPolicyRaw != nil {
-		err := proto.Unmarshal(job.TriggeringPolicyRaw, &p)
-		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to unmarshal TriggeringPolicy, using the default policy instead")
-			p = messages.TriggeringPolicy{}
-		}
+	var policyFunc policy.Func
+	p, err := policy.UnmarshalDefinition(job.TriggeringPolicyRaw)
+	if err == nil {
+		policyFunc, err = op.policyFactory(p)
 	}
-
-	policyFunc, err := op.policyFactory(p)
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to instantiate the triggering policy function, using the default policy instead")
-		policyFunc, err = op.policyFactory(messages.TriggeringPolicy{})
-		if err != nil {
-			panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
-		}
+		policyFunc = policy.Default()
 	}
-
 	return policyFunc(policyFuncEnv{c, op}, policy.In{
 		Now:               clock.Now(c).UTC(),
 		ActiveInvocations: job.ActiveInvocations,

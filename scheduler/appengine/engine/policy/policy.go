@@ -16,8 +16,10 @@
 package policy
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -72,17 +74,13 @@ type Func func(Environment, In) Out
 // The returned function will be used only during one triage round and then
 // discarded.
 //
-// Returns an error if the TriggeringPolicy message can't be understood (for
-// example, it references an undefined policy kind).
-func New(p messages.TriggeringPolicy) (Func, error) {
-	// Fill in defaults.
-	if p.Kind == 0 {
-		p.Kind = messages.TriggeringPolicy_GREEDY_BATCHING
-	}
-	if p.MaxConcurrentInvocations == 0 {
-		p.MaxConcurrentInvocations = 1
-	}
-
+// The caller is responsible for filling in all default values in the proto if
+// necessary. Use UnmarshalDefinition to deserialize TriggeringPolicy filling in
+// the defaults.
+//
+// Returns an error if the TriggeringPolicy message can't be
+// understood (for example, it references an undefined policy kind).
+func New(p *messages.TriggeringPolicy) (Func, error) {
 	// There will be more kinds here, so this should technically be a switch, even
 	// though currently it is not a very interesting switch.
 	switch p.Kind {
@@ -91,4 +89,36 @@ func New(p messages.TriggeringPolicy) (Func, error) {
 	default:
 		return nil, errors.Reason("unrecognized triggering policy kind %d", p.Kind).Err()
 	}
+}
+
+// Default instantiates default triggering policy function.
+//
+// Is is used if jobs do not define a triggering policy or it can't be
+// understood.
+func Default() Func {
+	f, err := New(&messages.TriggeringPolicy{
+		Kind: messages.TriggeringPolicy_GREEDY_BATCHING,
+		MaxConcurrentInvocations: 1,
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
+	}
+	return f
+}
+
+// UnmarshalDefinition deserializes TriggeringPolicy, filling in defaults.
+func UnmarshalDefinition(b []byte) (*messages.TriggeringPolicy, error) {
+	msg := &messages.TriggeringPolicy{}
+	if len(b) != 0 {
+		if err := proto.Unmarshal(b, msg); err != nil {
+			return nil, errors.Annotate(err, "failed to unmarshal TriggeringPolicy").Err()
+		}
+	}
+	if msg.Kind == 0 {
+		msg.Kind = messages.TriggeringPolicy_GREEDY_BATCHING
+	}
+	if msg.MaxConcurrentInvocations == 0 {
+		msg.MaxConcurrentInvocations = 1
+	}
+	return msg, nil
 }
