@@ -173,6 +173,24 @@
     },
     {
       "key": {
+        "uuid": "8a82a8bd_e118080d",
+        "filename": "logdog/appengine/cmd/coordinator/logs/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-10T23:45:14Z",
+      "side": 1,
+      "message": "One can imagine only doing this for only lines that are full and complete sentences",
+      "parentUuid": "b118628b_40a0057f",
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be90c353_3cdef161",
         "filename": "logdog/appengine/coordinator/context.go",
         "patchSetId": 7
@@ -787,6 +805,30 @@
     },
     {
       "key": {
+        "uuid": "78ce4be1_201f23b1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-10T23:45:14Z",
+      "side": 1,
+      "message": "Correct, assuming you have errors or bits of structured data you want to log.\n\nI think we\u0027ve been pretty consistent about using .WithError() since it\u0027s straightforward.  I don\u0027t think we use fields quite as often but I think adoption would increase if the benefits were clear (ie they show up in structured logging).",
+      "parentUuid": "597fc80e_fe669d88",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58c8c233_fb5c75df",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -1137,6 +1179,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c09e99f_b930d9b2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-10T23:45:14Z",
+      "side": 1,
+      "message": "Was halfway done with a retry.Retry implementation before I realized.. It still doesn\u0027t make sense.\n\nThe original fetcher used a forever loop:\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/logdog/common/fetcher/fetcher.go?q\u003dfetcher+logdog\u0026sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026l\u003d366\nI don\u0027t think it\u0027s common to use retry.Retry for \"loop until done\".\n\nretry.Retry has been used for calls that are expected to run once on the normative case, none of the options available are suited for running forever with the exact set of things we want here.  The documentation literally says:\n\"Retry executes a function \u0027fn\u0027. If the function returns an error, it will be re-executed according to a retry plan.\"\n\nThat means for retry.Retry to work here, the inner function has to return a fake error that isn\u0027t really an error.  This smells a lot like \"raise ndb.Return(...)\".\n\nIn addition, the logic we have here is to exponential backoff only if no new logs were fetched, and use a 1s backoff otherwise, and reset the exponential backoff counter.  That would require a pretty custom retry.Factory already, which probably would make this much longer than this code.\n\n(digression) As for improving the egronomics of retry.Retry, I\u0027d probably add a new set of retry \"engines\", which are prefilled with options.  Eg.\nretry.OnTransientFailure(c, func() {...})\nOr make an engine factory, \nretry.With(Exponential, Logging, TransientOnly).On(c, func() {...})\nI think this would make it easier to read.",
+      "parentUuid": "65dc96ac_75bedf68",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -1538,6 +1604,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c5197bf8_18975e49",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-10T23:45:14Z",
+      "side": 1,
+      "message": "Yeah, new code _only_ shows text for errors that have been tagged with a grpc code.\n\nNon-tagged errors (which show up as grpc.Internal, for all intents and purposes) or errors with grpc.Internal are logged and a generic error is displayed.\n\nI think this probably makes sense?",
+      "parentUuid": "46d25074_76e3788f",
+      "range": {
+        "startLine": 232,
+        "startChar": 25,
+        "endLine": 232,
+        "endChar": 36
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
