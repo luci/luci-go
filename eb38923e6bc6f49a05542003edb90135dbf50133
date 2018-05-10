@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ae62e629_10a02ddc",
+        "filename": "skylark/skylarkproto/testdata/oneof.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-10T00:45:47Z",
+      "side": 1,
+      "message": "Nope. Attempting to use \u0027is\u0027:\n\n  testdata/oneof.sky:25:27: got illegal token, want \u0027,\u0027",
+      "parentUuid": "774bf16b_253fe7a6",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c55a521_a411175d",
         "filename": "skylark/skylarkproto/type.go",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2018-05-09T21:51:59Z",
       "side": 1,
       "message": "I\u0027m not sure I understand this. Shouldn\u0027t the wrapper just be a new object of type alt.outerType which you make the message point to? Looks like that\u0027s the second branch. Under what circumstances is the wrapper already set up? If this is called twice? What\u0027s the harm in always creating a new wrapper and discarding the old one?",
+      "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d7d6675_6811375f",
+        "filename": "skylark/skylarkproto/type.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-10T00:45:47Z",
+      "side": 1,
+      "message": "\u003e I\u0027m not sure I understand this. Shouldn\u0027t the wrapper just be a new object of type alt.outerType which you make the message point to? Looks like that\u0027s the second branch. Under what circumstances is the wrapper already set up? If this is called twice? What\u0027s the harm in always creating a new wrapper and discarding the old one?\n\nYeah, this first branch is for the case when the wrapper is already pointing to a value of correct type. This happens, for example, in:\n\n  msg.field_a \u003d 123\n  msg.field_a \u003d 456\n\nThere\u0027s NO harm in re-creating the wrapper on each assignment. I did it this way primarily because I wrote the unit test first (see line 94 in type_test.go), and wanted the test to pass :) Do you want me to remove this branch?",
+      "parentUuid": "0c55a521_a411175d",
       "revId": "eb38923e6bc6f49a05542003edb90135dbf50133",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
