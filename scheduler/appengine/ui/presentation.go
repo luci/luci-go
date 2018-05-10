@@ -15,7 +15,6 @@
 package ui
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -36,6 +35,7 @@ import (
 
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/presentation"
@@ -49,6 +49,7 @@ type schedulerJob struct {
 	JobName        string
 	Schedule       string
 	Definition     string
+	Policy         string
 	Revision       string
 	RevisionURL    string
 	State          string
@@ -115,6 +116,7 @@ func makeJob(c context.Context, j *engine.Job) *schedulerJob {
 		JobName:        j.JobName(),
 		Schedule:       j.Schedule,
 		Definition:     taskToText(j.Task),
+		Policy:         policyToText(j.TriggeringPolicyRaw),
 		Revision:       j.Revision,
 		RevisionURL:    j.RevisionURL,
 		State:          string(state),
@@ -138,11 +140,15 @@ func taskToText(task []byte) string {
 	if err := proto.Unmarshal(task, &msg); err != nil {
 		return fmt.Sprintf("Failed to unmarshal the task - %s", err)
 	}
-	buf := bytes.Buffer{}
-	if err := proto.MarshalText(&buf, &msg); err != nil {
-		return fmt.Sprintf("Failed to marshal the task - %s", err)
+	return proto.MarshalTextString(&msg)
+}
+
+func policyToText(p []byte) string {
+	msg, err := policy.UnmarshalDefinition(p)
+	if err != nil {
+		return err.Error()
 	}
-	return buf.String()
+	return proto.MarshalTextString(msg)
 }
 
 type sortedJobs []*schedulerJob

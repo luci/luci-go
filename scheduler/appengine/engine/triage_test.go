@@ -184,7 +184,7 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 
 	op := triageOp{
 		jobID: before.JobID,
-		policyFactory: func(messages.TriggeringPolicy) (policy.Func, error) {
+		policyFactory: func(*messages.TriggeringPolicy) (policy.Func, error) {
 			return func(env policy.Environment, in policy.In) (out policy.Out) {
 				for _, t := range in.Triggers {
 					out.Requests = append(out.Requests, task.Request{
