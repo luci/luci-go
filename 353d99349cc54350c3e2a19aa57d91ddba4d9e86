@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf585db1_9f79989c",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T22:42:42Z",
+      "side": 1,
+      "message": "better names obviously welcomed :)",
+      "range": {
+        "startLine": 313,
+        "startChar": 5,
+        "endLine": 313,
+        "endChar": 12
+      },
+      "revId": "353d99349cc54350c3e2a19aa57d91ddba4d9e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
