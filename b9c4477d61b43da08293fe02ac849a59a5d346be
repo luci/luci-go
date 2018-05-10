@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "200eef01_7cf4b8f0",
+        "filename": "scheduler/appengine/engine/policy/greedy_batching_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "while",
+      "range": {
+        "startLine": 59,
+        "startChar": 22,
+        "endLine": 59,
+        "endChar": 26
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "12afa73c_2c76a1d2",
+        "filename": "scheduler/appengine/engine/policy/request_builder_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "lol, just delete the whole Convey block or actually DO it.",
+      "range": {
+        "startLine": 34,
+        "startChar": 2,
+        "endLine": 34,
+        "endChar": 9
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9be6584_db59d947",
+        "filename": "scheduler/appengine/engine/policy/simulator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "lgtm",
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37357a9e_2f388a80",
+        "filename": "scheduler/appengine/engine/policy/simulator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "if s.seenTriggers.Add(tr.Id){",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 28
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b6d70d2_952db80b",
+        "filename": "scheduler/appengine/engine/policy/simulator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 156,
+        "startChar": 61,
+        "endLine": 156,
+        "endChar": 62
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f472ba24_d38acd59",
+        "filename": "scheduler/appengine/engine/policy/simulator.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 272,
+        "startChar": 49,
+        "endLine": 272,
+        "endChar": 50
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5685c9ba_6e563b94",
+        "filename": "scheduler/appengine/internal/noop_trigger.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "8",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3284cb8e_2aa92e42",
+        "filename": "scheduler/appengine/task/task.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 343,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T01:05:54Z",
+      "side": 1,
+      "message": "a",
+      "range": {
+        "startLine": 343,
+        "startChar": 12,
+        "endLine": 343,
+        "endChar": 13
+      },
+      "revId": "b9c4477d61b43da08293fe02ac849a59a5d346be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
