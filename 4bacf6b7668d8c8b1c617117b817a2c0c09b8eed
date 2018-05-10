@@ -1,0 +1,387 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5b6656b_502e2501",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "i am not sure about this part. The doc comment does not mention this behavior and I don\u0027t see why this is needed. Normally WithFoo functions do not do that and normally they are called during bootstrapping, either in the very beginning of the request handling or test initialization. I think the best place to create rInterface is in the middleware in main.go, and call this function with a concrete instance of config.Interface. Then the function merely adds a given configInterface to the context.",
+      "range": {
+        "startLine": 178,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 2
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "805e1965_09ecfae7",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "we are returning a context without telling the caller that actually we didn\u0027t do what were told to do. We continue execution with a broken state.\n\nif we do this in middleware, we have access to http.ResponseWriter so we can respond with HTTP 500 right away",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5638055d_d104e376",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "I think it would be simpler to build\n\n  map[string][]string\n\nwith one loop of recipients\n\nwhere first string is a template name and the second string is an email",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 40
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32957ab7_29abbeab",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "what if there are no recipients for this template?",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd3a1e8f_3478acba",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "unused",
+      "range": {
+        "startLine": 111,
+        "startChar": 24,
+        "endLine": 111,
+        "endChar": 34
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2565c7c_e6f95d11",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "build is only used to retrieve build.Builder.Project. Perhaps passing only the project would be cleaner, and it would better align with the comment one line above",
+      "range": {
+        "startLine": 133,
+        "startChar": 46,
+        "endLine": 133,
+        "endChar": 51
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46d54c62_33b9094a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": ", len(files)+1)",
+      "range": {
+        "startLine": 139,
+        "startChar": 46,
+        "endLine": 139,
+        "endChar": 47
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87abb6bd_f1697262",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "this still doesn\u0027t filter out templates of other luci-notify instances",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7566ced_3544753e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "HasSuffix",
+      "range": {
+        "startLine": 145,
+        "startChar": 14,
+        "endLine": 145,
+        "endChar": 22
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a7e53f4_335da406",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "this is noop. Did you mean to log?",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5dc1c684_3dcf2190",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "noop",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02eda692_a850c125",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "this should be done before the loop. We might be overwriting the default template provided by the configs",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f71f6e12_119cf117",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "nit: parseTemplate",
+      "range": {
+        "startLine": 165,
+        "startChar": 5,
+        "endLine": 165,
+        "endChar": 20
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba463c69_a32c3423",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "nit: less than 3 lines",
+      "range": {
+        "startLine": 173,
+        "startChar": 36,
+        "endLine": 173,
+        "endChar": 59
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "478d1a84_a7ab4b43",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "default",
+      "range": {
+        "startLine": 174,
+        "startChar": 1,
+        "endLine": 174,
+        "endChar": 18
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9348566_2cad776a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "please add a case ensuring that tc[1] is a blank line",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11aed071_866fce68",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "perhaps dealing with pointers would be simpler",
+      "range": {
+        "startLine": 190,
+        "startChar": 3,
+        "endLine": 190,
+        "endChar": 16
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "accfb6ea_95f90509",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "this could be simpler. Assuming pointers:\n\nfor _, r :\u003d range recipients {\n  if _, ok :\u003d templates[r.Template]; !ok {\n    r.Template \u003d \"default\"\n  }\n}\n\nalso, let\u0027s define a constant for \"default\"",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa7be2cd_fb3978aa",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 249,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "I think it is not Notify\u0027s job to initialize config service in context. Please move WithRemoteConfigService call to a middleware used in main.go, basemw variable",
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -348,6 +348,30 @@
     },
     {
       "key": {
+        "uuid": "8458bc04_e4ddcd29",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:00:36Z",
+      "side": 1,
+      "message": "if we compute a *set* of templates from recipients and fetch only them, then we don\u0027t fetch same template twice",
+      "parentUuid": "fa763b6e_4aff2c8d",
+      "range": {
+        "startLine": 88,
+        "startChar": 19,
+        "endLine": 88,
+        "endChar": 43
+      },
+      "revId": "dc9527aa6c3e0f382b71a8811a844f2270648394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7958fc72_1cb8658f",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 4
