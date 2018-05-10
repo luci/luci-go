@@ -48,7 +48,11 @@ func TestTriageOp(t *testing.T) {
 			}
 			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
-			So(after, ShouldResemble, before)
+
+			// Only LastTriage timestamp is bumped.
+			expected := *before
+			expected.LastTriage = epoch
+			So(after, ShouldResemble, &expected)
 		})
 
 		Convey("pops finished invocations", func() {
