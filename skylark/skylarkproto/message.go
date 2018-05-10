@@ -58,7 +58,7 @@ func (m *Message) ToProto() (proto.Message, error) {
 		if !ok {
 			panic("should not happen, SetField and Attr checks the structure already")
 		}
-		if err := assign(fd.value(msg), val); err != nil {
+		if err := assign(fd.onProtoReflection(msg), val); err != nil {
 			return nil, fmt.Errorf("bad value for field %q of %q - %s", name, m.Type(), err)
 		}
 	}
@@ -103,8 +103,14 @@ func (m *Message) Attr(name string) (skylark.Value, error) {
 	}
 
 	// The field wasn't set, but it is defined by the proto schema? Need to
-	// generate and return the default value then.
+	// generate and return the default value then, except for oneof alternatives
+	// that do not have defaults. This is needed to make sure callers are
+	// explicitly picking a oneof alternative by assigning a value to it, rather
+	// than have it picked implicitly be reading an attribute (which is weird).
 	if fd, ok := m.typ.fields[name]; ok {
+		if !fd.defaultable {
+			return skylark.None, nil
+		}
 		def, err := newDefaultValue(fd.typ)
 		if err != nil {
 			return nil, err
@@ -140,6 +146,12 @@ func (m *Message) SetField(name string, val skylark.Value) error {
 		return fmt.Errorf("can't assign value of type %q to field %q in proto %q - %s", val.Type(), name, m.Type(), err)
 	}
 	m.fields[name] = val
+
+	// onChanged hooks is used by oneof's to clear alternatives that weren't
+	// picked.
+	if fd.onChanged != nil {
+		fd.onChanged(m.fields)
+	}
 
 	return nil
 }
