@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb0484e8_6eeff65a",
+        "filename": "scheduler/appengine/engine/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T18:35:57Z",
+      "side": 1,
+      "message": "I think Stale() as getter + private \"stale\" field is better design, s.t. when when jobLog.Stale() indicates its real nature.",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 160,
+        "endChar": 21
+      },
+      "revId": "47e4edf874d252b6ede73cc00dc57d5b74933835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdd2c57e_bb36fe97",
+        "filename": "scheduler/appengine/engine/triage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-10T18:35:57Z",
+      "side": 1,
+      "message": "I think we need explicit pruning here, just in case someone\u0027s triage routine spits out 1MB of logs such that UI clearly says so (or are you relying on Staleness to indicate smth is wrong?)",
+      "range": {
+        "startLine": 239,
+        "startChar": 14,
+        "endLine": 239,
+        "endChar": 35
+      },
+      "revId": "47e4edf874d252b6ede73cc00dc57d5b74933835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
