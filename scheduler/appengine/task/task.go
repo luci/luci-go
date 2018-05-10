@@ -327,3 +327,29 @@ type Request struct {
 	// it set.
 	DebugLog string
 }
+
+// TriggerIDs extracts list of IDs from IncomingTriggers.
+//
+// This is useful in tests for asserts.
+func (r *Request) TriggerIDs() []string {
+	ids := make([]string, len(r.IncomingTriggers))
+	for i, t := range r.IncomingTriggers {
+		ids[i] = t.Id
+	}
+	return ids
+}
+
+// StringProperty returns a value of string property or "" if no such property
+// or it has a different type.
+//
+// This is useful in tests for asserts.
+func (r *Request) StringProperty(k string) string {
+	if r.Properties == nil {
+		return ""
+	}
+	prop := r.Properties.Fields[k]
+	if prop == nil {
+		return ""
+	}
+	return prop.GetStringValue()
+}

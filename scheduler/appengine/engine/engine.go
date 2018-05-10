@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/acl"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
 	"go.chromium.org/luci/scheduler/appengine/engine/cron"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
@@ -1742,9 +1743,9 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 
 	// There's error logging inside of triageOp already.
 	op := triageOp{
-		jobID:            jobID,
-		dispatcher:       e.cfg.Dispatcher,
-		triggeringPolicy: e.triggeringPolicy,
+		jobID:         jobID,
+		dispatcher:    e.cfg.Dispatcher,
+		policyFactory: policy.New,
 		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			_, err := e.enqueueInvocations(c, job, req)
 			return err
@@ -1769,20 +1770,6 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 	// Best effort cleanup.
 	op.finalize(c)
 	return nil
-}
-
-// triggeringPolicy decides how to convert a set of pending triggers into
-// a bunch of new invocations.
-//
-// Called within a job transaction. Must not do any expensive calls.
-func (e *engineImpl) triggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error) {
-	// TODO(vadimsh): This policy matches old v1 behavior:
-	//  * Don't start anything new if some invocation is already running.
-	//  * Otherwise consume all pending triggers at once.
-	if len(job.ActiveInvocations) != 0 {
-		return nil, nil
-	}
-	return []task.Request{requestFromTriggers(c, triggers)}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

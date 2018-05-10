@@ -25,7 +25,9 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/internal"
+	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -170,9 +172,6 @@ func TestTriageOp(t *testing.T) {
 }
 
 type triageTestBed struct {
-	// Inputs.
-	triggeringPolicy func(c context.Context, job *Job, triggers []*internal.Trigger) ([]task.Request, error)
-
 	// Outputs.
 	nextInvID int64
 	requests  []task.Request
@@ -183,14 +182,18 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 		return nil, err
 	}
 
-	policy := t.triggeringPolicy
-	if policy == nil {
-		policy = t.defaultTriggeringPolicy
-	}
-
 	op := triageOp{
-		jobID:            before.JobID,
-		triggeringPolicy: policy,
+		jobID: before.JobID,
+		policyFactory: func(messages.TriggeringPolicy) (policy.Func, error) {
+			return func(env policy.Environment, in policy.In) (out policy.Out) {
+				for _, t := range in.Triggers {
+					out.Requests = append(out.Requests, task.Request{
+						IncomingTriggers: []*internal.Trigger{t},
+					})
+				}
+				return
+			}, nil
+		},
 		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			t.requests = append(t.requests, req...)
 			for range req {
@@ -225,13 +228,4 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 		return nil, err
 	}
 	return after, nil
-}
-
-func (t *triageTestBed) defaultTriggeringPolicy(c context.Context, job *Job, triggers []*internal.Trigger) (out []task.Request, err error) {
-	for _, t := range triggers {
-		out = append(out, task.Request{
-			IncomingTriggers: []*internal.Trigger{t},
-		})
-	}
-	return
 }
