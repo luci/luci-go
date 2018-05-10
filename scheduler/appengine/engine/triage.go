@@ -15,12 +15,15 @@
 package engine
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -36,7 +39,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
 
-// TODO(vadimsh): Surface triage log and status in UI and Monitoring.
+// TODO(vadimsh): Surface triage status in Monitoring.
 
 // errTriagePrepareFail is returned by 'prepare' on errors.
 var errTriagePrepareFail = errors.New("error while fetching sets, see logs", transient.Tag)
@@ -70,6 +73,11 @@ type triageOp struct {
 
 	// The rest of fields are used internally.
 
+	started time.Time
+
+	debugLog     bytes.Buffer // appended to by debugInfoLog and debugErrLog
+	debugLogLock sync.Mutex   // the log may be modified from multiple goroutines
+
 	finishedSet  *invocationIDSet
 	finishedList *dsset.Listing
 
@@ -77,11 +85,16 @@ type triageOp struct {
 	triggersList  *dsset.Listing
 	readyTriggers []*internal.Trigger // same as triggersList, but deserialized and sorted
 
-	garbage dsset.Garbage // collected inside the transaction, cleaned outside
+	garbage    dsset.Garbage // collected inside the transaction, cleaned outside
+	txnAttempt int           // incremented on each transaction attempt
+	lastTriage time.Time     // value of job.LastTriage stored in the transaction
 }
 
 // prepare fetches all pending triggers and events from dsset structs.
 func (op *triageOp) prepare(c context.Context) error {
+	op.debugInfoLog(c, "Starting")
+
+	op.started = clock.Now(c).UTC()
 	op.finishedSet = recentlyFinishedSet(c, op.jobID)
 	op.triggersSet = pendingTriggersSet(c, op.jobID)
 
@@ -94,7 +107,7 @@ func (op *triageOp) prepare(c context.Context) error {
 		defer wg.Done()
 		op.triggersList, op.readyTriggers, triggersErr = op.triggersSet.Triggers(c)
 		if triggersErr != nil {
-			logging.WithError(triggersErr).Errorf(c, "Failed to grab a set of pending triggers")
+			op.debugErrLog(c, triggersErr, "Failed to grab pending triggers")
 		} else {
 			sortTriggers(op.readyTriggers)
 		}
@@ -107,7 +120,7 @@ func (op *triageOp) prepare(c context.Context) error {
 		defer wg.Done()
 		op.finishedList, finishedErr = op.finishedSet.List(c)
 		if finishedErr != nil {
-			logging.WithError(finishedErr).Errorf(c, "Failed to grab a set of recently finished invocations")
+			op.debugErrLog(c, finishedErr, "Failed to grab recently finished invocations")
 			return
 		}
 	}()
@@ -117,18 +130,20 @@ func (op *triageOp) prepare(c context.Context) error {
 		return errTriagePrepareFail // the original error is already logged
 	}
 
-	logging.Infof(c, "Pending triggers set:  %d items, %d garbage", len(op.triggersList.Items), len(op.triggersList.Garbage))
-	logging.Infof(c, "Recently finished set: %d items, %d garbage", len(op.finishedList.Items), len(op.finishedList.Garbage))
+	op.debugInfoLog(c, "Pending triggers set:  %d items, %d garbage", len(op.triggersList.Items), len(op.triggersList.Garbage))
+	op.debugInfoLog(c, "Recently finished set: %d items, %d garbage", len(op.finishedList.Items), len(op.finishedList.Garbage))
 
 	// Remove old tombstones to keep the set tidy. We fail hard here on errors to
 	// make sure progress stops if garbage can't be cleaned up for some reason.
 	// It is better to fail early rather than silently accumulate tons of garbage
 	// until everything grinds to a halt.
 	if err := dsset.CleanupGarbage(c, op.triggersList.Garbage, op.finishedList.Garbage); err != nil {
-		logging.WithError(err).Errorf(c, "Failed to cleanup dsset garbage")
+		op.debugErrLog(c, err, "Failed to cleanup dsset garbage")
 		return err
 	}
 
+	// Log something mostly to capture the timestamp.
+	op.debugInfoLog(c, "The preparation is finished")
 	return nil
 }
 
@@ -139,21 +154,27 @@ func (op *triageOp) prepare(c context.Context) error {
 //
 // This method may be called multiple times (when the transaction is retried).
 func (op *triageOp) transaction(c context.Context, job *Job) error {
+	op.txnAttempt++
+	if op.txnAttempt != 1 {
+		op.debugInfoLog(c, "Retrying the transaction, attempt %d", op.txnAttempt)
+	}
+
 	// Reset state collected in the transaction in case this is a retry.
 	op.garbage = nil
+	op.lastTriage = time.Time{}
 
 	// Tidy ActiveInvocations list by moving all recently finished invocations to
 	// FinishedInvocations list.
 	tidyOp, err := op.tidyActiveInvocations(c, job)
 	if err != nil {
-		return err
+		return err // the error is logged inside already
 	}
 
 	// Process pending triggers set by emitting new invocations. Note that this
 	// modifies ActiveInvocations list when emitting invocations.
 	triggersOp, err := op.processTriggers(c, job)
 	if err != nil {
-		return err
+		return err // the error is logged inside already
 	}
 
 	// If nothing is running anymore, make sure the cron is ticking again. This is
@@ -167,6 +188,7 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 			return nil
 		})
 		if err != nil {
+			op.debugErrLog(c, err, "Failed to rewind cron machine")
 			return err
 		}
 	}
@@ -181,27 +203,70 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 		popOps = append(popOps, triggersOp)
 	}
 	if op.garbage, err = dsset.FinishPop(c, popOps...); err != nil {
+		op.debugErrLog(c, err, "Failed to pop consumed dsset items")
 		return err
 	}
 
+	op.lastTriage = clock.Now(c).UTC()
+	job.LastTriage = op.lastTriage
+
+	op.debugInfoLog(c, "Landing the transaction")
 	return nil
 }
 
 // finalize is called after successfully submitted transaction to delete any
-// produced garbage, update monitoring counters, etc.
+// produced garbage, submit the triage log, update monitoring counters, etc.
 //
 // It is best effort. We can't do anything meaningful if it fails: the
 // transaction has already landed, there's no way to unland it.
 func (op *triageOp) finalize(c context.Context) {
 	if len(op.garbage) != 0 {
-		logging.Infof(c, "Cleaning up storage of %d dsset items", len(op.garbage))
+		op.debugInfoLog(c, "Cleaning up storage of %d dsset items", len(op.garbage))
 		if err := dsset.CleanupGarbage(c, op.garbage); err != nil {
-			logging.WithError(err).Warningf(c, "Best effort cleanup failed")
+			op.debugErrLog(c, err, "Best effort cleanup failed")
 		}
+	}
+	op.debugInfoLog(c, "Done in %s", clock.Since(c, op.started))
+
+	// Save the log. There's nothing we can do if this fails, but we try to detect
+	// and warn on the log staleness (see GetJobTriageLog implementation).
+	if op.lastTriage.IsZero() {
+		op.lastTriage = clock.Now(c).UTC()
+	}
+	log := JobTriageLog{
+		JobID:      op.jobID,
+		LastTriage: op.lastTriage,
+		DebugLog:   op.debugLog.String(),
+	}
+	if err := datastore.Put(c, &log); err != nil {
+		logging.WithError(err).Errorf(c, "Failed to store the triage debug log")
 	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+// debugInfoLog adds a line to the triage debug log and Infof log.
+func (op *triageOp) debugInfoLog(c context.Context, format string, args ...interface{}) {
+	logging.Infof(c, format, args...)
+	op.appendToLog(c, fmt.Sprintf(format, args...))
+}
+
+// debugErrLog adds a line to the triage debug log and Errorf log.
+func (op *triageOp) debugErrLog(c context.Context, err error, format string, args ...interface{}) {
+	logging.WithError(err).Errorf(c, format, args...)
+	op.appendToLog(c, fmt.Sprintf("Error: "+format+" - %s", append(args, err)...))
+}
+
+// appendToLog adds a line to the debug log, prefixing it with current time.
+func (op *triageOp) appendToLog(c context.Context, msg string) {
+	prefix := clock.Now(c).UTC().Format("[15:04:05.000] ")
+
+	op.debugLogLock.Lock()
+	op.debugLog.WriteString(prefix)
+	op.debugLog.WriteString(msg)
+	op.debugLog.WriteRune('\n')
+	op.debugLogLock.Unlock()
+}
 
 // tidyActiveInvocations removes finished invocations from ActiveInvocations,
 // and adds them to FinishedInvocations.
@@ -218,7 +283,7 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 	finishedRecord, err := filteredFinishedInvs(
 		job.FinishedInvocationsRaw, now.Add(-FinishedInvocationsHorizon))
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to unmarshal FinishedInvocationsRaw, skipping")
+		op.debugErrLog(c, err, "Failed to unmarshal FinishedInvocationsRaw, skipping")
 	}
 
 	// Note that per dsset API we need to do BeginPop if there's some garbage,
@@ -227,6 +292,7 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 	if len(op.finishedList.Items) != 0 || len(op.finishedList.Garbage) != 0 {
 		popOp, err = op.finishedSet.BeginPop(c, op.finishedList)
 		if err != nil {
+			op.debugErrLog(c, err, "Failed to pop from finished invocations set")
 			return nil, err
 		}
 
@@ -248,7 +314,7 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 					filtered = append(filtered, id) // still running
 					continue
 				}
-				logging.Infof(c, "Invocation %d is acknowledged as finished", id)
+				op.debugInfoLog(c, "Invocation %d is acknowledged as finished", id)
 				finishedRecord = append(finishedRecord, &internal.FinishedInvocation{
 					InvocationId: id,
 					Finished:     google.NewTimestamp(now),
@@ -261,13 +327,9 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 	// Marshal back FinishedInvocationsRaw after it has been updated.
 	job.FinishedInvocationsRaw = marshalFinishedInvs(finishedRecord)
 
-	// Nice looking logging.
-	invIDs := make([]int64, len(finishedRecord))
-	for i := range finishedRecord {
-		invIDs[i] = finishedRecord[i].InvocationId
-	}
-	logging.Infof(c, "Active invocations: %v", job.ActiveInvocations)
-	logging.Infof(c, "Recently finished:  %v", invIDs)
+	// Log summary.
+	op.debugInfoLog(c, "Number of active invocations: %d", len(job.ActiveInvocations))
+	op.debugInfoLog(c, "Number of recently finished:  %d", len(finishedRecord))
 
 	return popOp, nil
 }
@@ -276,6 +338,7 @@ func (op *triageOp) tidyActiveInvocations(c context.Context, job *Job) (*dsset.P
 func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, error) {
 	popOp, err := op.triggersSet.BeginPop(c, op.triggersList)
 	if err != nil {
+		op.debugErrLog(c, err, "Failed to pop from pending triggers set")
 		return nil, err
 	}
 
@@ -286,21 +349,14 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 			triggers = append(triggers, t)
 		}
 	}
+	op.debugInfoLog(c, "Triggers available in this txn: %d", len(triggers))
 
-	// Look at what's left and decide what invocations to start (if any).
+	// If the job is paused or disabled, just pop all triggers without starting
+	// anything. Note: there's a best-effort shortcut for ignoring triggers
+	// for paused jobs in execEnqueueTriggersTask.
 	if len(triggers) != 0 {
-		now := clock.Now(c)
-		logging.Infof(c, "Pending triggers:")
-		for _, t := range triggers {
-			logging.Infof(c, "  %q submitted %s ago by %q inv %d",
-				t.Id, now.Sub(google.TimeFromProto(t.Created)), t.JobId, t.InvocationId)
-		}
-
-		// If the job is paused or disabled, just pop all triggers without starting
-		// anything. Note: there's a best-effort shortcut for ignoring triggers
-		// for paused jobs in execEnqueueTriggersTask.
 		if job.Paused || !job.Enabled {
-			logging.Infof(c, "The job is inactive, clearing the pending triggers queue")
+			op.debugInfoLog(c, "The job is inactive, clearing the pending triggers queue")
 			for _, t := range triggers {
 				popOp.Pop(t.Id)
 			}
@@ -322,6 +378,7 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 			}
 		}
 		if err := op.enqueueInvocations(c, job, out.Requests); err != nil {
+			op.debugErrLog(c, err, "Failed to enqueue some invocations")
 			return nil, err
 		}
 	}
@@ -338,14 +395,14 @@ func (op *triageOp) triggeringPolicy(c context.Context, job *Job, triggers []*in
 	if job.TriggeringPolicyRaw != nil {
 		err := proto.Unmarshal(job.TriggeringPolicyRaw, &p)
 		if err != nil {
-			logging.WithError(err).Errorf(c, "Failed to unmarshal TriggeringPolicy, using the default policy instead")
+			op.debugErrLog(c, err, "Failed to unmarshal TriggeringPolicy, using the default policy instead")
 			p = messages.TriggeringPolicy{}
 		}
 	}
 
 	policyFunc, err := op.policyFactory(p)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to instantiate the triggering policy function, using the default policy instead")
+		op.debugErrLog(c, err, "Failed to instantiate the triggering policy function, using the default policy instead")
 		policyFunc, err = op.policyFactory(messages.TriggeringPolicy{})
 		if err != nil {
 			panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
@@ -366,7 +423,5 @@ type policyFuncEnv struct {
 }
 
 func (e policyFuncEnv) DebugLog(format string, args ...interface{}) {
-	// TODO(vadimsh): Log this into datastore too, so that we have access to
-	// the triage log in the UI.
-	logging.Infof(e.ctx, format, args...)
+	e.op.debugInfoLog(e.ctx, format, args...)
 }
