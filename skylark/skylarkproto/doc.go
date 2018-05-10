@@ -51,7 +51,6 @@ package skylarkproto
 // TODO: Support proto package with.dotted.names.
 // TODO: Investigate how to load proto packages consisting of multiple files.
 
-// TODO: support oneof fields.
 // TODO: support known types (maps, any, struct).
 
 // TODO: support freezing.
