@@ -132,21 +132,30 @@ func processBot(c context.Context, desc model.PoolDescriptor) error {
 	}
 	sc.BasePath = fmt.Sprintf("https://%s/_ah/api/swarming/v1/", desc.Host())
 
-	botList, err := sc.Bots.List().Dimensions(desc.Dimensions().Format()...).Do()
-	if err != nil {
-		return err
-	}
-	bots := make([]model.Bot, 0, len(botList.Items))
-	for _, botInfo := range botList.Items {
-		// Ignore deleted bots.
-		if botInfo.Deleted {
-			continue
-		}
-		bot, err := parseBot(c, desc.Host(), botInfo)
+	var bots []model.Bot
+	bl := sc.Bots.List().Dimensions(desc.Dimensions().Format()...)
+	// Keep fetching until the cursor is empty.
+	for {
+		botList, err := bl.Do()
 		if err != nil {
 			return err
 		}
-		bots = append(bots, *bot)
+		for _, botInfo := range botList.Items {
+			// Ignore deleted bots.
+			if botInfo.Deleted {
+				continue
+			}
+			bot, err := parseBot(c, desc.Host(), botInfo)
+			if err != nil {
+				return err
+			}
+			bots = append(bots, *bot)
+		}
+
+		if botList.Cursor == "" {
+			break
+		}
+		bl = bl.Cursor(botList.Cursor)
 	}
 	// This is a large RPC, don't try to batch it.
 	return datastore.Put(c, &model.BotPool{
