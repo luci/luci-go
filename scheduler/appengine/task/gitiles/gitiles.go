@@ -113,88 +113,31 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		return err
 	}
 
-	refs := refsState{}
-	refs.watched.init(cfg.GetRefs())
-	err = parallel.FanOutIn(func(work chan<- func() error) {
-		work <- func() (loadErr error) {
-			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
-			return
-		}
-		work <- func() (refsErr error) {
-			refs.current, refsErr = m.getRefsTips(c, ctl, cfg.Repo, refs.watched)
-			return
-		}
-	})
+	refs, err := m.fetchRefsState(c, ctl, cfg, repoURL)
 	if err != nil {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return err
 	}
 
-	// This also increments refs.changed.
 	refs.pruneKnown(ctl)
-
-	emittedTriggers := 0
-	maxTriggersPerInvocation := m.maxTriggersPerInvocation
-	if maxTriggersPerInvocation == 0 {
-		maxTriggersPerInvocation = defaultMaxTriggersPerInvocation
-	}
-	// Note, that current `refs` contains only watched refs (see getRefsTips).
-	// For determinism, sort refs by name.
-	for _, ref := range refs.sortedCurrentRefNames() {
-		newHead := refs.current[ref]
-		oldHead, existed := refs.known[ref]
-		switch {
-		case !existed:
-			ctl.DebugLog("Ref %s is new: %s", ref, newHead)
-		case oldHead != newHead:
-			ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
-		default:
-			// No change.
-			continue
-		}
-		refs.known[ref] = newHead
-		refs.changed++
-		emittedTriggers++
-		// TODO(tandrii): actually look at commits between current and previously
-		// known tips of each ref.
-		// In current (v1) engine, all triggers emitted around the same time will
-		// result in just 1 invocation of each triggered job. Therefore,
-		// passing just HEAD's revision is good enough.
-		// For the same reason, only 1 of the refs will actually be processed if
-		// several refs changed at the same time.
-		ctl.EmitTrigger(c, &internal.Trigger{
-			Id:    fmt.Sprintf("%s/+/%s@%s", cfg.Repo, ref, newHead),
-			Title: newHead,
-			Url:   fmt.Sprintf("%s/+/%s", cfg.Repo, newHead),
-			Payload: &internal.Trigger_Gitiles{
-				Gitiles: &api.GitilesTrigger{Repo: cfg.Repo, Ref: ref, Revision: newHead},
-			},
-		})
-
-		// Safeguard against too many changes such as the first run after
-		// config change to watch many more refs than before.
-		if emittedTriggers >= maxTriggersPerInvocation {
-			ctl.DebugLog("Emitted %d triggers, postponing the rest", emittedTriggers)
-			break
-		}
-	}
+	leftToProcess := m.emitTriggersRefAtATime(c, ctl, cfg.Repo, refs)
 
 	if refs.changed == 0 {
 		ctl.DebugLog("No changes detected")
-	} else {
-		ctl.DebugLog("%d refs changed", refs.changed)
-		// Force save to ensure triggers are actually emitted.
-		if err := ctl.Save(c); err != nil {
-			// At this point, triggers have not been sent, so bail now and don't save
-			// the refs' heads newest values.
-			return err
-		}
-		if err := saveState(c, ctl.JobID(), repoURL, refs.known); err != nil {
-			return err
-		}
-		ctl.DebugLog("Saved %d known refs", len(refs.known))
+		ctl.State().Status = task.StatusSucceeded
+		return nil
 	}
-
+	ctl.DebugLog("%d changed refs processed, %d refs not yet examined", refs.changed, leftToProcess)
+	// Force save to ensure triggers are actually emitted.
+	if err := ctl.Save(c); err != nil {
+		// At this point, triggers have not been sent, so bail now and don't save
+		// the refs' heads newest values.
+		return err
+	}
+	if err := saveState(c, ctl.JobID(), repoURL, refs.known); err != nil {
+		return err
+	}
+	ctl.DebugLog("Saved %d known refs", len(refs.known))
 	ctl.State().Status = task.StatusSucceeded
 	return nil
 }
@@ -212,6 +155,22 @@ func (m TaskManager) HandleNotification(c context.Context, ctl task.Controller, 
 // HandleTimer is part of Manager interface.
 func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name string, payload []byte) error {
 	return errors.New("not implemented")
+}
+
+func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, repoURL *url.URL) (*refsState, error) {
+	refs := &refsState{}
+	refs.watched.init(cfg.GetRefs())
+	return refs, parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() (loadErr error) {
+			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
+			return
+		}
+		work <- func() (refsErr error) {
+			// Merge getRefsTips here.
+			refs.current, refsErr = m.getRefsTips(c, ctl, cfg.Repo, refs.watched)
+			return
+		}
+	})
 }
 
 // getRefsTips returns tip for each ref being watched.
@@ -259,6 +218,70 @@ func (m TaskManager) getRefsTips(c context.Context, ctl task.Controller, repoURL
 		return nil, errors.NewMultiError(errs...)
 	}
 	return allTips, nil
+}
+
+// emitTriggersRefAtATime processes refs one a time and emits triggers if ref
+// changed. Limits number of triggers emitted and so may stop early.
+//
+// Returns how many refs were not examined.
+func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controller, repo string, refs *refsState) (left int) {
+	maxTriggersPerInvocation := m.maxTriggersPerInvocation
+	if maxTriggersPerInvocation == 0 {
+		maxTriggersPerInvocation = defaultMaxTriggersPerInvocation
+	}
+	emittedTriggers := 0
+	// Note, that refs.current contain only watched refs (see getRefsTips).
+	// For determinism, sort refs by name.
+	sortedRefs := make([]string, 0, len(refs.current))
+	for ref := range refs.current {
+		sortedRefs = append(sortedRefs, ref)
+	}
+	sort.Strings(sortedRefs)
+	for i, ref := range sortedRefs {
+		// TODO(tandrii): enforce limit on emitted triggers here.
+		emittedTriggers += m.emitTriggersForRef(c, ctl, repo, ref, refs)
+		// Safeguard against too many changes such as the first run after
+		// config change to watch many more refs than before.
+		if emittedTriggers >= maxTriggersPerInvocation {
+			ctl.DebugLog("Emitted %d triggers, postponing the rest", emittedTriggers)
+			left = len(sortedRefs) - i - 1
+			return left
+		}
+	}
+	left = 0
+	return
+}
+
+// emitTriggersForRef emits triggers for 1 ref if there are any changes and
+// returns number of triggers emitted.
+func (m TaskManager) emitTriggersForRef(c context.Context, ctl task.Controller, repo, ref string, refs *refsState) int {
+	newHead := refs.current[ref]
+	switch oldHead, existed := refs.known[ref]; {
+	case !existed:
+		ctl.DebugLog("Ref %s is new: %s", ref, newHead)
+	case oldHead != newHead:
+		ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
+	default:
+		return 0 // no change
+	}
+	refs.known[ref] = newHead
+	refs.changed++
+	// TODO(tandrii): actually look at commits between current and previously
+	// known tips of each ref.
+	// In current (v1) engine, all triggers emitted around the same time will
+	// result in just 1 invocation of each triggered job. Therefore,
+	// passing just HEAD's revision is good enough.
+	// For the same reason, only 1 of the refs will actually be processed if
+	// several refs changed at the same time.
+	ctl.EmitTrigger(c, &internal.Trigger{
+		Id:    fmt.Sprintf("%s/+/%s@%s", repo, ref, newHead),
+		Title: newHead,
+		Url:   fmt.Sprintf("%s/+/%s", repo, newHead),
+		Payload: &internal.Trigger_Gitiles{
+			Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: newHead},
+		},
+	})
+	return 1
 }
 
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, host string) (gitilespb.GitilesClient, error) {
