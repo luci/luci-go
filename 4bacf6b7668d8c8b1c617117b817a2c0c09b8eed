@@ -65,6 +65,30 @@
     },
     {
       "key": {
+        "uuid": "0bc3c25f_9cdfbc68",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-10T02:13:21Z",
+      "side": 1,
+      "message": "but again, there is no need for matchTemplate function if the list templates is coming from recipients, rather than ListFiles function. I think usage of ListFiles is unnecessary in this CL. We don\u0027t need to discover available templates because we have the exact list of templates that we need to load.",
+      "parentUuid": "5638055d_d104e376",
+      "range": {
+        "startLine": 92,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 40
+      },
+      "revId": "4bacf6b7668d8c8b1c617117b817a2c0c09b8eed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "32957ab7_29abbeab",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 5
