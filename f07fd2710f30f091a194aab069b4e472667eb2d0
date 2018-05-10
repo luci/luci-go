@@ -22,6 +22,30 @@
       "revId": "f07fd2710f30f091a194aab069b4e472667eb2d0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e288237_871f0e05",
+        "filename": "scheduler/appengine/ui/presentation.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-10T21:07:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "598c1689_b961cbef",
+      "range": {
+        "startLine": 145,
+        "startChar": 0,
+        "endLine": 157,
+        "endChar": 2
+      },
+      "revId": "f07fd2710f30f091a194aab069b4e472667eb2d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
