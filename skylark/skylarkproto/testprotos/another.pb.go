@@ -6,10 +6,12 @@ Package testprotos is a generated protocol buffer package.
 
 It is generated from these files:
 	go.chromium.org/luci/skylark/skylarkproto/testprotos/another.proto
+	go.chromium.org/luci/skylark/skylarkproto/testprotos/proto2.proto
 	go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto
 
 It has these top-level messages:
 	AnotherMessage
+	Proto2Message
 	SimpleFields
 	MessageFields
 	Simple

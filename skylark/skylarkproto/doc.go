@@ -45,9 +45,6 @@
 // To clear a field, assign None to it (regardless of its type).
 package skylarkproto
 
-// TODO: Detect version2 protos and bail, our reflection magic expects proto3
-// messages.
-
 // TODO: support known types (maps, any, struct).
 // TODO: support freezing.
 // TODO: support '==' ?

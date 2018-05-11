@@ -40,7 +40,10 @@ func newDefaultValue(typ reflect.Type) (skylark.Value, error) {
 	case reflect.Slice: // this is either a repeated field or 'bytes'
 		return skylark.NewList(nil), nil
 
-	case reflect.Ptr: // a message field
+	case reflect.Ptr: // a message field (*Struct) or proto2 scalar field (*int64)
+		if typ.Elem().Kind() != reflect.Struct {
+			return nil, errNoProto2
+		}
 		t, err := GetMessageType(typ)
 		if err != nil {
 			return nil, fmt.Errorf("can't instantiate value for go type %q - %s", typ, err)
