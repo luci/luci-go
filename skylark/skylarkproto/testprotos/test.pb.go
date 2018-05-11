@@ -32,7 +32,7 @@ var Enum_value = map[string]int32{
 func (x Enum) String() string {
 	return proto.EnumName(Enum_name, int32(x))
 }
-func (Enum) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (Enum) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 type Complex_InnerEnum int32
 
@@ -53,7 +53,7 @@ var Complex_InnerEnum_value = map[string]int32{
 func (x Complex_InnerEnum) String() string {
 	return proto.EnumName(Complex_InnerEnum_name, int32(x))
 }
-func (Complex_InnerEnum) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
+func (Complex_InnerEnum) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{3, 0} }
 
 type SimpleFields struct {
 	I64    int64    `protobuf:"varint,1,opt,name=i64" json:"i64,omitempty"`
@@ -72,7 +72,7 @@ type SimpleFields struct {
 func (m *SimpleFields) Reset()                    { *m = SimpleFields{} }
 func (m *SimpleFields) String() string            { return proto.CompactTextString(m) }
 func (*SimpleFields) ProtoMessage()               {}
-func (*SimpleFields) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*SimpleFields) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
 
 func (m *SimpleFields) GetI64() int64 {
 	if m != nil {
@@ -159,7 +159,7 @@ type MessageFields struct {
 func (m *MessageFields) Reset()                    { *m = MessageFields{} }
 func (m *MessageFields) String() string            { return proto.CompactTextString(m) }
 func (*MessageFields) ProtoMessage()               {}
-func (*MessageFields) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*MessageFields) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
 
 func (m *MessageFields) GetSingle() *Simple {
 	if m != nil {
@@ -183,7 +183,7 @@ type Simple struct {
 func (m *Simple) Reset()                    { *m = Simple{} }
 func (m *Simple) String() string            { return proto.CompactTextString(m) }
 func (*Simple) ProtoMessage()               {}
-func (*Simple) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*Simple) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
 func (m *Simple) GetI() int64 {
 	if m != nil {
@@ -214,7 +214,7 @@ type Complex struct {
 func (m *Complex) Reset()                    { *m = Complex{} }
 func (m *Complex) String() string            { return proto.CompactTextString(m) }
 func (*Complex) ProtoMessage()               {}
-func (*Complex) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*Complex) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
 
 type isComplex_OneofVal interface {
 	isComplex_OneofVal()
@@ -367,7 +367,7 @@ type Complex_InnerMessage struct {
 func (m *Complex_InnerMessage) Reset()                    { *m = Complex_InnerMessage{} }
 func (m *Complex_InnerMessage) String() string            { return proto.CompactTextString(m) }
 func (*Complex_InnerMessage) ProtoMessage()               {}
-func (*Complex_InnerMessage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
+func (*Complex_InnerMessage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3, 0} }
 
 func (m *Complex_InnerMessage) GetI() int64 {
 	if m != nil {
@@ -384,7 +384,7 @@ type RefsOtherProtos struct {
 func (m *RefsOtherProtos) Reset()                    { *m = RefsOtherProtos{} }
 func (m *RefsOtherProtos) String() string            { return proto.CompactTextString(m) }
 func (*RefsOtherProtos) ProtoMessage()               {}
-func (*RefsOtherProtos) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*RefsOtherProtos) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
 
 func (m *RefsOtherProtos) GetAnotherMsg() *AnotherMessage {
 	if m != nil {
@@ -412,10 +412,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor2)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor2 = []byte{
 	// 595 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x9d, 0x93, 0x36, 0x6d, 0x6f, 0xb3, 0xfd, 0x2a, 0x4b, 0x3f, 0x11, 0x55, 0x20, 0xac, 0x88,

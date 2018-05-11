@@ -22,6 +22,8 @@ import (
 	"github.com/google/skylark"
 )
 
+var errNoProto2 = fmt.Errorf("proto2 messages are not fully supported, update to proto3")
+
 // intRanges describes ranges of integer types that can appear in *.pb.go code.
 //
 // Note that platform-dependent 'int' is not possible there, nor (s|u)int16 or
@@ -43,6 +45,13 @@ var intRanges = map[reflect.Kind]struct {
 // a go value of the given type, or an error if such assignment is not allowed
 // due to incompatible types.
 func getAssigner(typ reflect.Type, sv skylark.Value) (func(reflect.Value) error, error) {
+	// Proto3 use pointers only to represent message-valued fields. Proto2 also
+	// uses them to represent scalar-valued fields. We don't support proto2. So
+	// check that if typ is a pointer, it points to a struct.
+	if typ.Kind() == reflect.Ptr && typ.Elem().Kind() != reflect.Struct {
+		return nil, errNoProto2
+	}
+
 	switch val := sv.(type) {
 	case skylark.NoneType:
 		return nil, fmt.Errorf("can't assign nil to a value of kind %q", typ.Kind())
