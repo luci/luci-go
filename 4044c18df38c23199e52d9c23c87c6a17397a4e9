@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d002559_e9d9a44d",
+        "filename": "machine-db/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-11T01:01:03Z",
+      "side": 1,
+      "message": "Maybe the templates subdirectory should be under ui, it seems related to ui. In which case just omit the parameter and hard code in InstallHandlers.",
+      "range": {
+        "startLine": 46,
+        "startChar": 49,
+        "endLine": 46,
+        "endChar": 58
+      },
+      "revId": "4044c18df38c23199e52d9c23c87c6a17397a4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af41656f_f495f64b",
+        "filename": "machine-db/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-11T01:01:03Z",
+      "side": 1,
+      "message": "For consistency with the database package could just make this \u0027var serverKey \u003d \"server\"\u0027, but that level of consistency between machine-db\u0027s subpackages could be overkill.",
+      "revId": "4044c18df38c23199e52d9c23c87c6a17397a4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7462e9a_1f8466e2",
+        "filename": "machine-db/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-11T01:01:03Z",
+      "side": 1,
+      "message": "Sort alphabetically for consistency with the rest of machine-db (since I usually do).",
+      "revId": "4044c18df38c23199e52d9c23c87c6a17397a4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b6349ceb_cabc976a",
+        "filename": "machine-db/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-11T01:01:03Z",
+      "side": 1,
+      "message": "Prefer alphabetic by key, I don\u0027t think numeric by codes.go order is that useful to readers/writers who want to add another.",
+      "revId": "4044c18df38c23199e52d9c23c87c6a17397a4e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
