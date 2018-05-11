@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config/validation"
@@ -45,11 +46,18 @@ import (
 // invocation.
 const defaultMaxTriggersPerInvocation = 100
 
+// defaultMaxCommitsPerRefUpdate limits number of commits (and hence triggers)
+// emitted when a ref changes.
+// Must be smaller than defaultMaxTriggersPerInvocation, else these many
+// triggers could be emitted.
+const defaultMaxCommitsPerRefUpdate = 50
+
 // TaskManager implements task.Manager interface for tasks defined with
 // GitilesTask proto message.
 type TaskManager struct {
 	mockGitilesClient        gitilespb.GitilesClient // Used for testing only.
 	maxTriggersPerInvocation int                     // Avoid choking on DS or runtime limits.
+	maxCommitsPerRefUpdate   int                     // Failsafe when someone pushes too many commits at once.
 }
 
 // Name is part of Manager interface.
@@ -127,17 +135,32 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	}
 
 	refs.pruneKnown(ctl)
-	leftToProcess := m.emitTriggersRefAtATime(c, ctl, cfg.Repo, refs)
+	leftToProcess, err := m.emitTriggersRefAtATime(c, ctl, g, cfg.Repo, refs)
+
+	if err != nil {
+		switch {
+		case leftToProcess == 0:
+			panic(err) // leftToProcess must include the one processing of which failed.
+		case refs.changed > 0:
+			// Even though we hit error, we had progress. So, ignore error as transient.
+			ctl.DebugLog("ignoring error %s as transient", err)
+		default:
+			ctl.DebugLog("no progress made due to %s", err)
+			return err
+		}
+	}
 
 	switch {
-	case leftToProcess == 0 && refs.changed == 0:
+	case leftToProcess > 0 && refs.changed == 0:
+		panic(errors.New("no progress with no errors must not happen"))
+	case refs.changed == 0:
 		ctl.DebugLog("No changes detected")
 		ctl.State().Status = task.StatusSucceeded
 		return nil
-	case leftToProcess == 0:
-		ctl.DebugLog("All %d changed refs processed", refs.changed)
-	default:
+	case leftToProcess > 0:
 		ctl.DebugLog("%d changed refs processed, %d refs not yet examined", refs.changed, leftToProcess)
+	default:
+		ctl.DebugLog("All %d changed refs processed", refs.changed)
 	}
 	// Force save to ensure triggers are actually emitted.
 	if err := ctl.Save(c); err != nil {
@@ -190,64 +213,49 @@ func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg 
 // changed. Limits number of triggers emitted and so may stop early.
 //
 // Returns how many refs were not examined.
-func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controller, repo string, refs *refsState) (left int) {
+func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controller, g *gitilesClient, repo string, refs *refsState) (int, error) {
+	// Safeguard against too many changes such as the first run after config
+	// change to watch many more refs than before.
 	maxTriggersPerInvocation := m.maxTriggersPerInvocation
-	if maxTriggersPerInvocation == 0 {
+	if maxTriggersPerInvocation <= 0 {
 		maxTriggersPerInvocation = defaultMaxTriggersPerInvocation
+	}
+	maxCommitsPerRefUpdate := m.maxCommitsPerRefUpdate
+	if maxCommitsPerRefUpdate <= 0 {
+		maxCommitsPerRefUpdate = defaultMaxCommitsPerRefUpdate
 	}
 	emittedTriggers := 0
 	// Note, that refs.current contain only watched refs (see getRefsTips).
 	// For determinism, sort refs by name.
-	sortedRefs := make([]string, 0, len(refs.current))
-	for ref := range refs.current {
-		sortedRefs = append(sortedRefs, ref)
-	}
-	sort.Strings(sortedRefs)
+	sortedRefs := refs.sortedCurrentRefNames()
 	for i, ref := range sortedRefs {
-		// TODO(tandrii): enforce limit on emitted triggers here.
-		emittedTriggers += m.emitTriggersForRef(c, ctl, repo, ref, refs)
-		// Safeguard against too many changes such as the first run after
-		// config change to watch many more refs than before.
-		if emittedTriggers >= maxTriggersPerInvocation {
+		commits, err := refs.newCommits(c, ctl, g, ref, maxCommitsPerRefUpdate)
+		if err != nil {
+			// This ref counts as not yet examined.
+			return len(sortedRefs) - i, err
+		}
+		for i := range commits {
+			// commit[0] is latest, so emit triggers in reverse order of commits.
+			commit := commits[len(commits)-i-1]
+			ctl.EmitTrigger(c, &internal.Trigger{
+				Id:    fmt.Sprintf("%s/+/%s@%s", repo, ref, commit.Id),
+				Title: commit.Id,
+				Url:   fmt.Sprintf("%s/+/%s", repo, commit.Id),
+				Payload: &internal.Trigger_Gitiles{
+					Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: commit.Id},
+				},
+			})
+			emittedTriggers++
+		}
+		// Stop early if next iteration can't emit maxCommitsPerRefUpdate triggers.
+		// But do so only after first successful fetch to ensure progress if
+		// misconfigured.
+		if emittedTriggers+maxCommitsPerRefUpdate > maxTriggersPerInvocation {
 			ctl.DebugLog("Emitted %d triggers, postponing the rest", emittedTriggers)
-			left = len(sortedRefs) - i - 1
-			return left
+			return len(sortedRefs) - i - 1, nil
 		}
 	}
-	left = 0
-	return
-}
-
-// emitTriggersForRef emits triggers for 1 ref if there are any changes and
-// returns number of triggers emitted.
-func (m TaskManager) emitTriggersForRef(c context.Context, ctl task.Controller, repo, ref string, refs *refsState) int {
-	newHead := refs.current[ref]
-	switch oldHead, existed := refs.known[ref]; {
-	case !existed:
-		ctl.DebugLog("Ref %s is new: %s", ref, newHead)
-	case oldHead != newHead:
-		ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
-	default:
-		return 0 // no change
-	}
-	refs.known[ref] = newHead
-	refs.changed++
-	// TODO(tandrii): actually look at commits between current and previously
-	// known tips of each ref.
-	// In current (v1) engine, all triggers emitted around the same time will
-	// result in just 1 invocation of each triggered job. Therefore,
-	// passing just HEAD's revision is good enough.
-	// For the same reason, only 1 of the refs will actually be processed if
-	// several refs changed at the same time.
-	ctl.EmitTrigger(c, &internal.Trigger{
-		Id:    fmt.Sprintf("%s/+/%s@%s", repo, ref, newHead),
-		Title: newHead,
-		Url:   fmt.Sprintf("%s/+/%s", repo, newHead),
-		Payload: &internal.Trigger_Gitiles{
-			Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: newHead},
-		},
-	})
-	return 1
+	return 0, nil
 }
 
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cfg *messages.GitilesTask) (*gitilesClient, error) {
@@ -332,6 +340,39 @@ func (s *refsState) sortedCurrentRefNames() []string {
 	}
 	sort.Strings(sortedRefs)
 	return sortedRefs
+}
+
+// newCommits finds new commits for a given ref.
+//
+// If ref is new, returns only ref's HEAD,
+// For updated refs, at most maxCommits of gitiles.Log(new..old)
+func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitilesClient, ref string, maxCommits int) ([]*git.Commit, error) {
+	newHead := s.current[ref]
+	oldHead, existed := s.known[ref]
+	switch {
+	case !existed:
+		ctl.DebugLog("Ref %s is new: %s", ref, newHead)
+		maxCommits = 1
+	case oldHead != newHead:
+		ctl.DebugLog("Ref %s updated: %s => %s", ref, oldHead, newHead)
+	default:
+		return nil, nil // no change
+	}
+
+	commits, err := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+		Project:  g.project,
+		Treeish:  newHead,
+		Ancestor: oldHead, // empty if ref is new, but then maxCommits is 1.
+		PageSize: int32(maxCommits),
+	}, maxCommits)
+	if err != nil {
+		ctl.DebugLog("Failed to fetch log of new rev %q", newHead)
+		return nil, err
+	}
+
+	s.known[ref] = newHead
+	s.changed++
+	return commits, nil
 }
 
 type watchedRefNamespace struct {

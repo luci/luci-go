@@ -24,6 +24,8 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/validation"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task/utils/tasktest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 var _ task.Manager = (*TaskManager)(nil)
@@ -80,10 +83,29 @@ func TestTriggerBuild(t *testing.T) {
 			}
 			return gitilesMock.EXPECT().Refs(gomock.Any(), req).Return(res, nil)
 		}
+		// log is for readability of expectLog calls.
+		log := func(ids ...string) []string { return ids }
+		expectLog := func(from, to string, pageSize int, ids []string, errs ...error) *gomock.Call {
+			req := &gitilespb.LogRequest{
+				Project:  "b",
+				Treeish:  from,
+				Ancestor: to,
+				PageSize: int32(pageSize),
+			}
+			if len(errs) > 0 {
+				return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(nil, errs[0])
+			}
+			res := &gitilespb.LogResponse{}
+			for _, id := range ids {
+				res.Log = append(res.Log, &git.Commit{Id: id})
+			}
+			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
+		}
 
 		Convey("new refs are discovered", func() {
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
+			expectLog("deadbeef00", "", 1, log("deadbeef00"))
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
 				"refs/heads/master": "deadbeef00",
@@ -101,7 +123,6 @@ func TestTriggerBuild(t *testing.T) {
 			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/heads/master": "deadbeef00",
 			}), ShouldBeNil)
-
 			expectRefs("refs/heads", strmap{"refs/heads/master": "deadbeef00"})
 			expectRefs("refs/branch-heads", strmap{"refs/weird": "1234567890"})
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
@@ -113,49 +134,55 @@ func TestTriggerBuild(t *testing.T) {
 
 		Convey("New, updated, and deleted refs", func() {
 			So(saveState(c, jobID, parsedUrl, strmap{
-				"refs/heads/master":   "deadbeef00",
+				"refs/heads/master":   "deadbeef03",
 				"refs/branch-heads/x": "1234567890",
 				"refs/was/watched":    "0987654321",
 			}), ShouldBeNil)
 			expectRefs("refs/heads", strmap{
-				"refs/heads/master": "deadbeef01",
+				"refs/heads/master": "deadbeef00",
 			})
 			expectRefs("refs/branch-heads", strmap{
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
+			expectLog("deadbeef00", "deadbeef03", 50, log("deadbeef00", "deadbeef01", "deadbeef02"))
+			expectLog("baadcafe00", "", 1, log("baadcafe00"))
 
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
-				"refs/heads/master":       "deadbeef01",
+				"refs/heads/master":       "deadbeef00",
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
-			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(ctl.Triggers, ShouldHaveLength, 4)
 			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe00")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
+			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02")
+			So(ctl.Triggers[2].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
+			So(ctl.Triggers[3].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
 		})
 
 		Convey("Refglobs: new, updated, and deleted refs", func() {
 			So(saveState(c, jobID, parsedUrl, strmap{
-				"refs/branch-heads/1.2.3": "deadbeef00",
+				"refs/branch-heads/1.2.3": "deadbeef01",
 				"refs/branch-heads/4.5":   "beefcafe",
 				"refs/branch-heads/6.7":   "deadcafe",
 			}), ShouldBeNil)
 			expectRefs("refs/heads", nil)
 			expectRefs("refs/branch-heads", strmap{
-				"refs/branch-heads/1.2.3":          "deadbeef01",
+				"refs/branch-heads/1.2.3":          "deadbeef00",
 				"refs/branch-heads/6.7":            "deadcafe",
 				"refs/branch-heads/8.9.0":          "beef44dead",
 				"refs/branch-heads/must/not/match": "deaddead",
 			})
+			expectLog("deadbeef00", "deadbeef01", 50, log("deadbeef00"))
+			expectLog("beef44dead", "", 1, log("beef44dead"))
 
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(loadNoError(), ShouldResemble, strmap{
-				"refs/branch-heads/1.2.3": "deadbeef01", // updated.
+				"refs/branch-heads/1.2.3": "deadbeef00", // updated.
 				"refs/branch-heads/6.7":   "deadcafe",   // same.
 				"refs/branch-heads/8.9.0": "beef44dead", // new.
 			})
 			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@deadbeef01")
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@deadbeef00")
 			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/8.9.0@beef44dead")
 		})
 
@@ -188,7 +215,13 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/4": "cafee4",
 				"refs/branch-heads/5": "cafee5",
 			}).AnyTimes()
+			expectLog("cafee1", "", 1, log("cafee1"))
+			expectLog("cafee2", "", 1, log("cafee2"))
+			expectLog("cafee3", "", 1, log("cafee3"))
+			expectLog("cafee4", "", 1, log("cafee4"))
+			expectLog("cafee5", "", 1, log("cafee5"))
 			m.maxTriggersPerInvocation = 2
+			m.maxCommitsPerRefUpdate = 1
 			// First run, refs/branch-heads/{1,2} updated, refs/heads/master removed.
 			So(m.LaunchTask(c, ctl), ShouldBeNil)
 			So(ctl.Triggers, ShouldHaveLength, 2)
@@ -218,6 +251,45 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/3": "cafee3",
 				"refs/branch-heads/4": "cafee4",
 				"refs/branch-heads/5": "cafee5",
+			})
+		})
+
+		Convey("Ensure progress", func() {
+			expectRefs("refs/heads", nil).AnyTimes()
+			expectRefs("refs/branch-heads", strmap{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
+				"refs/branch-heads/3": "cafee3",
+			}).AnyTimes()
+			m.maxTriggersPerInvocation = 2
+			m.maxCommitsPerRefUpdate = 1
+
+			Convey("no progress is an error", func() {
+				expectLog("cafee1", "", 1, log(), errors.New("flake"))
+				So(m.LaunchTask(c, ctl), ShouldErrLike, "flake")
+			})
+
+			expectLog("cafee1", "", 1, log("cafee1"))
+			expectLog("cafee2", "", 1, log(), errors.New("flake"))
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			So(ctl.Triggers, ShouldHaveLength, 1)
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/branch-heads/1": "cafee1",
+			})
+			ctl.Triggers = nil
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/branch-heads/1": "cafee1",
+			})
+
+			// Second run.
+			expectLog("cafee2", "", 1, log("cafee2"))
+			expectLog("cafee3", "", 1, log("cafee3"))
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+			So(ctl.Triggers, ShouldHaveLength, 2)
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/branch-heads/1": "cafee1",
+				"refs/branch-heads/2": "cafee2",
+				"refs/branch-heads/3": "cafee3",
 			})
 		})
 	})
