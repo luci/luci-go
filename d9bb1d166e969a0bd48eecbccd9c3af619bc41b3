@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7c5003d_2a7545bf",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 240,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-11T01:45:42Z",
+      "side": 1,
+      "message": "do we need to populate OrderInBatch? Or ctl does it correctly already? (I forgot).",
+      "range": {
+        "startLine": 240,
+        "startChar": 3,
+        "endLine": 240,
+        "endChar": 18
+      },
+      "revId": "d9bb1d166e969a0bd48eecbccd9c3af619bc41b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bf3608f_ae5bcef3",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-11T01:45:42Z",
+      "side": 1,
+      "message": "does this fetch commit message? Can we say we don\u0027t want it?",
+      "range": {
+        "startLine": 362,
+        "startChar": 17,
+        "endLine": 362,
+        "endChar": 34
+      },
+      "revId": "d9bb1d166e969a0bd48eecbccd9c3af619bc41b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
