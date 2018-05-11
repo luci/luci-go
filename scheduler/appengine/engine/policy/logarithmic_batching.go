@@ -14,14 +14,24 @@
 
 package policy
 
-import "go.chromium.org/luci/scheduler/appengine/internal"
+import (
+	"math"
 
-// GreedyBatchingPolicy instantiates new GREEDY_BATCHING policy function.
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/scheduler/appengine/internal"
+)
+
+// LogarithmicBatchingPolicy instantiates new LOGARITHMIC_BATCHING policy
+// function.
 //
-// It takes all pending triggers and collapses them into one new invocation,
-// deriving its properties from the most recent trigger alone.
-func GreedyBatchingPolicy(maxConcurrentInvs, maxBatchSize int) (Func, error) {
+// It takes all pending triggers and collapses log_k N of them into one new
+// invocation, deriving its properties from the most recent trigger alone.
+func LogarithmicBatchingPolicy(maxConcurrentInvs, maxBatchSize, logBase int) (Func, error) {
+	if logBase <= 1 {
+		return nil, errors.Reason("log_base should be at least 2").Err()
+	}
+
 	return basePolicy(maxConcurrentInvs, maxBatchSize, func(triggers []*internal.Trigger) int {
-		return len(triggers)
+		return int(math.Max(math.Log(float64(len(triggers)))/math.Log(float64(logBase)), 1.0))
 	})
 }
