@@ -39,7 +39,7 @@ func TestTriageOp(t *testing.T) {
 
 	Convey("with fake env", t, func() {
 		c := newTestContext(epoch)
-		tb := triageTestBed{}
+		tb := triageTestBed{maxAllowedTriggers: 1000}
 
 		Convey("noop triage", func() {
 			before := &Job{
@@ -189,18 +189,59 @@ func TestTriageOp(t *testing.T) {
 				Paused:  true,
 			})
 			So(err, ShouldBeNil)
-			So(len(after.ActiveInvocations), ShouldEqual, 0)
-			So(len(tb.requests), ShouldEqual, 0)
+			So(after.ActiveInvocations, ShouldHaveLength, 0)
+			So(tb.requests, ShouldHaveLength, 0)
 
 			// No triggers there anymore.
 			listing, err := pendingTriggersSet(c, "job").List(c)
 			So(err, ShouldBeNil)
-			So(len(listing.Items), ShouldEqual, 0)
+			So(listing.Items, ShouldHaveLength, 0)
+		})
+
+		Convey("drops excessive triggers", func() {
+			tb.maxAllowedTriggers = 1
+
+			triggers := []*internal.Trigger{
+				{
+					Id:      "most-recent",
+					Created: google.NewTimestamp(epoch.Add(3 * time.Second)),
+				},
+				{
+					Id:      "dropped-1",
+					Created: google.NewTimestamp(epoch.Add(2 * time.Second)),
+				},
+				{
+					Id:      "dropped-2",
+					Created: google.NewTimestamp(epoch.Add(1 * time.Second)),
+				},
+			}
+
+			pendingTriggersSet(c, "job").Add(c, triggers)
+
+			// Only the most recent trigger will be kept alive and converted into
+			// an invocation.
+			after, err := tb.runTestTriage(c, &Job{
+				JobID:   "job",
+				Enabled: true,
+			})
+			So(err, ShouldBeNil)
+			So(after.ActiveInvocations, ShouldHaveLength, 1)
+			So(tb.requests, ShouldResemble, []task.Request{
+				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
+			})
+
+			// No triggers there anymore.
+			listing, err := pendingTriggersSet(c, "job").List(c)
+			So(err, ShouldBeNil)
+			So(listing.Items, ShouldHaveLength, 0)
 		})
 	})
 }
 
 type triageTestBed struct {
+	// Inputs.
+	maxAllowedTriggers int
+
 	// Outputs.
 	nextInvID int64
 	requests  []task.Request
@@ -231,6 +272,7 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 			}
 			return nil
 		},
+		maxAllowedTriggers: t.maxAllowedTriggers,
 	}
 
 	defer op.finalize(c)

@@ -1765,9 +1765,10 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 	c = logging.SetField(c, "JobID", jobID)
 
 	op := triageOp{
-		jobID:         jobID,
-		dispatcher:    e.cfg.Dispatcher,
-		policyFactory: policy.New,
+		jobID:              jobID,
+		dispatcher:         e.cfg.Dispatcher,
+		policyFactory:      policy.New,
+		maxAllowedTriggers: 1000, // experimentally derived number
 		enqueueInvocations: func(c context.Context, job *Job, req []task.Request) error {
 			_, err := e.enqueueInvocations(c, job, req)
 			return err
