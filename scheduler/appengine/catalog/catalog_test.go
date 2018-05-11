@@ -102,12 +102,6 @@ func TestProtoValidation(t *testing.T) {
 			Noop:             &messages.NoopTask{},
 			TriggeringPolicy: &messages.TriggeringPolicy{Kind: 111111},
 		}), ShouldErrLike, "unrecognized policy kind 111111")
-		So(call(&messages.Job{
-			Id:               "good",
-			Schedule:         "* * * * *",
-			Noop:             &messages.NoopTask{},
-			TriggeringPolicy: &messages.TriggeringPolicy{MaxConcurrentInvocations: -1},
-		}), ShouldErrLike, "max_concurrent_invocations should be positive, got -1")
 	})
 
 	Convey("extractTaskProto works", t, func() {

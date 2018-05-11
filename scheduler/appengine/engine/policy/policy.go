@@ -85,10 +85,16 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 	// though currently it is not a very interesting switch.
 	switch p.Kind {
 	case messages.TriggeringPolicy_GREEDY_BATCHING:
-		return GreedyBatchingPolicy(int(p.MaxConcurrentInvocations))
+		return GreedyBatchingPolicy(int(p.MaxConcurrentInvocations), int(p.MaxBatchSize))
 	default:
 		return nil, errors.Reason("unrecognized triggering policy kind %d", p.Kind).Err()
 	}
+}
+
+var defaultPolicy = messages.TriggeringPolicy{
+	Kind: messages.TriggeringPolicy_GREEDY_BATCHING,
+	MaxConcurrentInvocations: 1,
+	MaxBatchSize:             1000,
 }
 
 // Default instantiates default triggering policy function.
@@ -96,10 +102,7 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 // Is is used if jobs do not define a triggering policy or it can't be
 // understood.
 func Default() Func {
-	f, err := New(&messages.TriggeringPolicy{
-		Kind: messages.TriggeringPolicy_GREEDY_BATCHING,
-		MaxConcurrentInvocations: 1,
-	})
+	f, err := New(&defaultPolicy)
 	if err != nil {
 		panic(fmt.Errorf("failed to instantiate default triggering policy - %s", err))
 	}
@@ -115,10 +118,13 @@ func UnmarshalDefinition(b []byte) (*messages.TriggeringPolicy, error) {
 		}
 	}
 	if msg.Kind == 0 {
-		msg.Kind = messages.TriggeringPolicy_GREEDY_BATCHING
+		msg.Kind = defaultPolicy.Kind
 	}
 	if msg.MaxConcurrentInvocations == 0 {
-		msg.MaxConcurrentInvocations = 1
+		msg.MaxConcurrentInvocations = defaultPolicy.MaxConcurrentInvocations
+	}
+	if msg.MaxBatchSize == 0 {
+		msg.MaxBatchSize = defaultPolicy.MaxBatchSize
 	}
 	return msg, nil
 }

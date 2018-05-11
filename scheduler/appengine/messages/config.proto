@@ -70,9 +70,10 @@ message TriggeringPolicy {
     // A placeholder for unrecognized policy kind.
     UNDEFINED = 0;
 
-    // A greedy triggering function that takes all pending triggers and
-    // collapses them into one new invocation, deriving its properties from the
-    // most recent trigger alone.
+    // A greedy triggering function that takes all pending triggers (up to
+    // max_batch_size limit) and collapses them into one new invocation,
+    // deriving its properties from the most recent trigger alone. It doesn't
+    // wait for a full batch, nor tries to batch evenly.
     GREEDY_BATCHING = 1;
   }
 
@@ -91,6 +92,14 @@ message TriggeringPolicy {
   //
   // Default is 1.
   int64 max_concurrent_invocations = 2;
+
+  // Limits how many triggers can be put into one invocation request.
+  //
+  // For example, setting this to 1 will make each trigger launch its own
+  // invocation.
+  //
+  // Default is 1000 (which is ~= unlimited).
+  int64 max_batch_size = 3;
 }
 
 
