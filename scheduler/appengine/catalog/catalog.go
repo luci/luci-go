@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	"go.chromium.org/luci/scheduler/appengine/acl"
+	"go.chromium.org/luci/scheduler/appengine/engine/policy"
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/schedule"
 	"go.chromium.org/luci/scheduler/appengine/task"
@@ -556,25 +557,10 @@ func (cat *catalog) validateTaskProto(ctx *validation.Context, t proto.Message) 
 //
 // Errors are returned via validation.Context.
 func (cat *catalog) validateTriggeringPolicy(ctx *validation.Context, p *messages.TriggeringPolicy) {
-	if p == nil {
-		return // not defined, this is fine, we'll use default
-	}
-	ctx.Enter("triggering_policy")
-	defer ctx.Exit()
-
-	// Validate the kind. UNDEFINED is same as GREEDY_BATCHING.
-	switch p.Kind {
-	case
-		messages.TriggeringPolicy_UNDEFINED,
-		messages.TriggeringPolicy_GREEDY_BATCHING:
-		// ok
-	default:
-		ctx.Errorf("unrecognized policy kind %d", p.Kind)
-	}
-
-	// Note: 0 is fine. It is default and it actually means 1.
-	if p.MaxConcurrentInvocations < 0 {
-		ctx.Errorf("max_concurrent_invocations should be positive, got %d", p.MaxConcurrentInvocations)
+	if p != nil {
+		ctx.Enter("triggering_policy")
+		policy.ValidateDefinition(ctx, p)
+		ctx.Exit()
 	}
 }
 
