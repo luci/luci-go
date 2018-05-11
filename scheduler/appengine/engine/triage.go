@@ -70,6 +70,15 @@ type triageOp struct {
 	// Implemented by the engine, see engineImpl.enqueueInvocations.
 	enqueueInvocations func(c context.Context, job *Job, req []task.Request) error
 
+	// maxAllowedTriggers limits how many pending triggers are allowed to exist.
+	//
+	// If the pending triggers set has more triggers, oldest ones are forcefully
+	// (without consulting the policy) discarded.
+	//
+	// This mechanism acts as a safeguard against total meltdown caused by large
+	// pending trigger queues.
+	maxAllowedTriggers int
+
 	// The rest of fields are used internally.
 
 	started      time.Time    // used to derive relative time in the debug log
@@ -120,7 +129,6 @@ func (op *triageOp) prepare(c context.Context) error {
 		op.finishedList, finishedErr = op.finishedSet.List(c)
 		if finishedErr != nil {
 			op.debugErrLog(c, finishedErr, "Failed to grab recently finished invocations")
-			return
 		}
 	}()
 
@@ -256,8 +264,13 @@ func (op *triageOp) debugInfoLog(c context.Context, format string, args ...inter
 
 // debugErrLog adds a line to the triage debug log and Errorf log.
 func (op *triageOp) debugErrLog(c context.Context, err error, format string, args ...interface{}) {
-	logging.WithError(err).Errorf(c, format, args...)
-	op.appendToLog(c, fmt.Sprintf("Error: "+format+" - %s", append(args, err)...))
+	if err == nil {
+		logging.Errorf(c, format, args...)
+		op.appendToLog(c, fmt.Sprintf("Error: "+format, args...))
+	} else {
+		logging.WithError(err).Errorf(c, format, args...)
+		op.appendToLog(c, fmt.Sprintf("Error: "+format+" - %s", append(args, err)...))
+	}
 }
 
 // appendToLog adds a line to the debug log, prefixing it with current time.
@@ -374,9 +387,20 @@ func (op *triageOp) processTriggers(c context.Context, job *Job) (*dsset.PopOp, 
 		}
 	}
 
-	// Otherwise ask the policy to convert triggers into invocations. Note that
-	// triggers is not the only input to the triggering policy, so we call it
-	// on each triage, even if there's no pending triggers.
+	// Keep the set of pending triggers bounded, to avoid total meltdown caused
+	// by slow triage transactions.
+	if len(triggers) > op.maxAllowedTriggers {
+		dropping := len(triggers) - op.maxAllowedTriggers
+		op.debugErrLog(c, nil, "Too many pending triggers (>%d), dropping %d oldest", op.maxAllowedTriggers, dropping)
+		for i := 0; i < dropping; i++ {
+			popOp.Pop(triggers[i].Id)
+		}
+		triggers = triggers[dropping:]
+	}
+
+	// Ask the policy to convert triggers into invocations. Note that triggers is
+	// not the only input to the triggering policy, so we call it on each triage,
+	// even if there's no pending triggers.
 	op.debugInfoLog(c, "Invoking the triggering policy function")
 	out := op.triggeringPolicy(c, job, triggers)
 	op.debugInfoLog(c, "The policy requested %d new invocations", len(out.Requests))
