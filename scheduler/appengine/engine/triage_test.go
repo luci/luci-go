@@ -39,7 +39,7 @@ func TestTriageOp(t *testing.T) {
 
 	Convey("with fake env", t, func() {
 		c := newTestContext(epoch)
-		tb := triageTestBed{}
+		tb := triageTestBed{maxAllowedTriggers: 1000}
 
 		Convey("noop triage", func() {
 			before := &Job{
@@ -197,10 +197,51 @@ func TestTriageOp(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(listing.Items), ShouldEqual, 0)
 		})
+
+		Convey("drops excessive triggers", func() {
+			tb.maxAllowedTriggers = 1
+
+			triggers := []*internal.Trigger{
+				{
+					Id:      "t0",
+					Created: google.NewTimestamp(epoch.Add(3 * time.Second)),
+				},
+				{
+					Id:      "t1",
+					Created: google.NewTimestamp(epoch.Add(2 * time.Second)),
+				},
+				{
+					Id:      "t3",
+					Created: google.NewTimestamp(epoch.Add(1 * time.Second)),
+				},
+			}
+
+			pendingTriggersSet(c, "job").Add(c, triggers)
+
+			// Only t0 (the most recent trigger) will be kept alive and converted into
+			// an invocation.
+			after, err := tb.runTestTriage(c, &Job{
+				JobID:   "job",
+				Enabled: true,
+			})
+			So(err, ShouldBeNil)
+			So(len(after.ActiveInvocations), ShouldEqual, 1)
+			So(tb.requests, ShouldResemble, []task.Request{
+				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
+			})
+
+			// No triggers there anymore.
+			listing, err := pendingTriggersSet(c, "job").List(c)
+			So(err, ShouldBeNil)
+			So(len(listing.Items), ShouldEqual, 0)
+		})
 	})
 }
 
 type triageTestBed struct {
+	// Inputs.
+	maxAllowedTriggers int
+
 	// Outputs.
 	nextInvID int64
 	requests  []task.Request
@@ -231,6 +272,7 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 			}
 			return nil
 		},
+		maxAllowedTriggers: t.maxAllowedTriggers,
 	}
 
 	defer op.finalize(c)
