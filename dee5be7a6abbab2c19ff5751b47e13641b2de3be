@@ -1,0 +1,211 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2f16f29f_20336327",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nit: use the tabbed notation w/ line breaks, like WithProjectNamespace. It formats a little nicer in godoc.",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b71bb84_96374aa4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nit: maybe rename \"fetchRound\"?",
+      "range": {
+        "startLine": 170,
+        "startChar": 20,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9f16d50_872e2bc1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nit: \"Signal regardless\"? You\u0027re not really sending data here.",
+      "range": {
+        "startLine": 171,
+        "startChar": 5,
+        "endLine": 171,
+        "endChar": 14
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2db2143b_fb9aa568",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "IIUC \"nextIndex\" is the *unfetched* next index. Since the terminal index is the *last* index in the log stream (i.e., a valid index), we are only finished if \"nextIndex\" is \u003e lst.TerminalIndex, not \u003e\u003d.",
+      "range": {
+        "startLine": 178,
+        "startChar": 25,
+        "endLine": 178,
+        "endChar": 62
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "767670ac_d22352a4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nit: consider casting \"lst.TerminalIndex\" to a types.MessageIndex, instead of the other way around. The only reason it\u0027s an \"int64\" is b/c this is a datastore struct, and so uses datastore types.",
+      "range": {
+        "startLine": 178,
+        "startChar": 45,
+        "endLine": 178,
+        "endChar": 62
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64065a93_08509927",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "I don\u0027t understand why this is better than making this a method on a \"fetchOperation\" type. In either case, the user has to reference the struct to see what\u0027s in it and (in this case) note that passing by value is just an expensive no-op.\n\nI don\u0027t care enough to block the CL on this, but the entire *point* of methods on objects is that you have an object with state/data and methods that manipulate that state/data. That is the case here, and I think not embracing it reduces both the readability of the code.",
+      "range": {
+        "startLine": 210,
+        "startChar": 79,
+        "endLine": 210,
+        "endChar": 97
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "138ac96f_3b22329c",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nit: index is already a types.MessageIndex.",
+      "range": {
+        "startLine": 219,
+        "startChar": 11,
+        "endLine": 219,
+        "endChar": 36
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a17850b_7d1d75c0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "Worth a debug log?",
+      "range": {
+        "startLine": 233,
+        "startChar": 0,
+        "endLine": 233,
+        "endChar": 15
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e31f8fb_3fc10c96",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "nice",
+      "range": {
+        "startLine": 274,
+        "startChar": 0,
+        "endLine": 274,
+        "endChar": 9
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

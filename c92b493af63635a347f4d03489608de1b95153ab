@@ -891,6 +891,30 @@
     },
     {
       "key": {
+        "uuid": "94de5942_8a2e9f33",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "(I like #1 better as well, but yeah #2 is definitely less invasive).",
+      "parentUuid": "7b656c5a_4a980aca",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 210,
+        "endChar": 28
+      },
+      "revId": "c92b493af63635a347f4d03489608de1b95153ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d63e8c9_3a2b278c",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4

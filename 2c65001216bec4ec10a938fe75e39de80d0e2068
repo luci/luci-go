@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d983216b_ec2ef781",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "TBH it\u0027s a superior semantic. It costs nothing and ensures that a common error is not encountered.\n\nWe had a discussion thread on this a while back. Basically, there are two worlds:\n1) The function returns a Context unconditionally. In this case, the error is either deferred until usage or cannot occur.\n2) The function can return a (Context, error), in which case there is enormous potential to code functions that return a nil Context.\n\n(2) is further exacerbated because oftentimes Context-generation error paths aren\u0027t tested, meaning that the ensuing panic will only hit in production.\n\nThe options for the (Context, error) scenario boil down to:\n\n---\n\n// (I) Hard to use wrong, but it has a scary \"\u0026\".\nif err :\u003d DoSomething(\u0026c); err !\u003d nil {}\n\nvs.\n\n// (II) Easy to screw up, but sadly really common b/c (..., error) is a typical Go idiom.\nc, err :\u003d DoSomething(c)\nif err !\u003d nil {}\n// (AND) make sure DoSomething doesn\u0027t ever return a nil \"c\", which is only assertable through tests.\n\nvs.\n\n// (III) Cannot be accidentally misused, but is wordy and requires a supporting object.\nfactory, err :\u003d DoSomething()\nif err !\u003d nil {}\nc \u003d factory.With(c)\n\nvs.\n\n// (IV) Is like (II) but puts the burden on the caller.\nif nc, err :\u003d DoSomething(c); err !\u003d nil {\n  // (Can still use \"c\").\n} else {\n  // On success, we\u0027re good.\n  // (But nothing helps make sure I don\u0027t forget this part and leave \"nc\" dangling.)\n  // (And nothing helps me not just write this as \"c, err :\u003d ...\" and fall into (II)).\n  c \u003d nc\n}\n\n---\n\nThe resolution, IIRC, was a preference for (I) or (III), with the choice left up to the user. I think this approach is stronger, and I\u0027d encourage you not to make a CL with the purpose of weakening the defensive nature of this code. Passing \"\u0026c\" is a really trivial price to pay, and results in simpler and more concise code that is safer to both write and use. If you were spend the time addressing this, perhaps a better focus would be to convert (II) and (IV) to styles (I) or (III).",
+      "parentUuid": "f5ddb50d_be15d5d9",
+      "range": {
+        "startLine": 84,
+        "startChar": 0,
+        "endLine": 84,
+        "endChar": 147
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2b546029_beee32c0",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 9
@@ -234,6 +258,30 @@
       "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d8324581_20a0d0ef",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "Yeah - my rule of thumb is that unless there\u0027s an explicit purpose to passing by value, just pass by reference. Passing by value can be counterintuitive. I don\u0027t think anything is gained here by doing it, so I\u0027d recommend going by reference *shrug*\n\nThis is something Go\u0027s not super great at being clear on.",
+      "parentUuid": "688cbd49_40a48bad",
+      "range": {
+        "startLine": 141,
+        "startChar": 56,
+        "endLine": 141,
+        "endChar": 67
+      },
+      "revId": "2c65001216bec4ec10a938fe75e39de80d0e2068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

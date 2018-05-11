@@ -829,6 +829,30 @@
     },
     {
       "key": {
+        "uuid": "7f432bb0_c9faab22",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "LogDog does :D",
+      "parentUuid": "78ce4be1_201f23b1",
+      "range": {
+        "startLine": 87,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 2
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "58c8c233_fb5c75df",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -1203,6 +1227,30 @@
       "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "310ef30a_a5082f66",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "RE sentinel error, totally, but that\u0027s part of the design of the library. The library supports transience functionality because it is such a common use case for retry, but it is (by design) not limited to transient retries. Case in point: one must opt into transient retries.\n\nYou are correct - you\u0027d want to create a sentinel error. Actually, it looks like iannucci@\u0027s refactor of transience made it a little harder to do by moving my Once function into a subpackage:\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/a67367ced1a85b53d7a96e7c4c91ef5d66c9c6e3/common/retry/transient/transient.go#64\n\nPrior to that, all you\u0027d have to do is say something like:\nvar errWaitingForMoreLogs \u003d errors.New(\"waiting for more logs\")\n\nvar exp retry.Exponential{...}\nretry.Retry(..., retry.On(errWaitingForMoreLogs, exp))\n\nIf you\u0027re interested, I threw this together to add it back:\nhttps://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1054474\n\nSentinel errors aren\u0027t really bad - they\u0027re part of the intended usage of Go\u0027s error functionality (e.g., io.EOF).\n\n---\n\nThat said, the reason I care about this at all is that \"retry\" and its backoff generation are scoped and tested. This ad-hoc backoff is not really. You can add tests and assert that it exponentially backs off, or you can use the backoff iterator. The latter, to me, is both more consistent and simpler.\n\nI do like your retry construction. That\u0027d be a good refactor.",
+      "parentUuid": "4c09e99f_b930d9b2",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -1619,6 +1667,30 @@
       "side": 1,
       "message": "Yeah, new code _only_ shows text for errors that have been tagged with a grpc code.\n\nNon-tagged errors (which show up as grpc.Internal, for all intents and purposes) or errors with grpc.Internal are logged and a generic error is displayed.\n\nI think this probably makes sense?",
       "parentUuid": "46d25074_76e3788f",
+      "range": {
+        "startLine": 232,
+        "startChar": 25,
+        "endLine": 232,
+        "endChar": 36
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ac12549_d431ae1f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1109829
+      },
+      "writtenOn": "2018-05-11T13:37:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c5197bf8_18975e49",
       "range": {
         "startLine": 232,
         "startChar": 25,
