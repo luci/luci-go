@@ -19,10 +19,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
+
 	"golang.org/x/net/context"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // testIterator is an Iterator implementation used for testing.
