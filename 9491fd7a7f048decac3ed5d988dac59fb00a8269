@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "149b8032_3fdff90e",
+        "filename": "scheduler/appengine/engine/policy/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-12T00:02:56Z",
+      "side": 1,
+      "message": "please document, in particular what reducer is expected to receive and return",
+      "range": {
+        "startLine": 22,
+        "startChar": 5,
+        "endLine": 22,
+        "endChar": 15
+      },
+      "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e74e74ff_44f2ac2a",
+        "filename": "scheduler/appengine/engine/policy/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-12T00:02:56Z",
+      "side": 1,
+      "message": "break the loop if numTriggers ends up to be 0, we don\u0027t want to get stuck forever",
+      "range": {
+        "startLine": 46,
+        "startChar": 3,
+        "endLine": 46,
+        "endChar": 14
+      },
+      "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84beffe8_a5611d64",
+        "filename": "scheduler/appengine/engine/policy/greedy_batching.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-12T00:02:56Z",
+      "side": 1,
+      "message": "nit:\n\nimport (\n  \"go.chromium.org/luci/scheduler/appengine/internal\"\n)",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 58
+      },
+      "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b396b463_dbfc4c7a",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-12T00:02:56Z",
+      "side": 1,
+      "message": "nit: this can be precomputed once\n\nlog :\u003d math.Log(...)\n\nreturn basePolicy(...) ... \n  return (.../log)\n}",
+      "range": {
+        "startLine": 35,
+        "startChar": 55,
+        "endLine": 35,
+        "endChar": 80
+      },
+      "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
