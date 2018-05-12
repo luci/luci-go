@@ -15,15 +15,24 @@
 package policy
 
 import (
+	"math"
+
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
-// GreedyBatchingPolicy instantiates new GREEDY_BATCHING policy function.
+// LogarithmicBatchingPolicy instantiates new LOGARITHMIC_BATCHING policy
+// function.
 //
-// It takes all pending triggers and collapses them into one new invocation,
-// deriving its properties from the most recent trigger alone.
-func GreedyBatchingPolicy(maxConcurrentInvs, maxBatchSize int) (Func, error) {
+// It takes all pending triggers and collapses log_k N of them into one new
+// invocation, deriving its properties from the most recent trigger alone.
+func LogarithmicBatchingPolicy(maxConcurrentInvs, maxBatchSize int, logBase float64) (Func, error) {
+	if logBase <= 1.001 {
+		return nil, errors.Reason("log_base should be more than 1.001").Err()
+	}
+
+	log := math.Log(logBase)
 	return basePolicy(maxConcurrentInvs, maxBatchSize, func(triggers []*internal.Trigger) int {
-		return len(triggers)
+		return int(math.Max(math.Log(float64(len(triggers)))/log, 1.0))
 	})
 }
