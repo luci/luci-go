@@ -91,6 +91,29 @@
       "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41293475_ce3dc8e5",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-12T04:08:44Z",
+      "side": 1,
+      "message": "this should be float",
+      "range": {
+        "startLine": 116,
+        "startChar": 2,
+        "endLine": 116,
+        "endChar": 7
+      },
+      "revId": "9491fd7a7f048decac3ed5d988dac59fb00a8269",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
