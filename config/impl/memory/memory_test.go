@@ -86,8 +86,8 @@ func TestMemoryImpl(t *testing.T) {
 			templates, err := impl.ListFiles(ctx, "projects/proj2")
 			So(err, ShouldBeNil)
 			So(templates, ShouldResemble, []string{
-				"project2 another file",
-				"project2 file",
+				"another/file",
+				"file",
 			})
 		})
 
