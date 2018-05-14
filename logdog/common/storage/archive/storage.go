@@ -49,7 +49,7 @@ const (
 	// our archived log stream. This will help prevent out-of-memory errors if the
 	// arhived log stream is malicious or corrupt.
 	//
-	// 16MB is larger than the maximum log entry size
+	// Make this twice as large as the maximum log entry size
 	maxStreamRecordSize = 2 * types.MaxLogEntryDataSize
 )
 

@@ -22,12 +22,15 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex/logs"
 
+	"go.chromium.org/luci/appengine/gaeauth/server"
 	flexMW "go.chromium.org/luci/appengine/gaemiddleware/flex"
+	commonAuth "go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	"golang.org/x/net/context"
@@ -40,21 +43,6 @@ func main() {
 	// Setup process global Context.
 	c := context.Background()
 	c = gologger.StdConfig.Use(c) // Log to STDERR.
-
-	// Setup Cloud Endpoints.
-	svr := &prpc.Server{
-		AccessControl: accessControl,
-	}
-	logsPb.RegisterLogsServer(svr, logs.New())
-	discovery.Enable(svr)
-
-	// Setup the global services.
-	gsvc, err := flex.NewGlobalServices(flexMW.WithGlobal(c))
-	if err != nil {
-		logging.WithError(err).Errorf(c, "Failed to setup Flex services.")
-		panic(err)
-	}
-	defer gsvc.Close()
 
 	// TODO(dnj): We currently instantiate global instances of several services,
 	// with the current service configuration paramers (e.g., name of BigTable
@@ -73,9 +61,33 @@ func main() {
 	mw := flexMW.ReadOnlyFlex
 	mw.InstallHandlers(r)
 
-	base := mw.Base().Extend(gsvc.Base)
-	svr.InstallHandlers(r, base)
+	// Setup the global services, such as auth, luci-config.
+	gsvc, err := flex.NewGlobalServices(flexMW.WithGlobal(c))
+	if err != nil {
+		logging.WithError(err).Errorf(c, "Failed to setup Flex services.")
+		panic(err)
+	}
+	defer gsvc.Close()
+	baseMW := mw.Base().Extend(gsvc.Base)
 
+	// Set up PRPC server.
+	svr := &prpc.Server{
+		AccessControl: accessControl,
+	}
+	logsServer := logs.New()
+	logsPb.RegisterLogsServer(svr, logsServer)
+	discovery.Enable(svr)
+	svr.InstallHandlers(r, baseMW)
+
+	// Setup HTTP endpoints.
+	// We support OpenID (cookie) auth for browsers and OAuth2 for everything else.
+	httpMW := baseMW.Extend(
+		auth.Authenticate(
+			server.CookieAuth,
+			&auth.GoogleOAuth2Method{Scopes: []string{commonAuth.OAuthScopeEmail}}))
+	r.GET("/logs/*path", httpMW, logs.GetHandler)
+
+	// Run forever.
 	logging.Infof(c, "Listening on port 8080...")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		logging.WithError(err).Errorf(c, "Failed HTTP listen.")

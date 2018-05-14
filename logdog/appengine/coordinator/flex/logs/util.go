@@ -15,8 +15,6 @@
 package logs
 
 import (
-	ds "go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
@@ -41,10 +39,4 @@ func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamSt
 	}
 
 	return &lss
-}
-
-func isNoSuchEntity(err error) bool {
-	return errors.Any(err, func(err error) bool {
-		return err == ds.ErrNoSuchEntity
-	})
 }

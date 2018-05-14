@@ -142,6 +142,7 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 		globalTsMonState.Middleware,
 	),
 	ExtraHandlers: func(r *router.Router, base router.MiddlewareChain) {
+		gaeauth.InstallHandlers(r, base)
 		pprof.InstallHandlers(r, base)
 		// Install a handler for basic health checking. We respond with HTTP 200 to
 		// indicate that we're always healthy.

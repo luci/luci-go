@@ -90,7 +90,7 @@ func (s *server) getImpl(c context.Context, req *logdog.GetRequest, tail bool) (
 	}.Debugf(c, "Loading stream.")
 
 	if err := ds.Get(c, ls, lst); err != nil {
-		if isNoSuchEntity(err) {
+		if ds.IsErrNoSuchEntity(err) {
 			log.Warningf(c, "Log stream does not exist.")
 			return nil, grpcutil.Errf(codes.NotFound, "path not found")
 		}
