@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -27,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/config/validation"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -85,6 +87,7 @@ func TestTriggerBuild(t *testing.T) {
 		}
 		// log is for readability of expectLog calls.
 		log := func(ids ...string) []string { return ids }
+		var epoch = time.Unix(1442270520, 0).UTC()
 		expectLog := func(from, to string, pageSize int, ids []string, errs ...error) *gomock.Call {
 			req := &gitilespb.LogRequest{
 				Project:  "b",
@@ -96,8 +99,14 @@ func TestTriggerBuild(t *testing.T) {
 				return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(nil, errs[0])
 			}
 			res := &gitilespb.LogResponse{}
+			committedAt := epoch
 			for _, id := range ids {
-				res.Log = append(res.Log, &git.Commit{Id: id})
+				// Ids go backwards in time, just as in `git log`.
+				committedAt = committedAt.Add(-time.Minute)
+				res.Log = append(res.Log, &git.Commit{
+					Id:        id,
+					Committer: &git.Commit_User{Time: google.NewTimestamp(committedAt)},
+				})
 			}
 			return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
 		}
@@ -153,10 +162,18 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/1.2.3": "baadcafe00",
 			})
 			So(ctl.Triggers, ShouldHaveLength, 4)
+			// Ordered by ref, then by timestamp.
 			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@baadcafe00")
 			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef02")
 			So(ctl.Triggers[2].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef01")
 			So(ctl.Triggers[3].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/heads/master@deadbeef00")
+			for i, t := range ctl.Triggers {
+				So(t.OrderInBatch, ShouldEqual, i)
+			}
+			So(google.TimeFromProto(ctl.Triggers[0].Created), ShouldEqual, epoch.Add(-1*time.Minute))
+			So(google.TimeFromProto(ctl.Triggers[1].Created), ShouldEqual, epoch.Add(-3*time.Minute)) // oldest on master
+			So(google.TimeFromProto(ctl.Triggers[2].Created), ShouldEqual, epoch.Add(-2*time.Minute))
+			So(google.TimeFromProto(ctl.Triggers[3].Created), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
 		})
 
 		Convey("Refglobs: new, updated, and deleted refs", func() {

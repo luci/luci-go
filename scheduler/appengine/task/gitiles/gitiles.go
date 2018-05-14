@@ -238,9 +238,11 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 			// commit[0] is latest, so emit triggers in reverse order of commits.
 			commit := commits[len(commits)-i-1]
 			ctl.EmitTrigger(c, &internal.Trigger{
-				Id:    fmt.Sprintf("%s/+/%s@%s", repo, ref, commit.Id),
-				Title: commit.Id,
-				Url:   fmt.Sprintf("%s/+/%s", repo, commit.Id),
+				Id:           fmt.Sprintf("%s/+/%s@%s", repo, ref, commit.Id),
+				Created:      commit.Committer.Time,
+				OrderInBatch: int64(emittedTriggers),
+				Title:        commit.Id,
+				Url:          fmt.Sprintf("%s/+/%s", repo, commit.Id),
 				Payload: &internal.Trigger_Gitiles{
 					Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: commit.Id},
 				},
