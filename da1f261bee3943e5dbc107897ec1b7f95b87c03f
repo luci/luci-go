@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df2a72ff_6cbbc9fa",
+        "filename": "scheduler/appengine/engine/policy/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-14T20:51:07Z",
+      "side": 1,
+      "message": "great, but there are formatting nits: \n1) Keep one sentence as a short summary and move all details into a separate paragraph.\n2) We keep our comment line width limited by 80 chars per line.\n\nSo:\n\n// basePolicy returns a generic policy customizable by the `reduce` func.\n//\n// Parameters `maxConcurrentInvs` and `maxBatchSize` control how many invocations\n// can be running in parallel ...",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 85
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e585c87a_0e5873fc",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-14T20:51:07Z",
+      "side": 1,
+      "message": "This should be \"logBase \u003c 1\", since if logBase \u003d\u003d 1, math.Log(logBase) will be 0 and the division below will blow up.",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 16
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20406e3e_c3b7bf00",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-14T20:51:07Z",
+      "side": 1,
+      "message": "with float base this is no longer accurate",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 58
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
