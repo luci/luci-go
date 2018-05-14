@@ -211,6 +211,30 @@
       "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "289e16fe_4d83a442",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-14T21:59:34Z",
+      "side": 1,
+      "message": "We sort of can, since we read these floats from configs, so their precision is relatively good. E.g. if you use 1.000000000000000000000000000000000000000001 in your config file, you probably doing something wrong anyway. Note that math.Max below will ensure nothing blows up if log does happen to be negative.",
+      "parentUuid": "8e84fea3_58cbe09d",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
