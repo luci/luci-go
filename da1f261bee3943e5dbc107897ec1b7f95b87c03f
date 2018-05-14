@@ -187,6 +187,30 @@
       "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8e84fea3_58cbe09d",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-14T21:54:43Z",
+      "side": 1,
+      "message": "if you have exact math, yeah, but these are floats. Can you guarantee that Math.Log(~1.0) is never 0 given this[1] approximation? I can\u0027t.\nhttps://golang.org/src/math/log.go?s\u003d2809:2836#L70",
+      "parentUuid": "4bcaa560_538cd185",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
