@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4c970c77_df8f969c",
+        "filename": "scheduler/appengine/engine/policy/common.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-14T21:49:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df2a72ff_6cbbc9fa",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 85
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e585c87a_0e5873fc",
         "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
         "patchSetId": 5
@@ -95,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "029d77df_04971c7e",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-14T21:49:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20406e3e_c3b7bf00",
+      "range": {
+        "startLine": 31,
+        "startChar": 29,
+        "endLine": 31,
+        "endChar": 58
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "560c15f5_a4b24151",
         "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
         "patchSetId": 5
@@ -115,6 +163,30 @@
       "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bcaa560_538cd185",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-14T21:49:29Z",
+      "side": 1,
+      "message": "Given previous condition (note that it enforces the base to be strictly larger than 1), this will always be \u003e 0. See https://upload.wikimedia.org/wikipedia/commons/8/81/Logarithm_plots.png.",
+      "parentUuid": "560c15f5_a4b24151",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
