@@ -1,0 +1,175 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31c9e49f_e75b4ffe",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "i think we agreed that this CL will be split into \"switch from config.Backend\" and \"email templates\". This CL still combines both changes.",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecbb6bd4_52f489cb",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "this function no longer has anything to do with remote implementation. In fact tests call it with a non-remote impl\n\nPlease rename to \"WithConfigService\"",
+      "range": {
+        "startLine": 174,
+        "startChar": 9,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49aa91b5_73bb853b",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "the point of having a private variable with the context key is that it is hidden from others. Using the value of the variable, as opposed to its pointer, defeats this purposes.\n\nPlease use \u0026configInterfaceKey here and below. This is what other services do too",
+      "range": {
+        "startLine": 175,
+        "startChar": 29,
+        "endLine": 175,
+        "endChar": 47
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3fb9803_d255b836",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "this will panic if the interface is not there. Either document that or do what others do:\n\n  if iface, ok :\u003d c.Value(\u0026configInterfaceKey).(configInterface.Interface); ok {\n    return iface\n  }\n  return nil",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da41b82f_1be4b7bf",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "golang.org/x/net/context/ctxhttp",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a42cb60_11c8e1f5",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "- realistically, no one will see this message\n- as a service owner, I will have no idea why HTTP 500 was returned because server logs don\u0027t tell me that.\n- finally, this message is not useful for users because they don\u0027t know what it means.\n- this ignores err\n\nplease log err with logging.WithError(err).Errorf(....)\n\nrespond with \"Internal Server Error\"",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd3b6328_10975f9c",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "https://godoc.org/net/http#StatusInternalServerError",
+      "range": {
+        "startLine": 59,
+        "startChar": 23,
+        "endLine": 59,
+        "endChar": 26
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43e35041_0c0fb63b",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "this is noop because c.Writer.Write was already called\nit should be called before c.Writer.Write",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd74757d_1e756896",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-14T19:19:25Z",
+      "side": 1,
+      "message": "i didn\u0027t review changes in this dir because\n1) it should be in a separate CL\n2) the problems discussed in the meeting are still there",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
