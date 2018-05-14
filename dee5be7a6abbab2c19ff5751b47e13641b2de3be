@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7bcd67d4_0df967f9",
+        "filename": "logdog/appengine/coordinator/context.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Like this...?",
+      "parentUuid": "2f16f29f_20336327",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 28
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b71bb84_96374aa4",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 11
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "6b4478d5_4a1bb3bf",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "I\u0027m not sure what \"Round\" would mean.  Isn\u0027t \"Once\" pretty standard?",
+      "parentUuid": "4b71bb84_96374aa4",
+      "range": {
+        "startLine": 170,
+        "startChar": 20,
+        "endLine": 170,
+        "endChar": 29
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9f16d50_872e2bc1",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 11
@@ -68,6 +116,30 @@
       "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff921eb7_7c57b8e2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Feels the same to me.  \"Send data\" down a pipe, where the pipe is a channel.  I\u0027ll switch to Signal.",
+      "parentUuid": "b9f16d50_872e2bc1",
+      "range": {
+        "startLine": 171,
+        "startChar": 5,
+        "endLine": 171,
+        "endChar": 14
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "19a5f7ea_f632d34e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Oh yeah you\u0027re right.",
+      "parentUuid": "2db2143b_fb9aa568",
+      "range": {
+        "startLine": 178,
+        "startChar": 25,
+        "endLine": 178,
+        "endChar": 62
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "050ffede_6d3da605",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "767670ac_d22352a4",
+      "range": {
+        "startLine": 178,
+        "startChar": 45,
+        "endLine": 178,
+        "endChar": 62
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64065a93_08509927",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 11
@@ -137,6 +257,30 @@
       "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "959e00c5_fdef08a1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "If fetchOnce changes the underlying state of its receiver, it\u0027d look like this:\n\ntype fetchOperation struct {...}\n\nfunc (o *fetchOperation) fetch()\nfunc (o *fetchOperation) fetchOnce()\n\nfetchOnce() makes some modification to the struct, but without reading the entire function, it\u0027s more difficult for a reader to reason about the entire set of state changes that occurs when any of the methods are called.  This is the main reason I dislike using the operations struct + method state change patterns.\n\nIn this code, it\u0027s fairly clear that fetchOnce:\n* Writes into a channel\n* Fetches at an index\n* Returns another index\n* Make no other state changes (except it might modify params.lst, not super thrilled about that, but oh well).\n\nAlso IIUC in go, due to how the GC works, passing by pointer could actually be more expensive, so I don\u0027t think it\u0027s necessarily safe to say passing by pointer is always cheaper.",
+      "parentUuid": "64065a93_08509927",
+      "range": {
+        "startLine": 210,
+        "startChar": 79,
+        "endLine": 210,
+        "endChar": 97
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "1dda4626_fb41238e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "138ac96f_3b22329c",
+      "range": {
+        "startLine": 219,
+        "startChar": 11,
+        "endLine": 219,
+        "endChar": 36
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a17850b_7d1d75c0",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 11
@@ -183,6 +351,30 @@
       "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "086cf26a_185f29b6",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Done.  Actually probably worth an error if archived.",
+      "parentUuid": "9a17850b_7d1d75c0",
+      "range": {
+        "startLine": 233,
+        "startChar": 0,
+        "endLine": 233,
+        "endChar": 15
+      },
+      "revId": "dee5be7a6abbab2c19ff5751b47e13641b2de3be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

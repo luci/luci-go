@@ -1254,6 +1254,30 @@
     },
     {
       "key": {
+        "uuid": "f53e6e8a_f8ccef43",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-14T21:02:56Z",
+      "side": 1,
+      "message": "Ack.\n\nTho like I said, the built-in backoff generation from the retry library can\u0027t actually be used here because the semantics are different here (depending on the error, it needs to either backoff, or reset the timer).  Fixing that requires implementing the exact same ad-hoc backoff factory.",
+      "parentUuid": "310ef30a_a5082f66",
+      "range": {
+        "startLine": 126,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 51
+      },
+      "revId": "af60ac12d61b409eee25b77f4f60d806d775d02a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ba84f0e_0c9f9560",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
