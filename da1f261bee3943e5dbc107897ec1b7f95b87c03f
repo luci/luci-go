@@ -92,6 +92,29 @@
       "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "560c15f5_a4b24151",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-14T21:09:20Z",
+      "side": 1,
+      "message": "with floats, prev. condition isn\u0027t sufficient; this too should be checked to be \u003e 0.",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
