@@ -17,6 +17,7 @@ package coordinator
 import (
 	"fmt"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/auth/identity"
 	log "go.chromium.org/luci/common/logging"
@@ -72,6 +73,40 @@ func WithConfigProvider(c context.Context, s ConfigProvider) context.Context {
 // If no Services has been installed, it will panic.
 func GetConfigProvider(c context.Context) ConfigProvider {
 	return c.Value(&configProviderKey).(ConfigProvider)
+}
+
+// WithStream performs all ACL checks on a stream, including:
+//
+//	- Project Namespace check
+//	- Logs purged check
+//
+// This returns the stream metadata, and a new context tied to the project.
+// The new context can be used to fetch the LogStreamState from the datastore.
+// The returned error is a gRPC error, parsable with grpcutil.
+func WithStream(c context.Context, project types.ProjectName, path types.StreamPath, at NamespaceAccessType) (context.Context, *LogStream, error) {
+	nc := c
+	// Do the project namespace check.  If successful, the namespace is installed
+	// into the resulting context.
+	if err := WithProjectNamespace(&nc, project, at); err != nil {
+		return c, nil, err
+	}
+	// Check to see if the log is purged.
+	ls := &LogStream{ID: LogStreamID(path)}
+	switch err := datastore.Get(nc, ls); {
+	case datastore.IsErrNoSuchEntity(err):
+		err = ErrPathNotFound
+		fallthrough
+	case err != nil:
+		return c, nil, err
+	}
+	// If this log entry is Purged and we're not admin, pretend it doesn't exist.
+	if ls.Purged {
+		if authErr := IsAdminUser(c); authErr != nil {
+			return c, nil, ErrPathNotFound
+		}
+	}
+	// Everything is fine.
+	return nc, ls, nil
 }
 
 // WithProjectNamespace sets the current namespace to the project name.
