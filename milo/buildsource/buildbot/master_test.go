@@ -16,6 +16,7 @@ package buildbot
 
 import (
 	"testing"
+	"time"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -29,24 +30,44 @@ import (
 func TestMaster(t *testing.T) {
 	c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
+	moreThanAnHourAgo := testclock.TestTimeUTC.Add(-61 * time.Minute)
+	lessThanAnHourAgo := testclock.TestTimeUTC.Add(-59 * time.Minute)
+	cExpired, _ := testclock.UseTime(c, moreThanAnHourAgo)
+	cNotExpired, _ := testclock.UseTime(c, lessThanAnHourAgo)
 	datastore.GetTestable(c).Consistent(true)
 	datastore.GetTestable(c).AutoIndex(true)
 	datastore.GetTestable(c).CatchupIndexes()
 
 	Convey(`Tests for master`, t, func() {
-		So(buildstore.SaveMaster(c, &buildbot.Master{
-			Name:     "fake",
-			Builders: map[string]*buildbot.Builder{"fake": {}},
+
+		So(buildstore.SaveMaster(cExpired, &buildbot.Master{
+			Name:     "fake expired",
+			Builders: map[string]*buildbot.Builder{"fake expired builder": {}},
 		}, false, nil), ShouldBeNil)
-		So(buildstore.SaveMaster(c, &buildbot.Master{
+
+		So(buildstore.SaveMaster(cNotExpired, &buildbot.Master{
+			Name:     "fake not expired",
+			Builders: map[string]*buildbot.Builder{"fake recent builder": {}},
+		}, false, nil), ShouldBeNil)
+
+		So(buildstore.SaveMaster(cNotExpired, &buildbot.Master{
 			Name:     "fake internal",
 			Builders: map[string]*buildbot.Builder{"fake": {}},
 		}, true, nil), ShouldBeNil)
 
-		Convey(`GetAllBuilders()`, func() {
+		Convey(`GetAllBuilders() should return all public builders`, func() {
 			cs, err := CIService(c)
 			So(err, ShouldBeNil)
-			So(len(cs.BuilderGroups), ShouldEqual, 1)
+			So(len(cs.BuilderGroups), ShouldEqual, 2)
+			Convey(`Expired builder should have no builders`, func() {
+				So(cs.BuilderGroups[0].Name, ShouldEqual, "fake expired")
+				So(len(cs.BuilderGroups[0].Builders), ShouldEqual, 0)
+			})
+			Convey(`Non-expired builder should have builders`, func() {
+				So(cs.BuilderGroups[1].Name, ShouldEqual, "fake not expired")
+				So(len(cs.BuilderGroups[1].Builders), ShouldEqual, 1)
+				So(cs.BuilderGroups[1].Builders[0].Label, ShouldEqual, "fake recent builder")
+			})
 		})
 	})
 }
