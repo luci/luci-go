@@ -17,10 +17,15 @@ package frontend
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	authServer "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/config/appengine/gaeconfig"
+	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
@@ -32,7 +37,7 @@ func init() {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	basemw := standard.Base().Extend(auth.Authenticate(authServer.CookieAuth))
+	basemw := standard.Base().Extend(auth.Authenticate(authServer.CookieAuth), withRemoteConfigService)
 
 	taskDispatcher := tq.Dispatcher{BaseURL: "/internal/tasks/"}
 	notify.InitDispatcher(&taskDispatcher)
@@ -47,4 +52,24 @@ func init() {
 	})
 
 	http.Handle("/", r)
+}
+
+func withRemoteConfigService(c *router.Context, next router.Handler) {
+	s, err := gaeconfig.FetchCachedSettings(c.Context)
+	if err != nil {
+		c.Writer.WriteHeader(http.StatusInternalServerError)
+		logging.WithError(err).Errorf(c.Context, "failure retrieving cached settings")
+		return
+	}
+
+	rInterface := remote.New(s.ConfigServiceHost, false, func(c context.Context) (*http.Client, error) {
+		t, err := auth.GetRPCTransport(c, auth.AsSelf)
+		if err != nil {
+			return nil, err
+		}
+		return &http.Client{Transport: t}, nil
+	})
+	// insert into context
+	c.Context = config.WithConfigService(c.Context, rInterface)
+	next(c)
 }

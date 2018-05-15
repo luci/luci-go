@@ -76,7 +76,7 @@ func (m *memoryImpl) ListFiles(ctx context.Context, configSet config.Set) ([]str
 	}
 
 	var files []string
-	for _, cf := range m.sets[configSet] {
+	for cf := range m.sets[configSet] {
 		files = append(files, cf)
 	}
 	sort.Strings(files)
