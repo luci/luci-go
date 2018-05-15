@@ -18,6 +18,8 @@ It has these top-level messages:
 	PrefixRequest
 	PrefixMetadata
 	InheritedPrefixMetadata
+	Instance
+	RegisterInstanceResponse
 */
 package api
 

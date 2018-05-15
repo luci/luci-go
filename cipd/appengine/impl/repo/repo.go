@@ -16,33 +16,41 @@ package repo
 
 import (
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public() api.RepositoryServer {
-	return &repoImpl{meta: metadata.GetStorage()}
+func Public(internalCAS api.StorageServer) api.RepositoryServer {
+	return &repoImpl{
+		meta: metadata.GetStorage(),
+		cas:  internalCAS,
+	}
 }
 
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct {
-	meta metadata.Storage
+	meta metadata.Storage  // storage for package prefix metadata
+	cas  api.StorageServer // non-ACLed storage for instance package files
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Prefix metadata RPC methods + related helpers.
+// Prefix metadata RPC methods + related helpers including ACL checks.
 
 // GetPrefixMetadata implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) GetPrefixMetadata(c context.Context, r *api.PrefixRequest) (resp *api.PrefixMetadata, err error) {
@@ -163,4 +171,81 @@ func metadataDeniedErr(prefix string) error {
 // metadata attached.
 func noMetadataErr(prefix string) error {
 	return status.Errorf(codes.NotFound, "prefix %q has no metadata", prefix)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Package instance registration.
+
+// RegisterInstance implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp *api.RegisterInstanceResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate request format.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_WRITER); err != nil {
+		return nil, err
+	}
+
+	// Is such instance already registered?
+	instance := &instanceEntity{
+		Package:    packageKey(c, r.Package),
+		InstanceID: objectRefToInstanceID(r.Instance),
+	}
+	switch err := datastore.Get(c, instance); {
+	case err == nil:
+		return &api.RegisterInstanceResponse{
+			Status:   api.RegistrationStatus_ALREADY_REGISTERED,
+			Instance: instance.proto(),
+		}, nil
+	case err != datastore.ErrNoSuchEntity:
+		return nil, errors.Annotate(err, "failed to fetch the instance entity").Err()
+	}
+
+	// Attempt to start a new upload session. This will fail with ALREADY_EXISTS
+	// if such object is already in the storage. This is expected (it means the
+	// client has uploaded the object already).
+	uploadOp, err := impl.cas.BeginUpload(c, &api.BeginUploadRequest{
+		Object: r.Instance,
+	})
+	switch code := grpc.Code(err); {
+	case code == codes.OK:
+		// The object is not in the storage and we just started the upload op. Let
+		// the client finish it.
+		return &api.RegisterInstanceResponse{
+			Status:   api.RegistrationStatus_NOT_UPLOADED,
+			UploadOp: uploadOp,
+		}, nil
+	case code != codes.AlreadyExists:
+		return nil, errors.Annotate(err, "unexpected code %d from Storage.BeginUpload", code).Err()
+	}
+
+	// The instance is already in the CAS storage. Just register it in the
+	// repository (possibly registering the package too if it's the first
+	// instance of this package).
+	registered, instance, err := registerInstance(c, &instanceEntity{
+		Package:      packageKey(c, r.Package),
+		InstanceID:   objectRefToInstanceID(r.Instance),
+		RegisteredBy: string(auth.CurrentIdentity(c)),
+		RegisteredTS: clock.Now(c).UTC(),
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to register the instance").Err()
+	}
+
+	resp = &api.RegisterInstanceResponse{
+		Instance: instance.proto(),
+	}
+	if registered {
+		resp.Status = api.RegistrationStatus_REGISTERED
+	} else {
+		resp.Status = api.RegistrationStatus_ALREADY_REGISTERED
+	}
+	return
 }
