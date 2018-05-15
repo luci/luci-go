@@ -15,12 +15,12 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
 
-	"go.chromium.org/luci/buildbucket/client/cmd/buildbucket/proto"
 	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/data/text/indented"
+
+	configpb "go.chromium.org/luci/buildbucket/proto/config"
 )
 
 var cmdConvertBuilders = &subcommands.Command{
@@ -71,7 +71,7 @@ func (r *convertBuildersRun) convertStreams(in io.Reader, out io.Writer) error {
 	return writeConfig(out, output)
 }
 
-func (r *convertBuildersRun) convert(in *buildersFile) (*buildbucket.Swarming, error) {
+func (r *convertBuildersRun) convert(in *buildersFile) (*configpb.Swarming, error) {
 	if len(in.Builders) == 0 {
 		return nil, fmt.Errorf("no builders")
 	}
@@ -83,13 +83,13 @@ func (r *convertBuildersRun) convert(in *buildersFile) (*buildbucket.Swarming, e
 	commonDims["pool"] = r.poolDim
 	commonProps := in.commonProperties()
 	commonProperties, commonPropertiesJ := encodeProperties(commonProps)
-	out := &buildbucket.Swarming{
-		BuilderDefaults: &buildbucket.Swarming_Builder{
-			Recipe: &buildbucket.Swarming_Recipe{
-				Name:        proto.String(in.commonRecipe()),
+	out := &configpb.Swarming{
+		BuilderDefaults: &configpb.Builder{
+			Recipe: &configpb.Builder_Recipe{
+				Name:        in.commonRecipe(),
 				Properties:  commonProperties,
 				PropertiesJ: commonPropertiesJ,
-				Repository:  &r.recipeRepo,
+				Repository:  r.recipeRepo,
 			},
 			Dimensions:   mapToList(commonDims),
 			SwarmingTags: []string{"allow_milo:1"},
@@ -114,13 +114,13 @@ func (r *convertBuildersRun) convert(in *buildersFile) (*buildbucket.Swarming, e
 		if recipeName == out.BuilderDefaults.Recipe.GetName() {
 			recipeName = ""
 		}
-		out.Builders = append(out.Builders, &buildbucket.Swarming_Builder{
-			Category:             &b.Category,
+		out.Builders = append(out.Builders, &configpb.Builder{
+			Category:             b.Category,
 			Dimensions:           mapToList(dims),
-			ExecutionTimeoutSecs: proto.Uint32(uint32(b.ExecutionTimeoutSecs)),
-			Name:                 proto.String(name + r.builderSuffix),
-			Recipe: &buildbucket.Swarming_Recipe{
-				Name:        &recipeName,
+			ExecutionTimeoutSecs: uint32(b.ExecutionTimeoutSecs),
+			Name:                 name + r.builderSuffix,
+			Recipe: &configpb.Builder_Recipe{
+				Name:        recipeName,
 				Properties:  properties,
 				PropertiesJ: propertiesJ,
 			},
@@ -314,7 +314,7 @@ func encodeProperties(props map[string]interface{}) (properties, propertiesJ []s
 	return
 }
 
-func writeConfig(w io.Writer, cfg *buildbucket.Swarming) error {
+func writeConfig(w io.Writer, cfg *configpb.Swarming) error {
 	indented := &indented.Writer{Writer: w, UseSpaces: true}
 
 	var writeError error
@@ -335,7 +335,7 @@ func writeConfig(w io.Writer, cfg *buildbucket.Swarming) error {
 		}
 	}
 
-	printRecipe := func(r *buildbucket.Swarming_Recipe) {
+	printRecipe := func(r *configpb.Builder_Recipe) {
 		pstr("repository", r.GetRepository())
 		pstr("name", r.GetName())
 
@@ -355,7 +355,7 @@ func writeConfig(w io.Writer, cfg *buildbucket.Swarming) error {
 		}
 	}
 
-	printBuilder := func(b *buildbucket.Swarming_Builder) {
+	printBuilder := func(b *configpb.Builder) {
 		pstr("category", b.GetCategory())
 		pstr("name", b.GetName())
 		pstrlist("swarming_tags", b.SwarmingTags)
@@ -469,7 +469,7 @@ func mapDiff(values, defaults map[string]interface{}) map[string]interface{} {
 	return result
 }
 
-type byCategoryThenName []*buildbucket.Swarming_Builder
+type byCategoryThenName []*configpb.Builder
 
 func (a byCategoryThenName) Len() int      { return len(a) }
 func (a byCategoryThenName) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
