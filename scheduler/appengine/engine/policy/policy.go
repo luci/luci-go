@@ -86,6 +86,8 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 	switch p.Kind {
 	case messages.TriggeringPolicy_GREEDY_BATCHING:
 		return GreedyBatchingPolicy(int(p.MaxConcurrentInvocations), int(p.MaxBatchSize))
+	case messages.TriggeringPolicy_LOGARITHMIC_BATCHING:
+		return LogarithmicBatchingPolicy(int(p.MaxConcurrentInvocations), int(p.MaxBatchSize), float64(p.LogBase))
 	default:
 		return nil, errors.Reason("unrecognized triggering policy kind %d", p.Kind).Err()
 	}
