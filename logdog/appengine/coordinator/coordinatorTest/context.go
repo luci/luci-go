@@ -249,7 +249,7 @@ func Install(useRealIndex bool) (context.Context, *Environment) {
 		var pcfg configPB.ProjectCfg
 		e.modTextProtobuf(c, config.ProjectSet(string(proj)), cfgclient.ProjectConfigPath, &pcfg, func() {
 			pcfg = configPB.ProjectCfg{
-				Name:   proto.String(string(proj)),
+				Name:   string(proj),
 				Access: projectAccesses,
 			}
 		})

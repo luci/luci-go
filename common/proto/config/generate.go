@@ -14,16 +14,13 @@
 
 // Package config contains luci-config protobuf definitions.
 //
-// The .proto files are copied from
-// https://github.com/luci/luci-py/tree/45f3e27/appengine/components/components/config/proto
-// with package name changed to "config" because golint does not like
-// underscore in package names.
+// Copied from:
+//
+// Repo: https://chromium.googlesource.com/infra/luci/luci-py/
+// Revision: 7fb14584fc00e85e3414302b64d8f6cfbb6747a8
+// Path: appengine/components/components/config/proto/*.proto
+//
+// Modification: none.
 package config
-
-import (
-	"github.com/golang/protobuf/proto"
-)
-
-var _ = proto.Marshal
 
 //go:generate cproto

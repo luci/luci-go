@@ -58,7 +58,7 @@ type testCache interface {
 
 func projectConfigWithAccess(project string, access ...string) *configPB.ProjectCfg {
 	return &configPB.ProjectCfg{
-		Name:   proto.String(project),
+		Name:   project,
 		Access: access,
 	}
 }
