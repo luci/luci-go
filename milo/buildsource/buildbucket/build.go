@@ -175,12 +175,12 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
 
-	// this means that there were more than 50 commits in-between.
+	// this means that there were more than 100 commits in-between.
 	if len(builds) == 0 && len(commits) > 0 {
 		result = append(result, &ui.Commit{
-			Description: "<blame list capped at 50 commits>",
+			Description: "<blame list capped at 100 commits>",
 			Revision:    &ui.Link{},
-			AuthorName:  "<blame list capped at 50 commits>",
+			AuthorName:  "<blame list capped at 100 commits>",
 		})
 	}
 

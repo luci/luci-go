@@ -298,7 +298,7 @@ var ErrUnknownPreviousBuild = errors.New("unable to find previous build")
 // BuildSummaries will be sorted in reverse creation order, so that builds[0] is
 // always the most-recently-created build.
 //
-// This will only look up to 50 commits into the past.
+// This will only look up to 100 commits into the past.
 //
 // If this is unable to find the previous build, it returns
 // ErrUnknownPreviousBuild.
@@ -313,8 +313,8 @@ func (bs *BuildSummary) PreviousByGitilesCommit(c context.Context) (builds []*Bu
 	// because there may be gaps in commits,
 	// i.e. some commits may not have builds.
 
-	// We don't really need a blamelist longer than 50 commits.
-	commits, err = git.Log(c, gc.Host, gc.Project, gc.Id, &git.LogOptions{Limit: 50, WithFiles: true})
+	// We don't really need a blamelist longer than 100  commits.
+	commits, err = git.Log(c, gc.Host, gc.Project, gc.Id, &git.LogOptions{Limit: 100, WithFiles: true})
 	if err != nil || len(commits) == 0 {
 		return
 	}
