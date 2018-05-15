@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2cdd06db_61bd3bf1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "These have been split and the backend changes committed.",
+      "parentUuid": "31c9e49f_e75b4ffe",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ecbb6bd4_52f489cb",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 7
@@ -39,6 +57,30 @@
       "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd3dea15_9b09780d",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "This was changed in the previous CL.  Ironically, it was you that suggested WithRemoteConfigService initially. \u003d)",
+      "parentUuid": "ecbb6bd4_52f489cb",
+      "range": {
+        "startLine": 174,
+        "startChar": 9,
+        "endLine": 174,
+        "endChar": 15
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "a346b426_074e0757",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49aa91b5_73bb853b",
+      "range": {
+        "startLine": 175,
+        "startChar": 29,
+        "endLine": 175,
+        "endChar": 47
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3fb9803_d255b836",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 7
@@ -79,6 +145,24 @@
       "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef616390_13c4f437",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3fb9803_d255b836",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "f04627d3_da7c1bfd",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da41b82f_1be4b7bf",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a42cb60_11c8e1f5",
         "filename": "luci_notify/frontend/main.go",
         "patchSetId": 7
@@ -113,6 +215,24 @@
       "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dba863c1_e067b8d3",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a42cb60_11c8e1f5",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -156,6 +276,48 @@
     },
     {
       "key": {
+        "uuid": "2d06c961_34d7ec03",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd3b6328_10975f9c",
+      "range": {
+        "startLine": 59,
+        "startChar": 23,
+        "endLine": 59,
+        "endChar": 26
+      },
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "655ca34a_38ae7ae9",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43e35041_0c0fb63b",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd74757d_1e756896",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 7
@@ -170,6 +332,24 @@
       "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "142f82cd_254fe0bb",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T20:59:29Z",
+      "side": 1,
+      "message": "1) the CLs have been split\n2) I believe all legacy calls have now been removed.",
+      "parentUuid": "fd74757d_1e756896",
+      "revId": "d65c08f0ca60d9793b003443e1b8c6fe07daa86a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
