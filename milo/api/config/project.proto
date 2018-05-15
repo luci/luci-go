@@ -4,7 +4,9 @@
 
 syntax = "proto3";
 
-package config;
+package milo;
+
+option go_package = "config";
 
 // Note that while the field names in the proto matches the proto
 // naming conventions, the comments uses the generate Go code variable naming
