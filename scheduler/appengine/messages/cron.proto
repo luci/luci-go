@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package messages;
+package scheduler;
 
 // This file is intentionally empty. See config.proto instead. Please update
 // the link that led you to this file to point to config.proto.
