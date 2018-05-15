@@ -22,6 +22,30 @@
       "revId": "04d605745653b7ca346415c8bee9d3c05e77a0a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34b88718_59dc5ea1",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 10
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-15T08:20:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c10b673b_a05d543d",
+      "range": {
+        "startLine": 116,
+        "startChar": 18,
+        "endLine": 116,
+        "endChar": 19
+      },
+      "revId": "04d605745653b7ca346415c8bee9d3c05e77a0a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
