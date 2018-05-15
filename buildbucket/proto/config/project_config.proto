@@ -1,0 +1,417 @@
+// Copyright 2015 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+// Schemas for project configs.
+
+// Copied from:
+//
+// Repo: https://chromium.googlesource.com/infra/infra
+// Revision: 0250067c5d7969ce8c0b284deb5d8cd58accc864
+// Path: appengine/cr-buildbucket/proto/project_config.proto
+//
+// Modification: added this comments and 'go_package' option.
+
+syntax = "proto3";
+
+package buildbucket;
+
+option go_package = "configpb";
+
+import "google/protobuf/wrappers.proto";
+
+// A single access control rule.
+message Acl {
+  enum Role {
+    // Can do read-only operations, such as search for builds.
+    READER = 0;
+    // Same as READER + can schedule and cancel builds.
+    SCHEDULER = 1;
+    // Can do all write operations.
+    WRITER = 2;
+  }
+  // Role denotes a list of actions that an identity can perform.
+  Role role = 1;
+  // Name of the group defined in the auth service.
+  string group = 2;
+  // An email address or a full identity string "kind:name". See auth service
+  // on kinds of identities. Anonymous users are "anonymous:anonymous".
+  // Either identity or group must be present, not both.
+  string identity = 3;
+}
+
+// A set of Acl messages. Can be referenced in a bucket by name.
+message AclSet {
+  // A name of the ACL set. Required. Must match regex '^[a-z0-9_]+$'.
+  string name = 1;
+  // List of access control rules.
+  // The order does not matter.
+  repeated Acl acls = 2;
+}
+
+
+// Defines a swarmbucket builder or a builder mixin. A builder has a name, a
+// category and specifies what should happen if a build is scheduled to that
+// builder.
+//
+// SECURITY WARNING: if adding more fields to this message, keep in mind that
+// a user that has permissions to schedule a build to the bucket, can override
+// this config.
+//
+// Next tag: 21.
+message Builder {
+  reserved 8;  // cipd_packages
+  reserved 11; // build_numbers of the old format.
+  reserved 13; // auto_builder_dimension of the old format.
+  reserved 15; // experimental of the old format.
+
+
+  // Describes a cache directory persisted on a bot.
+  //
+  // If a build requested a cache, a cache directory is available on build
+  // startup. If the cache was present on the bot, the directory contains files
+  // from the previous run.
+  // The build can read/write to the cache directory while it runs.
+  // After build completes, the cache directory is persisted.
+  // Next time another build requests the same cache and runs on the same bot,
+  // if the cache wasn't evicted, the files will still be there.
+  //
+  // One bot can keep multiple caches at the same time and one build can request
+  // multiple different caches.
+  // A cache is identified by its name and mapped to a path.
+  // In recipes-based builds, the path is relative to api.paths['cache'] dir.
+  // For example, a cache {"name": "foo", "path": "bar"} maps foo to bar and
+  // the cache dir is available at
+  //   my_cache = api.path["cache"].join("bar")
+  //
+  // If the bot is running out of space, caches are evicted in LRU manner.
+  //
+  // Renaming a cache is equivalent to clearing it from the builder perspective.
+  // The files will still be there, but eventually will be purged by GC.
+  //
+  // Builder cache.
+  //
+  // Buildbucket implicitly declares cache
+  //   {"name": "<hash(bucket/builder)>", "path": "builder"}.
+  // This means that any LUCI builder has a "personal disk space" on the bot.
+  // Builder cache is often a good start before customizing caching.
+  //
+  // In order to share the builder cache among multiple builders, it can be
+  // overridden:
+  //
+  //   builders {
+  //     name: "a"
+  //     caches {
+  //       path: "builder"
+  //       name: "my_shared_cache"
+  //     }
+  //   }
+  //   builders {
+  //     name: "b"
+  //     caches {
+  //       path: "builder"
+  //       name: "my_shared_cache"
+  //     }
+  //   }
+  //
+  // Builders "a" and "b" share their builder cache. If an "a" build ran on a bot
+  // and left some files in the builder cache and then a "b" build runs on the
+  // same bot, the same files will be available in the builder cache.
+  message CacheEntry {
+    // Identifier of the cache. Required. Length is limited to 128.
+    //
+    // If the pool of swarming bots is shared among multiple LUCI projects and
+    // projects use same cache name, the cache will be shared across projects.
+    // To avoid affecting and being affected by other projects, prefix the cache
+    // name with something project-specific, e.g. "v8-".
+    string name = 1;
+    // Relative path where the cache in mapped into. Required.
+    // Must use POSIX format (forward slashes).
+    // In most cases, it does not need slashes at all.
+    // Must be unique in the given builder.
+    string path = 2;
+  }
+
+  // Specifies a recipe to run.
+  message Recipe {
+    // Repository URL of the recipe package.
+    // Value "-" is treated as unset.
+  string repository = 1;
+    // Name of the recipe to run.
+    string name = 2;
+
+    // If set, will use CIPD to fetch the recipes, rather than using git. This
+    // obsoletes the `repository` parameter.
+    //
+    // Typically the package will look like:
+    //
+    //   infra/recipe_bundles/chromium.googlesource.com/chromium/tools/build
+    //
+    // Recipes bundled from internal repositories are typically under
+    // `infra_internal/recipe_bundles/...`.
+    //
+    // But if you're building your own recipe bundles, they could be located
+    // elsewhere.
+    string cipd_package = 6;
+
+    // The CIPD version to fetch. This can be a lower-cased git ref (like
+    // `refs/heads/master` or `head`), or it can be a cipd tag (like
+    // `git_revision:dead...beef`).
+    //
+    // The default is `head`, which corresponds to the git repo's HEAD ref. This
+    // is typically (but not always) a symbolic ref for `refs/heads/master`.
+    string cipd_version = 5;
+
+    // Colon-separated build properties to set.
+    // A property can be overriden by "properties" build parameter.
+    //
+    // Use this field for string properties and use properties_j for other
+    // types.
+    repeated string properties = 3;
+    // Same as properties, but the value must valid JSON. For example
+    //   properties_j: "a:1"
+    // means property a is a number 1, not string "1".
+    //
+    // If null, it means no property must be defined. In particular, it removes
+    // a default value for the property, if any.
+    //
+    // Fields properties and properties_j can be used together, but cannot both
+    // specify values for same property.
+    repeated string properties_j = 4;
+  }
+
+  // Name of the builder or builder mixin.
+  //
+  // If a builder name, will be propagated to "builder" build tag and
+  // "buildername" recipe property.
+  string name = 1;
+  // Names of mixins to apply to this builder definition.
+  //
+  // FLATTENING
+  //
+  // Final builder/mixin values are computed as follows:
+  // - start with an empty builder definition.
+  // - if this is a builder, apply values in a bucket's builder_defaults,
+  //   flattened in advance.
+  // - apply each mixin, flattened in advance, in the same order.
+  // - apply values in this builder/mixin.
+  //
+  // EXAMPLE
+  //
+  //   A definition
+  //
+  //     builder_mixins {
+  //       name: "foo"
+  //       dimensions: "os:Linux"
+  //       dimensions: "cpu:x86"
+  //       recipe {
+  //         repository: "https://example.com"
+  //         name: "x"
+  //       }
+  //     }
+  //     builder_mixins {
+  //       name: "bar"
+  //       dimensions: "cores:8"
+  //       dimensions: "cpu:x86-64"
+  //     }
+  //     bucket {
+  //       name: "luci.x.try"
+  //       swarming {
+  //         builders {
+  //           name: "release"
+  //           mixins: "foo"
+  //           mixins: "bar"
+  //           recipe {
+  //             name: "y"
+  //           }
+  //         }
+  //       }
+  //     }
+  //
+  //   is equivalent to
+  //
+  //     bucket {
+  //      name: "luci.x.try"
+  //      swarming {
+  //         builders {
+  //           name: "release"
+  //           dimensions: "os:Linux"
+  //           dimensions: "cpu:x86-64"
+  //           dimensions: "cores:8"
+  //           recipe {
+  //             repository: "https://example.com"
+  //             name: "y"
+  //           }
+  //         }
+  //       }
+  //     }
+  //
+  // A NOTE ON DIAMOND MERGES
+  //
+  // Given
+  //   B mixes in A and overrides some values defined in A
+  //   C mixes in A
+  //   D mixes in B and C
+  // B's overrides won't affect D because D mixes in C after B.
+  //
+  //   builder_mixins {
+  //     name: "A"
+  //     dimensions: "dim:a"
+  //   }
+  //   builder_mixins {
+  //     name: "B"
+  //     mixins: "A"
+  //     dimensions: "dim:b"
+  //   }
+  //   builder_mixins {
+  //     name: "C"
+  //     mixins: "A"
+  //   }
+  //   ...
+  //   builders {
+  //     name: "D"
+  //     mixins: "B"
+  //     mixins: "C"
+  //   }
+  //
+  // D's dim will be "a", not "b" because it is "a" in C which is applied after
+  // B.
+  //
+  // OTHER
+  //
+  // Circular references are prohibited.
+  repeated string mixins = 10;
+  // Builder category. Will be used for visual grouping, for example in Code Review.
+  string category = 6;
+  // Will be become to swarming task tags.
+  // Each tag will end up in "swarming_tag" buildbucket tag, for example
+  // "swarming_tag:builder:release"
+  repeated string swarming_tags = 2;
+  // Colon-delimited key-value pair of task dimensions.
+  //
+  // If value is not specified ("<key>:"), then it excludes a default value.
+  //
+  // If this builder is defined in a bucket, dimension "pool" is defaulted
+  // to the name of the bucket. See Bucket message below.
+  repeated string dimensions = 3;
+  // Specifies that a recipe to run.
+  Recipe recipe = 4;
+  // Swarming task priority.
+  uint32 priority = 5;
+  // Maximum build execution time. Not to be confused with pending time.
+  uint32 execution_timeout_secs = 7;
+  // Maximum build pending time.
+  uint32 expiration_secs = 20;
+  // Caches that should be present on the bot.
+  repeated CacheEntry caches = 9;
+  // If YES, generate monotonically increasing contiguous numbers for each
+  // build, unique within the builder.
+  // Note: this limits the build creation rate in this builder to 5 per second.
+  Toggle build_numbers = 16;
+  // Email of a service account to run the build as or literal 'bot' string to
+  // use Swarming bot's account (if available). Passed directly to Swarming.
+  // Subject to Swarming's ACLs.
+  string service_account = 12;
+  // If YES, each builder will get extra dimension "builder:<builder name>"
+  // added. Default is UNSET.
+  //
+  // For example, this config
+  //
+  //   builder {
+  //     name: "linux-compiler"
+  //     dimension: "builder:linux-compiler"
+  //   }
+  //
+  // is equivalent to this:
+  //
+  //   builders {
+  //     name: "linux-compiler"
+  //     auto_builder_dimension: YES
+  //   }
+  //
+  // We've considered providing interpolation like this
+  //   builder_defaults {
+  //     dimensions: "builder:${BUILDER}"
+  //   }
+  // (see also http://docs.buildbot.net/0.8.9/manual/cfg-properties.html#interpolate)
+  // but are currently against complicating config with this.
+  Toggle auto_builder_dimension = 17;
+  // If YES, by default a new build in this builder will be marked as
+  // experimental.
+  // This is useful for inherently experimental builders that use production
+  // recipes.
+  Toggle experimental = 18;
+  // If not empty and not "-", and a build request is not marked as
+  // experimental/prod explicitly and has "mastername" property, buildbucket
+  // will contact this instance of luci-migration app to determine whether the
+  // builder is experimental.
+  // On success, this takes precedence over Builder.experimental proto field
+  // (above).
+  //
+  // Special value "-" means no luci_migration_host specified.
+  // Useful in a builder that wants to override luci_migration_host
+  // specified in builder_defaults or mixin.
+  string luci_migration_host = 19;
+}
+
+// Configuration of buildbucket-swarming integration for one bucket.
+message Swarming {
+  // Hostname of the swarming instance, e.g. "chromium-swarm.appspot.com".
+  string hostname = 1;
+  // DEPRECATED, IGNORED.
+  // Used to generate a URL for Build, may contain parameters
+  // {swarming_hostname}, {task_id}, {bucket} and {builder}. Defaults to:
+  // https://{swarming_hostname}/user/task/{task_id}
+  string url_format = 2;
+
+  // Defines default values for builders.
+  Builder builder_defaults = 3;
+
+  // Configuration for each builder.
+  // Swarming tasks are created only for builds for builders that are not
+  // explicitly specified.
+  repeated Builder builders = 4;
+
+  // Percentage of builds that should use a canary swarming task template.
+  // A value from 0 to 100.
+  // If omitted, default percentage is used.
+  google.protobuf.UInt32Value task_template_canary_percentage = 5;
+}
+
+// Defines one bucket in buildbucket.cfg
+message Bucket {
+  // Name of the bucket. Names are unique within one instance of buildbucket.
+  // If another project already uses this name, a config will be rejected.
+  // Name reservation is first-come first-serve.
+  string name = 1;
+  // List of access control rules for the bucket.
+  // The order does not matter.
+  repeated Acl acls = 2;
+  // A list of ACL set names. Each ACL in each referenced ACL set will be
+  // included in this bucket.
+  // The order does not matter.
+  repeated string acl_sets = 4;
+  // Buildbucket-swarming integration.
+  Swarming swarming = 3;
+}
+
+// Schema of buildbucket.cfg file, a project config.
+message BuildbucketCfg {
+  // All buckets defined for this project.
+  repeated Bucket buckets = 1;
+  // A list of ACL sets. Names must be unique.
+  repeated AclSet acl_sets = 2;
+  // A list of builder mixin definitions.
+  // A mixin can be referenced in any builder defined within the BuildbucketCfg.
+  // See also Buider.mixins field.
+  repeated Builder builder_mixins = 3;
+}
+
+// Toggle is a boolean with an extra state UNSET.
+// When protobuf messages are merged, UNSET does not overwrite an existing
+// value.
+enum Toggle {
+  UNSET = 0;
+  YES = 1;
+  NO = 2;
+}
