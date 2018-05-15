@@ -222,6 +222,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		Project:  l.project,
 		Treeish:  l.commitish,
 		PageSize: 100,
+		TreeDiff: l.withFiles,
 	}
 	logging.Infof(c, "gitiles(%q).Log(%#v)", l.host, req)
 	res, err := g.Log(c, req)
