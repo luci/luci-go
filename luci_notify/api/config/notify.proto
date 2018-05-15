@@ -30,7 +30,9 @@
 
 syntax = "proto3";
 
-package config;
+package notify;
+
+option go_package = "config";
 
 // ProjectConfig is a luci-notify configuration for a particular project.
 message ProjectConfig {

@@ -6,7 +6,9 @@
 
 syntax = "proto3";
 
-package config;
+package notify;
+
+option go_package = "config";
 
 // Settings is the top-level configuration message.
 message Settings {
