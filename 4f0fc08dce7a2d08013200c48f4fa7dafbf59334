@@ -1,0 +1,686 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e5f1c0a_88a42134",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "please move this after L99",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81a7387e_a83eec8b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "what if there is \"default\" template defined in a config file. As a user I\u0027d expect that template to be used in this case.\n\nIf you want to add this in a different CL, please leave a TODO\n\ni think this means that we want two magical template names: \"builtin\" and \"default\". builtin is the one above and cannot be overridden by a config. default is used if template is not specified. builtin is used if template execution fails (see below)",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "464f7985_253ad3c0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "use https://godoc.org/go.chromium.org/luci/common/data/stringset\nthen you don\u0027t need contains",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a6193b7_2391c3d1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 98,
+        "startChar": 9,
+        "endLine": 98,
+        "endChar": 14
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de39bed_f5d1ea7c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "templates",
+      "range": {
+        "startLine": 98,
+        "startChar": 55,
+        "endLine": 98,
+        "endChar": 63
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7394150_fd59240b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "let\u0027s make a const for this and use it in other places",
+      "range": {
+        "startLine": 103,
+        "startChar": 45,
+        "endLine": 103,
+        "endChar": 54
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18c9edf7_8962aa00",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "let\u0027s unindent the rest of the code block by inverting this condition and using continue",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36b8c42e_8611ec2b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "we recreate body buffer for each template. let\u0027s reuse. please declare bodyBuffer var before L100 loop and reset it in the beginning of the loop",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b6bff48_076a9bc6",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "let\u0027s move this up in the file. We might want to add more functions here in the future and they have nothing to do with push task creation",
+      "range": {
+        "startLine": 109,
+        "startChar": 37,
+        "endLine": 114,
+        "endChar": 4
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff60379f_760d88e9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "we should not fail sending all emails because of one bad template\n\nthis error handling is inconsistent with error handling in buildEmailTemplateMap:\n- L168 only logs an error if a user-defined template is bad\n- this one fails entire function\n\nFWIU in L168, you prefer to use default template if a user-defined template is bad. That SGTM.\n\nDoing so probably means that for each template, we first try to generate an email. If that fails, builtin template is used (which must not fail because it is hardcoded). That means that template\u003c-\u003erecipient matching should happen after we tried to generate emails",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a324682_39e10323",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "same as L116",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2552723_3913164d",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "include template name",
+      "range": {
+        "startLine": 119,
+        "startChar": 38,
+        "endLine": 119,
+        "endChar": 61
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86cce8b9_95734efd",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "I think you meant\n\ntasks \u003d append(tasks, \u0026tq.Task{\n  Payload: \u0026internal.EmailTask{\n    Recipients: destEmail,\n    Subject:    t.Subject,\n    Body:       bodyBuffer.String(),\n  },\n})",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 4
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b5a21a8_72e892f1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "i believe this is not needed",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "177daf0c_aa65e032",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "this hardcodes appid of the app. Please use https://godoc.org/go.chromium.org/gae/service/info#AppID",
+      "range": {
+        "startLine": 149,
+        "startChar": 22,
+        "endLine": 149,
+        "endChar": 33
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c09e6c4a_e5486f38",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "no longer correct\nthe function name probably also needs updating. getTemplates?",
+      "range": {
+        "startLine": 151,
+        "startChar": 38,
+        "endLine": 151,
+        "endChar": 47
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b483fed4_bc73c52a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "now that this function responsibility is to fetch specified templates, it would be cleaner if it returned only the requested ones. Then this belongs to the callsite",
+      "range": {
+        "startLine": 155,
+        "startChar": 1,
+        "endLine": 158,
+        "endChar": 2
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5e2e7f9_abc84a93",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "why is this needed?",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36eb4507_c58f37b7",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "let\u0027s fetch them concurrently\nplease use https://godoc.org/go.chromium.org/luci/common/sync/parallel#WorkPool",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06c86704_2bc32ce1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "consider fmt.Sprintf",
+      "range": {
+        "startLine": 161,
+        "startChar": 79,
+        "endLine": 161,
+        "endChar": 106
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40614165_60989abb",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "please handle case err \u003d\u003d configInterface.ErrNoConfig",
+      "range": {
+        "startLine": 162,
+        "startChar": 6,
+        "endLine": 162,
+        "endChar": 9
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5b0cf0d_3c7ea7c1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "we cannot just ignore fetch error\ni think we should fail",
+      "range": {
+        "startLine": 164,
+        "startChar": 4,
+        "endLine": 164,
+        "endChar": 12
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a54377ab_53b6afc0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "parsing",
+      "range": {
+        "startLine": 168,
+        "startChar": 31,
+        "endLine": 168,
+        "endChar": 41
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d37b70c3_b057e3e1",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "this is ignored, there is not %s. Use logging.WithError(err).Warningf(...)",
+      "range": {
+        "startLine": 168,
+        "startChar": 52,
+        "endLine": 168,
+        "endChar": 57
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37a5476e_5c71f6f3",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "doesn\u0027t say which template\nplease include config set and file name in the log message",
+      "range": {
+        "startLine": 168,
+        "startChar": 42,
+        "endLine": 168,
+        "endChar": 51
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd13f12f_0a7a6fd9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "strings.TrimSpace(tc[1])\nso that humans are not annoyed",
+      "range": {
+        "startLine": 186,
+        "startChar": 6,
+        "endLine": 186,
+        "endChar": 11
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19aab549_7d4e31c0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "looks like previous code forgot to check if this returned an error\nwe should do it",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 20
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82198826_af03cfaf",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "let\u0027s accept either []emailTemplate or ...emailTemplate, not ...[]emailTemplate",
+      "range": {
+        "startLine": 52,
+        "startChar": 64,
+        "endLine": 52,
+        "endChar": 67
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4b6db79_0add941d",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "expectSet :\u003d stringset.New(len(expect))\nfor _, en :\u003d range expect {\n  expectSet.Add(en.Email)\n}\n\nwould be simpler and faster",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4481911_b63164f2",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "undo?",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02e63172_f42c6a71",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "a public field in a public type using an internal type",
+      "range": {
+        "startLine": 229,
+        "startChar": 15,
+        "endLine": 229,
+        "endChar": 26
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f684d2f_1f0a77ce",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-15T22:17:14Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 53,
+        "startChar": 121,
+        "endLine": 53,
+        "endChar": 124
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
