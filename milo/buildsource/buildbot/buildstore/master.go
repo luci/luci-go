@@ -33,6 +33,9 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+// masterExpiry is how long a master entity can be stale before we consider it to be expired.
+const masterExpiry = time.Hour
+
 // Master is buildbot.Master plus extra storage-level information.
 type Master struct {
 	buildbot.Master
@@ -89,7 +92,7 @@ func GetMaster(c context.Context, name string, refreshState bool) (*Master, erro
 		return nil, err
 	}
 
-	m, err := entity.decode()
+	m, err := entity.decode(c)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +214,7 @@ func AllMasters(c context.Context, checkAccess bool) ([]*Master, error) {
 	allowInternal := !checkAccess || isAllowedInternal(c)
 	err := datastore.RunBatch(c, batchSize, q, func(e *masterEntity) error {
 		if allowInternal || !e.Internal {
-			m, err := e.decode()
+			m, err := e.decode(c)
 			if err != nil {
 				return err
 			}
@@ -443,12 +446,18 @@ type masterEntity struct {
 	Modified time.Time
 }
 
-func (m *masterEntity) decode() (*Master, error) {
+func (m *masterEntity) decode(c context.Context) (*Master, error) {
+	deadline := m.Modified.Add(masterExpiry)
 	res := Master{
 		Internal: m.Internal,
 		Modified: m.Modified,
 	}
-	return &res, decode(&res.Master, m.Data)
+	err := decode(&res.Master, m.Data)
+	if err == nil && clock.Now(c).After(deadline) {
+		// Purge the builder list if the master is expired.
+		res.Master.Builders = map[string]*buildbot.Builder{}
+	}
+	return &res, err
 }
 
 // builderEntity is a child of masterEntity, specific to a Builder.
