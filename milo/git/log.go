@@ -183,7 +183,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	})
 	namespace := "git-log-v2"
 	if l.withFiles {
-		namespace = "git-log-v2-with-files"
+		namespace = "git-log-v2-files"
 	}
 	c, err := info.Namespace(c, namespace)
 	if err != nil {
