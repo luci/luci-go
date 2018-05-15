@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5dc58bce_c3498dff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T00:09:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ca68761_06ac21bc",
+      "range": {
+        "startLine": 9,
+        "startChar": 35,
+        "endLine": 9,
+        "endChar": 41
+      },
+      "revId": "5f93929f34a6f037ce8ccbdf4b35734c0b4d93b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c80ab0b9_287c1391",
         "filename": "luci_notify/frontend/main.go",
         "patchSetId": 1
@@ -39,6 +63,24 @@
       "revId": "5f93929f34a6f037ce8ccbdf4b35734c0b4d93b0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a6213ee_c6a0eba7",
+        "filename": "luci_notify/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-15T00:09:53Z",
+      "side": 1,
+      "message": "Per our discussion, this is actually \"golang.org/x/net/context\"\n\nChanged.",
+      "parentUuid": "c80ab0b9_287c1391",
+      "revId": "5f93929f34a6f037ce8ccbdf4b35734c0b4d93b0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
