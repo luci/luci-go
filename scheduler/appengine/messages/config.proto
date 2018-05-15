@@ -14,7 +14,9 @@
 
 syntax = "proto3";
 
-package messages;
+package scheduler;
+
+option go_package = "messages";
 
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
