@@ -42,5 +42,8 @@ func TestValidation(t *testing.T) {
 			ShouldErrLike, "max_concurrent_invocations should be positive, got -1")
 		So(run(messages.TriggeringPolicy{MaxBatchSize: -1}),
 			ShouldErrLike, "max_batch_size should be positive, got -1")
+		So(run(messages.TriggeringPolicy{
+			Kind: messages.TriggeringPolicy_LOGARITHMIC_BATCHING, LogBase: 0.5}),
+			ShouldErrLike, "log_base should be larger or equal 1.0001, got 0.5")
 	})
 }
