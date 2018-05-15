@@ -287,6 +287,8 @@ func GetCurrentServiceConfig(c context.Context) (*ServiceConfig, error) {
 	return nil, fmt.Errorf("could not load service config %#v", item)
 }
 
+const globalConfigFilename = "settings.cfg"
+
 // UpdateServiceConfig fetches the service config from luci-config
 // and then stores a snapshot of the configuration in datastore.
 func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
@@ -294,10 +296,9 @@ func UpdateServiceConfig(c context.Context) (*config.Settings, error) {
 	cs := cfgclient.CurrentServiceConfigSet(c)
 	// Acquire the raw config client.
 	lucicfg := backend.Get(c).GetConfigInterface(c, backend.AsService)
-	// Our global config name is called settings.cfg.
-	cfg, err := lucicfg.GetConfig(c, cs, "settings.cfg", false)
+	cfg, err := lucicfg.GetConfig(c, cs, globalConfigFilename, false)
 	if err != nil {
-		return nil, fmt.Errorf("could not load settings.cfg from luci-config: %s", err)
+		return nil, fmt.Errorf("could not load %s from luci-config: %s", globalConfigFilename, err)
 	}
 	settings := &config.Settings{}
 	err = proto.UnmarshalText(cfg.Content, settings)
@@ -586,6 +587,7 @@ func init() {
 	// Milo is only responsible for validating the config matching the instance's
 	// appID in a project config.
 	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", validateProjectCfg)
+	validation.Rules.Add("services/${appid}", globalConfigFilename, validateServiceCfg)
 }
 
 // validateProjectCfg implements validation.Func by taking a potential Milo
@@ -597,6 +599,20 @@ func init() {
 func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	proj := config.Project{}
 	if err := proto.UnmarshalText(string(content), &proj); err != nil {
+		ctx.Error(err)
+	}
+	return nil
+}
+
+// validateServiceCfg implements validation.Func by taking a potential Milo
+// service global config, validating it, and writing the result into ctx.
+//
+// The validation we do include:
+//
+// * Make sure the config is able to be unmarshalled.
+func validateServiceCfg(ctx *validation.Context, configSet, path string, content []byte) error {
+	settings := config.Settings{}
+	if err := proto.UnmarshalText(string(content), &settings); err != nil {
 		ctx.Error(err)
 	}
 	return nil
