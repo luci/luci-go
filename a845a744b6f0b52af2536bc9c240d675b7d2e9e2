@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f684a17f_b0dadd93",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T23:06:46Z",
+      "side": 1,
+      "message": "ahh yassss",
+      "range": {
+        "startLine": 54,
+        "startChar": 10,
+        "endLine": 54,
+        "endChar": 20
+      },
+      "revId": "a845a744b6f0b52af2536bc9c240d675b7d2e9e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9d5e77_2e48a2dc",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T23:06:46Z",
+      "side": 1,
+      "message": "supernits: prefer breaks to start on the next line\n\n...host should not be a Gerrit host,\ni.e. it...",
+      "range": {
+        "startLine": 60,
+        "startChar": 73,
+        "endLine": 60,
+        "endChar": 77
+      },
+      "revId": "a845a744b6f0b52af2536bc9c240d675b7d2e9e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6aec5925_a2206fc9",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T23:06:46Z",
+      "side": 1,
+      "message": "supernit: prefer open paren on new line.",
+      "range": {
+        "startLine": 84,
+        "startChar": 59,
+        "endLine": 84,
+        "endChar": 60
+      },
+      "revId": "a845a744b6f0b52af2536bc9c240d675b7d2e9e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
