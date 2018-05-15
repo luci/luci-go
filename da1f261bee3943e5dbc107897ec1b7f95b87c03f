@@ -259,6 +259,30 @@
       "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ca0a438_aa5eb679",
+        "filename": "scheduler/appengine/engine/policy/logarithmic_batching.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-15T06:30:46Z",
+      "side": 1,
+      "message": "\u003e\u003d 1.0001 very lgtm, because this way you are also ensuring you have no overflow when converting float to int, since max(..) can reach at most log(1000)/log(1.0001) ~\u003d 69081. Perhaps you want to spell it out in comment :)",
+      "parentUuid": "0f4720e1_43ce51eb",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "da1f261bee3943e5dbc107897ec1b7f95b87c03f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
