@@ -77,6 +77,13 @@ message TriggeringPolicy {
     // deriving its properties from the most recent trigger alone. It doesn't
     // wait for a full batch, nor tries to batch evenly.
     GREEDY_BATCHING = 1;
+
+    // A logarithmic triggering function that takes log_k N pending triggers (up
+    // to max_batch_size limit) and collapses them into one new incovation,
+    // deriving its properties from the most recent trigger alone, where N is
+    // the total number of pending triggers and k is specified by the log_base
+    // field below.
+    LOGARITHMIC_BATCHING = 2;
   }
 
   // Defines an algorithm to use for the triggering decisions.
@@ -102,6 +109,16 @@ message TriggeringPolicy {
   //
   // Default is 1000 (which is ~= unlimited).
   int64 max_batch_size = 3;
+
+  // Base of the logarithm operation during logarithmic batching.
+  //
+  // For example, setting this to 2, will cause 3 out of 8 pending triggers to
+  // be combined into a single invocation with LOGARITHMIC_BATCHING kind. This
+  // value is ignored by other policy kinds. Must be larger or equal to 1.0001
+  // for numerical stability reasons.
+  //
+  // Required.
+  float log_base = 4;
 }
 
 

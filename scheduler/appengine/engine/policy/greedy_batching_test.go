@@ -28,6 +28,7 @@ func TestGreedyBatching(t *testing.T) {
 	t.Parallel()
 
 	Convey("With simulator", t, func(c C) {
+		var err error
 		s := Simulator{
 			OnRequest: func(s *Simulator, r task.Request) time.Duration {
 				return time.Minute
@@ -37,10 +38,33 @@ func TestGreedyBatching(t *testing.T) {
 			},
 		}
 
+		Convey("Max concurrent invocations must be positive", func() {
+			s.Policy, err = GreedyBatchingPolicy(0, 1)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("Max batch size must be positive", func() {
+			s.Policy, err = GreedyBatchingPolicy(1, 0)
+			So(err, ShouldNotBeNil)
+		})
+
+		Convey("No invocations scheduled when reducer returns 0", func() {
+			// A policy that always asks for 0 triggers to be combined.
+			s.Policy, err = basePolicy(2, 1000, func(triggers []*internal.Trigger) int {
+				return 0
+			})
+			So(err, ShouldBeNil)
+
+			s.AddTrigger(0,
+				internal.NoopTrigger("t1", "t1_data"),
+				internal.NoopTrigger("t2", "t2_data"))
+			So(s.PendingTriggers, ShouldHaveLength, 2)
+			So(s.Invocations, ShouldHaveLength, 0)
+		})
+
 		Convey("Unlimited batching works", func() {
 			// A policy that allows two concurrent invocations with effectively
 			// unlimited batch size.
-			var err error
 			s.Policy, err = GreedyBatchingPolicy(2, 1000)
 			So(err, ShouldBeNil)
 

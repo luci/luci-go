@@ -27,7 +27,8 @@ func ValidateDefinition(ctx *validation.Context, p *messages.TriggeringPolicy) {
 	switch p.Kind {
 	case
 		messages.TriggeringPolicy_UNDEFINED, // same as GREEDY_BATCHING
-		messages.TriggeringPolicy_GREEDY_BATCHING:
+		messages.TriggeringPolicy_GREEDY_BATCHING,
+		messages.TriggeringPolicy_LOGARITHMIC_BATCHING:
 		// ok
 	default:
 		ctx.Errorf("unrecognized policy kind %d", p.Kind)
@@ -40,5 +41,8 @@ func ValidateDefinition(ctx *validation.Context, p *messages.TriggeringPolicy) {
 	// Same here.
 	if p.MaxBatchSize < 0 {
 		ctx.Errorf("max_batch_size should be positive, got %d", p.MaxBatchSize)
+	}
+	if p.Kind == messages.TriggeringPolicy_LOGARITHMIC_BATCHING && p.LogBase < 1.0001 {
+		ctx.Errorf("log_base should be larger or equal 1.0001, got %f", p.LogBase)
 	}
 }

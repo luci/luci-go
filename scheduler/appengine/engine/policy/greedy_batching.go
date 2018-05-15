@@ -15,7 +15,7 @@
 package policy
 
 import (
-	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/scheduler/appengine/internal"
 )
 
 // GreedyBatchingPolicy instantiates new GREEDY_BATCHING policy function.
@@ -23,46 +23,7 @@ import (
 // It takes all pending triggers and collapses them into one new invocation,
 // deriving its properties from the most recent trigger alone.
 func GreedyBatchingPolicy(maxConcurrentInvs, maxBatchSize int) (Func, error) {
-	switch {
-	case maxConcurrentInvs <= 0:
-		return nil, errors.Reason("max_concurrent_invocations should be positive").Err()
-	case maxBatchSize <= 0:
-		return nil, errors.Reason("max_batch_size should be positive").Err()
-	}
-
-	return func(env Environment, in In) (out Out) {
-		slots := maxConcurrentInvs - len(in.ActiveInvocations)
-		switch {
-		case len(in.Triggers) == 0:
-			return // nothing new to launch
-		case slots <= 0:
-			env.DebugLog(
-				"Max concurrent invocations is %d and there's %d running => refusing to launch more",
-				maxConcurrentInvs, len(in.ActiveInvocations))
-			return // maxed all available slots
-		}
-
-		triggers := in.Triggers
-		for slots > 0 && len(triggers) != 0 {
-			// Grab up to maxBatchSize triggers.
-			size := maxBatchSize
-			if size > len(triggers) {
-				size = len(triggers)
-			}
-			batch := triggers[:size]
-			triggers = triggers[size:]
-
-			// Put them into the new invocation, deriving its properties from the most
-			// recent trigger (which is last in the list, since triggers are sorted by
-			// time already)
-			req := RequestBuilder{env: env}
-			req.FromTrigger(batch[len(batch)-1])
-			req.IncomingTriggers = batch
-
-			out.Requests = append(out.Requests, req.Request)
-			slots -= 1
-		}
-
-		return
-	}, nil
+	return basePolicy(maxConcurrentInvs, maxBatchSize, func(triggers []*internal.Trigger) int {
+		return len(triggers)
+	})
 }
