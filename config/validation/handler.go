@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
@@ -101,8 +100,8 @@ func validationRequestHandler(rules *RuleSet) router.Handler {
 				// validation.Context currently only supports ERROR severity
 				err := error.Error()
 				msgList = append(msgList, &config.ValidationResponseMessage_Message{
-					Severity: config.ValidationResponseMessage_ERROR.Enum(),
-					Text:     &err,
+					Severity: config.ValidationResponseMessage_ERROR,
+					Text:     err,
 				})
 				errorBuffer.WriteString("\n  " + err)
 			}
@@ -127,15 +126,15 @@ func metadataRequestHandler(rules *RuleSet) router.Handler {
 		}
 
 		meta := config.ServiceDynamicMetadata{
-			Version: proto.String(metaDataFormatVersion),
+			Version: metaDataFormatVersion,
 			Validation: &config.Validator{
-				Url: proto.String(fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath)),
+				Url: fmt.Sprintf("https://%s%s", ctx.Request.URL.Host, validationPath),
 			},
 		}
 		for _, p := range patterns {
 			meta.Validation.Patterns = append(meta.Validation.Patterns, &config.ConfigPattern{
-				ConfigSet: proto.String(p.ConfigSet.String()),
-				Path:      proto.String(p.Path.String()),
+				ConfigSet: p.ConfigSet.String(),
+				Path:      p.Path.String(),
 			})
 		}
 

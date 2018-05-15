@@ -71,9 +71,9 @@ func TestResolver(t *testing.T) {
 		be = &testingBackend{
 			items: []*config.Config{
 				{Meta: config.Meta{"projects/foo", "path", "####", "v1", "config_url"},
-					Content: tpb(&configPB.Project{Id: proto.String("foo")})},
+					Content: tpb(&configPB.Project{Id: "foo"})},
 				{Meta: config.Meta{"projects/bar", "path", "####", "v1", "config_url"},
-					Content: tpb(&configPB.Project{Id: proto.String("bar")})},
+					Content: tpb(&configPB.Project{Id: "bar"})},
 			},
 		}
 
@@ -83,7 +83,7 @@ func TestResolver(t *testing.T) {
 			Convey(`Single`, func() {
 				var val configPB.Project
 				So(cfgclient.Get(c, cfgclient.AsService, "", "", Message(&val), nil), ShouldBeNil)
-				So(val, ShouldResemble, configPB.Project{Id: proto.String("foo")})
+				So(val, ShouldResemble, configPB.Project{Id: "foo"})
 			})
 
 			Convey(`Multi`, func() {
@@ -93,8 +93,8 @@ func TestResolver(t *testing.T) {
 				)
 				So(cfgclient.Projects(c, cfgclient.AsService, "", Slice(&val), &meta), ShouldBeNil)
 				So(val, ShouldResemble, []*configPB.Project{
-					{Id: proto.String("foo")},
-					{Id: proto.String("bar")},
+					{Id: "foo"},
+					{Id: "bar"},
 				})
 				So(meta, ShouldResemble, []*config.Meta{
 					{"projects/foo", "path", "####", "v1", "config_url"},
@@ -129,7 +129,7 @@ func TestResolver(t *testing.T) {
 				Convey(`Single`, func() {
 					var val configPB.Project
 					So(cfgclient.Get(c, cfgclient.AsService, "", "", Message(&val), nil), ShouldBeNil)
-					So(val, ShouldResemble, configPB.Project{Id: proto.String("foo")})
+					So(val, ShouldResemble, configPB.Project{Id: "foo"})
 				})
 
 				Convey(`Multi`, func() {
@@ -139,8 +139,8 @@ func TestResolver(t *testing.T) {
 					)
 					So(cfgclient.Projects(c, cfgclient.AsService, "", Slice(&val), &meta), ShouldBeNil)
 					So(val, ShouldResemble, []*configPB.Project{
-						{Id: proto.String("foo")},
-						{Id: proto.String("bar")},
+						{Id: "foo"},
+						{Id: "bar"},
 					})
 					So(meta, ShouldResemble, []*config.Meta{
 						{"projects/foo", "path", "####", "v1", "config_url"},

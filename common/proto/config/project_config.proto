@@ -1,22 +1,23 @@
-// Copyright 2014 The Swarming Authors. All rights reserved.
-// Use of this source code is governed by the Apache v2.0 license that can be
+// Copyright 2014 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
 // that can be found in the LICENSE file.
 
 // Schemas for some of config files in projects/<project_id> config sets.
 
-syntax = "proto2";
+syntax = "proto3";
 
 package config;
 
 // Schema for project.cfg
 message ProjectCfg {
   // Full name of the project.
-  optional string name = 1;
-  // A list of identities that have read-only access to the. An element is one
-  // of:
+  string name = 1;
+  // A list of identities that have read-only access to the project.
+  //
+  // An element is one of:
   // * "group:<group>", where group is defined on auth server.
   // * "<email>"
-  // * "<identity>"
+  // * "<kind>:<value>" (for non-email identities)
   //
   // If not specified, only admins and trusted services have access.
   // Talk to admins to determine the group name appropriate for your project.
@@ -27,10 +28,9 @@ message ProjectCfg {
 message RefsCfg {
   message Ref {
     // Name of the ref. Must start with "refs/".
-    optional string name = 1;
-
+    string name = 1;
     // Path to config directory for the ref. Defaults to "infra/config".
-    optional string config_path = 3;
+    string config_path = 3;
   }
   // List of refs that have configuration files and need to be fetched into
   // luci-config. Refs are accessible through get_refs() API endpoint.

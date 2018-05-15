@@ -22,8 +22,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
-
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/config"
 	"go.chromium.org/luci/server/router"
@@ -54,8 +52,8 @@ func TestInstallHandlers(t *testing.T) {
 		}
 		valCall := func(configSet, path, content string) *config.ValidationResponseMessage {
 			respBodyJSON, err := json.Marshal(config.ValidationRequestMessage{
-				ConfigSet: proto.String(configSet),
-				Path:      proto.String(path),
+				ConfigSet: configSet,
+				Path:      path,
 				Content:   []byte(content),
 			})
 			So(err, ShouldBeNil)
@@ -76,9 +74,9 @@ func TestInstallHandlers(t *testing.T) {
 		Convey("Basic metadataHandler call", func() {
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(metaCall(), ShouldResemble, &config.ServiceDynamicMetadata{
-				Version: proto.String(metaDataFormatVersion),
+				Version: metaDataFormatVersion,
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, validationPath)),
+					Url: fmt.Sprintf("https://%s%s", host, validationPath),
 				},
 			})
 		})
@@ -88,13 +86,13 @@ func TestInstallHandlers(t *testing.T) {
 			meta := metaCall()
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(meta, ShouldResemble, &config.ServiceDynamicMetadata{
-				Version: proto.String(metaDataFormatVersion),
+				Version: metaDataFormatVersion,
 				Validation: &config.Validator{
-					Url: proto.String(fmt.Sprintf("https://%s%s", host, validationPath)),
+					Url: fmt.Sprintf("https://%s%s", host, validationPath),
 					Patterns: []*config.ConfigPattern{
 						{
-							ConfigSet: proto.String("exact:configSet"),
-							Path:      proto.String("exact:path"),
+							ConfigSet: "exact:configSet",
+							Path:      "exact:path",
 						},
 					},
 				},
@@ -111,8 +109,8 @@ func TestInstallHandlers(t *testing.T) {
 			So(rr.Code, ShouldEqual, http.StatusOK)
 			So(valResp, ShouldResemble, &config.ValidationResponseMessage{
 				Messages: []*config.ValidationResponseMessage_Message{{
-					Text:     proto.String("deadbeef"),
-					Severity: config.ValidationResponseMessage_ERROR.Enum(),
+					Text:     "deadbeef",
+					Severity: config.ValidationResponseMessage_ERROR,
 				}},
 			})
 		})
