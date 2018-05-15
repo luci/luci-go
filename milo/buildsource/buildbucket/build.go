@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/common/proto/git"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	logDogTypes "go.chromium.org/luci/logdog/common/types"
 
@@ -141,38 +142,11 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 		return nil, err
 	}
 
-	gc := build.GitilesCommit()
+	repoURL := build.GitilesCommit().RepoURL()
 	result := make([]*ui.Commit, 0, len(commits)+1)
-	for _, c := range commits {
-		commit := &ui.Commit{
-			AuthorName:  c.Author.Name,
-			AuthorEmail: c.Author.Email,
-			Repo:        gc.RepoURL(),
-			Description: c.Message,
-
-			// TODO(iannucci): this use of links is very sloppy; the frontend should
-			// know how to render a Commit without having Links embedded in it.
-			Revision: ui.NewLink(
-				c.Id,
-				gc.RepoURL()+"/+/"+c.Id, fmt.Sprintf("commit by %s", c.Author.Email)),
-		}
-
-		commit.CommitTime, _ = ptypes.Timestamp(c.Committer.Time)
-		commit.File = make([]string, 0, len(c.TreeDiff))
-		// Only lists new files, but not deleted or renamed ones.
-		for _, td := range c.TreeDiff {
-			// If file is moved, there is both new and old path, from which we take
-			// only new path.
-			switch {
-			case td.NewPath != "":
-				commit.File = append(commit.File, td.NewPath)
-			case td.OldPath != "":
-				commit.File = append(commit.File, td.OldPath)
-			}
-		}
-		result = append(result, commit)
+	for _, commit := range commits {
+		result = append(result, uiCommit(commit, repoURL))
 	}
-
 	logging.Infof(c, "Fetched %d commit blamelist from Gitiles", len(result))
 
 	// this means that there were more than 100 commits in-between.
@@ -185,6 +159,35 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 	}
 
 	return result, nil
+}
+
+func uiCommit(commit *git.Commit, repoURL string) *ui.Commit {
+	res := &ui.Commit{
+		AuthorName:  commit.Author.Name,
+		AuthorEmail: commit.Author.Email,
+		Repo:        repoURL,
+		Description: commit.Message,
+
+		// TODO(iannucci): this use of links is very sloppy; the frontend should
+		// know how to render a Commit without having Links embedded in it.
+		Revision: ui.NewLink(
+			commit.Id,
+			repoURL+"/+/"+commit.Id, fmt.Sprintf("commit by %s", commit.Author.Email)),
+	}
+	res.CommitTime, _ = ptypes.Timestamp(commit.Committer.Time)
+	res.File = make([]string, 0, len(commit.TreeDiff))
+	// Only lists new files, but not deleted or renamed ones.
+	for _, td := range commit.TreeDiff {
+		// If file is moved, there is both new and old path, from which we take
+		// only new path.
+		switch {
+		case td.NewPath != "":
+			res.File = append(res.File, td.NewPath)
+		case td.OldPath != "":
+			res.File = append(res.File, td.OldPath)
+		}
+	}
+	return res
 }
 
 // fetchGerritChangeEmail fetches the CL author email.
