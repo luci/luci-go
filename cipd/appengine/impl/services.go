@@ -44,5 +44,5 @@ var (
 
 	// PublicRepo is ACL-protected implementation of cipd.RepositoryServer that
 	// can be exposed as a public API.
-	PublicRepo = repo.Public()
+	PublicRepo = repo.Public(InternalCAS)
 )
