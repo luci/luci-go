@@ -1,0 +1,107 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19e5b439_f772c38e",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T22:58:23Z",
+      "side": 1,
+      "message": "I\u0027d probably just specify here\n// host is fully qualified URI \"https://\u003csubdomain\u003e.googlesource.com\".\n\nAnd for documentation simplicity, not mention anything about the scheme, because googlesource.com forces a https redirect anyways, so theres no reason to specify http:// ever.",
+      "range": {
+        "startLine": 56,
+        "startChar": 15,
+        "endLine": 56,
+        "endChar": 27
+      },
+      "revId": "74272bfd7a8d39edeb0d7f893dcb23b7b44a1441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a808d57_73a1e1e8",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T22:58:23Z",
+      "side": 1,
+      "message": "For more granularity, use the project field instead.",
+      "revId": "74272bfd7a8d39edeb0d7f893dcb23b7b44a1441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15de8c68_c91b2139",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T22:58:23Z",
+      "side": 1,
+      "message": "Relative to a URL, the protocol component is called a scheme.\n\nEither way, I think this is unnecessary.  Just force https:// everywhere.",
+      "revId": "74272bfd7a8d39edeb0d7f893dcb23b7b44a1441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3740890b_56fbfcd2",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T22:58:23Z",
+      "side": 1,
+      "message": "not start with \u0027/a/\u0027",
+      "range": {
+        "startLine": 71,
+        "startChar": 23,
+        "endLine": 71,
+        "endChar": 38
+      },
+      "revId": "74272bfd7a8d39edeb0d7f893dcb23b7b44a1441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea566788_5d2541b7",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T22:58:23Z",
+      "side": 1,
+      "message": "All fields are repeated, so they should have the same plurality.  I don\u0027t care either way, but it looks like it\u0027s more common to have everything plural, so make this plural.  Same with host.",
+      "range": {
+        "startLine": 73,
+        "startChar": 20,
+        "endLine": 73,
+        "endChar": 27
+      },
+      "revId": "74272bfd7a8d39edeb0d7f893dcb23b7b44a1441",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
