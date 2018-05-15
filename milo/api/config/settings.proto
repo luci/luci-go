@@ -4,7 +4,9 @@
 
 syntax = "proto3";
 
-package config;
+package milo;
+
+option go_package = "config";
 
 // Settings represents the format for the global (service) config for Milo.
 message Settings {
