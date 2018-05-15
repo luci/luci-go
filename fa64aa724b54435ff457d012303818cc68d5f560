@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c025880_188b2c78",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "Following convention for file: This comment should start with:\n\nGooglesourceAcls grants...\n\nSame below.",
+      "range": {
+        "startLine": 51,
+        "startChar": 5,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58c43a36_8fe5cf28",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "Runtime-enforced rules are tricky, see: Making interfaces hard to misuse.  What do you think about:\n\nmessage Target {\n  string host \u003d 1;\n  // If empty, target applies to all projects on host.\n  repeated string project \u003d 2;\n}\nrepeated Target target \u003d 1;",
+      "range": {
+        "startLine": 57,
+        "startChar": 63,
+        "endLine": 57,
+        "endChar": 79
+      },
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "933124a1_6f58d8fb",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "I wouldn\u0027t use \"sub-\" anything, since we don\u0027t allow the user to define anything that it is a subordinate of.  Maybe just \"host\".  It\u0027d be shorter.",
+      "range": {
+        "startLine": 58,
+        "startChar": 20,
+        "endLine": 58,
+        "endChar": 27
+      },
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c82dc505_6d70facf",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "Add https://\u003csubhost\u003e.googlesource.com/\u003cproject\u003e somewhere as a definition.",
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37136c73_77087c99",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "\"Readers are allowed to read git/gerrit data from targets\"",
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2808bc66_66025b87",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "Three types of identity strings are supported:\n* Emails.  For example \"someuser@example.com\"\n* Chrome-infra-auth Groups. For example: \"group:committers\"\n* Auth service identities.  For example: \"kind:name\"",
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9fc5171_53c5dbf6",
+        "filename": "milo/api/config/settings.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-15T19:49:39Z",
+      "side": 1,
+      "message": "granted what to where?\n\nI\u0027d use \"readers\", I think that\u0027s pretty standard terminology.",
+      "range": {
+        "startLine": 73,
+        "startChar": 20,
+        "endLine": 73,
+        "endChar": 30
+      },
+      "revId": "fa64aa724b54435ff457d012303818cc68d5f560",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
