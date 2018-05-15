@@ -47,4 +47,39 @@ message Settings {
     repeated string allowed_hosts = 2;
   }
   Swarming swarming = 3;
+
+  // GooglesourceAcls grants read access on a set of Git/Gerrit hosts or projects.
+  message GooglesourceAcls {
+    // host corresponds to two domains:
+    //  * <host>.googlesource.com (Gitiles)
+    //  * <host>-review.googlesource.com (Gerrit)
+    //
+    // At least one required. If projects are specified below, must be just one.
+    repeated string host = 1;
+
+    // project corresponds to Git repository and Gerrit CLs in it.
+    //
+    // URL of this repository is https://<host>.googlesource.com/<project>.
+    //
+    // Project may contain /, e.g., "chromium/src" will refer to git repo
+    //   https://<host>.googlesource.com/chromium/src.
+    //
+    // Optional. If specified, exactly one subhost must be defined.
+    repeated string project = 2;
+
+    // readers are allowed to read git/gerrit data from targets.
+    //
+    // Three types of identity strings are supported:
+    //  * Emails.                   For example: "someuser@example.com"
+    //  * Chrome-infra-auth Groups. For example: "group:committers"
+    //  * Auth service identities.  For example: "kind:name"
+    //
+    // Required.
+    repeated string readers = 3;
+  }
+
+  // googlesource_acls instructs Milo to provide Git/Gerrit data (e.g.,
+  // blamelist) to some of its users on entire subdomains or just repositories
+  // (Gerrit "projects") on *.googlesource.com.
+  repeated GooglesourceAcls googlesource_acls = 4;
 }
