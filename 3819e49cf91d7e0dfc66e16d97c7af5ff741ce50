@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "b6ef0693_113d7775",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:12:01Z",
+      "side": 1,
+      "message": "uploaded",
+      "range": {
+        "startLine": 214,
+        "startChar": 53,
+        "endLine": 214,
+        "endChar": 59
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d788b672_ea62a6cc",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:12:01Z",
+      "side": 1,
+      "message": "is it too late to use a message?",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 8
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b3fabf75_7fbb3de9",
         "filename": "cipd/appengine/impl/repo/model.go",
         "patchSetId": 3
@@ -16,6 +62,29 @@
       "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "febe92b2_08b97792",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:12:01Z",
+      "side": 1,
+      "message": "would %s be nicer?",
+      "range": {
+        "startLine": 230,
+        "startChar": 74,
+        "endLine": 230,
+        "endChar": 76
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
