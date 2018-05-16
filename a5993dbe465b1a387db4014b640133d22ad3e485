@@ -1,0 +1,74 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8441e57b_fc998c49",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:30:15Z",
+      "side": 1,
+      "message": "is the following js too modern to be used in milo?\n\n`https://$(window.location.host)$(window.location.pathname)?q\u003d${$(this).val()}`",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 39
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "08c69ead_f9d40755",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:30:15Z",
+      "side": 1,
+      "message": "space after :",
+      "range": {
+        "startLine": 42,
+        "startChar": 36,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e907dfe6_af0f6946",
+        "filename": "milo/frontend/expectations/search-Basic_search_page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-16T00:30:15Z",
+      "side": 1,
+      "message": "lol",
+      "parentUuid": "7545f0bb_7501e3fe",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 5
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
