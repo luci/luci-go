@@ -47,10 +47,19 @@ func TestFail(t *testing.T) {
 }
 
 func execInitScript(body string) error {
+	return execInitScripts(map[string]string{"init.sky": body}, nil)
+}
+
+func execInitScripts(scripts map[string]string, logs *[]string) error {
 	intr := Interpreter{
 		Root: "testdata",
+		Logger: func(file string, line int, message string) {
+			if logs != nil {
+				*logs = append(*logs, message)
+			}
+		},
 		Stdlib: func(path string) (string, error) {
-			if path == "init.sky" {
+			if body, ok := scripts[path]; ok {
 				return body, nil
 			}
 			return "", ErrNoStdlibModule
