@@ -1,0 +1,2 @@
+# If this doesn't crash, it means we've successfully loaded init.sky.
+main_sym = [exported_sym, loaded_sym]

@@ -1,0 +1,6 @@
+# Absolute paths work.
+load("//sub/loaded.sky", "loaded_sym", "another_loaded_sym")
+# Loading stdlib modules work.
+load("builtin:lib.sky", "lib_sym")
+
+main_sym = True

@@ -1,0 +1,4 @@
+# Relative paths work.
+load("../another_loaded.sky", "another_loaded_sym")
+
+loaded_sym = True

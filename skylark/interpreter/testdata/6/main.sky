@@ -1,0 +1,4 @@
+load("mod.sky", "a")
+load("mod.sky", "b")
+
+print("%d, %d" % (a, b))
