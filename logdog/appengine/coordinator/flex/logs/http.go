@@ -76,11 +76,11 @@ func parse(pathStr string) (project types.ProjectName, path types.StreamPath, er
 		err = errors.Reason("invalid path %q", pathStr).Err()
 		return
 	}
-	path = types.StreamPath(parts[2])
+	path = types.StreamPath(parts[1])
 	if err = path.Validate(); err != nil {
 		return
 	}
-	project = types.ProjectName(parts[1])
+	project = types.ProjectName(parts[0])
 	err = project.Validate()
 	return
 }
