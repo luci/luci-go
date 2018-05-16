@@ -133,6 +133,11 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 //     to swarming's implementation of buildsource.ID.Get(), which only returns
 //     the resp object.
 func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Commit, error) {
+	bs := build.GitilesCommit()
+	if bs == nil {
+		return nil, nil
+	}
+
 	builds, commits, err := build.PreviousByGitilesCommit(c)
 	switch {
 	case err == nil || err == model.ErrUnknownPreviousBuild:
@@ -142,7 +147,7 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 		return nil, err
 	}
 
-	repoURL := build.GitilesCommit().RepoURL()
+	repoURL := bs.RepoURL()
 	result := make([]*ui.Commit, 0, len(commits)+1)
 	for _, commit := range commits {
 		result = append(result, uiCommit(commit, repoURL))
