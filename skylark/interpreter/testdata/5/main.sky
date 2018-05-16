@@ -1,0 +1,2 @@
+load("builtin:go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", "testprotos")
+print(proto.to_pbtext(testprotos.SimpleFields(i64=123)))

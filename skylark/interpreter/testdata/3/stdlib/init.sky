@@ -1,0 +1,2 @@
+# Should fail.
+load("//some.sky", "some")

@@ -1,0 +1,3 @@
+# Can load other builtin module.
+load("builtin:loaded.sky", "loaded_sym")
+exported_sym = True
