@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3d7f2b15_7eb2a671",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-16T01:00:34Z",
+      "side": 1,
+      "message": "It changed from 1/2 to 0/1 because this TrimLeft was added...",
+      "range": {
+        "startLine": 74,
+        "startChar": 25,
+        "endLine": 74,
+        "endChar": 41
+      },
+      "revId": "8a8efc2ecfddb05149dcb5355adf93dea47a65da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
