@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "82925dbe_8acc7292",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-16T04:03:27Z",
+      "side": 1,
+      "message": "It\u0027s what native skylark repl does: https://github.com/google/skylark/blob/master/repl/repl.go#L218 *shrug* It appears to be working either way. I guess skylark.Thread doesn\u0027t really have much state to begin with.",
+      "range": {
+        "startLine": 203,
+        "startChar": 3,
+        "endLine": 203,
+        "endChar": 40
+      },
+      "revId": "cfefb619b213a9c62c75adfac2c6707632d23bdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
