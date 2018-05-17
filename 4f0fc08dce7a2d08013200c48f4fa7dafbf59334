@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8a2ebe70_7bea47de",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e5f1c0a_88a42134",
+      "range": {
+        "startLine": 83,
+        "startChar": 1,
+        "endLine": 87,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81a7387e_a83eec8b",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "3e1cf833_15367a87",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "This was all handled previously using ListFiles; if you could not retrieve a template, you defaulted to the \"default\" template, or whatever you want to call it in this case.  It would always be set and would always ensure there was a default template to utilize.  If there was a failure retrieving the templates, you have no matching template and get the default.  No additional logic. \n\nBased on the request, the easiest approach is to compare what is requested, what is retrieved, and if a requested template is not retrieved, due to it not existing or error, the contents of that requested template become the default.  This doesnt introduce any complex logic and allows the existing function to operate normally.  Ideally ListFiles would fill this gap and make this a non event.",
+      "parentUuid": "81a7387e_a83eec8b",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "464f7985_253ad3c0",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -62,6 +110,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "394bc1ab_4946aa88",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "We have no basis on how large to create the internal Set therefore we can only estimate the largest it could be. \n\nMaking that clear here.",
+      "parentUuid": "464f7985_253ad3c0",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,54 @@
     },
     {
       "key": {
+        "uuid": "345385a8_7cff7d85",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a6193b7_2391c3d1",
+      "range": {
+        "startLine": 98,
+        "startChar": 9,
+        "endLine": 98,
+        "endChar": 14
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "02ffb2eb_33359cc8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1de39bed_f5d1ea7c",
+      "range": {
+        "startLine": 98,
+        "startChar": 55,
+        "endLine": 98,
+        "endChar": 63
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7394150_fd59240b",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "ac3f5485_11a74249",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7394150_fd59240b",
+      "range": {
+        "startLine": 103,
+        "startChar": 45,
+        "endLine": 103,
+        "endChar": 54
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18c9edf7_8962aa00",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -151,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "78326b81_92e0a39e",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18c9edf7_8962aa00",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36b8c42e_8611ec2b",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -165,6 +321,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "973c4c86_ec5b8985",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "As you wish.",
+      "parentUuid": "36b8c42e_8611ec2b",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "6ace2cf0_109bbc16",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7b6bff48_076a9bc6",
+      "range": {
+        "startLine": 109,
+        "startChar": 37,
+        "endLine": 114,
+        "endChar": 4
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff60379f_760d88e9",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -205,6 +403,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bad6002_35565d01",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "I agree that the error handling was inconsistent.  Updated to not fail all of them for a bad template.\n\nI disagree about the default and builtin; unless you are adding validation that a template could never be named \"builtin\" the solution is no better than the initial solution I had (that you didn\u0027t like) in which default was always set first and was hard-coded to the default in the module, assuring that it would always parse.  The default is now set, either from the project or the \"default\", and validated to be set.",
+      "parentUuid": "ff60379f_760d88e9",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -248,6 +464,48 @@
     },
     {
       "key": {
+        "uuid": "929f63f3_5ce1b44c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2552723_3913164d",
+      "range": {
+        "startLine": 119,
+        "startChar": 38,
+        "endLine": 119,
+        "endChar": 61
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0bf580c1_3a9ea5d0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a324682_39e10323",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86cce8b9_95734efd",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -271,6 +529,30 @@
     },
     {
       "key": {
+        "uuid": "019e155c_f5960f82",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "I did not mean to do it any other way, rather this was a conscious decision to not blast user emails addresses to all that shared a template (since BCC is not used).  This is treating every recipient as an individual email rather than bulk emailing.  \n\nIf the desire is to not shield users (since this is open source) then totally agree, this can be changed to treat all recipients together and make emails visible in all blasts.  This becomes more of a question of the intent of how we are treating users and whether there is a need to shield addresses or not.  Easy change either way but looking for direction.",
+      "parentUuid": "86cce8b9_95734efd",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 4
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b5a21a8_72e892f1",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -285,6 +567,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9af4bd39_d1fc3467",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b5a21a8_72e892f1",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -311,6 +611,30 @@
     },
     {
       "key": {
+        "uuid": "781da988_0610ea69",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Per the design doc, the path for all email templates is luci-notify/email_templates within the project itself.  \n\nThe decision to support multiple environments is a feature that was added after the fact and was only briefly discussed in passing.  \n\nI\u0027ve updated to allow by using the AppId().",
+      "parentUuid": "177daf0c_aa65e032",
+      "range": {
+        "startLine": 149,
+        "startChar": 22,
+        "endLine": 149,
+        "endChar": 33
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c09e6c4a_e5486f38",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -331,6 +655,30 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8bb1569_5897a674",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Do agree, the naming should be updated since the intent was changed.",
+      "parentUuid": "c09e6c4a_e5486f38",
+      "range": {
+        "startLine": 151,
+        "startChar": 38,
+        "endLine": 151,
+        "endChar": 47
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -357,6 +705,30 @@
     },
     {
       "key": {
+        "uuid": "21d2933f_7b550985",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Based on the initial request to introduce different \"default\" templates and builtins, I feel this should remain here as it sets default, that can be overwritten.  This ensures there is always a default/builtin.",
+      "parentUuid": "b483fed4_bc73c52a",
+      "range": {
+        "startLine": 155,
+        "startChar": 1,
+        "endLine": 158,
+        "endChar": 2
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d5e2e7f9_abc84a93",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -371,6 +743,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c22d9519_d2d1a4e6",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Was to avoid no template being set in the request parameters but I\u0027m already addressing when setting the template list therefore it is duplicate.",
+      "parentUuid": "d5e2e7f9_abc84a93",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -414,6 +804,48 @@
     },
     {
       "key": {
+        "uuid": "c57dca77_316843eb",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06c86704_2bc32ce1",
+      "range": {
+        "startLine": 161,
+        "startChar": 79,
+        "endLine": 161,
+        "endChar": 106
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2fafb0f5_87ebdb32",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36eb4507_c58f37b7",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "40614165_60989abb",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -437,6 +869,30 @@
     },
     {
       "key": {
+        "uuid": "257cfe1e_49b1dd16",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40614165_60989abb",
+      "range": {
+        "startLine": 162,
+        "startChar": 6,
+        "endLine": 162,
+        "endChar": 9
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b5b0cf0d_3c7ea7c1",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -457,6 +913,30 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18ae1c0a_941c1b83",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "This ties directly back to not failing when we cannot send an email; why fail on one template and ignore all the others when one fails?\n\nThis goes back to why ListFiles was the chosen path; if you are unable to retrieve a template, for any reason, the user would be sent the default template.  If you fail now, there is no template and the user receives no email at all.  \n\nFailing should be rare, but failing here could prevent all email from being sent rather than a transient error preventing only users of the template not receiving mail.",
+      "parentUuid": "b5b0cf0d_3c7ea7c1",
+      "range": {
+        "startLine": 164,
+        "startChar": 4,
+        "endLine": 164,
+        "endChar": 12
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -529,6 +1009,78 @@
     },
     {
       "key": {
+        "uuid": "e5c93fe6_4b0ea52c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a54377ab_53b6afc0",
+      "range": {
+        "startLine": 168,
+        "startChar": 31,
+        "endLine": 168,
+        "endChar": 41
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46c4d7e6_a097b160",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "37a5476e_5c71f6f3",
+      "range": {
+        "startLine": 168,
+        "startChar": 42,
+        "endLine": 168,
+        "endChar": 51
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14a079eb_015b5a88",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d37b70c3_b057e3e1",
+      "range": {
+        "startLine": 168,
+        "startChar": 52,
+        "endLine": 168,
+        "endChar": 57
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd13f12f_0a7a6fd9",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -549,6 +1101,30 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bdb89c79_8247c8ea",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd13f12f_0a7a6fd9",
+      "range": {
+        "startLine": 186,
+        "startChar": 6,
+        "endLine": 186,
+        "endChar": 11
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -575,6 +1151,30 @@
     },
     {
       "key": {
+        "uuid": "20868f70_ce89f5a3",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "I see no reason we\u0027d stop processing emails because one failed, but would want to be able to debug.  Logged the error and continue.\n\nFixed.",
+      "parentUuid": "19aab549_7d4e31c0",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 20
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82198826_af03cfaf",
         "filename": "luci_notify/notify/notify_test.go",
         "patchSetId": 9
@@ -595,6 +1195,30 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb9555f3_649a9c73",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "What does this accomplish?  Split each of the emails out into a separate struct.  Get that, but why?  It is an optional field.  We\u0027re testing with a template and not, therefore two emails going in.  We pass an array of EmailNotify to most methods involved in the templates.  It was initially an optional field, and remains as such while sticking to the standard constructor.\n\nThat said, since this CL has gone beyond what is style or practice based, and more to personal preference, I am going to change it.",
+      "parentUuid": "82198826_af03cfaf",
+      "range": {
+        "startLine": 52,
+        "startChar": 64,
+        "endLine": 52,
+        "endChar": 67
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -621,6 +1245,30 @@
     },
     {
       "key": {
+        "uuid": "2c3d47dc_9bdc31ea",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4b6db79_0add941d",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c4481911_b63164f2",
         "filename": "luci_notify/notify/notify_test.go",
         "patchSetId": 9
@@ -635,6 +1283,24 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa4056cf_e4b0f18e",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Yeah, I missed that.  Thanks,",
+      "parentUuid": "c4481911_b63164f2",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -661,6 +1327,30 @@
     },
     {
       "key": {
+        "uuid": "93979b29_f26988ff",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "Sorry.  That one is my bad.  I got caught up in changing the name and forgot to change it back once it dawned on me that it was a public type.",
+      "parentUuid": "02e63172_f42c6a71",
+      "range": {
+        "startLine": 229,
+        "startChar": 15,
+        "endLine": 229,
+        "endChar": 26
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f684d2f_1f0a77ce",
         "filename": "luci_notify/notify/pubsub_test.go",
         "patchSetId": 9
@@ -681,6 +1371,30 @@
       "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47919d80_7a5c98db",
+        "filename": "luci_notify/notify/pubsub_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T16:10:34Z",
+      "side": 1,
+      "message": "See other comment.  It is optional field, you made it as such.  The use of an array of EmailNotify is standard.  I see no basis for this changing to split what we would not split in the rest of the code.\n\nAgain, I\u0027m changing it to move forward.  I see no basis nor benefit to this change; it doesn\u0027t address anything in terms of complexity or readability.",
+      "parentUuid": "1f684d2f_1f0a77ce",
+      "range": {
+        "startLine": 53,
+        "startChar": 121,
+        "endLine": 53,
+        "endChar": 124
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
