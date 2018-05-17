@@ -122,6 +122,30 @@
     },
     {
       "key": {
+        "uuid": "97324bbd_530d78ed",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-05-17T18:25:26Z",
+      "side": 1,
+      "message": "Notifiers are specified in LUCI Config, and are potentially applied to every build in the project, this was the original design.\n\nrecipients can also be specified in the buildbucket request, this is something I added for ChromeOS tryjobs. It was necessary because tryjobs change based on who requested the build, not which LUCI Builder is used.\n\nAdding template names in both places allows you to customize how each type of email is formatted independently. nodir and I came up with that design.",
+      "parentUuid": "14fde2e2_632b1660",
+      "range": {
+        "startLine": 247,
+        "startChar": 24,
+        "endLine": 247,
+        "endChar": 39
+      },
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e567f1e3_0b4a758a",
         "filename": "luci_notify/notify/notify_test.go",
         "patchSetId": 10
