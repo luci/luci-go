@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6bf172de_46c0c691",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "yep. Thanks. This was copied from clearDeadNotifiers. Did this there too.",
+      "parentUuid": "ab17c2d5_145a001b",
+      "range": {
+        "startLine": 63,
+        "startChar": 25,
+        "endLine": 63,
+        "endChar": 77
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8073ffae_17e82041",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6c0e5d5_f98fa858",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8073ffae_17e82041",
+      "range": {
+        "startLine": 151,
+        "startChar": 20,
+        "endLine": 151,
+        "endChar": 50
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "4b0fc9ee_983b30c0",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "this function was problematic. I\u0027ve rewrote it",
+      "parentUuid": "18494688_7714a646",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 58
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a32b2dfb_86a1dbca",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f198b5f8_1f8c9679",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "it was easy and it has simplified code",
+      "parentUuid": "a32b2dfb_86a1dbca",
+      "range": {
+        "startLine": 180,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 30
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "c8298d01_dc38b610",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3783fb4d_04ccdeeb",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 1
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c274666_be899545",
         "filename": "luci_notify/config/emailtemplate.go",
         "patchSetId": 4
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "0a98037f_0feef0fd",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "that wasn\u0027t the reason of the comment. I didn\u0027t want to recompile regex more than once per vm instance, and I didn\u0027t want to write caching of it. Made it a func that compiles dynamically.",
+      "parentUuid": "9c274666_be899545",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d775778_795bcdca",
         "filename": "luci_notify/config/emailtemplate.go",
         "patchSetId": 4
@@ -151,6 +295,30 @@
       "writtenOn": "2018-05-17T21:59:04Z",
       "side": 1,
       "message": "nit: we log with capital letter\n\nupdate: I see the rest of the code here logs with lower case letter, fine then...",
+      "range": {
+        "startLine": 106,
+        "startChar": 20,
+        "endLine": 106,
+        "endChar": 21
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "663985df_65ce69e5",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T23:16:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8d775778_795bcdca",
       "range": {
         "startLine": 106,
         "startChar": 20,
