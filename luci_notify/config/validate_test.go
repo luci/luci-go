@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestValidation(t *testing.T) {
@@ -173,5 +174,20 @@ func TestValidation(t *testing.T) {
 		testValidation(`empty`, ``, requiredFieldError, "milo_host")
 		testValidation(`bad hostname`, `milo_host: "9mNRn29%^^%#"`, invalidFieldError, "milo_host")
 		testValidation(`good`, `milo_host: "luci-milo.example.com"`, "")
+	})
+
+	Convey("email template filename validation", t, func() {
+		ctx := &validation.Context{Context: context.Background()}
+		validFileContent := []byte("a\n\nb")
+
+		Convey("valid", func() {
+			validateEmailTemplateFile(ctx, "projects/x", "luci-notify/email-templates/a.template", validFileContent)
+			So(ctx.Finalize(), ShouldBeNil)
+		})
+
+		Convey("invalid char", func() {
+			validateEmailTemplateFile(ctx, "projects/x", "luci-notify/email-templates/A.template", validFileContent)
+			So(ctx.Finalize(), ShouldErrLike, "does not match")
+		})
 	})
 }
