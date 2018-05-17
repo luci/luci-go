@@ -15,6 +15,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	html "html/template"
 	"regexp"
@@ -36,29 +37,21 @@ import (
 // The first path component is a app id. We do not validate it here.
 var emailTemplateFilenameRegexp = regexp.MustCompile(`^[^/]+/email-templates/([a-z][a-z0-9_]*)\.template$`)
 
-// ParsedEmailTemplate is a parsed email template file.
-type ParsedEmailTemplate struct {
-	Subject *text.Template
-	Body    *html.Template
-}
-
-// Parse parses email subject and body templates.
-func (t *ParsedEmailTemplate) Parse(subject, body string) error {
-	subjectTemplate, err := text.New("subject").Parse(subject)
+// ParseEmailTemplate parses email subject and body templates.
+func ParseEmailTemplate(subject, body string) (parsedSubject *text.Template, parsedBody *html.Template, err error) {
+	parsedSubject, err = text.New("subject").Parse(subject)
 	if err != nil {
-		return err // error includes template name
+		return nil, nil, err // error includes template name
 	}
 
-	bodyTemplate, err := html.New("body").Parse(body)
+	parsedBody, err = html.New("body").Parse(body)
 	// Due to luci-config limitation, we cannot detect an invalid reference to
 	// a sub-template defined in a different file.
 	if err != nil {
-		return err // error includes template name
+		return nil, nil, err // error includes template name
 	}
 
-	t.Subject = subjectTemplate
-	t.Body = bodyTemplate
-	return nil
+	return
 }
 
 // EmailTemplate is a Datastore entity directly under Project entity that
@@ -77,6 +70,74 @@ type EmailTemplate struct {
 
 	// BodyHTMLTemplate is a html.Template of the email body.
 	BodyHTMLTemplate string
+}
+
+// EmailTemplateBundle combines all email body templates into one
+// html.Template such that one template can reuse parts of another.
+// Use (*EmailTemplateBundle).Parse to make one and use
+// (*EmailTemplateBundle).Execute to render an email.
+type EmailTemplateBundle struct {
+	// subjects is a mapping from template name ot the subject template.
+	subjects map[string]*text.Template
+
+	// bodies is a single html.Template that combines all body templates.
+	bodies *html.Template
+}
+
+// Bundle bundles email templates into EmailTemplateBundle.
+// Returns an error if template names are not unique or templates are invalid.
+func (b *EmailTemplateBundle) Parse(templates []*EmailTemplate) error {
+	b.subjects = make(map[string]*text.Template, len(templates))
+	b.bodies = html.New("")
+
+	for _, t := range templates {
+		if _, ok := b.subjects[t.Name]; ok {
+			return errors.Reason("duplicate template name %q", t.Name).Err()
+		}
+
+		subject, body, err := ParseEmailTemplate(t.SubjectTextTemplate, t.BodyHTMLTemplate)
+		if err != nil {
+			return errors.Annotate(err, "invalid template %s", t.Name).Err()
+		}
+
+		b.subjects[t.Name] = subject
+
+		// Insert body and its subtemplates into the common b.bodies.
+		for _, st := range body.Templates() {
+			treeName := st.Name()
+			if st == body {
+				treeName = t.Name
+			}
+			if _, err := b.bodies.AddParseTree(treeName, st.Tree); err != nil {
+				// This cannot happen because AddParseTree may return an error only if the
+				// template was executed before. It was not.
+				panic(err)
+			}
+		}
+	}
+
+	return nil
+}
+
+// Execute executes a named email template and returned rendered subject and body.
+func (b *EmailTemplateBundle) Execute(templateName string, data interface{}) (subject, body string, err error) {
+	subjectTemplate, ok := b.subjects[templateName]
+	if !ok {
+		return "", "", errors.Reason("unknown template %q", templateName).Err()
+	}
+
+	var buf bytes.Buffer
+	if err := subjectTemplate.Execute(&buf, data); err != nil {
+		return "", "", errors.Annotate(err, "failed to execute subject template").Err()
+	}
+	subject = buf.String()
+
+	buf.Reset()
+	if err := b.bodies.ExecuteTemplate(&buf, templateName, data); err != nil {
+		return "", "", errors.Annotate(err, "failed to execute body template").Err()
+	}
+	body = buf.String()
+	return
 }
 
 // fetchAllEmailTemplates fetches all valid email templates of the project.
