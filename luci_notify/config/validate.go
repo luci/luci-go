@@ -19,13 +19,33 @@ import (
 	"net/mail"
 	"regexp"
 
+	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )
 
-// Regexp for notifier names.
+// emailTemplateFilenameRegexp is a regular expression for email template file
+// names.
+// The first path component is a app id. We do not validate it here.
+var emailTemplateFilenameRegexp = regexp.MustCompile(`^[^/]/email-templates/[a-z][a-z0-9_]*\.template$`)
+
+// notifierNameRegexp is a regexp for notifier names.
 var notifierNameRegexp = regexp.MustCompile("^[a-z-]+$")
+
+func init() {
+	validation.Rules.Add("regex:projects/.*", "${appid}.cfg", func(ctx *validation.Context, configSet, path string, content []byte) error {
+		cfg := &notifyConfig.ProjectConfig{}
+		if err := proto.UnmarshalText(string(content), cfg); err != nil {
+			ctx.Errorf("invalid ProjectConfig proto message: %s", err)
+		} else {
+			validateProjectConfig(ctx, cfg)
+		}
+		return nil
+	})
+
+	validation.Rules.Add("regex:projects/.*", `regex:${appid}/email-templates/[^/]+\.template`, validateEmailTemplateFile)
+}
 
 const (
 	requiredFieldError    = "field %q is required"
@@ -106,4 +126,18 @@ func validateSettings(ctx *validation.Context, settings *notifyConfig.Settings) 
 	case validation.ValidateHostname(settings.MiloHost) != nil:
 		ctx.Errorf(invalidFieldError, "milo_host")
 	}
+}
+
+// validateEmailTemplateFile validates an email template file, including
+// its filename and contents.
+func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, content []byte) error {
+	if !emailTemplateFilenameRegexp.MatchString(path) {
+		ctx.Errorf("filename does not match %q", emailTemplateFilenameRegexp.String())
+	}
+
+	var t ParsedEmailTemplate
+	if err := t.Parse(string(content)); err != nil {
+		ctx.Error(err)
+	}
+	return nil
 }
