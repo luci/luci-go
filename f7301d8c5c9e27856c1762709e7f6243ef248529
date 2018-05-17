@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab17c2d5_145a001b",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "I believe this should be marked as KeysOnly: https://godoc.org/github.com/luci/gae/service/datastore#Query.KeysOnly\n\nI don\u0027t think datastore.Run is smart enough to figure this out from the callback signature (or maybe it is?)",
+      "range": {
+        "startLine": 63,
+        "startChar": 25,
+        "endLine": 63,
+        "endChar": 77
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8073ffae_17e82041",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "nit: this should be keys-only query",
+      "range": {
+        "startLine": 151,
+        "startChar": 20,
+        "endLine": 151,
+        "endChar": 50
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18494688_7714a646",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "you probably need to transactionally delete all Notifier entities AND root Project entity itself, otherwise you\u0027ll be getting \"deleting notifiers for %s because the project no longer exists\" in the logs forever (nothing deletes Project entity).\n\nSo, two steps:\n1. Discover all projects needs to be delete.\n2. For each project, run a transaction that queries all entities under the project root and deletes them.",
+      "range": {
+        "startLine": 151,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 58
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a32b2dfb_86a1dbca",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "Consider parallelizing this. There are many LUCI projects. And there may be many templates in each project (fetched sequentially), and LUCI config sometimes hangs for 5-10 sec. So updating all projects sequentially may take a lot of time.\n\nThis shouldn\u0027t be too hard with parallel.FanOutIn.",
+      "range": {
+        "startLine": 180,
+        "startChar": 1,
+        "endLine": 180,
+        "endChar": 30
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3783fb4d_04ccdeeb",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "you need to mark these as non-indexed, otherwise their length is severely limited by datastore",
+      "range": {
+        "startLine": 75,
+        "startChar": 1,
+        "endLine": 80,
+        "endChar": 1
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c274666_be899545",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "could have put it in the regexp using regexp.QuoteMeta, but whatever",
+      "range": {
+        "startLine": 98,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 33
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8d775778_795bcdca",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-17T21:59:04Z",
+      "side": 1,
+      "message": "nit: we log with capital letter\n\nupdate: I see the rest of the code here logs with lower case letter, fine then...",
+      "range": {
+        "startLine": 106,
+        "startChar": 20,
+        "endLine": 106,
+        "endChar": 21
+      },
+      "revId": "f7301d8c5c9e27856c1762709e7f6243ef248529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
