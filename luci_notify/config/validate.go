@@ -145,10 +145,9 @@ func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, 
 
 	// Validate file contents.
 	subject, body, err := splitEmailTemplateFile(string(content))
-	var t ParsedEmailTemplate
 	if err != nil {
 		ctx.Error(err)
-	} else if err := t.Parse(subject, body); err != nil {
+	} else if _, _, err := ParseEmailTemplate(subject, body); err != nil {
 		ctx.Error(err)
 	}
 	return nil
