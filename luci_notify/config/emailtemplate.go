@@ -15,6 +15,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	html "html/template"
 	"regexp"
@@ -36,31 +37,6 @@ import (
 // The first path component is a app id. We do not validate it here.
 var emailTemplateFilenameRegexp = regexp.MustCompile(`^[^/]+/email-templates/([a-z][a-z0-9_]*)\.template$`)
 
-// ParsedEmailTemplate is a parsed email template file.
-type ParsedEmailTemplate struct {
-	Subject *text.Template
-	Body    *html.Template
-}
-
-// Parse parses email subject and body templates.
-func (t *ParsedEmailTemplate) Parse(subject, body string) error {
-	subjectTemplate, err := text.New("subject").Parse(subject)
-	if err != nil {
-		return err // error includes template name
-	}
-
-	bodyTemplate, err := html.New("body").Parse(body)
-	// Due to luci-config limitation, we cannot detect an invalid reference to
-	// a sub-template defined in a different file.
-	if err != nil {
-		return err // error includes template name
-	}
-
-	t.Subject = subjectTemplate
-	t.Body = bodyTemplate
-	return nil
-}
-
 // EmailTemplate is a Datastore entity directly under Project entity that
 // represents an email template.
 // It is managed by the cron job that ingests configs.
@@ -77,6 +53,48 @@ type EmailTemplate struct {
 
 	// BodyHTMLTemplate is a html.Template of the email body.
 	BodyHTMLTemplate string
+}
+
+// EmailTemplateBundle is a collection of email templates. It combines all email
+// body templates into one html.Template such that one template can reuse
+// another.
+type EmailTemplateBundle struct {
+	subjects *text.Template
+	bodies   *html.Template
+}
+
+// Parse parses email templates.
+func (b *EmailTemplateBundle) Parse(templates []*EmailTemplate) error {
+	b.subjects = text.New("")
+	b.bodies = html.New("")
+
+	for _, t := range templates {
+		if _, err := b.subjects.New(t.Name).Parse(t.SubjectTextTemplate); err != nil {
+			return errors.Annotate(err, "invalid subject template %s", t.Name).Err()
+		}
+
+		if _, err := b.bodies.New(t.Name).Parse(t.BodyHTMLTemplate); err != nil {
+			return errors.Annotate(err, "invalid body template %s", t.Name).Err()
+		}
+	}
+
+	return nil
+}
+
+// Execute executes a named email template and returns rendered subject and body.
+func (b *EmailTemplateBundle) Execute(templateName string, data interface{}) (subject, body string, err error) {
+	var buf bytes.Buffer
+	if err := b.subjects.ExecuteTemplate(&buf, templateName, data); err != nil {
+		return "", "", errors.Annotate(err, "failed to execute subject template").Err()
+	}
+	subject = buf.String()
+
+	buf.Reset()
+	if err := b.bodies.ExecuteTemplate(&buf, templateName, data); err != nil {
+		return "", "", errors.Annotate(err, "failed to execute body template").Err()
+	}
+	body = buf.String()
+	return
 }
 
 // fetchAllEmailTemplates fetches all valid email templates of the project.
