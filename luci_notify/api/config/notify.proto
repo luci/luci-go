@@ -8,7 +8,7 @@
 // (without .template) are the names of the templates they define. They must
 // match the regex ^[a-z][a-z0-9\_]*$.
 //
-// luci-notify/
+// <app-id>/
 //   email-templates/
 //     <template_name>.template
 //
