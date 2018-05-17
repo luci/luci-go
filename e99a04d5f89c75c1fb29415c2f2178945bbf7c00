@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7068ab3_1542efc4",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 653,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-17T22:17:39Z",
+      "side": 1,
+      "message": "%q, and you are missing , proj.LogoUrl arg.",
+      "range": {
+        "startLine": 653,
+        "startChar": 31,
+        "endLine": 653,
+        "endChar": 33
+      },
+      "revId": "e99a04d5f89c75c1fb29415c2f2178945bbf7c00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
