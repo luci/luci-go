@@ -615,5 +615,14 @@ func validateServiceCfg(ctx *validation.Context, configSet, path string, content
 	if err := proto.UnmarshalText(string(content), &settings); err != nil {
 		ctx.Error(err)
 	}
+	for i, gsa := range settings.GooglesourceAcls {
+		ctx.Enter("googlesource_acl #%d", i)
+		if len(gsa.Subhost) == 0 {
+			ctx.Error("At least 1 subhost required")
+		} else {
+
+		}
+		ctx.Exit()
+	}
 	return nil
 }
