@@ -27,12 +27,15 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"
 
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
+	config "go.chromium.org/luci/config"
+	memImpl "go.chromium.org/luci/config/impl/memory"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -47,7 +50,7 @@ var (
 	}
 )
 
-func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...string) *Build {
+func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	var build Build
 	build.Build = *testutil.TestBuild("test", "hello", builder, status)
 	build.Input = &buildbucketpb.Build_Input{
@@ -60,8 +63,9 @@ func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime 
 		},
 	}
 	build.CreateTime, _ = ptypes.TimestampProto(creationTime)
-	build.EmailNotify = notifyEmails
-
+	for _, en := range notifyEmails {
+		build.EmailNotify = append(build.EmailNotify, en)
+	}
 	return &build
 }
 
@@ -81,20 +85,45 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 
 		Convey(`single email_notify value`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email"})
+			So(results, ShouldResemble, []EmailNotify{
+				{
+					Email:    "test@email",
+					Template: "",
+				},
+			})
+			So(err, ShouldBeNil)
+		})
+
+		Convey(`single email_notify value_with_template`, func() {
+			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email", "template": "test-template"}]}`)
+			So(results, ShouldResemble, []EmailNotify{
+				{
+					Email:    "test@email",
+					Template: "test-template",
+				},
+			})
 			So(err, ShouldBeNil)
 		})
 
 		Convey(`multiple email_notify values`, func() {
 			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}, {"email": "test2@email"}]}`)
-			So(results, ShouldResemble, []string{"test@email", "test2@email"})
+			So(results, ShouldResemble, []EmailNotify{
+				{
+					Email:    "test@email",
+					Template: "",
+				},
+				{
+					Email:    "test2@email",
+					Template: "",
+				},
+			})
 			So(err, ShouldBeNil)
 		})
 	})
 }
 
 func TestHandleBuild(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	Convey(`Test Environment for handleBuild`, t, func() {
 		cfgName := "basic"
@@ -105,6 +134,13 @@ func TestHandleBuild(t *testing.T) {
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
+		impl := memImpl.New(map[config.Set]memImpl.Files{
+			"projects/proj1": {
+				"file": "file content",
+				"email_templates/minimal.template": "Subject: Test Subject\nTest Content",
+			},
+		})
+		c = notifyConfig.WithConfigService(c, impl)
 
 		// Add Notifiers to datastore and update indexes.
 		notifiers := extractNotifiers(c, "test", cfg)
@@ -117,14 +153,19 @@ func TestHandleBuild(t *testing.T) {
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 
 		dispatcher, taskqueue := createMockTaskQueue(c)
-
-		testSuccess := func(build *Build, emailExpect ...string) {
+		testSuccess := func(build *Build, emailExpect ...EmailNotify) {
 			// Test handleBuild.
 			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
 			So(err, ShouldBeNil)
 
+			// Flatten email notify array of arrays
+			notifyEmail := []EmailNotify{}
+			for _, en := range emailExpect {
+				notifyEmail = append(notifyEmail, en)
+			}
+
 			// Verify sent messages.
-			verifyTasksAndMessages(c, taskqueue, emailExpect)
+			verifyTasksAndMessages(c, taskqueue, notifyEmail)
 		}
 
 		verifyBuilder := func(build *Build, revision string) {
@@ -134,6 +175,19 @@ func TestHandleBuild(t *testing.T) {
 			So(datastore.Get(c, &builder), ShouldBeNil)
 			So(builder.StatusRevision, ShouldResemble, revision)
 			So(builder.Status, ShouldEqual, build.Status)
+		}
+
+		propEmail := EmailNotify{
+			Email: "property@google.com",
+		}
+		successEmail := EmailNotify{
+			Email: "test-example-success@google.com",
+		}
+		failEmail := EmailNotify{
+			Email: "test-example-failure@google.com",
+		}
+		changeEmail := EmailNotify{
+			Email: "test-example-change@google.com",
 		}
 
 		grepLog := func(substring string) {
@@ -150,8 +204,8 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no config w/property`, func() {
-			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
-			testSuccess(build, "property@google.com")
+			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			testSuccess(build, propEmail)
 		})
 
 		Convey(`no revision`, func() {
@@ -162,53 +216,53 @@ func TestHandleBuild(t *testing.T) {
 
 		Convey(`init builder`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(build, "test-example-failure@google.com")
+			testSuccess(build, failEmail)
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`init builder w/property`, func() {
-			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, "property@google.com")
-			testSuccess(build, "test-example-failure@google.com", "property@google.com")
+			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			testSuccess(build, failEmail, propEmail)
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`out-of-order revision`, func() {
 			build := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, successEmail)
 			verifyBuilder(build, rev2)
 
 			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_FAILURE, newTime, rev1)
-			testSuccess(oldRevBuild, "test-example-failure@google.com")
+			testSuccess(oldRevBuild, failEmail)
 			grepLog("old commit")
 		})
 
 		Convey(`revision update`, func() {
 			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, successEmail)
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
-			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com")
+			testSuccess(newBuild, failEmail, changeEmail)
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`revision update w/property`, func() {
-			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, "property@google.com")
-			testSuccess(build, "test-example-success@google.com", "property@google.com")
+			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propEmail)
+			testSuccess(build, successEmail, propEmail)
 			verifyBuilder(build, rev1)
 
-			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, "property@google.com")
-			testSuccess(newBuild, "test-example-failure@google.com", "test-example-change@google.com", "property@google.com")
+			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propEmail)
+			testSuccess(newBuild, failEmail, changeEmail, propEmail)
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`out-of-order creation time`, func() {
 			build := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
-			testSuccess(build, "test-example-success@google.com")
+			testSuccess(build, successEmail)
 			verifyBuilder(build, rev1)
 
 			oldBuild := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(oldBuild, "test-example-failure@google.com")
+			testSuccess(oldBuild, failEmail)
 			grepLog("old time")
 		})
 	})
