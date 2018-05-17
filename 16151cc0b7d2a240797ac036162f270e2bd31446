@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "1ee391f8_d4ac5096",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2018-05-17T18:21:12Z",
+      "side": 1,
+      "message": "Change to Infof?",
+      "range": {
+        "startLine": 125,
+        "startChar": 11,
+        "endLine": 125,
+        "endChar": 19
+      },
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "212b92de_1d4db627",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 10
@@ -73,6 +96,29 @@
       "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14fde2e2_632b1660",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 247,
+      "author": {
+        "id": 1196209
+      },
+      "writtenOn": "2018-05-17T18:21:12Z",
+      "side": 1,
+      "message": "It seems very strange to me that notifiers have email recipients and even stranger that notifiers have templates. I don\u0027t understand this domain model. It might as well just be called a DefaultEmailNotifier since it could never be used for anything else.",
+      "range": {
+        "startLine": 247,
+        "startChar": 24,
+        "endLine": 247,
+        "endChar": 39
+      },
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
