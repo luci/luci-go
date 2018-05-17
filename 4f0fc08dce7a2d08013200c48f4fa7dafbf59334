@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "a57a559b_2d62f141",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "I think I wasn\u0027t clear. Let me make sure I am heard.\n\nThere is a case for having two templates with two different purposes:\n- default template is one that is used if a template was not specified explicitly. It is user-defined.\n- builtin template, or rather \"error\" template, is one that is used if a user-defined template, default or not, failed to execute. It is server-defined, so it is guaranteed to be correct. It may NOT fail. It contains a warning that it had to be used because a user-defined template execution failed, and perhaps it could include the error details.\n\nerror template is essentially a better error handling. We send it out to users because template authors cannot see our server logs.\n\nI\u0027ll add it in a separate CL. My motivation is I don\u0027t want to be bothered by users asking \"what\u0027s wrong with my template? What was the error? Where are the logs?\". The system should provide the answers on its own without developer intervention because developers don\u0027t have time for this.",
+      "parentUuid": "3e1cf833_15367a87",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "464f7985_253ad3c0",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -424,6 +448,24 @@
     },
     {
       "key": {
+        "uuid": "92ae7647_198a93dc",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "yeah, I implied that \"builtin\" is a reserved template name.",
+      "parentUuid": "9bad6002_35565d01",
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a324682_39e10323",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -541,6 +583,30 @@
       "side": 1,
       "message": "I did not mean to do it any other way, rather this was a conscious decision to not blast user emails addresses to all that shared a template (since BCC is not used).  This is treating every recipient as an individual email rather than bulk emailing.  \n\nIf the desire is to not shield users (since this is open source) then totally agree, this can be changed to treat all recipients together and make emails visible in all blasts.  This becomes more of a question of the intent of how we are treating users and whether there is a need to shield addresses or not.  Easy change either way but looking for direction.",
       "parentUuid": "86cce8b9_95734efd",
+      "range": {
+        "startLine": 121,
+        "startChar": 3,
+        "endLine": 129,
+        "endChar": 4
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d59e8b8b_77e3112c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "you are right, sending separate emails is better",
+      "parentUuid": "019e155c_f5960f82",
       "range": {
         "startLine": 121,
         "startChar": 3,
@@ -940,6 +1006,30 @@
     },
     {
       "key": {
+        "uuid": "dfd9065a_af1be3fc",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "I think it is a bug to _occasionally_ send an email based on the default template instead of a requested one. Note that this is different from ErrNoConfig. This is a transient failure. Transient failures must be retried. If we return an error here, the whole function will be retried because it is called in a context of a PubSub handler. The handler would return HTTP 500 to the pubsub and pubsub will retry later.",
+      "parentUuid": "18ae1c0a_941c1b83",
+      "range": {
+        "startLine": 164,
+        "startChar": 4,
+        "endLine": 164,
+        "endChar": 12
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a54377ab_53b6afc0",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
@@ -1175,6 +1265,30 @@
     },
     {
       "key": {
+        "uuid": "93092f87_7d4a07a3",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "the reason is, if we don\u0027t fail entire function, we *occasionally* not send emails. This is a bug. Also it is a nasty bug because it is not consistent / harder to notice. Nobody will have time to read these warnings in the server log.\nI can address it in a separate CL.",
+      "parentUuid": "20868f70_ce89f5a3",
+      "range": {
+        "startLine": 254,
+        "startChar": 2,
+        "endLine": 254,
+        "endChar": 20
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82198826_af03cfaf",
         "filename": "luci_notify/notify/notify_test.go",
         "patchSetId": 9
@@ -1210,6 +1324,30 @@
       "side": 1,
       "message": "What does this accomplish?  Split each of the emails out into a separate struct.  Get that, but why?  It is an optional field.  We\u0027re testing with a template and not, therefore two emails going in.  We pass an array of EmailNotify to most methods involved in the templates.  It was initially an optional field, and remains as such while sticking to the standard constructor.\n\nThat said, since this CL has gone beyond what is style or practice based, and more to personal preference, I am going to change it.",
       "parentUuid": "82198826_af03cfaf",
+      "range": {
+        "startLine": 52,
+        "startChar": 64,
+        "endLine": 52,
+        "endChar": 67
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "93497532_70aaf32d",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "this accomplishes simplicity. Patch 9 has a loop in L55. It is not needed if it is a non-nested array: build.EmailNotify \u003d notifyEmails\nThe whole function becomes a single statement, see another comment in patchset 10",
+      "parentUuid": "cb9555f3_649a9c73",
       "range": {
         "startLine": 52,
         "startChar": 64,
@@ -1339,6 +1477,30 @@
       "side": 1,
       "message": "Sorry.  That one is my bad.  I got caught up in changing the name and forgot to change it back once it dawned on me that it was a public type.",
       "parentUuid": "02e63172_f42c6a71",
+      "range": {
+        "startLine": 229,
+        "startChar": 15,
+        "endLine": 229,
+        "endChar": 26
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "029a6ac6_d6ca50e8",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "what helps me is I always review my own code before sending out. It may take up to 10 iterations. This way I am not affected by review latency, save reviewer\u0027s time and many of my CLs get an LGTM from the first review.",
+      "parentUuid": "93979b29_f26988ff",
       "range": {
         "startLine": 229,
         "startChar": 15,

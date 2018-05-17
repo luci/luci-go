@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2eb8ef21_adac0234",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "tList.Len() would simpler and faster",
+      "range": {
+        "startLine": 101,
+        "startChar": 4,
+        "endLine": 101,
+        "endChar": 24
+      },
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d9b42be7_60381aa0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "this is a closure, so it will capture only the last value of tf variable. The tf has to be scoped. Please add\n\n  tf :\u003d tf\n\nin the beginning of the loop",
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "799ae36a_87799ea4",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "map is not goroutine-safe, access to a map must be synchronized",
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e567f1e3_0b4a758a",
+        "filename": "luci_notify/notify/notify_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T16:56:50Z",
+      "side": 1,
+      "message": "there is no reason for this loop\n\nreturn \u0026Build {\n  EmailNotify: notifyEmails,\n  Build: *testutil.TestBuild(\"test\", \"hello\", \"test-builder\", status)\n}",
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
