@@ -34,18 +34,15 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 
-	"go.chromium.org/luci/luci_notify/config"
+	configInterface "go.chromium.org/luci/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 )
 
-var emailTemplate = template.Must(template.New("email").Funcs(template.FuncMap{
-	"time": func(ts *tspb.Timestamp) time.Time {
-		t, _ := ptypes.Timestamp(ts)
-		return t
-	},
-}).Parse(`
-luci-notify detected a status change for builder "{{ .Build.Builder.IDString }}"
+var (
+	defaultBody = `luci-notify detected a status change for builder "{{ .Build.Builder.IDString }}"
 at {{ .Build.EndTime | time }}.
 
 <table>
@@ -75,31 +72,148 @@ at {{ .Build.EndTime | time }}.
   </tr>
 </table>
 
-<a href="{{ .Build.ViewUrl }}">Full details are available here.</a>`))
+<a href="{{ .Build.ViewUrl }}">Full details are available here.</a><br/><br/>
+
+You are receiving the default template as no template was provided or a template
+name did not match the one provided.`
+
+	defaultSubject = `[Build Status] Builder "{{ .Build.Builder.IDString }}"`
+)
+
+const defaultTemplate = "default"
 
 // createEmailTask constructs an EmailTask to be dispatched onto the task queue.
-func createEmailTask(c context.Context, recipients []string, oldStatus buildbucketpb.Status, build *Build) (*tq.Task, error) {
+func createEmailTask(c context.Context, recipients []EmailNotify, oldStatus buildbucketpb.Status, build *Build) ([]*tq.Task, error) {
 	templateContext := map[string]interface{}{
 		"OldStatus": oldStatus.String(),
 		"Build":     build,
 	}
-	var bodyBuffer bytes.Buffer
-	if err := emailTemplate.Execute(&bodyBuffer, &templateContext); err != nil {
-		return nil, errors.Annotate(err, "constructing email body").Err()
+	tList := stringset.New(len(recipients))
+	for _, rt := range recipients {
+		if rt.Template != "" && rt.Template != defaultTemplate {
+			tList.Add(rt.Template)
+		}
 	}
-	subject := fmt.Sprintf(`[Build Status] Builder %s`, build.Builder.IDString())
-
-	return &tq.Task{
-		Payload: &internal.EmailTask{
-			Recipients: recipients,
-			Subject:    subject,
-			Body:       bodyBuffer.String(),
+	templates, err := getEmailTemplates(c, tList.ToSlice(), build.Builder.Project)
+	if err != nil {
+		return nil, errors.Annotate(err, "retrieving email templates").Err()
+	}
+	if len(tList.ToSlice())+1 != len(templates) {
+		validateTemplates(tList, templates)
+	}
+	tasks := []*tq.Task{}
+	var bodyBuffer bytes.Buffer
+	tFuncMap := template.FuncMap{
+		"time": func(ts *tspb.Timestamp) time.Time {
+			t, _ := ptypes.Timestamp(ts)
+			return t
 		},
-	}, nil
+	}
+	for name, t := range templates {
+		var destEmail []string
+		for _, recipient := range recipients {
+			if recipient.Template == name || (name == defaultTemplate && recipient.Template == "") {
+				destEmail = append(destEmail, recipient.Email)
+			}
+		}
+		if len(destEmail) < 1 {
+			continue
+		}
+		bodyBuffer.Reset()
+		et := template.New("email").Funcs(tFuncMap)
+		if _, err := et.Parse(t.Body); err != nil {
+			logging.Warningf(c, "parsing email body into template %v: %v", name, err)
+			continue
+		}
+		if err := et.Execute(&bodyBuffer, &templateContext); err != nil {
+			logging.Warningf(c, "constructing email body for template %v: %v", name, err)
+			continue
+		}
+		for _, rec := range destEmail {
+			tasks = append(tasks, &tq.Task{
+				Payload: &internal.EmailTask{
+					Recipients: []string{rec},
+					Subject:    t.Subject,
+					Body:       bodyBuffer.String(),
+				},
+			})
+		}
+	}
+	return tasks, nil
+}
+
+//validateTemplates compares what was requested and what was retrieved, defaulting templates that have no match to the default overall template.
+func validateTemplates(wantedTemplates stringset.Set, retrievedTemplates map[string]subjectAndBody) {
+	for _, rt := range wantedTemplates.ToSlice() {
+		if _, ok := retrievedTemplates[rt]; !ok {
+			retrievedTemplates[rt] = subjectAndBody{
+				Subject: defaultSubject,
+				Body:    defaultBody,
+			}
+		}
+	}
+}
+
+type subjectAndBody struct {
+	Subject string
+	Body    string
+}
+
+// getEmailTemplateMap retrieves all user requested email templates for the provided project.
+func getEmailTemplates(c context.Context, templateList []string, project string) (map[string]subjectAndBody, error) {
+	lucicfg := notifyConfig.GetConfigService(c)
+	templateMap := make(map[string]subjectAndBody, len(templateList)+1)
+	// Ensures that default template exists for all projects; overwritten if a default template exists.
+	templateMap[defaultTemplate] = subjectAndBody{
+		Subject: defaultSubject,
+		Body:    defaultBody,
+	}
+	templatePath := info.AppID(c) + "/email_templates/"
+	err := parallel.WorkPool(10, func(work chan<- func() error) {
+		for _, tf := range templateList {
+			work <- func() error {
+				cTemplate, err := lucicfg.GetConfig(c, configInterface.ProjectSet(project), fmt.Sprintf("%s%s.template", templatePath, tf), false)
+				switch {
+				case err == configInterface.ErrNoConfig:
+					return errors.Annotate(err, "template does not exist: %s", tf).Err()
+				case err != nil:
+					return errors.Annotate(err, "while fetching contents for template: %s", tf).Err()
+				}
+				sb, err := parseTemplate(cTemplate.Content)
+				if err != nil {
+					return errors.Annotate(err, "while parsing contents for template: %s", tf).Err()
+				}
+				templateMap[tf] = sb
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return templateMap, errors.Annotate(err, "failed to retrieve email templates").Err()
+	}
+	return templateMap, nil
+}
+
+func parseTemplate(content string) (subjectAndBody, error) {
+	var parsedContent subjectAndBody
+	if len(content) == 0 {
+		return parsedContent, fmt.Errorf("empty template file, unable to parse subject and body")
+	}
+	tc := strings.SplitN(content, "\n", 3)
+	switch {
+	case len(tc) < 3:
+		return parsedContent, fmt.Errorf("less than three lines in template file, unable to parse subject and body")
+	case strings.TrimSpace(tc[1]) != "":
+		return parsedContent, fmt.Errorf("second line is not blank, unable to parse subject and body")
+	default:
+		parsedContent.Subject = tc[0]
+		parsedContent.Body = strings.TrimSpace(tc[2])
+	}
+	return parsedContent, nil
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *config.NotificationConfig, oldStatus, newStatus buildbucketpb.Status) bool {
+func shouldNotify(n *notifyConfig.NotificationConfig, oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
@@ -122,9 +236,8 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 
 // Notify discovers, consolidates and filters recipients from notifiers, and
 // 'email_notify' properties, then dispatches notifications if necessary.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
-	recipientSet := stringset.New(0)
-
+func Notify(c context.Context, d *tq.Dispatcher, notifiers []*notifyConfig.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
+	var recipients []EmailNotify
 	// Notify based on configured notifiers.
 	for _, n := range notifiers {
 		for _, nc := range n.Notifications {
@@ -132,31 +245,36 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*config.Notifier, o
 				continue
 			}
 			for _, r := range nc.EmailRecipients {
-				recipientSet.Add(r)
+				recipients = append(recipients, EmailNotify{
+					Email:    r,
+					Template: nc.Template,
+				})
 			}
 		}
 	}
 
 	// Notify based on build request properties.
-	for _, r := range build.EmailNotify {
-		recipientSet.Add(r)
-	}
+	recipients = append(recipients, build.EmailNotify...)
 
-	for _, r := range recipientSet.ToSlice() {
-		if !isRecipientAllowed(c, r, build) {
-			recipientSet.Del(r)
+	for i, r := range recipients {
+		if !isRecipientAllowed(c, r.Email, build) {
+			recipients = append(recipients[:i], recipients[i+1:]...)
 		}
 	}
 
-	if recipientSet.Len() == 0 {
+	if len(recipients) == 0 {
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	task, err := createEmailTask(c, recipientSet.ToSlice(), oldStatus, build)
+	tasks, err := createEmailTask(c, recipients, oldStatus, build)
 	if err != nil {
 		return errors.Annotate(err, "failed to create email task").Err()
 	}
-	d.AddTask(c, task)
+	for _, task := range tasks {
+		if err := d.AddTask(c, task); err != nil {
+			logging.Warningf(c, "adding task to dispatcher: %v", err)
+		}
+	}
 	return nil
 }
 
