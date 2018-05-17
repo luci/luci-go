@@ -26,7 +26,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -34,7 +34,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/luci_notify/config"
+	notifyConfig "go.chromium.org/luci/luci_notify/config"
 )
 
 var (
@@ -54,27 +54,25 @@ func commitIndex(commits []*gitpb.Commit, revision string) int {
 	return -1
 }
 
-func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
+// EmailNotify contains information for delivery and personalization of notification emails.
+type EmailNotify struct {
+	Email    string `json:"email"`
+	Template string `json:"template"`
+}
+
+func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 	if parametersJSON == "" {
 		return nil, nil
 	}
-
 	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
 	var output struct {
-		EmailNotify []struct {
-			Email string `json:"email"`
-		} `json:"email_notify"`
+		EmailNotify []EmailNotify `json:"email_notify"`
 	}
 
 	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
 		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
 	}
-
-	result := make([]string, len(output.EmailNotify))
-	for i, r := range output.EmailNotify {
-		result[i] = r.Email
-	}
-	return result, nil
+	return output.EmailNotify, nil
 }
 
 // handleBuild processes a Build and sends appropriate notifications.
@@ -89,7 +87,7 @@ func extractEmailNotifyValues(parametersJSON string) ([]string, error) {
 func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
-	notifiers, err := config.LookupNotifiers(c, build.Builder.Project, builderID)
+	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
 	if err != nil {
 		return errors.Annotate(err, "looking up notifiers").Err()
 	}
@@ -229,7 +227,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
 type Build struct {
 	buildbucketpb.Build
-	EmailNotify []string
+	EmailNotify []EmailNotify
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
