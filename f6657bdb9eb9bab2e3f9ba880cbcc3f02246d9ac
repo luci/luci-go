@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16427028_ab68f105",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Docstring",
+      "range": {
+        "startLine": 28,
+        "startChar": 5,
+        "endLine": 28,
+        "endChar": 19
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a92104c_b9bf3956",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "docstring.",
+      "range": {
+        "startLine": 38,
+        "startChar": 5,
+        "endLine": 38,
+        "endChar": 23
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4ade981_235d523f",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Acls define readers for git repositories and Gerrits CLs.  \n\nwho can read -\u003e readers.  Less words, more active\ndefines -\u003e define.  Noun and verb should agree on plurality.",
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f19353_93f1a39d",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Should be acls or ACLs, never Acls.\n\nhttps://github.com/golang/go/wiki/CodeReviewComments#initialisms",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 9
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c943540_c06f20e1",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "configs? It looks like there are more than 1",
+      "range": {
+        "startLine": 60,
+        "startChar": 38,
+        "endLine": 60,
+        "endChar": 44
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30db75bc_32b3ce17",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "load Acls",
+      "range": {
+        "startLine": 60,
+        "startChar": 22,
+        "endLine": 60,
+        "endChar": 27
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "df0edaeb_1d7f3aa6",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "cfgReaders\n\nor rename the param to \"readers\", that seems cleaner.",
+      "range": {
+        "startLine": 80,
+        "startChar": 25,
+        "endLine": 80,
+        "endChar": 32
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de2e9b03_657c0e89",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "validate, assuming \"loadReaders\" is plural.",
+      "range": {
+        "startLine": 80,
+        "startChar": 15,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e80c8456_1716e595",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Should this be fine?  It could have different ACLs.  It doesn\u0027t look like we error out on hosts being defined in a separate block.",
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dccf9b0_bdd30429",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Backwards?",
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efc0e07d_86219f70",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-17T18:31:17Z",
+      "side": 1,
+      "message": "Should be || (as is this always evaluates to false, unless u.Scheme is a quantum superposition of two values)",
+      "range": {
+        "startLine": 180,
+        "startChar": 19,
+        "endLine": 180,
+        "endChar": 21
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
