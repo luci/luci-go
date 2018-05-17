@@ -138,12 +138,17 @@ func validateSettings(ctx *validation.Context, settings *notifyConfig.Settings) 
 // validateEmailTemplateFile validates an email template file, including
 // its filename and contents.
 func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, content []byte) error {
+	// Validate file name.
 	if !emailTemplateFilenameRegexp.MatchString(path) {
 		ctx.Errorf("filename does not match %q", emailTemplateFilenameRegexp.String())
 	}
 
+	// Validate file contents.
+	subject, body, err := splitEmailTemplateFile(string(content))
 	var t ParsedEmailTemplate
-	if err := t.Parse(string(content)); err != nil {
+	if err != nil {
+		ctx.Error(err)
+	} else if err := t.Parse(subject, body); err != nil {
 		ctx.Error(err)
 	}
 	return nil

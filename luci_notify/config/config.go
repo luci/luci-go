@@ -55,36 +55,82 @@ func clearDeadNotifiers(c context.Context, parent *datastore.Key, liveNotifiers 
 	return datastore.Delete(c, toDelete)
 }
 
+// clearDeadEmailTemplates deletes all EmailTemplate entities from the datastore
+// which are not in a given "live" set, and which are associated with a
+// specific project via parent key.
+func clearDeadEmailTemplates(c context.Context, parent *datastore.Key, liveEmailTemplates map[string]*EmailTemplate) error {
+	var toDelete []*datastore.Key
+	err := datastore.Run(c, datastore.NewQuery("EmailTemplate").Ancestor(parent), func(key *datastore.Key) error {
+		name := key.StringID()
+		if _, ok := liveEmailTemplates[name]; !ok {
+			logging.Infof(
+				c, "deleting %s/%s because the email template no longer exists", parent.StringID(), name)
+			toDelete = append(toDelete, key)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return datastore.Delete(c, toDelete)
+}
+
+// parsedProjectConfigSet contains all configurations of a project.
+type parsedProjectConfigSet struct {
+	ProjectID      string
+	ProjectConfig  *notifyConfig.ProjectConfig
+	EmailTemplates map[string]*EmailTemplate
+	Revision       string
+	ViewURL        string
+}
+
 // updateProject updates all relevant entities corresponding to a particular project in
 // a single datastore transaction.
 //
 // Returns the set of notifiers that were updated.
-func updateProject(c context.Context, projectName string, projectCfg *notifyConfig.ProjectConfig, cfg *configInterface.Config) error {
-	existingProject := Project{Name: projectName}
-	switch err := datastore.Get(c, &existingProject); err {
+func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
+	existingProject := &Project{Name: cs.ProjectID}
+	switch err := datastore.Get(c, existingProject); err {
 	case datastore.ErrNoSuchEntity:
 		// continue
 	case nil:
-		if existingProject.Revision == cfg.Revision {
-			logging.Debugf(c, "same revision: %s, %s", projectName, cfg.Revision)
+		// TODO(nodir): do this check before fetching email templates.
+		if existingProject.Revision == cs.Revision {
+			logging.Debugf(c, "same revision: %s, %s", cs.ProjectID, cs.Revision)
 			return nil
 		}
 	default:
 		return errors.Annotate(err, "checking existence").Err()
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		notifiers := make([]*Notifier, len(projectCfg.Notifiers))
-		liveNotifiers := stringset.New(len(projectCfg.Notifiers))
-		newProject := NewProject(projectName, cfg)
-		parentKey := datastore.KeyForObj(c, newProject)
-		for i, cfgNotifier := range projectCfg.Notifiers {
-			notifiers[i] = NewNotifier(parentKey, cfgNotifier)
+		project := &Project{
+			Name:     cs.ProjectID,
+			Revision: cs.Revision,
+			URL:      cs.ViewURL,
+		}
+		parentKey := datastore.KeyForObj(c, project)
+
+		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
+		toSave = append(toSave, project)
+
+		liveNotifiers := stringset.New(len(cs.ProjectConfig.Notifiers))
+		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
+			toSave = append(toSave, NewNotifier(parentKey, cfgNotifier))
 			liveNotifiers.Add(cfgNotifier.Name)
 		}
-		if err := datastore.Put(c, newProject, notifiers); err != nil {
-			return errors.Annotate(err, "saving project and notifiers").Err()
+
+		for _, et := range cs.EmailTemplates {
+			et.ProjectKey = parentKey
+			toSave = append(toSave, et)
 		}
-		return clearDeadNotifiers(c, parentKey, liveNotifiers)
+
+		if err := datastore.Put(c, toSave); err != nil {
+			return errors.Annotate(err, "failed to save project configuration").Err()
+		}
+		if err := clearDeadNotifiers(c, parentKey, liveNotifiers); err != nil {
+			return err
+		}
+		return clearDeadEmailTemplates(c, parentKey, cs.EmailTemplates)
 	}, nil)
 }
 
@@ -132,29 +178,42 @@ func updateProjects(c context.Context) error {
 	// Iterate through each project config, extracting notifiers.
 	merr := errors.MultiError{}
 	for _, cfg := range configs {
-		projectName := cfg.ConfigSet.Project()
-		if projectName == "" {
+		projectId := cfg.ConfigSet.Project()
+		if projectId == "" {
 			merr = append(merr, fmt.Errorf("invalid config set %s", cfg.ConfigSet))
 			continue
 		}
-
 		// All found projects are considered 'alive'.
-		liveProjects.Add(projectName)
+		liveProjects.Add(projectId)
 
-		project := notifyConfig.ProjectConfig{}
-		if err := proto.UnmarshalText(cfg.Content, &project); err != nil {
+		project := &notifyConfig.ProjectConfig{}
+		if err := proto.UnmarshalText(cfg.Content, project); err != nil {
 			merr = append(merr, errors.Annotate(err, "unmarshalling proto").Err())
 			continue
 		}
+
 		ctx := &validation.Context{Context: c}
 		ctx.SetFile(cfgName)
-		validateProjectConfig(ctx, &project)
+		validateProjectConfig(ctx, project)
 		if err := ctx.Finalize(); err != nil {
 			merr = append(merr, errors.Annotate(err, "validating config").Err())
 			continue
 		}
-		if err := updateProject(c, projectName, &project, &cfg); err != nil {
-			err = errors.Annotate(err, "processing %s", projectName).Err()
+
+		emailTemplates, err := fetchAllEmailTemplates(c, lucicfg, projectId)
+		if err != nil {
+			return errors.Annotate(err, "failed to fetch email templates").Err()
+		}
+
+		parsedConfigSet := &parsedProjectConfigSet{
+			ProjectID:      projectId,
+			ProjectConfig:  project,
+			EmailTemplates: emailTemplates,
+			Revision:       cfg.Revision,
+			ViewURL:        cfg.ViewURL,
+		}
+		if err := updateProject(c, parsedConfigSet); err != nil {
+			err = errors.Annotate(err, "processing %s", projectId).Err()
 			merr = append(merr, err)
 		}
 	}
