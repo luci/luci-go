@@ -58,18 +58,6 @@ func TestEmailTemplate(t *testing.T) {
 		})
 	})
 
-	Convey(`ParsedEmailTemplate.Parse`, t, func() {
-		var t ParsedEmailTemplate
-
-		Convey(`invalid subject template`, func() {
-			So(t.Parse("{{}}}", ""), ShouldErrLike, "subject:1: missing value for command")
-		})
-
-		Convey(`invalid body template`, func() {
-			So(t.Parse("", "{{!}}"), ShouldErrLike, `body:1: unexpected "!" in command`)
-		})
-	})
-
 	Convey("fetchAllEmailTemplates", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-config")
 		c = gologger.StdConfig.Use(c)
@@ -100,5 +88,42 @@ func TestEmailTemplate(t *testing.T) {
 				BodyHTMLTemplate:    "bBody",
 			},
 		})
+	})
+
+	Convey("EmailTemplateBundle", t, func() {
+		templates := []*EmailTemplate{
+			{
+				Name:                "shared",
+				SubjectTextTemplate: "this file is shared",
+				BodyHTMLTemplate:    `{{define "steps"}}steps go here{{end}}`,
+			},
+			{
+				Name:                "inlineEntireFile",
+				SubjectTextTemplate: "this file is shared",
+				BodyHTMLTemplate:    `entire file`,
+			},
+			{
+				Name:                "default",
+				SubjectTextTemplate: "Build completed. Data: {{.}}",
+				BodyHTMLTemplate: `
+					Reusing a template from another file.
+					Data: {{.}}.
+					{{template "steps"}}
+					{{template "inlineEntireFile"}}
+				`,
+			},
+		}
+		var b EmailTemplateBundle
+		So(b.Parse(templates), ShouldBeNil)
+
+		subject, body, err := b.Execute("default", "this is data")
+		So(err, ShouldBeNil)
+		So(subject, ShouldEqual, "Build completed. Data: this is data")
+		So(body, ShouldEqual, `
+					Reusing a template from another file.
+					Data: this is data.
+					steps go here
+					entire file
+				`)
 	})
 }
