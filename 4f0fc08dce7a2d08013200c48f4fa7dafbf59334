@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "75798b85_9a2bfc58",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1273501
+      },
+      "writtenOn": "2018-05-17T21:35:33Z",
+      "side": 1,
+      "message": "The error template usage actually helps in this case.  That was lacking in my understanding thus I could not see why one would go with two \"defaults\" for the use case.  \n\nMy apologies for that bit.",
+      "parentUuid": "a57a559b_2d62f141",
+      "range": {
+        "startLine": 90,
+        "startChar": 5,
+        "endLine": 90,
+        "endChar": 22
+      },
+      "revId": "4f0fc08dce7a2d08013200c48f4fa7dafbf59334",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "464f7985_253ad3c0",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 9
