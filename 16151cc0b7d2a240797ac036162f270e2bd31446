@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "212b92de_1d4db627",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-17T17:30:50Z",
+      "side": 1,
+      "message": "per spec, subject in the template must be interpreted as a text/template. This dumps subject as is.",
+      "revId": "16151cc0b7d2a240797ac036162f270e2bd31446",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d9b42be7_60381aa0",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 10
