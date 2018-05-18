@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0ac654ad_b833c988",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-18T17:32:44Z",
+      "side": 1,
+      "message": "does this always transform into HTTP 500 (same for other transient failures from this function)? We want to trigger pubsub redelivery on datastore errors.",
+      "range": {
+        "startLine": 90,
+        "startChar": 9,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "4881c2c86b4330224e7d524bc58e5f6a8f25df82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
