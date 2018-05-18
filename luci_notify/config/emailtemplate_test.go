@@ -58,18 +58,6 @@ func TestEmailTemplate(t *testing.T) {
 		})
 	})
 
-	Convey(`ParsedEmailTemplate.Parse`, t, func() {
-		var t ParsedEmailTemplate
-
-		Convey(`invalid subject template`, func() {
-			So(t.Parse("{{}}}", ""), ShouldErrLike, "subject:1: missing value for command")
-		})
-
-		Convey(`invalid body template`, func() {
-			So(t.Parse("", "{{!}}"), ShouldErrLike, `body:1: unexpected "!" in command`)
-		})
-	})
-
 	Convey("fetchAllEmailTemplates", t, func() {
 		c := gaetesting.TestingContextWithAppID("luci-notify")
 		c = gologger.StdConfig.Use(c)

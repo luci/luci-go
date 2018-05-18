@@ -16,10 +16,8 @@ package config
 
 import (
 	"fmt"
-	html "html/template"
 	"regexp"
 	"strings"
-	text "text/template"
 
 	"golang.org/x/net/context"
 
@@ -37,31 +35,6 @@ func emailTemplateFilenameRegexp(c context.Context) *regexp.Regexp {
 	appId := info.AppID(c)
 	pattern := fmt.Sprintf(`^%s+/email-templates/([a-z][a-z0-9_]*)\.template$`, regexp.QuoteMeta(appId))
 	return regexp.MustCompile(pattern)
-}
-
-// ParsedEmailTemplate is a parsed email template file.
-type ParsedEmailTemplate struct {
-	Subject *text.Template
-	Body    *html.Template
-}
-
-// Parse parses email subject and body templates.
-func (t *ParsedEmailTemplate) Parse(subject, body string) error {
-	subjectTemplate, err := text.New("subject").Parse(subject)
-	if err != nil {
-		return err // error includes template name
-	}
-
-	bodyTemplate, err := html.New("body").Parse(body)
-	// Due to luci-config limitation, we cannot detect an invalid reference to
-	// a sub-template defined in a different file.
-	if err != nil {
-		return err // error includes template name
-	}
-
-	t.Subject = subjectTemplate
-	t.Body = bodyTemplate
-	return nil
 }
 
 // EmailTemplate is a Datastore entity directly under Project entity that

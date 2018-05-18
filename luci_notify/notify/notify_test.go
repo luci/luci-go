@@ -19,10 +19,10 @@ import (
 	"testing"
 	"time"
 
-	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/gae/service/user"
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -30,8 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/data/stringset"
 
-	config "go.chromium.org/luci/config"
-	memImpl "go.chromium.org/luci/config/impl/memory"
 	apiConfig "go.chromium.org/luci/luci_notify/api/config"
 	notifyConfig "go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
@@ -133,21 +131,18 @@ func TestNotify(t *testing.T) {
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 
-		c := memory.UseWithAppID(context.Background(), "luci-notify-test")
+		c := gaetesting.TestingContextWithAppID("luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
-		impl := memImpl.New(map[config.Set]memImpl.Files{
-			"projects/test": {
-				"file": "file content",
-				"luci-notify-test/email_templates/minimal.template": `Test Subject
 
-				Test Content`,
-				"minimal": `Invalid Template Name
-
-				Will be rejected`,
-			},
-		})
-		c = notifyConfig.WithConfigService(c, impl)
+		// Put Project and EmailTemplate entities.
+		project := &notifyConfig.Project{Name: "chromium", Revision: "deadbeef"}
+		emailTemplate := &notifyConfig.EmailTemplate{
+			Name:                "default",
+			SubjectTextTemplate: "Build {{.Build.Id}} completed",
+			BodyHTMLTemplate:    "Build {{.Build.Id}} completed with status {{.Build.Status}}",
+		}
+		So(datastore.Put(c, project, emailTemplate), ShouldBeNil)
 
 		// Get notifiers from test config.
 		notifiers := extractNotifiers(c, cfgName, cfg)
