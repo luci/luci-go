@@ -20,6 +20,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/config/validation"
 
@@ -177,7 +178,7 @@ func TestValidation(t *testing.T) {
 	})
 
 	Convey("email template filename validation", t, func() {
-		ctx := &validation.Context{Context: context.Background()}
+		ctx := &validation.Context{Context: gaetesting.TestingContextWithAppID("luci-notify")}
 		validFileContent := []byte("a\n\nb")
 
 		Convey("valid", func() {
