@@ -16,10 +16,8 @@ package config
 
 import (
 	"fmt"
-	html "html/template"
 	"regexp"
 	"strings"
-	text "text/template"
 
 	"golang.org/x/net/context"
 
@@ -39,31 +37,6 @@ func emailTemplateFilenameRegexp(c context.Context) *regexp.Regexp {
 	return regexp.MustCompile(pattern)
 }
 
-// ParsedEmailTemplate is a parsed email template file.
-type ParsedEmailTemplate struct {
-	Subject *text.Template
-	Body    *html.Template
-}
-
-// Parse parses email subject and body templates.
-func (t *ParsedEmailTemplate) Parse(subject, body string) error {
-	subjectTemplate, err := text.New("subject").Parse(subject)
-	if err != nil {
-		return err // error includes template name
-	}
-
-	bodyTemplate, err := html.New("body").Parse(body)
-	// Due to luci-config limitation, we cannot detect an invalid reference to
-	// a sub-template defined in a different file.
-	if err != nil {
-		return err // error includes template name
-	}
-
-	t.Subject = subjectTemplate
-	t.Body = bodyTemplate
-	return nil
-}
-
 // EmailTemplate is a Datastore entity directly under Project entity that
 // represents an email template.
 // It is managed by the cron job that ingests configs.
@@ -80,10 +53,14 @@ type EmailTemplate struct {
 
 	// BodyHTMLTemplate is a html.Template of the email body.
 	BodyHTMLTemplate string `gae:",noindex"`
+
+	// DefinitionURL is a URL to human-viewable page that contains the definition
+	// of this email template.
+	DefinitionURL string `gae:",noindex"`
 }
 
-// fetchAllEmailTemplates fetches all valid email templates of the project.
-// Returned EmailTemplate entities do not have ProjectKey set.
+// fetchAllEmailTemplates fetches all valid email templates of the project from
+// a config service. Returned EmailTemplate entities do not have ProjectKey set.
 func fetchAllEmailTemplates(c context.Context, configService configInterface.Interface, projectId string) (map[string]*EmailTemplate, error) {
 	configSet := configInterface.ProjectSet(projectId)
 	files, err := configService.ListFiles(c, configSet)
@@ -122,6 +99,7 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 			Name:                templateName,
 			SubjectTextTemplate: subject,
 			BodyHTMLTemplate:    body,
+			DefinitionURL:       config.ViewURL,
 		}
 	}
 	return ret, nil
