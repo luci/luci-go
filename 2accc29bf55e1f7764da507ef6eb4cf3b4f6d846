@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "8d5ff3ad_c7f199b5",
+        "filename": "milo/common/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T21:57:19Z",
+      "side": 1,
+      "message": "common.Transport() sounds like a generic transport function, but this does specific git stuff.\n\nMaybe common.GitTransport()?",
+      "range": {
+        "startLine": 92,
+        "startChar": 5,
+        "endLine": 92,
+        "endChar": 14
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e3552d56_202f333a",
         "filename": "milo/common/gerrit.go",
         "patchSetId": 1
@@ -25,6 +48,47 @@
     },
     {
       "key": {
+        "uuid": "1413ad18_db56ee37",
+        "filename": "milo/common/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T21:57:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e3552d56_202f333a",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 1
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "efad7df9_e0e2f19f",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T21:57:19Z",
+      "side": 1,
+      "message": "Nit: \"Allowed()\" or \"IsAllowed()\" is the more common convention, i believe.",
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e3c46652_db54072b",
         "filename": "milo/git/acls_test.go",
         "patchSetId": 1
@@ -41,6 +105,53 @@
         "startChar": 2,
         "endLine": 271,
         "endChar": 4
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faaa9191_6766153a",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T21:57:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e3c46652_db54072b",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 4
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "36744be0_563f2e33",
+        "filename": "milo/git/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T21:57:19Z",
+      "side": 1,
+      "message": "I\u0027d expect the returned client to freak out if a project was accessed outside of the given project.",
+      "range": {
+        "startLine": 58,
+        "startChar": 28,
+        "endLine": 58,
+        "endChar": 35
       },
       "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
