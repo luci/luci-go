@@ -48,19 +48,6 @@ type parsedProjectConfigSet struct {
 //
 // Returns the set of notifiers that were updated.
 func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
-	existingProject := &Project{Name: cs.ProjectID}
-	switch err := datastore.Get(c, existingProject); err {
-	case datastore.ErrNoSuchEntity:
-		// continue
-	case nil:
-		// TODO(nodir): do this check before fetching email templates.
-		// if existingProject.Revision == cs.Revision {
-		// 	logging.Debugf(c, "same revision: %s, %s", cs.ProjectID, cs.Revision)
-		// 	return nil
-		// }
-	default:
-		return errors.Annotate(err, "checking existence").Err()
-	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
 		project := &Project{
 			Name:     cs.ProjectID,
@@ -151,10 +138,31 @@ func updateProjects(c context.Context) error {
 	}
 	logging.Infof(c, "got %d project configs", len(configs))
 
+	// Load revisions of the existing projects from Datastore.
+	projectRevisions := map[string]string{} // project id -> revision
+	err = datastore.Run(c, datastore.NewQuery("Project"), func(p *Project) error {
+		projectRevisions[p.Name] = p.Revision
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
 	// Update each project concurrently.
 	err = parallel.WorkPool(10, func(work chan<- func() error) {
 		for _, cfg := range configs {
 			cfg := cfg
+
+			curRev, ok := projectRevisions[cfg.ConfigSet.Project()]
+			if ok && curRev == cfg.Revision {
+				// Same revision.
+				continue
+			}
+
+			logging.Warningf(
+				c, "upgrading config of project %q: %q => %q",
+				cfg.ConfigSet.Project(), curRev, cfg.Revision)
+
 			work <- func() error {
 				projectId := cfg.ConfigSet.Project()
 				project := &notifyConfig.ProjectConfig{}
