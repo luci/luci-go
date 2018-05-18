@@ -302,6 +302,54 @@
     },
     {
       "key": {
+        "uuid": "89517492_7b25d5f8",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T02:16:01Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c2e1cc72_59b49172",
+      "range": {
+        "startLine": 60,
+        "startChar": 38,
+        "endLine": 60,
+        "endChar": 44
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5d3b647_69369dbc",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T02:16:01Z",
+      "side": 1,
+      "message": "derp my bad, Acls is the object, not the subject",
+      "parentUuid": "3ef394e4_efabb747",
+      "range": {
+        "startLine": 60,
+        "startChar": 22,
+        "endLine": 60,
+        "endChar": 27
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "df0edaeb_1d7f3aa6",
         "filename": "milo/git/acls.go",
         "patchSetId": 5
@@ -395,6 +443,30 @@
       "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79c15e99_0998cd9f",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T02:16:01Z",
+      "side": 1,
+      "message": "You\u0027re right, Go does some interesting things :/\n\nI guess proper nouns (ie function names) that end with \"s\" can be considered singular, since it\u0027s just a singular function that is name that way.\n\nWe\u0027ll just say plurality is a flexible concept here.",
+      "parentUuid": "7cf5a8e3_7e61d248",
+      "range": {
+        "startLine": 80,
+        "startChar": 15,
+        "endLine": 80,
+        "endChar": 24
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -515,6 +587,30 @@
       "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c6d8c25_d5effa2e",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T02:16:01Z",
+      "side": 1,
+      "message": "Wow I had a huge brainfart.  You\u0027re right but I\u0027m still staring at this @__@.\n\nMaybe this is easier to follow\nif !(u.Scheme \u003d\u003d \"\" || u.Scheme \u003d\u003d \"https\") { ...\n\nIt\u0027s a toss up.",
+      "parentUuid": "7f112fb1_c9c4b793",
+      "range": {
+        "startLine": 180,
+        "startChar": 19,
+        "endLine": 180,
+        "endChar": 21
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
