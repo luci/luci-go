@@ -125,24 +125,28 @@ func TestConfigIngestion(t *testing.T) {
 				Name:                "a",
 				SubjectTextTemplate: "a",
 				BodyHTMLTemplate:    "chromium",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/a.template",
 			},
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "chromium"),
 				Name:                "b",
 				SubjectTextTemplate: "b",
 				BodyHTMLTemplate:    "chromium",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/b.template",
 			},
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "v8"),
 				Name:                "a",
 				SubjectTextTemplate: "a",
 				BodyHTMLTemplate:    "v8",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/a.template",
 			},
 			{
 				ProjectKey:          datastore.MakeKey(c, "Project", "v8"),
 				Name:                "b",
 				SubjectTextTemplate: "b",
 				BodyHTMLTemplate:    "v8",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/b.template",
 			},
 		})
 
