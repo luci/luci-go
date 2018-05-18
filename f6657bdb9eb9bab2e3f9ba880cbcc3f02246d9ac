@@ -611,6 +611,30 @@
       "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bc874f07_a35a4ce9",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T02:19:26Z",
+      "side": 1,
+      "message": "i tried the !(||), but i find both hard to read, so keeping as is because fewer operators.",
+      "parentUuid": "4c6d8c25_d5effa2e",
+      "range": {
+        "startLine": 180,
+        "startChar": 19,
+        "endLine": 180,
+        "endChar": 21
+      },
+      "revId": "f6657bdb9eb9bab2e3f9ba880cbcc3f02246d9ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
