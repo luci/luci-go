@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe8d34b3_078a71a0",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T20:23:35Z",
+      "side": 1,
+      "message": "v2 buildbucket does not populate it. Its users do, IF they do.\nI am not sure about that field. It came up in crbug.com/843318 too\nit feels like a design mistake now\n\nnote that there is memcache in L200\n\ndidn\u0027t you plan to have a global config file that check based on that?",
+      "revId": "7bff7a451d460fb426dc7c1f8236f165c6ebf4ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
