@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "2e18f0a9_697c008a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T05:56:20Z",
+      "side": 1,
+      "message": "done, I\u0027ve inverted the meaning of the predicate: if it returns true, the entity is preserved. This results in less code and it implies that default is that everything is deleted (and I use it in deleteProject)\n\nalso i\u0027ve parallelized many things.",
+      "parentUuid": "d22006ce_fccd5bd7",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 28
+      },
+      "revId": "d3ea16c4d5a6dfabc1f249b566f04ac2114aff48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4bc83697_cd22f20f",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T05:56:20Z",
+      "side": 1,
+      "message": "this was a bug. Tests helped.",
+      "range": {
+        "startLine": 142,
+        "startChar": 40,
+        "endLine": 142,
+        "endChar": 41
+      },
+      "revId": "d3ea16c4d5a6dfabc1f249b566f04ac2114aff48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f340301d_533a6a18",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 6
@@ -48,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "a034866c_9b318699",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T05:56:20Z",
+      "side": 1,
+      "message": "there were no tests for this file. Now 80% is covered.",
+      "parentUuid": "f340301d_533a6a18",
+      "range": {
+        "startLine": 181,
+        "startChar": 5,
+        "endLine": 181,
+        "endChar": 19
+      },
+      "revId": "d3ea16c4d5a6dfabc1f249b566f04ac2114aff48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a201a95c_551fffd7",
         "filename": "luci_notify/config/emailtemplate.go",
         "patchSetId": 6
@@ -68,6 +139,30 @@
       "revId": "d3ea16c4d5a6dfabc1f249b566f04ac2114aff48",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f7955d4_b482b0f3",
+        "filename": "luci_notify/config/emailtemplate.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T05:56:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a201a95c_551fffd7",
+      "range": {
+        "startLine": 107,
+        "startChar": 20,
+        "endLine": 107,
+        "endChar": 21
+      },
+      "revId": "d3ea16c4d5a6dfabc1f249b566f04ac2114aff48",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
