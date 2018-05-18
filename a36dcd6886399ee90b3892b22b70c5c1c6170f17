@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d24197ac_687ee1a5",
+        "filename": "common/api/buildbucket/buildbucket/v1/search.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T22:42:28Z",
+      "side": 1,
+      "message": "Why doesn\u0027t search return a *ApiSearchResponseMessage? It was a little awkward threading the cursor through these calls.",
+      "range": {
+        "startLine": 41,
+        "startChar": 61,
+        "endLine": 41,
+        "endChar": 82
+      },
+      "revId": "a36dcd6886399ee90b3892b22b70c5c1c6170f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2898834d_f652ed27",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T22:42:28Z",
+      "side": 1,
+      "message": "Adapted from luci-scheduler with two tiny differences:\n* memcache key takes limit into account\n* empty cursor is EMPTY instead of NULL",
+      "revId": "a36dcd6886399ee90b3892b22b70c5c1c6170f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "837d3ff1_32b2409d",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-18T22:42:28Z",
+      "side": 1,
+      "message": "This assumes that if we ask for scheduled builds from buildbucket, we\u0027ll get exactly what we asked for.  I feel like that is a good assumption.",
+      "revId": "a36dcd6886399ee90b3892b22b70c5c1c6170f17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
