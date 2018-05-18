@@ -1,0 +1,225 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c00fb7de_c8a85c0b",
+        "filename": "skylark/interpreter/fail_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Move to the top so readers know what it does before it\u0027s used.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65630575_86440e24",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Are terms being overloaded here? Seems like this builtin is not the same as Builtins above. I find it confusing.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e7e3efb_4de2802a",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Can you document these arguments? In particular, \"file\" could be interpreted as a path to a file to emit logs into (but I gather from below that it\u0027s the name of the .sky file which emitted the log).",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "728b51a5_e1378191",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Document load order. If I understand correctly, Builtins may override names like \"struct\", \"fail\", and \"proto\" and stdlib may possibly override those (but maybe not since they\u0027re prefixed \"builtin:\", see also my confusion about builtin above).",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9bf5f37_d4179025",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Document that it falls back on cwd.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a625f39b_3e60163b",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Mention module name to ease debugging.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cafc255_8c942e02",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Minor thing, since you can see this a few lines later, but can you move this comment to just above err, or change it to say the fields will be set/err will be overwritten? m itself is not being overwritten.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20bc8737_b9168af9",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Does keys not resemble []string{\"main_sym\"}? My reading is that testdata/1/main.sky exports main_sym.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17575f65_d5bc6a64",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "It\u0027s annoying to have to check several different files just to figure out what the test is testing. Here, for example, it may be easier to read if you could just inline the contents of testdata/4/stdlib/init.sky instead of making the reader look at some other file. And going the other way, a reader looking at testdata/4/stdlib/init.sky has no idea what imported_builtin is until reading interpreter_test.go. Much of the testdata is several tiny files that only make sense once you\u0027ve read all of them and also seen interpreter_test.go.\n\nHow much effort would be needed to just be able to supply the contents of these files to run directly instead of as file paths?\n\nOne approach I can think of would be to give Interpreter an optional function to use to read files in place of ioutil.ReadFile. Then you can supply run with the file contents right here instead of making the reader look at multiple other files just to understand one test case.\n\nDo you think the tests would be too dense if each one had to supply the names and contents of their files to the run function (plus presumably a list of which names should be considered stdlib)?",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab59a771_53fe0618",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Can you give the testdata subdirectories more descriptive names? For example, this could be testdata/cyclical. Same elsewhere.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a68a7e4_8f094ca6",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Move this to the top so a reader knows what run does by the time it\u0027s first used. Add a comment explaining that it looks for the stdlib subdir under the interpreter root, executes main.sky under the interpreter root, and returns the names loaded from main.sky.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63fab59c_7dc006a4",
+        "filename": "skylark/interpreter/testdata/1/main.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Assuming you create an interpreter that\u0027s set up to load the contents of the stdlib directory.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "079cec94_30c85c3a",
+        "filename": "skylark/interpreter/testdata/4/main.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T22:24:19Z",
+      "side": 1,
+      "message": "Might mention that this is defined in the interpreter\u0027s builtins in interpreter_test.go.",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
