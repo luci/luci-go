@@ -202,12 +202,15 @@ func fetchGerritChangeEmail(c context.Context, change *buildbucketpb.GerritChang
 		return string(cache.Value()), nil
 	}
 
+	// TODO(nodir, tandrii): check ACLs by creating client with the right
+	// transport. For this, we need to know Gerrit project, but can only learn
+	// about it by asking Gerrit :(
+	// (at least until v2 buildbucket populates GerritChange.Project).
 	client, err := common.CreateGerritClient(c, change.Host)
 	if err != nil {
 		return "", err
 	}
 
-	// TODO(nodir, tandrii): check ACLs
 	changeInfo, err := client.GetChange(c, &gerritpb.GetChangeRequest{
 		Number:  change.Change,
 		Options: []gerritpb.QueryOption{gerritpb.QueryOption_DETAILED_ACCOUNTS},
