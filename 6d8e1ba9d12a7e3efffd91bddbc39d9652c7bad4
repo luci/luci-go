@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27377467_c7a971b9",
+        "filename": "milo/srcman/blamelist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T02:13:26Z",
+      "side": 0,
+      "message": "this is really why i\u0027m deleting this code. git.Log doesn\u0027t support ancestors. Adding support for it complicates git.Log code w/o benefiting from cache sharing (pages produced git.Log(a) and git.Log(a..b) will differ for non-linear histories).\n\nI could have computed log(a..b) here after calling git.Log(a), but this is also substantial work,  and guaranteeing exactly N\u003d100 commits are returned if available is even harder.\n\nFinally, I could have just coded ACL-ware usage of gitiles client here, but ideally it\u0027d be encapsulated inside git package s.t.\n\nSo, I decided to stop maintaining this never used code.",
+      "revId": "6d8e1ba9d12a7e3efffd91bddbc39d9652c7bad4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
