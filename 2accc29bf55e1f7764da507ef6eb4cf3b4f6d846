@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e3552d56_202f333a",
+        "filename": "milo/common/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T18:00:39Z",
+      "side": 1,
+      "message": "this is moved from git/ package, because it\u0027s now only used by common/gerrit.",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 1
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3c46652_db54072b",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T18:00:39Z",
+      "side": 1,
+      "message": "this is the only genuinely new part.",
+      "range": {
+        "startLine": 226,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 4
+      },
+      "revId": "2accc29bf55e1f7764da507ef6eb4cf3b4f6d846",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

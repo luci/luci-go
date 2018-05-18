@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee993efa_fdd2b7ec",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T18:00:39Z",
+      "side": 0,
+      "message": "just indented this",
+      "range": {
+        "startLine": 54,
+        "startChar": 2,
+        "endLine": 108,
+        "endChar": 4
+      },
+      "revId": "36407bce1574f8abbf5edc5d47061972901927fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
