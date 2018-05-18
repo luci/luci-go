@@ -1488,6 +1488,7 @@ type SwarmingRpcsTaskResult struct {
 	//   "COMPLETED"
 	//   "EXPIRED"
 	//   "KILLED"
+	//   "NO_RESOURCE"
 	//   "PENDING"
 	//   "RUNNING"
 	//   "TIMED_OUT"
@@ -1892,6 +1893,30 @@ func (r *BotService) Events(botId string) *BotEventsCall {
 	return c
 }
 
+// Cursor sets the optional parameter "cursor":
+func (c *BotEventsCall) Cursor(cursor string) *BotEventsCall {
+	c.urlParams_.Set("cursor", cursor)
+	return c
+}
+
+// End sets the optional parameter "end":
+func (c *BotEventsCall) End(end float64) *BotEventsCall {
+	c.urlParams_.Set("end", fmt.Sprint(end))
+	return c
+}
+
+// Limit sets the optional parameter "limit":
+func (c *BotEventsCall) Limit(limit int64) *BotEventsCall {
+	c.urlParams_.Set("limit", fmt.Sprint(limit))
+	return c
+}
+
+// Start sets the optional parameter "start":
+func (c *BotEventsCall) Start(start float64) *BotEventsCall {
+	c.urlParams_.Set("start", fmt.Sprint(start))
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -1997,6 +2022,26 @@ func (c *BotEventsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotEvents
 	//       "location": "path",
 	//       "required": true,
 	//       "type": "string"
+	//     },
+	//     "cursor": {
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "end": {
+	//       "format": "double",
+	//       "location": "query",
+	//       "type": "number"
+	//     },
+	//     "limit": {
+	//       "default": "200",
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "start": {
+	//       "format": "double",
+	//       "location": "query",
+	//       "type": "number"
 	//     }
 	//   },
 	//   "path": "bot/{bot_id}/events",
@@ -2169,6 +2214,71 @@ func (r *BotService) Tasks(botId string) *BotTasksCall {
 	return c
 }
 
+// Cursor sets the optional parameter "cursor":
+func (c *BotTasksCall) Cursor(cursor string) *BotTasksCall {
+	c.urlParams_.Set("cursor", cursor)
+	return c
+}
+
+// End sets the optional parameter "end":
+func (c *BotTasksCall) End(end float64) *BotTasksCall {
+	c.urlParams_.Set("end", fmt.Sprint(end))
+	return c
+}
+
+// IncludePerformanceStats sets the optional parameter
+// "include_performance_stats":
+func (c *BotTasksCall) IncludePerformanceStats(includePerformanceStats bool) *BotTasksCall {
+	c.urlParams_.Set("include_performance_stats", fmt.Sprint(includePerformanceStats))
+	return c
+}
+
+// Limit sets the optional parameter "limit":
+func (c *BotTasksCall) Limit(limit int64) *BotTasksCall {
+	c.urlParams_.Set("limit", fmt.Sprint(limit))
+	return c
+}
+
+// Sort sets the optional parameter "sort":
+//
+// Possible values:
+//   "ABANDONED_TS"
+//   "COMPLETED_TS"
+//   "CREATED_TS" (default)
+//   "MODIFIED_TS"
+func (c *BotTasksCall) Sort(sort string) *BotTasksCall {
+	c.urlParams_.Set("sort", sort)
+	return c
+}
+
+// Start sets the optional parameter "start":
+func (c *BotTasksCall) Start(start float64) *BotTasksCall {
+	c.urlParams_.Set("start", fmt.Sprint(start))
+	return c
+}
+
+// State sets the optional parameter "state":
+//
+// Possible values:
+//   "ALL" (default)
+//   "BOT_DIED"
+//   "CANCELED"
+//   "COMPLETED"
+//   "COMPLETED_FAILURE"
+//   "COMPLETED_SUCCESS"
+//   "DEDUPED"
+//   "EXPIRED"
+//   "KILLED"
+//   "NO_RESOURCE"
+//   "PENDING"
+//   "PENDING_RUNNING"
+//   "RUNNING"
+//   "TIMED_OUT"
+func (c *BotTasksCall) State(state string) *BotTasksCall {
+	c.urlParams_.Set("state", state)
+	return c
+}
+
 // Fields allows partial responses to be retrieved. See
 // https://developers.google.com/gdata/docs/2.0/basics#PartialResponse
 // for more information.
@@ -2273,6 +2383,84 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 	//     "bot_id": {
 	//       "location": "path",
 	//       "required": true,
+	//       "type": "string"
+	//     },
+	//     "cursor": {
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "end": {
+	//       "format": "double",
+	//       "location": "query",
+	//       "type": "number"
+	//     },
+	//     "include_performance_stats": {
+	//       "location": "query",
+	//       "type": "boolean"
+	//     },
+	//     "limit": {
+	//       "default": "200",
+	//       "format": "int64",
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "sort": {
+	//       "default": "CREATED_TS",
+	//       "enum": [
+	//         "ABANDONED_TS",
+	//         "COMPLETED_TS",
+	//         "CREATED_TS",
+	//         "MODIFIED_TS"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
+	//       "type": "string"
+	//     },
+	//     "start": {
+	//       "format": "double",
+	//       "location": "query",
+	//       "type": "number"
+	//     },
+	//     "state": {
+	//       "default": "ALL",
+	//       "enum": [
+	//         "ALL",
+	//         "BOT_DIED",
+	//         "CANCELED",
+	//         "COMPLETED",
+	//         "COMPLETED_FAILURE",
+	//         "COMPLETED_SUCCESS",
+	//         "DEDUPED",
+	//         "EXPIRED",
+	//         "KILLED",
+	//         "NO_RESOURCE",
+	//         "PENDING",
+	//         "PENDING_RUNNING",
+	//         "RUNNING",
+	//         "TIMED_OUT"
+	//       ],
+	//       "enumDescriptions": [
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         "",
+	//         ""
+	//       ],
+	//       "location": "query",
 	//       "type": "string"
 	//     }
 	//   },
@@ -4410,6 +4598,7 @@ func (c *TasksCountCall) Start(start float64) *TasksCountCall {
 //   "DEDUPED"
 //   "EXPIRED"
 //   "KILLED"
+//   "NO_RESOURCE"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -4542,12 +4731,14 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 	//         "DEDUPED",
 	//         "EXPIRED",
 	//         "KILLED",
+	//         "NO_RESOURCE",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -4654,6 +4845,7 @@ func (c *TasksListCall) Start(start float64) *TasksListCall {
 //   "DEDUPED"
 //   "EXPIRED"
 //   "KILLED"
+//   "NO_RESOURCE"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -4817,12 +5009,14 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//         "DEDUPED",
 	//         "EXPIRED",
 	//         "KILLED",
+	//         "NO_RESOURCE",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
@@ -5049,6 +5243,7 @@ func (c *TasksRequestsCall) Start(start float64) *TasksRequestsCall {
 //   "DEDUPED"
 //   "EXPIRED"
 //   "KILLED"
+//   "NO_RESOURCE"
 //   "PENDING"
 //   "PENDING_RUNNING"
 //   "RUNNING"
@@ -5212,12 +5407,14 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//         "DEDUPED",
 	//         "EXPIRED",
 	//         "KILLED",
+	//         "NO_RESOURCE",
 	//         "PENDING",
 	//         "PENDING_RUNNING",
 	//         "RUNNING",
 	//         "TIMED_OUT"
 	//       ],
 	//       "enumDescriptions": [
+	//         "",
 	//         "",
 	//         "",
 	//         "",
