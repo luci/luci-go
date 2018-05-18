@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "564c87a5_f08fb8f6",
+        "filename": "skylark/interpreter/fail_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T23:00:35Z",
+      "side": 1,
+      "message": "Can you move these to test_utils.go or something? If they\u0027re going to be shared by multiple *_test.go suites it seems odd to just put them in one of the *_test.go files arbitrarily.",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ebd99e37_a310d7e3",
+        "filename": "skylark/interpreter/mutable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T23:00:35Z",
+      "side": 1,
+      "message": "What if v.v is 0, \"\", False, (), [], {}, etc.?",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b22070f_f7c16de7",
+        "filename": "skylark/interpreter/mutable_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-18T23:00:35Z",
+      "side": 1,
+      "message": "Consider a test for \"s.set(0); if s/not s\".",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
