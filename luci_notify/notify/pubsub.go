@@ -85,6 +85,13 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
 func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
+	switch ex, err := datastore.Exists(c, &notifyConfig.Project{Name: build.Builder.Project}); {
+	case err != nil:
+		return err
+	case !ex.All():
+		return nil // This project is not tracked by luci-notify
+	}
+
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
