@@ -16,6 +16,24 @@
       "revId": "7bff7a451d460fb426dc7c1f8236f165c6ebf4ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13a36732_2157a0eb",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-18T22:11:51Z",
+      "side": 1,
+      "message": "tl;dr ignore this, I was too tired to see the right way last night.\n\nre buildset: -\u003e will reply on the bug.\nre cache: I intended to stick all git/gerrit {RPC,ACLs,Caching) into git package.",
+      "parentUuid": "fe8d34b3_078a71a0",
+      "revId": "7bff7a451d460fb426dc7c1f8236f165c6ebf4ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
