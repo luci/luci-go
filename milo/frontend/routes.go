@@ -53,11 +53,13 @@ func Run(templatePath string) {
 	r := router.New()
 	standard.InstallHandlers(r)
 
-	baseMW := standard.Base().Extend(withGitilesMiddleware, withGerritMiddleware)
+	// TODO(tandrii): remove withGerritMiddleware.
+	baseMW := standard.Base().Extend(withGerritMiddleware)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth),
 		withAccessClientMiddleware, // This must be called after the auth.Authenticate middleware.
+		withGitMiddleware,
 		templates.WithTemplates(getTemplateBundle(templatePath)),
 	)
 	projectMW := htmlMW.Extend(projectACLMiddleware)

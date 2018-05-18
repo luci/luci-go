@@ -16,18 +16,22 @@ package git
 
 import (
 	"net/http"
-	"strings"
 
+	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/api/gitiles"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/server/auth"
 	"golang.org/x/net/context"
 )
 
-// ClientFactory creates a Gitiles client.
-type ClientFactory func(ctx context.Context, host string) (gitilespb.GitilesClient, error)
+// ClientFactory creates clients for Gerrit and Gitiles.
+type ClientFactory interface {
+	Gitiles(ctx context.Context, host, project string) (gitilespb.GitilesClient, error)
+	Gerrit(ctx context.Context, host, project string) (gerritpb.GerritClient, error)
+}
 
 var factoryKey = "gitiles client factory key"
 
@@ -36,66 +40,66 @@ func UseFactory(c context.Context, f ClientFactory) context.Context {
 	return context.WithValue(c, &factoryKey, f)
 }
 
-// TODO(tandrii): remove the following per https://crbug.com/796317.
-// Until Milo properly supports ACLs for blamelists, we have a hack; if the git
-// repo being log'd is in this list, use `auth.AsSelf`. Otherwise use
-// `auth.Anonymous`.
-//
-// The reason to do this is that we currently do blamelist calculation in the
-// backend, so we can't accurately determine if the requesting user has access
-// to these repos or not. For now, we use this whitelist to indicate domains
-// that we know have full public read-access so that we can use milo's
-// credentials (instead of anonymous) in order to avoid hitting gitiles'
-// anonymous quota limits.
-var whitelistPublicHosts = stringset.NewFromSlice(
-	"chromium",
-	"fuchsia",
-)
-
-func isPublicHost(host string) bool {
-	const gs = ".googlesource.com"
-	if !strings.HasSuffix(host, gs) {
-		return false
+func NewProdClientFactory(settings *config.Settings) (ClientFactory, error) {
+	acls, err := ACLsFromConfig(settings.SourceAcls)
+	if err != nil {
+		return nil, errors.Annotate(err, "source_acls config invalid").Err()
 	}
-
-	host = strings.TrimSuffix(host, gs)
-	host = strings.TrimSuffix(host, "-review")
-	return whitelistPublicHosts.Has(host)
+	return &prodClientFactory{*acls}, nil
 }
 
-// Transport returns an HTTP transport to be used for the given host.
-//
-// Currently, it is authenticated as self only for a whitelistPublicHosts.
-// For all other repos, the transport will not use authentication to avoid
-// information leaks.
-// TODO(tandrii): fix this per https://crbug.com/796317.
-func Transport(c context.Context, host string) (transport http.RoundTripper, authenticated bool, err error) {
-	if isPublicHost(host) {
+// private implementation
+
+// prodClientFactory implements ClientFactory.
+type prodClientFactory struct {
+	acls ACLs
+}
+
+func (f *prodClientFactory) Gitiles(c context.Context, host, project string) (gitilespb.GitilesClient, error) {
+	t, auth, err := f.transport(c, host, project)
+	if err != nil {
+		return nil, err
+	}
+	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, auth)
+}
+func (f *prodClientFactory) Gerrit(c context.Context, host, project string) (gerritpb.GerritClient, error) {
+	t, auth, err := f.transport(c, host, project)
+	if err != nil {
+		return nil, err
+	}
+	return gerrit.NewRESTClient(&http.Client{Transport: t}, host, auth)
+}
+
+func (f *prodClientFactory) transport(c context.Context, host, project string) (transport http.RoundTripper, authenticated bool, err error) {
+	// TODO(tandrii): if current context has OAuth 2.0 bearer token, use it.
+	switch authenticated, err = f.acls.ReadGranted(c, host, project); {
+	case err != nil:
+		return
+	case authenticated:
 		transport, err = auth.GetRPCTransport(c, auth.AsSelf, auth.WithScopes(gitiles.OAuthScope))
-		authenticated = true
-	} else {
+	default:
+		// TODO(tandrii): fail instead once existing projects work as intended.
 		transport, err = auth.GetRPCTransport(c, auth.NoAuth)
-		authenticated = false
 	}
 	return
 }
 
-// GitilesProdClient returns a production Gitiles client.
-// Implements ClientFactory.
-func GitilesProdClient(c context.Context, host string) (gitilespb.GitilesClient, error) {
-	t, auth, err := Transport(c, host)
-	if err != nil {
-		return nil, errors.Annotate(err, "getting RPC Transport").Err()
-	}
-	return gitiles.NewRESTClient(&http.Client{Transport: t}, host, auth)
-}
-
-// Client creates a new Gitiles client using the ClientFactory installed in c.
+// gitilesClient creates a new Gitiles client using the ClientFactory installed in c.
 // See also UseFactory.
-func Client(c context.Context, host string) (gitilespb.GitilesClient, error) {
+func gitilesClient(c context.Context, host, project string) (gitilespb.GitilesClient, error) {
 	f, ok := c.Value(&factoryKey).(ClientFactory)
 	if !ok {
-		return nil, errors.New("gitiles client factory is not installed in context")
+		return nil, errors.New("git client factory is not installed in context")
 	}
-	return f(c, host)
+	return f.Gitiles(c, host, project)
+}
+
+// gerritClient creates a new Gerrit client using the ClientFactory installed in c.
+// See also UseFactory.
+func gerritClient(c context.Context, host, project string) (gerritpb.GerritClient, error) {
+	f, ok := c.Value(&factoryKey).(ClientFactory)
+	if !ok {
+		return nil, errors.New("git client factory is not installed in context")
+	}
+	return f.Gerrit(c, host, project)
 }
