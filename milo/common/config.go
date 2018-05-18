@@ -38,6 +38,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
+	"go.chromium.org/luci/milo/git"
 
 	// Register "${appid}" placeholder for config validation rules.
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
@@ -615,5 +616,6 @@ func validateServiceCfg(ctx *validation.Context, configSet, path string, content
 	if err := proto.UnmarshalText(string(content), &settings); err != nil {
 		ctx.Error(err)
 	}
+	git.ValidateACLsConfig(ctx, settings.SourceAcls)
 	return nil
 }
