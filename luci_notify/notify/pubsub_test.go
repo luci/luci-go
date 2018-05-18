@@ -16,7 +16,6 @@ package notify
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 	"time"
 
@@ -51,22 +50,28 @@ var (
 )
 
 func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
-	var build Build
-	build.Build = *testutil.TestBuild("test", "hello", builder, status)
-	build.Input = &buildbucketpb.Build_Input{
-		GitilesCommits: []*buildbucketpb.GitilesCommit{
-			{
-				Host:    "test.googlesource.com",
-				Project: "test",
-				Id:      revision,
+	ret := &Build{
+		Build: buildbucketpb.Build{
+			Builder: &buildbucketpb.Builder_ID{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: builder,
+			},
+			Status: status,
+			Input: &buildbucketpb.Build_Input{
+				GitilesCommits: []*buildbucketpb.GitilesCommit{
+					{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Id:      revision,
+					},
+				},
 			},
 		},
+		EmailNotify: notifyEmails,
 	}
-	build.CreateTime, _ = ptypes.TimestampProto(creationTime)
-	for _, en := range notifyEmails {
-		build.EmailNotify = append(build.EmailNotify, en)
-	}
-	return &build
+	ret.Build.CreateTime, _ = ptypes.TimestampProto(creationTime)
+	return ret
 }
 
 func TestExtractEmailNotifyValues(t *testing.T) {
@@ -134,19 +139,20 @@ func TestHandleBuild(t *testing.T) {
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
+
+		// TODO(nodir): replace this with EmailTemplate entities.
 		impl := memImpl.New(map[config.Set]memImpl.Files{
-			"projects/proj1": {
+			"projects/chromium": {
 				"file": "file content",
-				"email_templates/minimal.template": "Subject: Test Subject\nTest Content",
+				"email-templates/minimal.template": "Subject: Test Subject\nTest Content",
 			},
 		})
 		c = notifyConfig.WithConfigService(c, impl)
 
-		// Add Notifiers to datastore and update indexes.
-		notifiers := extractNotifiers(c, "test", cfg)
-		for _, n := range notifiers {
-			datastore.Put(c, n)
-		}
+		// Add Project and Notifiers to datastore and update indexes.
+		project := &notifyConfig.Project{Name: "chromium"}
+		notifiers := makeNotifiers(c, "chromium", cfg)
+		So(datastore.Put(c, project, notifiers), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
@@ -194,7 +200,7 @@ func TestHandleBuild(t *testing.T) {
 			buf := new(bytes.Buffer)
 			_, err := memlogger.Dump(c, buf)
 			So(err, ShouldBeNil)
-			So(strings.Contains(buf.String(), substring), ShouldEqual, true)
+			So(buf.String(), ShouldContainSubstring, substring)
 		}
 
 		Convey(`no config`, func() {
@@ -209,7 +215,16 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no revision`, func() {
-			build := &Build{Build: *testutil.TestBuild("test", "hello", "test-builder-1", buildbucketpb.Status_SUCCESS)}
+			build := &Build{
+				Build: buildbucketpb.Build{
+					Builder: &buildbucketpb.Builder_ID{
+						Project: "chromium",
+						Bucket:  "ci",
+						Builder: "test-builder-1",
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+				},
+			}
 			testSuccess(build)
 			grepLog("revision")
 		})

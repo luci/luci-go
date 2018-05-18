@@ -40,7 +40,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func extractNotifiers(c context.Context, projectID string, cfg *apiConfig.ProjectConfig) []*notifyConfig.Notifier {
+func makeNotifiers(c context.Context, projectID string, cfg *apiConfig.ProjectConfig) []*notifyConfig.Notifier {
 	var notifiers []*notifyConfig.Notifier
 	parentKey := datastore.MakeKey(c, "Project", projectID)
 	for _, n := range cfg.Notifiers {
@@ -150,7 +150,7 @@ func TestNotify(t *testing.T) {
 		c = notifyConfig.WithConfigService(c, impl)
 
 		// Get notifiers from test config.
-		notifiers := extractNotifiers(c, cfgName, cfg)
+		notifiers := makeNotifiers(c, cfgName, cfg)
 
 		// Re-usable builds and builders for running Notify.
 		dummyPropEmail := EmailNotify{
