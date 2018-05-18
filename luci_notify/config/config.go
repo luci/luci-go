@@ -15,7 +15,6 @@
 package config
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -28,89 +27,117 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	configInterface "go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/validation"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/server/router"
 )
 
-// clearDeadNotifiers deletes all Notifier entities from the datastore
-// which are not in a given "live" set, and which are associated with a
-// specific project via parent key.
-func clearDeadNotifiers(c context.Context, parent *datastore.Key, liveNotifiers stringset.Set) error {
-	// Delete all the notifiers that no longer exist or are part of deleted projects.
-	toDelete := []*datastore.Key{}
-	err := datastore.Run(c, datastore.NewQuery("Notifier").Ancestor(parent), func(key *datastore.Key) error {
-		id := key.StringID()
-		if !liveNotifiers.Has(id) {
-			logging.Infof(
-				c, "deleting %s/%s because the notifier no longer exists", parent.StringID(), id)
-			toDelete = append(toDelete, key)
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return datastore.Delete(c, toDelete)
+// parsedProjectConfigSet contains all configurations of a project.
+type parsedProjectConfigSet struct {
+	ProjectID      string
+	ProjectConfig  *notifyConfig.ProjectConfig
+	EmailTemplates map[string]*EmailTemplate
+	Revision       string
+	ViewURL        string
 }
 
 // updateProject updates all relevant entities corresponding to a particular project in
 // a single datastore transaction.
 //
 // Returns the set of notifiers that were updated.
-func updateProject(c context.Context, projectName string, projectCfg *notifyConfig.ProjectConfig, cfg *configInterface.Config) error {
-	existingProject := Project{Name: projectName}
-	switch err := datastore.Get(c, &existingProject); err {
+func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
+	existingProject := &Project{Name: cs.ProjectID}
+	switch err := datastore.Get(c, existingProject); err {
 	case datastore.ErrNoSuchEntity:
 		// continue
 	case nil:
-		if existingProject.Revision == cfg.Revision {
-			logging.Debugf(c, "same revision: %s, %s", projectName, cfg.Revision)
-			return nil
-		}
+		// TODO(nodir): do this check before fetching email templates.
+		// if existingProject.Revision == cs.Revision {
+		// 	logging.Debugf(c, "same revision: %s, %s", cs.ProjectID, cs.Revision)
+		// 	return nil
+		// }
 	default:
 		return errors.Annotate(err, "checking existence").Err()
 	}
 	return datastore.RunInTransaction(c, func(c context.Context) error {
-		notifiers := make([]*Notifier, len(projectCfg.Notifiers))
-		liveNotifiers := stringset.New(len(projectCfg.Notifiers))
-		newProject := NewProject(projectName, cfg)
-		parentKey := datastore.KeyForObj(c, newProject)
-		for i, cfgNotifier := range projectCfg.Notifiers {
-			notifiers[i] = NewNotifier(parentKey, cfgNotifier)
+		project := &Project{
+			Name:     cs.ProjectID,
+			Revision: cs.Revision,
+			URL:      cs.ViewURL,
+		}
+		parentKey := datastore.KeyForObj(c, project)
+
+		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
+		toSave = append(toSave, project)
+
+		liveNotifiers := stringset.New(len(cs.ProjectConfig.Notifiers))
+		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
+			toSave = append(toSave, NewNotifier(parentKey, cfgNotifier))
 			liveNotifiers.Add(cfgNotifier.Name)
 		}
-		if err := datastore.Put(c, newProject, notifiers); err != nil {
-			return errors.Annotate(err, "saving project and notifiers").Err()
+
+		for _, et := range cs.EmailTemplates {
+			et.ProjectKey = parentKey
+			toSave = append(toSave, et)
 		}
-		return clearDeadNotifiers(c, parentKey, liveNotifiers)
+
+		return parallel.FanOutIn(func(work chan<- func() error) {
+			work <- func() error {
+				return datastore.Put(c, toSave)
+			}
+			work <- func() error {
+				return removeDescendants(c, "Notifier", parentKey, liveNotifiers.Has)
+			}
+			work <- func() error {
+				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {
+					_, ok := cs.EmailTemplates[name]
+					return ok
+				})
+			}
+		})
 	}, nil)
 }
 
-// clearDeadProjects deletes all Notifier entities from the datastore
-// associated with dead projects. It will leave the Project structure,
-// however, because it doesn't take up much space.
+// clearDeadProjects calls deleteProject for all projects in the datastore
+// that are not in liveProjects.
 func clearDeadProjects(c context.Context, liveProjects stringset.Set) error {
-	toDelete := []*datastore.Key{}
-	markForDeletion := func(key *datastore.Key) error {
-		toDelete = append(toDelete, key)
-		return nil
-	}
-	err := datastore.Run(c, datastore.NewQuery("Project"), func(key *datastore.Key) error {
-		id := key.StringID()
-		if !liveProjects.Has(id) {
-			logging.Infof(
-				c, "deleting notifiers for %s because the project no longer exists", id)
-			notifierQuery := datastore.NewQuery("Notifier").Ancestor(key)
-			return datastore.Run(c, notifierQuery, markForDeletion)
-		}
-		return nil
-	})
-	if err != nil {
+	var allProjects []*Project
+	projectQ := datastore.NewQuery("Project").KeysOnly(true)
+	if err := datastore.GetAll(c, projectQ, &allProjects); err != nil {
 		return err
 	}
-	return datastore.Delete(c, toDelete)
+	return parallel.WorkPool(10, func(work chan<- func() error) {
+		for _, p := range allProjects {
+			p := p
+			if !liveProjects.Has(p.Name) {
+				work <- func() error {
+					logging.Warningf(c, "deleting project %s", p.Name)
+					return deleteProject(c, p.Name)
+				}
+			}
+		}
+	})
+}
+
+// deleteProject deletes a Project entity and all of its descendants.
+func deleteProject(c context.Context, projectId string) error {
+	return datastore.RunInTransaction(c, func(c context.Context) error {
+		project := &Project{Name: projectId}
+		ancestorKey := datastore.KeyForObj(c, project)
+		return parallel.FanOutIn(func(work chan<- func() error) {
+			work <- func() error {
+				return removeDescendants(c, "Notifier", ancestorKey, nil)
+			}
+			work <- func() error {
+				return removeDescendants(c, "EmailTemplate", ancestorKey, nil)
+			}
+			work <- func() error {
+				return datastore.Delete(c, project)
+			}
+		})
+	}, nil)
 }
 
 // updateProjects updates all Projects and their Notifiers in the datastore.
@@ -124,48 +151,55 @@ func updateProjects(c context.Context) error {
 	}
 	logging.Infof(c, "got %d project configs", len(configs))
 
+	// Update each project concurrently.
+	err = parallel.WorkPool(10, func(work chan<- func() error) {
+		for _, cfg := range configs {
+			cfg := cfg
+			work <- func() error {
+				projectId := cfg.ConfigSet.Project()
+				project := &notifyConfig.ProjectConfig{}
+				if err := proto.UnmarshalText(cfg.Content, project); err != nil {
+					return errors.Annotate(err, "unmarshalling project config").Err()
+				}
+
+				ctx := &validation.Context{Context: c}
+				ctx.SetFile(cfgName)
+				validateProjectConfig(ctx, project)
+				if err := ctx.Finalize(); err != nil {
+					return errors.Annotate(err, "validating project config").Err()
+				}
+
+				emailTemplates, err := fetchAllEmailTemplates(c, lucicfg, projectId)
+				if err != nil {
+					return errors.Annotate(err, "failed to fetch email templates").Err()
+				}
+
+				parsedConfigSet := &parsedProjectConfigSet{
+					ProjectID:      projectId,
+					ProjectConfig:  project,
+					EmailTemplates: emailTemplates,
+					Revision:       cfg.Revision,
+					ViewURL:        cfg.ViewURL,
+				}
+				if err := updateProject(c, parsedConfigSet); err != nil {
+					return errors.Annotate(err, "importing project %q", projectId).Err()
+				}
+				return nil
+			}
+		}
+	})
+	if err != nil {
+		return err
+	}
+
 	// Live projects includes both valid and invalid configurations, as long as
 	// they are found via luci-config. Otherwise, a minor mistake in a
 	// configuration can cause projects to be deleted.
 	liveProjects := stringset.New(0)
-
-	// Iterate through each project config, extracting notifiers.
-	merr := errors.MultiError{}
 	for _, cfg := range configs {
-		projectName := cfg.ConfigSet.Project()
-		if projectName == "" {
-			merr = append(merr, fmt.Errorf("invalid config set %s", cfg.ConfigSet))
-			continue
-		}
-
-		// All found projects are considered 'alive'.
-		liveProjects.Add(projectName)
-
-		project := notifyConfig.ProjectConfig{}
-		if err := proto.UnmarshalText(cfg.Content, &project); err != nil {
-			merr = append(merr, errors.Annotate(err, "unmarshalling proto").Err())
-			continue
-		}
-		ctx := &validation.Context{Context: c}
-		ctx.SetFile(cfgName)
-		validateProjectConfig(ctx, &project)
-		if err := ctx.Finalize(); err != nil {
-			merr = append(merr, errors.Annotate(err, "validating config").Err())
-			continue
-		}
-		if err := updateProject(c, projectName, &project, &cfg); err != nil {
-			err = errors.Annotate(err, "processing %s", projectName).Err()
-			merr = append(merr, err)
-		}
+		liveProjects.Add(cfg.ConfigSet.Project())
 	}
-	if err := clearDeadProjects(c, liveProjects); err != nil {
-		err = errors.Annotate(err, "deleting projects").Err()
-		merr = append(merr, err)
-	}
-	if len(merr) == 0 {
-		return nil
-	}
-	return merr
+	return clearDeadProjects(c, liveProjects)
 }
 
 var configInterfaceKey = "configInterface"
@@ -199,4 +233,25 @@ func UpdateHandler(ctx *router.Context) {
 		return
 	}
 	h.WriteHeader(http.StatusOK)
+}
+
+// removeDescedants deletes all entities of a given kind under the ancestor.
+// If preserve is not nil and it returns true for a string id, the entity
+// is not deleted.
+func removeDescendants(c context.Context, kind string, ancestor *datastore.Key, preserve func(string) bool) error {
+	var toDelete []*datastore.Key
+	q := datastore.NewQuery(kind).Ancestor(ancestor).KeysOnly(true)
+	err := datastore.Run(c, q, func(key *datastore.Key) error {
+		id := key.StringID()
+		if preserve != nil && preserve(id) {
+			return nil
+		}
+		logging.Infof(c, "deleting entity %s", key.String())
+		toDelete = append(toDelete, key)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return datastore.Delete(c, toDelete)
 }

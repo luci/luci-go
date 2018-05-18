@@ -14,10 +14,6 @@
 
 package config
 
-import (
-	"go.chromium.org/luci/config"
-)
-
 // Project represents the luci-notify configuration for a single project in the datastore.
 type Project struct {
 	// Name is the name of the project.
@@ -30,13 +26,4 @@ type Project struct {
 
 	// URL is the luci-config URL to this project's luci-notify configuration.
 	URL string
-}
-
-// NewProject constructs a new Project from a name and a luci-config configuration.
-func NewProject(name string, cfg *config.Config) *Project {
-	return &Project{
-		Name:     name,
-		Revision: cfg.Revision,
-		URL:      cfg.ViewURL,
-	}
 }
