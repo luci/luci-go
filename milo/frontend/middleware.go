@@ -371,19 +371,26 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 	}
 }
 
-// withGitilesMiddleware is a middleware that installs a prod Gitiles client
+// withGitMiddleware is a middleware that installs a prod Gitiles client
 // factory into the context.
-func withGitilesMiddleware(c *router.Context, next router.Handler) {
-	c.Context = git.UseFactory(c.Context, git.GitilesProdClient)
+// TODO(tandrii): also install Gerrit client.
+func withGitMiddleware(c *router.Context, next router.Handler) {
+	f, err := git.NewProdClientFactory(common.GetSettings(c.Context))
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	c.Context = git.UseFactory(c.Context, f)
 	next(c)
 }
 
 // withGerritMiddleware is a middleware that installs a prod Gerrit client
 // factory into the context that creates a prod Gerrit client that uses
 // Milo's credentials.
+// TODO(tandrii): remove in favor of withGitMiddleware.
 func withGerritMiddleware(c *router.Context, next router.Handler) {
 	c.Context = common.WithGerritFactory(c.Context, func(c context.Context, host string) (gerritpb.GerritClient, error) {
-		t, auth, err := git.Transport(c, host)
+		t, auth, err := common.GitTransport(c, host)
 		if err != nil {
 			return nil, err
 		}
