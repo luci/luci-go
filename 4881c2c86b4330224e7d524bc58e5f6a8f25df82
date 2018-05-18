@@ -22,6 +22,30 @@
       "revId": "4881c2c86b4330224e7d524bc58e5f6a8f25df82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d49d06f_ce463c21",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-18T17:54:36Z",
+      "side": 1,
+      "message": "yes. yes.",
+      "parentUuid": "0ac654ad_b833c988",
+      "range": {
+        "startLine": 90,
+        "startChar": 9,
+        "endLine": 90,
+        "endChar": 12
+      },
+      "revId": "4881c2c86b4330224e7d524bc58e5f6a8f25df82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
