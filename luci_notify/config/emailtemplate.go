@@ -80,10 +80,14 @@ type EmailTemplate struct {
 
 	// BodyHTMLTemplate is a html.Template of the email body.
 	BodyHTMLTemplate string `gae:",noindex"`
+
+	// DefinitionURL is a URL to human-viewable page that contains the definition
+	// of this email template.
+	DefinitionURL string `gae:",noindex"`
 }
 
-// fetchAllEmailTemplates fetches all valid email templates of the project.
-// Returned EmailTemplate entities do not have ProjectKey set.
+// fetchAllEmailTemplates fetches all valid email templates of the project from
+// a config service. Returned EmailTemplate entities do not have ProjectKey set.
 func fetchAllEmailTemplates(c context.Context, configService configInterface.Interface, projectId string) (map[string]*EmailTemplate, error) {
 	configSet := configInterface.ProjectSet(projectId)
 	files, err := configService.ListFiles(c, configSet)
@@ -122,6 +126,7 @@ func fetchAllEmailTemplates(c context.Context, configService configInterface.Int
 			Name:                templateName,
 			SubjectTextTemplate: subject,
 			BodyHTMLTemplate:    body,
+			DefinitionURL:       config.ViewURL,
 		}
 	}
 	return ret, nil

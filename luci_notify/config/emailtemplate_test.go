@@ -71,18 +71,18 @@ func TestEmailTemplate(t *testing.T) {
 	})
 
 	Convey("fetchAllEmailTemplates", t, func() {
-		c := gaetesting.TestingContextWithAppID("luci-config")
+		c := gaetesting.TestingContextWithAppID("luci-notify")
 		c = gologger.StdConfig.Use(c)
 		c = logging.SetLevel(c, logging.Debug)
 
 		cfgService := memory.New(map[config.Set]memory.Files{
 			"projects/x": {
-				"luci-config/email-templates/a.template":            "aSubject\n\naBody",
-				"luci-config/email-templates/b.template":            "bSubject\n\nbBody",
-				"luci-config/email-templates/invalid name.template": "subject\n\nbody",
+				"luci-notify/email-templates/a.template":            "aSubject\n\naBody",
+				"luci-notify/email-templates/b.template":            "bSubject\n\nbBody",
+				"luci-notify/email-templates/invalid name.template": "subject\n\nbody",
 			},
 			"projects/y": {
-				"luci-config/email-templates/c.template": "cSubject\n\ncBody",
+				"luci-notify/email-templates/c.template": "cSubject\n\ncBody",
 			},
 		})
 		templates, err := fetchAllEmailTemplates(c, cfgService, "x")
@@ -93,11 +93,13 @@ func TestEmailTemplate(t *testing.T) {
 				Name:                "a",
 				SubjectTextTemplate: "aSubject",
 				BodyHTMLTemplate:    "aBody",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/a.template",
 			},
 			"b": {
 				Name:                "b",
 				SubjectTextTemplate: "bSubject",
 				BodyHTMLTemplate:    "bBody",
+				DefinitionURL:       "https://example.com/view/here/luci-notify/email-templates/b.template",
 			},
 		})
 	})
