@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "92ed9312_4aeadb3a",
+        "filename": "skylark/interpreter/fail_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c00fb7de_c8a85c0b",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "65630575_86440e24",
         "filename": "skylark/interpreter/interpreter.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac3cd714_febc1aa3",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Renamed Interpreter.Builtins to Interpreter.Predeclared.",
+      "parentUuid": "65630575_86440e24",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "aa0c7c90_a649cf5c",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e7e3efb_4de2802a",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "728b51a5_e1378191",
         "filename": "skylark/interpreter/interpreter.go",
         "patchSetId": 2
@@ -67,6 +121,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "567685e1_c58a55e9",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done.\n\nStdlib uses \u0027builtin:\u0027 prefix because most often its source code is embedded into the interpreter binary (using go.chromium.org/luci/tools/cmd/assets). Same for protobuf message descriptors: they are part of the interpreter binary.",
+      "parentUuid": "728b51a5_e1378191",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "993f8ac2_3477287b",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9bf5f37_d4179025",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a625f39b_3e60163b",
         "filename": "skylark/interpreter/interpreter.go",
         "patchSetId": 2
@@ -101,6 +191,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58a9d771_2f96d034",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "It is already mentioned by skylark.Thread, as tested by \"Load cycles are caught\":\n\n\"cannot load mod.sky: cannot load main.sky: cannot load mod.sky: cycle in load graph\"",
+      "parentUuid": "a625f39b_3e60163b",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -121,6 +229,24 @@
     },
     {
       "key": {
+        "uuid": "1ad25155_b09594e3",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7cafc255_8c942e02",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20bc8737_b9168af9",
         "filename": "skylark/interpreter/interpreter_test.go",
         "patchSetId": 2
@@ -135,6 +261,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e9e03078_1ed69301",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "They do, but it\u0027s not what this test tested.",
+      "parentUuid": "20bc8737_b9168af9",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -155,6 +299,24 @@
     },
     {
       "key": {
+        "uuid": "41f8fce0_e8be75da",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Fine, inlined everything into tests.",
+      "parentUuid": "17575f65_d5bc6a64",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ab59a771_53fe0618",
         "filename": "skylark/interpreter/interpreter_test.go",
         "patchSetId": 2
@@ -169,6 +331,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a58c5eb_2d050778",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "No longer relevant.",
+      "parentUuid": "ab59a771_53fe0618",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -189,6 +369,24 @@
     },
     {
       "key": {
+        "uuid": "b3f40b02_1258f7bc",
+        "filename": "skylark/interpreter/interpreter_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done, it is in helpers_test.go now.",
+      "parentUuid": "3a68a7e4_8f094ca6",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "63fab59c_7dc006a4",
         "filename": "skylark/interpreter/testdata/1/main.sky",
         "patchSetId": 2
@@ -206,6 +404,24 @@
     },
     {
       "key": {
+        "uuid": "3e2d7ca3_da24adc7",
+        "filename": "skylark/interpreter/testdata/1/main.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Changed this to print instead.",
+      "parentUuid": "63fab59c_7dc006a4",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "079cec94_30c85c3a",
         "filename": "skylark/interpreter/testdata/4/main.sky",
         "patchSetId": 2
@@ -220,6 +436,24 @@
       "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e76a1432_396b5f4b",
+        "filename": "skylark/interpreter/testdata/4/main.sky",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T00:58:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "079cec94_30c85c3a",
+      "revId": "d5002387142b1a3aebf8aa7d3022804a157d6ba0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
