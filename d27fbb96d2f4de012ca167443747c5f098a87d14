@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aaec34a8_97378ff3",
+        "filename": "skylark/interpreter/mutable.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:38:57Z",
+      "side": 1,
+      "message": "I guess it\u0027s implied, but you could spell out that \"holds no value \u003d\u003d holds None\".",
+      "revId": "d27fbb96d2f4de012ca167443747c5f098a87d14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cafc6a7_eaa4529f",
+        "filename": "skylark/interpreter/mutable_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:38:57Z",
+      "side": 1,
+      "message": "Hardly worth mentioning, but you spelled this differently (with an e) a few lines above (and with a hyphen in mutable.go, but I wouldn\u0027t even bother changing that one).",
+      "range": {
+        "startLine": 65,
+        "startChar": 21,
+        "endLine": 65,
+        "endChar": 27
+      },
+      "revId": "d27fbb96d2f4de012ca167443747c5f098a87d14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

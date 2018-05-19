@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "41d4d6f7_fde092df",
+        "filename": "skylark/interpreter/mutable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:38:57Z",
+      "side": 1,
+      "message": "Hm, ok. I thought it\u0027d be a sort of transparent wrapper around the symbol. But with get and set I guess I can see that it\u0027s a separate thing.",
+      "parentUuid": "d6fc3b87_c60091aa",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b22070f_f7c16de7",
         "filename": "skylark/interpreter/mutable_test.go",
         "patchSetId": 1
