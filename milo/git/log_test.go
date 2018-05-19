@@ -39,9 +39,9 @@ func TestLog(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		gitilesMock := gitilespb.NewMockGitilesClient(ctl)
-		c = UseFactory(c, func(c context.Context, host string) (gitilespb.GitilesClient, error) {
-			return gitilesMock, nil
-		})
+		f := NewMockFactory(ctl)
+		f.EXPECT().Gitiles(gomock.Any(), "host", "project").AnyTimes().Return(gitilesMock, nil)
+		c = UseFactory(c, f)
 
 		fakeCommits := make([]*gitpb.Commit, 255)
 		commitID := make([]byte, 20)
