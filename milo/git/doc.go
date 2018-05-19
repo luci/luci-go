@@ -12,10 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package git abstracts interaction with Git and Gerrit for Milo.
+// package git encapsulates interaction with Git and Gerrit for Milo.
 //
-// Currently, only works with *.googlesource.com hosted Git/Gerrit repositories,
-// but could be extended to work with other providers.
+// Features:
+//   Enforces read ACLs on Git/Gerrit hosts/projects configured in settings.cfg
+//     in source_acls blocks.
+//   Transparently caches results respecting ACLs above.
+//     That's no caching of returned data should be done by callers.
+//
+// Limitations:
+//   currently, only works with *.googlesource.com hosted Git/Gerrit
+//   repositories, but could be extended to work with other providers.
 //
 // TODO(tandrii): move Gerrit here.
 package git

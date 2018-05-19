@@ -67,6 +67,7 @@ func TestGetChange(t *testing.T) {
 					SecondaryEmails: []string{"johndoe@chromium.org"},
 					Username:        "jdoe",
 				},
+				Project: "example/repo",
 			}
 			var actualRequest *http.Request
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +83,7 @@ func TestGetChange(t *testing.T) {
 						"secondary_emails": []string{"johndoe@chromium.org"},
 						"username":         "jdoe",
 					},
+					"project": "example/repo",
 				})
 			})
 			defer srv.Close()
