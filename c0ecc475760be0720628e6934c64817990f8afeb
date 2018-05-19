@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1616bb3c_0de5056d",
+        "filename": "skylark/interpreter/helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T02:46:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ead4e18_c1495ec3",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 13
+      },
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed4aec48_a26d90b0",
         "filename": "skylark/interpreter/helpers_test.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb4d4424_2f4a8162",
+        "filename": "skylark/interpreter/helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T02:46:53Z",
+      "side": 1,
+      "message": "No, it can\u0027t be test_helpers.go because then Go would start linking testing packages into non-test binaries that import \u0027interpreter\u0027. For example, just a fact of importing \"testing\" package registers a ton of CLI flags in the default flagset, we don\u0027t want them to appear in non-test binaries.\n\nThus test helpers should live in *_test.go.\n\nI\u0027ve added a test right here, it is not a big deal.",
+      "parentUuid": "ed4aec48_a26d90b0",
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4467750e_c13645ac",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T02:46:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ad3766e_33bc7b55",
+      "range": {
+        "startLine": 349,
+        "startChar": 10,
+        "endLine": 349,
+        "endChar": 19
+      },
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
