@@ -214,7 +214,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	// cache miss, cache failure or corrupted cache.
 	// Call Gitiles.
 
-	g, err := Client(c, l.host)
+	g, err := gitilesClient(c, l.host, l.project)
 	if err != nil {
 		return nil, err
 	}
