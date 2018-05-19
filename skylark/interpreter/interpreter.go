@@ -30,6 +30,9 @@
 //  * 'struct' constructs an object resembling namedtuple from Python.
 //  * 'proto' is a library with protobuf helpers.
 //  * 'fail' aborts the script execution with an error message.
+//  * 'mutable' allows modules to explicitly declare that they wish to keep some
+//    mutable (non-frozen) state, which can be modified after the module has
+//    loaded (e.g. from an exported function).
 package interpreter
 
 import (
@@ -144,8 +147,9 @@ func (intr *Interpreter) Init() error {
 	// Register most basic builtin symbols. They'll be available from all scripts
 	// (stdlib and user scripts).
 	intr.globals = skylark.StringDict{
-		"struct": skylark.NewBuiltin("struct", skylarkstruct.Make),
-		"fail":   skylark.NewBuiltin("fail", failImpl),
+		"fail":    skylark.NewBuiltin("fail", failImpl),
+		"mutable": skylark.NewBuiltin("mutable", mutableImpl),
+		"struct":  skylark.NewBuiltin("struct", skylarkstruct.Make),
 	}
 	for k, v := range skylarkproto.ProtoLib() {
 		intr.globals[k] = v
