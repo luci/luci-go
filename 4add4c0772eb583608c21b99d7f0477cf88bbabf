@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fe2f5069_1cef33fe",
+        "filename": "skylark/interpreter/fail_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T01:19:32Z",
+      "side": 1,
+      "message": "Done in the previous CL. Also code that\u0027s needed by tests should live in *_test.go, so it is helpers_test.go *shrug*",
+      "parentUuid": "564c87a5_f08fb8f6",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ebd99e37_a310d7e3",
         "filename": "skylark/interpreter/mutable.go",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "d6fc3b87_c60091aa",
+        "filename": "skylark/interpreter/mutable.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T01:19:32Z",
+      "side": 1,
+      "message": "\u0027mutable\u0027 is like a container in itself. It is true-ish if it holds a value (regardless of truthiness of the value), and false-ish if its empty. I\u0027ll document it somewhere...",
+      "parentUuid": "ebd99e37_a310d7e3",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b22070f_f7c16de7",
         "filename": "skylark/interpreter/mutable_test.go",
         "patchSetId": 1
@@ -50,6 +86,24 @@
       "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f40f55b1_5a4f78a2",
+        "filename": "skylark/interpreter/mutable_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-19T01:19:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1b22070f_f7c16de7",
+      "revId": "4add4c0772eb583608c21b99d7f0477cf88bbabf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
