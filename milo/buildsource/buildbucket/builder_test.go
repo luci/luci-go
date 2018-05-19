@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,6 +34,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/git"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -58,8 +58,9 @@ func TestBuilder(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 		gerrit := gerritpb.NewMockGerritClient(ctrl)
-		c = common.WithGerritFactory(c, func(context.Context, string) (gerritpb.GerritClient, error) {
-			return gerrit, nil
+		c = git.UseFactory(c, &git.MockFactory{
+			GerritMock:    gerrit,
+			IsAllowedMock: git.MockAllowedEverything,
 		})
 		mockChange := &gerritpb.ChangeInfo{
 			Owner: &gerritpb.AccountInfo{Email: "johndoe@example.com"},
