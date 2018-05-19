@@ -24,7 +24,16 @@ import (
 	"unicode"
 
 	"github.com/google/skylark"
+	"github.com/google/skylark/resolve"
 )
+
+func init() {
+	// Enable not-yet-standard features.
+	resolve.AllowLambda = true
+	resolve.AllowNestedDef = true
+	resolve.AllowFloat = true
+	resolve.AllowSet = true
+}
 
 // deindend finds first non-empty and non-whitespace line and subtracts its
 // indentation from all lines.
