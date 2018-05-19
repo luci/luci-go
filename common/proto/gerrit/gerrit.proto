@@ -196,4 +196,7 @@ message ChangeInfo {
 
   // The owner of the change.
   AccountInfo owner = 2;
+
+  // The project of this change. For example, "chromium/src".
+  string project = 3;
 }

@@ -66,8 +66,9 @@ type client struct {
 
 // changeInfo is JSON representation of gerritpb.ChangeInfo on the wire.
 type changeInfo struct {
-	Number int64                 `json:"_number"`
-	Owner  *gerritpb.AccountInfo `json:"owner"`
+	Number  int64                 `json:"_number"`
+	Owner   *gerritpb.AccountInfo `json:"owner"`
+	Project string                `json:"project"`
 }
 
 func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, opts ...grpc.CallOption) (
