@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ead4e18_c1495ec3",
+        "filename": "skylark/interpreter/helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:31:53Z",
+      "side": 1,
+      "message": "deindent",
+      "range": {
+        "startLine": 31,
+        "startChar": 5,
+        "endLine": 31,
+        "endChar": 13
+      },
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed4aec48_a26d90b0",
+        "filename": "skylark/interpreter/helpers_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:31:53Z",
+      "side": 1,
+      "message": "Ostensibly this warrants its own test now... which would be helpers_test_test.go. Can this be test_helpers.go instead of helpers_test.go? I\u0027d assume *_test.go would contain test cases.",
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ad3766e_33bc7b55",
+        "filename": "skylark/interpreter/interpreter.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-19T01:31:53Z",
+      "side": 1,
+      "message": "must always be.",
+      "range": {
+        "startLine": 349,
+        "startChar": 10,
+        "endLine": 349,
+        "endChar": 19
+      },
+      "revId": "c0ecc475760be0720628e6934c64817990f8afeb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
