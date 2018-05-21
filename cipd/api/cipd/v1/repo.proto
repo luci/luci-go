@@ -19,6 +19,7 @@ package cipd;
 option go_package = "api";
 
 import "google/protobuf/timestamp.proto";
+import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
 
 // Manages CIPD packages and their associated metadata.
@@ -99,6 +100,25 @@ service Repository {
   //
   // On success returns PrefixMetadata object with the updated fingerprint.
   rpc UpdatePrefixMetadata(PrefixMetadata) returns (PrefixMetadata);
+
+  // Registers a package instance in the repository (if it was uploaded to the
+  // storage already and wasn't registered yet) or initiates a new upload
+  // operation.
+  //
+  // Callers are expected to execute the following protocol:
+  //   1. Attempt to register a package instance by calling RegisterInstance.
+  //   2. On NOT_UPLOADED status, upload the package data and finalize the
+  //      upload operation using Storage RPC service and upload_op from the
+  //      response.
+  //   3. Once the upload operation is finalized, call RegisterInstance again,
+  //      it should succeed with status REGISTERED now.
+  //
+  // If such instance is already registered by someone else, returns
+  // ALREADY_REGISTERED status. This is not an error.
+  //
+  // Callers must have roles WRITER or OWNER for the package prefix. Returns
+  // PERMISSION_DENIED otherwise.
+  rpc RegisterInstance(Instance) returns (RegisterInstanceResponse);
 }
 
 
@@ -179,4 +199,48 @@ message InheritedPrefixMetadata {
   // contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
   // skipped in this example as not having any metadata attached).
   repeated PrefixMetadata per_prefix_metadata = 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// RegistrationStatus is part of RegisterInstance RPC response.
+enum RegistrationStatus {
+  REGISTRATION_STATUS_UNSPECIFIED = 0;
+
+  REGISTERED         = 1;  // the instance was successfully registered just now
+  ALREADY_REGISTERED = 2;  // the instance already exists, this is OK
+  NOT_UPLOADED       = 3;  // the instance should be uploaded to Storage first
+}
+
+
+// Instance is a pointer to an instance of some package.
+message Instance {
+  // A name of the package, e.g. "a/b/c/d".
+  string package = 1;
+  // A reference to the instance file in the storage.
+  ObjectRef instance = 2;
+  // User who registered the instance (output only).
+  string registered_by = 3;
+  // When the instance was registered (output only).
+  google.protobuf.Timestamp registered_ts = 4;
+}
+
+
+// RegisterInstanceResponse is returned by RegisterInstance RPC.
+message RegisterInstanceResponse {
+  // Outcome of the operation, see the enum for possibilities.
+  //
+  // Defines what other fields are present.
+  RegistrationStatus status = 1;
+
+  // For statuses REGISTERED and ALREADY_REGISTERED contains details about the
+  // instance. Not set for NOT_UPLOADED status.
+  Instance instance = 2;
+
+  // For status NOT_UPLOADED contains a new upload operation that can be used
+  // together with Storage service to upload the instance file. Not set for
+  // other statuses.
+  UploadOperation upload_op = 3;
 }
