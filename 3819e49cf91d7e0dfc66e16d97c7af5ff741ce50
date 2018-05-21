@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "467d1965_27cce84e",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-21T07:03:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6ef0693_113d7775",
+      "range": {
+        "startLine": 214,
+        "startChar": 53,
+        "endLine": 214,
+        "endChar": 59
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d788b672_ea62a6cc",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58ee10f6_0cd612fa",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-21T07:03:07Z",
+      "side": 1,
+      "message": "I don\u0027t want to. I think it\u0027s unnecessary in this case. The structure of is simple, non-ambigious and it isn\u0027t going to change.",
+      "parentUuid": "d788b672_ea62a6cc",
+      "range": {
+        "startLine": 225,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 8
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -85,6 +133,30 @@
       "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c83ca898_3a1716a3",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-21T07:03:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "febe92b2_08b97792",
+      "range": {
+        "startLine": 230,
+        "startChar": 74,
+        "endLine": 230,
+        "endChar": 76
+      },
+      "revId": "3819e49cf91d7e0dfc66e16d97c7af5ff741ce50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
