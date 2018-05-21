@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb4e71a1_dd2b76d8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-21T21:05:06Z",
+      "side": 1,
+      "message": "Recommended review sequence:\n\nFirst, \n1. Check Factory interface in git/client.go.\n2. See test buildsource/buildbucket/builder_test.go\nFor my own certainty, I currently like that it requires mocking both GetChange and IsAllowed calls. \nIf I do instead:\n\n$ cat git/iface.go:\ninterface{\n  ChangeOwnerEmail()\n  Log()\n}\n\nthen tests are easier to write, but hide the ACLs handling. WDYT \u0026\u0026 better ideas?\n\n\nSecond, if you like current approach, review the rest :)",
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
