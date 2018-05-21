@@ -39,9 +39,9 @@ func TestLog(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		gitilesMock := gitilespb.NewMockGitilesClient(ctl)
-		c = UseFactory(c, func(c context.Context, host string) (gitilespb.GitilesClient, error) {
-			return gitilesMock, nil
-		})
+		f := NewMockFactory(ctl)
+		f.EXPECT().Gitiles(gomock.Any(), "host", "project").AnyTimes().Return(gitilesMock, nil)
+		c = UseFactory(c, f)
 
 		fakeCommits := make([]*gitpb.Commit, 255)
 		commitID := make([]byte, 20)
@@ -56,6 +56,12 @@ func TestLog(t *testing.T) {
 		}
 
 		Convey("cold cache", func() {
+			Convey("ACLs respected", func() {
+				f.EXPECT().IsAllowed(gomock.Any(), "host", "project").Return(false, nil)
+				_, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 50})
+				So(err.Error(), ShouldContainSubstring, "https://host/project not found or no access")
+			})
+
 			req := &gitilespb.LogRequest{
 				Project:  "project",
 				Treeish:  "refs/heads/master",
@@ -64,6 +70,8 @@ func TestLog(t *testing.T) {
 			res := &gitilespb.LogResponse{
 				Log: fakeCommits[1:101], // return 100 commits
 			}
+
+			f.EXPECT().IsAllowed(gomock.Any(), "host", "project").Return(true, nil)
 			gitilesMock.EXPECT().Log(gomock.Any(), req).Return(res, nil)
 			commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 100})
 			So(err, ShouldBeNil)
@@ -72,6 +80,14 @@ func TestLog(t *testing.T) {
 			// Now that we have something in cache, call Log with cached commits.
 			// gitiles.Log was already called maximum number of times, which is 1,
 			// so another call with cause a test failure.
+
+			Convey("ACLs respected even with cache", func() {
+				f.EXPECT().IsAllowed(gomock.Any(), "host", "project").Return(false, nil)
+				_, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 50})
+				So(err.Error(), ShouldContainSubstring, "https://host/project not found or no access")
+			})
+
+			f.EXPECT().IsAllowed(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(true, nil)
 
 			Convey("with ref in cache", func() {
 				commits, err := Log(c, "host", "project", "refs/heads/master", &LogOptions{Limit: 50})
@@ -171,6 +187,7 @@ func TestLog(t *testing.T) {
 			res2 := &gitilespb.LogResponse{
 				Log: fakeCommits[99:199],
 			}
+			f.EXPECT().IsAllowed(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(true, nil)
 			gitilesMock.EXPECT().Log(gomock.Any(), req1).Return(res1, nil)
 			gitilesMock.EXPECT().Log(gomock.Any(), req2).Return(res2, nil)
 
