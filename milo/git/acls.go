@@ -19,11 +19,15 @@ import (
 	"sort"
 	"strings"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/milo/api/config"
+	"go.chromium.org/luci/server/auth"
 )
 
 // ACLsFromConfig returns ACLs if config is valid.
@@ -45,10 +49,44 @@ func ValidateACLsConfig(ctx *validation.Context, cfg []*config.Settings_SourceAc
 
 // ACLs define readers for git repositories and Gerrits CLs.
 type ACLs struct {
-	hosts map[string]*hostACLs
+	hosts map[string]*hostACLs // immutable once constructed.
+}
+
+// IsAllowed returns whether current identity has been granted read access to
+// given Git/Gerrit project.
+func (a *ACLs) IsAllowed(c context.Context, host, project string) (bool, error) {
+	hacls, configured := a.hosts[host]
+	if !configured {
+		return false, nil
+	}
+	if pacls, projKnown := hacls.projects[project]; projKnown {
+		return a.belongsTo(c, hacls.readers, pacls.readers)
+	}
+	return a.belongsTo(c, hacls.readers)
 }
 
 // private implementation.
+
+func (a *ACLs) belongsTo(c context.Context, readerGroups ...[]string) (bool, error) {
+	currentIdentity := auth.CurrentIdentity(c)
+	groups := []string{}
+	for _, readers := range readerGroups {
+		for _, r := range readers {
+			switch {
+			case strings.HasPrefix(r, "group:"):
+				// auth.IsMember expects group names w/o "group:" prefix.
+				groups = append(groups, r[len("group:"):])
+			case currentIdentity == identity.Identity(r):
+				return true, nil
+			}
+		}
+	}
+	if isMember, err := auth.IsMember(c, groups...); err != nil {
+		return false, transient.Tag.Apply(err)
+	} else {
+		return isMember, nil
+	}
+}
 
 type itemACLs struct {
 	definedIn int // used for validation only.
@@ -164,7 +202,7 @@ func (a *ACLs) loadProject(ctx *validation.Context, blockId int, projectURL stri
 		return
 	}
 
-	// u.Path at this point starts with '/' and will be key in projects map.
+	u.Path = u.Path[1:] // trim starting '/'.
 	hACLs, knownHost := a.hosts[u.Host]
 	switch {
 	case knownHost && hACLs.definedIn == blockId:
