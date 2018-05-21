@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,6 +34,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 
 	"go.chromium.org/luci/milo/common"
+	"go.chromium.org/luci/milo/git"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -58,13 +58,16 @@ func TestBuilder(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
 		gerrit := gerritpb.NewMockGerritClient(ctrl)
-		c = common.WithGerritFactory(c, func(context.Context, string) (gerritpb.GerritClient, error) {
-			return gerrit, nil
-		})
+
+		f := git.NewMockFactory(ctrl)
+		f.EXPECT().Gerrit(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(gerrit, nil)
 		mockChange := &gerritpb.ChangeInfo{
-			Owner: &gerritpb.AccountInfo{Email: "johndoe@example.com"},
+			Owner:   &gerritpb.AccountInfo{Email: "johndoe@example.com"},
+			Project: "some/project",
 		}
 		gerrit.EXPECT().GetChange(gomock.Any(), gomock.Any()).AnyTimes().Return(mockChange, nil)
+		f.EXPECT().IsAllowed(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(true, nil)
+		c = git.UseFactory(c, f)
 
 		// Update the service config so that the settings are loaded.
 		_, err := common.UpdateServiceConfig(c)

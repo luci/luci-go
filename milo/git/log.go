@@ -22,6 +22,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
@@ -40,7 +42,7 @@ type LogOptions struct {
 }
 
 // Log returns ancestors commits of the given repository
-// host (e.g. "chromium.googlesource.scom"), project (e.g. "chromium/src") and
+// host (e.g. "chromium.googlesource.com"), project (e.g. "chromium/src") and
 // descendant committish (e.g. "refs/heads/master" or commit hash).
 //
 // Limit specifies the number of commits to return.
@@ -50,6 +52,13 @@ type LogOptions struct {
 // Returns an error if a client factory is not installed in c. See UseFactory.
 // May return gRPC errors returned by the underlying Gitiles service.
 func Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error) {
+	switch yes, err := isAllowed(c, host, project); {
+	case err != nil:
+		return nil, err
+	case !yes:
+		return nil, status.Errorf(codes.NotFound, "https://%s/%s not found or no access", host, project)
+	}
+
 	var opts LogOptions
 	if inputOptions != nil {
 		opts = *inputOptions
@@ -214,7 +223,7 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	// cache miss, cache failure or corrupted cache.
 	// Call Gitiles.
 
-	g, err := Client(c, l.host)
+	g, err := gitilesClient(c, l.host, l.project)
 	if err != nil {
 		return nil, err
 	}
