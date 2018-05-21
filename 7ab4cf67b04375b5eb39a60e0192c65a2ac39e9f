@@ -1,0 +1,147 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a911ad5_f900bdb7",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "nit: move to own section above.",
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "efe1e2ac_e7a7e11c",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "nit: used only once, just inline.",
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75523278_29720c39",
+        "filename": "milo/git/acls.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "strings.TrimPrefix()?",
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4fa5f003_6d3f9d08",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "I like using \"public\" here",
+      "range": {
+        "startLine": 229,
+        "startChar": 25,
+        "endLine": 229,
+        "endChar": 28
+      },
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1501a9a_036a7b3e",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "I like using \"public\" here",
+      "range": {
+        "startLine": 230,
+        "startChar": 44,
+        "endLine": 230,
+        "endChar": 47
+      },
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "511d7830_0e54f6dc",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "maybe \"limited\"",
+      "range": {
+        "startLine": 234,
+        "startChar": 25,
+        "endLine": 234,
+        "endChar": 26
+      },
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "da027ccc_367f96cc",
+        "filename": "milo/git/acls_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-21T21:04:35Z",
+      "side": 1,
+      "message": "i like using \"private\" here",
+      "range": {
+        "startLine": 235,
+        "startChar": 44,
+        "endLine": 235,
+        "endChar": 48
+      },
+      "revId": "7ab4cf67b04375b5eb39a60e0192c65a2ac39e9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
