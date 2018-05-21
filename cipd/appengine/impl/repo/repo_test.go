@@ -15,6 +15,7 @@
 package repo
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
@@ -29,9 +31,11 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMetadataFetching(t *testing.T) {
@@ -301,6 +305,149 @@ func TestMetadataUpdating(t *testing.T) {
 			// Trying to do it again fails, 'm' is stale now.
 			_, err = callUpdate("user:top-owner@example.com", m)
 			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+		})
+	})
+}
+
+func TestRegisterInstance(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, testTime)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:owner@example.com",
+		})
+
+		cas := testutil.MockCAS{}
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
+				},
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta, cas: &cas}
+
+		digest := strings.Repeat("a", 40)
+		inst := &api.Instance{
+			Package: "a/b",
+			Instance: &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: digest,
+			},
+		}
+
+		Convey("Happy path", func() {
+			uploadOp := api.UploadOperation{
+				OperationId: "op_id",
+				UploadUrl:   "http://fake.example.com",
+				Status:      api.UploadStatus_UPLOADING,
+			}
+
+			// Mock "successfully started upload op".
+			cas.BeginUploadImpl = func(_ context.Context, req *api.BeginUploadRequest) (*api.UploadOperation, error) {
+				So(req, ShouldResemble, &api.BeginUploadRequest{
+					Object: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+				})
+				return &uploadOp, nil
+			}
+
+			// The instance is not uploaded yet => asks to upload.
+			resp, err := impl.RegisterInstance(ctx, inst)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+				Status:   api.RegistrationStatus_NOT_UPLOADED,
+				UploadOp: &uploadOp,
+			})
+
+			// Mock "already have it in the storage" response.
+			cas.BeginUploadImpl = func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error) {
+				return nil, grpc.Errorf(codes.AlreadyExists, "already uploaded")
+			}
+
+			// The instance is already uploaded => registers it in the datastore.
+			resp, err = impl.RegisterInstance(ctx, inst)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+				Status: api.RegistrationStatus_REGISTERED,
+				Instance: &api.Instance{
+					Package:      inst.Package,
+					Instance:     inst.Instance,
+					RegisteredBy: "user:owner@example.com",
+					RegisteredTs: google.NewTimestamp(testTime),
+				},
+			})
+		})
+
+		Convey("Already registered", func() {
+			_, _, err := model.RegisterInstance(ctx, &model.Instance{
+				Package:      model.PackageKey(ctx, inst.Package),
+				InstanceID:   model.ObjectRefToInstanceID(inst.Instance),
+				RegisteredBy: "user:someone@example.com",
+			})
+			So(err, ShouldBeNil)
+
+			resp, err := impl.RegisterInstance(ctx, inst)
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
+				Status: api.RegistrationStatus_ALREADY_REGISTERED,
+				Instance: &api.Instance{
+					Package:      inst.Package,
+					Instance:     inst.Instance,
+					RegisteredBy: "user:someone@example.com",
+				},
+			})
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.RegisterInstance(ctx, &api.Instance{
+				Package: "//a",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'package'")
+		})
+
+		Convey("Bad instance ID", func() {
+			_, err := impl.RegisterInstance(ctx, &api.Instance{
+				Package: "a/b",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: "abc",
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'instance'")
+		})
+
+		Convey("No reader access", func() {
+			_, err := impl.RegisterInstance(ctx, &api.Instance{
+				Package:  "some/other/root",
+				Instance: inst.Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, `prefix "some/other/root" doesn't exist or the caller is not allowed to see it`)
+		})
+
+		Convey("No owner access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:reader@example.com",
+			})
+			_, err := impl.RegisterInstance(ctx, inst)
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, `caller has no required WRITER role in prefix "a/b"`)
 		})
 	})
 }
