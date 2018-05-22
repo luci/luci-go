@@ -245,11 +245,16 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		Message struct {
 			Data []byte
 		}
+		Attributes map[string]interface{}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "could not decode message").Err()
 	}
 
+	if v, ok := req.Message.Attributes["version"].(string); ok && v != "v1" {
+		// Ignore v2 pubsub messages. TODO(nodir): use v2.
+		return nil
+	}
 	var message struct {
 		Build bbv1.ApiCommonBuildMessage
 	}
