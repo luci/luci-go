@@ -32,8 +32,8 @@ import (
 
 // authPrelude ensures the user is authorized to use the Crimson API.
 func authPrelude(c context.Context, methodName string, req proto.Message) (context.Context, error) {
-	groups := []string{"machine-db-administrators"}
-	if strings.HasPrefix(methodName, "List") {
+	groups := []string{"machine-db-administrators", "machine-db-writers"}
+	if strings.HasPrefix(methodName, "Find") || strings.HasPrefix(methodName, "List") {
 		groups = append(groups, "machine-db-readers")
 	}
 	switch is, err := auth.IsMember(c, groups...); {
