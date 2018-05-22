@@ -67,8 +67,17 @@ func sayHello(c C) http.HandlerFunc {
 		buf, err := proto.Marshal(&res)
 		c.So(err, ShouldBeNil)
 
-		w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
+		code := codes.OK
+		status := http.StatusOK
+		if req.Name == "NOT FOUND" {
+			code = codes.NotFound
+			status = http.StatusNotFound
+		}
+
+		w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(code)))
 		w.Header().Set("Content-Type", ContentTypePRPC)
+		w.WriteHeader(status)
+
 		_, err = w.Write(buf)
 		c.So(err, ShouldBeNil)
 	}
@@ -241,6 +250,27 @@ func TestClient(t *testing.T) {
 				req.Name = "TOO BIG"
 				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
 				So(err, ShouldEqual, ErrResponseTooBig)
+			})
+
+			Convey("Doesn't log expected codes", func(c C) {
+				client, server := setUp(sayHello(c))
+				defer server.Close()
+
+				req.Name = "NOT FOUND"
+
+				// Have it logged by default
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(log, shouldHaveMessagesLike,
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{Level: logging.Warning, Msg: "RPC failed permanently"})
+
+				log.Reset()
+
+				// And don't have it if using ExpectedCode.
+				err = client.Call(ctx, "prpc.Greeter", "SayHello", req, res, ExpectedCode(codes.NotFound))
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
 			})
 
 			Convey("HTTP 500 x2", func(c C) {

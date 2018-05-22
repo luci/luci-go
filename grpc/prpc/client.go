@@ -307,12 +307,26 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		},
 	)
 
-	// We have to unwrap gRPC errors because
-	// grpc.Code and grpc.ErrorDesc functions do not work with error wrappers.
+	// We have to unwrap gRPC errors because grpc.Code and grpc.ErrorDesc
+	// functions do not work with error wrappers.
 	// https://github.com/grpc/grpc-go/issues/494
 	if err != nil {
-		logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
-		return nil, errors.Unwrap(err)
+		grpcErr := errors.Unwrap(err)
+		code := grpc.Code(grpcErr)
+
+		// Log only unexpected codes.
+		ignore := false
+		for _, expected := range options.expectedCodes {
+			if code == expected {
+				ignore = true
+				break
+			}
+		}
+		if !ignore {
+			logging.WithError(err).Warningf(ctx, "RPC failed permanently: %s", err)
+		}
+
+		return nil, grpcErr
 	}
 
 	// Parse the response content type.
