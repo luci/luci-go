@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4b51c31a_b2db65cb",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T21:55:30Z",
+      "side": 1,
+      "message": "yes, thanks",
+      "parentUuid": "11214909_c7bb8e3b",
+      "range": {
+        "startLine": 206,
+        "startChar": 24,
+        "endLine": 206,
+        "endChar": 27
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c54257c4_640b5bc0",
         "filename": "luci_notify/notify/emailgen.go",
         "patchSetId": 14
@@ -36,6 +60,30 @@
       "writtenOn": "2018-05-22T18:50:36Z",
       "side": 1,
       "message": "why? The possibility that the project was deleted between lines 188 and 207 is extremely low. And nothing really bad happens if we don\u0027t notice it.",
+      "range": {
+        "startLine": 207,
+        "startChar": 3,
+        "endLine": 209,
+        "endChar": 4
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c6a05ce_fb6175d4",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T21:55:30Z",
+      "side": 1,
+      "message": "there is a possibility that revision changes between L188 and this, no?\ni\u0027d like to have a guarantee that revision of templates we retrieve matches bundle.revision in L235",
+      "parentUuid": "c54257c4_640b5bc0",
       "range": {
         "startLine": 207,
         "startChar": 3,
@@ -68,6 +116,30 @@
       "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bede7924_bf7f9d03",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T21:55:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "958d1af1_4a0b40bb",
+      "range": {
+        "startLine": 45,
+        "startChar": 4,
+        "endLine": 45,
+        "endChar": 33
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "d62af0a7_c8b34765",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T21:55:30Z",
+      "side": 1,
+      "message": "TIL, thanks :)",
+      "parentUuid": "0f8d316e_4da5d1e9",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 2
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7e1565d_226d3aac",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 14
@@ -138,6 +234,30 @@
       "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4da14111_7355295b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T21:55:30Z",
+      "side": 1,
+      "message": "yes, this is a pubsub handler",
+      "parentUuid": "f7e1565d_226d3aac",
+      "range": {
+        "startLine": 148,
+        "startChar": 9,
+        "endLine": 148,
+        "endChar": 24
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
