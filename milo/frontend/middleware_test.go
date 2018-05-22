@@ -15,8 +15,20 @@
 package frontend
 
 import (
+	"bytes"
+	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/config"
+	"go.chromium.org/luci/config/impl/memory"
+	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -58,6 +70,32 @@ func TestFuncs(t *testing.T) {
 					" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
 						"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>")
 			})
+		})
+
+		Convey("Redirect unauthorized users to login page for projects with access restrictions", func() {
+			r := httptest.NewRecorder()
+			c := gaetesting.TestingContextWithAppID("luci-milo-dev")
+
+			// Fake user to be anonymous.
+			c = auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
+
+			// Create fake internal project named "secret".
+			c = testconfig.WithCommonClient(c, memory.New(map[config.Set]memory.Files{
+				"projects/secret": {
+					"project.cfg": "name: \"secret\"\naccess: \"group:googlers\"",
+				},
+			}))
+
+			ctx := &router.Context{
+				Context: c,
+				Writer:  r,
+				Request: httptest.NewRequest("GET", "/p/secret", bytes.NewReader(nil)),
+				Params:  httprouter.Params{{Key: "project", Value: "secret"}},
+			}
+
+			projectACLMiddleware(ctx, nil)
+			So(r.Code, ShouldEqual, 302)
+			So(r.HeaderMap["Location"], ShouldResemble, []string{"http://fake.example.com/login?dest=%2Fp%2Fsecret"})
 		})
 	})
 }
