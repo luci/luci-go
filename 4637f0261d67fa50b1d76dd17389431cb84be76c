@@ -34,6 +34,24 @@
       "revId": "4637f0261d67fa50b1d76dd17389431cb84be76c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11d43d56_f8656692",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T16:40:19Z",
+      "side": 1,
+      "message": "added logging anyway. this is temporary\n\nexcept I don\u0027t return a transient error, because the fact that we don\u0027t support v2 is not transient",
+      "parentUuid": "9fe91b91_86fefeec",
+      "revId": "4637f0261d67fa50b1d76dd17389431cb84be76c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
