@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5e5d8b9f_63d1ce2a",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T16:32:21Z",
+      "side": 1,
+      "message": "Just make this an error so it can get logged.  As long as the transient tag isn\u0027t applied, it won\u0027t get retried.",
+      "revId": "4637f0261d67fa50b1d76dd17389431cb84be76c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
