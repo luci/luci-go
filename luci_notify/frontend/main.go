@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/server/auth"
@@ -48,7 +49,13 @@ func init() {
 
 	// Pub/Sub endpoint.
 	r.POST("/_ah/push-handlers/buildbucket", basemw, func(c *router.Context) {
-		notify.BuildbucketPubSubHandler(c, &taskDispatcher)
+		if err := notify.BuildbucketPubSubHandler(c, &taskDispatcher); err != nil {
+			logging.Errorf(c.Context, "%s", err)
+			if transient.Tag.In(err) {
+				// Retry transient errors.
+				c.Writer.WriteHeader(http.StatusInternalServerError)
+			}
+		}
 	})
 
 	http.Handle("/", r)
