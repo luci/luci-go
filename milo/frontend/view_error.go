@@ -5,7 +5,10 @@
 package frontend
 
 import (
+	"net/http"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -22,6 +25,12 @@ func ErrorHandler(c *router.Context, err error) {
 	if code == common.CodeUnknown {
 		errors.Log(c.Context, err)
 	}
+	if code == common.CodeUnauthorized {
+		loginURL := auth.LoginURL(c, c.Request.URL.RequestURI())
+		http.Redirect(c.Writer, c.Request, loginURL, http.StatusFound)
+		return
+	}
+
 	status := code.HTTPStatus()
 	c.Writer.WriteHeader(status)
 	templates.MustRender(c.Context, c.Writer, "pages/error.html", templates.Args{
