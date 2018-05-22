@@ -18,12 +18,12 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"go.chromium.org/luci/common/logging"
-	"go.chromium.org/luci/common/logging/gologger"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
@@ -55,18 +55,6 @@ func TestEmailTemplate(t *testing.T) {
         second line
         `)
 			So(err, ShouldErrLike, "second line is not blank")
-		})
-	})
-
-	Convey(`ParsedEmailTemplate.Parse`, t, func() {
-		var t ParsedEmailTemplate
-
-		Convey(`invalid subject template`, func() {
-			So(t.Parse("{{}}}", ""), ShouldErrLike, "subject:1: missing value for command")
-		})
-
-		Convey(`invalid body template`, func() {
-			So(t.Parse("", "{{!}}"), ShouldErrLike, `body:1: unexpected "!" in command`)
 		})
 	})
 

@@ -22,27 +22,29 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
-	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"
 
+	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/appengine/tq/tqtesting"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/memlogger"
 	gitpb "go.chromium.org/luci/common/proto/git"
 
-	config "go.chromium.org/luci/config"
-	memImpl "go.chromium.org/luci/config/impl/memory"
+	apicfg "go.chromium.org/luci/luci_notify/api/config"
 	notifyConfig "go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 var (
-	rev1        = testutil.TestRevision("some random data here")
-	rev2        = testutil.TestRevision("other random string")
+	rev1        = "deadbeef"
+	rev2        = "badcoffe"
 	testCommits = []*gitpb.Commit{
 		{Id: rev1},
 		{Id: rev2},
@@ -135,19 +137,10 @@ func TestHandleBuild(t *testing.T) {
 		cfg, err := testutil.LoadProjectConfig(cfgName)
 		So(err, ShouldBeNil)
 
-		c := memory.UseWithAppID(context.Background(), "luci-notify-test")
+		c := gaetesting.TestingContextWithAppID("luci-notify-test")
 		c = clock.Set(c, testclock.New(time.Now()))
 		c = memlogger.Use(c)
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
-
-		// TODO(nodir): replace this with EmailTemplate entities.
-		impl := memImpl.New(map[config.Set]memImpl.Files{
-			"projects/chromium": {
-				"file": "file content",
-				"email-templates/minimal.template": "Subject: Test Subject\nTest Content",
-			},
-		})
-		c = notifyConfig.WithConfigService(c, impl)
 
 		// Add Project and Notifiers to datastore and update indexes.
 		project := &notifyConfig.Project{Name: "chromium"}
@@ -158,20 +151,21 @@ func TestHandleBuild(t *testing.T) {
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 
-		dispatcher, taskqueue := createMockTaskQueue(c)
-		testSuccess := func(build *Build, emailExpect ...EmailNotify) {
+		dispatcher, tqTestable := createMockTaskQueue(c)
+		assertTasks := func(build *Build, expectedRecipients ...EmailNotify) {
 			// Test handleBuild.
 			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
 			So(err, ShouldBeNil)
 
-			// Flatten email notify array of arrays
-			notifyEmail := []EmailNotify{}
-			for _, en := range emailExpect {
-				notifyEmail = append(notifyEmail, en)
+			// Verify tasks were scheduled.
+			tasks := tqTestable.GetScheduledTasks()
+			So(tasks, ShouldHaveLength, len(expectedRecipients))
+			for i, t := range tasks {
+				So(
+					t.Payload.(*internal.EmailTask).Recipients,
+					ShouldResemble,
+					[]string{expectedRecipients[i].Email})
 			}
-
-			// Verify sent messages.
-			verifyTasksAndMessages(c, taskqueue, notifyEmail)
 		}
 
 		verifyBuilder := func(build *Build, revision string) {
@@ -205,13 +199,13 @@ func TestHandleBuild(t *testing.T) {
 
 		Convey(`no config`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(build)
+			assertTasks(build)
 			grepLog("Nobody to notify")
 		})
 
 		Convey(`no config w/property`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
-			testSuccess(build, propEmail)
+			assertTasks(build, propEmail)
 		})
 
 		Convey(`no revision`, func() {
@@ -225,59 +219,59 @@ func TestHandleBuild(t *testing.T) {
 					Status: buildbucketpb.Status_SUCCESS,
 				},
 			}
-			testSuccess(build)
+			assertTasks(build)
 			grepLog("revision")
 		})
 
 		Convey(`init builder`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(build, failEmail)
+			assertTasks(build, failEmail)
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`init builder w/property`, func() {
 			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
-			testSuccess(build, failEmail, propEmail)
+			assertTasks(build, failEmail, propEmail)
 			verifyBuilder(build, rev1)
 		})
 
 		Convey(`out-of-order revision`, func() {
 			build := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_SUCCESS, oldTime, rev2)
-			testSuccess(build, successEmail)
+			assertTasks(build, successEmail)
 			verifyBuilder(build, rev2)
 
 			oldRevBuild := pubsubDummyBuild("test-builder-2", buildbucketpb.Status_FAILURE, newTime, rev1)
-			testSuccess(oldRevBuild, failEmail)
+			assertTasks(oldRevBuild, successEmail, failEmail) //no changeEmail
 			grepLog("old commit")
 		})
 
 		Convey(`revision update`, func() {
 			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1)
-			testSuccess(build, successEmail)
+			assertTasks(build, successEmail)
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
-			testSuccess(newBuild, failEmail, changeEmail)
+			assertTasks(newBuild, successEmail, failEmail, changeEmail)
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`revision update w/property`, func() {
 			build := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_SUCCESS, oldTime, rev1, propEmail)
-			testSuccess(build, successEmail, propEmail)
+			assertTasks(build, successEmail, propEmail)
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propEmail)
-			testSuccess(newBuild, failEmail, changeEmail, propEmail)
+			assertTasks(newBuild, successEmail, propEmail, failEmail, changeEmail, propEmail)
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`out-of-order creation time`, func() {
 			build := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
-			testSuccess(build, successEmail)
+			assertTasks(build, successEmail)
 			verifyBuilder(build, rev1)
 
 			oldBuild := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
-			testSuccess(oldBuild, failEmail)
+			assertTasks(oldBuild, successEmail, failEmail) // no changeEmail
 			grepLog("old time")
 		})
 	})
@@ -306,4 +300,21 @@ func mockHistoryFunc(mockCommits []*gitpb.Commit) HistoryFunc {
 		}
 		return commits, nil
 	}
+}
+
+func makeNotifiers(c context.Context, projectID string, cfg *apicfg.ProjectConfig) []*notifyConfig.Notifier {
+	var notifiers []*notifyConfig.Notifier
+	parentKey := datastore.MakeKey(c, "Project", projectID)
+	for _, n := range cfg.Notifiers {
+		notifiers = append(notifiers, notifyConfig.NewNotifier(parentKey, n))
+	}
+	return notifiers
+}
+
+func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable) {
+	dispatcher := &tq.Dispatcher{}
+	InitDispatcher(dispatcher)
+	taskqueue := tqtesting.GetTestable(c, dispatcher)
+	taskqueue.CreateQueues()
+	return dispatcher, taskqueue
 }

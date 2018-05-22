@@ -198,7 +198,7 @@ func (c *Cache) Put(ctx context.Context, key, value interface{}, exp time.Durati
 //
 // The key will be considered most recently used regardless of whether it was
 // put.
-func (c *Cache) Mutate(ctx context.Context, key interface{}, gen Generator) (interface{}, bool) {
+func (c *Cache) Mutate(ctx context.Context, key interface{}, gen Generator) (value interface{}, ok bool) {
 	now := clock.Now(ctx)
 
 	c.lock.Lock()
