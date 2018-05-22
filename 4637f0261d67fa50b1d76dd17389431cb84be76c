@@ -16,6 +16,24 @@
       "revId": "4637f0261d67fa50b1d76dd17389431cb84be76c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fe91b91_86fefeec",
+        "filename": "milo/buildsource/buildbucket/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T16:36:01Z",
+      "side": 1,
+      "message": "why would you want this to be logged? That would be 3k log lines per hour and I am not sure how is this useful.\n\nnote that that CL dups all messages",
+      "parentUuid": "5e5d8b9f_63d1ce2a",
+      "revId": "4637f0261d67fa50b1d76dd17389431cb84be76c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
