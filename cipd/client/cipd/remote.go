@@ -114,6 +114,10 @@ func isTemporaryHTTPError(statusCode int) bool {
 	return statusCode >= 500 || statusCode == 408 || statusCode == 429
 }
 
+func (r *remoteImpl) init() error {
+	return nil
+}
+
 // makeRequest sends POST or GET REST JSON requests with retries.
 func (r *remoteImpl) makeRequest(ctx context.Context, path, method string, request, response interface{}) error {
 	var body []byte
