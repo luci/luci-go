@@ -134,7 +134,7 @@ func pubSubHandlerImpl(c context.Context, r *http.Request) error {
 		// and Milo isn't updated yet.
 		return errors.Annotate(err, "could not decode message").Tag(transient.Tag).Err()
 	}
-	if v := msg.Message.Attributes["version"]; v != "" && v != "v1" {
+	if v, ok := msg.Message.Attributes["version"].(string); ok && v != "v1" {
 		// TODO(nodir): switch to v2, crbug.com/826006
 		logging.Debugf(c, "unsupported pubsub message version %q. Ignoring", v)
 		return nil
