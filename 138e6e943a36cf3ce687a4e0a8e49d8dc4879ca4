@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d738dc18_87f9e2c0",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "nit: nil will be the same",
+      "range": {
+        "startLine": 38,
+        "startChar": 43,
+        "endLine": 38,
+        "endChar": 46
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9aabb053_08820a57",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "For when you do the oauth2 implementation, note that this will be tricky with the \"allowed\" check.",
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c18c150b_5d81f4ff",
+        "filename": "milo/git/log.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "Make sure to tag these calls with NotFound errors too, otherwise it\u0027d pretty obvious when !allowed is triggered since it\u0027s the only time you\u0027d see \"https://%s/%s not found or no access\"",
+      "range": {
+        "startLine": 94,
+        "startChar": 26,
+        "endLine": 94,
+        "endChar": 30
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f11373af_0ef02545",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "I want to say for all intents and purposes, that this is basically a client. wdyt?",
+      "range": {
+        "startLine": 42,
+        "startChar": 3,
+        "endLine": 42,
+        "endChar": 9
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef0672aa_231b7496",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "nit: the maximum number",
+      "range": {
+        "startLine": 49,
+        "startChar": 20,
+        "endLine": 49,
+        "endChar": 30
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cb1001d_f23f9c27",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "\"Fetch\" is redundant since all other functions in the interface fetches things\n\"Gerrit\" is redundant since \"Change\" doesn\u0027t apply to Gitiles (right?).\nChangeEmail seems sufficient.  Or CLEmail since \"ChangeEmail\" sounds like an action.",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 61,
+        "endChar": 23
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7479a987_b77c504f",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "necessary?",
+      "range": {
+        "startLine": 65,
+        "startChar": 62,
+        "endLine": 65,
+        "endChar": 67
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10ecaea4_7e4ca7bd",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "Add comment: \"If a mockGerrit or mockGitiles is provided, then the mocks will be used.  Otherwise, the production client is used.\" or something.",
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "969a10ea_d83b9c58",
+        "filename": "milo/git/source.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T23:14:26Z",
+      "side": 1,
+      "message": "nit: returns an",
+      "range": {
+        "startLine": 100,
+        "startChar": 13,
+        "endLine": 100,
+        "endChar": 20
+      },
+      "revId": "138e6e943a36cf3ce687a4e0a8e49d8dc4879ca4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
