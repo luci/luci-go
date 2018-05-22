@@ -93,6 +93,17 @@ const (
 const (
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
+	EnvProtocol            = "CIPD_PROTOCOL"
+)
+
+// Possible values for ClientOptions.Protocol.
+type Protocol string
+
+const (
+	// ProtocolV1 is a protocol based on Cloud Endpoints.
+	ProtocolV1 Protocol = "v1"
+	// ProtocolV2 is a protocol based on pRPC.
+	ProtocolV2 Protocol = "v2"
 )
 
 var (
@@ -126,7 +137,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.8.0"
+	UserAgent = "cipd 1.8.1"
 )
 
 func init() {
@@ -537,6 +548,11 @@ type ClientOptions struct {
 	//
 	// Default is UserAgent const.
 	UserAgent string
+
+	// Protocol allows picking pRPC-based protocol instead of Cloud Endpoints.
+	//
+	// Default is ProtocolV1.
+	Protocol Protocol
 }
 
 // LoadFromEnv loads supplied default values from an environment into opts.
@@ -557,6 +573,16 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
+	if opts.Protocol == "" {
+		switch p := getEnv(EnvProtocol); {
+		case p == "v1":
+			opts.Protocol = ProtocolV1
+		case p == "v2":
+			opts.Protocol = ProtocolV2
+		case p != "":
+			return fmt.Errorf("unknown CIPD protocol identifier %q, pick either v1 or v2", p)
+		}
+	}
 	return nil
 }
 
@@ -570,6 +596,9 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
+	}
+	if opts.Protocol == "" {
+		opts.Protocol = ProtocolV1
 	}
 
 	// Validate and normalize service URL.
@@ -585,13 +614,32 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
-	return &clientImpl{
-		ClientOptions: opts,
-		remote: &remoteImpl{
+	// Pick the protocol implementation.
+	var r remote
+	switch opts.Protocol {
+	case ProtocolV1:
+		r = &remoteImpl{
 			serviceURL: opts.ServiceURL,
 			userAgent:  opts.UserAgent,
 			client:     opts.AuthenticatedClient,
-		},
+		}
+	case ProtocolV2:
+		r = &prpcRemoteImpl{
+			serviceURL: opts.ServiceURL,
+			userAgent:  opts.UserAgent,
+			client:     opts.AuthenticatedClient,
+		}
+	default:
+		return nil, fmt.Errorf("unknown protocol %q", opts.Protocol)
+	}
+
+	if err := r.init(); err != nil {
+		return nil, err
+	}
+
+	return &clientImpl{
+		ClientOptions: opts,
+		remote:        r,
 		storage: &storageImpl{
 			chunkSize: uploadChunkSize,
 			userAgent: opts.UserAgent,
@@ -1454,6 +1502,8 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 // Private structs and interfaces.
 
 type remote interface {
+	init() error
+
 	fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
 	modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
 
