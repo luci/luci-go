@@ -16,8 +16,10 @@ package config
 
 import (
 	"fmt"
+	html "html/template"
 	"net/mail"
 	"regexp"
+	text "text/template"
 
 	"github.com/golang/protobuf/proto"
 
@@ -146,11 +148,17 @@ func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, 
 
 	// Validate file contents.
 	subject, body, err := splitEmailTemplateFile(string(content))
-	var t ParsedEmailTemplate
 	if err != nil {
 		ctx.Error(err)
-	} else if err := t.Parse(subject, body); err != nil {
-		ctx.Error(err)
+	} else {
+		if _, err = text.New("subject").Parse(subject); err != nil {
+			ctx.Error(err) // error includes template name
+		}
+		// Due to luci-config limitation, we cannot detect an invalid reference to
+		// a sub-template defined in a different file.
+		if _, err = html.New("body").Parse(body); err != nil {
+			ctx.Error(err) // error includes template name
+		}
 	}
 	return nil
 }
