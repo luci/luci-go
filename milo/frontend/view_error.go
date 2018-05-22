@@ -5,7 +5,10 @@
 package frontend
 
 import (
+	"net/http"
+
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -19,9 +22,19 @@ func ErrorHandler(c *router.Context, err error) {
 	// master/bucket, etc.
 
 	code := common.ErrorTag.In(err)
-	if code == common.CodeUnknown {
+	switch code {
+	case common.CodeUnknown:
 		errors.Log(c.Context, err)
+	case common.CodeUnauthorized:
+		loginURL, err := auth.LoginURL(c.Context, c.Request.URL.RequestURI())
+		if err == nil {
+			http.Redirect(c.Writer, c.Request, loginURL, http.StatusFound)
+			return
+		}
+		errors.Log(
+			c.Context, errors.Annotate(err, "Failed to retrieve login URL").Err())
 	}
+
 	status := code.HTTPStatus()
 	c.Writer.WriteHeader(status)
 	templates.MustRender(c.Context, c.Writer, "pages/error.html", templates.Args{
