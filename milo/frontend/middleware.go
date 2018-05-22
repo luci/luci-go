@@ -414,7 +414,11 @@ func projectACLMiddleware(c *router.Context, next router.Handler) {
 	case err != nil:
 		ErrorHandler(c, err)
 	case !allowed:
-		ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
+		if auth.CurrentIdentity(c.Context) == identity.AnonymousIdentity {
+			ErrorHandler(c, errors.New("not logged in", common.CodeUnauthorized))
+		} else {
+			ErrorHandler(c, errors.New("no access to project", common.CodeNoAccess))
+		}
 	default:
 		next(c)
 	}
