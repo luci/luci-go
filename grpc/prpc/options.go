@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/retry"
@@ -44,6 +45,7 @@ type Options struct {
 	resHeaderMetadata  *metadata.MD // destination for response HTTP headers.
 	resTrailerMetadata *metadata.MD // destination for response HTTP trailers.
 	serverDeadline     time.Duration
+	expectedCodes      []codes.Code // list of non-OK grpc codes NOT to log
 }
 
 // DefaultOptions are used if no options are specified in Client.
@@ -96,6 +98,20 @@ func Trailer(md *metadata.MD) *CallOption {
 		grpc.Trailer(md),
 		func(o *Options) {
 			o.resTrailerMetadata = md
+		},
+	}
+}
+
+// ExpectedCode can be used to indicate that given non-OK codes may appear
+// during normal successful call flow, and thus they must not be logged as
+// erroneous.
+//
+// Only affects local logging, nothing else.
+func ExpectedCode(codes ...codes.Code) *CallOption {
+	return &CallOption{
+		grpc.EmptyCallOption{},
+		func(o *Options) {
+			o.expectedCodes = append(o.expectedCodes, codes...)
 		},
 	}
 }
