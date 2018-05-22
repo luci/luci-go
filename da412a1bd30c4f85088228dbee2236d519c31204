@@ -22,6 +22,30 @@
       "revId": "da412a1bd30c4f85088228dbee2236d519c31204",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "39e3ee82_8b891921",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T22:44:12Z",
+      "side": 1,
+      "message": "yeah, this is also a problem of duplicated pubsub messages. I will fix in a separate CL using task names.",
+      "parentUuid": "680c47eb_08086a3b",
+      "range": {
+        "startLine": 144,
+        "startChar": 1,
+        "endLine": 144,
+        "endChar": 30
+      },
+      "revId": "da412a1bd30c4f85088228dbee2236d519c31204",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
