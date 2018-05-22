@@ -14,6 +14,8 @@
 
 package pattern
 
+import "regexp"
+
 type exactMatch string
 
 func (m exactMatch) Match(s string) bool {
@@ -22,6 +24,10 @@ func (m exactMatch) Match(s string) bool {
 
 func (m exactMatch) String() string {
 	return "exact:" + string(m)
+}
+
+func (m exactMatch) Regexp() *regexp.Regexp {
+	return nil
 }
 
 // Exact returns a pattern that matches s only.

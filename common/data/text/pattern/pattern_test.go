@@ -30,6 +30,7 @@ func TestPattern(t *testing.T) {
 			So(p.Match("a"), ShouldBeTrue)
 			So(p.Match("b"), ShouldBeFalse)
 			So(p.String(), ShouldEqual, "exact:a")
+			So(p.Regexp(), ShouldBeNil)
 		})
 
 		Convey("Regex", func() {
@@ -38,18 +39,21 @@ func TestPattern(t *testing.T) {
 			So(p.Match("ab"), ShouldBeTrue)
 			So(p.Match("b"), ShouldBeFalse)
 			So(p.String(), ShouldEqual, "regex:^ab?$")
+			So(p.Regexp().String(), ShouldEqual, "^ab?$")
 		})
 
 		Convey("Any", func() {
 			So(Any.Match("a"), ShouldBeTrue)
 			So(Any.Match("b"), ShouldBeTrue)
 			So(Any.String(), ShouldEqual, "*")
+			So(Any.Regexp(), ShouldBeNil)
 		})
 
 		Convey("None", func() {
 			So(None.Match("a"), ShouldBeFalse)
 			So(None.Match("b"), ShouldBeFalse)
 			So(None.String(), ShouldEqual, "")
+			So(None.Regexp(), ShouldBeNil)
 		})
 
 		Convey("Parse", func() {

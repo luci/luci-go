@@ -27,6 +27,8 @@ type Pattern interface {
 	String() string
 	// Match returns true if s matches this pattern, otherwise false.
 	Match(s string) bool
+	// Regexp parsed regexp if the pattern has regexp prefix, nil otherwise.
+	Regexp() *regexp.Regexp
 }
 
 // Parse parses a pattern.

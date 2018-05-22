@@ -14,6 +14,8 @@
 
 package pattern
 
+import "regexp"
+
 type constant bool
 
 func (c constant) Match(s string) bool {
@@ -25,6 +27,10 @@ func (c constant) String() string {
 		return "*"
 	}
 	return ""
+}
+
+func (c constant) Regexp() *regexp.Regexp {
+	return nil
 }
 
 var (

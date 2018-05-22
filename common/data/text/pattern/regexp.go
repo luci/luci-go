@@ -28,6 +28,10 @@ func (m regexpMatch) String() string {
 	return "regex:" + m.r.String()
 }
 
+func (m regexpMatch) Regexp() *regexp.Regexp {
+	return m.r
+}
+
 // Regexp returns a regular expression-based pattern.
 func Regexp(expr *regexp.Regexp) Pattern {
 	return regexpMatch{expr}
