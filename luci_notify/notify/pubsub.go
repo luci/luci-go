@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -208,27 +209,31 @@ var errNotLUCIBuild = errors.New("not a LUCI build")
 //
 // This handler delegates the actual processing of the build to handleBuild.
 // Its primary purpose is to unwrap context boilerplate and deal with progress-stopping errors.
-func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) {
-	c, h := ctx.Context, ctx.Writer
+func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
+	c := ctx.Context
 	build, err := extractBuild(c, ctx.Request)
 	switch {
 	case err == errNotLUCIBuild:
 		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
+		return nil
+
 	case err != nil:
-		logging.WithError(err).Errorf(c, "error while extracting build")
+		return errors.Annotate(err, "failed to extract build").Err()
+
+	case build == nil:
+		// Ignore. Most probably, v2.
+		return nil
+
 	case !build.Status.Completed():
 		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
+		return nil
+
 	default:
 		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
-			logging.WithError(err).Errorf(c, "error while notifying")
-			if transient.Tag.In(err) {
-				// Transient errors are 500 so that PubSub retries them.
-				h.WriteHeader(http.StatusInternalServerError)
-				return
-			}
+			return errors.Annotate(err, "failed to notify").Tag(transient.Tag).Err()
 		}
+		return nil
 	}
-	h.WriteHeader(http.StatusOK)
 }
 
 // Build is buildbucketpb.Build along with the parsed 'email_notify' values.
@@ -245,11 +250,16 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		Message struct {
 			Data []byte
 		}
+		Attributes map[string]interface{}
 	}
 	if err := json.NewDecoder(r.Body).Decode(&msg); err != nil {
 		return nil, errors.Annotate(err, "could not decode message").Err()
 	}
 
+	if v, ok := msg.Attributes["version"].(string); ok && v != "v1" {
+		// Ignore v2 pubsub messages. TODO(nodir): use v2.
+		return nil, nil
+	}
 	var message struct {
 		Build bbv1.ApiCommonBuildMessage
 	}
