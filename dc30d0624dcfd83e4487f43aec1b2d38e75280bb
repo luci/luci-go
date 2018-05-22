@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "04171447_b94002c8",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T16:34:38Z",
+      "side": 1,
+      "message": "nit: calling search.StartCursor(\"\") is ok too",
+      "revId": "dc30d0624dcfd83e4487f43aec1b2d38e75280bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d7395c8_8de806d9",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-22T16:34:38Z",
+      "side": 1,
+      "message": "would just not setting it work? \"EMPTY\" is more magical than \"\".\nIsn\u0027t \"\" and \"EMPTY\" treated the same higher in the stack?\n\nafter reading more of this CL: the \"EMPTY\" is not checked anywhere, but we do check \"\"",
+      "revId": "dc30d0624dcfd83e4487f43aec1b2d38e75280bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
