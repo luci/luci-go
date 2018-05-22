@@ -45,6 +45,54 @@
       "revId": "c57bad5562817823cccf9e2dc9c1b4a769b8fbe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61b8b826_34613dcd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:33:52Z",
+      "side": 1,
+      "message": "1. Run a full chromium tryjob task via led with CIPD_PROTOCOL\u003dv2.\n2. Set this env var when calling CIPD from Puppet.\n3. Set this env var in ccompute bootstrap scripts, respawn a bunch of VMs to confirm it works.",
+      "parentUuid": "f22e1363_c06a0bcf",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 65
+      },
+      "revId": "c57bad5562817823cccf9e2dc9c1b4a769b8fbe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c94f49ad_ce72f861",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:33:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "073b3765_1be77136",
+      "range": {
+        "startLine": 15,
+        "startChar": 17,
+        "endLine": 15,
+        "endChar": 18
+      },
+      "revId": "c57bad5562817823cccf9e2dc9c1b4a769b8fbe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
