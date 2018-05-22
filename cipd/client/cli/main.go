@@ -2541,6 +2541,12 @@ func GetApplication(params Parameters) *cli.Application {
 				Advanced:  true,
 				ShortDesc: "Optional http User-Agent prefix.",
 			},
+			cipd.EnvProtocol: {
+				Advanced: true,
+				ShortDesc: "Allow picking CIPD backend protocol version ('v1' or 'v2'). " +
+					"The current default is v1, and this setting allows to test v2 before " +
+					"it becomes default.",
+			},
 			cipd.EnvCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
