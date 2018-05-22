@@ -16,12 +16,18 @@ package cipd
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/grpc/prpc"
 
@@ -78,12 +84,143 @@ func (r *prpcRemoteImpl) init() error {
 ////////////////////////////////////////////////////////////////////////////////
 // ACLs.
 
+var legacyRoles = map[string]api.Role{
+	"READER": api.Role_READER,
+	"WRITER": api.Role_WRITER,
+	"OWNER":  api.Role_OWNER,
+}
+
+func toUnixTime(t *timestamp.Timestamp) UnixTime {
+	return UnixTime(google.TimeFromProto(t))
+}
+
+func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
+	var roleAcl *api.PrefixMetadata_ACL
+	for _, acl := range m.Acls {
+		if acl.Role != role {
+			continue
+		}
+		for _, p := range acl.Principals {
+			if p == principal {
+				return false // already have it
+			}
+		}
+		roleAcl = acl
+	}
+
+	if roleAcl != nil {
+		// Append to the existing ACL.
+		roleAcl.Principals = append(roleAcl.Principals, principal)
+	} else {
+		// Add new ACL for this role, this is the first one.
+		m.Acls = append(m.Acls, &api.PrefixMetadata_ACL{
+			Role:       role,
+			Principals: []string{principal},
+		})
+	}
+
+	return true
+}
+
+func revokeRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
+	dirty := false
+	for _, acl := range m.Acls {
+		if acl.Role != role {
+			continue
+		}
+		filtered := acl.Principals[:0]
+		for _, p := range acl.Principals {
+			if p != principal {
+				filtered = append(filtered, principal)
+			}
+		}
+		if len(filtered) != len(acl.Principals) {
+			acl.Principals = filtered
+			dirty = true
+		}
+	}
+
+	if !dirty {
+		return false
+	}
+
+	// Kick out empty ACL entries.
+	acls := m.Acls[:0]
+	for _, acl := range m.Acls {
+		if len(acl.Principals) != 0 {
+			acls = append(acls, acl)
+		}
+	}
+	m.Acls = acls
+	return true
+}
+
 func (r *prpcRemoteImpl) fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
-	return nil, errNoV2Impl
+	resp, err := r.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
+		Prefix: packagePath,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := []PackageACL{}
+	for _, p := range resp.PerPrefixMetadata {
+		for _, acl := range p.Acls {
+			out = append(out, PackageACL{
+				PackagePath: p.Prefix,
+				Role:        acl.Role.String(),
+				Principals:  acl.Principals,
+				ModifiedBy:  p.UpdateUser,
+				ModifiedTs:  toUnixTime(p.UpdateTime),
+			})
+		}
+	}
+	return out, nil
 }
 
 func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
-	return errNoV2Impl
+	// Fetch existing metadata, if any.
+	meta, err := r.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
+		Prefix: packagePath,
+	}, prpc.ExpectedCode(codes.NotFound))
+	if code := grpc.Code(err); code != codes.OK && code != codes.NotFound {
+		return err
+	}
+
+	// Construct new empty metadata for codes.NotFound.
+	if meta == nil {
+		meta = &api.PrefixMetadata{Prefix: packagePath}
+	}
+
+	// Apply mutations.
+	dirty := false
+	for _, ch := range changes {
+		role, ok := legacyRoles[ch.Role]
+		if !ok {
+			// Just log and ignore. Aborting with error here breaks 'acl-edit -revoke'
+			// functionality, since it always try to revoke all possible roles,
+			// including unsupported COUNTER_WRITER.
+			logging.Warningf(ctx, "Ignoring role %q not supported in v2", ch.Role)
+			continue
+		}
+		changed := false
+		switch ch.Action {
+		case GrantRole:
+			changed = grantRole(meta, role, ch.Principal)
+		case RevokeRole:
+			changed = revokeRole(meta, role, ch.Principal)
+		default:
+			return fmt.Errorf("unrecognized PackageACLChangeAction %q", ch.Action)
+		}
+		dirty = dirty || changed
+	}
+
+	if !dirty {
+		return nil
+	}
+
+	// Store the new metadata. This call will check meta.Fingerprint.
+	_, err = r.repo.UpdatePrefixMetadata(ctx, meta)
+	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
