@@ -19,9 +19,9 @@ import (
 var pubsubClientFactoryKey = "stores a pubsubClientFactory"
 
 type PubSubMessage struct {
-	Attributes map[string]string `json:"attributes"`
-	Data       string            `json:"data"`
-	MessageID  string            `json:"message_id"`
+	Attributes map[string]interface{} `json:"attributes"`
+	Data       string                 `json:"data"`
+	MessageID  string                 `json:"message_id"`
 }
 
 type PubSubSubscription struct {
