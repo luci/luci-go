@@ -94,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "0f8d316e_4da5d1e9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T18:51:46Z",
+      "side": 1,
+      "message": "\u003e nit: I know this is probably not yours, but this code is O(N^2), while it can simultaneously be O(1) and a bit shorter: https://github.com/golang/go/wiki/SliceTricks#filtering-without-allocating\n\u003e \n\nI meant O(N) :)",
+      "parentUuid": "56e7026e_f4a69512",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 140,
+        "endChar": 2
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f7e1565d_226d3aac",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 14
