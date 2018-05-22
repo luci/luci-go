@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "983149fc_cf2c16f7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:09:07Z",
+      "side": 1,
+      "message": "As far as I can tell extractBuild just does text manipulation (decoding JSON), so retrying it if it fails most likely will not help. I think we should just ignore such broken message.",
+      "range": {
+        "startLine": 223,
+        "startChar": 56,
+        "endLine": 223,
+        "endChar": 81
+      },
+      "revId": "3ac278f9d90da320f447cb0fc1113b52b2e55e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfb19109_f2f2246f",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:09:07Z",
+      "side": 1,
+      "message": "Did",
+      "range": {
+        "startLine": 234,
+        "startChar": 5,
+        "endLine": 234,
+        "endChar": 8
+      },
+      "revId": "3ac278f9d90da320f447cb0fc1113b52b2e55e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10eb1103_1cb74db8",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:09:07Z",
+      "side": 1,
+      "message": "is this really necessary? What\u0027s the problem you are trying to solve? If you insist, consider using https://github.com/luci/luci-go/blob/master/appengine/memlock/memlock.go instead that is known to be bug free. Memcache locking is hard to get right.\n\nIf your goal is to avoid duplicated emails, a more reliable alternative would be to enqueue SendEmail TQ tasks transactionally with checking (and setting) a flag in the datastore \"the notification has been processed\".",
+      "range": {
+        "startLine": 235,
+        "startChar": 2,
+        "endLine": 235,
+        "endChar": 28
+      },
+      "revId": "3ac278f9d90da320f447cb0fc1113b52b2e55e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eb4be99_43ee0b9a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:09:07Z",
+      "side": 1,
+      "message": "We should release the lock before returning this error, otherwise on retry the handler will see \"oh, the lock is still there, someone\u0027s handling this\" and will ack the message. And thus it will be lost forever.",
+      "range": {
+        "startLine": 248,
+        "startChar": 4,
+        "endLine": 248,
+        "endChar": 14
+      },
+      "revId": "3ac278f9d90da320f447cb0fc1113b52b2e55e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e838e64_ca25d4a3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T19:09:07Z",
+      "side": 1,
+      "message": "just Delete it",
+      "revId": "3ac278f9d90da320f447cb0fc1113b52b2e55e70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
