@@ -60,11 +60,12 @@
 <div class="console-header">
   <div class="console-header-column">
 
+    {{ with $header.Oncalls }}
     <!-- Oncalls -->
     <div class="console-header-group">
       <div class="console-header-group-title">Oncalls</div>
       <div class="console-header-groups">
-      {{ range $header.Oncalls }}
+      {{ range . }}
         <div class="console-header-oncalls-group">
           <div class="console-header-group-name">
             {{ .Name }}
@@ -91,6 +92,7 @@
       {{ end }}
       </div>
     </div>
+    {{ end }}
 
     <!-- Links -->
     <div class="console-header-group">
