@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b13cde5c_8ef02f67",
+        "filename": "milo/frontend/view_error.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T21:22:09Z",
+      "side": 1,
+      "message": "nit: switch code { ...",
+      "revId": "01f3987e1874c127642a08b6f26cf5e76aede568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2b87d62_e7bf6baa",
+        "filename": "milo/frontend/view_error.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T21:22:09Z",
+      "side": 1,
+      "message": "nit: else is redundant",
+      "range": {
+        "startLine": 35,
+        "startChar": 4,
+        "endLine": 35,
+        "endChar": 8
+      },
+      "revId": "01f3987e1874c127642a08b6f26cf5e76aede568",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
