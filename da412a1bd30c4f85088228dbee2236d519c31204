@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "680c47eb_08086a3b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T22:08:24Z",
+      "side": 1,
+      "message": "Note that this is not transactional. If it fails midway, only subset of \u0027tasks\u0027 will be scheduled. And on retry, they\u0027ll be readded.",
+      "range": {
+        "startLine": 144,
+        "startChar": 1,
+        "endLine": 144,
+        "endChar": 30
+      },
+      "revId": "da412a1bd30c4f85088228dbee2236d519c31204",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

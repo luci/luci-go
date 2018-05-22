@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "236523b2_ec16fd51",
+        "filename": "luci_notify/notify/emailgen.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-22T22:08:24Z",
+      "side": 1,
+      "message": "Ah, I see. I thought you only fetching it for ErrNoSuchEntity error.",
+      "parentUuid": "1c6a05ce_fb6175d4",
+      "range": {
+        "startLine": 207,
+        "startChar": 3,
+        "endLine": 209,
+        "endChar": 4
+      },
+      "revId": "d85433f7ae86c8ac5332b6476024b6e4271348ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "958d1af1_4a0b40bb",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 14
