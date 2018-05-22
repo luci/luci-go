@@ -16,6 +16,213 @@
       "revId": "21bd319002954e46e908f11f447e706e5994e164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10bc8b36_3717e32d",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "This makes it not really a factory anymore, but I don\u0027t know what to call this...\n\nACLSets instead of Factory maybe? Since that\u0027s really what this \"factory\" is encapsulating.  It creates Gitiles and Gerrit clients that are bound by these ACLSets, particularly with the IsAllowed() function thrown in there.",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 10
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a136dead_9333017a",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "Nit: I think \"UseProd()\" is sufficient here, since theres nothing else other than factories that can be used, so it\u0027s not ambiguous.\n\nOr maybe \"git.UseACLs(c, acls)\" would be even clearer.",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 17
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d24f0c0_16e0146c",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "You need to return the original context, otherwise logging will probably fail after this call",
+      "range": {
+        "startLine": 41,
+        "startChar": 9,
+        "endLine": 41,
+        "endChar": 12
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29ea8655_249a9757",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "Use() is sufficient.",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 15
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8401f183_11171183",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "the project.  Same below I think.  Also note what this is for (ie gerrit changes don\u0027t necessarily hardcode project in the path, so we have a change id but no project)",
+      "range": {
+        "startLine": 57,
+        "startChar": 66,
+        "endLine": 57,
+        "endChar": 73
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b59799f_78ca4a7b",
+        "filename": "milo/git/client.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "I like \"bypassACLChecks\" since it\u0027s scarier and describes the intention.",
+      "range": {
+        "startLine": 60,
+        "startChar": 6,
+        "endLine": 60,
+        "endChar": 33
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ccc294f_12f4aa00",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "What\u0027s the point of this closure?",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 19
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62dae8b8_04877882",
+        "filename": "milo/git/log.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "Isn\u0027t this redundant with the gitiles client?",
+      "range": {
+        "startLine": 55,
+        "startChar": 1,
+        "endLine": 55,
+        "endChar": 47
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee755812_65712b10",
+        "filename": "milo/git/log.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-22T02:09:46Z",
+      "side": 1,
+      "message": "I\u0027d name this \"allowed\", so that it\u0027s \"case !allowed\" (audible as \"not allowed\").  \"not yes\" doesn\u0027t mean as much.",
+      "range": {
+        "startLine": 58,
+        "startChar": 7,
+        "endLine": 58,
+        "endChar": 10
+      },
+      "revId": "21bd319002954e46e908f11f447e706e5994e164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
