@@ -16,6 +16,24 @@
       "revId": "1360a258540de19da4538b83e41d4434d81f7b6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4243a547_e0a65c6b",
+        "filename": "skylark/interpreter/to_json.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T01:49:50Z",
+      "side": 1,
+      "message": "Done, but there\u0027s an alternative philosophy for order of declarations: declare exported symbols first, and everything else later. In this module toJSONImpl is exported, everything else are implementation details.",
+      "parentUuid": "c5ffc131_36fe6341",
+      "revId": "1360a258540de19da4538b83e41d4434d81f7b6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
