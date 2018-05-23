@@ -88,6 +88,7 @@ func TestNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tasks, ShouldResemble, []*tq.Task{
 				{
+					NamePrefix: "email-54-default-8c87b489ce35cf2e2f39f80e282cb2e804932a56a213983eeeb428407d43b52d",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"jane@example.com"},
 						Subject:    "Build 54 completed",
@@ -95,6 +96,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 				{
+					NamePrefix: "email-54-default-855f96e983f1f8e8be944692b6f719fd54329826cb62e98015efee8e2e071dd4",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"john@example.com"},
 						Subject:    "Build 54 completed",
@@ -102,6 +104,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 				{
+					NamePrefix: "email-54-non-default-799973357b4634d2b9a8e044c5dc36f975a926c0d3d275fe3e0fe3c045b009f1",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"don@example.com"},
 						Subject:    "Build 54 completed from non-default template",
