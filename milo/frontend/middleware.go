@@ -41,6 +41,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/frontend/ui"
 	"go.chromium.org/luci/milo/git"
+	"go.chromium.org/luci/milo/git/gitacls"
 )
 
 // A collection of useful templating functions
@@ -375,7 +376,7 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 //
 // This middleware must be installed after the auth middleware.
 func withGitMiddleware(c *router.Context, next router.Handler) {
-	acls, err := git.ACLsFromConfig(c.Context, common.GetSettings(c.Context).SourceAcls)
+	acls, err := gitacls.FromConfig(c.Context, common.GetSettings(c.Context).SourceAcls)
 	if err != nil {
 		ErrorHandler(c, err)
 		return
