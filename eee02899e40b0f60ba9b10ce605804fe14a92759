@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e5aac14_5aca8c94",
+        "filename": "milo/git/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-23T23:46:54Z",
+      "side": 1,
+      "message": "use identity.AnonymousIdentity: https://github.com/luci/luci-go/blob/0bf5f71d3a434471950b2e398cdca920aa3a6d31/auth/identity/identity.go#L59",
+      "range": {
+        "startLine": 148,
+        "startChar": 40,
+        "endLine": 148,
+        "endChar": 61
+      },
+      "revId": "eee02899e40b0f60ba9b10ce605804fe14a92759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "097e62b8_1ad992b7",
+        "filename": "milo/git/gerrit_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-23T23:46:54Z",
+      "side": 1,
+      "message": "is this intentional?",
+      "revId": "eee02899e40b0f60ba9b10ce605804fe14a92759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
