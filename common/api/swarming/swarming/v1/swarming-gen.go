@@ -55,11 +55,11 @@ var _ = ctxhttp.Do
 const apiId = "swarming:v1"
 const apiName = "swarming"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/_ah/api/swarming/v1/"
+const basePath = "http://localhost:8080/api/swarming/v1"
 
 // OAuth2 scopes used by this API.
 const (
-	// View your email address
+	// https://www.googleapis.com/auth/userinfo.email
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
@@ -491,9 +491,9 @@ func (s *SwarmingRpcsBotsDimensions) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsCacheEntry: Describes a named cache that should be
 // present on the bot. A CacheEntry in a task specified that the task
 // prefers the cache to be present on the bot. A symlink to the cache
-// directory is created at /|path|. If cache is not present on the
-// machine, the directory is empty. If the tasks makes any changes to
-// the contents of the cache directory, they are persisted on the
+// directory is created at <run_dir>/|path|. If cache is not present on
+// the machine, the directory is empty. If the tasks makes any changes
+// to the contents of the cache directory, they are persisted on the
 // machine. If another task runs on the same machine and requests the
 // same named cache, even if mapped to a different path, it will see the
 // changes.
@@ -1162,11 +1162,11 @@ type SwarmingRpcsTaskProperties struct {
 	// Caches: Describes a named cache that should be present on the bot. A
 	// CacheEntry in a task specified that the task prefers the cache to be
 	// present on the bot. A symlink to the cache directory is created at
-	// /|path|. If cache is not present on the machine, the directory is
-	// empty. If the tasks makes any changes to the contents of the cache
-	// directory, they are persisted on the machine. If another task runs on
-	// the same machine and requests the same named cache, even if mapped to
-	// a different path, it will see the changes.
+	// <run_dir>/|path|. If cache is not present on the machine, the
+	// directory is empty. If the tasks makes any changes to the contents of
+	// the cache directory, they are persisted on the machine. If another
+	// task runs on the same machine and requests the same named cache, even
+	// if mapped to a different path, it will see the changes.
 	Caches []*SwarmingRpcsCacheEntry `json:"caches,omitempty"`
 
 	// CipdInput: Defines CIPD packages to install in task run directory.
@@ -1483,15 +1483,15 @@ type SwarmingRpcsTaskResult struct {
 	StartedTs string `json:"started_ts,omitempty"`
 
 	// Possible values:
-	//   "BOT_DIED"
-	//   "CANCELED"
-	//   "COMPLETED"
-	//   "EXPIRED"
-	//   "KILLED"
 	//   "NO_RESOURCE"
+	//   "COMPLETED"
 	//   "PENDING"
 	//   "RUNNING"
+	//   "EXPIRED"
 	//   "TIMED_OUT"
+	//   "CANCELED"
+	//   "KILLED"
+	//   "BOT_DIED"
 	State string `json:"state,omitempty"`
 
 	Tags []string `json:"tags,omitempty"`
@@ -1585,7 +1585,8 @@ type SwarmingRpcsTasksCancelRequest struct {
 
 	KillRunning bool `json:"kill_running,omitempty"`
 
-	Limit int64 `json:"limit,omitempty,string"`
+	// Default: 100
+	Limit *int64 `json:"limit,omitempty,string"`
 
 	Tags []string `json:"tags,omitempty"`
 
@@ -1866,7 +1867,7 @@ func (c *BotDeleteCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsDeletedRe
 	//   },
 	//   "path": "bot/{bot_id}/delete",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsDeletedResponse"
+	//     "$ref": "swarming_rpcs.DeletedResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2046,7 +2047,7 @@ func (c *BotEventsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotEvents
 	//   },
 	//   "path": "bot/{bot_id}/events",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotEvents"
+	//     "$ref": "swarming_rpcs.BotEvents"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2183,7 +2184,7 @@ func (c *BotGetCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotInfo, err
 	//   },
 	//   "path": "bot/{bot_id}/get",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotInfo"
+	//     "$ref": "swarming_rpcs.BotInfo"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2242,10 +2243,10 @@ func (c *BotTasksCall) Limit(limit int64) *BotTasksCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
 //   "CREATED_TS" (default)
 //   "MODIFIED_TS"
+//   "COMPLETED_TS"
+//   "ABANDONED_TS"
 func (c *BotTasksCall) Sort(sort string) *BotTasksCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -2260,20 +2261,20 @@ func (c *BotTasksCall) Start(start float64) *BotTasksCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
+//   "PENDING"
+//   "RUNNING"
+//   "PENDING_RUNNING"
+//   "COMPLETED"
+//   "COMPLETED_SUCCESS"
+//   "COMPLETED_FAILURE"
+//   "EXPIRED"
+//   "TIMED_OUT"
 //   "BOT_DIED"
 //   "CANCELED"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
+//   "ALL" (default)
 //   "DEDUPED"
-//   "EXPIRED"
 //   "KILLED"
 //   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
 func (c *BotTasksCall) State(state string) *BotTasksCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -2407,16 +2408,10 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 	//     "sort": {
 	//       "default": "CREATED_TS",
 	//       "enum": [
-	//         "ABANDONED_TS",
-	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "MODIFIED_TS",
+	//         "COMPLETED_TS",
+	//         "ABANDONED_TS"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -2429,36 +2424,20 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 	//     "state": {
 	//       "default": "ALL",
 	//       "enum": [
-	//         "ALL",
+	//         "PENDING",
+	//         "RUNNING",
+	//         "PENDING_RUNNING",
+	//         "COMPLETED",
+	//         "COMPLETED_SUCCESS",
+	//         "COMPLETED_FAILURE",
+	//         "EXPIRED",
+	//         "TIMED_OUT",
 	//         "BOT_DIED",
 	//         "CANCELED",
-	//         "COMPLETED",
-	//         "COMPLETED_FAILURE",
-	//         "COMPLETED_SUCCESS",
+	//         "ALL",
 	//         "DEDUPED",
-	//         "EXPIRED",
 	//         "KILLED",
-	//         "NO_RESOURCE",
-	//         "PENDING",
-	//         "PENDING_RUNNING",
-	//         "RUNNING",
-	//         "TIMED_OUT"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "NO_RESOURCE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -2466,7 +2445,7 @@ func (c *BotTasksCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotTasks, 
 	//   },
 	//   "path": "bot/{bot_id}/tasks",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotTasks"
+	//     "$ref": "swarming_rpcs.BotTasks"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2595,7 +2574,7 @@ func (c *BotTerminateCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTermin
 	//   },
 	//   "path": "bot/{bot_id}/terminate",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTerminateResponse"
+	//     "$ref": "swarming_rpcs.TerminateResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2729,7 +2708,7 @@ func (c *BotsCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotsCount
 	//   },
 	//   "path": "bots/count",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotsCount"
+	//     "$ref": "swarming_rpcs.BotsCount"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2851,7 +2830,7 @@ func (c *BotsDimensionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBots
 	//   "id": "swarming.bots.dimensions",
 	//   "path": "bots/dimensions",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotsDimensions"
+	//     "$ref": "swarming_rpcs.BotsDimensions"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -2892,8 +2871,8 @@ func (c *BotsListCall) Dimensions(dimensions ...string) *BotsListCall {
 //
 // Possible values:
 //   "FALSE"
-//   "NONE" (default)
 //   "TRUE"
+//   "NONE" (default)
 func (c *BotsListCall) InMaintenance(inMaintenance string) *BotsListCall {
 	c.urlParams_.Set("in_maintenance", inMaintenance)
 	return c
@@ -2903,8 +2882,8 @@ func (c *BotsListCall) InMaintenance(inMaintenance string) *BotsListCall {
 //
 // Possible values:
 //   "FALSE"
-//   "NONE" (default)
 //   "TRUE"
+//   "NONE" (default)
 func (c *BotsListCall) IsBusy(isBusy string) *BotsListCall {
 	c.urlParams_.Set("is_busy", isBusy)
 	return c
@@ -2914,8 +2893,8 @@ func (c *BotsListCall) IsBusy(isBusy string) *BotsListCall {
 //
 // Possible values:
 //   "FALSE"
-//   "NONE" (default)
 //   "TRUE"
+//   "NONE" (default)
 func (c *BotsListCall) IsDead(isDead string) *BotsListCall {
 	c.urlParams_.Set("is_dead", isDead)
 	return c
@@ -2925,8 +2904,8 @@ func (c *BotsListCall) IsDead(isDead string) *BotsListCall {
 //
 // Possible values:
 //   "FALSE"
-//   "NONE" (default)
 //   "TRUE"
+//   "NONE" (default)
 func (c *BotsListCall) IsMp(isMp string) *BotsListCall {
 	c.urlParams_.Set("is_mp", isMp)
 	return c
@@ -2942,8 +2921,8 @@ func (c *BotsListCall) Limit(limit int64) *BotsListCall {
 //
 // Possible values:
 //   "FALSE"
-//   "NONE" (default)
 //   "TRUE"
+//   "NONE" (default)
 func (c *BotsListCall) Quarantined(quarantined string) *BotsListCall {
 	c.urlParams_.Set("quarantined", quarantined)
 	return c
@@ -3057,13 +3036,8 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
+	//         "TRUE",
+	//         "NONE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -3072,13 +3046,8 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
+	//         "TRUE",
+	//         "NONE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -3087,13 +3056,8 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
+	//         "TRUE",
+	//         "NONE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -3102,13 +3066,8 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
+	//         "TRUE",
+	//         "NONE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -3123,13 +3082,8 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//       "default": "NONE",
 	//       "enum": [
 	//         "FALSE",
-	//         "NONE",
-	//         "TRUE"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         ""
+	//         "TRUE",
+	//         "NONE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -3137,7 +3091,7 @@ func (c *BotsListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBotList, e
 	//   },
 	//   "path": "bots/list",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBotList"
+	//     "$ref": "swarming_rpcs.BotList"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3281,7 +3235,7 @@ func (c *QueuesListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskQueu
 	//   },
 	//   "path": "queues/list",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskQueueList"
+	//     "$ref": "swarming_rpcs.TaskQueueList"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3402,7 +3356,7 @@ func (c *ServerDetailsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsServe
 	//   "id": "swarming.server.details",
 	//   "path": "server/details",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsServerDetails"
+	//     "$ref": "swarming_rpcs.ServerDetails"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3523,7 +3477,7 @@ func (c *ServerGetBootstrapCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	//   "id": "swarming.server.get_bootstrap",
 	//   "path": "server/get_bootstrap",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsFileContent"
+	//     "$ref": "swarming_rpcs.FileContent"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3644,7 +3598,7 @@ func (c *ServerGetBotConfigCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcs
 	//   "id": "swarming.server.get_bot_config",
 	//   "path": "server/get_bot_config",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsFileContent"
+	//     "$ref": "swarming_rpcs.FileContent"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3765,7 +3719,7 @@ func (c *ServerPermissionsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsC
 	//   "id": "swarming.server.permissions",
 	//   "path": "server/permissions",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsClientPermissions"
+	//     "$ref": "swarming_rpcs.ClientPermissions"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3872,7 +3826,7 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 	//   "id": "swarming.server.token",
 	//   "path": "server/token",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsBootstrapToken"
+	//     "$ref": "swarming_rpcs.BootstrapToken"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -3886,7 +3840,7 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 type TaskCancelCall struct {
 	s                             *Service
 	taskId                        string
-	swarmingrpcstaskcancelrequest *SwarmingRpcsTaskCancelRequest
+	swarmingRpcsTaskcancelrequest *SwarmingRpcsTaskCancelRequest
 	urlParams_                    gensupport.URLParams
 	ctx_                          context.Context
 	header_                       http.Header
@@ -3894,10 +3848,10 @@ type TaskCancelCall struct {
 
 // Cancel: Cancels a task. If a bot was running the task, the bot will
 // forcibly cancel the task.
-func (r *TaskService) Cancel(taskId string, swarmingrpcstaskcancelrequest *SwarmingRpcsTaskCancelRequest) *TaskCancelCall {
+func (r *TaskService) Cancel(taskId string, swarmingRpcsTaskcancelrequest *SwarmingRpcsTaskCancelRequest) *TaskCancelCall {
 	c := &TaskCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.taskId = taskId
-	c.swarmingrpcstaskcancelrequest = swarmingrpcstaskcancelrequest
+	c.swarmingRpcsTaskcancelrequest = swarmingRpcsTaskcancelrequest
 	return c
 }
 
@@ -3933,7 +3887,7 @@ func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcstaskcancelrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingRpcsTaskcancelrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -4002,11 +3956,11 @@ func (c *TaskCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsCancelRe
 	//   },
 	//   "path": "task/{task_id}/cancel",
 	//   "request": {
-	//     "$ref": "SwarmingRpcsTaskCancelRequest",
+	//     "$ref": "swarming_rpcs.TaskCancelRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "SwarmingRpcsCancelResponse"
+	//     "$ref": "swarming_rpcs.CancelResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4142,7 +4096,7 @@ func (c *TaskRequestCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReq
 	//   },
 	//   "path": "task/{task_id}/request",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskRequest"
+	//     "$ref": "swarming_rpcs.TaskRequest"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4293,7 +4247,7 @@ func (c *TaskResultCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskResu
 	//   },
 	//   "path": "task/{task_id}/result",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskResult"
+	//     "$ref": "swarming_rpcs.TaskResult"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4429,7 +4383,7 @@ func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutp
 	//   },
 	//   "path": "task/{task_id}/stdout",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskOutput"
+	//     "$ref": "swarming_rpcs.TaskOutput"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4442,7 +4396,7 @@ func (c *TaskStdoutCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskOutp
 
 type TasksCancelCall struct {
 	s                              *Service
-	swarmingrpcstaskscancelrequest *SwarmingRpcsTasksCancelRequest
+	swarmingRpcsTaskscancelrequest *SwarmingRpcsTasksCancelRequest
 	urlParams_                     gensupport.URLParams
 	ctx_                           context.Context
 	header_                        http.Header
@@ -4451,9 +4405,9 @@ type TasksCancelCall struct {
 // Cancel: Cancel a subset of pending tasks based on the tags.
 // Cancellation happens asynchronously, so when this call returns,
 // cancellations will not have completed yet.
-func (r *TasksService) Cancel(swarmingrpcstaskscancelrequest *SwarmingRpcsTasksCancelRequest) *TasksCancelCall {
+func (r *TasksService) Cancel(swarmingRpcsTaskscancelrequest *SwarmingRpcsTasksCancelRequest) *TasksCancelCall {
 	c := &TasksCancelCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingrpcstaskscancelrequest = swarmingrpcstaskscancelrequest
+	c.swarmingRpcsTaskscancelrequest = swarmingRpcsTaskscancelrequest
 	return c
 }
 
@@ -4489,7 +4443,7 @@ func (c *TasksCancelCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcstaskscancelrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingRpcsTaskscancelrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -4545,11 +4499,11 @@ func (c *TasksCancelCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCa
 	//   "id": "swarming.tasks.cancel",
 	//   "path": "tasks/cancel",
 	//   "request": {
-	//     "$ref": "SwarmingRpcsTasksCancelRequest",
+	//     "$ref": "swarming_rpcs.TasksCancelRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTasksCancelResponse"
+	//     "$ref": "swarming_rpcs.TasksCancelResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4589,20 +4543,20 @@ func (c *TasksCountCall) Start(start float64) *TasksCountCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
+//   "PENDING"
+//   "RUNNING"
+//   "PENDING_RUNNING"
+//   "COMPLETED"
+//   "COMPLETED_SUCCESS"
+//   "COMPLETED_FAILURE"
+//   "EXPIRED"
+//   "TIMED_OUT"
 //   "BOT_DIED"
 //   "CANCELED"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
+//   "ALL" (default)
 //   "DEDUPED"
-//   "EXPIRED"
 //   "KILLED"
 //   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
 func (c *TasksCountCall) State(state string) *TasksCountCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -4722,36 +4676,20 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 	//     "state": {
 	//       "default": "ALL",
 	//       "enum": [
-	//         "ALL",
+	//         "PENDING",
+	//         "RUNNING",
+	//         "PENDING_RUNNING",
+	//         "COMPLETED",
+	//         "COMPLETED_SUCCESS",
+	//         "COMPLETED_FAILURE",
+	//         "EXPIRED",
+	//         "TIMED_OUT",
 	//         "BOT_DIED",
 	//         "CANCELED",
-	//         "COMPLETED",
-	//         "COMPLETED_FAILURE",
-	//         "COMPLETED_SUCCESS",
+	//         "ALL",
 	//         "DEDUPED",
-	//         "EXPIRED",
 	//         "KILLED",
-	//         "NO_RESOURCE",
-	//         "PENDING",
-	//         "PENDING_RUNNING",
-	//         "RUNNING",
-	//         "TIMED_OUT"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "NO_RESOURCE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -4764,7 +4702,7 @@ func (c *TasksCountCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksCou
 	//   },
 	//   "path": "tasks/count",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTasksCount"
+	//     "$ref": "swarming_rpcs.TasksCount"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -4818,10 +4756,10 @@ func (c *TasksListCall) Limit(limit int64) *TasksListCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
 //   "CREATED_TS" (default)
 //   "MODIFIED_TS"
+//   "COMPLETED_TS"
+//   "ABANDONED_TS"
 func (c *TasksListCall) Sort(sort string) *TasksListCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -4836,20 +4774,20 @@ func (c *TasksListCall) Start(start float64) *TasksListCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
+//   "PENDING"
+//   "RUNNING"
+//   "PENDING_RUNNING"
+//   "COMPLETED"
+//   "COMPLETED_SUCCESS"
+//   "COMPLETED_FAILURE"
+//   "EXPIRED"
+//   "TIMED_OUT"
 //   "BOT_DIED"
 //   "CANCELED"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
+//   "ALL" (default)
 //   "DEDUPED"
-//   "EXPIRED"
 //   "KILLED"
 //   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
 func (c *TasksListCall) State(state string) *TasksListCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -4978,16 +4916,10 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//     "sort": {
 	//       "default": "CREATED_TS",
 	//       "enum": [
-	//         "ABANDONED_TS",
-	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "MODIFIED_TS",
+	//         "COMPLETED_TS",
+	//         "ABANDONED_TS"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -5000,36 +4932,20 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//     "state": {
 	//       "default": "ALL",
 	//       "enum": [
-	//         "ALL",
+	//         "PENDING",
+	//         "RUNNING",
+	//         "PENDING_RUNNING",
+	//         "COMPLETED",
+	//         "COMPLETED_SUCCESS",
+	//         "COMPLETED_FAILURE",
+	//         "EXPIRED",
+	//         "TIMED_OUT",
 	//         "BOT_DIED",
 	//         "CANCELED",
-	//         "COMPLETED",
-	//         "COMPLETED_FAILURE",
-	//         "COMPLETED_SUCCESS",
+	//         "ALL",
 	//         "DEDUPED",
-	//         "EXPIRED",
 	//         "KILLED",
-	//         "NO_RESOURCE",
-	//         "PENDING",
-	//         "PENDING_RUNNING",
-	//         "RUNNING",
-	//         "TIMED_OUT"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "NO_RESOURCE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -5042,7 +4958,7 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 	//   },
 	//   "path": "tasks/list",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskList"
+	//     "$ref": "swarming_rpcs.TaskList"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -5055,7 +4971,7 @@ func (c *TasksListCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskList,
 
 type TasksNewCall struct {
 	s                          *Service
-	swarmingrpcsnewtaskrequest *SwarmingRpcsNewTaskRequest
+	swarmingRpcsNewtaskrequest *SwarmingRpcsNewTaskRequest
 	urlParams_                 gensupport.URLParams
 	ctx_                       context.Context
 	header_                    http.Header
@@ -5064,9 +4980,9 @@ type TasksNewCall struct {
 // New: Creates a new task. The task will be enqueued in the tasks list
 // and will be executed at the earliest opportunity by a bot that has at
 // least the dimensions as described in the task request.
-func (r *TasksService) New(swarmingrpcsnewtaskrequest *SwarmingRpcsNewTaskRequest) *TasksNewCall {
+func (r *TasksService) New(swarmingRpcsNewtaskrequest *SwarmingRpcsNewTaskRequest) *TasksNewCall {
 	c := &TasksNewCall{s: r.s, urlParams_: make(gensupport.URLParams)}
-	c.swarmingrpcsnewtaskrequest = swarmingrpcsnewtaskrequest
+	c.swarmingRpcsNewtaskrequest = swarmingRpcsNewtaskrequest
 	return c
 }
 
@@ -5102,7 +5018,7 @@ func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingrpcsnewtaskrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.swarmingRpcsNewtaskrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -5158,11 +5074,11 @@ func (c *TasksNewCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskReques
 	//   "id": "swarming.tasks.new",
 	//   "path": "tasks/new",
 	//   "request": {
-	//     "$ref": "SwarmingRpcsNewTaskRequest",
+	//     "$ref": "swarming_rpcs.NewTaskRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskRequestMetadata"
+	//     "$ref": "swarming_rpcs.TaskRequestMetadata"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -5216,10 +5132,10 @@ func (c *TasksRequestsCall) Limit(limit int64) *TasksRequestsCall {
 // Sort sets the optional parameter "sort":
 //
 // Possible values:
-//   "ABANDONED_TS"
-//   "COMPLETED_TS"
 //   "CREATED_TS" (default)
 //   "MODIFIED_TS"
+//   "COMPLETED_TS"
+//   "ABANDONED_TS"
 func (c *TasksRequestsCall) Sort(sort string) *TasksRequestsCall {
 	c.urlParams_.Set("sort", sort)
 	return c
@@ -5234,20 +5150,20 @@ func (c *TasksRequestsCall) Start(start float64) *TasksRequestsCall {
 // State sets the optional parameter "state":
 //
 // Possible values:
-//   "ALL" (default)
+//   "PENDING"
+//   "RUNNING"
+//   "PENDING_RUNNING"
+//   "COMPLETED"
+//   "COMPLETED_SUCCESS"
+//   "COMPLETED_FAILURE"
+//   "EXPIRED"
+//   "TIMED_OUT"
 //   "BOT_DIED"
 //   "CANCELED"
-//   "COMPLETED"
-//   "COMPLETED_FAILURE"
-//   "COMPLETED_SUCCESS"
+//   "ALL" (default)
 //   "DEDUPED"
-//   "EXPIRED"
 //   "KILLED"
 //   "NO_RESOURCE"
-//   "PENDING"
-//   "PENDING_RUNNING"
-//   "RUNNING"
-//   "TIMED_OUT"
 func (c *TasksRequestsCall) State(state string) *TasksRequestsCall {
 	c.urlParams_.Set("state", state)
 	return c
@@ -5376,16 +5292,10 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//     "sort": {
 	//       "default": "CREATED_TS",
 	//       "enum": [
-	//         "ABANDONED_TS",
-	//         "COMPLETED_TS",
 	//         "CREATED_TS",
-	//         "MODIFIED_TS"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "MODIFIED_TS",
+	//         "COMPLETED_TS",
+	//         "ABANDONED_TS"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -5398,36 +5308,20 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//     "state": {
 	//       "default": "ALL",
 	//       "enum": [
-	//         "ALL",
+	//         "PENDING",
+	//         "RUNNING",
+	//         "PENDING_RUNNING",
+	//         "COMPLETED",
+	//         "COMPLETED_SUCCESS",
+	//         "COMPLETED_FAILURE",
+	//         "EXPIRED",
+	//         "TIMED_OUT",
 	//         "BOT_DIED",
 	//         "CANCELED",
-	//         "COMPLETED",
-	//         "COMPLETED_FAILURE",
-	//         "COMPLETED_SUCCESS",
+	//         "ALL",
 	//         "DEDUPED",
-	//         "EXPIRED",
 	//         "KILLED",
-	//         "NO_RESOURCE",
-	//         "PENDING",
-	//         "PENDING_RUNNING",
-	//         "RUNNING",
-	//         "TIMED_OUT"
-	//       ],
-	//       "enumDescriptions": [
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         "",
-	//         ""
+	//         "NO_RESOURCE"
 	//       ],
 	//       "location": "query",
 	//       "type": "string"
@@ -5440,7 +5334,7 @@ func (c *TasksRequestsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTaskR
 	//   },
 	//   "path": "tasks/requests",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTaskRequests"
+	//     "$ref": "swarming_rpcs.TaskRequests"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -5561,7 +5455,7 @@ func (c *TasksTagsCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsTasksTags
 	//   "id": "swarming.tasks.tags",
 	//   "path": "tasks/tags",
 	//   "response": {
-	//     "$ref": "SwarmingRpcsTasksTags"
+	//     "$ref": "swarming_rpcs.TasksTags"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"

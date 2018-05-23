@@ -17,6 +17,6 @@
 //go:generate apigen -api-subproject "isolate" -service "https://isolateserver.appspot.com" -api "isolateservice:v1"
 //go:generate apigen -api-subproject "luci_config" -service "https://luci-config.appspot.com" -api "config:v1"
 //go:generate apigen -api-subproject "machine_provider" -service "https://machine-provider.appspot.com" -api "catalog:v1" -api "machine:v1" -service-api-root api
-//go:generate apigen -api-subproject "swarming" -service "https://chromium-swarm.appspot.com" -api "swarming:v1"
+//go:generate apigen -api-subproject "swarming" -service "https://chromium-swarm.appspot.com" -api "swarming:v1" -service-api-root api
 
 package api
