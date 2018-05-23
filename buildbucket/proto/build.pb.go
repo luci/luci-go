@@ -7,6 +7,7 @@ Package buildbucketpb is a generated protocol buffer package.
 It is generated from these files:
 	go.chromium.org/luci/buildbucket/proto/build.proto
 	go.chromium.org/luci/buildbucket/proto/common.proto
+	go.chromium.org/luci/buildbucket/proto/rpc.proto
 	go.chromium.org/luci/buildbucket/proto/step.proto
 
 It has these top-level messages:
@@ -16,6 +17,7 @@ It has these top-level messages:
 	GerritChange
 	GitilesCommit
 	StringPair
+	GetBuildRequest
 	Step
 */
 package buildbucketpb
