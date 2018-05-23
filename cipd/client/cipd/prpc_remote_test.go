@@ -15,17 +15,21 @@
 package cipd
 
 import (
-	"context"
+	"strings"
 	"testing"
 	"time"
 
-	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/common/proto/google"
+	"github.com/golang/protobuf/proto"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/golang/protobuf/proto"
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/common/proto/google"
+
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestGrantRevokeRole(t *testing.T) {
@@ -72,10 +76,11 @@ func TestPrpcRemoteImpl(t *testing.T) {
 	Convey("with mocked clients", t, func(c C) {
 		ctx := context.Background()
 
+		cas := mockedStorageClient{}
+		cas.C(c)
 		repo := mockedRepoClient{}
 		repo.C(c)
-
-		r := &prpcRemoteImpl{repo: &repo}
+		r := &prpcRemoteImpl{cas: &cas, repo: &repo}
 
 		Convey("fetchACL works", func() {
 			repo.expect(rpcCall{
@@ -214,6 +219,167 @@ func TestPrpcRemoteImpl(t *testing.T) {
 
 			repo.assertAllCalled()
 		})
+
+		sha1 := strings.Repeat("a", 40)
+
+		Convey("initiateUpload works", func() {
+			cas.expect(rpcCall{
+				method: "BeginUpload",
+				in: &api.BeginUploadRequest{
+					Object: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				out: &api.UploadOperation{
+					OperationId: "op_id",
+					UploadUrl:   "http://upload.example.com",
+				},
+			})
+
+			session, err := r.initiateUpload(ctx, sha1)
+			So(err, ShouldBeNil)
+			So(session, ShouldResemble, &UploadSession{
+				ID:  "op_id",
+				URL: "http://upload.example.com",
+			})
+		})
+
+		Convey("initiateUpload already uploaded", func() {
+			cas.expect(rpcCall{
+				method: "BeginUpload",
+				in: &api.BeginUploadRequest{
+					Object: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				err: grpc.Errorf(codes.AlreadyExists, "have it"),
+			})
+
+			session, err := r.initiateUpload(ctx, sha1)
+			So(err, ShouldBeNil)
+			So(session, ShouldBeNil)
+		})
+
+		Convey("finalizeUpload, still verifying", func() {
+			cas.expect(rpcCall{
+				method: "FinishUpload",
+				in: &api.FinishUploadRequest{
+					UploadOperationId: "op_id",
+				},
+				out: &api.UploadOperation{
+					OperationId: "op_id",
+					Status:      api.UploadStatus_VERIFYING,
+				},
+			})
+			verified, err := r.finalizeUpload(ctx, "op_id")
+			So(err, ShouldBeNil)
+			So(verified, ShouldBeFalse)
+		})
+
+		Convey("finalizeUpload, verified", func() {
+			cas.expect(rpcCall{
+				method: "FinishUpload",
+				in: &api.FinishUploadRequest{
+					UploadOperationId: "op_id",
+				},
+				out: &api.UploadOperation{
+					OperationId: "op_id",
+					Status:      api.UploadStatus_PUBLISHED,
+				},
+			})
+			verified, err := r.finalizeUpload(ctx, "op_id")
+			So(err, ShouldBeNil)
+			So(verified, ShouldBeTrue)
+		})
+
+		Convey("finalizeUpload, error", func() {
+			cas.expect(rpcCall{
+				method: "FinishUpload",
+				in: &api.FinishUploadRequest{
+					UploadOperationId: "op_id",
+				},
+				out: &api.UploadOperation{
+					OperationId:  "op_id",
+					Status:       api.UploadStatus_ERRORED,
+					ErrorMessage: "boo",
+				},
+			})
+			verified, err := r.finalizeUpload(ctx, "op_id")
+			So(err, ShouldErrLike, "boo")
+			So(verified, ShouldBeFalse)
+		})
+
+		Convey("finalizeUpload, unknown", func() {
+			cas.expect(rpcCall{
+				method: "FinishUpload",
+				in: &api.FinishUploadRequest{
+					UploadOperationId: "op_id",
+				},
+				out: &api.UploadOperation{
+					OperationId: "op_id",
+					Status:      123,
+				},
+			})
+			verified, err := r.finalizeUpload(ctx, "op_id")
+			So(err, ShouldErrLike, "unrecognized upload operation status 123")
+			So(verified, ShouldBeFalse)
+		})
+
+		Convey("registerInstance, success", func() {
+			repo.expect(rpcCall{
+				method: "RegisterInstance",
+				in: &api.Instance{
+					Package: "a",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				out: &api.RegisterInstanceResponse{
+					Status: api.RegistrationStatus_REGISTERED,
+					Instance: &api.Instance{
+						// ... omitted fields ...
+						RegisteredBy: "user:a@example.com",
+						RegisteredTs: google.NewTimestamp(epoch),
+					},
+				},
+			})
+
+			resp, err := r.registerInstance(ctx, common.Pin{"a", sha1})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &registerInstanceResponse{
+				registeredBy: "user:a@example.com",
+				registeredTs: epoch,
+			})
+		})
+
+		Convey("registerInstance, not uploaded", func() {
+			repo.expect(rpcCall{
+				method: "RegisterInstance",
+				in: &api.Instance{
+					Package: "a",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				out: &api.RegisterInstanceResponse{
+					Status: api.RegistrationStatus_NOT_UPLOADED,
+					UploadOp: &api.UploadOperation{
+						OperationId: "op_id",
+						UploadUrl:   "http://upload.example.com",
+					},
+				},
+			})
+
+			resp, err := r.registerInstance(ctx, common.Pin{"a", sha1})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &registerInstanceResponse{
+				uploadSession: &UploadSession{"op_id", "http://upload.example.com"},
+			})
+		})
 	})
 }
 
@@ -251,6 +417,36 @@ func (m *mockedRPCClient) call(method string, in proto.Message, opts []grpc.Call
 	}
 	m.c.So(rpcCall{method: method, in: in}, ShouldResemble, rpcCall{method: expected.method, in: expected.in})
 	return expected.out, expected.err
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+type mockedStorageClient struct {
+	mockedRPCClient
+}
+
+func (m *mockedStorageClient) GetObjectURL(ctx context.Context, in *api.GetObjectURLRequest, opts ...grpc.CallOption) (*api.ObjectURL, error) {
+	out, err := m.call("GetObjectURL", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ObjectURL), nil
+}
+
+func (m *mockedStorageClient) BeginUpload(ctx context.Context, in *api.BeginUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+	out, err := m.call("BeginUpload", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.UploadOperation), nil
+}
+
+func (m *mockedStorageClient) FinishUpload(ctx context.Context, in *api.FinishUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+	out, err := m.call("FinishUpload", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.UploadOperation), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

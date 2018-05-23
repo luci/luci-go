@@ -1039,7 +1039,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 	if result.alreadyRegistered {
 		logging.Infof(
 			ctx, "cipd: instance %s is already registered by %s on %s",
-			instance.Pin(), result.registeredBy, result.registeredTs)
+			instance.Pin(), result.registeredBy, result.registeredTs.Local())
 	} else {
 		logging.Infof(ctx, "cipd: instance %s was successfully registered", instance.Pin())
 	}
