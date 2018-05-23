@@ -15,18 +15,31 @@
 package testutil
 
 import (
-	"context"
+	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )
 
-// MockCAS implements api.StorageServer interface.
+// MockCAS implements cas.StorageServer interface.
 type MockCAS struct {
 	Err error // an error to return or nil to pass through to the callback
 
+	GetReaderImpl    func(context.Context, *api.ObjectRef) (gs.Reader, error)
 	GetObjectURLImpl func(context.Context, *api.GetObjectURLRequest) (*api.ObjectURL, error)
 	BeginUploadImpl  func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error)
 	FinishUploadImpl func(context.Context, *api.FinishUploadRequest) (*api.UploadOperation, error)
+}
+
+// GetReader implements the corresponding method of cas.StorageServer interface.
+func (m *MockCAS) GetReader(c context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	if m.GetReaderImpl == nil {
+		panic("must not be called")
+	}
+	return m.GetReaderImpl(c, ref)
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.
