@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package git
+// Package acls implements read ACLs for Git/Gerrit data.
+package gitacls
 
 import (
 	"net/url"
@@ -41,8 +42,8 @@ func ACLsFromConfig(c context.Context, cfg []*config.Settings_SourceAcls) (*ACLs
 	return ACLs, nil
 }
 
-// ValidateACLsConfig passes all validation errors through validation context.
-func ValidateACLsConfig(ctx *validation.Context, cfg []*config.Settings_SourceAcls) {
+// ValidateConfig passes all validation errors through validation context.
+func ValidateConfig(ctx *validation.Context, cfg []*config.Settings_SourceAcls) {
 	var ACLs ACLs
 	ACLs.load(ctx, cfg)
 }
@@ -55,6 +56,7 @@ type ACLs struct {
 // IsAllowed returns whether current identity has been granted read access to
 // given Git/Gerrit project.
 func (a *ACLs) IsAllowed(c context.Context, host, project string) (bool, error) {
+	// TODO(tandrii): host may have '-review' in it.
 	hacls, configured := a.hosts[host]
 	if !configured {
 		return false, nil
