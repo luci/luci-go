@@ -29,11 +29,9 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/server/analytics"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -371,24 +369,18 @@ func getTemplateBundle(templatePath string) *templates.Bundle {
 	}
 }
 
-// withGitilesMiddleware is a middleware that installs a prod Gitiles client
-// factory into the context.
-func withGitilesMiddleware(c *router.Context, next router.Handler) {
-	c.Context = git.UseFactory(c.Context, git.GitilesProdClient)
-	next(c)
-}
-
-// withGerritMiddleware is a middleware that installs a prod Gerrit client
-// factory into the context that creates a prod Gerrit client that uses
-// Milo's credentials.
-func withGerritMiddleware(c *router.Context, next router.Handler) {
-	c.Context = common.WithGerritFactory(c.Context, func(c context.Context, host string) (gerritpb.GerritClient, error) {
-		t, auth, err := git.Transport(c, host)
-		if err != nil {
-			return nil, err
-		}
-		return gerrit.NewRESTClient(&http.Client{Transport: t}, host, auth)
-	})
+// withGitMiddleware is a middleware that installs a prod Gerrit and Gitiles client
+// factory into the context. Both use Milo's credentials if current user is
+// has been granted read access in settings.cfg.
+//
+// This middleware must be installed after the auth middleware.
+func withGitMiddleware(c *router.Context, next router.Handler) {
+	acls, err := git.ACLsFromConfig(c.Context, common.GetSettings(c.Context).SourceAcls)
+	if err != nil {
+		ErrorHandler(c, err)
+		return
+	}
+	c.Context = git.UseACLs(c.Context, acls)
 	next(c)
 }
 

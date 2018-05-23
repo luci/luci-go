@@ -12,10 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package git abstracts interaction with Git and Gerrit for Milo.
-//
-// Currently, only works with *.googlesource.com hosted Git/Gerrit repositories,
-// but could be extended to work with other providers.
-//
-// TODO(tandrii): move Gerrit here.
+//go:generate mockgen -source source.go -destination gittest/mock.go -package gittest
+//go:generate goimports -w gittest/mock.go
+
 package git

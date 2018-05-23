@@ -22,6 +22,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
@@ -39,17 +41,15 @@ type LogOptions struct {
 	WithFiles bool
 }
 
-// Log returns ancestors commits of the given repository
-// host (e.g. "chromium.googlesource.scom"), project (e.g. "chromium/src") and
-// descendant committish (e.g. "refs/heads/master" or commit hash).
-//
-// Limit specifies the number of commits to return.
-// If limit<=0, 50 is used.
-// Setting a lower value increases cache hit probability.
-//
-// Returns an error if a client factory is not installed in c. See UseFactory.
-// May return gRPC errors returned by the underlying Gitiles service.
-func Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error) {
+// Log implements Client interface.
+func (p *implementation) Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error) {
+	switch allowed, err := p.acls.IsAllowed(c, host, project); {
+	case err != nil:
+		return nil, err
+	case !allowed:
+		return nil, status.Errorf(codes.NotFound, "not found")
+	}
+
 	var opts LogOptions
 	if inputOptions != nil {
 		opts = *inputOptions
@@ -80,6 +80,7 @@ func Log(c context.Context, host, project, commitish string, inputOptions *LogOp
 	}
 
 	req := &logReq{
+		factory:   p,
 		host:      host,
 		project:   project,
 		commitish: commitish,
@@ -159,6 +160,7 @@ var gitHash = regexp.MustCompile("^[0-9a-fA-F]{40}$")
 //            The last byte indicates the distance between the two commits.
 //   100-255: reserved for future.
 type logReq struct {
+	factory   *implementation
 	host      string
 	project   string
 	commitish string
@@ -213,11 +215,6 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 
 	// cache miss, cache failure or corrupted cache.
 	// Call Gitiles.
-
-	g, err := Client(c, l.host)
-	if err != nil {
-		return nil, err
-	}
 	req := &gitilespb.LogRequest{
 		Project:  l.project,
 		Treeish:  l.commitish,
@@ -225,7 +222,11 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		TreeDiff: l.withFiles,
 	}
 	logging.Infof(c, "gitiles(%q).Log(%#v)", l.host, req)
-	res, err := g.Log(c, req)
+	client, err := l.factory.gitilesClient(c, l.host)
+	if err != nil {
+		return nil, err
+	}
+	res, err := client.Log(c, req)
 	if err != nil {
 		return nil, errors.Annotate(err, "gitiles.Log").Err()
 	}

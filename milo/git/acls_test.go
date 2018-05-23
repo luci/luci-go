@@ -114,7 +114,7 @@ func TestACLsWork(t *testing.T) {
 		})
 
 		load := func(cfg ...*config.Settings_SourceAcls) *ACLs {
-			a, err := ACLsFromConfig(cfg)
+			a, err := ACLsFromConfig(c, cfg)
 			if err != nil {
 				panic(err) // for stacktrace.
 			}

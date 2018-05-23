@@ -27,15 +27,13 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"go.chromium.org/luci/common/proto/git"
+	gitpb "go.chromium.org/luci/common/proto/git"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	logDogTypes "go.chromium.org/luci/logdog/common/types"
 
@@ -44,6 +42,7 @@ import (
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/common/model"
 	"go.chromium.org/luci/milo/frontend/ui"
+	"go.chromium.org/luci/milo/git"
 )
 
 // BuildID implements buildsource.ID, and is the buildbucket notion of a build.
@@ -166,7 +165,7 @@ func simplisticBlamelist(c context.Context, build *model.BuildSummary) ([]*ui.Co
 	return result, nil
 }
 
-func uiCommit(commit *git.Commit, repoURL string) *ui.Commit {
+func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
 	res := &ui.Commit{
 		AuthorName:  commit.Author.Name,
 		AuthorEmail: commit.Author.Email,
@@ -193,33 +192,6 @@ func uiCommit(commit *git.Commit, repoURL string) *ui.Commit {
 		}
 	}
 	return res
-}
-
-// fetchGerritChangeEmail fetches the CL author email.
-func fetchGerritChangeEmail(c context.Context, change *buildbucketpb.GerritChange) (string, error) {
-	cache := memcache.NewItem(c, fmt.Sprintf("gerrit-change-owner/%s/%d", change.Host, change.Change))
-	if err := memcache.Get(c, cache); err == nil {
-		return string(cache.Value()), nil
-	}
-
-	client, err := common.CreateGerritClient(c, change.Host)
-	if err != nil {
-		return "", err
-	}
-
-	// TODO(nodir, tandrii): check ACLs
-	changeInfo, err := client.GetChange(c, &gerritpb.GetChangeRequest{
-		Number:  change.Change,
-		Options: []gerritpb.QueryOption{gerritpb.QueryOption_DETAILED_ACCOUNTS},
-	})
-	if err != nil && status.Code(err) != codes.NotFound {
-		return "", err
-	}
-
-	email := changeInfo.GetOwner().GetEmail()
-	cache.SetValue([]byte(email))
-	memcache.Set(c, cache)
-	return email, nil
 }
 
 // extractDetails extracts the following from a build message's ResultDetailsJson:
@@ -321,7 +293,7 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		}}
 		result.Trigger.Changelist = link
 
-		result.Blame[0].AuthorEmail, err = fetchGerritChangeEmail(c, cl)
+		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.ID)
 		}

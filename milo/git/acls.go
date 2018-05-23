@@ -31,9 +31,9 @@ import (
 )
 
 // ACLsFromConfig returns ACLs if config is valid.
-func ACLsFromConfig(cfg []*config.Settings_SourceAcls) (*ACLs, error) {
+func ACLsFromConfig(c context.Context, cfg []*config.Settings_SourceAcls) (*ACLs, error) {
+	ctx := validation.Context{Context: c}
 	ACLs := &ACLs{}
-	var ctx validation.Context
 	ACLs.load(&ctx, cfg)
 	if err := ctx.Finalize(); err != nil {
 		return nil, err
