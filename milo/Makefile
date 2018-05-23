@@ -45,5 +45,5 @@ gen:
 versions-cleanup-dev:
 	gae.py cleanup -A luci-milo-dev --app-dir $(projdir)/frontend/appengine
 
-versions-cleanup-dev:
+versions-cleanup:
 	gae.py cleanup -A luci-milo --app-dir $(projdir)/frontend/appengine
