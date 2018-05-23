@@ -42,7 +42,7 @@ type Step struct {
 func (m *Step) Reset()                    { *m = Step{} }
 func (m *Step) String() string            { return proto.CompactTextString(m) }
 func (*Step) ProtoMessage()               {}
-func (*Step) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (*Step) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
 
 func (m *Step) GetName() string {
 	if m != nil {
@@ -98,7 +98,7 @@ type Step_Log struct {
 func (m *Step_Log) Reset()                    { *m = Step_Log{} }
 func (m *Step_Log) String() string            { return proto.CompactTextString(m) }
 func (*Step_Log) ProtoMessage()               {}
-func (*Step_Log) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (*Step_Log) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
 
 func (m *Step_Log) GetName() string {
 	if m != nil {
@@ -119,9 +119,9 @@ func init() {
 	proto.RegisterType((*Step_Log)(nil), "buildbucket.v2.Step.Log")
 }
 
-func init() { proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/step.proto", fileDescriptor2) }
+func init() { proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/step.proto", fileDescriptor3) }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor3 = []byte{
 	// 312 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x4f, 0x4b, 0xc3, 0x40,
 	0x10, 0xc5, 0x49, 0x1b, 0xfb, 0x67, 0x0b, 0x55, 0xf6, 0x20, 0x31, 0x17, 0x83, 0xa7, 0x08, 0xb2,

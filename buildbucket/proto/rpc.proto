@@ -1,0 +1,37 @@
+// Copyright 2018 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package buildbucket.v2;
+
+option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
+
+import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/buildbucket/proto/build.proto";
+
+// Manages builds.
+service Builds {
+  // Gets a build.
+  rpc GetBuild(GetBuildRequest) returns (Build) {};
+}
+
+// A request message for GetBuild rpc.
+message GetBuildRequest {
+  // Build id.
+  // Mutually exclusive with builder and number.
+  int64 id = 1;
+
+  // Builder of the build.
+  // Requires number. Mutually exclusive with id.
+  Builder.ID builder = 2;
+  // Build number.
+  // Requires builder. Mutually exclusive with id.
+  int32 build_number = 3;
+
+  // List of Build fields to include in the response, e.g. "steps".
+  // See Build field comments for the list of fields
+  // excluded by default.
+  google.protobuf.FieldMask build_fields = 100;
+}
