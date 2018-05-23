@@ -22,6 +22,18 @@ import (
 
 // ProtoLib() returns a dict with single struct named "proto" that holds helper
 // functions to manipulate protobuf messages (in particular serialize them).
+//
+// Exported functions:
+//
+//    def to_pbtext(msg):
+//      """Serializes a protobuf message to text proto.
+//
+//      Args:
+//        msg: a *Message to serialize.
+//
+//      Returns:
+//        An str representing msg in text format.
+//      """
 func ProtoLib() skylark.StringDict {
 	return skylark.StringDict{
 		"proto": skylarkstruct.FromStringDict(skylark.String("proto"), skylark.StringDict{
