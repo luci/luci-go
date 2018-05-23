@@ -16,6 +16,7 @@ package notify
 
 import (
 	"bytes"
+	"sort"
 	"testing"
 	"time"
 
@@ -130,7 +131,7 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 }
 
 func TestHandleBuild(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 
 	Convey(`Test Environment for handleBuild`, t, func() {
 		cfgName := "basic"
@@ -158,14 +159,17 @@ func TestHandleBuild(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Verify tasks were scheduled.
-			tasks := tqTestable.GetScheduledTasks()
-			So(tasks, ShouldHaveLength, len(expectedRecipients))
-			for i, t := range tasks {
-				So(
-					t.Payload.(*internal.EmailTask).Recipients,
-					ShouldResemble,
-					[]string{expectedRecipients[i].Email})
+			var actualEmails []string
+			for _, t := range tqTestable.GetScheduledTasks() {
+				actualEmails = append(actualEmails, t.Payload.(*internal.EmailTask).Recipients...)
 			}
+			var expectedEmails []string
+			for _, r := range expectedRecipients {
+				expectedEmails = append(expectedEmails, r.Email)
+			}
+			sort.Strings(actualEmails)
+			sort.Strings(expectedEmails)
+			So(actualEmails, ShouldResemble, expectedEmails)
 		}
 
 		verifyBuilder := func(build *Build, revision string) {
@@ -251,6 +255,7 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2)
+			newBuild.Id++
 			assertTasks(newBuild, successEmail, failEmail, changeEmail)
 			verifyBuilder(newBuild, rev2)
 		})
@@ -261,16 +266,19 @@ func TestHandleBuild(t *testing.T) {
 			verifyBuilder(build, rev1)
 
 			newBuild := pubsubDummyBuild("test-builder-3", buildbucketpb.Status_FAILURE, newTime, rev2, propEmail)
+			newBuild.Id++
 			assertTasks(newBuild, successEmail, propEmail, failEmail, changeEmail, propEmail)
 			verifyBuilder(newBuild, rev2)
 		})
 
 		Convey(`out-of-order creation time`, func() {
 			build := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_SUCCESS, newTime, rev1)
+			build.Id = 2
 			assertTasks(build, successEmail)
 			verifyBuilder(build, rev1)
 
 			oldBuild := pubsubDummyBuild("test-builder-4", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			oldBuild.Id = 1
 			assertTasks(oldBuild, successEmail, failEmail) // no changeEmail
 			grepLog("old time")
 		})
