@@ -22,6 +22,8 @@ import (
 
 	"go.chromium.org/gae/impl/memory"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
+	"go.chromium.org/luci/milo/api/config"
+	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -37,14 +39,13 @@ func TestCLEmail(t *testing.T) {
 		ctl := gomock.NewController(t)
 		defer ctl.Finish()
 		gerritMock := gerritpb.NewMockGerritClient(ctl)
-		impl := implementation{
-			mockGerrit: gerritMock,
-			acls: &ACLs{
-				hosts: map[string]*hostACLs{
-					"host": {itemACLs: itemACLs{readers: []string{"user:allowed@example.com"}}},
-				},
-			},
-		}
+
+		host := "limited.googlesource.com"
+		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
+			{Hosts: []string{host}, Readers: []string{"allowed@example.com"}},
+		})
+		So(err, ShouldBeNil)
+		impl := implementation{mockGerrit: gerritMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
 		cDenied := auth.WithState(c, &authtest.FakeState{Identity: "anonymous:anynomous"})
@@ -55,21 +56,22 @@ func TestCLEmail(t *testing.T) {
 			Project: "project",
 		}, nil)
 
-		_, err := impl.CLEmail(cDenied, "host", 123)
+		// TODO(tandrii): host used here must be '<subhost>-review.googlesource.com'.
+		_, err = impl.CLEmail(cDenied, host, 123)
 		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "https://host/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "https://limited.googlesource.com/123 not found or no access")
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
 		// happen, ensured by gerritMock expectation above.
 
 		Convey("ACLs still respected with warm cache", func() {
-			_, err = impl.CLEmail(cDenied, "host", 123)
-			So(err.Error(), ShouldContainSubstring, "https://host/123 not found or no access")
+			_, err = impl.CLEmail(cDenied, host, 123)
+			So(err.Error(), ShouldContainSubstring, "https://limited.googlesource.com/123 not found or no access")
 		})
 
 		Convey("Happy cached path", func() {
-			email, err := impl.CLEmail(cAllowed, "host", 123)
+			email, err := impl.CLEmail(cAllowed, host, 123)
 			So(err, ShouldBeNil)
 			So(email, ShouldResemble, "user@example.com")
 		})
