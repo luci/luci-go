@@ -36,6 +36,7 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -62,7 +63,7 @@ type Client interface {
 }
 
 // UseACLs returns context with production implementation installed.
-func UseACLs(c context.Context, acls *ACLs) context.Context {
+func UseACLs(c context.Context, acls *gitacls.ACLs) context.Context {
 	return Use(c, &implementation{acls: acls})
 }
 
@@ -90,7 +91,7 @@ var contextKey = "client factory key"
 
 // implementation implements Client.
 type implementation struct {
-	acls *ACLs
+	acls *gitacls.ACLs
 	// If a mockGerrit or mockGitiles is provided, then the mocks will be used.
 	// Otherwise, the production client will be used.
 	mockGitiles gitilespb.GitilesClient

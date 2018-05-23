@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package git
+package gitacls
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func TestACLsWork(t *testing.T) {
 			validate := func(cfg ...*config.Settings_SourceAcls) error {
 				ctx := validation.Context{Context: c}
 				ctx.SetFile("settings.cfg")
-				ValidateACLsConfig(&ctx, cfg)
+				ValidateConfig(&ctx, cfg)
 				return ctx.Finalize()
 			}
 			mustError := func(cfg ...*config.Settings_SourceAcls) multiError {
