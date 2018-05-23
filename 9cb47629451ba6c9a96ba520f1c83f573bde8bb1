@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85555988_2a0b8713",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-23T02:09:06Z",
+      "side": 1,
+      "message": "nit: remove prefix... it is part of the package name",
+      "range": {
+        "startLine": 379,
+        "startChar": 22,
+        "endLine": 379,
+        "endChar": 26
+      },
+      "revId": "9cb47629451ba6c9a96ba520f1c83f573bde8bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe8f91a9_8119746f",
+        "filename": "milo/git/gerrit_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-23T02:09:06Z",
+      "side": 1,
+      "message": "I am not quite sure whether this is equivalent to older code, but if tests pass, I guess it\u0027s okay. I\u0027d still suggest to get Ryan\u0027s review post-commit.",
+      "revId": "9cb47629451ba6c9a96ba520f1c83f573bde8bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9c2542a3_61a71d0e",
+        "filename": "milo/git/gitacls/acls.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-23T02:09:06Z",
+      "side": 1,
+      "message": "gitacls?",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 15
+      },
+      "revId": "9cb47629451ba6c9a96ba520f1c83f573bde8bb1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
