@@ -81,11 +81,11 @@ func (a *ACLs) belongsTo(c context.Context, readerGroups ...[]string) (bool, err
 			}
 		}
 	}
-	if isMember, err := auth.IsMember(c, groups...); err != nil {
+	isMember, err := auth.IsMember(c, groups...)
+	if err != nil {
 		return false, transient.Tag.Apply(err)
-	} else {
-		return isMember, nil
 	}
+	return isMember, nil
 }
 
 type itemACLs struct {
@@ -154,7 +154,7 @@ func (a *ACLs) loadReaders(ctx *validation.Context, readers []string) []string {
 	return res
 }
 
-func (a *ACLs) loadHost(ctx *validation.Context, blockId int, hostURL string, readers []string) {
+func (a *ACLs) loadHost(ctx *validation.Context, blockID int, hostURL string, readers []string) {
 	u, valid := validateURL(ctx, hostURL)
 	if !valid && u == nil {
 		return // Can't validate any more.
@@ -170,13 +170,13 @@ func (a *ACLs) loadHost(ctx *validation.Context, blockId int, hostURL string, re
 	case !valid:
 		return
 	case dup:
-		ha.definedIn = blockId
+		ha.definedIn = blockID
 		ha.readers = readers
 	default:
-		a.hosts[u.Host] = &hostACLs{itemACLs: itemACLs{definedIn: blockId, readers: readers}}
+		a.hosts[u.Host] = &hostACLs{itemACLs: itemACLs{definedIn: blockID, readers: readers}}
 	}
 }
-func (a *ACLs) loadProject(ctx *validation.Context, blockId int, projectURL string, readers []string) {
+func (a *ACLs) loadProject(ctx *validation.Context, blockID int, projectURL string, readers []string) {
 	u, valid := validateURL(ctx, projectURL)
 	if !valid && u == nil {
 		return // Can't validate any more.
@@ -205,7 +205,7 @@ func (a *ACLs) loadProject(ctx *validation.Context, blockId int, projectURL stri
 	u.Path = u.Path[1:] // trim starting '/'.
 	hACLs, knownHost := a.hosts[u.Host]
 	switch {
-	case knownHost && hACLs.definedIn == blockId:
+	case knownHost && hACLs.definedIn == blockID:
 		ctx.Errorf("redundant because already covered by its host in the same source_acls block")
 		return
 	case !knownHost:
@@ -218,14 +218,14 @@ func (a *ACLs) loadProject(ctx *validation.Context, blockId int, projectURL stri
 	}
 
 	switch projACLs, known := hACLs.projects[u.Path]; {
-	case known && projACLs.definedIn == blockId:
+	case known && projACLs.definedIn == blockID:
 		ctx.Errorf("duplicate, already defined in the same source_acls block")
 	case known:
-		projACLs.definedIn = blockId
+		projACLs.definedIn = blockID
 		projACLs.readers = stringset.NewFromSlice(append(projACLs.readers, readers...)...).ToSlice()
 		sort.Strings(projACLs.readers)
 	default:
-		hACLs.projects[u.Path] = &itemACLs{definedIn: blockId, readers: readers}
+		hACLs.projects[u.Path] = &itemACLs{definedIn: blockID, readers: readers}
 	}
 }
 

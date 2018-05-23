@@ -357,7 +357,7 @@ func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.Buil
 	return ret, nil
 }
 
-// getBuildSummary fetches a build summary where the Context URI matches the
+// GetBuildSummary fetches a build summary where the Context URI matches the
 // given address.
 func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	// The host is set to prod because buildbot is hardcoded to talk to prod.

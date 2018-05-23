@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package git provides high level API for Git/Gerrit data.
+// Package git provides high level API for Git/Gerrit data.
 //
 // Features:
 //   It enforces read ACLs on Git/Gerrit hosts/projects configured in
