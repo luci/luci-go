@@ -38,7 +38,7 @@ import (
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS api.StorageServer) api.RepositoryServer {
+func Public(internalCAS cas.StorageServer) api.RepositoryServer {
 	return &repoImpl{
 		meta: metadata.GetStorage(),
 		cas:  internalCAS,
@@ -48,7 +48,7 @@ func Public(internalCAS api.StorageServer) api.RepositoryServer {
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct {
 	meta metadata.Storage  // storage for package prefix metadata
-	cas  api.StorageServer // non-ACLed storage for instance package files
+	cas  cas.StorageServer // non-ACLed storage for instance package files
 }
 
 ////////////////////////////////////////////////////////////////////////////////
