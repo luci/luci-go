@@ -45,6 +45,30 @@
       "revId": "837cbf9099b08bacf6773cbbf2f8b6c4e9ecad9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77b882db_efe6602e",
+        "filename": "common/data/text/pattern/pattern.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-23T00:11:58Z",
+      "side": 1,
+      "message": "hm, that\u0027s a strange API.\n\nPlease either return a valid non-nil regex (it is easy/possible), or add another interface that has Regexp method",
+      "parentUuid": "de5d2372_638892d3",
+      "range": {
+        "startLine": 30,
+        "startChar": 44,
+        "endLine": 30,
+        "endChar": 50
+      },
+      "revId": "837cbf9099b08bacf6773cbbf2f8b6c4e9ecad9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
