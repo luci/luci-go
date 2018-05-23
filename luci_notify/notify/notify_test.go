@@ -88,6 +88,7 @@ func TestNotify(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(tasks, ShouldResemble, []*tq.Task{
 				{
+					DeduplicationKey: "54-default-jane@example.com",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"jane@example.com"},
 						Subject:    "Build 54 completed",
@@ -95,6 +96,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 				{
+					DeduplicationKey: "54-default-john@example.com",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"john@example.com"},
 						Subject:    "Build 54 completed",
@@ -102,6 +104,7 @@ func TestNotify(t *testing.T) {
 					},
 				},
 				{
+					DeduplicationKey: "54-non-default-don@example.com",
 					Payload: &internal.EmailTask{
 						Recipients: []string{"don@example.com"},
 						Subject:    "Build 54 completed from non-default template",
