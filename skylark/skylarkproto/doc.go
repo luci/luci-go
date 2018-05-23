@@ -19,7 +19,7 @@
 // Go programs can use Skylark scripts that return protobuf messages, but not
 // accept them.
 //
-// Internally messages are stored as a tree of Skylark native values, with
+// Internally a message is stored as a tree of Skylark native values, with
 // some type checking done when manipulating fields. For example, reading or
 // assigning to a field not defined in a message will cause a runtime error.
 // Similarly, trying to assign a value of a wrong type to a non-repeated field

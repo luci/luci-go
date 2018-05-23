@@ -27,9 +27,11 @@ import (
 	"github.com/google/skylark/skylarkstruct"
 )
 
-// LoadProtoModule loads a protobuf module, returning a dict with single struct
-// named after the proto package. It has all message constructors defined
-// inside.
+// LoadProtoModule loads a protobuf module, specified by its full path,
+// for example "a/b/c.proto".
+// The module should be registered in the process's protobuf descriptors set.
+// Returns a dict with single struct named after the proto package.
+// It has all message constructors defined inside.
 func LoadProtoModule(name string) (skylark.StringDict, error) {
 	desc, err := loadFileDesc(name)
 	if err != nil {
@@ -114,7 +116,7 @@ func injectEnumValues(d skylark.StringDict, enum *descpb.EnumDescriptorProto) {
 	}
 }
 
-// loadFileDesc loads a FileDescriptorProto for a give proto module, specified
+// loadFileDesc loads a FileDescriptorProto for a given proto module, specified
 // by its full path.
 //
 // The module should be registered in the process's protobuf descriptors set.

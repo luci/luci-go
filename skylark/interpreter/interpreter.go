@@ -26,16 +26,40 @@
 //  * All symbols from "init.sky" stdlib module are available globally to all
 //    non-stdlib scripts.
 //
-// Additionally, all script have access to some predefined functions and types:
-//  * 'struct' constructs an object resembling namedtuple from Python.
-//  * 'proto' is a library with protobuf helpers.
-//  * 'fail' aborts the script execution with an error message.
-//  * 'mutable' allows modules to explicitly declare that they wish to keep some
+// Additionally, all script have access to some predefined symbols:
+//
+//  `proto`, a library with protobuf helpers, see skylarkproto.ProtoLib.
+//
+//  def struct(**kwargs):
+//    """Returns an object resembling namedtuple from Python.
+//
+//    kwargs will become attributes of the returned object.
+//    See also skylarkstruct package.
+//
+//
+//  def fail(msg):
+//    """Aborts the script execution with an error message."""
+//
+//
+//  def mutable(value=None):
+//    """Returns an object with get and set methods.
+//
+//    Allows modules to explicitly declare that they wish to keep some
 //    mutable (non-frozen) state, which can be modified after the module has
 //    loaded (e.g. from an exported function).
-//  * `to_json` takes a skylark value (scalars, lists, tuples, dicts containing
-//    only skylark values) and returns a string with its compact JSON
-//    serialization.
+//    """
+//
+//
+//  def to_json(value):
+//    """Serializes a value to compact JSON.
+//
+//    Args:
+//      value: a skylark value: scalars, lists, tuples, dicts containing only
+//        skylark values.
+//
+//    Returns:
+//      A string with its compact JSON serialization.
+//    """
 package interpreter
 
 import (
@@ -61,7 +85,7 @@ var ErrNoStdlibModule = errors.New("no such stdlib module")
 // scripts, instantiate protobuf messages (with descriptors compiled into the
 // interpreter binary) and have access to some built-in standard library.
 type Interpreter struct {
-	// Root is an path to a root directory with scripts.
+	// Root is a path to a root directory with scripts.
 	//
 	// Scripts will be able to load other scripts from this directory using
 	// "//path/rel/to/root" syntax in load(...).
@@ -121,6 +145,7 @@ type loadedModule struct {
 // Registers most basic built in symbols first (like 'struct' and 'fail'). Then
 // executes 'init.sky' from stdlib, which may define more symbols or override
 // already defined ones.
+// Initializes intr.Usercode and intr.Logger if they are not set.
 //
 // Whatever symbols end up in the global dict of init.sky stdlib script will
 // become available as global symbols in all scripts executed via ExecFile (or
