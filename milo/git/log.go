@@ -47,7 +47,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 	case err != nil:
 		return nil, err
 	case !allowed:
-		return nil, status.Errorf(codes.NotFound, "not found")
+		return nil, tagError(c, status.Errorf(codes.NotFound, "not found"))
 	}
 
 	var opts LogOptions
@@ -93,7 +93,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		// Call it in a loop.
 		switch page, err := req.call(c); {
 		case err != nil:
-			return commits, err
+			return commits, tagError(c, err)
 		case len(page) < 100:
 			// This can happen iff there are no more commits.
 			add(page)
@@ -115,7 +115,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 	req.min = remaining
 	page, err := req.call(c)
 	if err != nil {
-		return commits, err
+		return commits, tagError(c, err)
 	}
 	add(page)
 

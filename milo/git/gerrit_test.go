@@ -58,7 +58,8 @@ func TestCLEmail(t *testing.T) {
 
 		_, err = impl.CLEmail(cDenied, host, 123)
 		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "not found")
+			// todo
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
@@ -66,7 +67,7 @@ func TestCLEmail(t *testing.T) {
 
 		Convey("ACLs still respected with warm cache", func() {
 			_, err = impl.CLEmail(cDenied, host, 123)
-			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "not found")
 		})
 
 		Convey("Happy cached path", func() {
