@@ -29,7 +29,7 @@ var typeRegistry struct {
 	types map[reflect.Type]*MessageType
 }
 
-// MessageType contains information about the structure of a proto message
+// MessageType contains information about the structure of a proto message.
 //
 // It is extracted via reflection from a proto message struct type.
 type MessageType struct {
@@ -74,7 +74,7 @@ type fieldDesc struct {
 	onProtoReflection func(msg reflect.Value) reflect.Value
 }
 
-// GetMessageType extract type description for protobuf message of given type.
+// GetMessageType extracts type description for protobuf message of given type.
 //
 // 'typ' is expected to represent a pointer to a protobuf struct, as returned
 // by proto.MessageType(...). Returns an error otherwise.

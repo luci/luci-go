@@ -68,6 +68,7 @@ func (m *Message) ToProto() (proto.Message, error) {
 
 // Basic skylark.Value interface.
 
+// String implements skylark.Value.
 func (m *Message) String() string {
 	msg, err := m.ToProto()
 	if err != nil {
@@ -76,6 +77,7 @@ func (m *Message) String() string {
 	return msg.String()
 }
 
+// Type implements skylark.Value.
 func (m *Message) Type() string {
 	// The receiver is nil when doing type checks with skylark.UnpackArgs. It asks
 	// the nil message for its type for the error message.
@@ -85,16 +87,20 @@ func (m *Message) Type() string {
 	return m.typ.name
 }
 
+// Freeze implements skylark.Value.
 func (m *Message) Freeze() {} // TODO
 
+// Truth implements skylark.Value.
 func (m *Message) Truth() skylark.Bool { return skylark.True }
 
+// Hash implements skylark.Value.
 func (m *Message) Hash() (uint32, error) {
 	return 0, fmt.Errorf("proto message %q is not hashable", m.Type())
 }
 
 // HasAttrs and HasSetField interfaces that make the message look like a struct.
 
+// Attr implements skylark.HasAttrs.
 func (m *Message) Attr(name string) (skylark.Value, error) {
 	// The field was already set?
 	val, ok := m.fields[name]
@@ -122,10 +128,12 @@ func (m *Message) Attr(name string) (skylark.Value, error) {
 	return nil, fmt.Errorf("proto message %q has no field %q", m.Type(), name)
 }
 
+// AttrNames implements skylark.HasAttrs.
 func (m *Message) AttrNames() []string {
 	return m.typ.fieldNames
 }
 
+// SetField implements skylark.HasSetField.
 func (m *Message) SetField(name string, val skylark.Value) error {
 	fd, ok := m.typ.fields[name]
 	if !ok {
