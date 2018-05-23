@@ -81,11 +81,11 @@ func (a *ACLs) belongsTo(c context.Context, readerGroups ...[]string) (bool, err
 			}
 		}
 	}
-	if isMember, err := auth.IsMember(c, groups...); err != nil {
+	isMember, err := auth.IsMember(c, groups...)
+	if err != nil {
 		return false, transient.Tag.Apply(err)
-	} else {
-		return isMember, nil
 	}
+	return isMember, nil
 }
 
 type itemACLs struct {
@@ -154,7 +154,7 @@ func (a *ACLs) loadReaders(ctx *validation.Context, readers []string) []string {
 	return res
 }
 
-func (a *ACLs) loadHost(ctx *validation.Context, blockId int, hostURL string, readers []string) {
+func (a *ACLs) loadHost(ctx *validation.Context, blockID int, hostURL string, readers []string) {
 	u, valid := validateURL(ctx, hostURL)
 	if !valid && u == nil {
 		return // Can't validate any more.
@@ -170,10 +170,10 @@ func (a *ACLs) loadHost(ctx *validation.Context, blockId int, hostURL string, re
 	case !valid:
 		return
 	case dup:
-		ha.definedIn = blockId
+		ha.definedIn = blockID
 		ha.readers = readers
 	default:
-		a.hosts[u.Host] = &hostACLs{itemACLs: itemACLs{definedIn: blockId, readers: readers}}
+		a.hosts[u.Host] = &hostACLs{itemACLs: itemACLs{definedIn: blockID, readers: readers}}
 	}
 }
 func (a *ACLs) loadProject(ctx *validation.Context, blockId int, projectURL string, readers []string) {
