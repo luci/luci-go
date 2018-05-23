@@ -223,7 +223,7 @@ func TestACLsWork(t *testing.T) {
 				})
 		})
 
-		Convey("ReadGranted works", func() {
+		Convey("IsAllowed works", func() {
 			acls := load(
 				&config.Settings_SourceAcls{
 					Hosts:    []string{"public.googlesource.com"},
@@ -268,6 +268,12 @@ func TestACLsWork(t *testing.T) {
 			So(granted(cSome, "limited.googlesource.com", "any"), ShouldBeTrue)
 			So(granted(cSome, "c.googlesource.com", "private"), ShouldBeTrue)
 			So(granted(cSome, "c.googlesource.com", "nope"), ShouldBeFalse)
+
+			Convey("for Gerrit, too", func() {
+				So(granted(cAnon, "public-review.googlesource.com", "any"), ShouldBeTrue)
+				So(granted(cThey, "limited-review.googlesource.com", "any"), ShouldBeTrue)
+				So(granted(cSome, "c-review.googlesource.com", "private"), ShouldBeTrue)
+			})
 		})
 	})
 }

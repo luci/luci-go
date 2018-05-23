@@ -40,9 +40,9 @@ func TestCLEmail(t *testing.T) {
 		defer ctl.Finish()
 		gerritMock := gerritpb.NewMockGerritClient(ctl)
 
-		host := "limited.googlesource.com"
+		host := "limited-review.googlesource.com"
 		acls, err := gitacls.FromConfig(c, []*config.Settings_SourceAcls{
-			{Hosts: []string{host}, Readers: []string{"allowed@example.com"}},
+			{Hosts: []string{"limited.googlesource.com"}, Readers: []string{"allowed@example.com"}},
 		})
 		So(err, ShouldBeNil)
 		impl := implementation{mockGerrit: gerritMock, acls: acls}
@@ -56,10 +56,9 @@ func TestCLEmail(t *testing.T) {
 			Project: "project",
 		}, nil)
 
-		// TODO(tandrii): host used here must be '<subhost>-review.googlesource.com'.
 		_, err = impl.CLEmail(cDenied, host, 123)
 		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "https://limited.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
@@ -67,7 +66,7 @@ func TestCLEmail(t *testing.T) {
 
 		Convey("ACLs still respected with warm cache", func() {
 			_, err = impl.CLEmail(cDenied, host, 123)
-			So(err.Error(), ShouldContainSubstring, "https://limited.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
 		})
 
 		Convey("Happy cached path", func() {
