@@ -4,14 +4,6 @@
 
 // Schemas for project configs.
 
-// Copied from:
-//
-// Repo: https://chromium.googlesource.com/infra/infra
-// Revision: 0250067c5d7969ce8c0b284deb5d8cd58accc864
-// Path: appengine/cr-buildbucket/proto/project_config.proto
-//
-// Modification: added this comments and 'go_package' option.
-
 syntax = "proto3";
 
 package buildbucket;

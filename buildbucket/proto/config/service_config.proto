@@ -1,0 +1,27 @@
+// Copyright 2015 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+// Schemas for project configs.
+
+syntax = "proto3";
+
+package buildbucket;
+
+option go_package = "configpb";
+
+// Schema of settings.cfg file, a service config.
+message SettingsCfg {
+  // Swarmbucket settings.
+  SwarmingSettings swarming = 1;
+}
+
+// Swarmbucket settings.
+message SwarmingSettings {
+  reserved 1; // default_hostname
+  // Swarmbucket build URLs will point to this Milo instance.
+  string milo_hostname = 2;
+  // Default value of swarming.task_template_canary_percentage field in
+  // cr-buildbucket.cfg files.
+  int32 default_task_template_canary_percentage = 3;
+}
