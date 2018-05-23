@@ -167,11 +167,6 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
-
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
 		createTime, _ := ptypes.Timestamp(build.CreateTime)
@@ -229,6 +224,10 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 		return nil
 
 	default:
+		// Since we're moving ahead, populate with build annotations.
+		if build.Annotations, err = getBuildAnnotations(c, build); err != nil {
+			return errors.Annotate(err, "could not populate build annotations").Err()
+		}
 		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
 			return errors.Annotate(err, "failed to notify").Tag(transient.Tag).Err()
 		}
@@ -240,6 +239,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 type Build struct {
 	buildbucketpb.Build
 	EmailNotify []EmailNotify
+	Annotations *Annotations
 }
 
 // extractBuild constructs a Build from the PubSub HTTP request.
