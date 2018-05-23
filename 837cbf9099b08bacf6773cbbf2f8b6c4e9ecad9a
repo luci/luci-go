@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "de5d2372_638892d3",
+        "filename": "common/data/text/pattern/pattern.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-23T00:09:25Z",
+      "side": 1,
+      "message": "has the \"regex:\" prefix\nor\nif the pattern contains a regexp",
+      "range": {
+        "startLine": 30,
+        "startChar": 44,
+        "endLine": 30,
+        "endChar": 50
+      },
+      "revId": "837cbf9099b08bacf6773cbbf2f8b6c4e9ecad9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13eec6e8_e00a9dff",
+        "filename": "common/data/text/pattern/pattern.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-23T00:09:25Z",
+      "side": 1,
+      "message": "Regexp returns parsed....",
+      "range": {
+        "startLine": 30,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "837cbf9099b08bacf6773cbbf2f8b6c4e9ecad9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
