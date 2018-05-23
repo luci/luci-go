@@ -338,7 +338,7 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 			}
 		}
 
-		topCommitId, err := hex.DecodeString(res.Log[0].Id)
+		topCommitID, err := hex.DecodeString(res.Log[0].Id)
 		if err != nil {
 			logging.WithError(err).Errorf(c, "commit id %q is not a valid hex", res.Log[0].Id)
 		} else {
@@ -349,8 +349,8 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 				} else {
 					// We have data with a shorter distance.
 					// see logReq comment for format of this cache value.
-					v := make([]byte, len(topCommitId)+1)
-					copy(v, topCommitId)
+					v := make([]byte, len(topCommitID)+1)
+					copy(v, topCommitID)
 					v[len(v)-1] = dist
 					e.SetValue(v)
 					caches = append(caches, e)
