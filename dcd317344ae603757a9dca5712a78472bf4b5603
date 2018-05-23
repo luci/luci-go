@@ -1,0 +1,153 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b677c777_cf316ff9",
+        "filename": "lucicfg/cmd/lucicfg/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "I imagine there\u0027ll later be subcommands like \"diff\" (regenerate configs and compare to stored *.cfg, for presubmits). And \"push\" (for uploading config to luci-config once it learns to accept pushes, if ever).",
+      "range": {
+        "startLine": 48,
+        "startChar": 3,
+        "endLine": 48,
+        "endChar": 17
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "51797896_223221a5",
+        "filename": "lucicfg/cmd/lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "This makes our protos available from skylark side.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26009961_dd57b279",
+        "filename": "lucicfg/stdlib/lib/services.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "I wanted a single point where we take app ID and return full description of the service. The rest of the rules operate in terms of types_pb.Service proto.\n\nIt currently derives everything from this ID, but I expect we\u0027ll allow to customize this at some point (e.g. to say that luci-logdog is actually logs.chromium.org).",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 29,
+        "endChar": 9
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f0a3bf09_fa0199e8",
+        "filename": "lucicfg/stdlib/rules/buildbucket.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "This is the general pattern followed by all rules: they take a list of services (as IDs) the rule hits. \n\nBy default it uses whatever is defined in project(...) rule, so we don\u0027t have to repeat them all the time. But weird configs that use cr-buildbucket-test or cr-buildbucket-dev, etc. will be able to say so (albeit a bit more verbosely).",
+      "range": {
+        "startLine": 33,
+        "startChar": 4,
+        "endLine": 35,
+        "endChar": 19
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "008a598f_41366091",
+        "filename": "lucicfg/stdlib/rules/buildbucket.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "This is also the common pattern of resolving app ID into types_pb.Service (and grabbing project-default service if app ID is None).",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 59
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7c132c3_804264d0",
+        "filename": "lucicfg/stdlib/rules/milo.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "This is used by chromium/src and I\u0027m not sure yet how to express this...",
+      "range": {
+        "startLine": 128,
+        "startChar": 2,
+        "endLine": 128,
+        "endChar": 70
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f9f19597_8423459f",
+        "filename": "lucicfg/stdlib/types.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T02:49:03Z",
+      "side": 1,
+      "message": "Messages here are used internally by stdlib, because skylark is dumb and I wanted structured values :(",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
