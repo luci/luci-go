@@ -84,19 +84,30 @@ at {{ .Build.EndTime | time }}.
     <td>Builder:</td>
     <td>{{ .Build.Builder.IDString }}</td>
   </tr>
-  <tr>
-    <td>Created by:</td>
-    <td>{{ .Build.CreatedBy }}</td>
-  </tr>
-  <tr>
-    <td>Created at:</td>
-    <td>{{ .Build.CreateTime | time }}</td>
-  </tr>
-  <tr>
-    <td>Finished at:</td>
-    <td>{{ .Build.EndTime | time }}</td>
-  </tr>
 </table>
+
+{{- if and .Build.Status.Failed .Build.Annotations }}
+The following build steps failed:
+<table>
+  <tr>
+    <td><b>Name</b></td>
+    <td><b>Status</b></td>
+    <td><b>Details</b></td>
+  </tr>
+{{- range .Build.Annotations.FailedSteps }}
+  <tr>
+    <td>{{ .Name }}</td>
+    <td>{{ .Status }}</td>
+    <td>{{ .Text }}</td>
+  </tr>
+  {{- range .Links }}
+  <tr>
+    <td><a href="{{ .URL }}">{{ .Label }}</a></td>
+  </tr>
+  {{- end }}
+{{- end }}
+</table>
+{{- end }}
 
 <a href="{{ .Build.ViewUrl }}">Full details are available here.</a><br/><br/>
 

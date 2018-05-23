@@ -18,3 +18,8 @@ package buildbucketpb
 func (s Status) Completed() bool {
 	return s&Status_COMPLETED_STATUS_MASK == Status_COMPLETED_STATUS_MASK
 }
+
+// Failed returns true if s is any kind of failure.
+func (s Status) Failed() bool {
+	return s == Status_FAILURE || s == Status_INFRA_FAILURE
+}
