@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "64672f30_0a8f2dec",
+        "filename": "cipd/client/cipd/prpc_remote.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T00:45:36Z",
+      "side": 1,
+      "message": "ptypes doesn\u0027t have extremely handy \"give me time.Time or zero time if proto is broken\". We\u0027ll have a TON of new useless error checking everywhere (I once tried to get rid of common/proto/google and gave up).",
+      "parentUuid": "63e0257f_94fe491e",
+      "range": {
+        "startLine": 94,
+        "startChar": 17,
+        "endLine": 94,
+        "endChar": 40
+      },
+      "revId": "85f0dc0a4e8b84571f995d7443c2277b8c7f6d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "61649ae7_509a7af8",
         "filename": "cipd/client/cipd/prpc_remote.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "85f0dc0a4e8b84571f995d7443c2277b8c7f6d87",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c074b91_498daf99",
+        "filename": "cipd/client/cipd/prpc_remote.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T00:45:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "61649ae7_509a7af8",
+      "revId": "85f0dc0a4e8b84571f995d7443c2277b8c7f6d87",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
