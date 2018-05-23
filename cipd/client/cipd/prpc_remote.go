@@ -239,15 +239,66 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 // Upload.
 
 func (r *prpcRemoteImpl) initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error) {
-	return nil, errNoV2Impl
+	op, err := r.cas.BeginUpload(ctx, &api.BeginUploadRequest{
+		Object: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: sha1,
+		},
+	}, prpc.ExpectedCode(codes.AlreadyExists))
+	switch grpc.Code(err) {
+	case codes.OK:
+		return &UploadSession{op.OperationId, op.UploadUrl}, nil
+	case codes.AlreadyExists:
+		return nil, nil
+	default:
+		return nil, err
+	}
 }
 
 func (r *prpcRemoteImpl) finalizeUpload(ctx context.Context, sessionID string) (bool, error) {
-	return false, errNoV2Impl
+	op, err := r.cas.FinishUpload(ctx, &api.FinishUploadRequest{
+		UploadOperationId: sessionID,
+	})
+	if err != nil {
+		return false, err
+	}
+	switch op.Status {
+	case api.UploadStatus_UPLOADING, api.UploadStatus_VERIFYING:
+		return false, nil // still verifying
+	case api.UploadStatus_PUBLISHED:
+		return true, nil // verified!
+	case api.UploadStatus_ERRORED:
+		return false, errors.New(op.ErrorMessage)
+	default:
+		return false, fmt.Errorf("unrecognized upload operation status %s", op.Status)
+	}
 }
 
 func (r *prpcRemoteImpl) registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error) {
-	return nil, errNoV2Impl
+	resp, err := r.repo.RegisterInstance(ctx, &api.Instance{
+		Package: pin.PackageName,
+		Instance: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: pin.InstanceID,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	switch resp.Status {
+	case api.RegistrationStatus_REGISTERED, api.RegistrationStatus_ALREADY_REGISTERED:
+		return &registerInstanceResponse{
+			alreadyRegistered: resp.Status == api.RegistrationStatus_ALREADY_REGISTERED,
+			registeredBy:      resp.Instance.RegisteredBy,
+			registeredTs:      google.TimeFromProto(resp.Instance.RegisteredTs),
+		}, nil
+	case api.RegistrationStatus_NOT_UPLOADED:
+		return &registerInstanceResponse{
+			uploadSession: &UploadSession{resp.UploadOp.OperationId, resp.UploadOp.UploadUrl},
+		}, nil
+	default:
+		return nil, fmt.Errorf("unrecognized package registration status %s", resp.Status)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
