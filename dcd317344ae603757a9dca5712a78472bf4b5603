@@ -2,6 +2,40 @@
   "comments": [
     {
       "key": {
+        "uuid": "6b18e093_bdd75e45",
+        "filename": "lucicfg/cmd/lucicfg/cmd_gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "Document return codes.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "679e8661_f87bdfaa",
+        "filename": "lucicfg/cmd/lucicfg/cmd_gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "Could you just remove the else branch and require the path to a .sky instead of searching for the specially named LUCI.sky? I prefer tools not to guess stuff about the file system.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b677c777_cf316ff9",
         "filename": "lucicfg/cmd/lucicfg/main.go",
         "patchSetId": 1
@@ -39,6 +73,86 @@
       "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe205921_c2c81369",
+        "filename": "lucicfg/stdlib/init.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "Does this matter? In the CL-level comments you said that initially order of definitions matters. I\u0027m not sure under what circumstances it matters.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "605d9e02_f1e5d8f1",
+        "filename": "lucicfg/stdlib/lib/acls.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "What does this mean? Seems like \"if an item has \u0027:\u0027, it is interpreted as \u003ckind\u003e:\u003cvalue\u003e\".",
+      "range": {
+        "startLine": 27,
+        "startChar": 45,
+        "endLine": 27,
+        "endChar": 69
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b414205_942684a0",
+        "filename": "lucicfg/stdlib/lib/acls.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "How do you get kind \u003d\u003d anonymous? The only time kind can be not user or group is when there\u0027s a :. Does that mean you\u0027d have to put \"anonymous:\" with the trailing : to mean anonymous? What val would be set if kind is anonymous?",
+      "range": {
+        "startLine": 60,
+        "startChar": 19,
+        "endLine": 60,
+        "endChar": 28
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61bbbf7c_1b8cfb76",
+        "filename": "lucicfg/stdlib/lib/acls.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "Prefer spaces around binary operator.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -111,6 +225,53 @@
     },
     {
       "key": {
+        "uuid": "249d7216_1c37dfd7",
+        "filename": "lucicfg/stdlib/rules/buildbucket.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "008a598f_41366091",
+      "range": {
+        "startLine": 52,
+        "startChar": 2,
+        "endLine": 52,
+        "endChar": 59
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "056b1b7f_1d29f4f9",
+        "filename": "lucicfg/stdlib/rules/buildbucket.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "More what?",
+      "range": {
+        "startLine": 130,
+        "startChar": 19,
+        "endLine": 130,
+        "endChar": 23
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a7c132c3_804264d0",
         "filename": "lucicfg/stdlib/rules/milo.sky",
         "patchSetId": 1
@@ -134,6 +295,29 @@
     },
     {
       "key": {
+        "uuid": "89272f0f_4c5a2228",
+        "filename": "lucicfg/stdlib/rules/project.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "chrome-infra-auth groups",
+      "range": {
+        "startLine": 56,
+        "startChar": 21,
+        "endLine": 56,
+        "endChar": 27
+      },
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f9f19597_8423459f",
         "filename": "lucicfg/stdlib/types.proto",
         "patchSetId": 1
@@ -148,6 +332,40 @@
       "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9a416369_6dcdd090",
+        "filename": "lucicfg/test/LUCI.sky",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "lucicfg/examples/LUCI.sky perhaps. It\u0027s not really a test since there\u0027s nothing asserted about it.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "297e022d_4758ca1c",
+        "filename": "lucicfg/test/run.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T22:50:56Z",
+      "side": 1,
+      "message": "I don\u0027t think this script\u0027s necessary. If you want to document lucicfg usage, add README.md.",
+      "revId": "dcd317344ae603757a9dca5712a78472bf4b5603",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
