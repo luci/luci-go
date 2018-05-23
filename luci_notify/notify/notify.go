@@ -15,6 +15,7 @@
 package notify
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
@@ -75,7 +77,12 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, oldStatus bui
 
 		task := *taskTemplates[name] // copy
 		task.Recipients = []string{r.Email}
-		tasks[i] = &tq.Task{Payload: &task}
+		emailHash := sha256.Sum256([]byte(r.Email))
+		tasks[i] = &tq.Task{
+			// Deduplicate emails using task names.
+			NamePrefix: fmt.Sprintf("email-%d-%s-%x", build.Id, name, emailHash[:]),
+			Payload:    &task,
+		}
 	}
 	return tasks, nil
 }
@@ -104,7 +111,11 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 
 // Notify discovers, consolidates and filters recipients from notifiers, and
 // 'email_notify' properties, then dispatches notifications if necessary.
+// Does not dispatch a notification for same email, template and build more than
+// once. Ignores current transaction in c, if any.
 func Notify(c context.Context, d *tq.Dispatcher, notifiers []*notifyConfig.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
+	c = datastore.WithoutTransaction(c)
+
 	var recipients []EmailNotify
 	// Notify based on configured notifiers.
 	for _, n := range notifiers {
