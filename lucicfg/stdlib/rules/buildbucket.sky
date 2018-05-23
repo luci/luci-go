@@ -1,0 +1,334 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Defines Buildbucket rules."""
+
+load(
+    'builtin:go.chromium.org/luci/buildbucket/proto/config/project_config.proto',
+    buildbucket_pb = 'buildbucket')
+load('builtin:lib/acls.sky', 'acls')
+load('builtin:lib/services.sky', 'services')
+load('builtin:rules/project.sky', 'project')
+
+
+def _bucket(
+    name,
+
+    # ACLs.
+    readers = None,
+    schedulers = None,
+    writers = None,
+
+    # Involved services.
+    buildbucket = None,
+    swarming = None):
+  """Defines a bucket, in particular its ACLs.
+
+  Args:
+    name: name of the bucket, e.g. "luci.infra.ci".
+
+    readers: list of groups that can list builds in this bucket and view
+        parameters of individual builds.
+    schedulers: list of groups that can submit and cancel builds in this bucket.
+    writers: full write access to the bucket (legacy role, do not use).
+
+    buildbucket: app ID of a Buildbucket instance for this bucket (project-level
+        default if not set).
+    swarming: app ID of a Swarming instance serving this bucket (project-level
+        default if not set). Or magical value 'NO' to disable completely. This
+        is useful for legacy buildbot buckets.
+  """
+  buildbucket = project.service('buildbucket', buildbucket)
+  if _get_bucket(buildbucket, name, should_exist = False):
+    fail('bucket %r in %s has already been defined' % (name, buildbucket.app_id))
+
+  # Swarming may be omitted for legacy buildbot-based buckets.
+  swarming_pb = None
+  if swarming != 'NO':
+    swarming = project.service('swarming', swarming)
+    swarming_pb = buildbucket_pb.Swarming(hostname = swarming.canonical_host)
+
+  readers = acls.split('readers', readers or project.current().readers)
+  schedulers = acls.split('schedulers', schedulers, allow_empty = True)
+  writers = acls.split('writers', writers, allow_empty = True)
+
+  bb_acls = []
+  bb_acls.extend(_to_bb_acl(buildbucket_pb.Acl.READER, *readers))
+  bb_acls.extend(_to_bb_acl(buildbucket_pb.Acl.SCHEDULER, *schedulers))
+  bb_acls.extend(_to_bb_acl(buildbucket_pb.Acl.WRITER, *writers))
+
+  _ensure_service(buildbucket).buckets.append(buildbucket_pb.Bucket(
+      name = name,
+      acls = bb_acls,
+      swarming = swarming_pb,
+  ))
+
+
+def _builder(
+    name,
+    bucket,
+
+    recipe = None,
+    build_numbers = None,
+    dimensions = None,
+    swarming_tags = None,
+    swarming_caches = None,
+    service_account = None,
+    priority = None,
+    execution_timeout_secs = None,
+    expiration_secs = None,
+    category = None,
+    experimental = None,
+
+    # Involved services.
+    buildbucket = None,
+    luci_migration = None):
+  """Defines a generic builder in some (already declared) bucket.
+
+  Args:
+    name: name of the builder, must be unique within the bucket.
+    bucket: name of a previously defined bucket.
+
+    recipe: a recipe to run, see recipe(...).
+    build_numbers: if True, each build will receive a build number.
+    dimensions: dictionary with Swarming dimensions for builds in this bucket.
+    swarming_tags: list of "k:v" pairs that will become Swarming tags.
+    swarming_caches: list of cache definition, see 'swarming_cache'.
+    service_account: email of a service account to run the build as.
+    priority: swarming task priority.
+    execution_timeout_secs: maximum build execution time. Not to be confused
+        with pending time.
+    expiration_secs: maximum build pending time.
+    category: builder category (deprecated).
+    experimental: if True, by default a new build in this builder will be marked as
+        experimental.
+
+    buildbucket: app ID of a Buildbucket instance for this bucket (project-level
+        default if not set).
+    luci_migration: app ID of a luci-migration app to contact to determine
+        whether the builder is experimental.
+  """
+  buildbucket = project.service('buildbucket', buildbucket)
+  bucket_cfg = _get_bucket(buildbucket, bucket)
+
+  # Already have this builder?
+  if _get_builder(buildbucket, bucket, name):
+      fail('duplicate builder %r in bucket %r' % (name, bucket))
+
+  # Check and normalize args.
+  # TODO(vadimsh): More
+  dimensions = dimensions or {}
+  if luci_migration:
+    luci_migration = services.info(luci_migration).canonical_host
+
+  bucket_cfg.swarming.builders.append(buildbucket_pb.Builder(
+      name = name,
+      recipe = recipe,
+      build_numbers = _to_toggle(build_numbers),
+      dimensions = ['%s:%s' % (k, v) for k, v in dimensions.items()],
+      swarming_tags = swarming_tags,
+      caches = list(swarming_caches),
+      service_account = service_account,
+      priority = priority,
+      execution_timeout_secs = execution_timeout_secs,
+      expiration_secs = expiration_secs,
+      category = category,
+      experimental = _to_toggle(experimental),
+      luci_migration_host = luci_migration,
+  ))
+
+
+def _swarming_cache(name, path):
+  """Returns a swarming named cache definition.
+
+  This is not a rule, but rather a helper constructor to create objects that
+  can be passed to builder(...) rule inside swarming_caches list.
+
+  If the pool of swarming bots is shared among multiple LUCI projects and
+  projects use same cache name, the cache will be shared across projects.
+  To avoid affecting and being affected by other projects, prefix the cache
+  name with something project-specific, e.g. "v8-".
+
+  Args:
+    name: identifier of the cache. Length is limited to 128.
+    path: relative path where the cache in mapped into. Must use POSIX format
+        (forward slashes). In most cases, it does not need slashes at all.
+        Must be unique in the given builder.
+
+  Returns:
+    buildbucket_pb.Builder.CacheEntry, but don't depend on this.
+  """
+  # TODO(vadimsh): Check arguments.
+  return buildbucket_pb.Builder.CacheEntry(name = name, path = path)
+
+
+def _recipe(
+    script,
+    properties = None,
+    repo = None,
+    cipd_package = None,
+    cipd_version = None):
+  """Returns a recipe call declaration.
+
+  It contains a pointer to a recipe script, plus properties to pass to it.
+
+  This is not a rule, but rather a helper constructor to create objects that
+  can be passed to builder(...) rule via 'recipe' argument.
+
+  Args:
+    script: name of the recipe script to run.
+    repo: repo with the recipe (default is to project's main repo).
+    cipd_package: if set, will use CIPD to fetch the recipes, rather than using
+        git. Incompatible with 'repo'.
+    cipd_version: the CIPD version to fetch.
+    properties: arbitrary JSON-ish dict to pass to the recipe.
+
+  Returns:
+    buildbucket_pb.Builder.Recipe, but don't depend on this.
+  """
+  if cipd_package and repo:
+    fail('only one of "repo" or "cipd_package" can be defined, not both')
+  if cipd_package and not cipd_version:
+    fail('"cipd_version" is required if "cipd_package" is set')
+  if not cipd_package:
+    repo = repo or project.current().repo
+    if not repo:
+      fail('one of "repo" or "cipd_package" must be set')
+
+  properties = properties or {}
+  if type(properties) != "dict":
+    fail('"properties" must be a dict')
+
+  return buildbucket_pb.Builder.Recipe(
+      repository = repo,
+      name = script,
+      cipd_package = cipd_package,
+      cipd_version = cipd_version,
+      properties_j = ['%s:%s' % (k, to_json(v)) for k, v in properties.items()])
+
+
+def _check_builder_defined(buildbucket, bucket, name):
+  """Fails if the given builder is not defined yet.
+
+  Args:
+    buildbucket: types_pb.Service instance of a buildbucket service.
+    bucket: name of the bucket.
+    name: name of the builder.
+  """
+  if not _get_builder(buildbucket, bucket, name):
+    fail('referencing undefined builder %r in bucket %r' % (name, bucket))
+
+
+################################################################################
+
+
+# Buildbucket app_id => buildbucket_pb.BuildbucketCfg.
+_configs = mutable({})
+
+
+def _ensure_service(buildbucket):
+  """Ensures there's an entry for the given service in _configs.
+
+  Args:
+    buildbucket: types_pb.Service instance of a buildbucket service.
+
+  Returns:
+    buildbucket_pb.BuildbucketCfg.
+  """
+  cfg = _configs.get()
+  if buildbucket.app_id not in cfg:
+    proj_cfg = buildbucket_pb.BuildbucketCfg()
+    cfg[buildbucket.app_id] = proj_cfg
+    __write_proto_later('project', buildbucket.project_cfg_file, proj_cfg)
+  return cfg[buildbucket.app_id]
+
+
+def _get_bucket(buildbucket, name, should_exist = True):
+  """Returns buildbucket_pb.Bucket of an already defined bucket or None.
+
+  Args:
+    buildbucket: types_pb.Service describing the buildbucket service.
+    name: name of a bucket to return.
+    should_exist: if True, will fail instead of returning None if the bucket
+        doesn't exist.
+
+  Returns:
+    buildbucket_pb.Bucket.
+  """
+  # Note that the number of buckets is usually small, so a linear scan is fine.
+  cfg = _configs.get().get(buildbucket.app_id)
+  for b in (cfg.buckets if cfg else []):
+    if b.name == name:
+      return b
+  if should_exist:
+    fail('bucket %r is not defined' % name)
+  return None
+
+
+def _get_builder(buildbucket, bucket, name):
+  """Returns buildbucket_pb.Builder of an already defined builder or None.
+
+  Args:
+    buildbucket: types_pb.Service describing the buildbucket service.
+    bucket: name of a bucket.
+    name: name of a builder to return.
+
+  Returns:
+    buildbucket_pb.Builder.
+  """
+  # TODO(vadimsh): Keep a map {name => builder} to have O(1) lookup.
+  buck = _get_bucket(buildbucket, bucket, should_exist = False)
+  if not buck:
+    return None
+  for b in buck.swarming.builders:
+    if b.name == name:
+      return b
+  return None
+
+
+def _to_bb_acl(role, groups, idents):
+  """Converts given list of groups and identities into a list of Acl protos."""
+  out = []
+  for g in groups:
+    out.append(buildbucket_pb.Acl(
+        role = role,
+        group = g,
+    ))
+  for kind, val in idents:
+    out.append(buildbucket_pb.Acl(
+        role = role,
+        identity = '%s:%s' % (kind, val),
+    ))
+  return out
+
+
+def _to_toggle(b):
+  """Converts boolean (or None) to buildbucket_pb.Toggle enum."""
+  if b == None:
+    return buildbucket_pb.UNSET
+  if b:
+    return buildbucket_pb.YES
+  return buildbucket_pb.NO
+
+
+# Exported symbols.
+buildbucket = struct(
+    bucket = _bucket,
+    builder = _builder,
+    swarming_cache = _swarming_cache,
+    recipe = _recipe,
+
+    # For internal use within stdlib only.
+    check_builder_defined = _check_builder_defined,
+)

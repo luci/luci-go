@@ -1,0 +1,68 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Defines 'logdog' rule used to declare a usage of Logdog service."""
+
+load(
+    'builtin:go.chromium.org/luci/logdog/api/config/svcconfig/project.proto',
+    logdog_pb = 'svcconfig')
+load('builtin:lib/acls.sky', 'acls')
+load('builtin:rules/project.sky', 'project')
+
+
+def _logdog(
+    archive_gs_bucket = None,
+
+    # ACLs.
+    readers = None,
+    writers = None,
+
+    # Involved services.
+    logdog = None):
+  """Defines Logdog service configuration.
+
+  Args:
+    archive_gs_bucket: a google storage bucket to use for storing logs.
+
+    readers: list of groups that can read project logs (default is project's
+        readers).
+    writers: list of groups that can upload logs to the project's prefix.
+
+    logdog: app ID of the Logdog instance (project-level default if not set).
+  """
+  logdog = project.service('logdog', logdog)
+
+  # Validate parameters.
+  readers, _ = acls.split(
+      'readers', readers or project.current().readers, only_groups = True)
+  writers, _ = acls.split('writers', writers, only_groups = True)
+  if not archive_gs_bucket:
+    fail('archive_gs_bucket is required')
+
+  # And actually write its config file.
+  __write_proto_later(
+      'project',
+      logdog.project_cfg_file,
+      logdog_pb.ProjectConfig(
+          reader_auth_groups = readers,
+          writer_auth_groups = writers,
+          archive_gs_bucket = archive_gs_bucket,
+      ),
+  )
+
+
+# Exported symbols.
+logdog = struct(
+    logdog = _logdog,
+)
