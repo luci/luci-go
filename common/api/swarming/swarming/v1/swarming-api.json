@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/swarming/v1/",
-  "baseUrl": "https://chromium-swarm.appspot.com/_ah/api/swarming/v1/",
+  "basePath": "/api/swarming/v1",
+  "baseUrl": "https://chromium-swarm.appspot.com/api/swarming/v1",
   "batchPath": "batch",
   "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/nv85ANV81PhwOzylDp5RkhV5Xu0\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "swarming:v1",
   "kind": "discovery#restDescription",
@@ -919,7 +918,7 @@
       }
     }
   },
-  "rootUrl": "https://chromium-swarm.appspot.com/_ah/api/",
+  "rootUrl": "https://chromium-swarm.appspot.com/api/",
   "schemas": {
     "SwarmingRpcsBootstrapToken": {
       "description": "Returns a token to bootstrap a new bot.",
@@ -1157,7 +1156,7 @@
       "type": "object"
     },
     "SwarmingRpcsCacheEntry": {
-      "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at /|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
+      "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at \u003crun_dir\u003e/|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
       "id": "SwarmingRpcsCacheEntry",
       "properties": {
         "name": {
@@ -1528,7 +1527,7 @@
       "id": "SwarmingRpcsTaskProperties",
       "properties": {
         "caches": {
-          "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at /|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
+          "description": "Describes a named cache that should be present on the bot. A CacheEntry in a task specified that the task prefers the cache to be present on the bot. A symlink to the cache directory is created at \u003crun_dir\u003e/|path|. If cache is not present on the machine, the directory is empty. If the tasks makes any changes to the contents of the cache directory, they are persisted on the machine. If another task runs on the same machine and requests the same named cache, even if mapped to a different path, it will see the changes.",
           "items": {
             "$ref": "SwarmingRpcsCacheEntry"
           },
@@ -1890,6 +1889,9 @@
         "properties": {
           "$ref": "SwarmingRpcsTaskProperties",
           "description": "Important metadata about a particular task."
+        },
+        "wait_for_capacity": {
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -1905,6 +1907,7 @@
           "type": "boolean"
         },
         "limit": {
+          "default": "100",
           "format": "int64",
           "type": "string"
         },

@@ -55,11 +55,11 @@ var _ = ctxhttp.Do
 const apiId = "swarming:v1"
 const apiName = "swarming"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/_ah/api/swarming/v1/"
+const basePath = "http://localhost:8080/api/swarming/v1"
 
 // OAuth2 scopes used by this API.
 const (
-	// View your email address
+	// https://www.googleapis.com/auth/userinfo.email
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
@@ -491,9 +491,9 @@ func (s *SwarmingRpcsBotsDimensions) MarshalJSON() ([]byte, error) {
 // SwarmingRpcsCacheEntry: Describes a named cache that should be
 // present on the bot. A CacheEntry in a task specified that the task
 // prefers the cache to be present on the bot. A symlink to the cache
-// directory is created at /|path|. If cache is not present on the
-// machine, the directory is empty. If the tasks makes any changes to
-// the contents of the cache directory, they are persisted on the
+// directory is created at <run_dir>/|path|. If cache is not present on
+// the machine, the directory is empty. If the tasks makes any changes
+// to the contents of the cache directory, they are persisted on the
 // machine. If another task runs on the same machine and requests the
 // same named cache, even if mapped to a different path, it will see the
 // changes.
@@ -1162,11 +1162,11 @@ type SwarmingRpcsTaskProperties struct {
 	// Caches: Describes a named cache that should be present on the bot. A
 	// CacheEntry in a task specified that the task prefers the cache to be
 	// present on the bot. A symlink to the cache directory is created at
-	// /|path|. If cache is not present on the machine, the directory is
-	// empty. If the tasks makes any changes to the contents of the cache
-	// directory, they are persisted on the machine. If another task runs on
-	// the same machine and requests the same named cache, even if mapped to
-	// a different path, it will see the changes.
+	// <run_dir>/|path|. If cache is not present on the machine, the
+	// directory is empty. If the tasks makes any changes to the contents of
+	// the cache directory, they are persisted on the machine. If another
+	// task runs on the same machine and requests the same named cache, even
+	// if mapped to a different path, it will see the changes.
 	Caches []*SwarmingRpcsCacheEntry `json:"caches,omitempty"`
 
 	// CipdInput: Defines CIPD packages to install in task run directory.
@@ -1554,6 +1554,8 @@ type SwarmingRpcsTaskSlice struct {
 	// Properties: Important metadata about a particular task.
 	Properties *SwarmingRpcsTaskProperties `json:"properties,omitempty"`
 
+	WaitForCapacity bool `json:"wait_for_capacity,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "ExpirationSecs") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
@@ -1585,7 +1587,8 @@ type SwarmingRpcsTasksCancelRequest struct {
 
 	KillRunning bool `json:"kill_running,omitempty"`
 
-	Limit int64 `json:"limit,omitempty,string"`
+	// Default: 100
+	Limit *int64 `json:"limit,omitempty,string"`
 
 	Tags []string `json:"tags,omitempty"`
 
