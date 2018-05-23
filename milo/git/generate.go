@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate mockgen -source source.go -destination gittest/mock.go -package gittest
+//go:generate mockgen -source client.go -destination gittest/mock.go -package gittest
 //go:generate goimports -w gittest/mock.go
 
 package git
