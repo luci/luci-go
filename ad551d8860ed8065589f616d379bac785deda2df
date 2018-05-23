@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87102540_e8113696",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-23T00:32:17Z",
+      "side": 1,
+      "message": "Use DeduplicationKey instead, it will do the hashing itself: https://github.com/luci/luci-go/blob/master/appengine/tq/tq.go#L131 \n\nIt will also avoid hitting task queue name limits.",
+      "range": {
+        "startLine": 83,
+        "startChar": 3,
+        "endLine": 83,
+        "endChar": 13
+      },
+      "revId": "ad551d8860ed8065589f616d379bac785deda2df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
