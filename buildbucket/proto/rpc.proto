@@ -30,8 +30,11 @@ message GetBuildRequest {
   // Requires builder. Mutually exclusive with id.
   int32 build_number = 3;
 
-  // List of Build fields to include in the response, e.g. "steps".
-  // See Build field comments for the list of fields
+  // Field mask to apply to the response, e.g. {paths: ["steps"]} to include
+  // steps in the response. See Build message comments for the list of fields
   // excluded by default.
-  google.protobuf.FieldMask build_fields = 100;
+  //
+  // Supports advanced semantics, see
+  // https://chromium.googlesource.com/infra/luci/luci-py/+/f9ae69a37c4bdd0e08a8b0f7e123f6e403e774eb/appengine/components/components/protoutil/field_masks.py#7
+  google.protobuf.FieldMask fields = 100;
 }
