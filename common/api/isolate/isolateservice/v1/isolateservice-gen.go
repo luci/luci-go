@@ -55,11 +55,11 @@ var _ = ctxhttp.Do
 const apiId = "isolateservice:v1"
 const apiName = "isolateservice"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/_ah/api/isolateservice/v1/"
+const basePath = "http://localhost:8080/api/isolateservice/v1"
 
 // OAuth2 scopes used by this API.
 const (
-	// View your email address
+	// https://www.googleapis.com/auth/userinfo.email
 	UserinfoEmailScope = "https://www.googleapis.com/auth/userinfo.email"
 )
 
@@ -568,8 +568,9 @@ type PreuploadCall struct {
 // is commensurate to the request's; each UrlMessage has * if an entry
 // is missing: two URLs: the URL to upload a file to and the URL to call
 // when the upload is done (can be null). * if the entry is already
-// present: null URLs (''). UrlCollection([ UrlMessage( upload_url = ""
-// finalize_url = "" ) UrlMessage( upload_url = '') ... ])
+// present: null URLs (''). UrlCollection([ UrlMessage( upload_url =
+// "<upload url>" finalize_url = "<finalize url>" ) UrlMessage(
+// upload_url = '') ... ])
 func (s *Service) Preupload(handlersendpointsv1digestcollection *HandlersEndpointsV1DigestCollection) *PreuploadCall {
 	c := &PreuploadCall{s: s, urlParams_: make(gensupport.URLParams)}
 	c.handlersendpointsv1digestcollection = handlersendpointsv1digestcollection
@@ -659,7 +660,7 @@ func (c *PreuploadCall) Do(opts ...googleapi.CallOption) (*HandlersEndpointsV1Ur
 	}
 	return ret, nil
 	// {
-	//   "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\" finalize_url = \"\" ) UrlMessage( upload_url = '') ... ])",
+	//   "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\u003cupload url\u003e\" finalize_url = \"\u003cfinalize url\u003e\" ) UrlMessage( upload_url = '') ... ])",
 	//   "httpMethod": "POST",
 	//   "id": "isolateservice.preupload",
 	//   "path": "preupload",
