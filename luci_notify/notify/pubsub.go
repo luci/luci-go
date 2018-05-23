@@ -22,17 +22,19 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
+	"google.golang.org/genproto/protobuf/field_mask"
 
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/buildbucket"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	notifyConfig "go.chromium.org/luci/luci_notify/config"
@@ -203,7 +205,16 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}, nil)
 }
 
-var errNotLUCIBuild = errors.New("not a LUCI build")
+func newBuildsClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
+	t, err := auth.GetRPCTransport(c, auth.AsSelf)
+	if err != nil {
+		return nil, err
+	}
+	return buildbucketpb.NewBuildsPRPCClient(&prpc.Client{
+		C:    &http.Client{Transport: t},
+		Host: host,
+	}), nil
+}
 
 // BuildbucketPubSubHandler is the main entrypoint for a new update from buildbucket's pubsub.
 //
@@ -213,19 +224,11 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 	c := ctx.Context
 	build, err := extractBuild(c, ctx.Request)
 	switch {
-	case err == errNotLUCIBuild:
-		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
-		return nil
-
 	case err != nil:
 		return errors.Annotate(err, "failed to extract build").Err()
 
 	case build == nil:
-		// Ignore. Most probably, v2.
-		return nil
-
-	case !build.Status.Completed():
-		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
+		// Ignore.
 		return nil
 
 	default:
@@ -262,26 +265,40 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	}
 	var message struct {
 		Build bbv1.ApiCommonBuildMessage
+		Host  string
 	}
-	if err := json.Unmarshal(msg.Message.Data, &message); err != nil {
+	switch err := json.Unmarshal(msg.Message.Data, &message); {
+	case err != nil:
 		return nil, errors.Annotate(err, "could not parse pubsub message data").Err()
-	}
-	if !strings.HasPrefix(message.Build.Bucket, "luci.") {
-		return nil, errNotLUCIBuild
+	case !strings.HasPrefix(message.Build.Bucket, "luci."):
+		logging.Infof(c, "Received build that isn't part of LUCI, ignoring...")
+		return nil, nil
+	case message.Build.Status != bbv1.StatusCompleted:
+		logging.Infof(c, "Received build that hasn't completed yet, ignoring...")
+		return nil, nil
 	}
 
-	var build Build
-	if bv2, err := buildbucket.BuildToV2(&message.Build); err != nil {
-		return nil, errors.Annotate(err, "could not decode buildbucket build").Err()
-	} else {
-		build.Build = *bv2
+	buildsClient, err := newBuildsClient(c, message.Host)
+	if err != nil {
+		return nil, err
+	}
+	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
+		Id: message.Build.Id,
+		Fields: &field_mask.FieldMask{
+			Paths: []string{"steps"},
+		},
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
 	}
 
 	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not decode email_notify").Err()
 	}
-	build.EmailNotify = emails
 
-	return &build, nil
+	return &Build{
+		Build:       *res,
+		EmailNotify: emails,
+	}, nil
 }
