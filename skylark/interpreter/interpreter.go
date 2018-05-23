@@ -33,6 +33,9 @@
 //  * 'mutable' allows modules to explicitly declare that they wish to keep some
 //    mutable (non-frozen) state, which can be modified after the module has
 //    loaded (e.g. from an exported function).
+//  * `to_json` takes a skylark value (scalars, lists, tuples, dicts containing
+//    only skylark values) and returns a string with its compact JSON
+//    serialization.
 package interpreter
 
 import (
@@ -150,6 +153,7 @@ func (intr *Interpreter) Init() error {
 		"fail":    skylark.NewBuiltin("fail", failImpl),
 		"mutable": skylark.NewBuiltin("mutable", mutableImpl),
 		"struct":  skylark.NewBuiltin("struct", skylarkstruct.Make),
+		"to_json": skylark.NewBuiltin("to_json", toJSONImpl),
 	}
 	for k, v := range skylarkproto.ProtoLib() {
 		intr.globals[k] = v
