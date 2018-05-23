@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b1d50c8a_3799e711",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 204,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 0,
+      "message": "Endpoints v1 has this but I think v2 just omits it, it doesn\u0027t seem relevant.",
+      "revId": "dbea23e9694a96fd56425c8217f3475dd904144e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

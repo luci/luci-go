@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c19543e5_2cb086a0",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 1,
+      "message": "I\u0027m still fairly sure these names don\u0027t matter, they just need to be internally consistent (i.e. $ref needs to match elsewhere in the doc).",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff8c208c_116534c3",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 1,
+      "message": "These are in numeric order now instead of alphabetic. Doesn\u0027t matter regardless since enums are strings.",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "32140708_a5caa8b6",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 1052,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 1,
+      "message": "This comment itself was updated, this isn\u0027t related to the adapter.",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8bedb4b6_0a612d27",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 1789,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 1,
+      "message": "This is actually an improvement. Now when you create a TasksCancelRequest on the API explorer it pre-fills in the default of 100. Endpoints v1 didn\u0027t seem to do that.",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "196541b9_a710390d",
+        "filename": "common/api/swarming/swarming/v1/swarming-gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1589,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-23T23:35:30Z",
+      "side": 1,
+      "message": "I\u0027m admittedly surprised to see this type change, I\u0027m not sure what the impact is of this being a pointer now.",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
