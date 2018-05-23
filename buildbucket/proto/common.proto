@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package buildbucket.v2;
 
-option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
-
 // Status of a build or a step.
 enum Status {
   // Unspecified state. Meaning depends on the context.
