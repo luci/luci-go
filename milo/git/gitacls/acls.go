@@ -56,7 +56,10 @@ type ACLs struct {
 // IsAllowed returns whether current identity has been granted read access to
 // given Git/Gerrit project.
 func (a *ACLs) IsAllowed(c context.Context, host, project string) (bool, error) {
-	// TODO(tandrii): host may have '-review' in it.
+	// Convert Gerrit to Git hosts.
+	if strings.HasSuffix(host, "-review.googlesource.com") {
+		host = strings.TrimSuffix(host, "-review.googlesource.com") + ".googlesource.com"
+	}
 	hacls, configured := a.hosts[host]
 	if !configured {
 		return false, nil
