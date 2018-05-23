@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package buildbucket.v2;
 
-option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
-
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
