@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59983b0d_60d5b37f",
+        "filename": "milo/frontend/view_console.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T22:48:44Z",
+      "side": 1,
+      "message": "derp. Must have been OK.",
+      "revId": "9b7e2979a0560f0ba2be981a2c8a7cb75250c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
