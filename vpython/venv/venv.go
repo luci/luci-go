@@ -472,7 +472,7 @@ func (e *Env) createLocked(c context.Context) error {
 	if _, err := os.Stat(e.Root); err == nil {
 		logging.Infof(c, "Deleting existing VirtualEnv: %s", e.Root)
 		if err := filesystem.RemoveAll(e.Root); err != nil {
-			return errors.Reason("failed to remove existing root").Err()
+			return errors.Annotate(err, "failed to remove existing root").Err()
 		}
 	}
 
