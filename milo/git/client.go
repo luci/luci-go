@@ -29,18 +29,25 @@ import (
 	"net/http"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/api/gerrit"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/milo/git/gitacls"
 	"go.chromium.org/luci/server/auth"
 )
 
 // Client provides high level API for Git/Gerrit data.
+//
+// Methods may return grpc errors returned by the underlying Gitiles service.
+// These errors will be annotated with Milo's error tags whenever reasonable.
 type Client interface {
 
 	// Log returns ancestors commits of the given repository host
@@ -59,6 +66,8 @@ type Client interface {
 	// Returns empty string if either:
 	//   CL doesn't exist, or
 	//   current user has no access to CL's project.
+	//
+	// May return gRPC errors returned by the underlying Gerrit service.
 	CLEmail(c context.Context, host string, changeNumber int64) (string, error)
 }
 
@@ -130,4 +139,26 @@ func (p *implementation) gerritClient(c context.Context, host string) (gerritpb.
 		return nil, err
 	}
 	return gerrit.NewRESTClient(&http.Client{Transport: t}, host, true)
+}
+
+// errGRPCNotFound is what gRPC API would have returned for NotFound error.
+var errGRPCNotFound = status.Errorf(codes.NotFound, "not found")
+
+// tagError annotates some gRPC with Milo specific tag.
+func tagError(c context.Context, err error) error {
+	loggedIn := auth.CurrentIdentity(c) != identity.AnonymousIdentity
+	tag := common.CodeUnknown
+	switch code := status.Code(err); {
+	case code == codes.Unauthenticated:
+		tag = common.CodeUnauthorized
+	case !loggedIn && (code == codes.NotFound || code == codes.PermissionDenied):
+		tag = common.CodeUnauthorized
+	case code == codes.NotFound:
+		tag = common.CodeNotFound
+	case code == codes.PermissionDenied:
+		tag = common.CodeNoAccess
+	default:
+		return err
+	}
+	return errors.Annotate(err, "").Tag(tag).Err()
 }

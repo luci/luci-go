@@ -42,12 +42,16 @@ type LogOptions struct {
 }
 
 // Log implements Client interface.
-func (p *implementation) Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error) {
-	switch allowed, err := p.acls.IsAllowed(c, host, project); {
+func (p *implementation) Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) (commits []*gitpb.Commit, err error) {
+	defer func() { err = tagError(c, err) }()
+
+	allowed, err := p.acls.IsAllowed(c, host, project)
+	switch {
 	case err != nil:
-		return nil, err
+		return
 	case !allowed:
-		return nil, status.Errorf(codes.NotFound, "not found")
+		err = status.Errorf(codes.NotFound, "not found")
+		return
 	}
 
 	var opts LogOptions
@@ -58,7 +62,6 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		opts.Limit = 50
 	}
 
-	var commits []*gitpb.Commit
 	remaining := opts.Limit // defined as (limit - len(commits))
 	// add appends page to commits and updates remaining.
 	// If page starts with commits' last commit, page's first commit
@@ -68,6 +71,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		case len(commits) == 0:
 			commits = page
 		case len(page) == 0:
+			// Do nothing.
 		default:
 			if page[0].Id != commits[len(commits)-1].Id {
 				panic(fmt.Sprintf(
@@ -88,16 +92,18 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		min:       100,
 	}
 
+	var page []*gitpb.Commit
 	for remaining > 100 {
 		// We need to fetch >100 commits, but one logReq can handle only 100.
 		// Call it in a loop.
-		switch page, err := req.call(c); {
+		page, err = req.call(c)
+		switch {
 		case err != nil:
-			return commits, err
+			return
 		case len(page) < 100:
 			// This can happen iff there are no more commits.
 			add(page)
-			return commits, nil
+			return
 		case len(page) > 100:
 			panic("impossible: logReq.call() returned >100 commits")
 		default:
@@ -113,9 +119,9 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 
 	// last page. One logReq.call() can handle the rest.
 	req.min = remaining
-	page, err := req.call(c)
+	page, err = req.call(c)
 	if err != nil {
-		return commits, err
+		return
 	}
 	add(page)
 
@@ -124,7 +130,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 	if len(commits) > opts.Limit {
 		commits = commits[:opts.Limit]
 	}
-	return commits, nil
+	return
 }
 
 // possible values for "result" field of logCounter metric below.
