@@ -264,8 +264,8 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, nil
 	}
 	var message struct {
-		Build bbv1.ApiCommonBuildMessage
-		Host  string
+		Build    bbv1.ApiCommonBuildMessage
+		Hostname string
 	}
 	switch err := json.Unmarshal(msg.Message.Data, &message); {
 	case err != nil:
@@ -278,7 +278,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, nil
 	}
 
-	buildsClient, err := newBuildsClient(c, message.Host)
+	buildsClient, err := newBuildsClient(c, message.Hostname)
 	if err != nil {
 		return nil, err
 	}
