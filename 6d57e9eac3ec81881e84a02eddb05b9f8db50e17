@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "1449a1b4_98ab6fb4",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T02:21:32Z",
+      "side": 1,
+      "message": "Ok, I guess if there is precedent from Vadim, then it\u0027s good to go.",
+      "parentUuid": "38679719_a9efc8b9",
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01c21973_73fbacb5",
         "filename": "milo/git/log.go",
         "patchSetId": 2
@@ -81,6 +99,30 @@
       "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63867262_822b20e7",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T02:21:32Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "63c4de2c_c4882769",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 25
+      },
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
