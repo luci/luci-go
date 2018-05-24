@@ -16,6 +16,24 @@
       "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52bac9b0_72caf215",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T20:55:45Z",
+      "side": 1,
+      "message": "Yes, this won\u0027t land until implementation is ready, but I\u0027ve sent this for review to get early feedback on the design before I invest too much time into implementation.",
+      "parentUuid": "99332d6e_d3cb3e72",
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
