@@ -255,7 +255,7 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 		InstanceID:   model.ObjectRefToInstanceID(r.Instance),
 		RegisteredBy: string(auth.CurrentIdentity(c)),
 		RegisteredTs: clock.Now(c).UTC(),
-	})
+	}, impl.onInstanceRegistration)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to register the instance").Err()
 	}
@@ -267,4 +267,10 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 		resp.Status = api.RegistrationStatus_ALREADY_REGISTERED
 	}
 	return
+}
+
+// onInstanceRegistration is called in a txn when registering an instance.
+func (impl *repoImpl) onInstanceRegistration(c context.Context, inst *model.Instance) error {
+	// TODO(vadimsh): Enqueue TQ tasks with processing steps.
+	return nil
 }
