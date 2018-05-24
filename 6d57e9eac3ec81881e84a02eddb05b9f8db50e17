@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "38679719_a9efc8b9",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T02:19:02Z",
+      "side": 1,
+      "message": "that\u0027s precisely why I like it. And I got it from Vadim\u0027s CL by chance reviewed today: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1070860/2/cipd/appengine/impl/cas/cas.go#103",
+      "parentUuid": "fe091c6d_2399d396",
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01c21973_73fbacb5",
         "filename": "milo/git/log.go",
         "patchSetId": 2
@@ -30,6 +48,30 @@
       "writtenOn": "2018-05-24T02:14:37Z",
       "side": 1,
       "message": "Why move it here instead of keeping the statement at line 99 inside switch?",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 25
+      },
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "63c4de2c_c4882769",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T02:19:02Z",
+      "side": 1,
+      "message": "if i do :\u003d in L99, then err inside for loop\u0027s closure {} is a new var aliasing err that is being returned.",
+      "parentUuid": "01c21973_73fbacb5",
       "range": {
         "startLine": 95,
         "startChar": 1,
