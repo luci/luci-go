@@ -170,7 +170,8 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	case common.CodeOK:
 		// Do nothing, all is good.
 	case common.CodeNotFound:
-		return nil, nil, errors.Annotate(err, "incorrect repo URL %q in the config or no access", def.RepoUrl).Err()
+		return nil, nil, errors.Reason("incorrect repo URL %q in the config or no access", def.RepoUrl).
+			InternalReason(err.Error()).Err()
 	default:
 		return nil, nil, err
 	}
