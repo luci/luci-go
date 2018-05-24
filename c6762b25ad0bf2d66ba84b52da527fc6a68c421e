@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fd89cd3b_42b9d44f",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T21:59:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ea2ea39_20c9f1f9",
+      "range": {
+        "startLine": 143,
+        "startChar": 49,
+        "endLine": 145,
+        "endChar": 27
+      },
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "99332d6e_d3cb3e72",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 3
@@ -80,6 +104,30 @@
       "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb5f2cb5_236ac460",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T21:59:03Z",
+      "side": 1,
+      "message": "Good point. I didn\u0027t realize scheduler only sends a trigger for the latest commit on a branch when discovering a new branch.",
+      "parentUuid": "5f4a0b4e_b0d8397f",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 36
+      },
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
