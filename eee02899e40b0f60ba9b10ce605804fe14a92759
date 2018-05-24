@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ad9bece7_6f124307",
+        "filename": "milo/git/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T02:14:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e5aac14_5aca8c94",
+      "range": {
+        "startLine": 148,
+        "startChar": 40,
+        "endLine": 148,
+        "endChar": 61
+      },
+      "revId": "eee02899e40b0f60ba9b10ce605804fe14a92759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "097e62b8_1ad992b7",
         "filename": "milo/git/gerrit_test.go",
         "patchSetId": 1

@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fe091c6d_2399d396",
+        "filename": "milo/git/gerrit.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T02:14:37Z",
+      "side": 1,
+      "message": "That\u0027s a new approach to me. I kinda like it because it removes repetition in return statements, but it\u0027s also inconsistent with every other function that I\u0027ve seen so far in LUCI go-code, so I\u0027d prefer you to get a second opinion on this from other people with Go experience in ChOps.",
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01c21973_73fbacb5",
+        "filename": "milo/git/log.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-24T02:14:37Z",
+      "side": 1,
+      "message": "Why move it here instead of keeping the statement at line 99 inside switch?",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 95,
+        "endChar": 25
+      },
+      "revId": "6d57e9eac3ec81881e84a02eddb05b9f8db50e17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
