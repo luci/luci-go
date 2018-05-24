@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "99332d6e_d3cb3e72",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-24T18:49:53Z",
+      "side": 1,
+      "message": "is this going to be implemented soon?\n\nif not, perhaps it is better to leave this out from this CL because these protos serve as documentation, and docs should not cover things that are not implemented.\n\nFrom this perspective, ideally this CL includes implementation of the feature (in Milo), rather than only changing the proto.",
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
