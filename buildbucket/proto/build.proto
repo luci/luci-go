@@ -118,8 +118,6 @@ message Build {
   int32 number = 3;
 
   // Verified identity which created this build.
-  // Derived by the server from OAuth 2.0 token and verified against Google
-  // OAuth servers at the build creation time.
   string created_by = 4;
 
   // URL of a human-oriented build page.
@@ -146,6 +144,15 @@ message Build {
   // BigQuery: Final status of the build. Cannot be SCHEDULED or STARTED.
   Status status = 12;
 
+  // Explanation of the current status.
+  oneof status_reason {
+    // Why status is INFRA_FAILURE.
+    InfraFailureReason infra_failure_reason = 13;
+
+    // Why status is CANCELED.
+    CancelReason cancel_reason = 14;
+  }
+
   // Input to the build script / recipe.
   Input input = 15;
 
@@ -171,6 +178,24 @@ message Build {
   // One key may have multiple values, which is why this is not a map<string,string>.
   // Indexed by the server, see also BuildFilter.tags.
   repeated StringPair tags = 19;
+}
+
+// Explains why status is CANCELED.
+message CancelReason {
+  // Human-oriented reasoning.
+  string message = 1;
+
+  // Verified identity who canceled this build.
+  string canceled_by = 2;
+}
+
+// Explains why status is INFRA_FAILURE.
+message InfraFailureReason {
+  // Human-oriented explanation of the infrastructure failure.
+  string message = 1;
+
+  // Indicates that the failure was due to a resource exhaustion / quota denial.
+  bool resource_exhaustion = 2;
 }
 
 // Build infrastructure that was used for a particular build.
