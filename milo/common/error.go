@@ -45,9 +45,6 @@ const (
 	// CodeParameterError occurs when one or more of the user-provided parameters
 	// was malformed.
 	CodeParameterError
-
-	// CodeOK indicates absense of any error.
-	CodeOK
 )
 
 var httpCode = map[ErrorCode]int{
@@ -55,7 +52,6 @@ var httpCode = map[ErrorCode]int{
 	CodeNoAccess:       http.StatusForbidden,
 	CodeNotFound:       http.StatusNotFound,
 	CodeParameterError: http.StatusBadRequest,
-	CodeOK:             http.StatusOK,
 }
 
 // HTTPStatus returns an HTTP Status code corresponding to this ErrorCode.
@@ -82,9 +78,6 @@ func (c ErrorCode) GenerateErrorTagValue() errors.TagValue {
 type errorTag struct{ Key errors.TagKey }
 
 func (t *errorTag) In(err error) ErrorCode {
-	if err == nil {
-		return CodeOK
-	}
 	v, ok := errors.TagValueIn(t.Key, err)
 	if ok {
 		return v.(ErrorCode)
