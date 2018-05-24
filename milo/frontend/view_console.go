@@ -166,7 +166,12 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 		return nil, nil, errors.Annotate(err, "invalid repo URL %q in the config", def.RepoUrl).Err()
 	}
 	rawCommits, err := git.Get(c).Log(c, repoHost, repoProject, def.Ref, &git.LogOptions{Limit: limit})
-	if err != nil {
+	switch common.ErrorTag.In(err) {
+	case common.CodeUnknown:
+		// Do nothing
+	case common.CodeNotFound:
+		return nil, nil, errors.Annotate(err, "incorrect repo URL %q in the config or no access", def.RepoUrl).Err()
+	default:
 		return nil, nil, err
 	}
 	tGitiles()
