@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9e0d44ef_3f0d4614",
+        "filename": "common/system/filesystem/filesystem_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T21:44:35Z",
+      "side": 1,
+      "message": "added primarily to ensure Windows still works.",
+      "revId": "7a026e69287429b22947598a13bf2c5eb4bca072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25427ef0_c61cd6ba",
+        "filename": "common/system/filesystem/remove_all_test/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T21:44:35Z",
+      "side": 1,
+      "message": "dunno if I should keep this dir. WDYT?",
+      "revId": "7a026e69287429b22947598a13bf2c5eb4bca072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
