@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
+	"go.chromium.org/luci/auth/identity"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/milo/git/gitacls"
@@ -48,7 +49,7 @@ func TestCLEmail(t *testing.T) {
 		impl := implementation{mockGerrit: gerritMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
-		cDenied := auth.WithState(c, &authtest.FakeState{Identity: "anonymous:anynomous"})
+		cDenied := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
 		// Will be called exactly once.
 		gerritMock.EXPECT().GetChange(gomock.Any(), gomock.Any()).Return(&gerritpb.ChangeInfo{
@@ -58,7 +59,7 @@ func TestCLEmail(t *testing.T) {
 
 		_, err = impl.CLEmail(cDenied, host, 123)
 		Convey("ACLs respected with cold cache", func() {
-			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "not found")
 		})
 
 		// Now that we have cached change owner, no more GetChange calls should
@@ -66,7 +67,7 @@ func TestCLEmail(t *testing.T) {
 
 		Convey("ACLs still respected with warm cache", func() {
 			_, err = impl.CLEmail(cDenied, host, 123)
-			So(err.Error(), ShouldContainSubstring, "https://limited-review.googlesource.com/123 not found or no access")
+			So(err.Error(), ShouldContainSubstring, "not found")
 		})
 
 		Convey("Happy cached path", func() {

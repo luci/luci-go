@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/server/auth"
@@ -245,7 +246,7 @@ func TestACLsWork(t *testing.T) {
 			}
 
 			cAnon := auth.WithState(c, &authtest.FakeState{
-				Identity:       "anonymous:anonymous",
+				Identity:       identity.AnonymousIdentity,
 				IdentityGroups: []string{"all"},
 			})
 			So(granted(cAnon, "public.googlesource.com", "any"), ShouldBeTrue)

@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/auth/identity"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/milo/api/config"
@@ -52,7 +53,7 @@ func TestLog(t *testing.T) {
 		impl := implementation{mockGitiles: gitilesMock, acls: acls}
 		c = Use(c, &impl)
 		cAllowed := auth.WithState(c, &authtest.FakeState{Identity: "user:allowed@example.com"})
-		cDenied := auth.WithState(c, &authtest.FakeState{Identity: "anonymous:anynomous"})
+		cDenied := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
 		fakeCommits := make([]*gitpb.Commit, 255)
 		commitID := make([]byte, 20)
