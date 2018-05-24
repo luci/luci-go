@@ -18,6 +18,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -46,13 +47,26 @@ import (
 // Larger values mean fewer Google Storage RPC calls, but more memory usage.
 const readBufferSize = 4 * 1024 * 1024
 
-// Internal returns non-ACLed implementation of cas.StorageService.
+// StorageServer extends StorageServer RPC interface with some methods used
+// internally by other CIPD server modules.
+type StorageServer interface {
+	api.StorageServer
+
+	// GetReader returns an io.ReaderAt implementation to read contents of an
+	// object in the storage.
+	//
+	// Returns grpc errors. In particular NotFound is returned if there's no such
+	// object in the storage.
+	GetReader(c context.Context, ref *api.ObjectRef) (gs.Reader, error)
+}
+
+// Internal returns non-ACLed implementation of StorageService.
 //
 // It can be used internally by the backend. Assumes ACL checks are already
 // done.
 //
 // Registers some task queue tasks in the given dispatcher.
-func Internal(d *tq.Dispatcher) api.StorageServer {
+func Internal(d *tq.Dispatcher) StorageServer {
 	impl := &storageImpl{
 		tq:           d,
 		getGS:        gs.Get,
@@ -81,6 +95,30 @@ func (s *storageImpl) registerTasks() {
 	s.tq.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
 		return s.verifyUploadTask(c, m.(*tasks.VerifyUpload))
 	}, "verify-upload", nil)
+}
+
+// GetReader is part of StorageServer interface.
+func (s *storageImpl) GetReader(c context.Context, ref *api.ObjectRef) (r gs.Reader, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	if err = ValidateObjectRef(ref); err != nil {
+		return nil, errors.Annotate(err, "bad ref").Err()
+	}
+
+	cfg, err := s.settings(c)
+	if err != nil {
+		return nil, err
+	}
+
+	r, err = s.getGS(c).Reader(c, cfg.ObjectPath(ref), 0)
+	if err != nil {
+		ann := errors.Annotate(err, "can't read the object")
+		if gs.StatusCode(err) == http.StatusNotFound {
+			ann.Tag(grpcutil.NotFoundTag)
+		}
+		return nil, ann.Err()
+	}
+	return r, nil
 }
 
 // GetObjectURL implements the corresponding RPC method, see the proto doc.

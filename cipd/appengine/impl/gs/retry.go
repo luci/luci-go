@@ -43,6 +43,13 @@ func StatusCode(err error) int {
 	return 0
 }
 
+// StatusCodeTag can be used to attach HTTP status code to the error.
+//
+// This code will be available via StatusCode(err) function.
+func StatusCodeTag(code int) errors.TagValue {
+	return errors.TagValue{Key: statusCodeTagKey, Value: code}
+}
+
 // withRetry executes a Google Storage API call, retrying on transient errors.
 //
 // If request reached GS, but the service replied with an error, the
@@ -64,7 +71,7 @@ func withRetry(c context.Context, call func() error) error {
 		}
 		ann := errors.Annotate(err, "GS replied with HTTP code %d", apiErr.Code).
 			InternalReason("full response body:\n%s", apiErr.Body).
-			Tag(errors.TagValue{Key: statusCodeTagKey, Value: apiErr.Code})
+			Tag(StatusCodeTag(apiErr.Code))
 		// Retry only on 429 and 5xx responses, according to
 		// https://cloud.google.com/storage/docs/exponential-backoff.
 		if apiErr.Code == 429 || apiErr.Code >= 500 {
