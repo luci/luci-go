@@ -91,11 +91,21 @@ func RemoveAll(path string) error {
 			}
 		}
 
-		// Make user-writable, if it's not already.
-		if err := MakePathUserWritable(path, fi); err != nil {
-			return err
+		// A file can be read-only. On some systems, file must first be writable,
+		// while others would allow file to be removed so long as its parent
+		// directory is writable and deny changing file permissions (e.g.,
+		// https://bugs.chromium.org/p/chromium/issues/detail?id=846378#c9).
+		//
+		// So, follow optimistic removal strategy: try to remove first, on failure
+		// try changing permissions and retrying removal.
+		errRm := os.Remove(path)
+		if errRm == nil {
+			return nil
 		}
-
+		if errChmod := MakePathUserWritable(path, fi); errChmod != nil {
+			return errors.Annotate(errors.NewMultiError(errRm, errChmod),
+				"failed to remove and also to make writable path").InternalReason("path(%q)", path).Err()
+		}
 		if err := os.Remove(path); err != nil {
 			return errors.Annotate(err, "failed to remove path").InternalReason("path(%q)", path).Err()
 		}
