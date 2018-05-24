@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2cba482a_427be9fb",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-24T00:46:02Z",
+      "side": 1,
+      "message": "wow this file is so high level it doesn\u0027t use stdlib",
+      "revId": "a3c06a2b1e39191bd9064a55104f6b5dca6d6f0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
