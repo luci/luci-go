@@ -397,7 +397,7 @@ func TestRegisterInstance(t *testing.T) {
 				Package:      model.PackageKey(ctx, inst.Package),
 				InstanceID:   model.ObjectRefToInstanceID(inst.Instance),
 				RegisteredBy: "user:someone@example.com",
-			})
+			}, nil)
 			So(err, ShouldBeNil)
 
 			resp, err := impl.RegisterInstance(ctx, inst)

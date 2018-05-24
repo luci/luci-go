@@ -99,12 +99,17 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 // RegisterInstance transactionally registers an instance (and the corresponding
 // package), if it isn't registered already.
 //
+// Calls the given callback (inside the transaction) if it is indeed registering
+// a new instance. The callback may mutate the instance entity before it is
+// stored. The callback may be called multiple times in case of retries (each
+// time it will be given a fresh instance to be mutated).
+//
 // Returns (true, entity, nil) if the instance was registered just now or
 // (false, entity, nil) if it existed before.
 //
 // In either case, it returns the entity that is stored now in the datastore.
-// It is either inst, or something that existed there before.
-func RegisterInstance(c context.Context, inst *Instance) (reg bool, out *Instance, err error) {
+// It is either the new instance, or something that existed there before.
+func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		// Reset the state in case of a txn retry.
 		reg = false
@@ -138,14 +143,20 @@ func RegisterInstance(c context.Context, inst *Instance) (reg bool, out *Instanc
 			}
 		}
 
-		// TODO(vadimsh): Add processors support.
+		// Let the caller do more stuff inside this txn, e.g start TQ tasks.
+		toPut := *inst
+		if cb != nil {
+			if err := cb(c, &toPut); err != nil {
+				return errors.Annotate(err, "instance registration callback error").Err()
+			}
+		}
 
 		// Finally register the package instance entity.
-		if err := datastore.Put(c, inst); err != nil {
+		if err := datastore.Put(c, &toPut); err != nil {
 			return errors.Annotate(err, "failed to create the package instance entity").Err()
 		}
 		reg = true
-		out = inst
+		out = &toPut
 		return nil
 	}, nil)
 	return

@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/proto/google"
@@ -61,10 +63,21 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		Convey("New package and instance", func() {
-			reg, out, err := RegisterInstance(ctx, inst)
+			reg, out, err := RegisterInstance(ctx, inst, func(c context.Context, inst *Instance) error {
+				inst.ProcessorsPending = []string{"a"}
+				return nil
+			})
 			So(err, ShouldBeNil)
 			So(reg, ShouldBeTrue)
-			So(out, ShouldResemble, inst)
+
+			expected := &Instance{
+				InstanceID:        inst.InstanceID,
+				Package:           inst.Package,
+				RegisteredBy:      inst.RegisteredBy,
+				RegisteredTs:      inst.RegisteredTs,
+				ProcessorsPending: []string{"a"},
+			}
+			So(out, ShouldResemble, expected)
 
 			// Created instance and package entities.
 			storedInst := &Instance{
@@ -74,7 +87,7 @@ func TestRegisterInstance(t *testing.T) {
 			storedPkg := &Package{Name: "a/b/c"}
 			So(datastore.Get(ctx, storedInst, storedPkg), ShouldBeNil)
 
-			So(storedInst, ShouldResemble, inst)
+			So(storedInst, ShouldResemble, expected)
 			So(storedPkg, ShouldResemble, pkg)
 		})
 
@@ -82,10 +95,19 @@ func TestRegisterInstance(t *testing.T) {
 			So(datastore.Put(ctx, pkg), ShouldBeNil)
 
 			inst.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, inst)
+			reg, out, err := RegisterInstance(ctx, inst, func(c context.Context, inst *Instance) error {
+				inst.ProcessorsPending = []string{"a"}
+				return nil
+			})
 			So(err, ShouldBeNil)
 			So(reg, ShouldBeTrue)
-			So(out, ShouldResemble, inst)
+			So(out, ShouldResemble, &Instance{
+				InstanceID:        inst.InstanceID,
+				Package:           inst.Package,
+				RegisteredBy:      inst.RegisteredBy,
+				RegisteredTs:      inst.RegisteredTs,
+				ProcessorsPending: []string{"a"},
+			})
 
 			// Package entity wasn't touched.
 			storedPkg := &Package{Name: "a/b/c"}
@@ -98,7 +120,9 @@ func TestRegisterInstance(t *testing.T) {
 
 			modified := *inst
 			modified.RegisteredBy = "user:someoneelse@example.com"
-			reg, out, err := RegisterInstance(ctx, &modified)
+			reg, out, err := RegisterInstance(ctx, &modified, func(c context.Context, inst *Instance) error {
+				panic("must not be called")
+			})
 			So(err, ShouldBeNil)
 			So(reg, ShouldBeFalse)
 			So(out, ShouldResemble, inst) // the original one
