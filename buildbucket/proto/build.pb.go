@@ -17,7 +17,11 @@ It has these top-level messages:
 	GerritChange
 	GitilesCommit
 	StringPair
+	TimeRange
 	GetBuildRequest
+	SearchBuildsRequest
+	SearchBuildsResponse
+	BuildPredicate
 	Step
 */
 package buildbucketpb
