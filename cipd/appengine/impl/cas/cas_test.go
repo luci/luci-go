@@ -327,7 +327,10 @@ func TestFinishUpload(t *testing.T) {
 			deleteCalls: []string{},
 		}
 
+		dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
+
 		impl := storageImpl{
+			tq:    dispatcher,
 			getGS: func(context.Context) gs.GoogleStorage { return gsMock },
 			settings: func(context.Context) (*settings.Settings, error) {
 				return &settings.Settings{
@@ -336,9 +339,8 @@ func TestFinishUpload(t *testing.T) {
 				}, nil
 			},
 		}
+		impl.registerTasks()
 
-		dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
-		impl.registerTasks(dispatcher)
 		tq := tqtesting.GetTestable(ctx, dispatcher)
 		tq.CreateQueues()
 

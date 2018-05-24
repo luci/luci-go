@@ -15,6 +15,7 @@
 package repo
 
 import (
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,6 +23,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
@@ -32,23 +34,37 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/common"
 )
 
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS api.StorageServer) api.RepositoryServer {
-	return &repoImpl{
+func Public(internalCAS api.StorageServer, d *tq.Dispatcher) api.RepositoryServer {
+	impl := &repoImpl{
+		tq:   d,
 		meta: metadata.GetStorage(),
 		cas:  internalCAS,
 	}
+	impl.registerTasks()
+	return impl
 }
 
 // repoImpl implements api.RepositoryServer.
 type repoImpl struct {
+	tq *tq.Dispatcher
+
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  api.StorageServer // non-ACLed storage for instance package files
+}
+
+// registerTasks adds tasks to the tq Dispatcher.
+func (impl *repoImpl) registerTasks() {
+	// See queue.yaml for "run-processors" task queue definition.
+	impl.tq.RegisterTask(&tasks.RunProcessors{}, func(c context.Context, m proto.Message) error {
+		return impl.runProcessorsTask(c, m.(*tasks.RunProcessors))
+	}, "run-processors", nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -271,6 +287,15 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 
 // onInstanceRegistration is called in a txn when registering an instance.
 func (impl *repoImpl) onInstanceRegistration(c context.Context, inst *model.Instance) error {
-	// TODO(vadimsh): Enqueue TQ tasks with processing steps.
+	// TODO(vadimsh): Enqueue tasks.RunProcessors task.
+	return nil
+}
+
+// runProcessorTask executes a post-upload processing step.
+//
+// Returning a transient error here causes the task queue service to retry the
+// task.
+func (impl *repoImpl) runProcessorsTask(c context.Context, t *tasks.RunProcessors) error {
+	// TODO(vadimsh): Implement.
 	return nil
 }

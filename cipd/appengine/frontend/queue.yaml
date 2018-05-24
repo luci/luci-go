@@ -18,8 +18,17 @@ queue:
 # [/FROM_PYTHON_CIPD]
 
 
-# Used for cas.tasks.VerifyUpload tasks.
+# Used for tasks.VerifyUpload tasks, see impl/cas/tasks/tasks.proto.
 - name: verify-upload
+  target: backend-go
+  bucket_size: 500
+  rate: 50/s
+  retry_parameters:
+    task_age_limit: 24h
+
+
+# Used for tasks.RunProcessors tasks, see impl/repo/tasks/tasks.proto.
+- name: run-processors
   target: backend-go
   bucket_size: 500
   rate: 50/s
