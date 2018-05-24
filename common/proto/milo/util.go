@@ -16,3 +16,6 @@ package milo
 
 // ContentTypeAnnotations is a stream content type for annotation streams.
 const ContentTypeAnnotations = "text/x-chrome-infra-annotations; version=2"
+
+// ContentTypeSourceManifest is a stream content type for source manifests.
+const ContentTypeSourceManifest = "text/x-chrome-infra-source-manifest; version=1"
