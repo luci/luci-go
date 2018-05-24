@@ -44,6 +44,30 @@ import (
 
 var (
 	errBuilderDeleted = fmt.Errorf("builder deleted between datastore.Get calls")
+
+	// buildFieldMask defines which buildbucketpb.Build fields to fetch and
+	// make available to email templates.
+	// If a message field is specified here without periods, e.g. "steps", all
+	// of its subfields are included too.
+	buildFieldMask = &field_mask.FieldMask{
+		Paths: []string{
+			"id",
+			"builder",
+			"number",
+			"created_by",
+			"view_url",
+			"create_time",
+			"start_time",
+			"end_time",
+			"update_time",
+			"status",
+			"input",
+			"output",
+			"steps",
+			"infra",
+			"tags",
+		},
+	}
 )
 
 func getBuilderID(b *Build) string {
@@ -285,10 +309,8 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, err
 	}
 	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
-		Id: message.Build.Id,
-		Fields: &field_mask.FieldMask{
-			Paths: []string{"steps"},
-		},
+		Id:     message.Build.Id,
+		Fields: buildFieldMask,
 	})
 	switch {
 	case status.Code(err) == codes.NotFound:
