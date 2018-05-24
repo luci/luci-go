@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "0ea2ea39_20c9f1f9",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T21:41:20Z",
+      "side": 1,
+      "message": "that\u0027s very hard to implement and isn\u0027t necessary. This must be just 1 exact ref.",
+      "range": {
+        "startLine": 143,
+        "startChar": 49,
+        "endLine": 145,
+        "endChar": 27
+      },
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "99332d6e_d3cb3e72",
         "filename": "scheduler/appengine/messages/config.proto",
         "patchSetId": 3
@@ -34,6 +57,29 @@
       "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5f4a0b4e_b0d8397f",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-24T21:41:20Z",
+      "side": 1,
+      "message": "tl;dr Not needed **in scheduler**, so avoid complexity.\n\nFor those who create new branches w/o extra commit, yes, gitiles poller of scheduler will issue a trigger, potentially resulting in a build, which IMO is either intended or at least tolerable.\nMost branching projects i know today, such as V8 and Chromium, do smth like this when creating a branch:\n\n    git co master\n    export $VERSION ./tools/update_version $VERSION_FILE\n    git commit -m \"$VERSION\"\n    git push origin HEAD:refs/branch-heads/$VERSION  # creates new branch\n\nThis will result in scheduler, upon discovery of new ref, triggering a build only this latest commit.",
+      "range": {
+        "startLine": 280,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 36
+      },
+      "revId": "c6762b25ad0bf2d66ba84b52da527fc6a68c421e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
