@@ -41,7 +41,7 @@ import (
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS api.StorageServer, d *tq.Dispatcher) api.RepositoryServer {
+func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) api.RepositoryServer {
 	impl := &repoImpl{
 		tq:   d,
 		meta: metadata.GetStorage(),
@@ -56,7 +56,7 @@ type repoImpl struct {
 	tq *tq.Dispatcher
 
 	meta metadata.Storage  // storage for package prefix metadata
-	cas  api.StorageServer // non-ACLed storage for instance package files
+	cas  cas.StorageServer // non-ACLed storage for instance package files
 }
 
 // registerTasks adds tasks to the tq Dispatcher.

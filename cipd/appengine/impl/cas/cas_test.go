@@ -15,7 +15,8 @@
 package cas
 
 import (
-	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -46,6 +47,59 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
+
+func TestGetReader(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	sha1 := strings.Repeat("a", 40)
+	gsMock := &mockedGS{
+		files: map[string]string{
+			"/bucket/path/SHA1/" + sha1: "zzz body",
+		},
+	}
+
+	impl := storageImpl{
+		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
+		settings: func(context.Context) (*settings.Settings, error) {
+			return &settings.Settings{StorageGSPath: "/bucket/path"}, nil
+		},
+	}
+
+	Convey("OK", t, func() {
+		r, err := impl.GetReader(ctx, &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: sha1,
+		})
+		So(err, ShouldBeNil)
+		So(r, ShouldNotBeNil)
+
+		body := make([]byte, 100)
+		l, err := r.ReadAt(body, 0)
+		So(err, ShouldEqual, io.EOF)
+		body = body[:l]
+		So(string(body), ShouldEqual, "zzz body")
+	})
+
+	Convey("Bad object ref", t, func() {
+		_, err := impl.GetReader(ctx, &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: "zzz",
+		})
+		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+		So(err, ShouldErrLike, "bad ref")
+	})
+
+	Convey("No such file", t, func() {
+		_, err := impl.GetReader(ctx, &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: strings.Repeat("b", 40),
+		})
+		So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		So(err, ShouldErrLike, "can't read the object")
+	})
+}
 
 func TestGetObjectURL(t *testing.T) {
 	t.Parallel()
@@ -126,7 +180,7 @@ func TestGetObjectURL(t *testing.T) {
 	})
 }
 
-type mockedUploadGS struct {
+type mockedGS struct {
 	testutil.NoopGoogleStorage
 
 	exists bool
@@ -145,22 +199,22 @@ type publishCall struct {
 	srcGen int64
 }
 
-func (m *mockedUploadGS) Exists(c context.Context, path string) (bool, error) {
+func (m *mockedGS) Exists(c context.Context, path string) (bool, error) {
 	return m.exists, nil
 }
 
-func (m *mockedUploadGS) StartUpload(c context.Context, path string) (string, error) {
+func (m *mockedGS) StartUpload(c context.Context, path string) (string, error) {
 	return "http://upload-url.example.com/for/+" + path, nil
 }
 
-func (m *mockedUploadGS) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
+func (m *mockedGS) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
 	if body, ok := m.files[path]; ok {
 		return mockedGSReader{Reader: strings.NewReader(body)}, nil
 	}
-	return nil, fmt.Errorf("file %q is missing", path)
+	return nil, errors.Reason("file %q is missing", path).Tag(gs.StatusCodeTag(http.StatusNotFound)).Err()
 }
 
-func (m *mockedUploadGS) Publish(c context.Context, dst, src string, srcGen int64) error {
+func (m *mockedGS) Publish(c context.Context, dst, src string, srcGen int64) error {
 	if m.publisCalls == nil {
 		panic("didn't expect Publish calls")
 	}
@@ -168,7 +222,7 @@ func (m *mockedUploadGS) Publish(c context.Context, dst, src string, srcGen int6
 	return m.publishErr
 }
 
-func (m *mockedUploadGS) Delete(c context.Context, path string) error {
+func (m *mockedGS) Delete(c context.Context, path string) error {
 	if m.deleteCalls == nil {
 		panic("didn't expect Delete calls")
 	}
@@ -191,7 +245,7 @@ func TestBeginUpload(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testTime)
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
 
-		gsMock := &mockedUploadGS{}
+		gsMock := &mockedGS{}
 
 		impl := storageImpl{
 			getGS: func(context.Context) gs.GoogleStorage { return gsMock },
@@ -321,7 +375,7 @@ func TestFinishUpload(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testTime)
 		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
 
-		gsMock := &mockedUploadGS{
+		gsMock := &mockedGS{
 			files:       map[string]string{},
 			publisCalls: []publishCall{},
 			deleteCalls: []string{},
