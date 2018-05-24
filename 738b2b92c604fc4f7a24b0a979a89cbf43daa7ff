@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c26504b3_808602b7",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-24T23:20:08Z",
+      "side": 1,
+      "message": "I think this is unnecessary detail, it is true for all user strings appearing in this proto.",
+      "range": {
+        "startLine": 191,
+        "startChar": 2,
+        "endLine": 192,
+        "endChar": 49
+      },
+      "revId": "738b2b92c604fc4f7a24b0a979a89cbf43daa7ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
