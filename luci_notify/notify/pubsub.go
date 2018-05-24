@@ -23,6 +23,8 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 	"google.golang.org/genproto/protobuf/field_mask"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
 
@@ -288,7 +290,11 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 			Paths: []string{"steps"},
 		},
 	})
-	if err != nil {
+	switch {
+	case status.Code(err) == codes.NotFound:
+		logging.Warningf(c, "no access to build %d", message.Build.Id)
+		return nil, nil
+	case err != nil:
 		return nil, errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
 	}
 
