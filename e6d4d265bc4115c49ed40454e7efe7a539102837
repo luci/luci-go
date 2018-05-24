@@ -53,6 +53,24 @@
     },
     {
       "key": {
+        "uuid": "8608c623_d9164c86",
+        "filename": "common/api/swarming/swarming/v1/swarming-api.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 1052,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-05-24T00:04:41Z",
+      "side": 1,
+      "message": "Actually it wasn\u0027t updated, it just didn\u0027t display correctly on Endpoints v1:\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1070928/1/common/api/swarming/swarming/v1/swarming-gen.go#494",
+      "parentUuid": "32140708_a5caa8b6",
+      "revId": "e6d4d265bc4115c49ed40454e7efe7a539102837",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8bedb4b6_0a612d27",
         "filename": "common/api/swarming/swarming/v1/swarming-api.json",
         "patchSetId": 1
