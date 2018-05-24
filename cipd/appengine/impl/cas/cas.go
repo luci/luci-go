@@ -54,11 +54,12 @@ const readBufferSize = 4 * 1024 * 1024
 // Registers some task queue tasks in the given dispatcher.
 func Internal(d *tq.Dispatcher) api.StorageServer {
 	impl := &storageImpl{
+		tq:           d,
 		getGS:        gs.Get,
 		settings:     settings.Get,
 		getSignedURL: getSignedURL,
 	}
-	impl.registerTasks(d)
+	impl.registerTasks()
 	return impl
 }
 
@@ -66,7 +67,7 @@ func Internal(d *tq.Dispatcher) api.StorageServer {
 //
 // Doesn't do any ACL checks.
 type storageImpl struct {
-	tq *tq.Dispatcher // as passed to the constructor or registerTasks
+	tq *tq.Dispatcher
 
 	// Mocking points for tests. See Internal() for real implementations.
 	getGS        func(c context.Context) gs.GoogleStorage
@@ -75,9 +76,7 @@ type storageImpl struct {
 }
 
 // registerTasks adds tasks to the tq Dispatcher.
-func (s *storageImpl) registerTasks(d *tq.Dispatcher) {
-	s.tq = d
-
+func (s *storageImpl) registerTasks() {
 	// See queue.yaml for "verify-upload" task queue definition.
 	s.tq.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
 		return s.verifyUploadTask(c, m.(*tasks.VerifyUpload))
