@@ -238,8 +238,31 @@ message BuildInfra {
     repeated StringPair bot_dimensions = 6;
   }
 
+  // LogDog-specific information.
+  message LogDog {
+    // LogDog hostname, e.g. "logs.chromium.org".
+    string hostname = 1;
+
+    // LogDog project, e.g. "chromium".
+    // Typically matches Build.builder.project.
+    string project = 2;
+
+    // A slash-separated path prefix shared by all logs and artifacts of this
+    // build.
+    // No other build can have the same prefix.
+    // Can be used to discover logs and/or load log contents.
+    //
+    // Can be used to construct URL of a page that displays stdout/stderr of all
+    // steps of a build. In pseudo-JS:
+    //   q_stdout = `${project}/${prefix}/+/**/stdout`;
+    //   q_stderr = `${project}/${prefix}/+/**/stderr`;
+    //   url = `https://${host}/v/?s=${urlquote(q_stdout)}&s=${urlquote(q_stderr)}`;
+    string prefix = 3;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
+  LogDog logdog = 3;
 }
 
 message Builder {
