@@ -22,6 +22,30 @@
       "revId": "9cd4353593f379b4122451ebc468f237a99d767f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a67f4ed_9431a830",
+        "filename": "milo/api/config/project.pb.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T00:54:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c8eee0f6_37cbd668",
+      "range": {
+        "startLine": 296,
+        "startChar": 44,
+        "endLine": 296,
+        "endChar": 53
+      },
+      "revId": "9cd4353593f379b4122451ebc468f237a99d767f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
