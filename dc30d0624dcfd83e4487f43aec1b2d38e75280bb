@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ce591880_9976afb2",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-25T21:56:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04171447_b94002c8",
+      "revId": "dc30d0624dcfd83e4487f43aec1b2d38e75280bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5d7395c8_8de806d9",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "dc30d0624dcfd83e4487f43aec1b2d38e75280bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6559ae9_09c0b022",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-25T21:56:47Z",
+      "side": 1,
+      "message": "Empty is checked here, it is meant to be magical:\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/frontend/middleware.go?l\u003d292\n\nDifference is:\n* \"\": Don\u0027t display \u003cprev\u003e\n* EMPTY: Display \u003cprev\u003e, no cursor.",
+      "parentUuid": "5d7395c8_8de806d9",
+      "revId": "dc30d0624dcfd83e4487f43aec1b2d38e75280bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
