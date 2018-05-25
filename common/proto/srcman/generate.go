@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milo
+//go:generate cproto
+//go:generate proto-gae -type Manifest -type ManifestDiff
 
-// ContentTypeAnnotations is a stream content type for annotation streams.
-const ContentTypeAnnotations = "text/x-chrome-infra-annotations; version=2"
+// Package srcman contains source manifest protobuf definitions.
+//
+// The package name here must match the protobuf package name, as the generated
+// files will reside in the same directory.
+package srcman
+
+import (
+	"github.com/golang/protobuf/proto"
+)
+
+var _ = proto.Marshal
