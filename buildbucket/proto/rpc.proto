@@ -14,6 +14,9 @@ import "go.chromium.org/luci/buildbucket/proto/build.proto";
 // Manages builds.
 service Builds {
   // Gets a build.
+  //
+  // By default the returned build does not include all fields.
+  // See GetBuildRequest.fields.
   rpc GetBuild(GetBuildRequest) returns (Build) {};
 }
 
@@ -30,11 +33,13 @@ message GetBuildRequest {
   // Requires builder. Mutually exclusive with id.
   int32 build_number = 3;
 
-  // Field mask to apply to the response, e.g. {paths: ["steps"]} to include
-  // steps in the response. See Build message comments for the list of fields
-  // excluded by default.
+  // Fields to include in the response.
+  // If not set, the default mask is used, see Build message comments for the
+  // list of fields returned by default.
   //
   // Supports advanced semantics, see
   // https://chromium.googlesource.com/infra/luci/luci-py/+/f9ae69a37c4bdd0e08a8b0f7e123f6e403e774eb/appengine/components/components/protoutil/field_masks.py#7
+  // In particular, if the client needs only some output properties, they
+  // can be requested with paths "output.properties.fields.foo".
   google.protobuf.FieldMask fields = 100;
 }

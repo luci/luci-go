@@ -79,8 +79,6 @@ type Build struct {
 	// than-HEAD version of the source.
 	Number int32 `protobuf:"varint,3,opt,name=number" json:"number,omitempty"`
 	// Verified identity which created this build.
-	// Derived by the server from OAuth 2.0 token and verified against Google
-	// OAuth servers at the build creation time.
 	CreatedBy string `protobuf:"bytes,4,opt,name=created_by,json=createdBy" json:"created_by,omitempty"`
 	// URL of a human-oriented build page.
 	// Always populated.
@@ -457,8 +455,6 @@ type CancelReason struct {
 	// Human-oriented reasoning.
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
 	// Verified identity who canceled this build.
-	// Derived by the server from OAuth 2.0 token and verified against Google
-	// OAuth servers at the build cancelation time.
 	CanceledBy string `protobuf:"bytes,2,opt,name=canceled_by,json=canceledBy" json:"canceled_by,omitempty"`
 }
 
