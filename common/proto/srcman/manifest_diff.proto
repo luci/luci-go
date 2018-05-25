@@ -7,7 +7,7 @@ syntax = "proto3";
 package milo;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
-import "go.chromium.org/luci/common/proto/milo/manifest.proto";
+import "go.chromium.org/luci/common/proto/srcman/manifest.proto";
 
 // ManifestDiff holds basic difference information between two source manifests.
 message ManifestDiff {
