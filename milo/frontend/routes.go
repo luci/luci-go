@@ -54,6 +54,10 @@ func Run(templatePath string) {
 	standard.InstallHandlers(r)
 
 	baseMW := standard.Base()
+	apiMW := baseMW.Extend(
+		middleware.WithContextTimeout(time.Minute),
+		withGitMiddleware,
+	)
 	htmlMW := baseMW.Extend(
 		middleware.WithContextTimeout(time.Minute),
 		auth.Authenticate(server.CookieAuth),
@@ -215,7 +219,7 @@ func Run(templatePath string) {
 	})
 	milo.RegisterBuildInfoServer(&api, &rpc.BuildInfoService{})
 	discovery.Enable(&api)
-	api.InstallHandlers(r, baseMW.Extend(middleware.WithContextTimeout(time.Minute)))
+	api.InstallHandlers(r, apiMW)
 
 	http.DefaultServeMux.Handle("/", r)
 }
