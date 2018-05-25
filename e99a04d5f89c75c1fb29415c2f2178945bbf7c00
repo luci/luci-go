@@ -22,6 +22,30 @@
       "revId": "e99a04d5f89c75c1fb29415c2f2178945bbf7c00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3eef80aa_29a65c88",
+        "filename": "milo/common/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 653,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-05-25T22:24:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7068ab3_1542efc4",
+      "range": {
+        "startLine": 653,
+        "startChar": 31,
+        "endLine": 653,
+        "endChar": 33
+      },
+      "revId": "e99a04d5f89c75c1fb29415c2f2178945bbf7c00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
