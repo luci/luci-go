@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "50495847_95bbddbc",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "977d762b_48ccccb8",
+      "range": {
+        "startLine": 106,
+        "startChar": 3,
+        "endLine": 108,
+        "endChar": 51
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4bed0607_7c30b5fe",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7
@@ -45,6 +69,30 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f94e7578_7ba0af82",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bed0607_7c30b5fe",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 36
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "7f4cf734_b05b5c37",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69fc48ce_36ec922d",
+      "range": {
+        "startLine": 115,
+        "startChar": 18,
+        "endLine": 115,
+        "endChar": 59
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f97ae45_078c1991",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "52494a73_3061351d",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f97ae45_078c1991",
+      "range": {
+        "startLine": 119,
+        "startChar": 56,
+        "endLine": 119,
+        "endChar": 62
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "68e36674_1e11fd45",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7
@@ -108,6 +204,24 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f7ed6ee_d90c085c",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 404,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "68e36674_1e11fd45",
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "4dbe47d3_c3ba2c34",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Unfortunately this is not possible until we get rid of the globs. If we merge both functions now, globs will start to be used as part of the loop in function hasRef below and will match grandchildren refs too, i.e. we need to include grandchildren when matching regexp, but need to exclude them while matching globs. Once support for globs is removed, we\u0027ll be able to merge matchRef into hasSuffix and we can even do that with a switch like this:\n\n  switch {\n  case suffix \u003d\u003d \"*\":\n    panic(fmt.Errorf(\"watchedRefNamespace membership should only be checked for refs, not ref glob %s\", suffix))\n  case w.allChildren:\n    return true\n  case w.childRegexp !\u003d nil \u0026\u0026 w.childRegexp.MatchString(suffix):\n    return true\n  case w.someChildren \u003d\u003d nil:\n    return false\n  default:\n    return w.someChildren.Has(suffix)\n  }\n\nI\u0027ll add a TODO to do that after deprecating globsl",
+      "parentUuid": "dff547cb_c9944736",
+      "range": {
+        "startLine": 415,
+        "startChar": 1,
+        "endLine": 418,
+        "endChar": 35
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3805968_d8ea512a",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7
@@ -154,6 +292,30 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d047f2e_2a555172",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3805968_d8ea512a",
+      "range": {
+        "startLine": 448,
+        "startChar": 36,
+        "endLine": 448,
+        "endChar": 61
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +365,54 @@
     },
     {
       "key": {
+        "uuid": "b5744151_0e72aeea",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6af53332_b2ec52c6",
+      "range": {
+        "startLine": 470,
+        "startChar": 36,
+        "endLine": 470,
+        "endChar": 38
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ac1858af_2d926abe",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b873026_dc2674b0",
+      "range": {
+        "startLine": 470,
+        "startChar": 20,
+        "endLine": 470,
+        "endChar": 29
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1000a97_9ed8cfc3",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7
@@ -223,6 +433,30 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3ca5295_d3e86e4f",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 474,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done, but I kept addChild inlined, since it\u0027s not duplicated after adding parseRefFromConfig.",
+      "parentUuid": "d1000a97_9ed8cfc3",
+      "range": {
+        "startLine": 459,
+        "startChar": 2,
+        "endLine": 474,
+        "endChar": 29
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -249,6 +483,30 @@
     },
     {
       "key": {
+        "uuid": "52f60b25_9791e903",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "As discussed offline, this is still necessary, but I rewrote this to iterate over namespaces as this is easier to read code and performance-wise it\u0027s not really an issue given that we have very few namespaces on average (probably 1.1 or so).",
+      "parentUuid": "684e9e89_3c81c1b8",
+      "range": {
+        "startLine": 490,
+        "startChar": 1,
+        "endLine": 499,
+        "endChar": 2
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "155c0360_ffb22bea",
         "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
         "patchSetId": 7
@@ -263,6 +521,24 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9dd29eb_ae89d0e5",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "155c0360_ffb22bea",
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -286,6 +562,30 @@
       "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5c76150_f5c9085b",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-25T05:26:07Z",
+      "side": 1,
+      "message": "Yes, but this also tests that we do not just check two slashes in regexp, but only check them in the literal prefix",
+      "parentUuid": "e99ae62b_92d9662b",
+      "range": {
+        "startLine": 392,
+        "startChar": 4,
+        "endLine": 393,
+        "endChar": 37
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
