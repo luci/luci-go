@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "5ac4bb2e_2f21090f",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T21:42:11Z",
+      "side": 1,
+      "message": "It\u0027s more robust for code which is maintained and modified and reviewed by people who are not the authors. Say, a contributor adds some fancy code to add several items at once and forgets to change this line, a reviewer may not even see this line in a diff.\n\nAsserts are even better, DCHECK_GT is best, but well, 3 lines for panic is also OK.",
+      "parentUuid": "ffc39587_99a4ee38",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 25
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "64776a04_0d83a908",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
