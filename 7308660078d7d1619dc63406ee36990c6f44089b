@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "977d762b_48ccccb8",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "just disallow $ and ^ here. It\u0027s good for config clarity.",
+      "range": {
+        "startLine": 106,
+        "startChar": 3,
+        "endLine": 108,
+        "endChar": 51
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bed0607_7c30b5fe",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "you should check that regex starts with \"refs/\" (see also line 125)",
+      "range": {
+        "startLine": 113,
+        "startChar": 3,
+        "endLine": 113,
+        "endChar": 36
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69fc48ce_36ec922d",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "imo, add more explanation as this is what end users will have to act on.\nMaybe add\n`e.g., \"refs/heads/\\d+\" is good because of \"refs/heads/` is literal prefix, while \"refs/.*\" is too short`",
+      "range": {
+        "startLine": 115,
+        "startChar": 18,
+        "endLine": 115,
+        "endChar": 59
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f97ae45_078c1991",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "%q doesn\u0027t need quoting :)",
+      "range": {
+        "startLine": 119,
+        "startChar": 56,
+        "endLine": 119,
+        "endChar": 62
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68e36674_1e11fd45",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 404,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "# TODO remove allChildren by removing support of ref globs in favor of regex.",
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dff547cb_c9944736",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "regex match should be here (well, outside of switch), since suffix is all that is necessary.",
+      "range": {
+        "startLine": 415,
+        "startChar": 1,
+        "endLine": 418,
+        "endChar": 35
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3805968_d8ea512a",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "are you sure operator precedence guarantees that you don\u0027t need (...)|(...)?",
+      "range": {
+        "startLine": 448,
+        "startChar": 36,
+        "endLine": 448,
+        "endChar": 61
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b873026_dc2674b0",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "this func should add ^ and $, since it also merges regexes.",
+      "range": {
+        "startLine": 470,
+        "startChar": 20,
+        "endLine": 470,
+        "endChar": 29
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6af53332_b2ec52c6",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "this should be only child portion, ie, excl. literal prefix.",
+      "range": {
+        "startLine": 470,
+        "startChar": 36,
+        "endLine": 470,
+        "endChar": 38
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1000a97_9ed8cfc3",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 474,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "I think this would be readable and less copy-pasta:\n\nns, literalSuffix, regexSuffix :\u003d parseRefOfConfig(ref)\nif _, exists :\u003d w.namespace[ns]....\n...\n}\nw.namespace[ns].add(literalSuffix, regexSuffix)\n\nfunc parseRefOfConfig(ref){\n  if !regex{\n    ns, suf :\u003d splitRef(ref)\n    return ns, suf, nil\n  }\n  ...\n  return ns,\"\", re\n}\n\nfunc addChild(suf, re){\n  switch{\n  case !((suf !\u003d \"\") ^ (re !\u003d nil)):\n    panic(exactly one must be defined)\n  case suf !\u003d \"\":\n    ...\n  case re !\u003d nil:\n    ...\n  }\n}",
+      "range": {
+        "startLine": 459,
+        "startChar": 2,
+        "endLine": 474,
+        "endChar": 29
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "684e9e89_3c81c1b8",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "you won\u0027t need this loop if wrn.childRegex was actually child regex, as I suggested above.",
+      "range": {
+        "startLine": 490,
+        "startChar": 1,
+        "endLine": 499,
+        "endChar": 2
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "155c0360_ffb22bea",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "I think better to test end-to-end with saved state + removed ref + \u003e1 item in log.\n\nsaveState(c, jobID, parsedUrl, strmap{\n  \"refs/branch-heads/1.0\":   \"deadcafe00\"\n  \"refs/branch-heads/1.1\":   \"beefcafe02\",\n}\n\nand then expect also \n  \"refs/branch-heads/1.1\":   \"beefcafe00\",",
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e99ae62b_92d9662b",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T01:28:46Z",
+      "side": 1,
+      "message": "regexp:refs/.* is easier to read :)",
+      "range": {
+        "startLine": 392,
+        "startChar": 4,
+        "endLine": 393,
+        "endChar": 37
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
