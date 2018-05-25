@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/common/proto/srcman"
 	"go.chromium.org/luci/logdog/common/types"
 )
 
@@ -389,7 +390,7 @@ func (s *State) Append(annotation string) error {
 
 		step := s.RootStep()
 		if step.SourceManifests == nil {
-			step.SourceManifests = map[string]*milo.ManifestLink{}
+			step.SourceManifests = map[string]*srcman.ManifestLink{}
 		}
 
 		name, hashHex, url := parts[0], parts[1], parts[2]
@@ -401,7 +402,7 @@ func (s *State) Append(annotation string) error {
 			return fmt.Errorf("repeated SOURCE_MANIFEST name %q", name)
 		}
 
-		step.SourceManifests[name] = &milo.ManifestLink{
+		step.SourceManifests[name] = &srcman.ManifestLink{
 			Sha256: hash,
 			Url:    url,
 		}
