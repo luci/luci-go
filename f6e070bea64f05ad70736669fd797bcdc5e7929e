@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "6c05ed51_48da3539",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Not most. All blocks are of equal size.",
+      "parentUuid": "de90f312_3780e831",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 56
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d1b28275_c1564fd6",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "1. \u0027cap\u0027 is highlighted as a keyword by my editor, I don\u0027t like it. Renamed to \u0027capacity\u0027. Also \u0027max\u0027 vs \u0027cap\u0027 is non-essential bikeshedding.\n2. cap(map) doesn\u0027t work in Go: https://golang.org/pkg/builtin/#cap",
+      "parentUuid": "eae26197_8c4664bc",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 4
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "699fe4ad_f380d6ba",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "3acb4d9e_bdb3562a",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06ab7d65_7d1c4bee",
+      "range": {
+        "startLine": 42,
+        "startChar": 11,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "200b70ff_2c8214b5",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -114,6 +186,30 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffc39587_99a4ee38",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "This is not \"more robust\", this is \"I don\u0027t understand what\u0027s going on inside my program, so I\u0027ll put some random fixes and pray they work\". This strategy may work for complex code with a lot of state, but here the state is very small and isolated well from external influence, so we can be sure it stays as expected.\n\nAdded panic on Len() \u003e l.max, since it must not happen.",
+      "parentUuid": "200b70ff_2c8214b5",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 60,
+        "endChar": 25
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "9a56b97d_81f08bcd",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "\"Clients of ReadAt can execute parallel ReadAt calls on the same input source.\" In particular zip.Reader relies on this https://golang.org/pkg/archive/zip/#File.Open : \"Multiple files may be read concurrently.\"\n\nNote that it is possible to make BufferingReaderAt efficient for parallel use (in exchange for more complexity), but it wasn\u0027t the goal (I merely made it correct, not efficient).",
+      "parentUuid": "64776a04_0d83a908",
+      "range": {
+        "startLine": 102,
+        "startChar": 44,
+        "endLine": 102,
+        "endChar": 66
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1de19c4b_b9b7c424",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -163,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "d24adc63_6c481b97",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "I disagree. \"Buffering\" is what comes to mind first, considering there\u0027s already buffering reader for regular io.Reader. \n\nAlso this is non-essential bikeshedding.",
+      "parentUuid": "1de19c4b_b9b7c424",
+      "range": {
+        "startLine": 105,
+        "startChar": 8,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fe7741c_a31861fe",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -177,6 +321,24 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b72d4e9_49885fd4",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1fe7741c_a31861fe",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +359,24 @@
     },
     {
       "key": {
+        "uuid": "5ff12711_318165cc",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "653fe370_404721f1",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "989fe9ef_a7e4d3ae",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -211,6 +391,24 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fc18436_63acfe84",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "It is actually capped by 1, since buffers are freed on LRU eviction, and when this happens, we immediately grab a buffer from the pool.\n\nI didn\u0027t want to code it as a single variable that caches last returned byte buffer, since it looks weird.",
+      "parentUuid": "989fe9ef_a7e4d3ae",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -234,6 +432,30 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ce0bd5c_92905772",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18ad7cd1_332e1590",
+      "range": {
+        "startLine": 155,
+        "startChar": 13,
+        "endLine": 155,
+        "endChar": 17
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +505,30 @@
     },
     {
       "key": {
+        "uuid": "31c3620d_366e65c1",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5aaa3a89_a3fc6f69",
+      "range": {
+        "startLine": 193,
+        "startChar": 31,
+        "endLine": 193,
+        "endChar": 32
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "92361b62_c13722cd",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -303,6 +549,30 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "396158f1_fcaea28e",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92361b62_c13722cd",
+      "range": {
+        "startLine": 201,
+        "startChar": 3,
+        "endLine": 201,
+        "endChar": 4
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -329,6 +599,30 @@
     },
     {
       "key": {
+        "uuid": "3685f348_a19600a8",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Modified this a bit to be clearer.",
+      "parentUuid": "4f3f7f46_bf5ae0e6",
+      "range": {
+        "startLine": 216,
+        "startChar": 3,
+        "endLine": 216,
+        "endChar": 20
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4610a1b0_f1185b80",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -343,6 +637,24 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a15b4414_fcecad4f",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T18:56:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4610a1b0_f1185b80",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
