@@ -85,11 +85,12 @@ func TestSearch(t *testing.T) {
 
 		Convey("Run until finished", func() {
 			builds := make(chan *ApiCommonBuildMessage, 5)
-			err := client.Search().Run(builds, 0, nil)
+			cursor, err := client.Search().Run(builds, 0, nil)
 			So(err, ShouldBeNil)
 			for id := 1; id <= 5; id++ {
 				So((<-builds).Id, ShouldEqual, id)
 			}
+			So(cursor, ShouldEqual, "")
 		})
 		Convey("Run until ctx is cancelled", func() {
 			ctx, cancel := context.WithCancel(ctx)
@@ -100,37 +101,41 @@ func TestSearch(t *testing.T) {
 				<-builds
 				cancel()
 			}()
-			err := client.Search().Context(ctx).Run(builds, 0, nil)
+			_, err := client.Search().Context(ctx).Run(builds, 0, nil)
 			So(err, ShouldEqual, context.Canceled)
 		})
 		Convey("Run with a partial response", func() {
 			builds := make(chan *ApiCommonBuildMessage, 5)
-			err := client.Search().Fields("builds(id)").Run(builds, 0, nil)
+			cursor, err := client.Search().Fields("builds(id)").Run(builds, 0, nil)
 			So(err, ShouldBeNil)
 			So(len(requests), ShouldBeGreaterThan, 0)
 			So(requests[0].FormValue("fields"), ShouldEqual, "builds(id),next_cursor")
+			So(cursor, ShouldEqual, "")
 		})
 
 		Convey("Fetch until finished", func() {
-			builds, err := client.Search().Fetch(0, nil)
+			builds, cursor, err := client.Search().Fetch(0, nil)
 			So(err, ShouldBeNil)
 			for i, b := range builds {
 				So(b.Id, ShouldEqual, i+1)
 			}
+			So(cursor, ShouldEqual, "")
 		})
 		Convey("Fetch until finished with transient errors", func() {
 			responses[0].transientErrors = 2
-			builds, err := client.Search().Fetch(0, nil)
+			builds, cursor, err := client.Search().Fetch(0, nil)
 			So(err, ShouldBeNil)
 			for i, b := range builds {
 				So(b.Id, ShouldEqual, i+1)
 			}
+			So(cursor, ShouldEqual, "")
 		})
 
 		Convey("Fetch 3", func() {
-			builds, err := client.Search().Fetch(3, nil)
+			builds, cursor, err := client.Search().Fetch(3, nil)
 			So(err, ShouldBeNil)
 			So(builds, ShouldHaveLength, 3)
+			So(cursor, ShouldEqual, "id>4")
 		})
 	})
 }
