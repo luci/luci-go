@@ -16,6 +16,24 @@
       "revId": "1a894d4fd769dc2473307b74f697264b9a33f849",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc364958_c5dc32be",
+        "filename": "cipd/appengine/impl/model/processing.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T19:06:24Z",
+      "side": 1,
+      "message": "No, I explicitly documented that \"does nothing is there\u0027s no results stored\". It assumes caller passes a clean object to begin with or checks for p.ResultRaw \u003d\u003d nil themselves.\n\nAlso JSON decoder doesn\u0027t clean fields when given empty buffer. It just returns io.EOF.",
+      "parentUuid": "2aa3daf2_46c1f9d8",
+      "revId": "1a894d4fd769dc2473307b74f697264b9a33f849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
