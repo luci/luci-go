@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3c8795e_3ef5ee2c",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T05:37:18Z",
+      "side": 1,
+      "message": "this is the only line not covered by tests :)",
+      "revId": "0e54a09abd28448583615b7d448804d6a41164bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
