@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "c0dd9662_c66b8d89",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-05-25T02:06:19Z",
+      "side": 1,
+      "message": "I\u0027d prefer a comment like this, which is more explicit:\n\nWhat determines if a file can be deleted varies across OSes. On Windows, the file itself must not be read-only and have valid ownership. On POSIX systems, the directory must have write access, and the file ACL is ignored.",
+      "range": {
+        "startLine": 94,
+        "startChar": 5,
+        "endLine": 96,
+        "endChar": 61
+      },
+      "revId": "7a026e69287429b22947598a13bf2c5eb4bca072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a2eb78a_49290831",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-05-25T02:06:19Z",
+      "side": 1,
+      "message": "That\u0027s correct on Windows but not on POSIX, it\u0027s the containing directory that you want to modify.",
+      "range": {
+        "startLine": 105,
+        "startChar": 38,
+        "endLine": 105,
+        "endChar": 42
+      },
+      "revId": "7a026e69287429b22947598a13bf2c5eb4bca072",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9e0d44ef_3f0d4614",
         "filename": "common/system/filesystem/filesystem_test.go",
         "patchSetId": 1
