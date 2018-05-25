@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2aa3daf2_46c1f9d8",
+        "filename": "cipd/appengine/impl/model/processing.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T14:41:07Z",
+      "side": 1,
+      "message": "strictly speaking, we should clear r\npass bytes.NewReader(nil) to json.NewDecoder",
+      "revId": "1a894d4fd769dc2473307b74f697264b9a33f849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
