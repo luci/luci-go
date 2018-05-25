@@ -168,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "fcb1c940_195cc1b0",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T21:35:23Z",
+      "side": 1,
+      "message": "all this is already implemented in V1. V2 implementation will piggy back on the existing implementation. \n\n\u003e Beware that it way complicate implementation, since you\u0027ll need to fetch more stuff to fill in the page after some results are filtered out.\n\nthis is inevitable because some of the attributes that we search by might be out of date in the datastore indexes.\nhttps://chromium.googlesource.com/infra/infra/+/be42fee11c5af79841415d99e59f292aa35aea38/appengine/cr-buildbucket/service.py#586\n\nI\u0027ve added one sentence that, I believe, captures everything here.",
+      "parentUuid": "d0d11414_786c8eba",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7021c69_574c40a9",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 5
