@@ -82,27 +82,9 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 //
 // If the specified path does not exist, RemoveAll will return nil.
 func RemoveAll(path string) error {
-	err := removeAllImpl(path, func(path string, fi os.FileInfo) error {
-		// If we aren't handed a FileInfo, use Lstat to get one.
-		if fi == nil {
-			var err error
-			if fi, err = os.Lstat(path); err != nil {
-				return errors.Annotate(err, "could not Lstat path").InternalReason("path(%q)", path).Err()
-			}
-		}
-
-		// Make user-writable, if it's not already.
-		if err := MakePathUserWritable(path, fi); err != nil {
-			return err
-		}
-
-		if err := os.Remove(path); err != nil {
-			return errors.Annotate(err, "failed to remove path").InternalReason("path(%q)", path).Err()
-		}
-		return nil
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to recurisvely remove path").InternalReason("path(%q)", path).Err()
+	if err := removeAllImpl(path, removeOne); err != nil {
+		return errors.Annotate(err, "failed to recurisvely remove path").
+			InternalReason("path(%q)", path).Err()
 	}
 	return nil
 }

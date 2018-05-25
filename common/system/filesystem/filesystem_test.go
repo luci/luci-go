@@ -244,6 +244,13 @@ func TestRemoveAll(t *testing.T) {
 					So(RemoveAll(subDir), ShouldBeNil)
 					So(isGone(subDir), ShouldBeTrue)
 				})
+
+				Convey(`Can remove the directory when it has read-only files`, func() {
+					readOnly := filepath.Join(subDir, "foo", "bar")
+					So(MakeReadOnly(readOnly, nil), ShouldBeNil)
+					So(RemoveAll(subDir), ShouldBeNil)
+					So(isGone(subDir), ShouldBeTrue)
+				})
 			})
 
 			Convey(`Will return nil if the target does not exist`, func() {
