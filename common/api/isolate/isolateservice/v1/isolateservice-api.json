@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/isolateservice/v1/",
-  "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1/",
+  "basePath": "/api/isolateservice/v1",
+  "baseUrl": "https://isolateserver.appspot.com/api/isolateservice/v1",
   "batchPath": "batch",
   "description": "Version 1 of Isolate Service",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/MYeWSQMjtWMUkNO01_D0i1W671o\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "isolateservice:v1",
   "kind": "discovery#restDescription",
@@ -38,7 +37,7 @@
       ]
     },
     "preupload": {
-      "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\" finalize_url = \"\" ) UrlMessage( upload_url = '') ... ])",
+      "description": "Checks for entry's existence and generates upload URLs. Arguments: request: the DigestCollection to be posted Returns: the UrlCollection corresponding to the uploaded digests The response list is commensurate to the request's; each UrlMessage has * if an entry is missing: two URLs: the URL to upload a file to and the URL to call when the upload is done (can be null). * if the entry is already present: null URLs (''). UrlCollection([ UrlMessage( upload_url = \"\u003cupload url\u003e\" finalize_url = \"\u003cfinalize url\u003e\" ) UrlMessage( upload_url = '') ... ])",
       "httpMethod": "POST",
       "id": "isolateservice.preupload",
       "path": "preupload",
@@ -144,7 +143,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://isolateserver.appspot.com/_ah/api/",
+  "rootUrl": "https://isolateserver.appspot.com/api/",
   "schemas": {
     "HandlersEndpointsV1Digest": {
       "description": "ProtoRPC message containing digest information.",
@@ -196,12 +195,15 @@
       "id": "HandlersEndpointsV1Namespace",
       "properties": {
         "compression": {
+          "default": "flate",
           "type": "string"
         },
         "digest_hash": {
+          "default": "SHA-1",
           "type": "string"
         },
         "namespace": {
+          "default": "default",
           "type": "string"
         }
       },
@@ -239,6 +241,7 @@
       "id": "HandlersEndpointsV1RetrieveRequest",
       "properties": {
         "digest": {
+          "required": true,
           "type": "string"
         },
         "namespace": {
