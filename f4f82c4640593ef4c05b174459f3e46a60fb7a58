@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "f7b0a11e_5d0654e4",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 268,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "+",
+      "range": {
+        "startLine": 268,
+        "startChar": 31,
+        "endLine": 268,
+        "endChar": 32
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5868c66a_4b6a3b29",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "contains only",
+      "range": {
+        "startLine": 271,
+        "startChar": 43,
+        "endLine": 271,
+        "endChar": 56
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6629a8b_1d029d16",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "i think block of code deserves a new function",
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2d702272_a6ffc0eb",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
@@ -19,6 +82,69 @@
         "endLine": 106,
         "endChar": 6
       },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0aed4d8_2008ee00",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "instead of prefixing each Errorf call with the context, use c.Enter",
+      "range": {
+        "startLine": 108,
+        "startChar": 14,
+        "endLine": 108,
+        "endChar": 18
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45706739_f965af8a",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "inconsistent with other Errorf calls",
+      "range": {
+        "startLine": 113,
+        "startChar": 14,
+        "endLine": 113,
+        "endChar": 31
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e589bd6a_312bb5ee",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "we shouldn\u0027t stop validation, there may be other invalid refs that we want to report\n\ncontinue\n\nsame below",
       "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -87,6 +213,29 @@
         "startChar": 4,
         "endLine": 129,
         "endChar": 10
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a9b885c_a0f38e56",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "\"refs/\"",
+      "range": {
+        "startLine": 132,
+        "startChar": 52,
+        "endLine": 132,
+        "endChar": 56
       },
       "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
@@ -163,6 +312,46 @@
     },
     {
       "key": {
+        "uuid": "057dbc8b_93b78ed6",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 445,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "i think it would be simpler to inline this function. Its purpose is not very clear to me\n\nif you do that, it would become immediately obvious that L516 is not needed to run if w.childRegexp is nil",
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b950362_4cc77cec",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "let\u0027s not ignore errors, but panic on them, same below",
+      "range": {
+        "startLine": 478,
+        "startChar": 15,
+        "endLine": 478,
+        "endChar": 16
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9c954f73_796b4fab",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
@@ -226,6 +415,23 @@
         "endLine": 498,
         "endChar": 69
       },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c34d1500_25eb9e52",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:42:12Z",
+      "side": 1,
+      "message": "we are recompiling regexes in each iteration. Let\u0027s just accumulate a slice of regexes in this loop and after the loop compile regex once. It would be less code too",
       "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
