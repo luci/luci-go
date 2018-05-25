@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc8eed82_1ce17652",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-05-25T19:26:35Z",
+      "side": 1,
+      "message": "const isWin \u003d runtime.GOOS \u003d\u003d \"windows\"",
+      "revId": "0757374f29cd174d86a4a2a860f8414dfb7eda8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3b95745_445cff7c",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-05-25T19:26:35Z",
+      "side": 1,
+      "message": "the variable name is a bit misleading, as it may not be a dir. I think I\u0027d prefer fi, which is what is generally used.",
+      "range": {
+        "startLine": 110,
+        "startChar": 1,
+        "endLine": 110,
+        "endChar": 4
+      },
+      "revId": "0757374f29cd174d86a4a2a860f8414dfb7eda8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "534eedf2_68599ad7",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-05-25T19:26:35Z",
+      "side": 1,
+      "message": "lol",
+      "range": {
+        "startLine": 139,
+        "startChar": 37,
+        "endLine": 139,
+        "endChar": 42
+      },
+      "revId": "0757374f29cd174d86a4a2a860f8414dfb7eda8f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
