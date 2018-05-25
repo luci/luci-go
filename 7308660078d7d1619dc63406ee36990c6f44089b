@@ -272,6 +272,30 @@
     },
     {
       "key": {
+        "uuid": "f05161cb_80994332",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 418,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "OR you can use:\ncase w.allChildren \u0026\u0026 strings.COntains(suffix, \u0027/\u0027)",
+      "parentUuid": "4dbe47d3_c3ba2c34",
+      "range": {
+        "startLine": 415,
+        "startChar": 1,
+        "endLine": 418,
+        "endChar": 35
+      },
+      "revId": "7308660078d7d1619dc63406ee36990c6f44089b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3805968_d8ea512a",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 7

@@ -1,0 +1,320 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2d702272_a6ffc0eb",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "this will make all quoted strings in errors below wrong. Use new var, say \"re\"",
+      "range": {
+        "startLine": 106,
+        "startChar": 3,
+        "endLine": 106,
+        "endChar": 6
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e283ce7a_c3cd2eec",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "... e.g., here lp \u003d\u003d ref",
+      "range": {
+        "startLine": 118,
+        "startChar": 67,
+        "endLine": 118,
+        "endChar": 76
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b25c1128_c503e077",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "imo, remove. Follow up errors are just valid (if applicable)",
+      "range": {
+        "startLine": 123,
+        "startChar": 4,
+        "endLine": 123,
+        "endChar": 10
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6433d91e_4cc00b79",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 129,
+        "startChar": 4,
+        "endLine": 129,
+        "endChar": 10
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d36b3607_ec75c795",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "and also, for clarity, how about s/childRegexp/descendantRegexp? Longer, but more clear.",
+      "range": {
+        "startLine": 419,
+        "startChar": 1,
+        "endLine": 419,
+        "endChar": 12
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "421a7370_d36debb6",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "imo, time to document them since semantics differ:\n\n// someChildren is a set of immediate children, not grandchildren.\n// i.e., may contain \u0027child\u0027, but not \u0027grand/child\u0027, which would be contained in\n// refsNamespace of (namespace + \"/child\").\n\n// childR is a regular expression matching all descendants.",
+      "range": {
+        "startLine": 418,
+        "startChar": 0,
+        "endLine": 419,
+        "endChar": 28
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5c27c3c_e90f89a6",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "i think it can by changing allChildren case to\n\ncase w.allChildren \u0026\u0026 !strings.Contains(\u0027/\u0027):",
+      "range": {
+        "startLine": 436,
+        "startChar": 10,
+        "endLine": 438,
+        "endChar": 18
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c954f73_796b4fab",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "this is wrong. it should trim by `ns`. Also, shorter:\nref[len(ns):]",
+      "range": {
+        "startLine": 481,
+        "startChar": 17,
+        "endLine": 481,
+        "endChar": 55
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f260e103_f1aae8c9",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "ns can be deduced from line below, but ls and rs are totally cryptic.\n\ns/ls/suffix\ns/rs/re[gexp]",
+      "range": {
+        "startLine": 492,
+        "startChar": 6,
+        "endLine": 492,
+        "endChar": 12
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdbff517_f7ddf681",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "ah, right! But, your code is actually more readable than xor, so remove this comment :)",
+      "range": {
+        "startLine": 498,
+        "startChar": 33,
+        "endLine": 498,
+        "endChar": 69
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d56a7de_2037bb1b",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "you can totally remove this and just rely on the below loop IFF you stick matchSuffix into HasSuffix.",
+      "range": {
+        "startLine": 509,
+        "startChar": 1,
+        "endLine": 514,
+        "endChar": 2
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c99bc89f_38eb1716",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "trimPrefix calls hasPrefix first. How about\n\nif strings.HasPrefix(ref, ns+\"/\") \u0026\u0026 wrn.matchSuffix(ref[:len(ns)+1]){\n  return true\n}",
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c47f7e_76170ac5",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "make it more interesting by replacing with explicit 1 and see it fail :)",
+      "range": {
+        "startLine": 132,
+        "startChar": 49,
+        "endLine": 132,
+        "endChar": 52
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8cf7724a_92f8c491",
+        "filename": "scheduler/appengine/task/gitiles/gitiles_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 415,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:48:32Z",
+      "side": 1,
+      "message": "sorry for this :( i didn\u0027t mean to write so much copy-pasta above, naming every So() statement isn\u0027t that useful. But it\u0027s done and looks nice :P",
+      "range": {
+        "startLine": 389,
+        "startChar": 2,
+        "endLine": 415,
+        "endChar": 5
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
