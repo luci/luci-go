@@ -201,7 +201,7 @@ func getEmulatedBuilds(c context.Context, q Query) ([]*buildbot.Build, error) {
 	}
 
 	start := clock.Now(c)
-	msgs, err := search.Fetch(q.Limit, nil)
+	msgs, _, err := search.Fetch(q.Limit, nil)
 	switch apiErr, _ := err.(*googleapi.Error); {
 	case apiErr != nil && apiErr.Code == http.StatusForbidden:
 		logging.Warningf(c, "%q does not have access to bucket %q. Returning 0 builds.",

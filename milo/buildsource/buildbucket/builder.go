@@ -15,15 +15,18 @@
 package buildbucket
 
 import (
+	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
+	"go.chromium.org/gae/service/memcache"
 	bb "go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -68,25 +71,26 @@ func (b BuilderID) String() string {
 // The returned builds are sorted by build creation descending.
 // count defines maximum number of builds to fetch; if <0, defaults to 100.
 func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
-	status string, limit int) ([]*bbv1.ApiCommonBuildMessage, error) {
+	status string, limit int, cursor string) ([]*bbv1.ApiCommonBuildMessage, string, error) {
 
 	search := client.Search()
 	search.Bucket(bid.V1Bucket())
 	search.Status(status)
 	search.Tag(strpair.Format(bbv1.TagBuilder, bid.Builder))
 	search.IncludeExperimental(true)
+	search.StartCursor(cursor)
 
 	if limit < 0 {
 		limit = 100
 	}
 
 	start := clock.Now(c)
-	msgs, err := search.Fetch(limit, nil)
+	msgs, cursor, err := search.Fetch(limit, nil)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	logging.Infof(c, "Fetched %d %s builds in %s", len(msgs), status, clock.Since(c, start))
-	return msgs, nil
+	return msgs, cursor, nil
 }
 
 // ensureDefined returns common.CodeNotFound tagged error if a builder is not
@@ -166,8 +170,39 @@ func getHost(c context.Context) (string, error) {
 	return settings.Buildbucket.Host, nil
 }
 
+// backCursor implements bidirectional cursors with forward-only datastore
+// cursors by storing a map for cursor -> prevCursor in memcache.
+// backCursor returns a previous cursor given thisCursor, and caches thisCursor
+// to be the previous cursor of nextCursor.
+func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCursor string) string {
+	memcacheKey := func(cursor string) string {
+		key := fmt.Sprintf("%s:%d:%s", bid.String(), limit, cursor)
+		blob := sha1.Sum([]byte(key))
+		encoded := base64.StdEncoding.EncodeToString(blob[:])
+		return "cursors:buildbucket_builders:" + encoded
+	}
+
+	prevCursor := ""
+	if thisCursor != "" {
+		if item, err := memcache.GetKey(c, memcacheKey(thisCursor)); err == nil {
+			prevCursor = string(item.Value())
+		}
+	}
+	if nextCursor != "" {
+		item := memcache.NewItem(c, memcacheKey(nextCursor))
+		if thisCursor == "" {
+			item.SetValue([]byte("EMPTY"))
+		} else {
+			item.SetValue([]byte(thisCursor))
+		}
+		item.SetExpiration(24 * time.Hour)
+		memcache.Set(c, item)
+	}
+	return prevCursor
+}
+
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
-func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error) {
+func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui.Builder, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -177,7 +212,6 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 		limit = 20
 	}
 
-	var lock sync.Mutex
 	result := &ui.Builder{
 		Name: bid.Builder,
 	}
@@ -189,30 +223,23 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 		return nil, err
 	}
 
-	fetch := func(statusFilter string, limit int) error {
-		msgs, err := fetchBuilds(c, client, bid, statusFilter, limit)
+	fetch := func(statusFilter string, limit int, cursor string) (result []*ui.BuildSummary, nextCursor string, err error) {
+		msgs, nextCursor, err := fetchBuilds(c, client, bid, statusFilter, limit, cursor)
 		if err != nil {
-			logging.Errorf(c, "Could not fetch %s builds: %s", statusFilter, err)
-			return err
+			logging.WithError(err).Errorf(c, "Could not fetch %s builds", statusFilter)
+			return
 		}
-		for _, m := range msgs {
-			mb, err := toMiloBuild(c, m)
+		result = make([]*ui.BuildSummary, len(msgs))
+		for i, m := range msgs {
+			var mb *ui.MiloBuild
+			mb, err = toMiloBuild(c, m)
 			if err != nil {
-				return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
+				err = errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
+				return
 			}
-			bs := mb.BuildSummary()
-			lock.Lock()
-			switch mb.Summary.Status {
-			case model.NotRun:
-				result.PendingBuilds = append(result.PendingBuilds, bs)
-			case model.Running:
-				result.CurrentBuilds = append(result.CurrentBuilds, bs)
-			default:
-				result.FinishedBuilds = append(result.FinishedBuilds, bs)
-			}
-			lock.Unlock()
+			result[i] = mb.BuildSummary()
 		}
-		return nil
+		return
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() error {
@@ -222,14 +249,18 @@ func GetBuilder(c context.Context, bid BuilderID, limit int) (*ui.Builder, error
 			result.MachinePool, err = getPool(c, bid)
 			return
 		}
-		work <- func() error {
-			return fetch(bbv1.StatusScheduled, -1)
+		work <- func() (err error) {
+			result.PendingBuilds, _, err = fetch(bbv1.StatusScheduled, -1, "")
+			return
 		}
-		work <- func() error {
-			return fetch(bbv1.StatusStarted, -1)
+		work <- func() (err error) {
+			result.CurrentBuilds, _, err = fetch(bbv1.StatusStarted, -1, "")
+			return
 		}
-		work <- func() error {
-			return fetch(bbv1.StatusCompleted, limit)
+		work <- func() (err error) {
+			result.FinishedBuilds, result.NextCursor, err = fetch(bbv1.StatusCompleted, limit, cursor)
+			result.PrevCursor = backCursor(c, bid, limit, cursor, result.NextCursor) // Safe to do even with error.
+			return
 		}
 	})
 }

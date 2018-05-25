@@ -111,7 +111,7 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 		return nil, nil
 	}
 
-	msgs, err := bb.Search().
+	msgs, _, err := bb.Search().
 		// this search is optimized, a datastore.get.
 		Tag(strpair.Format(bbv1.TagBuildAddress, bbv1.FormatBuildAddress(0, bucket, builder, number))).
 		Context(c).

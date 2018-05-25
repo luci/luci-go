@@ -38,7 +38,7 @@ import (
 //
 // Returns nil only if the search results are exhausted.
 // May return context.Canceled.
-func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessage, error) {
+func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessage, string, error) {
 	// Default page size to 100 because we are fetching everything.
 	maxBuildsKey := "max_builds"
 	origMaxBuilds := c.urlParams_.Get(maxBuildsKey)
@@ -49,23 +49,24 @@ func (c *SearchCall) Fetch(limit int, ret retry.Factory) ([]*ApiCommonBuildMessa
 
 	ch := make(chan *ApiCommonBuildMessage)
 	var err error
+	var cursor string
 	go func() {
 		defer close(ch)
-		err = c.Run(ch, limit, ret)
+		cursor, err = c.Run(ch, limit, ret)
 	}()
 
 	var builds []*ApiCommonBuildMessage
 	for b := range ch {
 		builds = append(builds, b)
 	}
-	return builds, err
+	return builds, cursor, err
 }
 
 // Run is like Fetch, but sends results to a channel and the default page size
 // is defined by the server (10 as of Sep 2017).
 //
 // Run blocks on sending.
-func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret retry.Factory) error {
+func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret retry.Factory) (cursor string, err error) {
 	if ret == nil {
 		ret = transient.Only(retry.Default)
 	}
@@ -103,7 +104,7 @@ func (c *SearchCall) Run(builds chan<- *ApiCommonBuildMessage, limit int, ret re
 outer:
 	for {
 		var res *ApiSearchResponseMessage
-		err := retry.Retry(ctx, ret,
+		err = retry.Retry(ctx, ret,
 			func() error {
 				var err error
 				// Set a timeout for this particular RPC.
@@ -128,13 +129,15 @@ outer:
 				logging.WithError(err).Warningf(ctx, "RPC error while searching builds; will retry in %s", wait)
 			})
 		if err != nil {
-			return err
+			return
 		}
+		cursor = res.NextCursor
 
 		for _, b := range res.Builds {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				err = ctx.Err()
+				return
 			case builds <- b:
 				sent++
 				if sent == limit {
@@ -149,5 +152,5 @@ outer:
 		c.urlParams_.Set(cursorKey, res.NextCursor)
 	}
 
-	return nil
+	return
 }

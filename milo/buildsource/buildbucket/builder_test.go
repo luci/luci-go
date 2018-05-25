@@ -74,7 +74,7 @@ func TestBuilder(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				bid := NewBuilderID(tc.bucket, tc.builder)
-				actual, err := GetBuilder(c, bid, 20)
+				actual, err := GetBuilder(c, bid, 20, "")
 				So(err, ShouldBeNil)
 				actualJSON, err := json.MarshalIndent(actual, "", "  ")
 				So(err, ShouldBeNil)
