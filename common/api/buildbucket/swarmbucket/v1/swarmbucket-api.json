@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/swarmbucket/v1/",
-  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/swarmbucket/v1/",
+  "basePath": "/api/swarmbucket/v1",
+  "baseUrl": "https://cr-buildbucket.appspot.com/api/swarmbucket/v1",
   "batchPath": "batch",
   "description": "API specific to swarmbucket.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/gNkho5DAwJ_ZfjCV8QgTS_UZQHM\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "swarmbucket:v1",
   "kind": "discovery#restDescription",
@@ -117,7 +116,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
+  "rootUrl": "https://cr-buildbucket.appspot.com/api/",
   "schemas": {
     "ApiPubSubCallbackMessage": {
       "id": "ApiPubSubCallbackMessage",
@@ -126,6 +125,7 @@
           "type": "string"
         },
         "topic": {
+          "required": true,
           "type": "string"
         },
         "user_data": {
@@ -138,6 +138,7 @@
       "id": "ApiPutRequestMessage",
       "properties": {
         "bucket": {
+          "required": true,
           "type": "string"
         },
         "canary_preference": {
@@ -233,7 +234,8 @@
       "id": "SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage",
       "properties": {
         "build_request": {
-          "$ref": "ApiPutRequestMessage"
+          "$ref": "ApiPutRequestMessage",
+          "required": true
         }
       },
       "type": "object"
@@ -251,13 +253,16 @@
       "id": "SwarmingSwarmbucketApiSetNextBuildNumberRequest",
       "properties": {
         "bucket": {
+          "required": true,
           "type": "string"
         },
         "builder": {
+          "required": true,
           "type": "string"
         },
         "next_number": {
           "format": "int64",
+          "required": true,
           "type": "string"
         }
       },

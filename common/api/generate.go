@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //go:generate go install go.chromium.org/luci/tools/cmd/apigen
-//go:generate apigen -api-subproject "buildbucket" -service "https://cr-buildbucket.appspot.com" -api "buildbucket:v1" -api "swarmbucket:v1"
+//go:generate apigen -api-subproject "buildbucket" -service "https://cr-buildbucket.appspot.com" -api "buildbucket:v1" -api "swarmbucket:v1" -service-api-root api
 //go:generate apigen -api-subproject "isolate" -service "https://isolateserver.appspot.com" -api "isolateservice:v1"
 //go:generate apigen -api-subproject "luci_config" -service "https://luci-config.appspot.com" -api "config:v1"
 //go:generate apigen -api-subproject "machine_provider" -service "https://machine-provider.appspot.com" -api "catalog:v1" -api "machine:v1" -service-api-root api

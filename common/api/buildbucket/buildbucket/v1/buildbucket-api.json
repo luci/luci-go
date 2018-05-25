@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/buildbucket/v1/",
-  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/buildbucket/v1/",
+  "basePath": "/api/buildbucket/v1",
+  "baseUrl": "https://cr-buildbucket.appspot.com/api/buildbucket/v1",
   "batchPath": "batch",
   "description": "API for scheduling builds.",
   "discoveryVersion": "v1",
-  "etag": "\"OQKfQPkpHu0nIKZBNBdt47Yvjvo/Ia4OMBGVxChWMHJchVRXdi0qR60\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "buildbucket:v1",
   "kind": "discovery#restDescription",
@@ -637,7 +636,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
+  "rootUrl": "https://cr-buildbucket.appspot.com/api/",
   "schemas": {
     "ApiBucketMessage": {
       "id": "ApiBucketMessage",
@@ -655,9 +654,11 @@
           "$ref": "ApiErrorMessage"
         },
         "name": {
+          "required": true,
           "type": "string"
         },
         "project_id": {
+          "required": true,
           "type": "string"
         }
       },
@@ -716,6 +717,7 @@
         },
         "build_id": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "error": {
@@ -738,6 +740,7 @@
       "id": "ApiCommonBuildMessage",
       "properties": {
         "bucket": {
+          "required": true,
           "type": "string"
         },
         "canary": {
@@ -798,6 +801,7 @@
         },
         "id": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "lease_expiration_ts": {
@@ -873,6 +877,7 @@
         },
         "utcnow_ts": {
           "format": "int64",
+          "required": true,
           "type": "string"
         }
       },
@@ -891,6 +896,7 @@
       "id": "ApiErrorMessage",
       "properties": {
         "message": {
+          "required": true,
           "type": "string"
         },
         "reason": {
@@ -912,6 +918,7 @@
             "",
             ""
           ],
+          "required": true,
           "type": "string"
         }
       },
@@ -971,14 +978,17 @@
       "properties": {
         "build_id": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "lease_expiration_ts": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "lease_key": {
           "format": "int64",
+          "required": true,
           "type": "string"
         }
       },
@@ -1004,6 +1014,7 @@
       "properties": {
         "build_id": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "error": {
@@ -1021,10 +1032,12 @@
       "properties": {
         "lease_expiration_ts": {
           "format": "int64",
+          "required": true,
           "type": "string"
         },
         "lease_key": {
           "format": "int64",
+          "required": true,
           "type": "string"
         }
       },
@@ -1051,6 +1064,7 @@
           "type": "string"
         },
         "topic": {
+          "required": true,
           "type": "string"
         },
         "user_data": {
@@ -1106,6 +1120,7 @@
       "id": "ApiPutRequestMessage",
       "properties": {
         "bucket": {
+          "required": true,
           "type": "string"
         },
         "canary_preference": {
