@@ -597,11 +597,63 @@ func init() {
 // The validation we do include:
 //
 // * Make sure the config is able to be unmarshalled.
+// * Make sure all consoles have either builder_view_only: true or manifest_name
 func validateProjectCfg(ctx *validation.Context, configSet, path string, content []byte) error {
 	proj := config.Project{}
 	if err := proto.UnmarshalText(string(content), &proj); err != nil {
 		ctx.Error(err)
+		return nil
 	}
+	knownHeaders := stringset.New(len(proj.Headers))
+	for i, header := range proj.Headers {
+		ctx.Enter("header #%d (%s)", i, header.Id)
+		if header.Id == "" {
+			ctx.Errorf("missing id")
+		} else if !knownHeaders.Add(header.Id) {
+			ctx.Errorf("duplicate header id")
+		}
+		ctx.Exit()
+	}
+
+	knownConsoles := stringset.New(len(proj.Consoles))
+	for i, console := range proj.Consoles {
+		ctx.Enter("console #%d (%s)", i, console.Id)
+		if console.Id == "" {
+			ctx.Errorf("missing id")
+		} else if !knownConsoles.Add(console.Id) {
+			ctx.Errorf("duplicate console")
+
+		}
+		// If this is a CI console and it's missing manifest name, the author
+		// probably forgot something.
+		if !console.BuilderViewOnly {
+			if console.ManifestName == "" {
+				ctx.Errorf("ci console missing manifest name")
+			}
+			if console.RepoUrl == "" {
+				ctx.Errorf("ci console missing repo url")
+			}
+			if console.Ref == "" {
+				ctx.Errorf("ci console missing ref")
+			}
+		} else {
+			if console.IncludeExperimentalBuilds {
+				ctx.Errorf("builder_view_only and include_experimental_builds both set")
+			}
+		}
+
+		if console.HeaderId != "" && !knownHeaders.Has(console.HeaderId) {
+			ctx.Errorf("header %s not defined", console.HeaderId)
+		}
+		if console.HeaderId != "" && console.Header != nil {
+			ctx.Errorf("cannot specify both header and header_id")
+		}
+		ctx.Exit()
+	}
+	if proj.LogoUrl != "" && !strings.HasPrefix(proj.LogoUrl, "https://storage.googleapis.com/") {
+		ctx.Errorf("invalid logo url %q, must begin with https://storage.googleapis.com/", proj.LogoUrl)
+	}
+
 	return nil
 }
 
