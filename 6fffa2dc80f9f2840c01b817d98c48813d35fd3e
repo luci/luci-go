@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d15778f5_e1b45517",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T20:43:24Z",
+      "side": 1,
+      "message": "it might be in the future, i don\u0027t know.\nI do know that if don\u0027t separate it now, it will be too late later.\nI think it makes the proto easier to follow. BuildPredicate has a very clear meaning.\n\nalso go/apidosdonts##4-don\u0027t-include-primitive-types-in-a-top-level-request-or-response-proto",
+      "parentUuid": "d8e9471e_3360bbdd",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 16
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "be3b5fdd_aaa9722e",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "f2f4cc8d_d7b220b8",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T20:43:24Z",
+      "side": 1,
+      "message": "it can return incomplete page\n\nthis is builds we are talking about. There may be thousands on them on a particular builder",
+      "parentUuid": "be3b5fdd_aaa9722e",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7021c69_574c40a9",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a33d18e_41ab869a",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T20:43:24Z",
+      "side": 1,
+      "message": "renamed to git_commits\n\nI find \"commit\" too abstract.",
+      "parentUuid": "a7021c69_574c40a9",
+      "range": {
+        "startLine": 100,
+        "startChar": 18,
+        "endLine": 100,
+        "endChar": 32
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
