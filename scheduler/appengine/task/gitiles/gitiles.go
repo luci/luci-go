@@ -17,6 +17,7 @@ package gitiles
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -101,6 +102,38 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 
 	c.Enter("refs")
 	for _, ref := range cfg.Refs {
+		if strings.HasPrefix(ref, "regexp:") {
+			ref = strings.TrimPrefix(ref, "regexp:")
+			if strings.HasPrefix(ref, "^") || strings.HasSuffix(ref, "$") {
+				c.Errorf("%q: regexp ^ and $ qualifiers are added automatically, "+
+					"please remove them from the config", ref)
+			}
+			r, err := regexp.Compile(ref)
+			if err != nil {
+				c.Errorf("invalid regexp %q: %s", ref, err)
+				return
+			}
+			lp, complete := r.LiteralPrefix()
+			if complete {
+				c.Errorf("%q: matches a single ref only, please use %q instead", ref, lp)
+				return
+			}
+			if !strings.HasPrefix(ref, lp) {
+				c.Errorf("%q: does not start with its own literal prefix %q", ref, lp)
+				return
+			}
+			if strings.Count(lp, "/") < 2 {
+				c.Errorf(`%q: fewer than 2 slashes in literal prefix %q, e.g., `+
+					`"refs/heads/\d+" is accepted because of "refs/heads/" is the `+
+					`literal prefix, while "refs/.*" is too short`, ref, lp)
+				return
+			}
+			if !strings.HasPrefix(lp, "refs/") {
+				c.Errorf("%q: literal prefix %q must start with refs", ref, lp)
+			}
+			continue
+		}
+
 		if !strings.HasPrefix(ref, "refs/") {
 			c.Errorf("ref must start with 'refs/' not %q", ref)
 		}
@@ -378,9 +411,12 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 }
 
 type watchedRefNamespace struct {
-	namespace    string // no trailing "/".
-	allChildren  bool   // if true, someChildren is ignored.
+	namespace string // no trailing "/".
+	// TODO(sergiyb): remove allChildren while removing support of ref globs after
+	// all configs using them are updated to use regexp.
+	allChildren  bool // if true, someChildren is ignored.
 	someChildren stringset.Set
+	childRegexp  *regexp.Regexp
 }
 
 func (w watchedRefNamespace) hasSuffix(suffix string) bool {
@@ -394,6 +430,18 @@ func (w watchedRefNamespace) hasSuffix(suffix string) bool {
 	default:
 		return w.someChildren.Has(suffix)
 	}
+}
+
+// TODO(sergiyb): Merge this function into hasSuffix above after deprecating
+// globs. Easiest way to merge it is to add another case before someChildren:
+//   case w.childRegexp != nil && w.childRegexp.MatchString(suffix):
+//     return true
+func (w watchedRefNamespace) matchSuffix(suffix string) bool {
+	if w.childRegexp == nil {
+		return false
+	}
+
+	return w.childRegexp.MatchString(suffix)
 }
 
 func (w *watchedRefNamespace) addSuffix(suffix string) {
@@ -410,33 +458,77 @@ func (w *watchedRefNamespace) addSuffix(suffix string) {
 	w.someChildren.Add(suffix)
 }
 
+func (w *watchedRefNamespace) addRegexp(refRegexp string) {
+	refRegexp = "^" + refRegexp + "$"
+	if w.childRegexp == nil {
+		w.childRegexp, _ = regexp.Compile(refRegexp)
+	} else {
+		w.childRegexp, _ = regexp.Compile(
+			"(" + w.childRegexp.String() + ")|(" + refRegexp + ")")
+	}
+}
+
 type watchedRefs struct {
 	namespaces map[string]*watchedRefNamespace
+}
+
+func parseRefFromConfig(ref string) (ns, literalSuffix, regexpSuffix string) {
+	if strings.HasPrefix(ref, "regexp:") {
+		ref = strings.TrimPrefix(ref, "regexp:")
+		childRegexp, _ := regexp.Compile(ref)
+		literalPrefix, _ := childRegexp.LiteralPrefix()
+		ns = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
+		regexpSuffix = strings.TrimPrefix(ref, literalPrefix)
+		return
+	}
+
+	ns, literalSuffix = splitRef(ref)
+	return
 }
 
 func (w *watchedRefs) init(refsConfig []string) {
 	w.namespaces = map[string]*watchedRefNamespace{}
 	for _, ref := range refsConfig {
-		ns, suffix := splitRef(ref)
+		ns, ls, rs := parseRefFromConfig(ref)
 		if _, exists := w.namespaces[ns]; !exists {
 			w.namespaces[ns] = &watchedRefNamespace{namespace: ns}
 		}
-		w.namespaces[ns].addSuffix(suffix)
+
+		switch {
+		case (ls == "") == (rs == ""): // golang does not have XOR on bools
+			panic("exactly one must be defined")
+		case rs != "":
+			w.namespaces[ns].addRegexp(rs)
+		case ls != "":
+			w.namespaces[ns].addSuffix(ls)
+		}
 	}
 }
 
 func (w *watchedRefs) hasRef(ref string) bool {
 	ns, suffix := splitRef(ref)
 	if wrn, exists := w.namespaces[ns]; exists {
-		return wrn.hasSuffix(suffix)
+		if wrn.hasSuffix(suffix) {
+			return true
+		}
 	}
+
+	for ns, wrn := range w.namespaces {
+		nsPrefix := ns + "/"
+		if strings.HasPrefix(ref, nsPrefix) {
+			if wrn.matchSuffix(strings.TrimPrefix(ref, nsPrefix)) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 
 func splitRef(s string) (string, string) {
-	if i := strings.LastIndex(s, "/"); i <= 0 {
+	i := strings.LastIndex(s, "/")
+	if i <= 0 {
 		return s, ""
-	} else {
-		return s[:i], s[i+1:]
 	}
+	return s[:i], s[i+1:]
 }
