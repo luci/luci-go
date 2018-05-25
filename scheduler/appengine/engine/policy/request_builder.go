@@ -19,8 +19,10 @@ import (
 	"strings"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/buildbucket/proto"
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/strpair"
 
 	"go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/internal"
@@ -90,8 +92,10 @@ func (r *RequestBuilder) FromGitilesTrigger(t *scheduler.GitilesTrigger) {
 		"repository": t.Repo,
 	})
 	r.Tags = []string{
-		"buildset:" + commit.BuildSetString(),
-		"gitiles_ref:" + t.Ref,
+		strpair.Format(bbv1.TagBuildSet, commit.BuildSetString()),
+		// TODO(nodir): remove after switching to ScheduleBuild RPC v2.
+		strpair.Format(bbv1.TagBuildSet, "commit/git/"+commit.Id),
+		strpair.Format("gitiles_ref", t.Ref),
 	}
 }
 

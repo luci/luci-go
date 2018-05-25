@@ -78,6 +78,7 @@ func TestRequestBuilder(t *testing.T) {
 			},
 			Tags: []string{
 				"buildset:commit/gitiles/example.googlesource.com/repo/+/aaaaaaaa",
+				"buildset:commit/git/aaaaaaaa",
 				"gitiles_ref:refs/heads/master",
 			},
 		})
