@@ -31,12 +31,15 @@ type GetBuildRequest struct {
 	// Build number.
 	// Requires builder. Mutually exclusive with id.
 	BuildNumber int32 `protobuf:"varint,3,opt,name=build_number,json=buildNumber" json:"build_number,omitempty"`
-	// Field mask to apply to the response, e.g. {paths: ["steps"]} to include
-	// steps in the response. See Build message comments for the list of fields
-	// excluded by default.
+	// Fields to include in the repsonse.
+	// If not set, the default mask is used, see Build message comments for the
+	// list of fields returned by default.
 	//
 	// Supports advanced semantics, see
 	// https://chromium.googlesource.com/infra/luci/luci-py/+/f9ae69a37c4bdd0e08a8b0f7e123f6e403e774eb/appengine/components/components/protoutil/field_masks.py#7
+	// In particular, if the client needs only some output properties, they
+	// can be request them with paths "output.properties.fields.foo",
+	// "output.properties.fields.`a long property name`".
 	Fields *google_protobuf2.FieldMask `protobuf:"bytes,100,opt,name=fields" json:"fields,omitempty"`
 }
 
@@ -89,6 +92,9 @@ const _ = grpc.SupportPackageIsVersion4
 
 type BuildsClient interface {
 	// Gets a build.
+	//
+	// By default the returned build does not include all fields.
+	// See GetBuildRequest.fields.
 	GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error)
 }
 type buildsPRPCClient struct {
@@ -129,6 +135,9 @@ func (c *buildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts .
 
 type BuildsServer interface {
 	// Gets a build.
+	//
+	// By default the returned build does not include all fields.
+	// See GetBuildRequest.fields.
 	GetBuild(context.Context, *GetBuildRequest) (*Build, error)
 }
 
