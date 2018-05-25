@@ -128,6 +128,31 @@ func TestTriggerBuild(t *testing.T) {
 			})
 		})
 
+		Convey("regexp refs are matched correctly", func(cc C) {
+			cfg.Refs = []string{`regexp:refs/branch-heads/\d+\.\d+`}
+			expectRefs("refs/branch-heads", strmap{
+				"refs/branch-heads/1.2":   "deadbeef00",
+				"refs/branch-heads/1.2.3": "deadbeef01",
+			})
+			expectLog("deadbeef00", "", 1, log("deadbeef00"))
+			So(m.LaunchTask(c, ctl), ShouldBeNil)
+
+			for _, s := range ctl.Log {
+				cc.Println(s)
+			}
+
+			So(loadNoError(), ShouldResemble, strmap{
+				"refs/branch-heads/1.2": "deadbeef00",
+			})
+			So(ctl.Triggers, ShouldHaveLength, 1)
+			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2@deadbeef00")
+			So(ctl.Triggers[0].GetGitiles(), ShouldResemble, &api.GitilesTrigger{
+				Repo:     "https://a.googlesource.com/b.git",
+				Ref:      "refs/branch-heads/1.2",
+				Revision: "deadbeef00",
+			})
+		})
+
 		Convey("do not trigger if there are no new commits", func() {
 			So(saveState(c, jobID, parsedUrl, strmap{
 				"refs/heads/master": "deadbeef00",
@@ -347,6 +372,28 @@ func TestValidateConfig(t *testing.T) {
 			})
 			Convey("invalid refGlob", func() {
 				cfg.Refs = []string{"refs/*/*"}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+		})
+
+		Convey("refRegexp works", func() {
+			cfg := &messages.GitilesTask{
+				Repo: "https://a.googlesource.com/b.git",
+				Refs: []string{`regexp:refs/branch-heads/\d+\.\d+`},
+			}
+			Convey("valid", func() {
+				So(validate(cfg), ShouldBeNil)
+			})
+			Convey("invalid regexp", func() {
+				cfg.Refs = []string{`regexp:a++`}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+			Convey("too few slashes in literal prefix", func() {
+				cfg.Refs = []string{`regexp:refs/release-\d+/foo`}
+				So(validate(cfg), ShouldNotBeNil)
+			})
+			Convey("regexp matches single ref only", func() {
+				cfg.Refs = []string{`regexp:refs/heads/master`}
 				So(validate(cfg), ShouldNotBeNil)
 			})
 		})
