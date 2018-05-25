@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "0905d76e_e16cac6d",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T21:20:52Z",
+      "side": 1,
+      "message": "2. bummer",
+      "parentUuid": "d1b28275_c1564fd6",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 4
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "699fe4ad_f380d6ba",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
