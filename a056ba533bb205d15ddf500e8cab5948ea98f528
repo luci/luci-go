@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6e1d38b9_1137dd96",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T19:09:42Z",
+      "side": 1,
+      "message": "Do we actually have property keys with spaces in them? IMHO, this part of the comment is misleading and raises more questions.",
+      "range": {
+        "startLine": 44,
+        "startChar": 32,
+        "endLine": 44,
+        "endChar": 52
+      },
+      "revId": "a056ba533bb205d15ddf500e8cab5948ea98f528",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
