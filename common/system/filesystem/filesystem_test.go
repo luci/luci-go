@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -235,12 +236,35 @@ func TestRemoveAll(t *testing.T) {
 					So(isGone(subDir), ShouldBeTrue)
 				})
 
+				Convey(`Removing inside a read-only dir...`, func() {
+					So(MakeReadOnly(subDir, nil), ShouldBeNil)
+					qux := filepath.Join(subDir, "qux")
+					if runtime.GOOS == "windows" {
+						Convey(`... is fine on Windows`, func() {
+							So(RemoveAll(qux), ShouldBeNil)
+							So(isGone(qux), ShouldBeTrue)
+						})
+					} else {
+						Convey(`... fails on POSIX`, func() {
+							So(RemoveAll(qux), ShouldNotBeNil)
+							So(isGone(qux), ShouldBeFalse)
+						})
+					}
+				})
+
 				Convey(`Can remove the directory when it is read-only`, func() {
 					// Make the directory read-only, and assert that classic os.RemoveAll
 					// fails.
 					So(MakeReadOnly(subDir, nil), ShouldBeNil)
 					So(os.RemoveAll(subDir), ShouldNotBeNil)
 
+					So(RemoveAll(subDir), ShouldBeNil)
+					So(isGone(subDir), ShouldBeTrue)
+				})
+
+				Convey(`Can remove the directory when it has read-only files`, func() {
+					readOnly := filepath.Join(subDir, "foo", "bar")
+					So(MakeReadOnly(readOnly, nil), ShouldBeNil)
 					So(RemoveAll(subDir), ShouldBeNil)
 					So(isGone(subDir), ShouldBeTrue)
 				})
