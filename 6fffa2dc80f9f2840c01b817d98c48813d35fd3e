@@ -22,6 +22,30 @@
       "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b6dc8a0_ca262872",
+        "filename": "scheduler/appengine/engine/policy/request_builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T19:19:03Z",
+      "side": 0,
+      "message": "yes. the go package name is \"buildbucketpb\"",
+      "parentUuid": "a6a6e701_cbd00235",
+      "range": {
+        "startLine": 22,
+        "startChar": 1,
+        "endLine": 22,
+        "endChar": 14
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
