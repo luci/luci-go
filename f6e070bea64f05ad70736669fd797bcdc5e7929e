@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "eae26197_8c4664bc",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "nit: I believe \"cap\" is a more standard name. Also, consider removing max and use cap(blocks) instead. This implies passing capacity as a param to init",
+      "range": {
+        "startLine": 33,
+        "startChar": 1,
+        "endLine": 33,
+        "endChar": 4
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "699fe4ad_f380d6ba",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -45,6 +68,29 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "06ab7d65_7d1c4bee",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "make(..., this.max)",
+      "range": {
+        "startLine": 42,
+        "startChar": 11,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -71,6 +117,69 @@
     },
     {
       "key": {
+        "uuid": "64776a04_0d83a908",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "I don\u0027t see it https://godoc.org/io#ReaderAt.ReadAt\nThey way locking is currently implemented, it does not provide any extra benefits compared to the caller just locking on ReadAt calls, i.e. you could make a separate \n\n  func SynchronizedReaderAt(io.ReaderAt) io.ReaderAt",
+      "range": {
+        "startLine": 102,
+        "startChar": 44,
+        "endLine": 102,
+        "endChar": 66
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de19c4b_b9b7c424",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "Caching might be a better name",
+      "range": {
+        "startLine": 105,
+        "startChar": 8,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fe7741c_a31861fe",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "maybe panic here if blockSize or lruSize \u003c\u003d0, rather than later when you read",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "653fe370_404721f1",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 3
@@ -82,6 +191,46 @@
       "writtenOn": "2018-05-25T08:25:30Z",
       "side": 1,
       "message": "wdyt about recycleBuf so as to avoid clashing with the `return` the keyword?",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "989fe9ef_a7e4d3ae",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "FWIU pool won\u0027t grow beyond lruSize. If so, please panic if we did, for documentation and to catch bugs",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18ad7cd1_332e1590",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "then",
+      "range": {
+        "startLine": 155,
+        "startChar": 13,
+        "endLine": 155,
+        "endChar": 17
+      },
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -108,6 +257,92 @@
       "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5aaa3a89_a3fc6f69",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "nit: this reads weirdly because usually \"maximum\" is inclusive. Consider renaming min/max to start/end. Usually end is exclusive.",
+      "range": {
+        "startLine": 193,
+        "startChar": 31,
+        "endLine": 193,
+        "endChar": 32
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92361b62_c13722cd",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "nit: this shadows p above. please use a different name",
+      "range": {
+        "startLine": 201,
+        "startChar": 3,
+        "endLine": 201,
+        "endChar": 4
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f3f7f46_bf5ae0e6",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "it is interesting that we have two different implementations of \"we are done\": here and in L193. Can we use (read \u003c len(p)) in L193? or perhaps remove it from L193 and move this if condition before `if err !\u003d nil`?\nthen these two ifs would be a switch",
+      "range": {
+        "startLine": 216,
+        "startChar": 3,
+        "endLine": 216,
+        "endChar": 20
+      },
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4610a1b0_f1185b80",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-25T13:18:00Z",
+      "side": 1,
+      "message": "break",
+      "revId": "f6e070bea64f05ad70736669fd797bcdc5e7929e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
