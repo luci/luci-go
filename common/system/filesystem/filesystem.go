@@ -15,8 +15,11 @@
 package filesystem
 
 import (
+	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"syscall"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
@@ -77,34 +80,96 @@ func Touch(path string, when time.Time, mode os.FileMode) error {
 	return nil
 }
 
-// RemoveAll is a wrapper around os.RemoveAll which makes sure all files are
-// writeable (recursively) prior to removing them.
+// RemoveAll is a fork of os.RemoveAll that attempts to deal with read only
+// files and directories by modifying permissions as necessary.
 //
 // If the specified path does not exist, RemoveAll will return nil.
+//
+// Note that RemoveAll will not modify permissions on parent directory of the
+// provided path, even if it is read only and preventing deletion of the path on
+// POSIX system.
+//
+// Copied from
+// https://go.googlesource.com/go/+/b86e76681366447798c94abb959bb60875bcc856/src/os/path.go#63
 func RemoveAll(path string) error {
-	err := removeAllImpl(path, func(path string, fi os.FileInfo) error {
-		// If we aren't handed a FileInfo, use Lstat to get one.
-		if fi == nil {
-			var err error
-			if fi, err = os.Lstat(path); err != nil {
-				return errors.Annotate(err, "could not Lstat path").InternalReason("path(%q)", path).Err()
+	const isWin = runtime.GOOS == "windows"
+	// Simple case: try removing as if it was a file or empty directory.
+	var err error
+	if isWin {
+		// On Windows, the file must not be read-only and have valid ownership.
+		err = MakePathUserWritable(path, nil)
+	}
+	if err == nil {
+		err = os.Remove(path)
+	}
+	if err == nil || IsNotExist(err) {
+		return nil
+	}
+
+	// Otherwise, is this a directory we need to recurse into?
+	dir, serr := os.Lstat(path)
+	if serr != nil {
+		if serr, ok := serr.(*os.PathError); ok && (IsNotExist(serr.Err) || serr.Err == syscall.ENOTDIR) {
+			return nil
+		}
+		return serr
+	}
+	if !dir.IsDir() {
+		// Not a directory; return the error from Remove.
+		return err
+	}
+	// Directory.
+	if !isWin {
+		// On POSIX systems, the directory must have write access for its files to
+		// be deleted. Best effort attempt to make it writable.
+		_ = MakePathUserWritable(path, dir)
+	}
+	fd, err := os.Open(path)
+	if err != nil {
+		if IsNotExist(err) {
+			// Race. It was deleted between the Lstat and Open.
+			// Return nil per RemoveAll's docs.
+			return nil
+		}
+		return err
+	}
+	// Remove contents & return first error.
+	err = nil
+	for {
+		if err == nil && (runtime.GOOS == "plan9" || runtime.GOOS == "nacl") {
+			// Reset read offset after removing directory entries.
+			// See golang.org/issue/22572.
+			fd.Seek(0, 0)
+		}
+		names, err1 := fd.Readdirnames(100)
+		for _, name := range names {
+			err1 := RemoveAll(path + string(os.PathSeparator) + name)
+			if err == nil {
+				err = err1
 			}
 		}
-
-		// Make user-writable, if it's not already.
-		if err := MakePathUserWritable(path, fi); err != nil {
-			return err
+		if err1 == io.EOF {
+			break
 		}
-
-		if err := os.Remove(path); err != nil {
-			return errors.Annotate(err, "failed to remove path").InternalReason("path(%q)", path).Err()
+		// If Readdirnames returned an error, use it.
+		if err == nil {
+			err = err1
 		}
-		return nil
-	})
-	if err != nil {
-		return errors.Annotate(err, "failed to recurisvely remove path").InternalReason("path(%q)", path).Err()
+		if len(names) == 0 {
+			break
+		}
 	}
-	return nil
+	// Close directory, because windows won't remove opened directory.
+	fd.Close()
+	// Remove directory.
+	err1 := os.Remove(path)
+	if err1 == nil || IsNotExist(err1) {
+		return nil
+	}
+	if err == nil {
+		err = err1
+	}
+	return err
 }
 
 // MakeReadOnly recursively iterates through all of the files and directories
