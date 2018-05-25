@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6cb0cd3_91be2e29",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:09:14Z",
+      "side": 1,
+      "message": "new",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "7be2378f1781f9e94f7555a12db84bdf54d231b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "53c77fef_f55b85b9",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:09:14Z",
+      "side": 1,
+      "message": "new",
+      "range": {
+        "startLine": 122,
+        "startChar": 1,
+        "endLine": 126,
+        "endChar": 2
+      },
+      "revId": "7be2378f1781f9e94f7555a12db84bdf54d231b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22157a55_c80c79e3",
+        "filename": "common/system/filesystem/filesystem.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-25T07:09:14Z",
+      "side": 1,
+      "message": "new change from upstream.",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 143,
+        "endChar": 3
+      },
+      "revId": "7be2378f1781f9e94f7555a12db84bdf54d231b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
