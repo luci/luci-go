@@ -9,6 +9,7 @@ package buildbucket.v2;
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
 import "google/protobuf/field_mask.proto";
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 
 // Manages builds.
@@ -18,6 +19,9 @@ service Builds {
   // By default the returned build does not include all fields.
   // See GetBuildRequest.fields.
   rpc GetBuild(GetBuildRequest) returns (Build) {};
+
+  // Searches for builds.
+  rpc SearchBuilds(SearchBuildsRequest) returns (SearchBuildsResponse) {};
 }
 
 // A request message for GetBuild rpc.
@@ -42,4 +46,70 @@ message GetBuildRequest {
   // In particular, if the client needs only some output properties, they
   // can be requested with paths "output.properties.fields.foo".
   google.protobuf.FieldMask fields = 100;
+}
+
+// A request message for SearchBuilds rpc.
+message SearchBuildsRequest {
+  // Returned builds must satisfy this predicate. Required.
+  BuildPredicate predicate = 1;
+
+  // Fields to include in the response, see GetBuildRequest.fields.
+  // Note that this applies to the response, not each build, so e.g. steps must
+  // be requested with a path "builds.*.steps".
+  google.protobuf.FieldMask fields = 100;
+
+  // Number of builds to return.
+  // Any value >100 is interpreted as 100.
+  int32 page_size = 101;
+
+  // Value of SearchBuildsResponse.next_page_token from the previous response.
+  // Use it to continue searching.
+  string page_token = 102;
+}
+
+// A response message for SearchBuilds rpc.
+message SearchBuildsResponse {
+  // Search results.
+  //
+  // Ordered by build id, descending. Ids are monotonically decreasing, so in
+  // other words the order is newest-to-oldest.
+  repeated Build builds = 1;
+
+  // Value for SearchBuildsRequest.page_token to continue searching.
+  string next_page_token = 100;
+}
+
+// A build predicate.
+//
+// At least one of the following fields is required: builder, gerrit_changes and
+// git_commits..
+// If a field value is empty, it is ignored, unless stated otherwise.
+message BuildPredicate {
+  // A build must be in this builder.
+  Builder.ID builder = 1;
+
+  // A build must have this status.
+  Status status = 2;
+
+  // A build's Build.Input.gerrit_changes must include ALL of these changes.
+  repeated GerritChange gerrit_changes = 3;
+
+  // A build's Build.Input.gitiles_commits must include ALL of these hex sha1s.
+  // Not to be confused with blamelist.
+  repeated string git_commits = 4;
+
+  // A build must be created by this identity.
+  string created_by = 5;
+
+  // A build must have ALL of these tags.
+  // For "ANY of these tags" make separate RPCs.
+  repeated StringPair tags = 6;
+
+  // A build must have been created within the specified range.
+  // Both boundaries are optional.
+  TimeRange create_time = 7;
+
+  // If false (default), a build must be non-experimental.
+  // Otherwise it may be experimental or non-experimental.
+  bool include_experimental = 8;
 }

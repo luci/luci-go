@@ -18,6 +18,8 @@ package buildbucket.v2;
 
 option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 
+import "google/protobuf/timestamp.proto";
+
 // Status of a build or a step.
 enum Status {
   // Unspecified state. Meaning depends on the context.
@@ -70,4 +72,12 @@ message GitilesCommit {
 message StringPair {
   string key = 1;
   string value = 2;
+}
+
+// Half-open time range.
+message TimeRange {
+  // Inclusive lower boundary. Optional.
+  google.protobuf.Timestamp start_time = 1;
+  // Exclusive upper boundary. Optional.
+  google.protobuf.Timestamp end_time = 2;
 }
