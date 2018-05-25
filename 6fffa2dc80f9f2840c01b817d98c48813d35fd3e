@@ -144,6 +144,30 @@
     },
     {
       "key": {
+        "uuid": "d0d11414_786c8eba",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T21:26:48Z",
+      "side": 1,
+      "message": "\u003e if there are 1000 builds\n\u003e   for page_size\u003d100, it will will return exactly 100 builds.\n\nThat\u0027s what I meant by \"full page\". Beware that it way complicate implementation, since you\u0027ll need to fetch more stuff to fill in the page after some results are filtered out.\n\n\u003e   for page_size\u003d500, it will return 100 builds\n\nErr... Why 100? You mean if we make 100 the internal limit on max page_size?\n\n\u003e \n\u003e it cannot return an empty page if there are builds\n\nPlease document all this, this is important. At least the part about the full page.",
+      "parentUuid": "24f885d9_f30893de",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7021c69_574c40a9",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 5
