@@ -15,7 +15,6 @@
 package common
 
 import (
-	"errors"
 	"testing"
 
 	"go.chromium.org/gae/service/datastore"
@@ -47,6 +46,20 @@ func TestConfig(t *testing.T) {
 				validateProjectCfg(ctx, configSet, path, content)
 				So(ctx.Finalize().Error(), ShouldResemble, "in <unspecified file>: line 4: unknown field name \"\" in config.Header")
 			})
+			Convey("Load another bad config", func() {
+				content := []byte(badCfg2)
+				validateProjectCfg(ctx, configSet, path, content)
+				err := ctx.Finalize()
+				ve, ok := err.(*validation.Error)
+				So(ok, ShouldEqual, true)
+				So(len(ve.Errors), ShouldEqual, 14)
+				So(ve.Errors[0].Error(), ShouldContainSubstring, "duplicate header id")
+				So(ve.Errors[1].Error(), ShouldContainSubstring, "missing id")
+				So(ve.Errors[2].Error(), ShouldContainSubstring, "missing manifest name")
+				So(ve.Errors[3].Error(), ShouldContainSubstring, "missing repo url")
+				So(ve.Errors[4].Error(), ShouldContainSubstring, "missing ref")
+				So(ve.Errors[5].Error(), ShouldContainSubstring, "header non-existant not defined")
+			})
 			Convey("Load a good config", func() {
 				content := []byte(fooCfg)
 				validateProjectCfg(ctx, configSet, path, content)
@@ -58,7 +71,7 @@ func TestConfig(t *testing.T) {
 			Convey("Read a config before anything is set", func() {
 				c = testconfig.WithCommonClient(c, memcfg.New(mockedConfigs))
 				_, err := UpdateServiceConfig(c)
-				So(err, ShouldResemble, errors.New("could not load settings.cfg from luci-config: no such config"))
+				So(err.Error(), ShouldResemble, "could not load settings.cfg from luci-config: no such config")
 				settings := GetSettings(c)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "")
 			})
@@ -159,6 +172,7 @@ consoles: {
 	id: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
 	ref: "master"
+	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -174,6 +188,7 @@ consoles: {
 	id: "default_header"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
 	ref: "master"
+	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -192,6 +207,27 @@ var badCfg = `
 headers: {
 	id: "main_header",
 	tree_status_host: "blarg.example.com"
+`
+
+var badCfg2 = `
+headers: {
+	id: "main_header",
+	tree_status_host: "blarg.example.com"
+}
+headers: {
+	id: "main_header",
+	tree_status_host: "blarg.example.com"
+}
+consoles {
+	header_id: "non-existant"
+}
+consoles {
+	id: "foo"
+}
+consoles {
+	id: "foo"
+}
+logo_url: "badurl"
 `
 
 var fooCfg2 = `
