@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8e9471e_3360bbdd",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T19:16:07Z",
+      "side": 1,
+      "message": "why does this exist as a separate message? Is it ever reused?",
+      "range": {
+        "startLine": 55,
+        "startChar": 2,
+        "endLine": 55,
+        "endChar": 16
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be3b5fdd_aaa9722e",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T19:16:07Z",
+      "side": 1,
+      "message": "Does the server always return full pages or it can return incomplete page and next_page_token?",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7021c69_574c40a9",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T19:16:07Z",
+      "side": 1,
+      "message": "what is \"commit ID\" and how is it different from just \"commit\"?",
+      "range": {
+        "startLine": 100,
+        "startChar": 18,
+        "endLine": 100,
+        "endChar": 32
+      },
+      "revId": "6fffa2dc80f9f2840c01b817d98c48813d35fd3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
