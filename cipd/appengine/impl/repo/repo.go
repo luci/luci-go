@@ -26,7 +26,9 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
@@ -34,6 +36,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -65,6 +68,27 @@ func (impl *repoImpl) registerTasks() {
 	impl.tq.RegisterTask(&tasks.RunProcessors{}, func(c context.Context, m proto.Message) error {
 		return impl.runProcessorsTask(c, m.(*tasks.RunProcessors))
 	}, "run-processors", nil)
+}
+
+// packageReader opens a package instance for reading.
+func (impl *repoImpl) packageReader(c context.Context, ref *api.ObjectRef) (*processing.PackageReader, error) {
+	// Get slow Google Storage based ReaderAt.
+	rawReader, err := impl.cas.GetReader(c, ref)
+	switch code := grpc.Code(err); {
+	case code == codes.NotFound:
+		return nil, errors.Annotate(err, "package instance is not in the storage").Err()
+	case code != codes.OK:
+		return nil, errors.Annotate(err, "failed to open the object for reading").Tag(transient.Tag).Err()
+	}
+
+	// Read in 512 Kb chunks, keep 2 of them buffered.
+	pkg, err := processing.NewPackageReader(
+		iotools.NewBufferingReaderAt(rawReader, 512*1024, 2),
+		rawReader.Size())
+	if err != nil {
+		return nil, errors.Annotate(err, "error when opening the package").Err()
+	}
+	return pkg, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -210,7 +234,7 @@ func noMetadataErr(prefix string) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Package instance registration.
+// Package instance registration and post-registration processing.
 
 // RegisterInstance implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp *api.RegisterInstanceResponse, err error) {
