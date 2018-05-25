@@ -21,8 +21,6 @@ import (
 	"go.chromium.org/gae/service/memcache"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // CLEmail implements Client interface.
@@ -66,10 +64,13 @@ func (p *implementation) clEmailAndProjectNoACLs(c context.Context, host string,
 		Number:  changeNumber,
 		Options: []gerritpb.QueryOption{gerritpb.QueryOption_DETAILED_ACCOUNTS},
 	})
-	if err != nil && status.Code(err) != codes.NotFound {
+	// We can't cache outcome of not found CL because
+	//  * Milo may not at first have access to a CL, say while CL was hidden or
+	//    becaues of bad ACLs.
+	//  * Gerrit is known to return 404 flakes.
+	if err != nil {
 		return nil, err
 	}
-
 	// Cache and return only email and project.
 	ret := &gerritpb.ChangeInfo{
 		Project: changeInfo.Project,
