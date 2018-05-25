@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "310bb594_97a7a155",
+        "filename": "common/iotools/bufferingreaderat.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-05-25T05:42:57Z",
+      "side": 1,
+      "message": "Note that I don\u0027t handle the case when b.offset is already in the LRU, because bufferingReaderAt checks for presence itself already. Actually, I\u0027ll add quick panic check to ensure this.",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 19
+      },
+      "revId": "0e54a09abd28448583615b7d448804d6a41164bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f3c8795e_3ef5ee2c",
         "filename": "common/iotools/bufferingreaderat.go",
         "patchSetId": 2
