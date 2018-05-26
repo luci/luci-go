@@ -195,11 +195,6 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
-
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
 		createTime, _ := ptypes.Timestamp(build.CreateTime)
