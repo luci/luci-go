@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9520fbfd_9832dc8f",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-26T23:06:26Z",
+      "side": 1,
+      "message": "stick it into defer after line 82, otherwise it won\u0027t be executed after early returns (line 87 and 92)",
+      "range": {
+        "startLine": 109,
+        "startChar": 1,
+        "endLine": 109,
+        "endChar": 9
+      },
+      "revId": "ce3ebc3ff4aba539a712d0b342fc7de88a778994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9360d44_bb34d056",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 18
+      },
+      "lineNbr": 427,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-26T23:06:26Z",
+      "side": 1,
+      "message": "i think Nodir\u0027s proposal was to accumulate regexp string as new field here, and then having one more pass over all namespaces to compile and set descendantRegexp",
+      "revId": "ce3ebc3ff4aba539a712d0b342fc7de88a778994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

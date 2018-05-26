@@ -354,6 +354,30 @@
     },
     {
       "key": {
+        "uuid": "98f1d7b5_de2d9bac",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-26T23:06:26Z",
+      "side": 1,
+      "message": "I didn\u0027t believe golang\u0027s Regex is that, but it is:\nhttps://play.golang.com/p/rqCpeVuytMO",
+      "parentUuid": "784b3e43_04adcd42",
+      "range": {
+        "startLine": 118,
+        "startChar": 67,
+        "endLine": 118,
+        "endChar": 76
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b25c1128_c503e077",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
