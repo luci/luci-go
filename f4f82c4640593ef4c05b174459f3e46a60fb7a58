@@ -378,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "901b3f0a_9069007b",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-27T06:56:35Z",
+      "side": 1,
+      "message": "Yes, I\u0027ve also tested this and that\u0027s why added the check on line 121 below. Otherwise, it\u0027s hard to extract a regexp just for the suffix.",
+      "parentUuid": "98f1d7b5_de2d9bac",
+      "range": {
+        "startLine": 118,
+        "startChar": 67,
+        "endLine": 118,
+        "endChar": 76
+      },
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b25c1128_c503e077",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
@@ -930,6 +954,24 @@
       "side": 1,
       "message": "i understand that you want to keep this function simple and I agree with that. I think there is a way to make it simple and efficient (linear, not square) at the same time:\n\n  regexps :\u003d map[string][]string{}\n  for _, ref :\u003d range refsConfig {\n    ...\n    regexps[ns] \u003d append(regexps[ns], rs)\n    ...\n  }\n\n  for ns, rs :\u003d range accumulatedRegexps {\n    w.namespaces[ns].childRegexp, _ \u003d re.Compile(\"(\" + strings.Join(\")|(\", rs) + \"(\")\n  }\n\nthe joining of regexps with OR can be extracted to a separate function if this looks too complicated here.\n\nNote that then you don\u0027t need addRegexp. Another problem with addRegexp that I have is that nobody except init would call it, so it has less reasons to be a separate function. A function that joins regexps with OR is more general, more likely to be reused, so to me it is more reasonable to have it.",
       "parentUuid": "d1d7e2b2_e589ea2a",
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "78ad40af_8834c19e",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-05-27T06:56:35Z",
+      "side": 1,
+      "message": "Thanks for writing the code. It looks a lot easier-to-read than what I suggested in my comment. I didn\u0027t know that maps default to empty value for items that do not exist and did not know about strings.Join function. I think it\u0027s fine to keep this logic inlined, but please let me know if you still want a separate function and I\u0027ll update the CL again.",
+      "parentUuid": "45b083c2_d0a717f3",
       "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
