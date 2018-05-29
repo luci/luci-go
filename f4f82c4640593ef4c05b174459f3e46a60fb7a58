@@ -978,6 +978,24 @@
     },
     {
       "key": {
+        "uuid": "edc7cb18_fe06ee98",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-29T15:32:44Z",
+      "side": 1,
+      "message": "the inlined version that you have now is fine",
+      "parentUuid": "78ad40af_8834c19e",
+      "revId": "f4f82c4640593ef4c05b174459f3e46a60fb7a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d56a7de_2037bb1b",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
