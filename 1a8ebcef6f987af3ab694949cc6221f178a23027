@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea083960_7dccb254",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 449,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-29T19:56:05Z",
+      "side": 1,
+      "message": "(can be in follow up CL) Add a warning here, s.t. we know which config use this feature, then fix those configs, verify this warning doesn\u0027t fire any more (scheduler re-evaluates configs ~every minute) and then prohibit this in validation.",
+      "revId": "1a8ebcef6f987af3ab694949cc6221f178a23027",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
