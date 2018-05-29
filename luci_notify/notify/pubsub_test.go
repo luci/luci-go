@@ -62,12 +62,10 @@ func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime 
 			},
 			Status: status,
 			Input: &buildbucketpb.Build_Input{
-				GitilesCommits: []*buildbucketpb.GitilesCommit{
-					{
-						Host:    "chromium.googlesource.com",
-						Project: "chromium/src",
-						Id:      revision,
-					},
+				GitilesCommit: &buildbucketpb.GitilesCommit{
+					Host:    "chromium.googlesource.com",
+					Project: "chromium/src",
+					Id:      revision,
 				},
 			},
 		},

@@ -42,11 +42,11 @@
         },
         "number": 1,
         "input": {
-            "gitilesCommits": [{
+            "gitilesCommit": {
                 "host": "chromium.googlesource.com",
                 "project": "infra/luci/luci-go",
                 "id": "b7a757f457487cd5cfe2dae83f65c5bc10e288b7"
-            }],
+            },
             "gerritChanges": [{
                 "host": "chromium-review.googlesource.com",
                 "change": 677784,
