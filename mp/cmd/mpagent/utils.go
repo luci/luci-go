@@ -35,7 +35,7 @@ func getClient(ctx context.Context, client *http.Client, server string) (*Machin
 	if err != nil {
 		return nil, err
 	}
-	mp.BasePath = server + "/api/machine/v1/"
+	mp.BasePath = server + "/_ah/api/machine/v1/"
 	return &MachineProvider{client: mp}, nil
 }
 
