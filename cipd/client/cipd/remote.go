@@ -634,6 +634,30 @@ func (r *remoteImpl) modifyACL(ctx context.Context, packagePath string, changes 
 	return fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
+func (r *remoteImpl) fetchRoles(ctx context.Context, packagePath string) ([]string, error) {
+	endpoint, err := rolesEndpoint(packagePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var reply struct {
+		Status       string   `json:"status"`
+		ErrorMessage string   `json:"error_message"`
+		Roles        []string `json:"roles"`
+	}
+	if err := r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
+		return nil, err
+	}
+
+	switch reply.Status {
+	case "SUCCESS":
+		return reply.Roles, nil
+	case "ERROR":
+		return nil, errors.New(reply.ErrorMessage)
+	}
+	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
+}
+
 func (r *remoteImpl) setRef(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
@@ -922,6 +946,15 @@ func aclEndpoint(packagePath string) (string, error) {
 	params := url.Values{}
 	params.Add("package_path", packagePath)
 	return "repo/v1/acl?" + params.Encode(), nil
+}
+
+func rolesEndpoint(packagePath string) (string, error) {
+	if err := common.ValidatePackageName(packagePath); err != nil {
+		return "", err
+	}
+	params := url.Values{}
+	params.Add("package_path", packagePath)
+	return "repo/v1/roles?" + params.Encode(), nil
 }
 
 func refEndpoint(packageName, instanceID string, refs []string) (string, error) {

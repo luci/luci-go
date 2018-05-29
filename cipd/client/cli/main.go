@@ -36,6 +36,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/fixflagpos"
 	"go.chromium.org/luci/common/logging"
@@ -1856,6 +1857,99 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// 'acl-check' subcommand.
+
+func cmdCheckACL(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "acl-check <package subpath> [options]",
+		ShortDesc: "checks whether the caller has given roles in a package",
+		LongDesc:  "Checks whether the caller has given roles in a package.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &checkACLRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params)
+			c.Flags.BoolVar(&c.owner, "owner", false, "Check for OWNER role.")
+			c.Flags.BoolVar(&c.writer, "writer", false, "Check for WRITER role.")
+			c.Flags.BoolVar(&c.reader, "reader", false, "Check for READER role.")
+			c.Flags.BoolVar(&c.counterWriter, "counter-writer", false, "Check for COUNTER_WRITER role.")
+			return c
+		},
+	}
+}
+
+type checkACLRun struct {
+	cipdSubcommand
+	clientOptions
+
+	owner         bool
+	writer        bool
+	reader        bool
+	counterWriter bool
+}
+
+func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 1, 1) {
+		return 1
+	}
+
+	var roles []string
+	if c.owner {
+		roles = append(roles, "OWNER")
+	}
+	if c.writer {
+		roles = append(roles, "WRITER")
+	}
+	if c.reader {
+		roles = append(roles, "READER")
+	}
+	if c.counterWriter {
+		roles = append(roles, "COUNTER_WRITER")
+	}
+
+	// By default, check for READER access.
+	if len(roles) == 0 {
+		roles = append(roles, "READER")
+	}
+
+	pkg, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	ctx := cli.GetContext(a, c, env)
+	return c.done(checkACL(ctx, pkg, roles, c.clientOptions))
+}
+
+func checkACL(ctx context.Context, packagePath string, roles []string, clientOpts clientOptions) (bool, error) {
+	client, err := clientOpts.makeCipdClient(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	actualRoles, err := client.FetchRoles(ctx, packagePath)
+	if err != nil {
+		return false, err
+	}
+	roleSet := stringset.NewFromSlice(actualRoles...)
+
+	var missing []string
+	for _, r := range roles {
+		if !roleSet.Has(r) {
+			missing = append(missing, r)
+		}
+	}
+
+	if len(missing) == 0 {
+		fmt.Printf("The caller has all requested role(s): %s\n", strings.Join(roles, ", "))
+		return true, nil
+	}
+
+	fmt.Printf("The caller doesn't have following role(s): %s\n", strings.Join(missing, ", "))
+	return false, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // 'pkg-build' subcommand.
 
 func cmdBuild() *subcommands.Command {
@@ -2594,6 +2688,7 @@ func GetApplication(params Parameters) *cli.Application {
 			{Advanced: true},
 			cmdListACL(params),
 			cmdEditACL(params),
+			cmdCheckACL(params),
 
 			// Counters.
 			{Advanced: true},
