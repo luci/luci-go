@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cb85bbc_36c335af",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-29T18:36:50Z",
+      "side": 1,
+      "message": "omg, Linus\u0027 invention?",
+      "range": {
+        "startLine": 186,
+        "startChar": 43,
+        "endLine": 186,
+        "endChar": 52
+      },
+      "revId": "eceb7cb9de3f70f6c1224d5ecc0aaaf484e20b84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
