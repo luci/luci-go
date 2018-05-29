@@ -137,7 +137,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.8.1"
+	UserAgent = "cipd 1.8.2"
 )
 
 func init() {
@@ -382,6 +382,13 @@ type Client interface {
 
 	// ModifyACL applies a set of PackageACLChanges to a package path.
 	ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
+
+	// FetchRoles returns all roles the caller has in the given package prefix.
+	//
+	// Understands roles inheritance, e.g. if the caller is OWNER, the return
+	// value will list all roles implied by being an OWNER (e.g. READER, WRITER,
+	// ...).
+	FetchRoles(ctx context.Context, packagePath string) ([]string, error)
 
 	// UploadToCAS uploads package data blob to Content Addressed Store.
 	//
@@ -783,6 +790,10 @@ func (client *clientImpl) FetchACL(ctx context.Context, packagePath string) ([]P
 
 func (client *clientImpl) ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
 	return client.remote.modifyACL(ctx, packagePath, changes)
+}
+
+func (client *clientImpl) FetchRoles(ctx context.Context, packagePath string) ([]string, error) {
+	return client.remote.fetchRoles(ctx, packagePath)
 }
 
 func (client *clientImpl) ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error) {
@@ -1506,6 +1517,7 @@ type remote interface {
 
 	fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
 	modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
+	fetchRoles(ctx context.Context, packagePath string) ([]string, error)
 
 	resolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
 
