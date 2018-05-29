@@ -22,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/server/auth"
@@ -48,7 +49,7 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		return nil, errors.Annotate(err, "creating Gitiles client").Err()
 	}
 
-	res, err := client.Log(c, &gitilespb.LogRequest{
+	req := &gitilespb.LogRequest{
 		Project: project,
 		// With ~1, if newCommit.Revision == oldRevision,
 		// we'll get one commit,
@@ -56,7 +57,9 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		// oldRevision not being reachable from newRevision.
 		Ancestor: oldRevision + "~1",
 		Treeish:  newRevision,
-	})
+	}
+	logging.Infof(c, "Gitiles request to host %q: %q", host, req)
+	res, err := client.Log(c, req)
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
