@@ -16,7 +16,6 @@
   'WATCHLISTS': {
     'all': [
       # Add yourself here to get explicitly spammed.
-      'maruel+w@chromium.org',
       'tandrii+luci-go@chromium.org',
     ],
   },
