@@ -94,10 +94,6 @@ message BuildPredicate {
   // A build's Build.Input.gerrit_changes must include ALL of these changes.
   repeated GerritChange gerrit_changes = 3;
 
-  // A build's Build.Input.gitiles_commits must include ALL of these hex sha1s.
-  // Not to be confused with blamelist.
-  repeated string git_commits = 4;
-
   // A build must be created by this identity.
   string created_by = 5;
 

@@ -193,11 +193,14 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		}
 	}
 
-	tagsToV2(b, msg.Tags)
+	if err := tagsToV2(b, msg.Tags); err != nil {
+		return nil, err
+	}
 	return b, nil
 }
 
-func tagsToV2(dest *buildbucketpb.Build, tags []string) {
+func tagsToV2(dest *buildbucketpb.Build, tags []string) error {
+	dest.Input.GitilesCommit = nil
 	for _, t := range toStringPairs(tags) {
 		switch t.Key {
 		case v1.TagBuilder, v1.TagBuildAddress:
@@ -208,7 +211,10 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) {
 			case *buildbucketpb.GerritChange:
 				dest.Input.GerritChanges = append(dest.Input.GerritChanges, bs)
 			case *buildbucketpb.GitilesCommit:
-				dest.Input.GitilesCommits = append(dest.Input.GitilesCommits, bs)
+				if dest.Input.GitilesCommit != nil {
+					return errors.Reason("more than one gitiles commit buildset").Tag(MalformedBuild).Err()
+				}
+				dest.Input.GitilesCommit = bs
 			default:
 				dest.Tags = append(dest.Tags, t)
 			}
@@ -233,6 +239,7 @@ func tagsToV2(dest *buildbucketpb.Build, tags []string) {
 			dest.Tags = append(dest.Tags, t)
 		}
 	}
+	return nil
 }
 
 // BucketNameToV2 converts a v1 Bucket name to the v2 constituent parts.

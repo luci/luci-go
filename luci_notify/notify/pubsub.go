@@ -134,11 +134,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return Notify(c, d, notifiers, StatusUnknown, build)
 	}
 
-	if len(build.Input.GetGitilesCommits()) == 0 {
+	gCommit := build.Input.GetGitilesCommit()
+	if gCommit == nil {
 		logging.Infof(c, "No revision information found for this build, ignoring...")
 		return nil
 	}
-	gCommit := build.Input.GitilesCommits[0]
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builder := &Builder{ID: builderID}
