@@ -125,7 +125,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
 	if err != nil {
-		return errors.Annotate(err, "looking up notifiers").Err()
+		return errors.Annotate(err, "looking up notifiers").Tag(transient.Tag).Err()
 	}
 	if len(notifiers) == 0 {
 		// No configurations were found, but we might need to generate notifications
@@ -169,10 +169,10 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return nil
 		}, nil)
 		if err != nil || !keepGoing {
-			return err
+			return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 		}
 	case err != nil:
-		return err
+		return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 	}
 
 	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
@@ -187,7 +187,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
-	return datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
 		case err == datastore.ErrNoSuchEntity:
 			return errBuilderDeleted
@@ -229,6 +229,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build))
 	}, nil)
+	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 }
 
 func newBuildsClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
@@ -258,10 +259,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 		return nil
 
 	default:
-		if err := handleBuild(c, d, build, gitilesHistory); err != nil {
-			return errors.Annotate(err, "failed to notify").Tag(transient.Tag).Err()
-		}
-		return nil
+		return handleBuild(c, d, build, gitilesHistory)
 	}
 }
 
