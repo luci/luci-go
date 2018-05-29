@@ -235,6 +235,10 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 	return err
 }
 
+func (r *prpcRemoteImpl) fetchRoles(ctx context.Context, packagePath string) ([]string, error) {
+	return nil, errNoV2Impl
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Upload.
 
