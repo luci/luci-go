@@ -47,18 +47,16 @@ message Build {
 
     // Gitiles commits to run against.
     // Usually present in CI builds, set by LUCI Scheduler.
-    // Usually describe different repositories.
     // If not present, the build may checkout "refs/heads/master".
     // NOT a blamelist.
     //
     // V1 equivalent: supersedes "revision" property and "buildset"
     // tag that starts with "commit/gitiles/".
-    repeated GitilesCommit gitiles_commits = 2;
+    GitilesCommit gitiles_commit = 2;
 
     // Gerrit patchsets to run against.
     // Usually present in tryjobs, set by CQ, Gerrit, git-cl-try.
-    // Applied on top of the corresponding commit in gitiles_commits
-    // or tip of the tree if the commit is not specified.
+    // Applied on top of gitiles_commit if specified, otherwise tip of the tree.
     //
     // V1 equivalent: supersedes patch_* properties and "buildset"
     // tag that starts with "patch/gerrit/".
