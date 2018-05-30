@@ -17,6 +17,7 @@ package processing
 import (
 	"archive/zip"
 	"io"
+	"math"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -44,11 +45,20 @@ func NewPackageReader(r io.ReaderAt, size int64) (*PackageReader, error) {
 }
 
 // Open opens some file inside the package for reading.
-func (p *PackageReader) Open(path string) (io.ReadCloser, error) {
+//
+// Returns the ReadCloser and the uncompressed file size.
+func (p *PackageReader) Open(path string) (io.ReadCloser, int64, error) {
 	for _, f := range p.zr.File {
 		if f.Name == path {
-			return f.Open()
+			if f.UncompressedSize64 > math.MaxInt64 {
+				return nil, 0, errors.Reason("the file %q is unbelievably huge (%d bytes)", path, f.UncompressedSize64).Err()
+			}
+			rc, err := f.Open()
+			if err != nil {
+				return nil, 0, err
+			}
+			return rc, int64(f.UncompressedSize64), nil
 		}
 	}
-	return nil, errors.Reason("no file %q inside the package", path).Err()
+	return nil, 0, errors.Reason("no file %q inside the package", path).Err()
 }
