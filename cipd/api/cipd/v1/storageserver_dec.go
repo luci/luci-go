@@ -66,3 +66,18 @@ func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequ
 	}
 	return
 }
+
+func (s *DecoratedStorage) CancelUpload(c context.Context, req *CancelUploadRequest) (rsp *UploadOperation, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "CancelUpload", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.CancelUpload(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CancelUpload", rsp, err)
+	}
+	return
+}

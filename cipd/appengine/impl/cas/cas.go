@@ -312,6 +312,15 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	return mutated.ToProto(r.UploadOperationId), nil
 }
 
+// CancelUpload implements the corresponding RPC method, see the proto doc.
+func (s *storageImpl) CancelUpload(c context.Context, r *api.CancelUploadRequest) (resp *api.UploadOperation, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// TODO(vadimsh): Implement!
+
+	return
+}
+
 // finishAndForcedHash finalizes uploads that use ForceHash field.
 //
 // It publishes the object immediately, skipping the verification.
