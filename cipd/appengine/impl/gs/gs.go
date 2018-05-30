@@ -88,6 +88,9 @@ type GoogleStorage interface {
 	// implemented here.
 	StartUpload(c context.Context, path string) (uploadURL string, err error)
 
+	// CancelUpload cancels a resumable upload session.
+	CancelUpload(c context.Context, uploadURL string) error
+
 	// Reader returns an io.ReaderAt implementation to read contents of a file at
 	// a specific generation (if 'gen' is positive) or at the current live
 	// generation (if 'gen' is zero or negative).
@@ -293,6 +296,33 @@ func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, e
 	}
 
 	return uploadURL, nil
+}
+
+func (gs *impl) CancelUpload(c context.Context, uploadURL string) error {
+	logging.Infof(c, "gs: CancelUpload(uploadURL=%q)", uploadURL)
+	if err := gs.init(); err != nil {
+		return err
+	}
+
+	err := withRetry(c, func() error {
+		req, _ := http.NewRequest("DELETE", uploadURL, nil)
+		resp, err := ctxhttp.Do(c, gs.client, req)
+		if err != nil {
+			return err
+		}
+		defer googleapi.CloseBody(resp)
+		return googleapi.CheckResponse(resp)
+	})
+
+	switch {
+	case transient.Tag.In(err):
+		return err
+	case err == nil:
+		return errors.Reason("expecting 499 code, but got 200").Err()
+	case StatusCode(err) != 499:
+		return errors.Annotate(err, "expecting 499 code, but got %d", StatusCode(err)).Err()
+	}
+	return nil
 }
 
 // Reader returns an io.ReaderAt implementation to read contents of a file at

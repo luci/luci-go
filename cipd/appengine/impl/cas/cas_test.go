@@ -191,6 +191,8 @@ type mockedGS struct {
 
 	deleteErr   error
 	deleteCalls []string
+
+	cancelUploadCalls []string
 }
 
 type publishCall struct {
@@ -205,6 +207,11 @@ func (m *mockedGS) Exists(c context.Context, path string) (bool, error) {
 
 func (m *mockedGS) StartUpload(c context.Context, path string) (string, error) {
 	return "http://upload-url.example.com/for/+" + path, nil
+}
+
+func (m *mockedGS) CancelUpload(c context.Context, uploadURL string) error {
+	m.cancelUploadCalls = append(m.cancelUploadCalls, uploadURL)
+	return nil
 }
 
 func (m *mockedGS) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
@@ -364,39 +371,47 @@ func TestBeginUpload(t *testing.T) {
 	})
 }
 
+var (
+	testTime   = testclock.TestRecentTimeUTC.Round(time.Millisecond)
+	uploaderId = identity.Identity("user:uploader@example.com")
+)
+
+func storageMocks() (context.Context, *mockedGS, tqtesting.Testable, *storageImpl) {
+	ctx := gaetesting.TestingContext()
+	ctx, _ = testclock.UseTime(ctx, testTime)
+	ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
+
+	gsMock := &mockedGS{
+		files:       map[string]string{},
+		publisCalls: []publishCall{},
+		deleteCalls: []string{},
+	}
+
+	dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
+
+	impl := &storageImpl{
+		tq:    dispatcher,
+		getGS: func(context.Context) gs.GoogleStorage { return gsMock },
+		settings: func(context.Context) (*settings.Settings, error) {
+			return &settings.Settings{
+				StorageGSPath: "/bucket/store",
+				TempGSPath:    "/bucket/tmp_path",
+			}, nil
+		},
+	}
+	impl.registerTasks()
+
+	tq := tqtesting.GetTestable(ctx, dispatcher)
+	tq.CreateQueues()
+
+	return ctx, gsMock, tq, impl
+}
+
 func TestFinishUpload(t *testing.T) {
 	t.Parallel()
 
 	Convey("With mocks", t, func() {
-		uploaderId := identity.Identity("user:uploader@example.com")
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{Identity: uploaderId})
-
-		gsMock := &mockedGS{
-			files:       map[string]string{},
-			publisCalls: []publishCall{},
-			deleteCalls: []string{},
-		}
-
-		dispatcher := &tq.Dispatcher{BaseURL: "/internal/tq/"}
-
-		impl := storageImpl{
-			tq:    dispatcher,
-			getGS: func(context.Context) gs.GoogleStorage { return gsMock },
-			settings: func(context.Context) (*settings.Settings, error) {
-				return &settings.Settings{
-					StorageGSPath: "/bucket/store",
-					TempGSPath:    "/bucket/tmp_path",
-				}, nil
-			},
-		}
-		impl.registerTasks()
-
-		tq := tqtesting.GetTestable(ctx, dispatcher)
-		tq.CreateQueues()
+		ctx, gsMock, tq, impl := storageMocks()
 
 		Convey("With force hash", func() {
 			// Initiate an upload to get operation ID.
@@ -734,6 +749,79 @@ func TestFinishUpload(t *testing.T) {
 			})
 			So(grpc.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such upload operation")
+		})
+	})
+}
+
+func TestCancelUpload(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		const (
+			uploadURL  = "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1"
+			tempGSPath = "/bucket/tmp_path/1454472306_1"
+		)
+
+		ctx, gsMock, tq, impl := storageMocks()
+
+		// Initiate an upload to get operation ID.
+		op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
+			HashAlgo: api.HashAlgo_SHA1,
+		})
+		So(err, ShouldBeNil)
+		So(op, ShouldResemble, &api.UploadOperation{
+			OperationId: op.OperationId,
+			Status:      api.UploadStatus_UPLOADING,
+			UploadUrl:   uploadURL,
+		})
+
+		Convey("Cancel right away", func() {
+			op, err := impl.CancelUpload(ctx, &api.CancelUploadRequest{
+				UploadOperationId: op.OperationId,
+			})
+			So(err, ShouldBeNil)
+			So(op, ShouldResemble, &api.UploadOperation{
+				OperationId: op.OperationId,
+				Status:      api.UploadStatus_CANCELED,
+				UploadUrl:   uploadURL,
+			})
+
+			// Should create the TQ task to cleanup.
+			t := tq.GetScheduledTasks()
+			So(t, ShouldHaveLength, 1)
+			So(t[0].Payload, ShouldResemble, &tasks.CleanupUpload{
+				UploadOperationId: 1,
+				UploadUrl:         uploadURL,
+				PathToCleanup:     tempGSPath,
+			})
+
+			// Cancel again. Noop, same single task in the queue.
+			op2, err := impl.CancelUpload(ctx, &api.CancelUploadRequest{
+				UploadOperationId: op.OperationId,
+			})
+			So(err, ShouldBeNil)
+			So(op2, ShouldResemble, op)
+			So(tq.GetScheduledTasks(), ShouldHaveLength, 1)
+
+			// Execute the pending task.
+			So(impl.cleanupUploadTask(ctx, t[0].Payload.(*tasks.CleanupUpload)), ShouldBeNil)
+
+			// It canceled the session and deleted the file.
+			So(gsMock.cancelUploadCalls, ShouldResemble, []string{uploadURL})
+			So(gsMock.deleteCalls, ShouldResemble, []string{tempGSPath})
+		})
+
+		Convey("Cancel after finishing", func() {
+			_, err := impl.FinishUpload(ctx, &api.FinishUploadRequest{
+				UploadOperationId: op.OperationId,
+			})
+			So(err, ShouldBeNil)
+
+			_, err = impl.CancelUpload(ctx, &api.CancelUploadRequest{
+				UploadOperationId: op.OperationId,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "the operation is in state VERIFYING and can't be canceled")
 		})
 	})
 }

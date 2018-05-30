@@ -48,6 +48,7 @@ func TestImpl(t *testing.T) {
 			Code     int
 			Response interface{}
 			Location string // value of Location response header
+			NonJSON  bool   // if true, do not put alt=json in the expected URL
 		}
 
 		lock := sync.Mutex{}
@@ -59,7 +60,7 @@ func TestImpl(t *testing.T) {
 			if c.Query == nil {
 				c.Query = url.Values{}
 			}
-			if c.Query.Get("alt") == "" {
+			if c.Query.Get("alt") == "" && !c.NonJSON {
 				c.Query.Set("alt", "json")
 			}
 			if c.Response == nil {
@@ -320,6 +321,26 @@ func TestImpl(t *testing.T) {
 			url, err := gs.StartUpload(ctx, "/bucket/a/b/c")
 			So(StatusCode(err), ShouldEqual, 403)
 			So(url, ShouldEqual, "")
+		})
+
+		Convey("CancelUpload success", func() {
+			expect(call{
+				Method:  "DELETE",
+				Path:    "/upload_url",
+				NonJSON: true,
+				Code:    499,
+			})
+			So(gs.CancelUpload(ctx, srv.URL+"/upload_url"), ShouldBeNil)
+		})
+
+		Convey("CancelUpload error", func() {
+			expect(call{
+				Method:  "DELETE",
+				Path:    "/upload_url",
+				NonJSON: true,
+				Code:    400,
+			})
+			So(gs.CancelUpload(ctx, srv.URL+"/upload_url"), ShouldNotBeNil)
 		})
 
 		Convey("Reader works", func() {

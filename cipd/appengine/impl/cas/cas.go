@@ -91,10 +91,13 @@ type storageImpl struct {
 
 // registerTasks adds tasks to the tq Dispatcher.
 func (s *storageImpl) registerTasks() {
-	// See queue.yaml for "verify-upload" task queue definition.
+	// See queue.yaml for "cas-uploads" task queue definition.
 	s.tq.RegisterTask(&tasks.VerifyUpload{}, func(c context.Context, m proto.Message) error {
 		return s.verifyUploadTask(c, m.(*tasks.VerifyUpload))
-	}, "verify-upload", nil)
+	}, "cas-uploads", nil)
+	s.tq.RegisterTask(&tasks.CleanupUpload{}, func(c context.Context, m proto.Message) error {
+		return s.cleanupUploadTask(c, m.(*tasks.CleanupUpload))
+	}, "cas-uploads", nil)
 }
 
 // GetReader is part of StorageServer interface.
@@ -261,26 +264,11 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 		}
 	}
 
-	// Verify HMAC of the upload operation ID.
-	opID, err := upload.UnwrapOpID(c, r.UploadOperationId, auth.CurrentIdentity(c))
-	if err != nil {
-		if transient.Tag.In(err) {
-			return nil, errors.Annotate(err, "failed to check HMAC on upload_operation_id").Err()
-		}
-		return nil, errors.Reason("no such upload operation").
-			InternalReason("HMAC check failed - %s", err).
-			Tag(grpcutil.NotFoundTag).Err()
-	}
-
 	// Grab the corresponding operation and inspect its status.
-	op := upload.Operation{ID: opID}
-	switch err := datastore.Get(c, &op); {
-	case err == datastore.ErrNoSuchEntity:
-		return nil, errors.Reason("no such upload operation").
-			Tag(grpcutil.NotFoundTag).Err()
+	op, err := fetchOp(c, r.UploadOperationId)
+	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "failed to fetch the upload operation").
-			Tag(grpcutil.InternalTag).Err()
+		return nil, err
 	case op.Status != api.UploadStatus_UPLOADING:
 		// Nothing to do if the operation is already closed or being verified.
 		return op.ToProto(r.UploadOperationId), nil
@@ -290,7 +278,7 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	// Just need to move the temp file to its final location based on this hash
 	// and close the operation.
 	if r.ForceHash != nil {
-		mutated, err := s.finishAndForcedHash(c, &op, r.ForceHash)
+		mutated, err := s.finishAndForcedHash(c, op, r.ForceHash)
 		if err != nil {
 			return nil, err
 		}
@@ -301,8 +289,8 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	mutated, err := op.Advance(c, func(c context.Context, op *upload.Operation) error {
 		op.Status = api.UploadStatus_VERIFYING
 		return s.tq.AddTask(c, &tq.Task{
-			Payload: &tasks.VerifyUpload{UploadOperationId: opID},
-			Title:   fmt.Sprintf("%d", opID),
+			Payload: &tasks.VerifyUpload{UploadOperationId: op.ID},
+			Title:   fmt.Sprintf("%d", op.ID),
 		})
 	})
 	if err != nil {
@@ -316,9 +304,67 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 func (s *storageImpl) CancelUpload(c context.Context, r *api.CancelUploadRequest) (resp *api.UploadOperation, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	// TODO(vadimsh): Implement!
+	handleOpStatus := func(op *upload.Operation) (*api.UploadOperation, error) {
+		if op.Status == api.UploadStatus_ERRORED || op.Status == api.UploadStatus_CANCELED {
+			return op.ToProto(r.UploadOperationId), nil
+		}
+		return nil, errors.Reason("the operation is in state %s and can't be canceled", op.Status).Tag(grpcutil.FailedPreconditionTag).Err()
+	}
 
-	return
+	// Grab the corresponding operation and inspect its status.
+	op, err := fetchOp(c, r.UploadOperationId)
+	switch {
+	case err != nil:
+		return nil, err
+	case op.Status != api.UploadStatus_UPLOADING:
+		return handleOpStatus(op)
+	}
+
+	// Move the operation to canceled state and launch the TQ task to cleanup.
+	mutated, err := op.Advance(c, func(c context.Context, op *upload.Operation) error {
+		op.Status = api.UploadStatus_CANCELED
+		return s.tq.AddTask(c, &tq.Task{
+			Payload: &tasks.CleanupUpload{
+				UploadOperationId: op.ID,
+				UploadUrl:         op.UploadURL,
+				PathToCleanup:     op.TempGSPath,
+			},
+			Title: fmt.Sprintf("%d", op.ID),
+		})
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to start the cleanup task").
+			Tag(grpcutil.InternalTag).Err()
+	}
+	return handleOpStatus(mutated)
+}
+
+// fethcOp unwraps upload operation ID and fetches upload.Operation entity.
+//
+// Returns an grpc-tagged error on failure that can be returned to the RPC
+// caller right away.
+func fetchOp(c context.Context, wrappedOpID string) (*upload.Operation, error) {
+	opID, err := upload.UnwrapOpID(c, wrappedOpID, auth.CurrentIdentity(c))
+	if err != nil {
+		if transient.Tag.In(err) {
+			return nil, errors.Annotate(err, "failed to check HMAC on upload_operation_id").Err()
+		}
+		return nil, errors.Reason("no such upload operation").
+			InternalReason("HMAC check failed - %s", err).
+			Tag(grpcutil.NotFoundTag).Err()
+	}
+
+	op := &upload.Operation{ID: opID}
+	switch err := datastore.Get(c, op); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errors.Reason("no such upload operation").
+			Tag(grpcutil.NotFoundTag).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch the upload operation").
+			Tag(grpcutil.InternalTag).Err()
+	}
+
+	return op, nil
 }
 
 // finishAndForcedHash finalizes uploads that use ForceHash field.
@@ -496,6 +542,31 @@ func (s *storageImpl) verifyUploadTask(c context.Context, task *tasks.VerifyUplo
 	if err != nil {
 		return errors.Annotate(err, "failed to publish the verified file").Err()
 	}
+	return nil
+}
+
+// cleanupUploadTask is called to clean up after a canceled upload.
+//
+// Best effort. If the temporary file can't be deleted from GS due to some
+// non-transient error, logs the error and ignores it, since retrying won't
+// help.
+func (s *storageImpl) cleanupUploadTask(c context.Context, task *tasks.CleanupUpload) (err error) {
+	gs := s.getGS(c)
+
+	if err := gs.CancelUpload(c, task.UploadUrl); err != nil {
+		if transient.Tag.In(err) {
+			return errors.Annotate(err, "transient error when canceling the resumable upload").Err()
+		}
+		logging.WithError(err).Errorf(c, "Failed to cancel resumable upload")
+	}
+
+	if err := gs.Delete(c, task.PathToCleanup); err != nil {
+		if transient.Tag.In(err) {
+			return errors.Annotate(err, "transient error when deleting the temp file").Err()
+		}
+		logging.WithError(err).Errorf(c, "Failed to delete the temp file")
+	}
+
 	return nil
 }
 

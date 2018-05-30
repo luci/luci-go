@@ -21,3 +21,10 @@ package tasks;
 message VerifyUpload {
   int64 upload_operation_id = 1; // unwrapped integer ID of Operation entity
 }
+
+// CleanupUpload task cleans up garbage after canceled upload.
+message CleanupUpload {
+  int64 upload_operation_id = 1; // unwrapped integer ID of Operation entity
+  string upload_url         = 2; // URL of the upload session to cancel
+  string path_to_cleanup    = 3; // gs file to delete
+}
