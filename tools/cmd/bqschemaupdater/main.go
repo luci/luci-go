@@ -103,6 +103,10 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 
 	default: // existing table
 		fmt.Printf("Updating table %q\n", tableID)
+		if err := addMissingFields(&td.Schema, md.Schema); err != nil {
+			return err
+		}
+
 		if diff := schemaDiff(md.Schema, td.Schema); diff == "" {
 			fmt.Println("No changes to schema detected.")
 		} else {
