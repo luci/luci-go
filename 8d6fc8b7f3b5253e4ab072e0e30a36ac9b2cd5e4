@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "29cd1a6d_fb236273",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-30T21:41:47Z",
+      "side": 1,
+      "message": "wdyt about s/someChildren/immediateChildren or exactChildren ?",
+      "range": {
+        "startLine": 423,
+        "startChar": 1,
+        "endLine": 423,
+        "endChar": 13
+      },
+      "revId": "8d6fc8b7f3b5253e4ab072e0e30a36ac9b2cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
