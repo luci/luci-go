@@ -393,11 +393,9 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		Convey("Already registered", func() {
-			_, _, err := model.RegisterInstance(ctx, &model.Instance{
-				Package:      model.PackageKey(ctx, inst.Package),
-				InstanceID:   model.ObjectRefToInstanceID(inst.Instance),
-				RegisteredBy: "user:someone@example.com",
-			}, nil)
+			instance := model.InstanceFromProto(ctx, inst)
+			instance.RegisteredBy = "user:someone@example.com"
+			_, _, err := model.RegisterInstance(ctx, instance, nil)
 			So(err, ShouldBeNil)
 
 			resp, err := impl.RegisterInstance(ctx, inst)

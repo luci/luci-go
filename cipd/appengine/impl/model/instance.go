@@ -65,6 +65,16 @@ func (e *Instance) Proto() *api.Instance {
 	}
 }
 
+// InstanceFromProto initializes Instance entity based on the proto message.
+//
+// Ignores output-only fields.
+func InstanceFromProto(c context.Context, p *api.Instance) *Instance {
+	return &Instance{
+		InstanceID: ObjectRefToInstanceID(p.Instance),
+		Package:    PackageKey(c, p.Package),
+	}
+}
+
 // ObjectRefToInstanceID returns an Instance ID that matches the given CAS
 // object ref.
 //
