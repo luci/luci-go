@@ -29,6 +29,7 @@ type MockCAS struct {
 	GetObjectURLImpl func(context.Context, *api.GetObjectURLRequest) (*api.ObjectURL, error)
 	BeginUploadImpl  func(context.Context, *api.BeginUploadRequest) (*api.UploadOperation, error)
 	FinishUploadImpl func(context.Context, *api.FinishUploadRequest) (*api.UploadOperation, error)
+	CancelUploadImpl func(context.Context, *api.CancelUploadRequest) (*api.UploadOperation, error)
 }
 
 // GetReader implements the corresponding method of cas.StorageServer interface.
@@ -73,4 +74,15 @@ func (m *MockCAS) FinishUpload(c context.Context, r *api.FinishUploadRequest) (*
 		panic("must not be called")
 	}
 	return m.FinishUploadImpl(c, r)
+}
+
+// CancelUpload implements the corresponding RPC method, see the proto doc.
+func (m *MockCAS) CancelUpload(c context.Context, r *api.CancelUploadRequest) (*api.UploadOperation, error) {
+	if m.Err != nil {
+		return nil, m.Err
+	}
+	if m.CancelUploadImpl == nil {
+		panic("must not be called")
+	}
+	return m.CancelUploadImpl(c, r)
 }

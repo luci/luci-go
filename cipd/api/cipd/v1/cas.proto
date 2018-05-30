@@ -74,6 +74,20 @@ service Storage {
   // field of the upload operation, since they are not directly related to this
   // RPC call, but rather to the upload operation itself.
   rpc FinishUpload(FinishUploadRequest) returns (UploadOperation);
+
+  // CancelUpload aborts the pending upload operation.
+  //
+  // It moves it to CANCELED state if it was in UPLOADING state and cleans up
+  // any temporary garbage. Returns the most recent state of the upload
+  // operation (whatever it may be).
+  //
+  // Does nothing if the operation is already canceled or failed.
+  //
+  // Returns:
+  //   NOT_FOUND if the provided upload operation doesn't exist.
+  //   FAILED_PRECONDITION if the upload operation is in PUBLISHED or VERIFYING
+  //      state (i.e. finished or being finalized now).
+  rpc CancelUpload(CancelUploadRequest) returns (UploadOperation);
 }
 
 
@@ -130,6 +144,7 @@ enum UploadStatus {
   VERIFYING = 2;  // the object's hash is being verified now
   PUBLISHED = 3;  // the object has been published in the CAS
   ERRORED   = 4;  // there were fatal errors during the finalization
+  CANCELED  = 5;  // the operation was canceled via CancelUpload
 }
 
 
@@ -171,6 +186,12 @@ message FinishUploadRequest {
   // External callers are denied usage of this field. Attempt to use it results
   // in PERMISSION_DENIED.
   ObjectRef force_hash = 2;
+}
+
+
+message CancelUploadRequest {
+  // An identifier of an upload operation returned by BeginUpload RPC.
+  string upload_operation_id = 1;
 }
 
 

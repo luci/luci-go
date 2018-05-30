@@ -71,12 +71,13 @@ var perMethodACL = map[string]struct {
 	"GetObjectURL": {"administrators", nil},
 
 	// Upload operations are initiated by the backend, but finalized by whoever
-	// uploads the data, thus 'FinishUpload' is accessible to anyone (the
-	// authorization happens through upload operation IDs which should be treated
-	// as secrets). Except we don't trust external API users to assign hashes,
-	// so usage of 'force_hash' field is forbidden.
+	// uploads the data, thus 'FinishUpload' and 'CancelUpload' is accessible to
+	// anyone (the authorization happens through upload operation IDs which should
+	// be treated as secrets). Except we don't trust external API users to assign
+	// hashes, so usage of 'force_hash' field is forbidden.
 	"BeginUpload":  {"administrators", nil},
 	"FinishUpload": {"*", denyForceHash},
+	"CancelUpload": {"*", nil},
 }
 
 func denyForceHash(c context.Context, req proto.Message) error {

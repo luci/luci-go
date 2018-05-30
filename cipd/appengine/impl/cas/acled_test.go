@@ -48,6 +48,7 @@ func TestACLDecorator(t *testing.T) {
 
 	noForceHash := &api.FinishUploadRequest{}
 	withForceHash := &api.FinishUploadRequest{ForceHash: &api.ObjectRef{}}
+	cancelReq := &api.CancelUploadRequest{}
 
 	var cases = []struct {
 		method  string
@@ -70,6 +71,10 @@ func TestACLDecorator(t *testing.T) {
 		{"FinishUpload", anon, withForceHash, false},
 		{"FinishUpload", someone, withForceHash, false},
 		{"FinishUpload", admin, withForceHash, false},
+
+		{"CancelUpload", anon, cancelReq, true},
+		{"CancelUpload", someone, cancelReq, true},
+		{"CancelUpload", admin, cancelReq, true},
 	}
 
 	for idx, cs := range cases {

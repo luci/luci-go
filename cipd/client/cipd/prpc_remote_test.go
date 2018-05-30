@@ -449,6 +449,14 @@ func (m *mockedStorageClient) FinishUpload(ctx context.Context, in *api.FinishUp
 	return out.(*api.UploadOperation), nil
 }
 
+func (m *mockedStorageClient) CancelUpload(ctx context.Context, in *api.CancelUploadRequest, opts ...grpc.CallOption) (*api.UploadOperation, error) {
+	out, err := m.call("CancelUpload", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.UploadOperation), nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 type mockedRepoClient struct {
