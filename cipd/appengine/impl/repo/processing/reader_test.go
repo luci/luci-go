@@ -70,8 +70,9 @@ func TestPackageReader(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
 		So(err, ShouldBeNil)
 
-		fr, err := pkg.Open("file2")
+		fr, size, err := pkg.Open("file2")
 		So(err, ShouldBeNil)
+		So(size, ShouldEqual, 4)
 		blob, err := ioutil.ReadAll(fr)
 		So(err, ShouldBeNil)
 		So(string(blob), ShouldEqual, "blah")
@@ -81,7 +82,7 @@ func TestPackageReader(t *testing.T) {
 		pkg, err := NewPackageReader(reader, size)
 		So(err, ShouldBeNil)
 
-		_, err = pkg.Open("zzz")
+		_, _, err = pkg.Open("zzz")
 		So(err.Error(), ShouldEqual, `no file "zzz" inside the package`)
 	})
 
@@ -111,7 +112,7 @@ func TestPackageReader(t *testing.T) {
 
 		// Now inject errors.
 		r.readAt = func([]byte, int64) (int, error) { return 0, readErr }
-		_, err = pkg.Open("file1")
+		_, _, err = pkg.Open("file1")
 		So(err, ShouldEqual, readErr) // exact same error object
 	})
 }
