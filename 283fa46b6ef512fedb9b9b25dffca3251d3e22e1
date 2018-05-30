@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22772ad7_f51371c3",
+        "filename": "tools/cmd/bqschemaupdater/schema.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-30T17:35:50Z",
+      "side": 1,
+      "message": ", len(s)\nor remove don\u0027t even call make, just map[..]...{}\n(microoptimization :D )",
+      "range": {
+        "startLine": 274,
+        "startChar": 45,
+        "endLine": 274,
+        "endChar": 46
+      },
+      "revId": "283fa46b6ef512fedb9b9b25dffca3251d3e22e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
