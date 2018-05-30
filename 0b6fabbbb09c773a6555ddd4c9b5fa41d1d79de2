@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22ffd12f_8d451768",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-30T19:21:20Z",
+      "side": 1,
+      "message": "why not (*Instance)FromProto? potentially less allocations",
+      "revId": "0b6fabbbb09c773a6555ddd4c9b5fa41d1d79de2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b6c661d_68eedee1",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-30T19:21:20Z",
+      "side": 1,
+      "message": "it is already nil",
+      "range": {
+        "startLine": 397,
+        "startChar": 11,
+        "endLine": 397,
+        "endChar": 20
+      },
+      "revId": "0b6fabbbb09c773a6555ddd4c9b5fa41d1d79de2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af36f437_cdd6f8c9",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-30T19:21:20Z",
+      "side": 1,
+      "message": "toPut, instEnt",
+      "range": {
+        "startLine": 438,
+        "startChar": 26,
+        "endLine": 438,
+        "endChar": 51
+      },
+      "revId": "0b6fabbbb09c773a6555ddd4c9b5fa41d1d79de2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
