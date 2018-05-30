@@ -255,3 +255,28 @@ func schemaDiff(before, after bigquery.Schema) string {
 	}
 	return ret
 }
+
+// addMissingFields copies fields from src to dest if they are not present in
+// dest. If they are present and incompatible, returns an error.
+func addMissingFields(dest *bigquery.Schema, src bigquery.Schema) error {
+	destFields := indexFields(*dest)
+	for _, sf := range src {
+		switch df := destFields[sf.Name]; {
+		case df == nil:
+			*dest = append(*dest, sf)
+		default:
+			if err := addMissingFields(&df.Schema, sf.Schema); err != nil {
+				return fmt.Errorf("field %q cannot be converted: %s", sf.Name, err)
+			}
+		}
+	}
+	return nil
+}
+
+func indexFields(s bigquery.Schema) map[string]*bigquery.FieldSchema {
+	ret := make(map[string]*bigquery.FieldSchema)
+	for _, f := range s {
+		ret[f.Name] = f
+	}
+	return ret
+}
