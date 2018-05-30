@@ -1,0 +1,154 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package gs
+
+import (
+	"bytes"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/net/context"
+	"golang.org/x/net/context/ctxhttp"
+	"google.golang.org/api/googleapi"
+)
+
+// RestartUploadError is returned by Uploader when it resumes an interrupted
+// upload, and Google Storage asks to upload from an offset the Uploader has no
+// data for.
+//
+// Callers of Uploader should handle this case themselves by restarting the
+// upload from the requested offset.
+//
+// See https://cloud.google.com/storage/docs/json_api/v1/how-tos/resumable-upload#resume-upload
+type RestartUploadError struct {
+	Offset int64
+}
+
+// Error is part of error interface.
+func (e *RestartUploadError) Error() string {
+	return fmt.Sprintf("the upload should be restarted from offset %d", e.Offset)
+}
+
+// Uploader implements io.Writer for Google Storage Resumable Upload sessions.
+//
+// Does no buffering inside, thus efficiency of uploads directly depends on
+// granularity of Write(...) calls. Additionally, Google Storage expects the
+// length of each uploaded chunk to be a multiple of 256 Kb, so callers of
+// Write(...) should supply the appropriately-sized chunks.
+//
+// Retries transient errors internally in, but it can potentially end up in a
+// situation where it needs data written by some previous Write(...) operation.
+// In this case Write returns RestartUploadError error, which indicates an
+// offset the upload should be restarted from.
+type Uploader struct {
+	Context   context.Context // the context for canceling retries
+	Client    *http.Client    // the client to use for sending anonymous requests
+	UploadURL string          // upload URL returned by GoogleStorage.StartUpload
+	Offset    int64           // initial offset to start uploading from
+	FileSize  int64           // total size of the file being uploaded
+}
+
+// Write is part of io.Writer interface.
+func (u *Uploader) Write(p []byte) (n int, err error) {
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	bufStart := u.Offset
+	bufEnd := u.Offset + int64(len(p))
+	if bufEnd > u.FileSize {
+		return 0, fmt.Errorf("attempting to write past the declared file size (%d > %d)", bufEnd, u.FileSize)
+	}
+
+	for u.Offset != bufEnd && err == nil {
+		err = withRetry(u.Context, func() error {
+			resumeOffset, err := u.uploadChunk(p[int(u.Offset-bufStart):])
+
+			// On transient errors, grab the offset to resume from.
+			if apiErr, _ := err.(*googleapi.Error); apiErr != nil && apiErr.Code >= 500 {
+				resumeOffset, err = u.uploadChunk(nil)
+			}
+
+			switch {
+			case err != nil:
+				// Either a fatal error during the upload or a transient or fatal error
+				// trying to resume. Let 'withRetry' handle it.
+				return err
+			case resumeOffset < bufStart || resumeOffset > bufEnd:
+				// Resuming requires data we don't have? Escalate to the caller.
+				return &RestartUploadError{Offset: resumeOffset}
+			default:
+				// Resume the upload from the last acknowledged offset.
+				u.Offset = resumeOffset
+				return nil
+			}
+		})
+	}
+
+	return int(u.Offset - bufStart), err
+}
+
+// uploadChunk pushes the given chunk to the google storage at u.Offset offset.
+//
+// Returns an offset to continue the upload from (usually u.Offset + len(p), but
+// Google Storage docs are vague about that, so it may be different).
+//
+// If data size is 0, makes an empty PUT request. This is useful for querying
+// the last uploaded offset.
+//
+// Returns *googleapi.Error on erroneous HTTP responses.
+func (u *Uploader) uploadChunk(p []byte) (int64, error) {
+	req, err := http.NewRequest("PUT", u.UploadURL, bytes.NewReader(p))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Length", fmt.Sprintf("%d", len(p)))
+	if len(p) > 0 {
+		req.Header.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", u.Offset, u.Offset+int64(len(p))-1, u.FileSize))
+	} else {
+		req.Header.Set("Content-Range", fmt.Sprintf("bytes */%d", u.FileSize))
+	}
+
+	resp, err := ctxhttp.Do(u.Context, u.Client, req)
+	if err != nil {
+		return 0, err
+	}
+	defer googleapi.CloseBody(resp)
+	if err := googleapi.CheckResponse(resp); err != nil {
+		return 0, err
+	}
+
+	switch {
+	case resp.StatusCode == http.StatusOK, resp.StatusCode == http.StatusCreated:
+		return u.FileSize, nil // uploaded everything
+	case resp.StatusCode != http.StatusPartialContent:
+		return 0, fmt.Errorf("unexpected status code %d, expecting %d", resp.StatusCode, http.StatusPartialContent)
+	}
+
+	// Extract the last uploaded offset from Range header.
+	hdr := resp.Header.Get("Range")
+	if hdr == "" {
+		return 0, fmt.Errorf("no Range header in Google Storage response")
+	}
+
+	var offset int64
+	if _, err = fmt.Sscanf(hdr, "bytes=0-%d", &offset); err != nil {
+		return 0, fmt.Errorf("unexpected Range header value: %q", hdr)
+	}
+
+	// 'offset' is an offset of the last uploaded byte, need to resume uploading
+	// from the next one.
+	return offset + 1, nil
+}

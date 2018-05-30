@@ -67,6 +67,10 @@ func withRetry(c context.Context, call func() error) error {
 		}
 		apiErr, _ := err.(*googleapi.Error)
 		if apiErr == nil {
+			// RestartUploadError errors are fatal and should be passed unannotated.
+			if _, ok := err.(*RestartUploadError); ok {
+				return err
+			}
 			return errors.Annotate(err, "failed to call GS").Tag(transient.Tag).Err()
 		}
 		ann := errors.Annotate(err, "GS replied with HTTP code %d", apiErr.Code).
