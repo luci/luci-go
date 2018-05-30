@@ -22,6 +22,30 @@
       "revId": "283fa46b6ef512fedb9b9b25dffca3251d3e22e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9871cc0c_5e36097a",
+        "filename": "tools/cmd/bqschemaupdater/schema.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 274,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-05-30T17:37:40Z",
+      "side": 1,
+      "message": "oops :) thanks",
+      "parentUuid": "22772ad7_f51371c3",
+      "range": {
+        "startLine": 274,
+        "startChar": 45,
+        "endLine": 274,
+        "endChar": 46
+      },
+      "revId": "283fa46b6ef512fedb9b9b25dffca3251d3e22e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
