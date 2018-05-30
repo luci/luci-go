@@ -264,9 +264,17 @@ message GitilesTask {
   //
   // Each ref can be either:
   //  * a fully qualified ref like "refs/heads/master" or "refs/tags/v1.2.3"
-  //  * a refglob like "refs/heads/*" which matches all immediate children of
-  //    "refs/heads". Thus, "refs/heads/*" will match "refs/heads/master",
-  //    but will not match "refs/heads/not/immediate/child".
+  //  * a regular expression with "regexp:" prefix to match multiple refs, e.g.
+  //    "regexp:refs/heads/[^/]+" or "regexp:refs/branch-heads/\d+\.\d+", but
+  //    the regular expression should have a literal prefix with at least two
+  //    slashes present, e.g. "refs/release-\d+/foobar" is not allowed, because
+  //    the literal prefix "refs/release-" contains only one slash. The regexp
+  //    should not start with ^ or end with $ as they will be added
+  //    automatically.
+  //  * (deprecated, use regexp instead) a refglob like "refs/heads/*" which
+  //    matches all immediate children of "refs/heads". Thus, "refs/heads/*"
+  //    will match "refs/heads/master", but will not match
+  //    "refs/heads/not/immediate/child".
   repeated string refs = 2;
 }
 
