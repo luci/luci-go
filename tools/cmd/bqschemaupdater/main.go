@@ -103,6 +103,11 @@ func updateFromTableDef(ctx context.Context, force bool, ts tableStore, td table
 
 	default: // existing table
 		fmt.Printf("Updating table %q\n", tableID)
+
+		// add fields missing in td.Schema because BigQuery does not support
+		// removing fields anyway.
+		addMissingFields(&td.Schema, md.Schema)
+
 		if diff := schemaDiff(md.Schema, td.Schema); diff == "" {
 			fmt.Println("No changes to schema detected.")
 		} else {

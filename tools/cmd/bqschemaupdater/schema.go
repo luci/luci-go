@@ -255,3 +255,25 @@ func schemaDiff(before, after bigquery.Schema) string {
 	}
 	return ret
 }
+
+// addMissingFields copies fields from src to dest if they are not present in
+// dest.
+func addMissingFields(dest *bigquery.Schema, src bigquery.Schema) {
+	destFields := indexFields(*dest)
+	for _, sf := range src {
+		switch df := destFields[sf.Name]; {
+		case df == nil:
+			*dest = append(*dest, sf)
+		default:
+			addMissingFields(&df.Schema, sf.Schema)
+		}
+	}
+}
+
+func indexFields(s bigquery.Schema) map[string]*bigquery.FieldSchema {
+	ret := make(map[string]*bigquery.FieldSchema, len(s))
+	for _, f := range s {
+		ret[f.Name] = f
+	}
+	return ret
+}
