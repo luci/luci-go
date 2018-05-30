@@ -70,6 +70,14 @@ func (n NoopGoogleStorage) StartUpload(c context.Context, path string) (uploadUR
 	return "", n.Err
 }
 
+// CancelUpload is part of gs.GoogleStorage interface.
+func (n NoopGoogleStorage) CancelUpload(c context.Context, uploadURL string) error {
+	if n.Err == nil {
+		panic("must not be called")
+	}
+	return n.Err
+}
+
 // Reader is part of gs.GoogleStorage interface.
 func (n NoopGoogleStorage) Reader(c context.Context, path string, gen int64) (gs.Reader, error) {
 	if n.Err == nil {

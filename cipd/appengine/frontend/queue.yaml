@@ -18,8 +18,8 @@ queue:
 # [/FROM_PYTHON_CIPD]
 
 
-# Used for tasks.VerifyUpload tasks, see impl/cas/tasks/tasks.proto.
-- name: verify-upload
+# Used for CAS asynchronous operations, see impl/cas/tasks/tasks.proto.
+- name: cas-uploads
   target: backend-go
   bucket_size: 500
   rate: 50/s
