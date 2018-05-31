@@ -34,7 +34,6 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -71,15 +70,6 @@ var (
 
 func getBuilderID(b *Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
-}
-
-func commitIndex(commits []*gitpb.Commit, revision string) int {
-	for i, commit := range commits {
-		if commit.Id == revision {
-			return i
-		}
-	}
-	return -1
 }
 
 // EmailNotify contains information for delivery and personalization of notification emails.
@@ -124,6 +114,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
+	checkout, err := getCheckout(c, build)
+	if err != nil {
+		return errors.Annotate(err, "failed to retrieve source manifest").Err()
+	}
+
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
 	builder := config.Builder{
@@ -139,7 +134,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	copy(recipients, build.EmailNotify)
 
 	keepGoing := false
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
 			// Even if the builder isn't found, we may still want to notify if the build
@@ -154,6 +149,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		updatedBuilder := builder
 		updatedBuilder.Status = build.Status
 		updatedBuilder.StatusBuildTime = buildCreateTime
+		updatedBuilder.StatusGitilesCommits = checkout.ToGitilesCommits()
 
 		switch {
 		case builder.Repository == "":
@@ -204,15 +200,32 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
+	// Get the revision history for the build-related commit.
 	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
-	if err != nil {
-		return err
-	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
 		return Notify(c, d, recipients, templateParams)
+	}
+
+	// Get the blamelist logs, if needed.
+	var blamelistLogs Logs
+	if builder.BlamelistNotification != nil {
+		whitelist := builder.BlamelistNotification.GetRepositoryWhitelist()
+
+		// If the whitelist is non-empty, use the GitilesCommits to compute
+		// the blamelist logs. Otherwise, just use the commits for the builder's
+		// repository.
+		if len(whitelist) != 0 {
+			oldCheckout := NewCheckout(builder.StatusGitilesCommits)
+			blamelistLogs, err = ComputeLogs(c, oldCheckout, checkout.Filter(whitelist), history)
+			if err != nil {
+				return errors.Annotate(err, "failed to populate manifest history").Tag(transient.Tag).Err()
+			}
+		} else {
+			blamelistLogs = make(Logs)
+			blamelistLogs[builder.Repository] = commits
+		}
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -236,11 +249,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		updatedBuilder.Status = build.Status
 		updatedBuilder.StatusBuildTime = buildCreateTime
 		updatedBuilder.StatusRevision = gCommit.Id
-
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
+		updatedBuilder.StatusGitilesCommits = checkout.ToGitilesCommits()
 
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
@@ -264,8 +273,14 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
 			return Notify(c, d, recipients, templateParams)
 		}
+
 		recipients = append(recipients, ExtractRecipients(builder.Notifications, builder.Status, build.Status)...)
 		templateParams.OldStatus = builder.Status
+
+		if builder.BlamelistNotification != nil {
+			recipients = append(recipients, blamelistLogs.Blamelist(builder.BlamelistNotification.Template)...)
+		}
+
 		if err := Notify(c, d, recipients, templateParams); err != nil {
 			return err
 		}
