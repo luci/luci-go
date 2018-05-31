@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -168,6 +169,7 @@ func Notifier struct {
 	Build *buildbucketpb.Build
 	OldStatus buildbucketpb.Status
 	Notifications notifypb.Notifications
+	Blamelist []EmailNotify
 }
 
 // Notify consolidates the given recipients with those from the 'email_notify' properties,
@@ -183,6 +185,7 @@ func (n *Notifier) Notify(c context.Context, d *tq.Dispatcher) error {
 
 	recipients := extractRecipientsFromNotifications(n.Notifications, n.OldStatus, n.Build.Status)
 	recipients = append(recipients, extractRecipientsFromBuild(n.Build))
+	recipients = append(recipients, n.Blamelist)
 
 	// Remove unallowed recipients.
 	allRecipients := recipients
