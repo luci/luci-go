@@ -82,14 +82,7 @@ type Notifier struct {
 
 // NewNotifier constructs a new Notifier from a parent key and a Notifier
 // as defined by the project configuration proto.
-func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier) *Notifier {
-	var builderIDs []string
-	for _, b := range cfg.Builders {
-		if b.Name != "" {
-			id := fmt.Sprintf("buildbucket/%s/%s/%s", parent.StringID(), b.Bucket, b.Name)
-			builderIDs = append(builderIDs, id)
-		}
-	}
+func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier, builderIDs []string) *Notifier {
 	var notifications []NotificationConfig
 	for _, n := range cfg.Notifications {
 		c := newNotificationConfig(n)
