@@ -59,10 +59,31 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
 
+		liveBuilders := stringset.New(len(cs.ProjectConfig.Notifiers))
 		liveNotifiers := stringset.New(len(cs.ProjectConfig.Notifiers))
+		builders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
-			toSave = append(toSave, NewNotifier(parentKey, cfgNotifier))
+			builderIDs := make([]string, 0, len(cfgNotifier.Builders)
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				builder := NewBuilder(parentKey, cfgBuilder)
+				toSave = append(toSave, builder)
+				liveBuilders.Add(builder.ID)
+				builderIDs = append(builderIDs, builder.ID)
+				builders = append(builders, builder)
+			}
+			toSave = append(toSave, NewNotifier(parentKey, cfgNotifier, builderIDs))
 			liveNotifiers.Add(cfgNotifier.Name)
+		}
+		// Just make sure we populate the builders with up-to-date information so we
+		// don't accidentally overwrite information such as Status.
+		merr := datastore.Get(c, builders...)
+		if len(builders) == 1 {
+			merr = errors.MultiError([]error{merr})
+		}
+		for _, err := range merr.([]error) {
+			if err != nil || err != datastore.ErrNoSuchEntity {
+				return merr
+			}
 		}
 
 		for _, et := range cs.EmailTemplates {
@@ -73,6 +94,9 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			work <- func() error {
 				return datastore.Put(c, toSave)
+			}
+			work <- func() error {
+				return removeDescendants(c, "Builder", parentKey, liveBuilders.Has)
 			}
 			work <- func() error {
 				return removeDescendants(c, "Notifier", parentKey, liveNotifiers.Has)
@@ -114,6 +138,9 @@ func deleteProject(c context.Context, projectId string) error {
 		project := &Project{Name: projectId}
 		ancestorKey := datastore.KeyForObj(c, project)
 		return parallel.FanOutIn(func(work chan<- func() error) {
+			work <- func() error {
+				return removeDescendants(c, "Builder", ancestorKey, nil)
+			}
 			work <- func() error {
 				return removeDescendants(c, "Notifier", ancestorKey, nil)
 			}
