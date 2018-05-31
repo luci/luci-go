@@ -38,6 +38,16 @@ message Notifier {
 
   // Builders is a list of buildbucket builders this Notifier should watch.
   repeated Builder builders = 3;
+
+  // NotifyBlamelist specifies whether to notify the computed blamelist for a
+  // given build, and if so, a configuration to set for the notification.
+  //
+  // If set, this notification will be sent to the blamelist of a build. Note
+  // that if this is set in multiple notifications pertaining to the same
+  // builder, the blamelist may recieve multiple emails.
+  //
+  // Optional.
+  BlamelistNotification notify_blamelist = 4;
 }
 
 // Notification specifies the triggers to watch for and send
@@ -76,6 +86,16 @@ message Notification {
   //
   // Optional.
   string template = 5;
+}
+
+// BlamelistNotification represents a notification to be sent to the computed
+// blamelist for a particular build.
+message BlamelistNotification {
+  // Refers to which project template name to use to format this email.
+  // If not present, "default" will be used.
+  //
+  // Optional.
+  string template = 1;
 }
 
 // Builder references a buildbucket builder in the current project.

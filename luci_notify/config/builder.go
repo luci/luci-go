@@ -17,8 +17,11 @@ package config
 import (
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/gae/service/datastore"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/common/proto/srcman"
 )
 
 // Builder represents the state of the last build seen from a particular
@@ -44,6 +47,12 @@ type Builder struct {
 	// settings on how to notify them.
 	Notifications []*notifyConfig.Notification `gae:"-"`
 
+	// NotifyBlamelist represents a notification to the blamelist when a build
+	// for this builder is encountered. More specifically, if non-nil, then
+	// notifications will be sent to the blamelist for the build, using the
+	// configuration defined therein.
+	NotifyBlamelist *notifyConfig.BlamelistNotification `gae:"-"`
+
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
 	//   1) the new build has a newer revision than StatusRevision, or
@@ -60,6 +69,13 @@ type Builder struct {
 	// It is the revision of the codebase that's associated with the build
 	// that caused a change of Status.
 	StatusRevision string
+
+	// StatusSourceManifest can be used to decide whether Status should be
+	// updated, and it can also be used to compute a blamelist. It is the source
+	// manifest associated with the build that caused a change of Status.
+	// Note: we assume here that each build has either one source manifest or
+	// none.
+	StatusSourceManifest *srcman.Manifest `gae:"-"`
 }
 
 // StatusUnknown is used in the LookupBuilder return value
@@ -86,6 +102,38 @@ func (b *Builder) Load(props datastore.PropertyMap) error {
 		}
 		delete(props, "Notifications")
 	}
+	if pdata, ok := props["NotifyBlamelist"]; ok {
+		configs := pdata.Slice()
+		if len(configs) != 1 {
+			return fmt.Errorf("property `StatusSourceManifest` is a property slice")
+		}
+		configBytes, ok := configs[0].Value().([]byte)
+		if !ok {
+			return fmt.Errorf("expected byte array for property `NotifyBlamelist`")
+		}
+		var notification notifyConfig.BlamelistNotification
+		if err := proto.Unmarshal(configBytes, &notification); err != nil {
+			return err
+		}
+		b.BlamelistNotification = &notification
+		delete(props, "NotifyBlamelist")
+	}
+	if pdata, ok := props["StatusSourceManifest"]; ok {
+		configs := pdata.Slice()
+		if len(configs) != 1 {
+			return fmt.Errorf("property `StatusSourceManifest` is a property slice")
+		}
+		configBytes, ok := configs[0].Value().([]byte)
+		if !ok {
+			return fmt.Errorf("expected byte array for property `StatusSourceManifest`")
+		}
+		var manifest srcman.Manifest
+		if err := proto.Unmarshal(configBytes, &manifest); err != nil {
+			return err
+		}
+		b.StatusSourceManifest = &manifest
+		delete(props, "StatusSourceManifest")
+	}
 	return datastore.GetPLS(n).Load(props)
 }
 
@@ -98,10 +146,30 @@ func (b *Builder) Save(withMeta bool) (datastore.PropertyMap, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Deal with Notifications.
 	bytes, err := json.Marshal(&b.Notifications)
 	if err != nil {
 		return nil, err
 	}
 	props["Notifications"] = datastore.MkProperty(bytes)
+
+	// Deal with NotifyBlamelist.
+	if b.NotifyBlamelist == nil {
+		bytes, err := proto.Marshal(b.NotifyBlamelist)
+		if err != nil {
+			return nil, err
+		}
+		props["NotifyBlamelist"] = datastore.MkProperty(bytes)
+	}
+
+	// Deal with StatusSourceManifest.
+	if b.StatusSourceManifest != nil {
+		bytes, err := proto.Marshal(b.StatusSourceManifest)
+		if err != nil {
+			return nil, err
+		}
+		props["StatusSourceManifest"] = datastore.MkProperty(bytes)
+	}
 	return props, nil
 }
