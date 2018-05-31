@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -110,7 +111,7 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 // and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notification, oldStatus buildbucketpb.Status, build *Build) error {
+func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notification, oldStatus buildbucketpb.Status, build *Build, blamelistNotification *notifypb.BlamelistNotification, blamelist stringset.Set) error {
 	c = datastore.WithoutTransaction(c)
 
 	var recipients []EmailNotify
@@ -122,6 +123,14 @@ func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notif
 			recipients = append(recipients, EmailNotify{
 				Email:    recipient,
 				Template: notification.Template,
+			})
+		}
+	}
+	if blamelistNotification != nil {
+		for recipient := range blamelist {
+			recipients = append(recipients, EmailNotify{
+				Email:    recipient,
+				Template: blamelistNotification.Template,
 			})
 		}
 	}
