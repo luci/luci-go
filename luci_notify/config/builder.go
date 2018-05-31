@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notify
+package config
 
 import (
 	"time"
 
-	"github.com/golang/protobuf/ptypes"
-
-	"go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/gae/service/datastore"
+	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
 )
 
 // Builder represents the state of the last build seen from a particular
 // builder in order to implement certain notification triggers (i.e. on change).
 type Builder struct {
+	// Parent is a datastore key to this Builders's parent (which will always
+	// be a Project), effectively making it a child of a specific project.
+	Parent *datastore.Key `gae:"$parent"`
+
 	// ID is the builder's canonical ID (e.g. buildbucket/<project>/<bucket>/<name>).
 	ID string `gae:"$id"`
+
+	// Repository is the repository this builder is tracking and the repository that
+	// StatusRevision is valid for.
+	Repository string
 
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
@@ -51,12 +58,11 @@ type Builder struct {
 const StatusUnknown buildbucketpb.Status = -1
 
 // NewBuilder creates a new builder from an ID, a revision, and a build.
-func NewBuilder(id, revision string, build *buildbucketpb.Build) *Builder {
-	ret := &Builder{
-		ID:             id,
-		Status:         build.Status,
-		StatusRevision: revision,
+func NewBuilder(parent *datastore.Key, builder *notifyConfig.Builder) *Builder {
+	return &Builder{
+		Parent:     parent,
+		ID:         fmt.Sprintf("buildbucket/%s/%s/%s", parent.StringID(), builder.Bucket, builder.Name),
+		Repository: builder.Repository,
+		Status:     StatusUnknown,
 	}
-	ret.StatusBuildTime, _ = ptypes.Timestamp(build.CreateTime)
-	return ret
 }
