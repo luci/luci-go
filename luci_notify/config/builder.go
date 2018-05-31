@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -41,6 +42,12 @@ type Builder struct {
 	// to notify, and different settings on how to notify them.
 	Notifications notifypb.Notifications
 
+	// BlamelistNotification represents a notification to the blamelist when a build
+	// for this builder is encountered. More specifically, if non-nil, then
+	// notifications will be sent to the blamelist for the build, using the
+	// configuration defined therein.
+	BlamelistNotification *notifypb.BlamelistNotification
+
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
 	//   1) the new build has a newer revision than StatusRevision, or
@@ -56,4 +63,8 @@ type Builder struct {
 	// the build that caused a change of Status. It can be used to decide whether
 	// Status should be updated.
 	StatusRevision string
+
+	// StatusGitilesCommits are the gitiles commits checked out by the build
+	// that caused a change of Status. It can also be used to compute a blamelist.
+	StatusGitilesCommits notifypb.GitilesCommits
 }
