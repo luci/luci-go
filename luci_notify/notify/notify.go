@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -123,6 +124,10 @@ func ExtractRecipients(notifications notifypb.Notifications, oldStatus, newStatu
 	}
 	return recipients
 }
+
+func BlamelistRecipients(logs Logs) []EmailNotify {
+}
+
 
 // Notify consolidates the given recipients with those from the 'email_notify' properties,
 // filters out unauthorized recipients, then dispatches notifications if necessary.
