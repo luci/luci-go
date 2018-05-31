@@ -200,7 +200,12 @@ func TestClient(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(res.Message, ShouldEqual, "Hello John")
 
-				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
+				So(log, shouldHaveMessagesLike,
+					expectedCallLogEntry(client),
+					memlogger.LogEntry{
+						Level: logging.Debug,
+						Msg:   fmt.Sprintf("RPC: Using context deadline %q", clock.Now(ctx).Add(10*time.Second)),
+					})
 			})
 
 			Convey("With a deadline in the future and a per-RPC deadline, applies the per-RPC deadline", func(c C) {
