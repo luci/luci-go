@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
-var swarmingAPISuffix = "/api/swarming/v1/"
+var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
