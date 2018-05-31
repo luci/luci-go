@@ -59,10 +59,45 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
 
-		liveNotifiers := stringset.New(len(cs.ProjectConfig.Notifiers))
+		liveBuilders := stringset.New(len(cs.ProjectConfig.Notifiers))
+		oldBuilders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
+		newBuilders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
-			toSave = append(toSave, NewNotifier(parentKey, cfgNotifier))
-			liveNotifiers.Add(cfgNotifier.Name)
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				id := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
+				liveBuilders.Add(id)
+				oldBuilders = append(builders, &Builder{
+					ProjectKey: parentKey,
+					ID: id,
+				})
+				ref := cfgBuilder.Ref
+				if ref == "" {
+					ref = "refs/heads/master"
+				}
+				newBuilder := &Builder{
+					ProjectKey: parentKey,
+					ID: id,
+					Repository: cfgBuilder.Repository,
+					Ref: ref,
+					Notifications: cfgNotifier.Notifications,
+					Status: StatusUnknown,
+				}
+				newBuilders = append(builders, newBuilder)
+				toSave = append(toSave, newBuilder)
+			}
+		}
+
+		// Populate the new builders with information from the old builders,
+		// if possible and if applicable. Note that if there are transient datastore
+		// errors here, that the worst that can happen is a single on_change notification
+		// will be missed.
+		datastore.Get(c, oldBuilders...)
+		for i := range oldBuilders {
+			if oldBuilders[i].Repository == newBuilders[i].Repository && oldBuilders[i].Ref == newBuilders[i].Ref {
+				newBuilders[i].StatusRevision = oldBuilders[i].StatusRevision
+			}
+			newBuilders[i].Status = oldBuilders[i].Status
+			newBuilders[i].StatusBuildTime = oldBuilders[i].StatusBuildTime
 		}
 
 		for _, et := range cs.EmailTemplates {
@@ -75,7 +110,7 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 				return datastore.Put(c, toSave)
 			}
 			work <- func() error {
-				return removeDescendants(c, "Notifier", parentKey, liveNotifiers.Has)
+				return removeDescendants(c, "Builder", parentKey, liveBuilders.Has)
 			}
 			work <- func() error {
 				return removeDescendants(c, "EmailTemplate", parentKey, func(name string) bool {
@@ -115,7 +150,7 @@ func deleteProject(c context.Context, projectId string) error {
 		ancestorKey := datastore.KeyForObj(c, project)
 		return parallel.FanOutIn(func(work chan<- func() error) {
 			work <- func() error {
-				return removeDescendants(c, "Notifier", ancestorKey, nil)
+				return removeDescendants(c, "Builder", ancestorKey, nil)
 			}
 			work <- func() error {
 				return removeDescendants(c, "EmailTemplate", ancestorKey, nil)
