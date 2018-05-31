@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -56,4 +57,8 @@ type Builder struct {
 	// the build that caused a change of Status. It can be used to decide whether
 	// Status should be updated.
 	StatusRevision string
+
+	// StatusGitilesCommits are the gitiles commits checked out by the build
+	// that caused a change of Status. It can also be used to compute a blamelist.
+	StatusGitilesCommits notifypb.GitilesCommits
 }
