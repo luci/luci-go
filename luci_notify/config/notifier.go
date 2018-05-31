@@ -46,6 +46,10 @@ type NotificationConfig struct {
 	// Template is the name of the template to use when sending email.
 	// "" is equivalent to "default".
 	Template string `json:"template"`
+
+	// NotifyBlamelist specifies whether the blamelist for a build should be
+	// sent this notification.
+	NotifyBlamelist bool `json:"notify_blamelist"`
 }
 
 func newNotificationConfig(cfg *notifyConfig.Notification) NotificationConfig {
@@ -59,6 +63,7 @@ func newNotificationConfig(cfg *notifyConfig.Notification) NotificationConfig {
 		OnChange:        cfg.OnChange,
 		EmailRecipients: recipients,
 		Template:        cfg.Template,
+		NotifyBlamelist: cfg.NotifyBlamelist,
 	}
 }
 
