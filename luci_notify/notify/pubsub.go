@@ -32,6 +32,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -71,15 +72,6 @@ var (
 
 func getBuilderID(b *Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
-}
-
-func commitIndex(commits []*gitpb.Commit, revision string) int {
-	for i, commit := range commits {
-		if commit.Id == revision {
-			return i
-		}
-	}
-	return -1
 }
 
 // EmailNotify contains information for delivery and personalization of notification emails.
@@ -124,6 +116,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
+	checkout, err := getCheckout(c, build)
+	if err != nil {
+		return errors.Annotate(err, "failed to retrieve source manifest").Err()
+	}
+
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
 	builder := config.Builder{
@@ -147,6 +144,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		updatedBuilder := builder
 		updatedBuilder.Status = build.Status
 		updatedBuilder.StatusBuildTime = buildCreateTime
+		updatedBuilder.StatusGitilesCommits = checkout.ToGitilesCommits()
 
 		switch {
 		case builder.Repository == "":
@@ -188,23 +186,40 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return err
 	}
 
-	builderRepoHost, builderRepoProject, _ := gitiles.ParseRepoURL(builder.Repository)
+	builderRepoHost, builderRepoProject, _ := gitiles.ParseRepoURL(builderRepository)
 	if builderRepoHost != gCommit.Host || builderRepoProject != gCommit.Project {
 		logging.Infof(c, "Builder %s triggered by commit to https://%s/%s"+
 			"instead of known https://%s, ignoring...",
-			builderID, gCommit.Host, gCommit.Project, builder.Repository)
+			builderID, gCommit.Host, gCommit.Project, builderRepository)
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
+	// Get the revision history for the build-related commit.
 	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
-	if err != nil {
-		return err
-	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
 		return Notify(c, d, build, recipients)
+	}
+
+	// Get the blamelist logs, if needed.
+	var blamelistLogs Logs
+	if builder.BlamelistNotification != nil {
+		whitelist := builder.BlamelistNotification.GetRepositoryWhitelist()
+
+		// If the whitelist is non-empty, use the GitilesCommits to compute
+		// the blamelist logs. Otherwise, just use the commits for the builder's
+		// repository.
+		if len(whitelist) != 0 {
+			oldCheckout := NewCheckout(builder.StatusGitilesCommits)
+			blamelistLogs, err = ComputeLogs(c, oldCheckout, checkout.Filter(whitelist), history) 
+			if err != nil {
+				logging.WithError(err).Warningf(c, "Failed to populate manifest history, ignoring blamelist...")
+			}
+		} else {
+			blamelistLogs = make(Logs)
+			blamelistLogs[builder.Repository] = commits
+		}
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -228,11 +243,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		updatedBuilder.Status = build.Status
 		updatedBuilder.StatusBuildTime = buildCreateTime
 		updatedBuilder.StatusRevision = gCommit.Id
-
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
+		updatedBuilder.StatusGitilesCommits = checkout.ToGitilesCommits()
 
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
@@ -251,13 +262,26 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			outOfOrder = true
 		}
 
-		notifications := builder.Notifications.GetNotifications()
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
 			recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
 			return Notify(c, d, build, recipients)
 		}
+
 		recipients := ExtractRecipients(builder.Notifications, builder.Status, build.Status)
+
+		// If we're notifying the blamelist, trim the blamelist if necessary given the new
+		// updated builder information, compute a blamelist from the logs, and add it to
+		// the list of recipients.
+		if builder.BlamelistNotification != nil {
+			if len(blamelistNotification.GetRepositoryWhitelist()) != 0 {
+				blamelistLogs = blamelistLogs.Trim(NewCheckout(builder.StatusGitilesCommits))
+			}
+			blamelist := blamelistLogs.Blamelist(builder.BlamelistNotification.Template)
+			recipients = append(recipients, blamelist...)
+		}
+
+		// Notify the final, complete list of recipients, and then update the builder.
 		if err := Notify(c, d, build, recipients); err != nil {
 			return err
 		}
