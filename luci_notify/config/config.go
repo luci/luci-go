@@ -78,6 +78,9 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 					Notifications: notifypb.Notifications{
 						Notifications: cfgNotifier.Notifications,
 					},
+					BlamelistNotification: notifypb.OptionalBlamelistNotification{
+						Notification: cfgNotifier.BlamelistNotification,
+					},
 				}
 				newBuilders = append(newBuilders, newBuilder)
 				toSave = append(toSave, newBuilder)
