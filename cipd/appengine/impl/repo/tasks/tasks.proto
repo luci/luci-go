@@ -20,6 +20,5 @@ import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
 
 // RunProcessors task runs a processing step on an uploaded package instance.
 message RunProcessors {
-  repeated string processors = 1; // IDs of the processors to run
-  cipd.Instance instance = 2;     // an instance to run them on
+  cipd.Instance instance = 1;  // an instance to process
 }
