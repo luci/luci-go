@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e832b4d1_e171175a",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "this is too low level for this interface. This should take (host, project, ref, exlcude_ref, limit) only.\nThis is Milo specific, so potentially this may take existing console configuration struct, and 4 params above from it.",
+      "range": {
+        "startLine": 74,
+        "startChar": 30,
+        "endLine": 75,
+        "endChar": 40
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0374a951_b6a25371",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "should be panic.",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c945934_a6c27bb5",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "use errNotFound constant defined in this package.",
+      "range": {
+        "startLine": 45,
+        "startChar": 8,
+        "endLine": 45,
+        "endChar": 50
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f51a58a9_721bdcd2",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "i told you you\u0027ll be re-implementing watchedRefs :)",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcc89456_546575ee",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "this is exactly what p.log does already.",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 73,
+        "endChar": 65
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11d3db1e_a258a8cf",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "use golang\u0027s time instead, https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/proto/google/util.go?type\u003dcs\u0026q\u003dproto+to+go+timestamp+file:%5C.go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d29",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 0
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ed27a90_457eff42",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "min-heap based merging is faster, most likely a LOT faster if most refs are really stale.",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bce48eb2_874fcd25",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T01:21:05Z",
+      "side": 1,
+      "message": "note that cache keymust be diff depending on ancenstor (or absense thereof).",
+      "range": {
+        "startLine": 197,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
