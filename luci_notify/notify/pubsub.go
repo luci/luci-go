@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
@@ -34,12 +35,12 @@ import (
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/config"
 )
 
@@ -73,19 +74,23 @@ func getBuilderID(b *Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
 }
 
-func commitIndex(commits []*gitpb.Commit, revision string) int {
-	for i, commit := range commits {
-		if commit.Id == revision {
-			return i
-		}
-	}
-	return -1
-}
-
 // EmailNotify contains information for delivery and personalization of notification emails.
 type EmailNotify struct {
 	Email    string `json:"email"`
 	Template string `json:"template"`
+}
+
+// sortEmailNotify sorts a list of EmailNotify by Email, then Template.
+func sortEmailNotify(en []EmailNotify) {
+	sort.Slice(en, func(i, j int) bool {
+		first := en[i]
+		second := en[j]
+		emailResult := strings.Compare(first.Email, second.Email)
+		if emailResult == 0 {
+			return strings.Compare(first.Template, second.Template) < 0
+		}
+		return emailResult < 0
+	})
 }
 
 func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
@@ -109,10 +114,13 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 // a Build to sent notifications. It also should explicitly handle ACLs and
 // stop the process of handling notifications early to avoid wasting compute time.
 //
+// getCheckout produces the associated source checkout for a build, if available.
+// It's passed in as a parameter in order to mock it for testing.
+//
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout CheckoutFunc, history HistoryFunc) error {
 	project := &config.Project{Name: build.Builder.Project}
 	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
@@ -123,6 +131,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
+
+	checkout, err := getCheckout(c, build)
+	if err != nil {
+		return errors.Annotate(err, "failed to retrieve checkout for build").Err()
+	}
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
@@ -138,14 +151,22 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	recipients := make([]EmailNotify, len(build.EmailNotify))
 	copy(recipients, build.EmailNotify)
 
+	// Helper function for notifying.
+	notifyNoBlame := func(n notifypb.Notifications, oldStatus buildbucketpb.Status) error {
+		n = n.Filter(oldStatus, build.Status)
+		recipients = append(recipients, ComputeRecipients(n, nil, nil)...)
+		templateParams.OldStatus = oldStatus
+		return Notify(c, d, recipients, templateParams)
+	}
+
 	keepGoing := false
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
-			return Notify(c, d, build.EmailNotify, templateParams)
+			return Notify(c, d, recipients, templateParams)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
@@ -153,22 +174,23 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// Create a new builder as a copy of the old, updated with build information.
 		updatedBuilder := builder
 		updatedBuilder.Status = build.Status
-		updatedBuilder.StatusBuildTime = buildCreateTime
+		updatedBuilder.BuildTime = buildCreateTime
+		if len(checkout) > 0 {
+			updatedBuilder.GitilesCommits = checkout.ToGitilesCommits()
+		}
 
 		switch {
 		case builder.Repository == "":
 			// Handle the case where there's no repository being tracked.
-			if builder.StatusBuildTime.Before(buildCreateTime) {
-				recipients = append(recipients, ExtractRecipients(builder.Notifications, builder.Status, build.Status)...)
-				templateParams.OldStatus = builder.Status
-				if err := Notify(c, d, recipients, templateParams); err != nil {
+			if builder.BuildTime.Before(buildCreateTime) {
+				// The build is in-order with respect to build time, so notify normally.
+				if err := notifyNoBlame(builder.Notifications, builder.Status); err != nil {
 					return err
 				}
 				return datastore.Put(c, &updatedBuilder)
 			}
 			logging.Infof(c, "Found build with old time")
-			recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
-			return Notify(c, d, recipients, templateParams)
+			return notifyNoBlame(builder.Notifications, 0)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
@@ -177,14 +199,13 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 
 		// Update the new builder with revision information as we know it's now available.
-		updatedBuilder.StatusRevision = gCommit.Id
+		updatedBuilder.Revision = gCommit.Id
 
 		// If there's no revision information on the Builder, this means the Builder
 		// is uninitialized. Notify about the build as best as we can and then store
 		// the updated builder.
-		if builder.StatusRevision == "" {
-			recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
-			if err := Notify(c, d, recipients, templateParams); err != nil {
+		if builder.Revision == "" {
+			if err := notifyNoBlame(builder.Notifications, 0); err != nil {
 				return err
 			}
 			return datastore.Put(c, &updatedBuilder)
@@ -204,15 +225,25 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
+	// Get the revision history for the build-related commit.
+	commits, err := history(c, gCommit.Host, gCommit.Project, builder.Revision, gCommit.Id)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to retrieve git history for input commit").Err()
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
-		return Notify(c, d, recipients, templateParams)
+		return notifyNoBlame(builder.Notifications, 0)
+	}
+
+	// Get the blamelist logs, if needed.
+	var aggregateLogs Logs
+	aggregateRepoWhiteset := BlamelistRepoWhiteset(builder.Notifications)
+	if len(aggregateRepoWhiteset) > 0 {
+		oldCheckout := NewCheckout(builder.GitilesCommits)
+		aggregateLogs, err = ComputeLogs(c, oldCheckout, checkout.Filter(aggregateRepoWhiteset), history)
+		if err != nil {
+			return errors.Annotate(err, "failed to compute logs").Err()
+		}
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -234,37 +265,37 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// Create a new builder as a copy of the old, updated with build information.
 		updatedBuilder := builder
 		updatedBuilder.Status = build.Status
-		updatedBuilder.StatusBuildTime = buildCreateTime
-		updatedBuilder.StatusRevision = gCommit.Id
-
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
+		updatedBuilder.BuildTime = buildCreateTime
+		updatedBuilder.Revision = gCommit.Id
+		if len(checkout) > 0 {
+			updatedBuilder.GitilesCommits = checkout.ToGitilesCommits()
 		}
 
-		index := commitIndex(commits, builder.StatusRevision)
+		index := commitIndex(commits, builder.Revision)
 		outOfOrder := false
 		switch {
 		// If the revision is not found, we can conclude that the Builder has
 		// advanced beyond gCommit.Revision. This is because:
-		//   1) builder.StatusRevision only ever moves forward.
+		//   1) builder.Revision only ever moves forward.
 		//   2) commits contains the git history up to gCommit.Revision.
 		case index < 0:
 			logging.Debugf(c, "Found build with old commit during transaction.")
 			outOfOrder = true
 
 		// If the revision is current, check build creation time.
-		case index == 0 && builder.StatusBuildTime.After(buildCreateTime):
+		case index == 0 && builder.BuildTime.After(buildCreateTime):
 			logging.Debugf(c, "Found build with the same commit but an old time.")
 			outOfOrder = true
 		}
 
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
-			recipients = append(recipients, ExtractRecipients(builder.Notifications, 0, build.Status)...)
-			return Notify(c, d, recipients, templateParams)
+			return notifyNoBlame(builder.Notifications, 0)
 		}
-		recipients = append(recipients, ExtractRecipients(builder.Notifications, builder.Status, build.Status)...)
+
+		// Notify, and include the blamelist.
+		n := builder.Notifications.Filter(builder.Status, build.Status)
+		recipients = append(recipients, ComputeRecipients(n, commits[:index], aggregateLogs)...)
 		templateParams.OldStatus = builder.Status
 		if err := Notify(c, d, recipients, templateParams); err != nil {
 			return err
@@ -301,7 +332,7 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 		return nil
 
 	default:
-		return handleBuild(c, d, build, gitilesHistory)
+		return handleBuild(c, d, build, srcmanCheckout, gitilesHistory)
 	}
 }
 

@@ -29,6 +29,7 @@ import (
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigIngestion(t *testing.T) {
@@ -165,7 +166,16 @@ func TestConfigIngestion(t *testing.T) {
 			// Update the Chromium builder in the datastore, simulating that some request was handled.
 			chromiumBuilder := builders[0]
 			chromiumBuilder.Status = buildbucketpb.Status_FAILURE
-			chromiumBuilder.StatusRevision = "abc123"
+			chromiumBuilder.Revision = "abc123"
+			chromiumBuilder.GitilesCommits = notifypb.GitilesCommits{
+				Commits: []*buildbucketpb.GitilesCommit{
+					{
+						Host:    "chromium.googlesource.com",
+						Project: "chromium/src",
+						Id:      "deadbeefdeadbeefdeadbeef",
+					},
+				},
+			}
 			So(datastore.Put(c, chromiumBuilder), ShouldBeNil)
 
 			datastore.GetTestable(c).CatchupIndexes()
@@ -177,11 +187,12 @@ func TestConfigIngestion(t *testing.T) {
 
 			var newBuilders []*Builder
 			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromiumKey), &newBuilders), ShouldBeNil)
-			So(len(newBuilders), ShouldEqual, 1)
+			So(newBuilders, ShouldHaveLength, 1)
 			// Check the fields we care about explicitly, because generated proto structs may have
 			// size caches which are updated.
 			So(newBuilders[0].Status, ShouldEqual, chromiumBuilder.Status)
-			So(newBuilders[0].StatusRevision, ShouldEqual, chromiumBuilder.StatusRevision)
+			So(newBuilders[0].Revision, ShouldResemble, chromiumBuilder.Revision)
+			So(&newBuilders[0].GitilesCommits, ShouldResembleProto, &chromiumBuilder.GitilesCommits)
 		})
 
 		Convey("delete project", func() {
