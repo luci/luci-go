@@ -26,10 +26,11 @@ import (
 	// Import to register {appid} in validation.Rules
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
 // notifierNameRegexp is a regexp for notifier names.
@@ -41,7 +42,7 @@ func init() {
 		"regex:projects/.*",
 		"${appid}.cfg",
 		func(ctx *validation.Context, configSet, path string, content []byte) error {
-			cfg := &notifyConfig.ProjectConfig{}
+			cfg := &notifypb.ProjectConfig{}
 			if err := proto.UnmarshalText(string(content), cfg); err != nil {
 				ctx.Errorf("invalid ProjectConfig proto message: %s", err)
 			} else {
@@ -61,12 +62,13 @@ const (
 	invalidFieldError     = "field %q has invalid format"
 	uniqueFieldError      = "field %q must be unique in %s"
 	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
+	badRepoURLError       = "repo url %q is invalid"
 	duplicateBuilderError = "builder %q is specified more than once in file"
 )
 
 // validateNotification is a helper function for validateConfig which validates
 // an individual notification configuration.
-func validateNotification(c *validation.Context, cfgNotification *notifyConfig.Notification) {
+func validateNotification(c *validation.Context, cfgNotification *notifypb.Notification) {
 	if cfgNotification.Email != nil {
 		for _, addr := range cfgNotification.Email.Recipients {
 			if _, err := mail.ParseAddress(addr); err != nil {
@@ -78,12 +80,17 @@ func validateNotification(c *validation.Context, cfgNotification *notifyConfig.N
 
 // validateBuilder is a helper function for validateConfig which validates
 // an individual Builder.
-func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder, builderNames stringset.Set) {
+func validateBuilder(c *validation.Context, cfgBuilder *notifypb.Builder, builderNames stringset.Set) {
 	if cfgBuilder.Bucket == "" {
 		c.Errorf(requiredFieldError, "bucket")
 	}
 	if cfgBuilder.Name == "" {
 		c.Errorf(requiredFieldError, "name")
+	}
+	if cfgBuilder.Repository != "" {
+		if err := gitiles.ValidateRepoURL(cfgBuilder.Repository); err != nil {
+			c.Errorf(badRepoURLError, cfgBuilder.Repository)
+		}
 	}
 	fullName := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
 	if !builderNames.Add(fullName) {
@@ -93,7 +100,7 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder, bu
 
 // validateNotifier is a helper function for validateConfig which validates
 // a Notifier.
-func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier, notifierNames, builderNames stringset.Set) {
+func validateNotifier(c *validation.Context, cfgNotifier *notifypb.Notifier, notifierNames, builderNames stringset.Set) {
 	switch {
 	case cfgNotifier.Name == "":
 		c.Errorf(requiredFieldError, "name")
@@ -116,7 +123,7 @@ func validateNotifier(c *validation.Context, cfgNotifier *notifyConfig.Notifier,
 
 // validateProjectConfig returns an error if the configuration violates any of the
 // requirements in the proto definition.
-func validateProjectConfig(ctx *validation.Context, projectCfg *notifyConfig.ProjectConfig) {
+func validateProjectConfig(ctx *validation.Context, projectCfg *notifypb.ProjectConfig) {
 	notifierNames := stringset.New(len(projectCfg.Notifiers))
 	builderNames := stringset.New(len(projectCfg.Notifiers)) // At least one builder per notifier
 	for i, cfgNotifier := range projectCfg.Notifiers {
@@ -128,7 +135,7 @@ func validateProjectConfig(ctx *validation.Context, projectCfg *notifyConfig.Pro
 
 // validateSettings returns an error if the service configuration violates any
 // of the requirements in the proto definition.
-func validateSettings(ctx *validation.Context, settings *notifyConfig.Settings) {
+func validateSettings(ctx *validation.Context, settings *notifypb.Settings) {
 	switch {
 	case settings.MiloHost == "":
 		ctx.Errorf(requiredFieldError, "milo_host")

@@ -74,7 +74,7 @@ message Notification {
   // Refers to which project template name to use to format this email.
   // If not present, "default" will be used.
   //
-  // Optional
+  // Optional.
   string template = 5;
 }
 
@@ -89,4 +89,30 @@ message Builder {
   //
   // Required.
   string name = 2;
+
+  // Repository is the git repository associated with this particular builder.
+  //
+  // The repository should look like a URL, e.g. https://chromium.googlesource.com/src
+  //
+  // Currently, luci-notify only supports Gerrit-like URLs since it checks
+  // against gitiles commits, so the URL's path (e.g. "src" in the above
+  // example) should map directly to a Gerrit project.
+  //
+  // Builds attached to the history of this repository will use this
+  // repository's git history to determine the order between two builds for the
+  // OnChange notification.
+  //
+  // Optional.
+  //
+  // If not set, OnChange notifications will derive their notion of
+  // "previous" build solely from build creation time, which is potentially
+  // less reliable.
+  string repository = 3;
+}
+
+// Notifications encapsulates a list of notifications as a proto so code for
+// storing it in the datastore may be generated.
+message Notifications {
+  // Notifications is a list of notification configurations.
+  repeated Notification notifications = 1;
 }
