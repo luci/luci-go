@@ -19,6 +19,8 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/proto/srcman"
+
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -44,6 +46,16 @@ type Builder struct {
 	// to notify, and different settings on how to notify them.
 	Notifications notifypb.Notifications
 
+	// NotifyBlamelist is whether we should notify the blamelist using the
+	// BlamelistNotification.
+	NotifyBlamelist bool
+
+	// BlamelistNotification represents a notification to the blamelist when a build
+	// for this builder is encountered. More specifically, if non-nil, then
+	// notifications will be sent to the blamelist for the build, using the
+	// configuration defined therein.
+	BlamelistNotification notifypb.BlamelistNotification
+
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
 	//   1) the new build has a newer revision than StatusRevision, or
@@ -59,4 +71,10 @@ type Builder struct {
 	// the build that caused a change of Status. It can be used to decide whether
 	// Status should be updated.
 	StatusRevision string
+
+	// StatusSourceManifest is the source manifest associated with the build
+	// that caused a change of Status. It can also be used to compute a blamelist.
+	// Note: we assume here that each build has either one source manifest or
+	// none.
+	StatusSourceManifest srcman.Manifest
 }

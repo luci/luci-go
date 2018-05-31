@@ -32,9 +32,11 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
+	"go.chromium.org/luci/common/proto/srcman"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
@@ -126,6 +128,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
+	manifest, err := getSourceManifest(c, build)
+	if err != nil {
+		logging.WithError(err).Warningf(c, "Failed to retrieve source manifest")
+		manifest = nil
+	}
+
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
 	builder := &config.Builder{
@@ -133,7 +141,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		ID:         builderID,
 	}
 	keepGoing := false
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
 		case err == datastore.ErrNoSuchEntity:
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
@@ -143,27 +151,30 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		case builder.Repository == "":
 			// Handle the case where there's no repository being tracked.
 			if builder.StatusBuildTime.Before(buildCreateTime) {
-				if err := Notify(c, d, builder, build, true); err != nil {
+				// TODO(mknyszek): Compute blamelist for builds without a revision.
+				if err := Notify(c, d, builder, build, true, nil); err != nil {
 					return err
 				}
 				builder.Status = build.Status
 				builder.StatusBuildTime = buildCreateTime
+				builder.StatusSourceManifest = *manifest
 				return datastore.Put(c, builder)
 			}
 			logging.Infof(c, "Found build with old time")
-			return Notify(c, d, builder, build, false)
+			return Notify(c, d, builder, build, false, nil)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
 			logging.Infof(c, "No revision information found for this build, ignoring...")
 			return nil
 		case builder.StatusRevision == "":
-			if err := Notify(c, d, builder, build, false); err != nil {
+			if err := Notify(c, d, builder, build, false, nil); err != nil {
 				return err
 			}
 			builder.Status = build.Status
 			builder.StatusBuildTime = buildCreateTime
 			builder.StatusRevision = gCommit.Id
+			builder.StatusSourceManifest = *manifest
 			return datastore.Put(c, builder)
 		}
 		keepGoing = true
@@ -181,14 +192,22 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
-	if err != nil {
-		return err
+	// Compute manifest diff and populate history.
+	var firstDiff *srcman.ManifestDiff
+	if manifest != nil {
+		firstDiff = builder.StatusSourceManifest.Diff(manifest)
+		if builder.NotifyBlamelist {
+			if err := populateHistory(c, firstDiff, history); err != nil {
+				logging.WithError(err).Warningf(c, "Failed to populate manifest history, ignoring blamelist...")
+			}
+		}
 	}
+
+	// Get the revision history for the build-related commit.
+	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		return Notify(c, d, builder, build, false)
+		return Notify(c, d, builder, build, false, nil)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -200,9 +219,13 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
+		// Compute the blamelist from the most recent manifest retrieved for
+		// the builder by using the diff we computed earlier to obtain the
+		// git history. Note that this may result in an incomplete blamelist.
+		var blamelist stringset.Set
+		if firstDiff != nil && builder.NotifyBlamelist {
+			diff := builder.StatusSourceManifest.Diff(firstDiff.Old)
+			blamelist = blamelistFromDiff(c, diff, firstDiff)
 		}
 
 		index := commitIndex(commits, builder.StatusRevision)
@@ -224,14 +247,15 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
-			return Notify(c, d, builder, build, false)
+			return Notify(c, d, builder, build, false, blamelist)
 		}
-		if err := Notify(c, d, builder, build, true); err != nil {
+		if err := Notify(c, d, builder, build, true, blamelist); err != nil {
 			return err
 		}
 		builder.Status = build.Status
 		builder.StatusBuildTime = buildCreateTime
 		builder.StatusRevision = gCommit.Id
+		builder.StatusSourceManifest = *manifest
 		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
