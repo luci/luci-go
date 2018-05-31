@@ -16,10 +16,12 @@ package repo
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -31,10 +33,12 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
@@ -485,15 +489,21 @@ func TestRegisterInstance(t *testing.T) {
 	})
 }
 
-func TestUpdateProcessors(t *testing.T) {
+func TestProcessors(t *testing.T) {
 	t.Parallel()
+
+	testZip := testutil.MakeZip(map[string]string{
+		"file1": strings.Repeat("hello", 50),
+		"file2": "blah",
+	})
 
 	Convey("With mocks", t, func() {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, testTime)
 
-		impl := repoImpl{}
+		cas := testutil.MockCAS{}
+		impl := repoImpl{cas: &cas}
 
 		inst := &api.Instance{
 			Package: "a/b/c",
@@ -524,6 +534,23 @@ func TestUpdateProcessors(t *testing.T) {
 			return p
 		}
 
+		// Note: assumes Result is a string.
+		fetchProcSuccess := func(id string) string {
+			res := fetchProcRes(id)
+			So(res, ShouldNotBeNil)
+			So(res.Success, ShouldBeTrue)
+			var r string
+			So(res.ReadResult(&r), ShouldBeNil)
+			return r
+		}
+
+		fetchProcFail := func(id string) string {
+			res := fetchProcRes(id)
+			So(res, ShouldNotBeNil)
+			So(res.Success, ShouldBeFalse)
+			return res.Error
+		}
+
 		Convey("Noop updateProcessors", func() {
 			storeInstance([]string{"a", "b"})
 			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
@@ -547,22 +574,130 @@ func TestUpdateProcessors(t *testing.T) {
 			So(inst.ProcessorsFailure, ShouldResemble, []string{"fail"})
 
 			// Created ProcessingResult entities.
-			okRes := fetchProcRes("ok")
-			So(okRes.Success, ShouldBeTrue)
-			var res string
-			So(okRes.ReadResult(&res), ShouldBeNil)
-			So(res, ShouldEqual, "OK")
-
-			failRes := fetchProcRes("fail")
-			So(failRes.Success, ShouldBeFalse)
-			So(failRes.Error, ShouldEqual, "failed")
+			So(fetchProcSuccess("ok"), ShouldEqual, "OK")
+			So(fetchProcFail("fail"), ShouldEqual, "failed")
 		})
 
-		Convey("Missing entity", func() {
+		Convey("Missing entity in updateProcessors", func() {
 			err := impl.updateProcessors(ctx, inst, map[string]processing.Result{
 				"proc": {Err: fmt.Errorf("fail")},
 			})
 			So(err, ShouldErrLike, "the entity is unexpectedly gone")
+		})
+
+		Convey("runProcessorsTask happy path", func() {
+			// Setup two pending processors that read 'file2'.
+			runCB := func(i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
+				So(proto.Equal(i.Proto(), inst), ShouldBeTrue)
+
+				rd, _, err := r.Open("file2")
+				So(err, ShouldBeNil)
+				defer rd.Close()
+				blob, err := ioutil.ReadAll(rd)
+				So(err, ShouldBeNil)
+				So(string(blob), ShouldEqual, "blah")
+
+				return processing.Result{Result: "OK"}, nil
+			}
+
+			impl.registerProcessor(&mockedProcessor{ProcID: "proc1", RunCB: runCB})
+			impl.registerProcessor(&mockedProcessor{ProcID: "proc2", RunCB: runCB})
+			storeInstance([]string{"proc1", "proc2"})
+
+			// Setup the package.
+			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+				So(proto.Equal(inst.Instance, ref), ShouldBeTrue)
+				return testutil.NewMockGSReader(testZip), nil
+			}
+
+			// Run the processor.
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(err, ShouldBeNil)
+
+			// Both succeeded.
+			inst := fetchInstance()
+			So(inst.ProcessorsPending, ShouldHaveLength, 0)
+			So(inst.ProcessorsSuccess, ShouldResemble, []string{"proc1", "proc2"})
+
+			// And have the result.
+			So(fetchProcSuccess("proc1"), ShouldEqual, "OK")
+			So(fetchProcSuccess("proc2"), ShouldEqual, "OK")
+		})
+
+		Convey("runProcessorsTask no entity", func() {
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(err, ShouldErrLike, "unexpectedly gone from the datastore")
+		})
+
+		Convey("runProcessorsTask no processor", func() {
+			storeInstance([]string{"proc"})
+
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(err, ShouldBeNil)
+
+			// Failed.
+			So(fetchProcFail("proc"), ShouldEqual, `unknown processor "proc"`)
+		})
+
+		Convey("runProcessorsTask broken package", func() {
+			impl.registerProcessor(&mockedProcessor{
+				ProcID: "proc",
+				Result: processing.Result{Result: "must not be called"},
+			})
+			storeInstance([]string{"proc"})
+
+			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+				return testutil.NewMockGSReader([]byte("im not a zip")), nil
+			}
+
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(err, ShouldBeNil)
+
+			// Failed.
+			So(fetchProcFail("proc"), ShouldEqual, `error when opening the package: zip: not a valid zip file`)
+		})
+
+		Convey("runProcessorsTask propagates transient proc errors", func() {
+			impl.registerProcessor(&mockedProcessor{
+				ProcID: "good-proc",
+				Result: processing.Result{Result: "OK"},
+			})
+			impl.registerProcessor(&mockedProcessor{
+				ProcID: "bad-proc",
+				Err:    fmt.Errorf("failed transiently"),
+			})
+			storeInstance([]string{"good-proc", "bad-proc"})
+
+			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+				return testutil.NewMockGSReader(testZip), nil
+			}
+
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(transient.Tag.In(err), ShouldBeTrue)
+			So(err, ShouldErrLike, "failed transiently")
+
+			// bad-proc is still pending.
+			So(fetchInstance().ProcessorsPending, ShouldResemble, []string{"bad-proc"})
+			// good-proc is done.
+			So(fetchProcSuccess("good-proc"), ShouldEqual, "OK")
+		})
+
+		Convey("runProcessorsTask handles fatal errors", func() {
+			impl.registerProcessor(&mockedProcessor{
+				ProcID: "proc",
+				Result: processing.Result{Err: fmt.Errorf("boom")},
+			})
+			storeInstance([]string{"proc"})
+
+			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
+				return testutil.NewMockGSReader(testZip), nil
+			}
+
+			err := impl.runProcessorsTask(ctx, &tasks.RunProcessors{Instance: inst})
+			So(err, ShouldBeNil)
+
+			// Failed.
+			So(fetchProcFail("proc"), ShouldEqual, "boom")
 		})
 	})
 }
@@ -572,6 +707,7 @@ type mockedProcessor struct {
 	ProcID    string
 	AppliesTo string
 
+	RunCB  func(*model.Instance, *processing.PackageReader) (processing.Result, error)
 	Result processing.Result
 	Err    error
 }
@@ -584,6 +720,9 @@ func (m *mockedProcessor) Applicable(inst *model.Instance) bool {
 	return inst.Package.StringID() == m.AppliesTo
 }
 
-func (m *mockedProcessor) Run(context.Context, *model.Instance, *processing.PackageReader) (processing.Result, error) {
+func (m *mockedProcessor) Run(_ context.Context, i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
+	if m.RunCB != nil {
+		return m.RunCB(i, r)
+	}
 	return m.Result, m.Err
 }
