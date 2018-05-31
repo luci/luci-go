@@ -86,6 +86,17 @@ func TestValidation(t *testing.T) {
 			}`,
 			requiredFieldError, "bucket")
 
+		testValidation(`builder bad repo`, `
+			notifiers {
+				name: "good-name"
+				builders {
+					name: "i-am-a-builder"
+					bucket: "test.bucket"
+					repository: "bad://x.notgooglesource.com/+/hello"
+				}
+			}`,
+			badRepoURLError, "bad://x.notgooglesource.com/+/hello")
+
 		testValidation(`bad email address`, `
 			notifiers {
 				name: "good-name"
