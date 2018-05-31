@@ -14,6 +14,14 @@
 
 package config
 
-//go:generate go install go.chromium.org/luci/grpc/cmd/cproto
-//go:generate cproto -discovery=false
-//go:generate proto-gae -type BlamelistNotification -type GitilesCommits -type Notifications
+import (
+	"fmt"
+)
+
+func (g *GitilesCommits) ToMap() map[string]string {
+	results := make(map[string]string)
+	for _, gitilesCommit := range g.GetCommits() {
+		results[fmt.Sprintf("https://%s/%s", gitilesCommit.Host, gitilesCommit.Project)] = gitilesCommit.Id
+	}
+	return results
+}
