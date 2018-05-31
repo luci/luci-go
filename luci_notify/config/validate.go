@@ -18,6 +18,7 @@ import (
 	"fmt"
 	html "html/template"
 	"net/mail"
+	"net/url"
 	"regexp"
 	text "text/template"
 
@@ -61,6 +62,7 @@ const (
 	invalidFieldError     = "field %q has invalid format"
 	uniqueFieldError      = "field %q must be unique in %s"
 	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
+	badURLError           = "url %q is invalid: %v"
 	duplicateBuilderError = "builder %q is specified more than once in file"
 )
 
@@ -84,6 +86,12 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder, bu
 	}
 	if cfgBuilder.Name == "" {
 		c.Errorf(requiredFieldError, "name")
+	}
+	if cfgBuilder.Repository != "" {
+		_, err := url.Parse(cfgBuilder.Repository)
+		if err != nil {
+			c.Errorf(badURLError, cfgBuilder.Repository, err)
+		}
 	}
 	fullName := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
 	if !builderNames.Add(fullName) {
