@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cd50aea_c12c6040",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-05-31T04:25:28Z",
+      "side": 1,
+      "message": "ugh, I\u0027ve been trying really hard to break up this function but it\u0027s really difficult to come up with a clean separation for most things, partially because we want to do them in the same transaction.\n\nany suggestions?",
+      "range": {
+        "startLine": 116,
+        "startChar": 5,
+        "endLine": 116,
+        "endChar": 16
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
