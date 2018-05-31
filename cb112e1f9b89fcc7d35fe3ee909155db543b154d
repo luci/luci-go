@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d21a8ed_4e5aa185",
+        "filename": "cipd/appengine/impl/repo/repo_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 589,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-05-31T21:07:25Z",
+      "side": 1,
+      "message": "nit: del",
+      "range": {
+        "startLine": 589,
+        "startChar": 44,
+        "endLine": 589,
+        "endChar": 45
+      },
+      "revId": "cb112e1f9b89fcc7d35fe3ee909155db543b154d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
