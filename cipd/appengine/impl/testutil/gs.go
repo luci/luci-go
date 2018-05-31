@@ -15,6 +15,9 @@
 package testutil
 
 import (
+	"bytes"
+	"io"
+
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -84,4 +87,27 @@ func (n NoopGoogleStorage) Reader(c context.Context, path string, gen int64) (gs
 		panic("must not be called")
 	}
 	return nil, n.Err
+}
+
+// MockGSReader implements gs.Reader on top of a regular io.ReaderAt.
+type MockGSReader struct {
+	io.ReaderAt
+
+	Len int64
+	Gen int64
+}
+
+// Size is part of gs.Reader interface.
+func (m *MockGSReader) Size() int64 { return m.Len }
+
+// Generation is part of gs.Reader interface.
+func (m *MockGSReader) Generation() int64 { return m.Gen }
+
+// NewMockGSReader constructs MockGSReader from a byte slice.
+func NewMockGSReader(data []byte) *MockGSReader {
+	return &MockGSReader{
+		ReaderAt: bytes.NewReader(data),
+		Len:      int64(len(data)),
+		Gen:      1,
+	}
 }

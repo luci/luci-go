@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -362,12 +363,67 @@ func (impl *repoImpl) runProcessorsTask(c context.Context, t *tasks.RunProcessor
 		return transient.Tag.Apply(err)
 	}
 
-	// TODO(vadimsh): Implement. For now, mark all processors as failed.
-	results := make(map[string]processing.Result, len(inst.ProcessorsPending))
-	for _, proc := range inst.ProcessorsPending {
-		results[proc] = processing.Result{Err: fmt.Errorf("not implemented yet")}
+	results := map[string]processing.Result{}
+
+	// Grab processors we haven't ran yet.
+	var run []processing.Processor
+	for _, id := range inst.ProcessorsPending {
+		if proc := impl.procsMap[id]; proc != nil {
+			run = append(run, proc)
+		} else {
+			logging.Errorf(c, "Skipping unknown processor %q", id)
+			results[id] = processing.Result{Err: fmt.Errorf("unknown processor %q", id)}
+		}
 	}
-	return impl.updateProcessors(c, t.Instance, results)
+
+	// Exit early if there's nothing to run.
+	if len(run) == 0 {
+		return impl.updateProcessors(c, t.Instance, results)
+	}
+
+	// Open the package for reading.
+	pkg, err := impl.packageReader(c, t.Instance.Instance)
+	switch {
+	case transient.Tag.In(err):
+		return err // retry the whole thing
+	case err != nil:
+		// The package is fatally broken, give up.
+		logging.WithError(err).Errorf(c, "The package can't be opened, failing all processors")
+		for _, proc := range run {
+			results[proc.ID()] = processing.Result{Err: err}
+		}
+		return impl.updateProcessors(c, t.Instance, results)
+	}
+
+	// Run the processors sequentially, since PackageReader is not very friendly
+	// to concurrent access.
+	var transientErrs errors.MultiError
+	for _, proc := range run {
+		logging.Infof(c, "Running processor %q", proc.ID())
+		res, err := proc.Run(c, inst, pkg)
+		if err != nil {
+			logging.WithError(err).Errorf(c, "Processor %q failed transiently", proc.ID())
+			transientErrs = append(transientErrs, err)
+		} else {
+			if res.Err != nil {
+				logging.WithError(res.Err).Errorf(c, "Processor %q failed fatally", proc.ID())
+			}
+			results[proc.ID()] = res
+		}
+	}
+
+	// Store what we've got, even if some processor may have failed to run.
+	updErr := impl.updateProcessors(c, t.Instance, results)
+
+	// Prefer errors from processors over 'updErr' if both happen. Processor
+	// errors are more interesting.
+	switch {
+	case len(transientErrs) != 0:
+		return transient.Tag.Apply(transientErrs)
+	case updErr != nil:
+		return updErr
+	}
+	return nil
 }
 
 // updateProcessors transactionally creates ProcessingResult entities and
