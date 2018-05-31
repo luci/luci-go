@@ -149,6 +149,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 				}
 				builder.Status = build.Status
 				builder.StatusBuildTime = buildCreateTime
+				builder.StatusSourceManifest = manifest
 				return datastore.Put(c, builder)
 			}
 			logging.Infof(c, "Found build with old time")
@@ -165,6 +166,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			builder.Status = build.Status
 			builder.StatusBuildTime = buildCreateTime
 			builder.StatusRevision = gCommit.Id
+			builder.StatusSourceManifest = manifest
 			return datastore.Put(c, builder)
 		}
 		keepGoing = true
@@ -181,8 +183,24 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
+	var firstDiff *srcman.ManifestDiff
+	var commits []*gitpb.Commit
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error {
+			firstDiff = builder.StatusSourceManifest.Diff(manifest)
+			err := populateHistory(c, firstDiff, history)
+			if err != nil {
+				logging.WithError(err).Warningf(c, "Failed to populate manifest history, ignoring blamelist...")
+			}
+			return nil
+		}
+		work <- func() error {
+			var err error
+			// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
+			commits, err = history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
+			return err
+		}
+	})
 	if err != nil {
 		return err
 	}
@@ -201,10 +219,13 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
+		diff := builder.StatusSourceManifest.Diff(firstDiff.Old)
+		// Attempt to populate the diff with git history from the first diff.
+		// This is only guaranteed to work if source manifests only ever move
+		// forward, which may not always be true. In practice, it's generally true
+		// however. At worst, commits not in the blamelist will be lost.
+		populateHistoryFromDiff(diff, firstDiff)
+		blamelist := blamelistFromDiff(diff)
 
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
@@ -235,6 +256,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		builder.Status = build.Status
 		builder.StatusBuildTime = buildCreateTime
 		builder.StatusRevision = gCommit.Id
+		builder.StatusSourceManifest = manifest
 		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
