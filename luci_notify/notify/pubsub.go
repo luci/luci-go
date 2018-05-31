@@ -130,7 +130,7 @@ func lookupNotifier(c context.Context, build *Build, notify notifyFunc) (*notify
 //
 // Returns a gitiles commit (signifying that it's non-nil), the builder from the datastore, whether we
 // should keep going, and potentially an error.
-func tryHandleBuild(c context.Context, build *Build, notify notifyFunc) (*buildbucketpb.GitilesCommit, *notifyConfig.Builder, bool, error) {
+func tryHandleBuild(c context.Context, manifest *srcman.Manifest, build *Build, notify notifyFunc) (*buildbucketpb.GitilesCommit, *notifyConfig.Builder, bool, error) {
 	gCommit := build.Input.GetGitilesCommit()
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
@@ -158,6 +158,7 @@ func tryHandleBuild(c context.Context, build *Build, notify notifyFunc) (*buildb
 					return err
 				}
 				builder.StatusBuildTime = buildCreateTime
+				builder.StatusSourceManifest = manifest
 				return datastore.Put(c, builder)
 			}
 			logging.Infof(c, "Found build with old time")
@@ -182,8 +183,9 @@ func tryHandleBuild(c context.Context, build *Build, notify notifyFunc) (*buildb
 			if err := notify(c, notifyConfig.StatusUnknown); err != nil {
 				return err
 			}
-			builder.StatusRevision = gCommit.Id
 			builder.StatusBuildTime = buildCreateTime
+			builder.StatusRevision = gCommit.Id
+			builder.StatusSourceManifest = manifest
 			return datastore.Put(c, builder)
 		}
 		keepGoing = true
@@ -192,11 +194,29 @@ func tryHandleBuild(c context.Context, build *Build, notify notifyFunc) (*buildb
 }
 
 // getCommitHistory retrieves the commit history between the builder's revision and the build's revision.
+// It also produces a diff between the builder's source manifest and the build's manifest, which is then
+// populated with a git history.
 //
 // Returns a list of git commits, whether to keep going, and potentially an error.
-func getCommitHistory(c context.Context, builder *notifyConfig.Builder, gCommit *buildbucketpb.GitilesCommit, notify notifyFunc, history HistoryFunc) ([]*gitpb.Commit, bool, error) {
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
+func getCommitHistory(c context.Context, builder *notifyConfig.Builder, gCommit *buildbucketpb.GitilesCommit, manifest *srcman.Manifest, notify notifyFunc, history HistoryFunc) (*srcman.ManifestDiff, []*gitpb.Commit, bool, error) {
+	var diff *srcman.ManifestDiff
+	var commits []*gitpb.Commit
+	err := parallel.FanOutIn(func(work chan<- func() error) {
+		work <- func() error {
+			diff = builder.StatusSourceManifest.Diff(manifest)
+			err := populateHistory(c, diff, history)
+			if err != nil {
+				logging.WithError(err).Warningf(c, "Failed to populate manifest history, ignoring blamelist...")
+			}
+			return nil
+		}
+		work <- func() error {
+			var err error
+			// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
+			commits, err = history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
+			return err
+		}
+	})
 	if err != nil {
 		return nil, false, err
 	}
@@ -211,7 +231,7 @@ func getCommitHistory(c context.Context, builder *notifyConfig.Builder, gCommit 
 // updateBuilderAndNotify uses revision information to determine if the build we're processing
 // arrived out-of-order compared to the builder's previous build, updates the builder in the datastore
 // if not, and sends a notification.
-func updateBuilderAndNotify(c context.Context, commits []*gitpb.Commit, builder *notifyConfig.Builder, newRevision string, build *Build, notify notifyFunc) error {
+func updateBuilderAndNotify(c context.Context, commits []*gitpb.Commit, builder *notifyConfig.Builder, newRevision string, firstDiff *srcman.ManifestDiff, build *Build, notify notifyFunc) error {
 	// Update `builder`, and check if we need to store a newer version, then store it.
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
@@ -221,10 +241,13 @@ func updateBuilderAndNotify(c context.Context, commits []*gitpb.Commit, builder 
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
-		}
+		diff := builder.StatusSourceManifest.Diff(firstDiff.Old)
+		// Attempt to populate the diff with git history from the first diff.
+		// This is only guaranteed to work if source manifests only ever move
+		// forward, which may not always be true. In practice, it's generally true
+		// however. At worst, commits not in the blamelist will be lost.
+		populateHistoryFromDiff(diff, firstDiff)
+		blamelist := blamelistFromDiff(diff)
 
 		index := commitIndex(commits, builder.StatusRevision)
 		buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
@@ -255,6 +278,7 @@ func updateBuilderAndNotify(c context.Context, commits []*gitpb.Commit, builder 
 		}
 		builder.StatusRevision = newRevision
 		builder.StatusBuildTime = buildCreateTime
+		builder.StatusSourceManifest = manifest
 		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
@@ -285,15 +309,20 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	if err != nil || !ok {
 		return err
 	}
-	gCommit, builder, ok, err := tryHandleBuild(c, build, notify)
+	manifest, err := getSourceManifest(c, build)
+	if err != nil {
+		logging.Warningf(c, "No source manifest found for this build, ignoring blamelist...")
+		manifest = nil
+	}
+	gCommit, builder, ok, err := tryHandleBuild(c, manifest, build, notify)
 	if err != nil || !ok {
 		return err
 	}
-	commits, ok, err := getCommitHistory(c, builder, gCommit, notify, history)
+	diff, commits, ok, err := getCommitHistory(c, builder, gCommit, manifest, notify, history)
 	if err != nil || !ok {
 		return err
 	}
-	return updateBuilderAndNotify(c, commits, builder, gCommit.Id, build, notify)
+	return updateBuilderAndNotify(c, commits, builder, gCommit.Id, diff, build, notify)
 }
 
 func newBuildsClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
