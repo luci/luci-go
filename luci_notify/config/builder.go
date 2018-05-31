@@ -19,6 +19,7 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
@@ -48,12 +49,17 @@ type Builder struct {
 	//      creation time.
 	Status buildbucketpb.Status
 
-	// StatusBuildTime is computed as the creation time of the build that caused a
-	// change of Status. It can be used to decide whether Status should be updated.
-	StatusBuildTime time.Time
+	// BuildTime is computed as the creation time of the most recent build encountered.
+	// It can be used to decide whether Status and this Builder should be updated.
+	BuildTime time.Time
 
-	// StatusRevision is the revision of the codebase that's associated with
-	// the build that caused a change of Status. It can be used to decide whether
-	// Status should be updated.
-	StatusRevision string
+	// BuildRevision is the revision of the codebase that's associated with the most
+	// recent build encountered. It can be used to decide whether Status should be
+	// updated.
+	Revision string
+
+	// GitilesCommits are the gitiles commits checked out by the most recent build
+	// encountered that had a non-empty checkout. It can also be used to compute a
+	// blamelist.
+	GitilesCommits notifypb.GitilesCommits
 }
