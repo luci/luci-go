@@ -13,6 +13,8 @@ package notify;
 
 option go_package = "config";
 
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
 // ProjectConfig is a luci-notify configuration for a particular project.
 message ProjectConfig {
   // Notifiers is a list of Notifiers which watch builders and send
@@ -38,6 +40,12 @@ message Notifier {
 
   // Builders is a list of buildbucket builders this Notifier should watch.
   repeated Builder builders = 3;
+
+  // NotifyBlamelist specifies whether to notify the computed blamelist for a
+  // given build, and if so, a configuration to set for the notification.
+  //
+  // Optional.
+  BlamelistNotification notify_blamelist = 4;
 }
 
 // Notification specifies the triggers to watch for and send
@@ -78,6 +86,16 @@ message Notification {
   string template = 5;
 }
 
+// BlamelistNotification represents a notification to be sent to the computed
+// blamelist for a particular build.
+message BlamelistNotification {
+  // Refers to which project template name to use to format this email.
+  // If not present, "default" will be used.
+  //
+  // Optional.
+  string template = 1;
+}
+
 // Builder references a buildbucket builder in the current project.
 message Builder {
   // Bucket is the buildbucket bucket that the builder is a part of.
@@ -115,4 +133,10 @@ message Builder {
 message Notifications {
   // Notifications is a list of notification configurations.
   repeated Notification notifications = 1;
+}
+
+// A collection of landed Git commits hosted on Gitiles.
+message GitilesCommits {
+  // The Gitiles commits in this collection.
+  repeated buildbucket.v2.GitilesCommit commits = 1;
 }

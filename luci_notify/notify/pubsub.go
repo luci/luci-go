@@ -32,6 +32,7 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -73,15 +74,6 @@ var (
 
 func getBuilderID(b *Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
-}
-
-func commitIndex(commits []*gitpb.Commit, revision string) int {
-	for i, commit := range commits {
-		if commit.Id == revision {
-			return i
-		}
-	}
-	return -1
 }
 
 // EmailNotify contains information for delivery and personalization of notification emails.
@@ -126,6 +118,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
+	buildCommits, err := getCommits(c, build)
+	if err != nil {
+		return errors.Annotate(err, "failed to retrieve source manifest").Err()
+	}
+
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
 	builder := &config.Builder{
@@ -133,7 +130,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		ID:         builderID,
 	}
 	keepGoing := false
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
 		case err == datastore.ErrNoSuchEntity:
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
@@ -144,27 +141,30 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			// Handle the case where there's no repository being tracked.
 			notifications := builder.Notifications.GetNotifications()
 			if builder.StatusBuildTime.Before(buildCreateTime) {
-				if err := Notify(c, d, notifications, builder.Status, build); err != nil {
+				// TODO(mknyszek): Compute blamelist for builds without a revision.
+				if err := Notify(c, d, notifications, builder.Status, build, nil, nil); err != nil {
 					return err
 				}
 				builder.Status = build.Status
 				builder.StatusBuildTime = buildCreateTime
+				builder.StatusGitilesCommits = commitsToGitilesCommits(buildCommits)
 				return datastore.Put(c, builder)
 			}
 			logging.Infof(c, "Found build with old time")
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build, nil, nil)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
 			logging.Infof(c, "No revision information found for this build, ignoring...")
 			return nil
 		case builder.StatusRevision == "":
-			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build); err != nil {
+			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build, nil, nil); err != nil {
 				return err
 			}
 			builder.Status = build.Status
 			builder.StatusBuildTime = buildCreateTime
 			builder.StatusRevision = gCommit.Id
+			builder.StatusGitilesCommits = commitsToGitilesCommits(buildCommits)
 			return datastore.Put(c, builder)
 		}
 		keepGoing = true
@@ -182,14 +182,19 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil
 	}
 
-	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
-	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
-	if err != nil {
-		return err
+	var blamelistLogs map[string][]*gitpb.Commit
+	if builder.BlamelistNotification != nil {
+		blamelistLogs, err = computeGitLog(c, builder.StatusGitilesCommits.ToMap(), buildCommits, history) 
+		if err != nil {
+			logging.WithError(err).Warningf(c, "Failed to populate manifest history, ignoring blamelist...")
+		}
 	}
+
+	// Get the revision history for the build-related commit.
+	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		return Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+		return Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build, nil, nil)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -201,9 +206,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return err
 		}
 
-		// If there's been no change in status, don't bother updating.
-		if build.Status == builder.Status {
-			return nil
+		// Compute the blamelist from the most recent manifest retrieved for
+		// the builder by using the logs we computed earlier to obtain the
+		// git history. Note that this may result in an incomplete blamelist.
+		var blamelist stringset.Set
+		if builder.BlamelistNotification != nil {
+			blamelist = blamelistFromLogs(c, blamelistLogs, builder.StatusGitilesCommits.ToMap())
 		}
 
 		index := commitIndex(commits, builder.StatusRevision)
@@ -224,16 +232,18 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 
 		notifications := builder.Notifications.GetNotifications()
+		blamelistNotification := builder.BlamelistNotification
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build, blamelistNotification, blamelist)
 		}
-		if err := Notify(c, d, notifications, builder.Status, build); err != nil {
+		if err := Notify(c, d, notifications, builder.Status, build, blamelistNotification, blamelist); err != nil {
 			return err
 		}
 		builder.Status = build.Status
 		builder.StatusBuildTime = buildCreateTime
 		builder.StatusRevision = gCommit.Id
+		builder.StatusGitilesCommits = commitsToGitilesCommits(buildCommits)
 		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
