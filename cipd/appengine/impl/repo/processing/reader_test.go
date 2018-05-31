@@ -15,36 +15,16 @@
 package processing
 
 import (
-	"archive/zip"
 	"bytes"
 	"fmt"
 	"io/ioutil"
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func makeZip(files map[string]string) []byte {
-	buf := bytes.NewBuffer(nil)
-	w := zip.NewWriter(buf)
-
-	for name, body := range files {
-		fw, err := w.Create(name)
-		if err != nil {
-			panic(err)
-		}
-		_, err = fw.Write([]byte(body))
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	if err := w.Close(); err != nil {
-		panic(err)
-	}
-	return buf.Bytes()
-}
 
 type cbReaderAt struct {
 	readAt func(p []byte, off int64) (int, error)
@@ -57,7 +37,7 @@ func (c *cbReaderAt) ReadAt(b []byte, off int64) (int, error) {
 func TestPackageReader(t *testing.T) {
 	t.Parallel()
 
-	testZip := makeZip(map[string]string{
+	testZip := testutil.MakeZip(map[string]string{
 		"file1": strings.Repeat("hello", 50),
 		"file2": "blah",
 	})
