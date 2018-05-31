@@ -26,11 +26,12 @@ import (
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/config"
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 )
 
@@ -85,11 +86,11 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, oldStatus bui
 }
 
 // shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *notifyConfig.NotificationConfig, oldStatus, newStatus buildbucketpb.Status) bool {
+func shouldNotify(n *notifypb.Notification, oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
-	case n.OnChange && oldStatus != StatusUnknown && newStatus != oldStatus:
+	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
 	default:
 		return false
 	}
@@ -106,26 +107,32 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 	return false
 }
 
-// Notify discovers, consolidates and filters recipients from notifiers, and
-// 'email_notify' properties, then dispatches notifications if necessary.
+// Notify discovers, consolidates and filters recipients from a Builder's notifications,
+// and 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*notifyConfig.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
+func Notify(c context.Context, d *tq.Dispatcher, builder *config.Builder, build *Build, hasPreviousBuild bool) error {
 	c = datastore.WithoutTransaction(c)
 
+	// Use the builder's status as the "old" status for on_change notifications, but
+	// not if we determined there's no previous build to be used here. In that case,
+	// set status to Status_STATUS_UNSPECIFIED, which will cause on_change notifications to be
+	// ignored.
+	status := builder.Status
+	if !hasPreviousBuild {
+		status = buildbucketpb.Status_STATUS_UNSPECIFIED
+	}
+
 	var recipients []EmailNotify
-	// Notify based on configured notifiers.
-	for _, n := range notifiers {
-		for _, nc := range n.Notifications {
-			if !shouldNotify(&nc, oldStatus, build.Status) {
-				continue
-			}
-			for _, r := range nc.EmailRecipients {
-				recipients = append(recipients, EmailNotify{
-					Email:    r,
-					Template: nc.Template,
-				})
-			}
+	for _, notification := range builder.Notifications.GetNotifications() {
+		if !shouldNotify(notification, status, build.Status) {
+			continue
+		}
+		for _, recipient := range notification.GetEmail().GetRecipients() {
+			recipients = append(recipients, EmailNotify{
+				Email:    recipient,
+				Template: notification.Template,
+			})
 		}
 	}
 
@@ -145,7 +152,7 @@ func Notify(c context.Context, d *tq.Dispatcher, notifiers []*notifyConfig.Notif
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	tasks, err := createEmailTasks(c, recipients, oldStatus, build)
+	tasks, err := createEmailTasks(c, recipients, status, build)
 	if err != nil {
 		return errors.Annotate(err, "failed to create email tasks").Err()
 	}
