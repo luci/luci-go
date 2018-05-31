@@ -67,7 +67,7 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
-		return status.Errorf(codes.NotFound, "unknown host %q for VLAN %d", name, vlan)
+		return status.Errorf(codes.NotFound, "host %q does not exist on VLAN %d", name, vlan)
 	case rows == 1:
 		return nil
 	default:

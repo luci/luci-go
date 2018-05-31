@@ -51,7 +51,7 @@ func TestDeleteHost(t *testing.T) {
 
 		Convey("invalid", func() {
 			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnResult(sqlmock.NewResult(1, 0))
-			So(deleteHost(c, "host", 1), ShouldErrLike, "unknown host")
+			So(deleteHost(c, "host", 1), ShouldErrLike, "does not exist")
 		})
 
 		Convey("ok", func() {

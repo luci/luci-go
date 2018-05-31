@@ -439,7 +439,7 @@ func TestValidateDatacenters(t *testing.T) {
 			So(context.Finalize(), ShouldErrLike, "duplicate KVM")
 		})
 
-		Convey("unknown rack", func() {
+		Convey("invalid rack", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -458,10 +458,10 @@ func TestValidateDatacenters(t *testing.T) {
 				},
 			}
 			validateDatacenters(context, datacenters)
-			So(context.Finalize(), ShouldErrLike, "unknown rack")
+			So(context.Finalize(), ShouldErrLike, "does not exist")
 		})
 
-		Convey("unknown KVM", func() {
+		Convey("invalid KVM", func() {
 			datacenters := map[string]*config.Datacenter{
 				"datacenter.cfg": {
 					Name: "datacenter",
@@ -482,7 +482,7 @@ func TestValidateDatacenters(t *testing.T) {
 				},
 			}
 			validateDatacenters(context, datacenters)
-			So(context.Finalize(), ShouldErrLike, "unknown KVM")
+			So(context.Finalize(), ShouldErrLike, "does not exist")
 		})
 
 		Convey("invalid MAC-48 address", func() {

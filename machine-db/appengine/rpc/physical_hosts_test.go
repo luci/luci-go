@@ -190,7 +190,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "unknown machine")
+			So(err, ShouldErrLike, "does not exist")
 			So(res, ShouldBeNil)
 		})
 
@@ -208,7 +208,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "unknown operating system")
+			So(err, ShouldErrLike, "does not exist")
 			So(res, ShouldBeNil)
 		})
 

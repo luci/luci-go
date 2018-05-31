@@ -93,10 +93,10 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 			return status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", n.MacAddress)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown machine %q", n.Machine)
+			return status.Errorf(codes.NotFound, "machine %q does not exist", n.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
-			return status.Errorf(codes.NotFound, "unknown switch %q", n.Switch)
+			return status.Errorf(codes.NotFound, "switch %q does not exist", n.Switch)
 		}
 		return errors.Annotate(err, "failed to create NIC").Err()
 	}
@@ -123,7 +123,7 @@ func deleteNIC(c context.Context, name, machine string) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
-		return status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", name, machine)
+		return status.Errorf(codes.NotFound, "NIC %q does not exist on machine %q", name, machine)
 	}
 	return nil
 }
@@ -217,7 +217,7 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", n.MacAddress)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown switch %q", n.Switch)
+			return nil, status.Errorf(codes.NotFound, "switch %q does not exist", n.Switch)
 		}
 		return nil, errors.Annotate(err, "failed to update NIC").Err()
 	}
@@ -232,7 +232,7 @@ func updateNIC(c context.Context, n *crimson.NIC, mask *field_mask.FieldMask) (*
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated NIC").Err()
 	case len(nics) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown NIC %q for machine %q", n.Name, n.Machine)
+		return nil, status.Errorf(codes.NotFound, "NIC %q does not exist on machine %q", n.Name, n.Machine)
 	}
 
 	if err := tx.Commit(); err != nil {
