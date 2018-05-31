@@ -80,6 +80,7 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 					Repository: cfgBuilder.Repository,
 					Ref: ref,
 					Notifications: cfgNotifier.Notifications,
+					NotifyBlamelist: cfgNotifier.NotifyBlamelist,
 					Status: StatusUnknown,
 				}
 				newBuilders = append(builders, newBuilder)

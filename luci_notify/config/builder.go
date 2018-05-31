@@ -17,8 +17,11 @@ package config
 import (
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/gae/service/datastore"
 	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
+	"go.chromium.org/luci/common/proto/srcman"
 )
 
 // Builder represents the state of the last build seen from a particular
@@ -44,6 +47,12 @@ type Builder struct {
 	// settings on how to notify them.
 	Notifications []*notifyConfig.Notification `gae:"-"`
 
+	// NotifyBlamelist represents a notification to the blamelist when a build
+	// for this builder is encountered. More specifically, if non-nil, then
+	// notifications will be sent to the blamelist for the build, using the
+	// configuration defined therein.
+	NotifyBlamelist notifyConfig.BlamelistNotification
+
 	// Status is current status of the builder.
 	// It is updated every time a new build has a new status and either
 	//   1) the new build has a newer revision than StatusRevision, or
@@ -60,6 +69,12 @@ type Builder struct {
 	// It is the revision of the codebase that's associated with the build
 	// that caused a change of Status.
 	StatusRevision string
+
+	// StatusSourceManifest is the source manifest associated with the build
+	// that caused a change of Status. It can also be used to compute a blamelist.
+	// Note: we assume here that each build has either one source manifest or
+	// none.
+	StatusSourceManifest srcman.Manifest
 }
 
 // StatusUnknown is used in the LookupBuilder return value
