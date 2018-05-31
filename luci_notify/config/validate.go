@@ -26,6 +26,7 @@ import (
 	// Import to register {appid} in validation.Rules
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config/validation"
 
@@ -61,6 +62,8 @@ const (
 	invalidFieldError     = "field %q has invalid format"
 	uniqueFieldError      = "field %q must be unique in %s"
 	badEmailError         = "recipient %q is not a valid RFC 5322 email address"
+	badRepoURLError       = "repo url %q is invalid: %v"
+	badRefError           = "%q is not a valid ref"
 	duplicateBuilderError = "builder %q is specified more than once in file"
 )
 
@@ -84,6 +87,14 @@ func validateBuilder(c *validation.Context, cfgBuilder *notifyConfig.Builder, bu
 	}
 	if cfgBuilder.Name == "" {
 		c.Errorf(requiredFieldError, "name")
+	}
+	if cfgBuilder.Repository != "" {
+		if err := gitiles.ValidateRepoURL(cfgBuilder.Repository); err != nil {
+			c.Errorf(badRepoURLError, cfgBuilder.Repository, err)
+		}
+	}
+	if cfgBuilder.Ref != "" && !strings.HasPrefix("refs/") {
+		c.Errorf(badRefError, cfgBuilder.Ref)
 	}
 	fullName := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
 	if !builderNames.Add(fullName) {
