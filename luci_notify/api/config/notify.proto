@@ -76,6 +76,16 @@ message Notification {
   //
   // Optional.
   string template = 5;
+
+  // NotifyBlamelist specifies whether to notify the computed blamelist for a
+  // given build.
+  //
+  // If set, this notification will be sent to the blamelist of a build. Note
+  // that if this is set in multiple notifications pertaining to the same
+  // builder, the blamelist may recieve multiple emails.
+  //
+  // Optional.
+  bool notify_blamelist = 6;
 }
 
 // Builder references a buildbucket builder in the current project.
