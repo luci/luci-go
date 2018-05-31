@@ -74,7 +74,7 @@ message Notification {
   // Refers to which project template name to use to format this email.
   // If not present, "default" will be used.
   //
-  // Optional
+  // Optional.
   string template = 5;
 }
 
@@ -89,4 +89,17 @@ message Builder {
   //
   // Required.
   string name = 2;
+
+  // Repository is the git repository associated with this particular builder.
+  //
+  // Builds attached to the history of this repository will use this
+  // repository's git history to determine the order between two builds for the
+  // OnChange notification.
+  //
+  // Optional.
+  //
+  // If not set, OnChange notifications will derive their notion of
+  // "previous" build solely from build creation time, which is potentially
+  // less reliable.
+  string repository = 3;
 }
