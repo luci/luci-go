@@ -13,6 +13,8 @@ package notify;
 
 option go_package = "config";
 
+import "go.chromium.org/luci/buildbucket/proto/common.proto";
+
 // ProjectConfig is a luci-notify configuration for a particular project.
 message ProjectConfig {
   // Notifiers is a list of Notifiers which watch builders and send
@@ -43,11 +45,26 @@ message Notifier {
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
 message Notification {
-  // EmailConfig is a message representing a set of mail recipients (email
+  // Email is a message representing a set of mail recipients (email
   // addresses).
   message Email {
     // Recipients is a list of email addresses to notify.
     repeated string recipients = 1;
+  }
+
+  // Blamelist is a message representing configuration for notifying the blamelist.
+  message Blamelist {
+    // A list of repositories which we are allowed to be included as part of the
+    // blamelist. If unset, a blamelist will be computed based on a Builder's
+    // repository field. If set, however luci-notify computes the blamelist for
+    // all commits related to a build (which may span multiple repositories) which
+    // are part of repository in this repository whitelist.
+    //
+    // Repositories should be valid Gerrit/Gitiles repository URLs, such as
+    // https://chromium.googlesource.com/chromium/src
+    //
+    // Optional.
+    repeated string repository_whitelist = 1;
   }
 
   // OnSuccess specifies a trigger to notify recipients on each build success.
@@ -76,6 +93,16 @@ message Notification {
   //
   // Optional.
   string template = 5;
+
+  // NotifyBlamelist specifies whether to notify the computed blamelist for a
+  // given build.
+  //
+  // If set, this notification will be sent to the blamelist of a build. Note
+  // that if this is set in multiple notifications pertaining to the same
+  // builder, the blamelist may recieve multiple emails.
+  //
+  // Optional.
+  Blamelist notify_blamelist = 6;
 }
 
 // Builder references a buildbucket builder in the current project.
@@ -115,4 +142,10 @@ message Builder {
 message Notifications {
   // Notifications is a list of notification configurations.
   repeated Notification notifications = 1;
+}
+
+// A collection of landed Git commits hosted on Gitiles.
+message GitilesCommits {
+  // The Gitiles commits in this collection.
+  repeated buildbucket.v2.GitilesCommit commits = 1;
 }
