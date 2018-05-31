@@ -65,6 +65,17 @@ func (e *Instance) Proto() *api.Instance {
 	}
 }
 
+// FromProto fills in the entity based on the proto message.
+//
+// Returns the entity itself for easier chaining.
+//
+// Doesn't touch output-only fields at all.
+func (e *Instance) FromProto(c context.Context, p *api.Instance) *Instance {
+	e.InstanceID = ObjectRefToInstanceID(p.Instance)
+	e.Package = PackageKey(c, p.Package)
+	return e
+}
+
 // ObjectRefToInstanceID returns an Instance ID that matches the given CAS
 // object ref.
 //

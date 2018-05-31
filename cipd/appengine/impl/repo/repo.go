@@ -15,6 +15,8 @@
 package repo
 
 import (
+	"fmt"
+
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -60,6 +62,9 @@ type repoImpl struct {
 
 	meta metadata.Storage  // storage for package prefix metadata
 	cas  cas.StorageServer // non-ACLed storage for instance package files
+
+	procs    []processing.Processor          // in order of registerProcessor calls
+	procsMap map[string]processing.Processor // ID => processing.Processor
 }
 
 // registerTasks adds tasks to the tq Dispatcher.
@@ -68,6 +73,21 @@ func (impl *repoImpl) registerTasks() {
 	impl.tq.RegisterTask(&tasks.RunProcessors{}, func(c context.Context, m proto.Message) error {
 		return impl.runProcessorsTask(c, m.(*tasks.RunProcessors))
 	}, "run-processors", nil)
+}
+
+// registerProcessor adds a new processor.
+func (impl *repoImpl) registerProcessor(p processing.Processor) {
+	if impl.procsMap == nil {
+		impl.procsMap = map[string]processing.Processor{}
+	}
+
+	id := p.ID()
+	if impl.procsMap[id] != nil {
+		panic(fmt.Sprintf("processor %q has already been registered", id))
+	}
+
+	impl.procs = append(impl.procs, p)
+	impl.procsMap[id] = p
 }
 
 // packageReader opens a package instance for reading.
@@ -254,10 +274,7 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 	}
 
 	// Is such instance already registered?
-	instance := &model.Instance{
-		Package:    model.PackageKey(c, r.Package),
-		InstanceID: model.ObjectRefToInstanceID(r.Instance),
-	}
+	instance := (&model.Instance{}).FromProto(c, r)
 	switch err := datastore.Get(c, instance); {
 	case err == nil:
 		return &api.RegisterInstanceResponse{
@@ -290,12 +307,11 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 	}
 
 	// The instance is already in the CAS storage. Register it in the repository.
-	registered, instance, err := model.RegisterInstance(c, &model.Instance{
-		Package:      model.PackageKey(c, r.Package),
-		InstanceID:   model.ObjectRefToInstanceID(r.Instance),
+	instance = (&model.Instance{
 		RegisteredBy: string(auth.CurrentIdentity(c)),
 		RegisteredTs: clock.Now(c).UTC(),
-	}, impl.onInstanceRegistration)
+	}).FromProto(c, r)
+	registered, instance, err := model.RegisterInstance(c, instance, impl.onInstanceRegistration)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to register the instance").Err()
 	}
@@ -311,15 +327,128 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 
 // onInstanceRegistration is called in a txn when registering an instance.
 func (impl *repoImpl) onInstanceRegistration(c context.Context, inst *model.Instance) error {
-	// TODO(vadimsh): Enqueue tasks.RunProcessors task.
-	return nil
+	// Collect IDs of applicable processors.
+	var procs []string
+	for _, p := range impl.procs {
+		if p.Applicable(inst) {
+			procs = append(procs, p.ID())
+		}
+	}
+	if len(procs) == 0 {
+		return nil
+	}
+
+	// Mark the instance as being processed now.
+	inst.ProcessorsPending = procs
+
+	// Launch the TQ task that does the processing (see runProcessorsTask below).
+	return impl.tq.AddTask(c, &tq.Task{
+		Payload: &tasks.RunProcessors{Instance: inst.Proto()},
+		Title:   inst.InstanceID,
+	})
 }
 
-// runProcessorTask executes a post-upload processing step.
+// runProcessorsTask executes a post-upload processing step.
 //
 // Returning a transient error here causes the task queue service to retry the
 // task.
 func (impl *repoImpl) runProcessorsTask(c context.Context, t *tasks.RunProcessors) error {
-	// TODO(vadimsh): Implement.
-	return nil
+	// Fetch the instance to see what processors are still pending.
+	inst := (&model.Instance{}).FromProto(c, t.Instance)
+	switch err := datastore.Get(c, inst); {
+	case err == datastore.ErrNoSuchEntity:
+		return fmt.Errorf("instance %q is unexpectedly gone from the datastore", inst.InstanceID)
+	case err != nil:
+		return transient.Tag.Apply(err)
+	}
+
+	// TODO(vadimsh): Implement. For now, mark all processors as failed.
+	results := make(map[string]processing.Result, len(inst.ProcessorsPending))
+	for _, proc := range inst.ProcessorsPending {
+		results[proc] = processing.Result{Err: fmt.Errorf("not implemented yet")}
+	}
+	return impl.updateProcessors(c, t.Instance, results)
+}
+
+// updateProcessors transactionally creates ProcessingResult entities and
+// updates Instance.Processors* fields.
+func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, results map[string]processing.Result) error {
+	if len(results) == 0 {
+		return nil
+	}
+
+	instEnt := (&model.Instance{}).FromProto(c, inst)
+	instKey := datastore.KeyForObj(c, instEnt)
+
+	now := clock.Now(c).UTC()
+
+	// Create ProcessingResult outside the transaction, since this involves slow
+	// zlib compression in WriteResult.
+	procResults := make(map[string]*model.ProcessingResult, len(results))
+	for procID, res := range results {
+		procRes := &model.ProcessingResult{
+			ProcID:    procID,
+			Instance:  instKey,
+			CreatedTs: now,
+			Success:   res.Err == nil,
+		}
+		procResults[procID] = procRes
+
+		// If the result is not serializable, store the serialization error instead.
+		err := res.Err
+		if err == nil {
+			if err = procRes.WriteResult(res.Result); err != nil {
+				err = errors.Annotate(err, "failed to write the processing result").Err()
+			}
+		}
+		if err != nil {
+			procRes.Success = false
+			procRes.Error = err.Error()
+		}
+	}
+
+	// Mutate Instance entity, storing results that haven't been stored yet.
+	fatal := false
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		fatal = false // reset in case of txn retry
+
+		switch err := datastore.Get(c, instEnt); {
+		case err == datastore.ErrNoSuchEntity:
+			fatal = true
+			return fmt.Errorf("the entity is unexpectedly gone")
+		case err != nil:
+			return errors.Annotate(err, "failed to fetch the entity").Err()
+		}
+
+		var toPut []interface{}
+
+		// Go over what's is still pending, and move it to either Success or Failure
+		// group if it is done.
+		stillPending := instEnt.ProcessorsPending[:0]
+		for _, procID := range instEnt.ProcessorsPending {
+			res, done := procResults[procID]
+			if !done {
+				stillPending = append(stillPending, procID)
+				continue
+			}
+			toPut = append(toPut, res)
+			if res.Success {
+				instEnt.ProcessorsSuccess = append(instEnt.ProcessorsSuccess, procID)
+			} else {
+				instEnt.ProcessorsFailure = append(instEnt.ProcessorsFailure, procID)
+			}
+		}
+		instEnt.ProcessorsPending = stillPending
+
+		// Store all the changes (if any).
+		if len(toPut) == 0 {
+			return nil
+		}
+		return datastore.Put(c, toPut, instEnt)
+	}, nil)
+
+	if !fatal {
+		err = transient.Tag.Apply(err)
+	}
+	return err
 }

@@ -15,6 +15,7 @@
 package repo
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -23,7 +24,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/appengine/tq"
+	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
@@ -32,6 +36,8 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
+	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -336,7 +342,15 @@ func TestRegisterInstance(t *testing.T) {
 			},
 		})
 
-		impl := repoImpl{meta: &meta, cas: &cas}
+		impl := repoImpl{
+			tq:   &tq.Dispatcher{BaseURL: "/internal/tq/"},
+			meta: &meta,
+			cas:  &cas,
+		}
+		impl.registerTasks()
+
+		tq := tqtesting.GetTestable(ctx, impl.tq)
+		tq.CreateQueues()
 
 		digest := strings.Repeat("a", 40)
 		inst := &api.Instance{
@@ -348,6 +362,15 @@ func TestRegisterInstance(t *testing.T) {
 		}
 
 		Convey("Happy path", func() {
+			impl.registerProcessor(&mockedProcessor{
+				ProcID:    "proc_id_1",
+				AppliesTo: inst.Package,
+			})
+			impl.registerProcessor(&mockedProcessor{
+				ProcID:    "proc_id_2",
+				AppliesTo: "something else",
+			})
+
 			uploadOp := api.UploadOperation{
 				OperationId: "op_id",
 				UploadUrl:   "http://fake.example.com",
@@ -379,25 +402,35 @@ func TestRegisterInstance(t *testing.T) {
 			}
 
 			// The instance is already uploaded => registers it in the datastore.
+			fullInstProto := &api.Instance{
+				Package:      inst.Package,
+				Instance:     inst.Instance,
+				RegisteredBy: "user:owner@example.com",
+				RegisteredTs: google.NewTimestamp(testTime),
+			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
 			So(resp, ShouldResemble, &api.RegisterInstanceResponse{
-				Status: api.RegistrationStatus_REGISTERED,
-				Instance: &api.Instance{
-					Package:      inst.Package,
-					Instance:     inst.Instance,
-					RegisteredBy: "user:owner@example.com",
-					RegisteredTs: google.NewTimestamp(testTime),
-				},
+				Status:   api.RegistrationStatus_REGISTERED,
+				Instance: fullInstProto,
+			})
+
+			// Launched post-processors.
+			ent := (&model.Instance{}).FromProto(ctx, inst)
+			So(datastore.Get(ctx, ent), ShouldBeNil)
+			So(ent.ProcessorsPending, ShouldResemble, []string{"proc_id_1"})
+			tqt := tq.GetScheduledTasks()
+			So(tqt, ShouldHaveLength, 1)
+			So(tqt[0].Payload, ShouldResemble, &tasks.RunProcessors{
+				Instance: fullInstProto,
 			})
 		})
 
 		Convey("Already registered", func() {
-			_, _, err := model.RegisterInstance(ctx, &model.Instance{
-				Package:      model.PackageKey(ctx, inst.Package),
-				InstanceID:   model.ObjectRefToInstanceID(inst.Instance),
+			instance := (&model.Instance{
 				RegisteredBy: "user:someone@example.com",
-			}, nil)
+			}).FromProto(ctx, inst)
+			_, _, err := model.RegisterInstance(ctx, instance, nil)
 			So(err, ShouldBeNil)
 
 			resp, err := impl.RegisterInstance(ctx, inst)
@@ -450,4 +483,107 @@ func TestRegisterInstance(t *testing.T) {
 			So(err, ShouldErrLike, `caller has no required WRITER role in prefix "a/b"`)
 		})
 	})
+}
+
+func TestUpdateProcessors(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, testTime)
+
+		impl := repoImpl{}
+
+		inst := &api.Instance{
+			Package: "a/b/c",
+			Instance: &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("a", 40),
+			},
+		}
+
+		storeInstance := func(pending []string) {
+			i := (&model.Instance{ProcessorsPending: pending}).FromProto(ctx, inst)
+			So(datastore.Put(ctx, i), ShouldBeNil)
+		}
+
+		fetchInstance := func() *model.Instance {
+			i := (&model.Instance{}).FromProto(ctx, inst)
+			So(datastore.Get(ctx, i), ShouldBeNil)
+			return i
+		}
+
+		fetchProcRes := func(id string) *model.ProcessingResult {
+			i := (&model.Instance{}).FromProto(ctx, inst)
+			p := &model.ProcessingResult{
+				ProcID:   id,
+				Instance: datastore.KeyForObj(ctx, i),
+			}
+			So(datastore.Get(ctx, p), ShouldBeNil)
+			return p
+		}
+
+		Convey("Noop updateProcessors", func() {
+			storeInstance([]string{"a", "b"})
+			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
+				"some-another": {Err: fmt.Errorf("fail")},
+			}), ShouldBeNil)
+			So(fetchInstance().ProcessorsPending, ShouldResemble, []string{"a", "b"})
+		})
+
+		Convey("Updates processors successfully", func() {
+			storeInstance([]string{"ok", "fail", "pending"})
+
+			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
+				"ok":   {Result: "OK"},
+				"fail": {Err: fmt.Errorf("failed")},
+			}), ShouldBeNil)
+
+			// Updated the Instance entity.
+			inst := fetchInstance()
+			So(inst.ProcessorsPending, ShouldResemble, []string{"pending"})
+			So(inst.ProcessorsSuccess, ShouldResemble, []string{"ok"})
+			So(inst.ProcessorsFailure, ShouldResemble, []string{"fail"})
+
+			// Created ProcessingResult entities.
+			okRes := fetchProcRes("ok")
+			So(okRes.Success, ShouldBeTrue)
+			var res string
+			So(okRes.ReadResult(&res), ShouldBeNil)
+			So(res, ShouldEqual, "OK")
+
+			failRes := fetchProcRes("fail")
+			So(failRes.Success, ShouldBeFalse)
+			So(failRes.Error, ShouldEqual, "failed")
+		})
+
+		Convey("Missing entity", func() {
+			err := impl.updateProcessors(ctx, inst, map[string]processing.Result{
+				"proc": {Err: fmt.Errorf("fail")},
+			})
+			So(err, ShouldErrLike, "the entity is unexpectedly gone")
+		})
+	})
+}
+
+// mockedProcessor implements processing.Processor interface.
+type mockedProcessor struct {
+	ProcID    string
+	AppliesTo string
+
+	Result processing.Result
+	Err    error
+}
+
+func (m *mockedProcessor) ID() string {
+	return m.ProcID
+}
+
+func (m *mockedProcessor) Applicable(inst *model.Instance) bool {
+	return inst.Package.StringID() == m.AppliesTo
+}
+
+func (m *mockedProcessor) Run(context.Context, *model.Instance, *processing.PackageReader) (processing.Result, error) {
+	return m.Result, m.Err
 }
