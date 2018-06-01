@@ -19,6 +19,9 @@ import (
 	"net/http"
 	"strings"
 
+	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/validation"
@@ -38,11 +41,6 @@ import (
 
 	"go.chromium.org/gae/impl/prod"
 	"go.chromium.org/gae/service/info"
-	"go.chromium.org/gae/service/urlfetch"
-
-	"google.golang.org/appengine"
-
-	"golang.org/x/net/context"
 )
 
 var (
@@ -60,8 +58,10 @@ var (
 		DBProvider:          authdb.NewDBCache(gaeauth.GetAuthDB),
 		Signer:              gaesigner.Signer{},
 		AccessTokenProvider: client.GetAccessToken,
-		AnonymousTransport:  urlfetch.Get,
-		IsDevMode:           appengine.IsDevAppServer(),
+		AnonymousTransport: func(c context.Context) http.RoundTripper {
+			return &contextAwareUrlFetch{c}
+		},
+		IsDevMode: appengine.IsDevAppServer(),
 	}
 
 	// globalTsMonState holds configuration and state related to time series
