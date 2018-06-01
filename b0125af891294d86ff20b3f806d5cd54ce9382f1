@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "412c19ee_1f099a85",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:24:43Z",
+      "side": 1,
+      "message": "i am not sure this is a good place for this field. It doesn\u0027t have much to do with other fields in this proto and it allows mutliple notifiers with blamelist. This will result in multiple blame emails.\n\nConsider a separate message BlamelistNotificaion { string template \u003d 1; } and use it in Notifier",
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6596125c_70801193",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:24:43Z",
+      "side": 1,
+      "message": "nit: let\u0027s make this first sentence",
+      "range": {
+        "startLine": 59,
+        "startChar": 64,
+        "endLine": 60,
+        "endChar": 70
+      },
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d2ab26d_f5cc6bb6",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:24:43Z",
+      "side": 1,
+      "message": "https://chromium.googlesource.com/infra/luci/gae/+/master/tools/proto-gae/README.md",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 1
+      },
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b91c8e32_670b043f",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:24:43Z",
+      "side": 1,
+      "message": "can we store notifyConfig.Notification itself? we keep mirroring its fields here. Then we don\u0027t need NotificationConfig type",
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
