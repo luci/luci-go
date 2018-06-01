@@ -104,40 +104,37 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 	return output.EmailNotify, nil
 }
 
-// handleBuild processes a Build and sends appropriate notifications.
-//
-// This function should serve as documentation of the process of going from
-// a Build to sent notifications. It also should explicitly handle ACLs and
-// stop the process of handling notifications early to avoid wasting compute time.
-//
-// history is a function that contacts gitiles to obtain the git history for
-// revision ordering purposes. It's passed in as a parameter in order to mock it
-// for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
-	switch ex, err := datastore.Exists(c, &notifyConfig.Project{Name: build.Builder.Project}); {
-	case err != nil:
-		return err
-	case !ex.All():
-		return nil // This project is not tracked by luci-notify
-	}
+// notifyFunc represents a closed-over version of Notify with the other arguments already curried.
+type notifyFunc func(c context.Context, status buildbucketpb.Status) error
 
+// lookupNotifiers looks up notifiers in the datastore and returns them.
+//
+// Returns a list of notifiers, whether we should continue, and potentially an error.
+func lookupNotifiers(c context.Context, build *Build, notify notifyFunc) ([]*notifyConfig.Notifier, bool, error) {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
 	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
 	if err != nil {
-		return errors.Annotate(err, "looking up notifiers").Tag(transient.Tag).Err()
+		return nil, false, errors.Annotate(err, "looking up notifiers").Tag(transient.Tag).Err()
 	}
 	if len(notifiers) == 0 {
 		// No configurations were found, but we might need to generate notifications
 		// based on properties. Don't fall through to avoid storing build status for
 		// builds without configurations.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return nil, false, notify(c, notifyConfig.StatusUnknown)
 	}
+	return notifiers, true, nil
+}
 
+// tryHandleBuild attempts to handle a build without revision information available.
+//
+// Returns a gitiles commit (signifying that it's non-nil), the builder from the datastore, whether we
+// should keep going, and potentially an error.
+func tryHandleBuild(c context.Context, build *Build, notify notifyFunc) (*buildbucketpb.GitilesCommit, *notifyConfig.Builder, bool, error) {
 	gCommit := build.Input.GetGitilesCommit()
-	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
+	builderID := getBuilderID(build)
 	builder := &Builder{ID: builderID}
 	keepGoing := false
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
@@ -151,17 +148,20 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
+
+		buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
+
 		// Handle the case where there's no repository being tracked.
 		if builder.Repository == "" {
 			if builder.StatusBuildTime.Before(buildCreateTime) {
-				if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+				if err := notify(c, builder.Status); err != nil {
 					return err
 				}
 				builder.StatusBuildTime = buildCreateTime
 				return datastore.Put(c, builder)
 			}
 			logging.Infof(c, "Found build with old time")
-			return Notify(c, d, notifiers, config.StatusUnknown, build)
+			return notify(c, notifyConfig.StatusUnknown)
 		}
 		// If there's no revision information, and the builder has a repository, ignore
 		// the build.
@@ -169,9 +169,17 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			logging.Infof(c, "No revision information found for this build, ignoring...")
 			return nil
 		}
+		// Check if the repository matches 
+		repoURL, _ := url.Parse(builder.Repository)
+		if repoURL.Hostname() != gCommit.Host || repoURL.EscapedPath() != gCommit.Project {
+			logging.Infof(c,
+				"Builder %s triggered by commit to %s on %s instead of known repo %s, ignoring...",
+				builderID, gCommit.Host, gCommit.Project, builder.Repository)
+			return nil
+		}
 		// Handle the case where the builder hasn't seen a build yet.
 		if builder.StatusRevision == "" {
-			if err := Notify(c, d, notifiers, config.StatusUnknown, build); err != nil {
+			if err := notify(c, notifyConfig.StatusUnknown); err != nil {
 				return err
 			}
 			builder.StatusRevision = gCommit.Id
@@ -180,29 +188,30 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 		keepGoing = true
 	})
-	if err != nil || !keepGoing {
-		return err
-	}
+	return gCommit, builder, keepGoing, err
+}
 
-	repoURL, _ := url.Parse(builder.Repository)
-	if repoURL.Hostname() != gCommit.Host || repoURL.EscapedPath() != gCommit.Project {
-		logging.Infof(c,
-			"Builder %s triggered by commit to %s on %s instead of known repo %s, ignoring...",
-			builderID, gCommit.Host, gCommit.Project, builder.Repository)
-		return nil
-	}
-
+// getCommitHistory retrieves the commit history between the builder's revision and the build's revision.
+//
+// Returns a list of git commits, whether to keep going, and potentially an error.
+func getCommitHistory(c context.Context, builder *notifyConfig.Builder, gCommit *buildbucketpb.GitilesCommit, notify notifyFunc, history HistoryFunc) ([]*gitpb.Commit, bool, error) {
 	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
 	commits, err := history(c, gCommit.Host, gCommit.Project, builder.StatusRevision, gCommit.Id)
 	if err != nil {
-		return err
+		return nil, false, err
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
 		// Notify about the build, but ignore on_change by creating a builder with an unknown status.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return nil, false, notify(c, StatusUnknown)
 	}
+	return commits, true, nil
+}
 
+// updateBuilderAndNotify uses revision information to determine if the build we're processing
+// arrived out-of-order compared to the builder's previous build, updates the builder in the datastore
+// if not, and sends a notification.
+func updateBuilderAndNotify(c context.Context, commits []*gitpb.Commit, builder *notifyConfig.Builder, newRevision string, build *Build, notify notifyFunc) error {
 	// Update `builder`, and check if we need to store a newer version, then store it.
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
@@ -218,6 +227,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		}
 
 		index := commitIndex(commits, builder.StatusRevision)
+		buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 		outOfOrder := false
 		switch {
 		// If the revision is not found, we can conclude that the Builder has
@@ -238,16 +248,52 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// Since on_change only occurs when Builder Status != StatusUnknown, set builder
 		// to a new builder with exactly this property.
 		if outOfOrder {
-			return Notify(c, d, notifiers, StatusUnknown, build)
+			return notify(c, StatusUnknown)
 		}
-		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+		if err := notify(c, builder.Status); err != nil {
 			return err
 		}
-		builder.StatusRevision = gCommit.Id
+		builder.StatusRevision = newRevision
 		builder.StatusBuildTime = buildCreateTime
 		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
+}
+
+// handleBuild processes a Build and sends appropriate notifications.
+//
+// This function should serve as documentation of the process of going from
+// a Build to sent notifications. It also should explicitly handle ACLs and
+// stop the process of handling notifications early to avoid wasting compute time.
+//
+// history is a function that contacts gitiles to obtain the git history for
+// revision ordering purposes. It's passed in as a parameter in order to mock it
+// for testing.
+func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
+	switch ex, err := datastore.Exists(c, &notifyConfig.Project{Name: build.Builder.Project}); {
+	case err != nil:
+		return err
+	case !ex.All():
+		return nil // This project is not tracked by luci-notify
+	}
+
+	var notifiers []*notifyConfig.Notifier
+	notify := func(c context.Context, status buildbucketpb.Status) error {
+		return Notify(c, d, notifiers, status, build)
+	}
+	notifiers, ok, err := lookupNotifiers(c, build, notify)
+	if err != nil || !ok {
+		return err
+	}
+	gCommit, builder, ok, err := tryHandleBuild(c, build, notify)
+	if err != nil || !ok {
+		return err
+	}
+	commits, ok, err := getCommitHistory(c, builder, gCommit, notify, history)
+	if err != nil || !ok {
+		return err
+	}
+	return updateBuilderAndNotify(c, commits, builder, gCommit.Id, build, notify)
 }
 
 func newBuildsClient(c context.Context, host string) (buildbucketpb.BuildsClient, error) {
