@@ -82,12 +82,14 @@ func validateFaviconURL(faviconURL string) error {
 }
 
 func getFaviconURL(c context.Context, def *config.Console) string {
-	faviconURL := def.FaviconUrl
-	if err := validateFaviconURL(faviconURL); err != nil {
-		logging.WithError(err).Warningf(c, "invalid favicon URL")
-		faviconURL = ""
+	if def.FaviconUrl == "" {
+		return ""
 	}
-	return faviconURL
+	if err := validateFaviconURL(def.FaviconUrl); err != nil {
+		logging.WithError(err).Warningf(c, "invalid favicon URL")
+		return ""
+	}
+	return def.FaviconUrl
 }
 
 // columnSummaryFn is called by buildTreeFromDef.
