@@ -29,6 +29,9 @@ one line of [text/template](https://godoc.org/text/template) and body is an
 
 Template `default` is used if template is not specified.
 
+Note `<appid>.cfg` project config is still required, even if it does not define
+any notifiers.
+
 ## Template input
 
 The input to both templates is a structure with fields
