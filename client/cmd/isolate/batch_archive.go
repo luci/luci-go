@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -171,9 +172,16 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		if err != nil {
 			return err
 		}
-		isolSummary, err := archiver.Archive(opts)
+		// Parse the incoming isolate file.
+		deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
+		if err != nil {
+			return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
+		}
+		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
+
+		isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 		if err != nil && errArchive == nil {
-			errArchive = err
+			errArchive = fmt.Errorf("isolate %s: %v", opts.Isolate, err)
 		} else {
 			printSummary(al, isolSummary)
 			isolSummaries = append(isolSummaries, isolSummary)

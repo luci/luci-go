@@ -26,7 +26,6 @@ import (
 )
 
 func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
-	t.Parallel()
 	Convey(`Archive command line arguments should be converted properly for Go.`, t, func() {
 		data := []struct {
 			input    []string
@@ -76,7 +75,6 @@ func TestConvertPyToGoArchiveCMDArgs(t *testing.T) {
 }
 
 func TestInvalidArchiveCMD(t *testing.T) {
-	t.Parallel()
 	Convey(`Archive should handle errors in command line argments.`, t, func() {
 		_, err := parseArchiveCMD([]string(nil), absToOS("e:", "/tmp/bar"))
 		So(err.Error(), ShouldResemble, "-isolated must be specified")
@@ -84,7 +82,6 @@ func TestInvalidArchiveCMD(t *testing.T) {
 }
 
 func TestArchiveCMDParsing(t *testing.T) {
-	t.Parallel()
 	Convey(`Archive command line arguments should be parsed correctly.`, t, func() {
 		args := []string{
 			"--isolated", "../biz/bar.isolated",
@@ -113,7 +110,6 @@ func TestArchiveCMDParsing(t *testing.T) {
 // Verify that if the isolate/isolated paths are absolute, we don't
 // accidentally interpret them as relative to the cwd.
 func TestArchiveAbsolutePaths(t *testing.T) {
-	t.Parallel()
 	Convey(`Archive command line should correctly handle absolute paths.`, t, func() {
 		root := absToOS("e:", "/tmp/bar/")
 		args := []string{

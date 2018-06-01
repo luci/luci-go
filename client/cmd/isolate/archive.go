@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -144,17 +145,24 @@ func (al *archiveLogger) Fprintf(w io.Writer, format string, a ...interface{}) (
 	return fmt.Printf("%s"+format, args...)
 }
 
-// archive performs the archive operation for an isolate specified by archiveOpts.
+// archive performs the archive operation for an isolate specified by opts.
 // dumpJSON is the path to write a JSON summary of the uploaded isolate, in the same format as batch_archive.
-func archive(ctx context.Context, client *isolatedclient.Client, archiveOpts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
+func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.ArchiveOptions, dumpJSON string, concurrentChecks, concurrentUploads int, al archiveLogger) error {
+	// Parse the incoming isolate file.
+	deps, rootDir, isol, err := isolate.ProcessIsolate(opts)
+	if err != nil {
+		return fmt.Errorf("isolate %s: failed to process: %v", opts.Isolate, err)
+	}
+	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
+
 	// Set up a checker and uploader.
 	checker := NewChecker(ctx, client, concurrentChecks)
 	uploader := NewUploader(ctx, client, concurrentUploads)
 	archiver := NewTarringArchiver(checker, uploader)
 
-	isolSummary, err := archiver.Archive(archiveOpts)
+	isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 	if err != nil {
-		return err
+		return fmt.Errorf("isolate %s: %v", opts.Isolate, err)
 	}
 
 	// Make sure that all pending items have been checked.
