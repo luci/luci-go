@@ -63,26 +63,26 @@ type ArchiveOptions struct {
 // uploads it and its dependencies.
 //
 // Archive returns the digest of the composite isolated file.
-func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.Item {
+func Archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
 	item, err := archive(c, arch, opts)
 	if err != nil {
 		arch.Cancel(err)
-		i := &archiver.Item{DisplayName: opts.Isolated}
+		i := &archiver.PendingItem{DisplayName: opts.Isolated}
 		i.SetErr(err)
 		return i
 	}
 	return item
 }
 
-func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (*archiver.Item, error) {
+func archive(c context.Context, arch *archiver.Archiver, opts *ArchiveOptions) (*archiver.PendingItem, error) {
 	// Archive all files.
-	fItems := make(map[*archiver.Item]string, len(opts.Files))
+	fItems := make(map[*archiver.PendingItem]string, len(opts.Files))
 	for file, wd := range opts.Files {
 		fItems[arch.PushFile(file, filepath.Join(wd, file), 0)] = wd
 	}
 
 	// Archive all directories.
-	dItems := make(map[*archiver.Item]string, len(opts.Dirs))
+	dItems := make(map[*archiver.PendingItem]string, len(opts.Dirs))
 	for dir, wd := range opts.Dirs {
 		dItems[archiver.PushDirectory(arch, filepath.Join(wd, dir), dir, opts.Blacklist)] = wd
 	}
@@ -145,7 +145,7 @@ func isolatedFile(file string, digest isolated.HexDigest) (isolated.File, error)
 	return isolated.BasicFile(digest, int(mode.Perm()), info.Size()), nil
 }
 
-func waitOnItems(items map[*archiver.Item]string, cb func(string, string, isolated.HexDigest) error) error {
+func waitOnItems(items map[*archiver.PendingItem]string, cb func(string, string, isolated.HexDigest) error) error {
 	for item, wd := range items {
 		item.WaitForHashed()
 		if err := item.Error(); err != nil {
