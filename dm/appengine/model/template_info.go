@@ -36,6 +36,19 @@ func (ti TemplateInfo) Less(i, j int) bool {
 	}.Use(i, j)
 }
 
+// Equals returns true iff this TemplateInfo is exactly same as `other`.
+func (ti TemplateInfo) Equals(other TemplateInfo) bool {
+	if len(other) != len(ti) {
+		return false
+	}
+	for i, me := range ti {
+		if !me.Equals(&other[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 // EqualsData returns true iff this TemplateInfo has the same content as the
 // proto-style TemplateInfo. This assumes that `other` is sorted.
 func (ti TemplateInfo) EqualsData(other []*dm.Quest_TemplateSpec) bool {

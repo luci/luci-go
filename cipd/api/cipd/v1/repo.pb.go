@@ -8,7 +8,7 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -19,6 +19,12 @@ import (
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Roles used in package prefix ACLs.
 //
@@ -56,7 +62,9 @@ var Role_value = map[string]int32{
 func (x Role) String() string {
 	return proto.EnumName(Role_name, int32(x))
 }
-func (Role) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (Role) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{0}
+}
 
 // RegistrationStatus is part of RegisterInstance RPC response.
 type RegistrationStatus int32
@@ -84,17 +92,41 @@ var RegistrationStatus_value = map[string]int32{
 func (x RegistrationStatus) String() string {
 	return proto.EnumName(RegistrationStatus_name, int32(x))
 }
-func (RegistrationStatus) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (RegistrationStatus) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{1}
+}
 
 type PrefixRequest struct {
 	// A prefix within the repository, e.g. "a/b/c".
-	Prefix string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix               string   `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *PrefixRequest) Reset()                    { *m = PrefixRequest{} }
-func (m *PrefixRequest) String() string            { return proto.CompactTextString(m) }
-func (*PrefixRequest) ProtoMessage()               {}
-func (*PrefixRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *PrefixRequest) Reset()         { *m = PrefixRequest{} }
+func (m *PrefixRequest) String() string { return proto.CompactTextString(m) }
+func (*PrefixRequest) ProtoMessage()    {}
+func (*PrefixRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{0}
+}
+func (m *PrefixRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PrefixRequest.Unmarshal(m, b)
+}
+func (m *PrefixRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PrefixRequest.Marshal(b, m, deterministic)
+}
+func (dst *PrefixRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrefixRequest.Merge(dst, src)
+}
+func (m *PrefixRequest) XXX_Size() int {
+	return xxx_messageInfo_PrefixRequest.Size(m)
+}
+func (m *PrefixRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrefixRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrefixRequest proto.InternalMessageInfo
 
 func (m *PrefixRequest) GetPrefix() string {
 	if m != nil {
@@ -118,20 +150,42 @@ type PrefixMetadata struct {
 	// When the metadata was modified the last time.
 	//
 	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
-	UpdateTime *google_protobuf.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
+	UpdateTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
 	// Identity string of whoever modified the metadata the last time.
 	//
 	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
 	UpdateUser string `protobuf:"bytes,4,opt,name=update_user,json=updateUser" json:"update_user,omitempty"`
 	// ACLs that apply to this prefix and all subprefixes, as a mapping from
 	// a role to a list of users and groups that have it.
-	Acls []*PrefixMetadata_ACL `protobuf:"bytes,5,rep,name=acls" json:"acls,omitempty"`
+	Acls                 []*PrefixMetadata_ACL `protobuf:"bytes,5,rep,name=acls" json:"acls,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *PrefixMetadata) Reset()                    { *m = PrefixMetadata{} }
-func (m *PrefixMetadata) String() string            { return proto.CompactTextString(m) }
-func (*PrefixMetadata) ProtoMessage()               {}
-func (*PrefixMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *PrefixMetadata) Reset()         { *m = PrefixMetadata{} }
+func (m *PrefixMetadata) String() string { return proto.CompactTextString(m) }
+func (*PrefixMetadata) ProtoMessage()    {}
+func (*PrefixMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{1}
+}
+func (m *PrefixMetadata) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PrefixMetadata.Unmarshal(m, b)
+}
+func (m *PrefixMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PrefixMetadata.Marshal(b, m, deterministic)
+}
+func (dst *PrefixMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrefixMetadata.Merge(dst, src)
+}
+func (m *PrefixMetadata) XXX_Size() int {
+	return xxx_messageInfo_PrefixMetadata.Size(m)
+}
+func (m *PrefixMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrefixMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrefixMetadata proto.InternalMessageInfo
 
 func (m *PrefixMetadata) GetPrefix() string {
 	if m != nil {
@@ -147,7 +201,7 @@ func (m *PrefixMetadata) GetFingerprint() string {
 	return ""
 }
 
-func (m *PrefixMetadata) GetUpdateTime() *google_protobuf.Timestamp {
+func (m *PrefixMetadata) GetUpdateTime() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdateTime
 	}
@@ -174,13 +228,35 @@ type PrefixMetadata_ACL struct {
 	// Users and groups that have the specified role.
 	//
 	// Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
-	Principals []string `protobuf:"bytes,2,rep,name=principals" json:"principals,omitempty"`
+	Principals           []string `protobuf:"bytes,2,rep,name=principals" json:"principals,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *PrefixMetadata_ACL) Reset()                    { *m = PrefixMetadata_ACL{} }
-func (m *PrefixMetadata_ACL) String() string            { return proto.CompactTextString(m) }
-func (*PrefixMetadata_ACL) ProtoMessage()               {}
-func (*PrefixMetadata_ACL) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
+func (m *PrefixMetadata_ACL) Reset()         { *m = PrefixMetadata_ACL{} }
+func (m *PrefixMetadata_ACL) String() string { return proto.CompactTextString(m) }
+func (*PrefixMetadata_ACL) ProtoMessage()    {}
+func (*PrefixMetadata_ACL) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{1, 0}
+}
+func (m *PrefixMetadata_ACL) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PrefixMetadata_ACL.Unmarshal(m, b)
+}
+func (m *PrefixMetadata_ACL) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PrefixMetadata_ACL.Marshal(b, m, deterministic)
+}
+func (dst *PrefixMetadata_ACL) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PrefixMetadata_ACL.Merge(dst, src)
+}
+func (m *PrefixMetadata_ACL) XXX_Size() int {
+	return xxx_messageInfo_PrefixMetadata_ACL.Size(m)
+}
+func (m *PrefixMetadata_ACL) XXX_DiscardUnknown() {
+	xxx_messageInfo_PrefixMetadata_ACL.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PrefixMetadata_ACL proto.InternalMessageInfo
 
 func (m *PrefixMetadata_ACL) GetRole() Role {
 	if m != nil {
@@ -202,13 +278,35 @@ type InheritedPrefixMetadata struct {
 	// For example, when requesting metadata for prefix "a/b/c/d" the reply may
 	// contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
 	// skipped in this example as not having any metadata attached).
-	PerPrefixMetadata []*PrefixMetadata `protobuf:"bytes,1,rep,name=per_prefix_metadata,json=perPrefixMetadata" json:"per_prefix_metadata,omitempty"`
+	PerPrefixMetadata    []*PrefixMetadata `protobuf:"bytes,1,rep,name=per_prefix_metadata,json=perPrefixMetadata" json:"per_prefix_metadata,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *InheritedPrefixMetadata) Reset()                    { *m = InheritedPrefixMetadata{} }
-func (m *InheritedPrefixMetadata) String() string            { return proto.CompactTextString(m) }
-func (*InheritedPrefixMetadata) ProtoMessage()               {}
-func (*InheritedPrefixMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *InheritedPrefixMetadata) Reset()         { *m = InheritedPrefixMetadata{} }
+func (m *InheritedPrefixMetadata) String() string { return proto.CompactTextString(m) }
+func (*InheritedPrefixMetadata) ProtoMessage()    {}
+func (*InheritedPrefixMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{2}
+}
+func (m *InheritedPrefixMetadata) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_InheritedPrefixMetadata.Unmarshal(m, b)
+}
+func (m *InheritedPrefixMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_InheritedPrefixMetadata.Marshal(b, m, deterministic)
+}
+func (dst *InheritedPrefixMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InheritedPrefixMetadata.Merge(dst, src)
+}
+func (m *InheritedPrefixMetadata) XXX_Size() int {
+	return xxx_messageInfo_InheritedPrefixMetadata.Size(m)
+}
+func (m *InheritedPrefixMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_InheritedPrefixMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_InheritedPrefixMetadata proto.InternalMessageInfo
 
 func (m *InheritedPrefixMetadata) GetPerPrefixMetadata() []*PrefixMetadata {
 	if m != nil {
@@ -226,13 +324,35 @@ type Instance struct {
 	// User who registered the instance (output only).
 	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy" json:"registered_by,omitempty"`
 	// When the instance was registered (output only).
-	RegisteredTs *google_protobuf.Timestamp `protobuf:"bytes,4,opt,name=registered_ts,json=registeredTs" json:"registered_ts,omitempty"`
+	RegisteredTs         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=registered_ts,json=registeredTs" json:"registered_ts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Instance) Reset()                    { *m = Instance{} }
-func (m *Instance) String() string            { return proto.CompactTextString(m) }
-func (*Instance) ProtoMessage()               {}
-func (*Instance) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *Instance) Reset()         { *m = Instance{} }
+func (m *Instance) String() string { return proto.CompactTextString(m) }
+func (*Instance) ProtoMessage()    {}
+func (*Instance) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{3}
+}
+func (m *Instance) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Instance.Unmarshal(m, b)
+}
+func (m *Instance) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Instance.Marshal(b, m, deterministic)
+}
+func (dst *Instance) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Instance.Merge(dst, src)
+}
+func (m *Instance) XXX_Size() int {
+	return xxx_messageInfo_Instance.Size(m)
+}
+func (m *Instance) XXX_DiscardUnknown() {
+	xxx_messageInfo_Instance.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Instance proto.InternalMessageInfo
 
 func (m *Instance) GetPackage() string {
 	if m != nil {
@@ -255,7 +375,7 @@ func (m *Instance) GetRegisteredBy() string {
 	return ""
 }
 
-func (m *Instance) GetRegisteredTs() *google_protobuf.Timestamp {
+func (m *Instance) GetRegisteredTs() *timestamp.Timestamp {
 	if m != nil {
 		return m.RegisteredTs
 	}
@@ -274,13 +394,35 @@ type RegisterInstanceResponse struct {
 	// For status NOT_UPLOADED contains a new upload operation that can be used
 	// together with Storage service to upload the instance file. Not set for
 	// other statuses.
-	UploadOp *UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp" json:"upload_op,omitempty"`
+	UploadOp             *UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp" json:"upload_op,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *RegisterInstanceResponse) Reset()                    { *m = RegisterInstanceResponse{} }
-func (m *RegisterInstanceResponse) String() string            { return proto.CompactTextString(m) }
-func (*RegisterInstanceResponse) ProtoMessage()               {}
-func (*RegisterInstanceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *RegisterInstanceResponse) Reset()         { *m = RegisterInstanceResponse{} }
+func (m *RegisterInstanceResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterInstanceResponse) ProtoMessage()    {}
+func (*RegisterInstanceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_repo_94560f2934ebd48e, []int{4}
+}
+func (m *RegisterInstanceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RegisterInstanceResponse.Unmarshal(m, b)
+}
+func (m *RegisterInstanceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RegisterInstanceResponse.Marshal(b, m, deterministic)
+}
+func (dst *RegisterInstanceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterInstanceResponse.Merge(dst, src)
+}
+func (m *RegisterInstanceResponse) XXX_Size() int {
+	return xxx_messageInfo_RegisterInstanceResponse.Size(m)
+}
+func (m *RegisterInstanceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_RegisterInstanceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RegisterInstanceResponse proto.InternalMessageInfo
 
 func (m *RegisterInstanceResponse) GetStatus() RegistrationStatus {
 	if m != nil {
@@ -322,8 +464,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Repository service
-
+// RepositoryClient is the client API for Repository service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type RepositoryClient interface {
 	// Returns metadata associated with the given prefix.
 	//
@@ -438,7 +581,7 @@ func NewRepositoryClient(cc *grpc.ClientConn) RepositoryClient {
 
 func (c *repositoryClient) GetPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*PrefixMetadata, error) {
 	out := new(PrefixMetadata)
-	err := grpc.Invoke(ctx, "/cipd.Repository/GetPrefixMetadata", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/GetPrefixMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +590,7 @@ func (c *repositoryClient) GetPrefixMetadata(ctx context.Context, in *PrefixRequ
 
 func (c *repositoryClient) GetInheritedPrefixMetadata(ctx context.Context, in *PrefixRequest, opts ...grpc.CallOption) (*InheritedPrefixMetadata, error) {
 	out := new(InheritedPrefixMetadata)
-	err := grpc.Invoke(ctx, "/cipd.Repository/GetInheritedPrefixMetadata", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/GetInheritedPrefixMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -456,7 +599,7 @@ func (c *repositoryClient) GetInheritedPrefixMetadata(ctx context.Context, in *P
 
 func (c *repositoryClient) UpdatePrefixMetadata(ctx context.Context, in *PrefixMetadata, opts ...grpc.CallOption) (*PrefixMetadata, error) {
 	out := new(PrefixMetadata)
-	err := grpc.Invoke(ctx, "/cipd.Repository/UpdatePrefixMetadata", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/UpdatePrefixMetadata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -465,15 +608,14 @@ func (c *repositoryClient) UpdatePrefixMetadata(ctx context.Context, in *PrefixM
 
 func (c *repositoryClient) RegisterInstance(ctx context.Context, in *Instance, opts ...grpc.CallOption) (*RegisterInstanceResponse, error) {
 	out := new(RegisterInstanceResponse)
-	err := grpc.Invoke(ctx, "/cipd.Repository/RegisterInstance", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/cipd.Repository/RegisterInstance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Repository service
-
+// RepositoryServer is the server API for Repository service.
 type RepositoryServer interface {
 	// Returns metadata associated with the given prefix.
 	//
@@ -636,9 +778,11 @@ var _Repository_serviceDesc = grpc.ServiceDesc{
 	Metadata: "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto",
 }
 
-func init() { proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/repo.proto", fileDescriptor1) }
+func init() {
+	proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/repo.proto", fileDescriptor_repo_94560f2934ebd48e)
+}
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_repo_94560f2934ebd48e = []byte{
 	// 692 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x4d, 0x6f, 0x1a, 0x3b,
 	0x14, 0x7d, 0x03, 0x84, 0x17, 0x2e, 0x09, 0x6f, 0xe2, 0xe4, 0xe5, 0x8d, 0x90, 0x5e, 0x82, 0xc8,

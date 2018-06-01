@@ -29,7 +29,11 @@ func NewJsonResult(data string, exps ...time.Time) *JsonResult {
 	case l > 1:
 		panic("too many exps")
 	}
-	return &JsonResult{data, uint32(len(data)), google_pb.NewTimestamp(exp)}
+	return &JsonResult{
+		Object:     data,
+		Size:       uint32(len(data)),
+		Expiration: google_pb.NewTimestamp(exp),
+	}
 }
 
 // NewDatalessJsonResult creates a new JsonResult object without data and with
@@ -42,7 +46,7 @@ func NewDatalessJsonResult(size uint32, exps ...time.Time) *JsonResult {
 	case l > 1:
 		panic("too many exps")
 	}
-	return &JsonResult{"", size, google_pb.NewTimestamp(exp)}
+	return &JsonResult{Size: size, Expiration: google_pb.NewTimestamp(exp)}
 }
 
 // NewAttemptScheduling creates an Attempt in the SCHEDULING state.
@@ -59,7 +63,7 @@ func NewAttemptExecuting(curExID uint32) *Attempt {
 		Data: &Attempt_Data{
 			NumExecutions: curExID,
 			AttemptType: &Attempt_Data_Executing_{
-				&Attempt_Data_Executing{curExID}}}}
+				&Attempt_Data_Executing{CurExecutionId: curExID}}}}
 }
 
 // NewAttemptWaiting creates an Attempt in the WAITING state.
@@ -67,7 +71,7 @@ func NewAttemptWaiting(numWaiting uint32) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
 			AttemptType: &Attempt_Data_Waiting_{
-				&Attempt_Data_Waiting{numWaiting}}}}
+				&Attempt_Data_Waiting{NumWaiting: numWaiting}}}}
 }
 
 // NewAttemptFinished creates an Attempt in the FINISHED state.
@@ -75,7 +79,7 @@ func NewAttemptFinished(result *JsonResult) *Attempt {
 	return &Attempt{
 		Data: &Attempt_Data{
 			AttemptType: &Attempt_Data_Finished_{
-				&Attempt_Data_Finished{result}}}}
+				&Attempt_Data_Finished{Data: result}}}}
 }
 
 // NewAttemptAbnormalFinish creates an Attempt in the ABNORMAL_FINISH state.

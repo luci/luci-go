@@ -6,12 +6,18 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A switch in the database.
 type Switch struct {
@@ -26,13 +32,35 @@ type Switch struct {
 	// The rack this switch belongs to.
 	Rack string `protobuf:"bytes,5,opt,name=rack" json:"rack,omitempty"`
 	// The state of this switch.
-	State common.State `protobuf:"varint,6,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,6,opt,name=state,enum=common.State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Switch) Reset()                    { *m = Switch{} }
-func (m *Switch) String() string            { return proto.CompactTextString(m) }
-func (*Switch) ProtoMessage()               {}
-func (*Switch) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{0} }
+func (m *Switch) Reset()         { *m = Switch{} }
+func (m *Switch) String() string { return proto.CompactTextString(m) }
+func (*Switch) ProtoMessage()    {}
+func (*Switch) Descriptor() ([]byte, []int) {
+	return fileDescriptor_switches_19a1da2c527957f2, []int{0}
+}
+func (m *Switch) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Switch.Unmarshal(m, b)
+}
+func (m *Switch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Switch.Marshal(b, m, deterministic)
+}
+func (dst *Switch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Switch.Merge(dst, src)
+}
+func (m *Switch) XXX_Size() int {
+	return xxx_messageInfo_Switch.Size(m)
+}
+func (m *Switch) XXX_DiscardUnknown() {
+	xxx_messageInfo_Switch.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Switch proto.InternalMessageInfo
 
 func (m *Switch) GetName() string {
 	if m != nil {
@@ -69,11 +97,11 @@ func (m *Switch) GetRack() string {
 	return ""
 }
 
-func (m *Switch) GetState() common.State {
+func (m *Switch) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 // A request to list switches in the database.
@@ -83,13 +111,35 @@ type ListSwitchesRequest struct {
 	// The datacenters to filter retrieved switches on.
 	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters" json:"datacenters,omitempty"`
 	// The racks to filter retrieved switches on.
-	Racks []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
+	Racks                []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListSwitchesRequest) Reset()                    { *m = ListSwitchesRequest{} }
-func (m *ListSwitchesRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListSwitchesRequest) ProtoMessage()               {}
-func (*ListSwitchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{1} }
+func (m *ListSwitchesRequest) Reset()         { *m = ListSwitchesRequest{} }
+func (m *ListSwitchesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListSwitchesRequest) ProtoMessage()    {}
+func (*ListSwitchesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_switches_19a1da2c527957f2, []int{1}
+}
+func (m *ListSwitchesRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSwitchesRequest.Unmarshal(m, b)
+}
+func (m *ListSwitchesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSwitchesRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListSwitchesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwitchesRequest.Merge(dst, src)
+}
+func (m *ListSwitchesRequest) XXX_Size() int {
+	return xxx_messageInfo_ListSwitchesRequest.Size(m)
+}
+func (m *ListSwitchesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSwitchesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSwitchesRequest proto.InternalMessageInfo
 
 func (m *ListSwitchesRequest) GetNames() []string {
 	if m != nil {
@@ -115,13 +165,35 @@ func (m *ListSwitchesRequest) GetRacks() []string {
 // A response containing a list of switches in the database.
 type ListSwitchesResponse struct {
 	// The switches matching the request.
-	Switches []*Switch `protobuf:"bytes,1,rep,name=switches" json:"switches,omitempty"`
+	Switches             []*Switch `protobuf:"bytes,1,rep,name=switches" json:"switches,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *ListSwitchesResponse) Reset()                    { *m = ListSwitchesResponse{} }
-func (m *ListSwitchesResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListSwitchesResponse) ProtoMessage()               {}
-func (*ListSwitchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor12, []int{2} }
+func (m *ListSwitchesResponse) Reset()         { *m = ListSwitchesResponse{} }
+func (m *ListSwitchesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListSwitchesResponse) ProtoMessage()    {}
+func (*ListSwitchesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_switches_19a1da2c527957f2, []int{2}
+}
+func (m *ListSwitchesResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListSwitchesResponse.Unmarshal(m, b)
+}
+func (m *ListSwitchesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListSwitchesResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListSwitchesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwitchesResponse.Merge(dst, src)
+}
+func (m *ListSwitchesResponse) XXX_Size() int {
+	return xxx_messageInfo_ListSwitchesResponse.Size(m)
+}
+func (m *ListSwitchesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListSwitchesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListSwitchesResponse proto.InternalMessageInfo
 
 func (m *ListSwitchesResponse) GetSwitches() []*Switch {
 	if m != nil {
@@ -137,10 +209,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor12)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor_switches_19a1da2c527957f2)
 }
 
-var fileDescriptor12 = []byte{
+var fileDescriptor_switches_19a1da2c527957f2 = []byte{
 	// 294 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0xc1, 0x4e, 0xc4, 0x20,
 	0x10, 0x0d, 0xbb, 0xdb, 0xea, 0xb2, 0x51, 0x13, 0xdc, 0x03, 0xf1, 0x60, 0x9a, 0x7a, 0x69, 0x62,

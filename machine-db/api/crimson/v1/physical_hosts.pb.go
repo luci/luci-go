@@ -6,13 +6,19 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "google.golang.org/genproto/protobuf/field_mask"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A physical host in the database.
 type PhysicalHost struct {
@@ -34,15 +40,37 @@ type PhysicalHost struct {
 	// The IPv4 address associated with this host.
 	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4" json:"ipv4,omitempty"`
 	// The state of the machine backing this host.
-	State common.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
 	// The virtual datacenter VMs deployed on this host belong to.
-	VirtualDatacenter string `protobuf:"bytes,10,opt,name=virtual_datacenter,json=virtualDatacenter" json:"virtual_datacenter,omitempty"`
+	VirtualDatacenter    string   `protobuf:"bytes,10,opt,name=virtual_datacenter,json=virtualDatacenter" json:"virtual_datacenter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *PhysicalHost) Reset()                    { *m = PhysicalHost{} }
-func (m *PhysicalHost) String() string            { return proto.CompactTextString(m) }
-func (*PhysicalHost) ProtoMessage()               {}
-func (*PhysicalHost) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
+func (m *PhysicalHost) Reset()         { *m = PhysicalHost{} }
+func (m *PhysicalHost) String() string { return proto.CompactTextString(m) }
+func (*PhysicalHost) ProtoMessage()    {}
+func (*PhysicalHost) Descriptor() ([]byte, []int) {
+	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{0}
+}
+func (m *PhysicalHost) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PhysicalHost.Unmarshal(m, b)
+}
+func (m *PhysicalHost) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PhysicalHost.Marshal(b, m, deterministic)
+}
+func (dst *PhysicalHost) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PhysicalHost.Merge(dst, src)
+}
+func (m *PhysicalHost) XXX_Size() int {
+	return xxx_messageInfo_PhysicalHost.Size(m)
+}
+func (m *PhysicalHost) XXX_DiscardUnknown() {
+	xxx_messageInfo_PhysicalHost.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PhysicalHost proto.InternalMessageInfo
 
 func (m *PhysicalHost) GetName() string {
 	if m != nil {
@@ -100,11 +128,11 @@ func (m *PhysicalHost) GetIpv4() string {
 	return ""
 }
 
-func (m *PhysicalHost) GetState() common.State {
+func (m *PhysicalHost) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 func (m *PhysicalHost) GetVirtualDatacenter() string {
@@ -117,13 +145,35 @@ func (m *PhysicalHost) GetVirtualDatacenter() string {
 // A request to create a new physical host in the database.
 type CreatePhysicalHostRequest struct {
 	// The host to create in the database.
-	Host *PhysicalHost `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host                 *PhysicalHost `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *CreatePhysicalHostRequest) Reset()                    { *m = CreatePhysicalHostRequest{} }
-func (m *CreatePhysicalHostRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreatePhysicalHostRequest) ProtoMessage()               {}
-func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
+func (m *CreatePhysicalHostRequest) Reset()         { *m = CreatePhysicalHostRequest{} }
+func (m *CreatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
+func (*CreatePhysicalHostRequest) ProtoMessage()    {}
+func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{1}
+}
+func (m *CreatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreatePhysicalHostRequest.Unmarshal(m, b)
+}
+func (m *CreatePhysicalHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreatePhysicalHostRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreatePhysicalHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreatePhysicalHostRequest.Merge(dst, src)
+}
+func (m *CreatePhysicalHostRequest) XXX_Size() int {
+	return xxx_messageInfo_CreatePhysicalHostRequest.Size(m)
+}
+func (m *CreatePhysicalHostRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreatePhysicalHostRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreatePhysicalHostRequest proto.InternalMessageInfo
 
 func (m *CreatePhysicalHostRequest) GetHost() *PhysicalHost {
 	if m != nil {
@@ -145,7 +195,7 @@ type ListPhysicalHostsRequest struct {
 	// The operating systems to filter retrieved hosts on.
 	Oses []string `protobuf:"bytes,5,rep,name=oses" json:"oses,omitempty"`
 	// The states to filter retrieved hosts on.
-	States []common.State `protobuf:"varint,6,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States []v1.State `protobuf:"varint,6,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
 	// The platforms to filter retrieved hosts on.
 	Platforms []string `protobuf:"bytes,7,rep,name=platforms" json:"platforms,omitempty"`
 	// The racks to filter retrieved hosts on.
@@ -153,13 +203,35 @@ type ListPhysicalHostsRequest struct {
 	// The datacenters to filter retrieved hosts on.
 	Datacenters []string `protobuf:"bytes,9,rep,name=datacenters" json:"datacenters,omitempty"`
 	// The virtual datacenters to filter retrieved hosts on.
-	VirtualDatacenters []string `protobuf:"bytes,10,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	VirtualDatacenters   []string `protobuf:"bytes,10,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListPhysicalHostsRequest) Reset()                    { *m = ListPhysicalHostsRequest{} }
-func (m *ListPhysicalHostsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListPhysicalHostsRequest) ProtoMessage()               {}
-func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
+func (m *ListPhysicalHostsRequest) Reset()         { *m = ListPhysicalHostsRequest{} }
+func (m *ListPhysicalHostsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPhysicalHostsRequest) ProtoMessage()    {}
+func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{2}
+}
+func (m *ListPhysicalHostsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPhysicalHostsRequest.Unmarshal(m, b)
+}
+func (m *ListPhysicalHostsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPhysicalHostsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListPhysicalHostsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPhysicalHostsRequest.Merge(dst, src)
+}
+func (m *ListPhysicalHostsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListPhysicalHostsRequest.Size(m)
+}
+func (m *ListPhysicalHostsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPhysicalHostsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPhysicalHostsRequest proto.InternalMessageInfo
 
 func (m *ListPhysicalHostsRequest) GetNames() []string {
 	if m != nil {
@@ -196,7 +268,7 @@ func (m *ListPhysicalHostsRequest) GetOses() []string {
 	return nil
 }
 
-func (m *ListPhysicalHostsRequest) GetStates() []common.State {
+func (m *ListPhysicalHostsRequest) GetStates() []v1.State {
 	if m != nil {
 		return m.States
 	}
@@ -234,13 +306,35 @@ func (m *ListPhysicalHostsRequest) GetVirtualDatacenters() []string {
 // A response containing a list of physical hosts in the database.
 type ListPhysicalHostsResponse struct {
 	// The hosts matching this request.
-	Hosts []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *ListPhysicalHostsResponse) Reset()                    { *m = ListPhysicalHostsResponse{} }
-func (m *ListPhysicalHostsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListPhysicalHostsResponse) ProtoMessage()               {}
-func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{3} }
+func (m *ListPhysicalHostsResponse) Reset()         { *m = ListPhysicalHostsResponse{} }
+func (m *ListPhysicalHostsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPhysicalHostsResponse) ProtoMessage()    {}
+func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{3}
+}
+func (m *ListPhysicalHostsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPhysicalHostsResponse.Unmarshal(m, b)
+}
+func (m *ListPhysicalHostsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPhysicalHostsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListPhysicalHostsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPhysicalHostsResponse.Merge(dst, src)
+}
+func (m *ListPhysicalHostsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListPhysicalHostsResponse.Size(m)
+}
+func (m *ListPhysicalHostsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPhysicalHostsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPhysicalHostsResponse proto.InternalMessageInfo
 
 func (m *ListPhysicalHostsResponse) GetHosts() []*PhysicalHost {
 	if m != nil {
@@ -254,13 +348,35 @@ type UpdatePhysicalHostRequest struct {
 	// The host to update in the database.
 	Host *PhysicalHost `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
 	// The fields to update in the host.
-	UpdateMask *google_protobuf1.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdatePhysicalHostRequest) Reset()                    { *m = UpdatePhysicalHostRequest{} }
-func (m *UpdatePhysicalHostRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdatePhysicalHostRequest) ProtoMessage()               {}
-func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{4} }
+func (m *UpdatePhysicalHostRequest) Reset()         { *m = UpdatePhysicalHostRequest{} }
+func (m *UpdatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdatePhysicalHostRequest) ProtoMessage()    {}
+func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{4}
+}
+func (m *UpdatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdatePhysicalHostRequest.Unmarshal(m, b)
+}
+func (m *UpdatePhysicalHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdatePhysicalHostRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdatePhysicalHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdatePhysicalHostRequest.Merge(dst, src)
+}
+func (m *UpdatePhysicalHostRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdatePhysicalHostRequest.Size(m)
+}
+func (m *UpdatePhysicalHostRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdatePhysicalHostRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdatePhysicalHostRequest proto.InternalMessageInfo
 
 func (m *UpdatePhysicalHostRequest) GetHost() *PhysicalHost {
 	if m != nil {
@@ -269,7 +385,7 @@ func (m *UpdatePhysicalHostRequest) GetHost() *PhysicalHost {
 	return nil
 }
 
-func (m *UpdatePhysicalHostRequest) GetUpdateMask() *google_protobuf1.FieldMask {
+func (m *UpdatePhysicalHostRequest) GetUpdateMask() *field_mask.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}
@@ -285,10 +401,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor9)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor_physical_hosts_2b90a5c9e86ddbd1)
 }
 
-var fileDescriptor9 = []byte{
+var fileDescriptor_physical_hosts_2b90a5c9e86ddbd1 = []byte{
 	// 551 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x4f, 0x6f, 0xd4, 0x3e,
 	0x10, 0x55, 0x92, 0xee, 0xbf, 0xd9, 0xdf, 0xaf, 0xa2, 0x06, 0x24, 0xef, 0x8a, 0x43, 0xb4, 0x08,

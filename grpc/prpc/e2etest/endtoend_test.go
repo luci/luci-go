@@ -21,6 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/testing/prpctest"
 
+	"github.com/golang/protobuf/proto"
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -56,7 +57,7 @@ func TestEndToEnd(t *testing.T) {
 
 			resp, err := client.Greet(c, &HelloRequest{Name: "round-trip"})
 			So(err, ShouldBeRPCOK)
-			So(resp, ShouldResemble, svc.R)
+			So(proto.Equal(resp, svc.R), ShouldBeTrue)
 		})
 	})
 }

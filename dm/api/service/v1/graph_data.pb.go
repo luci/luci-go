@@ -6,13 +6,19 @@ package dm
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/timestamp"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type AbnormalFinish_Status int32
 
@@ -117,7 +123,9 @@ var AbnormalFinish_Status_value = map[string]int32{
 func (x AbnormalFinish_Status) String() string {
 	return proto.EnumName(AbnormalFinish_Status_name, int32(x))
 }
-func (AbnormalFinish_Status) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
+func (AbnormalFinish_Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{0, 0}
+}
 
 type Attempt_State int32
 
@@ -152,7 +160,9 @@ var Attempt_State_value = map[string]int32{
 func (x Attempt_State) String() string {
 	return proto.EnumName(Attempt_State_name, int32(x))
 }
-func (Attempt_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 0} }
+func (Attempt_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 0}
+}
 
 type Attempt_Partial_Result int32
 
@@ -185,7 +195,9 @@ var Attempt_Partial_Result_value = map[string]int32{
 func (x Attempt_Partial_Result) String() string {
 	return proto.EnumName(Attempt_Partial_Result_name, int32(x))
 }
-func (Attempt_Partial_Result) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 3, 0} }
+func (Attempt_Partial_Result) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 3, 0}
+}
 
 type Execution_State int32
 
@@ -222,17 +234,41 @@ var Execution_State_value = map[string]int32{
 func (x Execution_State) String() string {
 	return proto.EnumName(Execution_State_name, int32(x))
 }
-func (Execution_State) EnumDescriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 0} }
-
-type AbnormalFinish struct {
-	Status AbnormalFinish_Status `protobuf:"varint,1,opt,name=status,enum=dm.AbnormalFinish_Status" json:"status,omitempty"`
-	Reason string                `protobuf:"bytes,2,opt,name=reason" json:"reason,omitempty"`
+func (Execution_State) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 0}
 }
 
-func (m *AbnormalFinish) Reset()                    { *m = AbnormalFinish{} }
-func (m *AbnormalFinish) String() string            { return proto.CompactTextString(m) }
-func (*AbnormalFinish) ProtoMessage()               {}
-func (*AbnormalFinish) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+type AbnormalFinish struct {
+	Status               AbnormalFinish_Status `protobuf:"varint,1,opt,name=status,enum=dm.AbnormalFinish_Status" json:"status,omitempty"`
+	Reason               string                `protobuf:"bytes,2,opt,name=reason" json:"reason,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
+}
+
+func (m *AbnormalFinish) Reset()         { *m = AbnormalFinish{} }
+func (m *AbnormalFinish) String() string { return proto.CompactTextString(m) }
+func (*AbnormalFinish) ProtoMessage()    {}
+func (*AbnormalFinish) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{0}
+}
+func (m *AbnormalFinish) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AbnormalFinish.Unmarshal(m, b)
+}
+func (m *AbnormalFinish) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AbnormalFinish.Marshal(b, m, deterministic)
+}
+func (dst *AbnormalFinish) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AbnormalFinish.Merge(dst, src)
+}
+func (m *AbnormalFinish) XXX_Size() int {
+	return xxx_messageInfo_AbnormalFinish.Size(m)
+}
+func (m *AbnormalFinish) XXX_DiscardUnknown() {
+	xxx_messageInfo_AbnormalFinish.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AbnormalFinish proto.InternalMessageInfo
 
 func (m *AbnormalFinish) GetStatus() AbnormalFinish_Status {
 	if m != nil {
@@ -258,13 +294,35 @@ type Quest struct {
 	Attempts map[uint32]*Attempt `protobuf:"bytes,4,rep,name=attempts" json:"attempts,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Partial is true iff the request asked for QuestData, but wasn't able to
 	// completely fill it.
-	Partial bool `protobuf:"varint,16,opt,name=partial" json:"partial,omitempty"`
+	Partial              bool     `protobuf:"varint,16,opt,name=partial" json:"partial,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Quest) Reset()                    { *m = Quest{} }
-func (m *Quest) String() string            { return proto.CompactTextString(m) }
-func (*Quest) ProtoMessage()               {}
-func (*Quest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (m *Quest) Reset()         { *m = Quest{} }
+func (m *Quest) String() string { return proto.CompactTextString(m) }
+func (*Quest) ProtoMessage()    {}
+func (*Quest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1}
+}
+func (m *Quest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest.Unmarshal(m, b)
+}
+func (m *Quest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest.Marshal(b, m, deterministic)
+}
+func (dst *Quest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest.Merge(dst, src)
+}
+func (m *Quest) XXX_Size() int {
+	return xxx_messageInfo_Quest.Size(m)
+}
+func (m *Quest) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest proto.InternalMessageInfo
 
 func (m *Quest) GetId() *Quest_ID {
 	if m != nil {
@@ -302,13 +360,35 @@ func (m *Quest) GetPartial() bool {
 }
 
 type Quest_ID struct {
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id                   string   `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Quest_ID) Reset()                    { *m = Quest_ID{} }
-func (m *Quest_ID) String() string            { return proto.CompactTextString(m) }
-func (*Quest_ID) ProtoMessage()               {}
-func (*Quest_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 0} }
+func (m *Quest_ID) Reset()         { *m = Quest_ID{} }
+func (m *Quest_ID) String() string { return proto.CompactTextString(m) }
+func (*Quest_ID) ProtoMessage()    {}
+func (*Quest_ID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 0}
+}
+func (m *Quest_ID) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_ID.Unmarshal(m, b)
+}
+func (m *Quest_ID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_ID.Marshal(b, m, deterministic)
+}
+func (dst *Quest_ID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_ID.Merge(dst, src)
+}
+func (m *Quest_ID) XXX_Size() int {
+	return xxx_messageInfo_Quest_ID.Size(m)
+}
+func (m *Quest_ID) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_ID.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest_ID proto.InternalMessageInfo
 
 func (m *Quest_ID) GetId() string {
 	if m != nil {
@@ -344,13 +424,35 @@ type Quest_Desc struct {
 	// This is metadata which doesn't affect the functionality of the payload,
 	// but does affect how DM interacts with the distributor when scheduling
 	// Executions.
-	Meta *Quest_Desc_Meta `protobuf:"bytes,4,opt,name=meta" json:"meta,omitempty"`
+	Meta                 *Quest_Desc_Meta `protobuf:"bytes,4,opt,name=meta" json:"meta,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *Quest_Desc) Reset()                    { *m = Quest_Desc{} }
-func (m *Quest_Desc) String() string            { return proto.CompactTextString(m) }
-func (*Quest_Desc) ProtoMessage()               {}
-func (*Quest_Desc) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1} }
+func (m *Quest_Desc) Reset()         { *m = Quest_Desc{} }
+func (m *Quest_Desc) String() string { return proto.CompactTextString(m) }
+func (*Quest_Desc) ProtoMessage()    {}
+func (*Quest_Desc) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 1}
+}
+func (m *Quest_Desc) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_Desc.Unmarshal(m, b)
+}
+func (m *Quest_Desc) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_Desc.Marshal(b, m, deterministic)
+}
+func (dst *Quest_Desc) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_Desc.Merge(dst, src)
+}
+func (m *Quest_Desc) XXX_Size() int {
+	return xxx_messageInfo_Quest_Desc.Size(m)
+}
+func (m *Quest_Desc) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_Desc.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest_Desc proto.InternalMessageInfo
 
 func (m *Quest_Desc) GetDistributorConfigName() string {
 	if m != nil {
@@ -387,14 +489,36 @@ type Quest_Desc_Meta struct {
 	AsAccount string `protobuf:"bytes,1,opt,name=as_account,json=asAccount" json:"as_account,omitempty"`
 	// This affects how DM will retry the job payload in various exceptional
 	// circumstances.
-	Retry    *Quest_Desc_Meta_Retry    `protobuf:"bytes,2,opt,name=retry" json:"retry,omitempty"`
-	Timeouts *Quest_Desc_Meta_Timeouts `protobuf:"bytes,3,opt,name=timeouts" json:"timeouts,omitempty"`
+	Retry                *Quest_Desc_Meta_Retry    `protobuf:"bytes,2,opt,name=retry" json:"retry,omitempty"`
+	Timeouts             *Quest_Desc_Meta_Timeouts `protobuf:"bytes,3,opt,name=timeouts" json:"timeouts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
 }
 
-func (m *Quest_Desc_Meta) Reset()                    { *m = Quest_Desc_Meta{} }
-func (m *Quest_Desc_Meta) String() string            { return proto.CompactTextString(m) }
-func (*Quest_Desc_Meta) ProtoMessage()               {}
-func (*Quest_Desc_Meta) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0} }
+func (m *Quest_Desc_Meta) Reset()         { *m = Quest_Desc_Meta{} }
+func (m *Quest_Desc_Meta) String() string { return proto.CompactTextString(m) }
+func (*Quest_Desc_Meta) ProtoMessage()    {}
+func (*Quest_Desc_Meta) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 1, 0}
+}
+func (m *Quest_Desc_Meta) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_Desc_Meta.Unmarshal(m, b)
+}
+func (m *Quest_Desc_Meta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_Desc_Meta.Marshal(b, m, deterministic)
+}
+func (dst *Quest_Desc_Meta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_Desc_Meta.Merge(dst, src)
+}
+func (m *Quest_Desc_Meta) XXX_Size() int {
+	return xxx_messageInfo_Quest_Desc_Meta.Size(m)
+}
+func (m *Quest_Desc_Meta) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_Desc_Meta.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest_Desc_Meta proto.InternalMessageInfo
 
 func (m *Quest_Desc_Meta) GetAsAccount() string {
 	if m != nil {
@@ -434,13 +558,35 @@ type Quest_Desc_Meta_Retry struct {
 	Expired uint32 `protobuf:"varint,3,opt,name=expired" json:"expired,omitempty"`
 	// The number of times in a row to retry Executions which have an
 	// ABNORMAL_FINISHED status of TIMED_OUT.
-	TimedOut uint32 `protobuf:"varint,4,opt,name=timed_out,json=timedOut" json:"timed_out,omitempty"`
+	TimedOut             uint32   `protobuf:"varint,4,opt,name=timed_out,json=timedOut" json:"timed_out,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Quest_Desc_Meta_Retry) Reset()                    { *m = Quest_Desc_Meta_Retry{} }
-func (m *Quest_Desc_Meta_Retry) String() string            { return proto.CompactTextString(m) }
-func (*Quest_Desc_Meta_Retry) ProtoMessage()               {}
-func (*Quest_Desc_Meta_Retry) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 1, 0, 0} }
+func (m *Quest_Desc_Meta_Retry) Reset()         { *m = Quest_Desc_Meta_Retry{} }
+func (m *Quest_Desc_Meta_Retry) String() string { return proto.CompactTextString(m) }
+func (*Quest_Desc_Meta_Retry) ProtoMessage()    {}
+func (*Quest_Desc_Meta_Retry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 1, 0, 0}
+}
+func (m *Quest_Desc_Meta_Retry) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_Desc_Meta_Retry.Unmarshal(m, b)
+}
+func (m *Quest_Desc_Meta_Retry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_Desc_Meta_Retry.Marshal(b, m, deterministic)
+}
+func (dst *Quest_Desc_Meta_Retry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_Desc_Meta_Retry.Merge(dst, src)
+}
+func (m *Quest_Desc_Meta_Retry) XXX_Size() int {
+	return xxx_messageInfo_Quest_Desc_Meta_Retry.Size(m)
+}
+func (m *Quest_Desc_Meta_Retry) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_Desc_Meta_Retry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest_Desc_Meta_Retry proto.InternalMessageInfo
 
 func (m *Quest_Desc_Meta_Retry) GetFailed() uint32 {
 	if m != nil {
@@ -487,33 +633,53 @@ func (m *Quest_Desc_Meta_Retry) GetTimedOut() uint32 {
 //
 // If a given timeout is unlimited, leave the duration unset or 0.
 type Quest_Desc_Meta_Timeouts struct {
-	Start *google_protobuf.Duration `protobuf:"bytes,1,opt,name=start" json:"start,omitempty"`
-	Run   *google_protobuf.Duration `protobuf:"bytes,2,opt,name=run" json:"run,omitempty"`
-	Stop  *google_protobuf.Duration `protobuf:"bytes,3,opt,name=stop" json:"stop,omitempty"`
+	Start                *duration.Duration `protobuf:"bytes,1,opt,name=start" json:"start,omitempty"`
+	Run                  *duration.Duration `protobuf:"bytes,2,opt,name=run" json:"run,omitempty"`
+	Stop                 *duration.Duration `protobuf:"bytes,3,opt,name=stop" json:"stop,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *Quest_Desc_Meta_Timeouts) Reset()         { *m = Quest_Desc_Meta_Timeouts{} }
 func (m *Quest_Desc_Meta_Timeouts) String() string { return proto.CompactTextString(m) }
 func (*Quest_Desc_Meta_Timeouts) ProtoMessage()    {}
 func (*Quest_Desc_Meta_Timeouts) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{1, 1, 0, 1}
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 1, 0, 1}
+}
+func (m *Quest_Desc_Meta_Timeouts) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_Desc_Meta_Timeouts.Unmarshal(m, b)
+}
+func (m *Quest_Desc_Meta_Timeouts) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_Desc_Meta_Timeouts.Marshal(b, m, deterministic)
+}
+func (dst *Quest_Desc_Meta_Timeouts) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_Desc_Meta_Timeouts.Merge(dst, src)
+}
+func (m *Quest_Desc_Meta_Timeouts) XXX_Size() int {
+	return xxx_messageInfo_Quest_Desc_Meta_Timeouts.Size(m)
+}
+func (m *Quest_Desc_Meta_Timeouts) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_Desc_Meta_Timeouts.DiscardUnknown(m)
 }
 
-func (m *Quest_Desc_Meta_Timeouts) GetStart() *google_protobuf.Duration {
+var xxx_messageInfo_Quest_Desc_Meta_Timeouts proto.InternalMessageInfo
+
+func (m *Quest_Desc_Meta_Timeouts) GetStart() *duration.Duration {
 	if m != nil {
 		return m.Start
 	}
 	return nil
 }
 
-func (m *Quest_Desc_Meta_Timeouts) GetRun() *google_protobuf.Duration {
+func (m *Quest_Desc_Meta_Timeouts) GetRun() *duration.Duration {
 	if m != nil {
 		return m.Run
 	}
 	return nil
 }
 
-func (m *Quest_Desc_Meta_Timeouts) GetStop() *google_protobuf.Duration {
+func (m *Quest_Desc_Meta_Timeouts) GetStop() *duration.Duration {
 	if m != nil {
 		return m.Stop
 	}
@@ -521,16 +687,38 @@ func (m *Quest_Desc_Meta_Timeouts) GetStop() *google_protobuf.Duration {
 }
 
 type Quest_TemplateSpec struct {
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
-	Ref     string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
-	Version string `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
-	Name    string `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	Project              string   `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Ref                  string   `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
+	Version              string   `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
+	Name                 string   `protobuf:"bytes,4,opt,name=name" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Quest_TemplateSpec) Reset()                    { *m = Quest_TemplateSpec{} }
-func (m *Quest_TemplateSpec) String() string            { return proto.CompactTextString(m) }
-func (*Quest_TemplateSpec) ProtoMessage()               {}
-func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 2} }
+func (m *Quest_TemplateSpec) Reset()         { *m = Quest_TemplateSpec{} }
+func (m *Quest_TemplateSpec) String() string { return proto.CompactTextString(m) }
+func (*Quest_TemplateSpec) ProtoMessage()    {}
+func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 2}
+}
+func (m *Quest_TemplateSpec) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_TemplateSpec.Unmarshal(m, b)
+}
+func (m *Quest_TemplateSpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_TemplateSpec.Marshal(b, m, deterministic)
+}
+func (dst *Quest_TemplateSpec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_TemplateSpec.Merge(dst, src)
+}
+func (m *Quest_TemplateSpec) XXX_Size() int {
+	return xxx_messageInfo_Quest_TemplateSpec.Size(m)
+}
+func (m *Quest_TemplateSpec) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_TemplateSpec.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Quest_TemplateSpec proto.InternalMessageInfo
 
 func (m *Quest_TemplateSpec) GetProject() string {
 	if m != nil {
@@ -561,17 +749,39 @@ func (m *Quest_TemplateSpec) GetName() string {
 }
 
 type Quest_Data struct {
-	Created *google_protobuf1.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	Desc    *Quest_Desc                 `protobuf:"bytes,2,opt,name=desc" json:"desc,omitempty"`
-	BuiltBy []*Quest_TemplateSpec       `protobuf:"bytes,3,rep,name=built_by,json=builtBy" json:"built_by,omitempty"`
+	Created              *timestamp.Timestamp  `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	Desc                 *Quest_Desc           `protobuf:"bytes,2,opt,name=desc" json:"desc,omitempty"`
+	BuiltBy              []*Quest_TemplateSpec `protobuf:"bytes,3,rep,name=built_by,json=builtBy" json:"built_by,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *Quest_Data) Reset()                    { *m = Quest_Data{} }
-func (m *Quest_Data) String() string            { return proto.CompactTextString(m) }
-func (*Quest_Data) ProtoMessage()               {}
-func (*Quest_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1, 3} }
+func (m *Quest_Data) Reset()         { *m = Quest_Data{} }
+func (m *Quest_Data) String() string { return proto.CompactTextString(m) }
+func (*Quest_Data) ProtoMessage()    {}
+func (*Quest_Data) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{1, 3}
+}
+func (m *Quest_Data) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Quest_Data.Unmarshal(m, b)
+}
+func (m *Quest_Data) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Quest_Data.Marshal(b, m, deterministic)
+}
+func (dst *Quest_Data) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Quest_Data.Merge(dst, src)
+}
+func (m *Quest_Data) XXX_Size() int {
+	return xxx_messageInfo_Quest_Data.Size(m)
+}
+func (m *Quest_Data) XXX_DiscardUnknown() {
+	xxx_messageInfo_Quest_Data.DiscardUnknown(m)
+}
 
-func (m *Quest_Data) GetCreated() *google_protobuf1.Timestamp {
+var xxx_messageInfo_Quest_Data proto.InternalMessageInfo
+
+func (m *Quest_Data) GetCreated() *timestamp.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -607,13 +817,35 @@ type JsonResult struct {
 	Size uint32 `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
 	// The timestamp of when this JsonResult's contents expire. If omitted, it
 	// should be assumed that the contents never expire.
-	Expiration *google_protobuf1.Timestamp `protobuf:"bytes,3,opt,name=expiration" json:"expiration,omitempty"`
+	Expiration           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=expiration" json:"expiration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *JsonResult) Reset()                    { *m = JsonResult{} }
-func (m *JsonResult) String() string            { return proto.CompactTextString(m) }
-func (*JsonResult) ProtoMessage()               {}
-func (*JsonResult) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (m *JsonResult) Reset()         { *m = JsonResult{} }
+func (m *JsonResult) String() string { return proto.CompactTextString(m) }
+func (*JsonResult) ProtoMessage()    {}
+func (*JsonResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{2}
+}
+func (m *JsonResult) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JsonResult.Unmarshal(m, b)
+}
+func (m *JsonResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JsonResult.Marshal(b, m, deterministic)
+}
+func (dst *JsonResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JsonResult.Merge(dst, src)
+}
+func (m *JsonResult) XXX_Size() int {
+	return xxx_messageInfo_JsonResult.Size(m)
+}
+func (m *JsonResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_JsonResult.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JsonResult proto.InternalMessageInfo
 
 func (m *JsonResult) GetObject() string {
 	if m != nil {
@@ -629,7 +861,7 @@ func (m *JsonResult) GetSize() uint32 {
 	return 0
 }
 
-func (m *JsonResult) GetExpiration() *google_protobuf1.Timestamp {
+func (m *JsonResult) GetExpiration() *timestamp.Timestamp {
 	if m != nil {
 		return m.Expiration
 	}
@@ -638,14 +870,36 @@ func (m *JsonResult) GetExpiration() *google_protobuf1.Timestamp {
 
 // Result holds either data OR abnormal finish information.
 type Result struct {
-	Data           *JsonResult     `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
-	AbnormalFinish *AbnormalFinish `protobuf:"bytes,2,opt,name=abnormal_finish,json=abnormalFinish" json:"abnormal_finish,omitempty"`
+	Data                 *JsonResult     `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	AbnormalFinish       *AbnormalFinish `protobuf:"bytes,2,opt,name=abnormal_finish,json=abnormalFinish" json:"abnormal_finish,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *Result) Reset()                    { *m = Result{} }
-func (m *Result) String() string            { return proto.CompactTextString(m) }
-func (*Result) ProtoMessage()               {}
-func (*Result) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (m *Result) Reset()         { *m = Result{} }
+func (m *Result) String() string { return proto.CompactTextString(m) }
+func (*Result) ProtoMessage()    {}
+func (*Result) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{3}
+}
+func (m *Result) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Result.Unmarshal(m, b)
+}
+func (m *Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Result.Marshal(b, m, deterministic)
+}
+func (dst *Result) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Result.Merge(dst, src)
+}
+func (m *Result) XXX_Size() int {
+	return xxx_messageInfo_Result.Size(m)
+}
+func (m *Result) XXX_DiscardUnknown() {
+	xxx_messageInfo_Result.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Result proto.InternalMessageInfo
 
 func (m *Result) GetData() *JsonResult {
 	if m != nil {
@@ -674,13 +928,35 @@ type Attempt struct {
 	// Partial values are true iff the request asked for AttemptData, Executions
 	// or Deps, but wasn't able to completely fill them. If Partial is omitted,
 	// it means that no partial data exists in this Attempt.
-	Partial *Attempt_Partial `protobuf:"bytes,16,opt,name=partial" json:"partial,omitempty"`
+	Partial              *Attempt_Partial `protobuf:"bytes,16,opt,name=partial" json:"partial,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *Attempt) Reset()                    { *m = Attempt{} }
-func (m *Attempt) String() string            { return proto.CompactTextString(m) }
-func (*Attempt) ProtoMessage()               {}
-func (*Attempt) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (m *Attempt) Reset()         { *m = Attempt{} }
+func (m *Attempt) String() string { return proto.CompactTextString(m) }
+func (*Attempt) ProtoMessage()    {}
+func (*Attempt) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4}
+}
+func (m *Attempt) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt.Unmarshal(m, b)
+}
+func (m *Attempt) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt.Marshal(b, m, deterministic)
+}
+func (dst *Attempt) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt.Merge(dst, src)
+}
+func (m *Attempt) XXX_Size() int {
+	return xxx_messageInfo_Attempt.Size(m)
+}
+func (m *Attempt) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt proto.InternalMessageInfo
 
 func (m *Attempt) GetId() *Attempt_ID {
 	if m != nil {
@@ -732,14 +1008,36 @@ func (m *Attempt) GetPartial() *Attempt_Partial {
 }
 
 type Attempt_ID struct {
-	Quest string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
-	Id    uint32 `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
+	Quest                string   `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
+	Id                   uint32   `protobuf:"varint,2,opt,name=id" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Attempt_ID) Reset()                    { *m = Attempt_ID{} }
-func (m *Attempt_ID) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_ID) ProtoMessage()               {}
-func (*Attempt_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 0} }
+func (m *Attempt_ID) Reset()         { *m = Attempt_ID{} }
+func (m *Attempt_ID) String() string { return proto.CompactTextString(m) }
+func (*Attempt_ID) ProtoMessage()    {}
+func (*Attempt_ID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 0}
+}
+func (m *Attempt_ID) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_ID.Unmarshal(m, b)
+}
+func (m *Attempt_ID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_ID.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_ID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_ID.Merge(dst, src)
+}
+func (m *Attempt_ID) XXX_Size() int {
+	return xxx_messageInfo_Attempt_ID.Size(m)
+}
+func (m *Attempt_ID) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_ID.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_ID proto.InternalMessageInfo
 
 func (m *Attempt_ID) GetQuest() string {
 	if m != nil {
@@ -756,22 +1054,44 @@ func (m *Attempt_ID) GetId() uint32 {
 }
 
 type Attempt_Data struct {
-	Created       *google_protobuf1.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	Modified      *google_protobuf1.Timestamp `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
-	NumExecutions uint32                      `protobuf:"varint,3,opt,name=num_executions,json=numExecutions" json:"num_executions,omitempty"`
+	Created       *timestamp.Timestamp `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	Modified      *timestamp.Timestamp `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
+	NumExecutions uint32               `protobuf:"varint,3,opt,name=num_executions,json=numExecutions" json:"num_executions,omitempty"`
 	// Types that are valid to be assigned to AttemptType:
 	//	*Attempt_Data_Scheduling_
 	//	*Attempt_Data_Executing_
 	//	*Attempt_Data_Waiting_
 	//	*Attempt_Data_Finished_
 	//	*Attempt_Data_AbnormalFinish
-	AttemptType isAttempt_Data_AttemptType `protobuf_oneof:"attempt_type"`
+	AttemptType          isAttempt_Data_AttemptType `protobuf_oneof:"attempt_type"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
-func (m *Attempt_Data) Reset()                    { *m = Attempt_Data{} }
-func (m *Attempt_Data) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data) ProtoMessage()               {}
-func (*Attempt_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1} }
+func (m *Attempt_Data) Reset()         { *m = Attempt_Data{} }
+func (m *Attempt_Data) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data) ProtoMessage()    {}
+func (*Attempt_Data) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 1}
+}
+func (m *Attempt_Data) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Data.Unmarshal(m, b)
+}
+func (m *Attempt_Data) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Data.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Data) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Data.Merge(dst, src)
+}
+func (m *Attempt_Data) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Data.Size(m)
+}
+func (m *Attempt_Data) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Data.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Data proto.InternalMessageInfo
 
 type isAttempt_Data_AttemptType interface {
 	isAttempt_Data_AttemptType()
@@ -806,14 +1126,14 @@ func (m *Attempt_Data) GetAttemptType() isAttempt_Data_AttemptType {
 	return nil
 }
 
-func (m *Attempt_Data) GetCreated() *google_protobuf1.Timestamp {
+func (m *Attempt_Data) GetCreated() *timestamp.Timestamp {
 	if m != nil {
 		return m.Created
 	}
 	return nil
 }
 
-func (m *Attempt_Data) GetModified() *google_protobuf1.Timestamp {
+func (m *Attempt_Data) GetModified() *timestamp.Timestamp {
 	if m != nil {
 		return m.Modified
 	}
@@ -963,27 +1283,27 @@ func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.AttemptType.(type) {
 	case *Attempt_Data_Scheduling_:
 		s := proto.Size(x.Scheduling)
-		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_Executing_:
 		s := proto.Size(x.Executing)
-		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_Waiting_:
 		s := proto.Size(x.Waiting)
-		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_Finished_:
 		s := proto.Size(x.Finished)
-		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Attempt_Data_AbnormalFinish:
 		s := proto.Size(x.AbnormalFinish)
-		n += proto.SizeVarint(9<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -996,23 +1316,67 @@ func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
 // This attempt is ready to be Executed, but hasn't been sent to the
 // distributor yet.
 type Attempt_Data_Scheduling struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Attempt_Data_Scheduling) Reset()                    { *m = Attempt_Data_Scheduling{} }
-func (m *Attempt_Data_Scheduling) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_Scheduling) ProtoMessage()               {}
-func (*Attempt_Data_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 0} }
+func (m *Attempt_Data_Scheduling) Reset()         { *m = Attempt_Data_Scheduling{} }
+func (m *Attempt_Data_Scheduling) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data_Scheduling) ProtoMessage()    {}
+func (*Attempt_Data_Scheduling) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 1, 0}
+}
+func (m *Attempt_Data_Scheduling) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Data_Scheduling.Unmarshal(m, b)
+}
+func (m *Attempt_Data_Scheduling) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Data_Scheduling.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Data_Scheduling) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Data_Scheduling.Merge(dst, src)
+}
+func (m *Attempt_Data_Scheduling) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Data_Scheduling.Size(m)
+}
+func (m *Attempt_Data_Scheduling) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Data_Scheduling.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Data_Scheduling proto.InternalMessageInfo
 
 // This attempt has a live Execution (with the specified ID). Check the
 // Execution state for more information.
 type Attempt_Data_Executing struct {
-	CurExecutionId uint32 `protobuf:"varint,1,opt,name=cur_execution_id,json=curExecutionId" json:"cur_execution_id,omitempty"`
+	CurExecutionId       uint32   `protobuf:"varint,1,opt,name=cur_execution_id,json=curExecutionId" json:"cur_execution_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Attempt_Data_Executing) Reset()                    { *m = Attempt_Data_Executing{} }
-func (m *Attempt_Data_Executing) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_Executing) ProtoMessage()               {}
-func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 1} }
+func (m *Attempt_Data_Executing) Reset()         { *m = Attempt_Data_Executing{} }
+func (m *Attempt_Data_Executing) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data_Executing) ProtoMessage()    {}
+func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 1, 1}
+}
+func (m *Attempt_Data_Executing) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Data_Executing.Unmarshal(m, b)
+}
+func (m *Attempt_Data_Executing) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Data_Executing.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Data_Executing) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Data_Executing.Merge(dst, src)
+}
+func (m *Attempt_Data_Executing) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Data_Executing.Size(m)
+}
+func (m *Attempt_Data_Executing) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Data_Executing.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Data_Executing proto.InternalMessageInfo
 
 func (m *Attempt_Data_Executing) GetCurExecutionId() uint32 {
 	if m != nil {
@@ -1023,13 +1387,35 @@ func (m *Attempt_Data_Executing) GetCurExecutionId() uint32 {
 
 // This attempt's last Execution stopped by adding dependencies.
 type Attempt_Data_Waiting struct {
-	NumWaiting uint32 `protobuf:"varint,1,opt,name=num_waiting,json=numWaiting" json:"num_waiting,omitempty"`
+	NumWaiting           uint32   `protobuf:"varint,1,opt,name=num_waiting,json=numWaiting" json:"num_waiting,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Attempt_Data_Waiting) Reset()                    { *m = Attempt_Data_Waiting{} }
-func (m *Attempt_Data_Waiting) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_Waiting) ProtoMessage()               {}
-func (*Attempt_Data_Waiting) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 2} }
+func (m *Attempt_Data_Waiting) Reset()         { *m = Attempt_Data_Waiting{} }
+func (m *Attempt_Data_Waiting) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data_Waiting) ProtoMessage()    {}
+func (*Attempt_Data_Waiting) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 1, 2}
+}
+func (m *Attempt_Data_Waiting) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Data_Waiting.Unmarshal(m, b)
+}
+func (m *Attempt_Data_Waiting) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Data_Waiting.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Data_Waiting) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Data_Waiting.Merge(dst, src)
+}
+func (m *Attempt_Data_Waiting) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Data_Waiting.Size(m)
+}
+func (m *Attempt_Data_Waiting) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Data_Waiting.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Data_Waiting proto.InternalMessageInfo
 
 func (m *Attempt_Data_Waiting) GetNumWaiting() uint32 {
 	if m != nil {
@@ -1046,13 +1432,35 @@ type Attempt_Data_Finished struct {
 	//
 	// Only if `include.attempt.data == true`, will the response include
 	// data.object.
-	Data *JsonResult `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	Data                 *JsonResult `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *Attempt_Data_Finished) Reset()                    { *m = Attempt_Data_Finished{} }
-func (m *Attempt_Data_Finished) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Data_Finished) ProtoMessage()               {}
-func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 1, 3} }
+func (m *Attempt_Data_Finished) Reset()         { *m = Attempt_Data_Finished{} }
+func (m *Attempt_Data_Finished) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Data_Finished) ProtoMessage()    {}
+func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 1, 3}
+}
+func (m *Attempt_Data_Finished) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Data_Finished.Unmarshal(m, b)
+}
+func (m *Attempt_Data_Finished) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Data_Finished.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Data_Finished) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Data_Finished.Merge(dst, src)
+}
+func (m *Attempt_Data_Finished) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Data_Finished.Size(m)
+}
+func (m *Attempt_Data_Finished) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Data_Finished.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Data_Finished proto.InternalMessageInfo
 
 func (m *Attempt_Data_Finished) GetData() *JsonResult {
 	if m != nil {
@@ -1075,13 +1483,35 @@ type Attempt_Partial struct {
 	BackDeps bool `protobuf:"varint,4,opt,name=back_deps,json=backDeps" json:"back_deps,omitempty"`
 	// result is set if AttemptResults were requested, and the attempt_type is
 	// Finished, but for some reason the result but wasn't loaded.
-	Result Attempt_Partial_Result `protobuf:"varint,5,opt,name=result,enum=dm.Attempt_Partial_Result" json:"result,omitempty"`
+	Result               Attempt_Partial_Result `protobuf:"varint,5,opt,name=result,enum=dm.Attempt_Partial_Result" json:"result,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *Attempt_Partial) Reset()                    { *m = Attempt_Partial{} }
-func (m *Attempt_Partial) String() string            { return proto.CompactTextString(m) }
-func (*Attempt_Partial) ProtoMessage()               {}
-func (*Attempt_Partial) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4, 3} }
+func (m *Attempt_Partial) Reset()         { *m = Attempt_Partial{} }
+func (m *Attempt_Partial) String() string { return proto.CompactTextString(m) }
+func (*Attempt_Partial) ProtoMessage()    {}
+func (*Attempt_Partial) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{4, 3}
+}
+func (m *Attempt_Partial) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Attempt_Partial.Unmarshal(m, b)
+}
+func (m *Attempt_Partial) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Attempt_Partial.Marshal(b, m, deterministic)
+}
+func (dst *Attempt_Partial) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Attempt_Partial.Merge(dst, src)
+}
+func (m *Attempt_Partial) XXX_Size() int {
+	return xxx_messageInfo_Attempt_Partial.Size(m)
+}
+func (m *Attempt_Partial) XXX_DiscardUnknown() {
+	xxx_messageInfo_Attempt_Partial.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Attempt_Partial proto.InternalMessageInfo
 
 func (m *Attempt_Partial) GetData() bool {
 	if m != nil {
@@ -1123,13 +1553,35 @@ type Execution struct {
 	Data *Execution_Data `protobuf:"bytes,2,opt,name=data" json:"data,omitempty"`
 	// Partial is true iff the request asked for Executions, but wasn't able to
 	// completely fill them.
-	Partial bool `protobuf:"varint,16,opt,name=partial" json:"partial,omitempty"`
+	Partial              bool     `protobuf:"varint,16,opt,name=partial" json:"partial,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Execution) Reset()                    { *m = Execution{} }
-func (m *Execution) String() string            { return proto.CompactTextString(m) }
-func (*Execution) ProtoMessage()               {}
-func (*Execution) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
+func (m *Execution) Reset()         { *m = Execution{} }
+func (m *Execution) String() string { return proto.CompactTextString(m) }
+func (*Execution) ProtoMessage()    {}
+func (*Execution) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5}
+}
+func (m *Execution) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution.Unmarshal(m, b)
+}
+func (m *Execution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution.Marshal(b, m, deterministic)
+}
+func (dst *Execution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution.Merge(dst, src)
+}
+func (m *Execution) XXX_Size() int {
+	return xxx_messageInfo_Execution.Size(m)
+}
+func (m *Execution) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution proto.InternalMessageInfo
 
 func (m *Execution) GetId() *Execution_ID {
 	if m != nil {
@@ -1155,14 +1607,36 @@ func (m *Execution) GetPartial() bool {
 // Execution_Auth is a tuple of the requesting ExecutionID and the activated
 // Execution Token (see the ActivateExecution rpc).
 type Execution_Auth struct {
-	Id    *Execution_ID `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
-	Token []byte        `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	Id                   *Execution_ID `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Token                []byte        `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *Execution_Auth) Reset()                    { *m = Execution_Auth{} }
-func (m *Execution_Auth) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Auth) ProtoMessage()               {}
-func (*Execution_Auth) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 0} }
+func (m *Execution_Auth) Reset()         { *m = Execution_Auth{} }
+func (m *Execution_Auth) String() string { return proto.CompactTextString(m) }
+func (*Execution_Auth) ProtoMessage()    {}
+func (*Execution_Auth) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 0}
+}
+func (m *Execution_Auth) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Auth.Unmarshal(m, b)
+}
+func (m *Execution_Auth) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Auth.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Auth) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Auth.Merge(dst, src)
+}
+func (m *Execution_Auth) XXX_Size() int {
+	return xxx_messageInfo_Execution_Auth.Size(m)
+}
+func (m *Execution_Auth) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Auth.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Auth proto.InternalMessageInfo
 
 func (m *Execution_Auth) GetId() *Execution_ID {
 	if m != nil {
@@ -1179,15 +1653,37 @@ func (m *Execution_Auth) GetToken() []byte {
 }
 
 type Execution_ID struct {
-	Quest   string `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
-	Attempt uint32 `protobuf:"varint,2,opt,name=attempt" json:"attempt,omitempty"`
-	Id      uint32 `protobuf:"varint,3,opt,name=id" json:"id,omitempty"`
+	Quest                string   `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
+	Attempt              uint32   `protobuf:"varint,2,opt,name=attempt" json:"attempt,omitempty"`
+	Id                   uint32   `protobuf:"varint,3,opt,name=id" json:"id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Execution_ID) Reset()                    { *m = Execution_ID{} }
-func (m *Execution_ID) String() string            { return proto.CompactTextString(m) }
-func (*Execution_ID) ProtoMessage()               {}
-func (*Execution_ID) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 1} }
+func (m *Execution_ID) Reset()         { *m = Execution_ID{} }
+func (m *Execution_ID) String() string { return proto.CompactTextString(m) }
+func (*Execution_ID) ProtoMessage()    {}
+func (*Execution_ID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 1}
+}
+func (m *Execution_ID) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_ID.Unmarshal(m, b)
+}
+func (m *Execution_ID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_ID.Marshal(b, m, deterministic)
+}
+func (dst *Execution_ID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_ID.Merge(dst, src)
+}
+func (m *Execution_ID) XXX_Size() int {
+	return xxx_messageInfo_Execution_ID.Size(m)
+}
+func (m *Execution_ID) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_ID.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_ID proto.InternalMessageInfo
 
 func (m *Execution_ID) GetQuest() string {
 	if m != nil {
@@ -1211,8 +1707,8 @@ func (m *Execution_ID) GetId() uint32 {
 }
 
 type Execution_Data struct {
-	Created         *google_protobuf1.Timestamp     `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
-	Modified        *google_protobuf1.Timestamp     `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
+	Created         *timestamp.Timestamp            `protobuf:"bytes,1,opt,name=created" json:"created,omitempty"`
+	Modified        *timestamp.Timestamp            `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
 	DistributorInfo *Execution_Data_DistributorInfo `protobuf:"bytes,3,opt,name=distributor_info,json=distributorInfo" json:"distributor_info,omitempty"`
 	// Types that are valid to be assigned to ExecutionType:
 	//	*Execution_Data_Scheduling_
@@ -1220,13 +1716,35 @@ type Execution_Data struct {
 	//	*Execution_Data_Stopping_
 	//	*Execution_Data_Finished_
 	//	*Execution_Data_AbnormalFinish
-	ExecutionType isExecution_Data_ExecutionType `protobuf_oneof:"execution_type"`
+	ExecutionType        isExecution_Data_ExecutionType `protobuf_oneof:"execution_type"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
 }
 
-func (m *Execution_Data) Reset()                    { *m = Execution_Data{} }
-func (m *Execution_Data) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Data) ProtoMessage()               {}
-func (*Execution_Data) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 2} }
+func (m *Execution_Data) Reset()         { *m = Execution_Data{} }
+func (m *Execution_Data) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data) ProtoMessage()    {}
+func (*Execution_Data) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2}
+}
+func (m *Execution_Data) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data.Unmarshal(m, b)
+}
+func (m *Execution_Data) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data.Merge(dst, src)
+}
+func (m *Execution_Data) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data.Size(m)
+}
+func (m *Execution_Data) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data proto.InternalMessageInfo
 
 type isExecution_Data_ExecutionType interface {
 	isExecution_Data_ExecutionType()
@@ -1261,14 +1779,14 @@ func (m *Execution_Data) GetExecutionType() isExecution_Data_ExecutionType {
 	return nil
 }
 
-func (m *Execution_Data) GetCreated() *google_protobuf1.Timestamp {
+func (m *Execution_Data) GetCreated() *timestamp.Timestamp {
 	if m != nil {
 		return m.Created
 	}
 	return nil
 }
 
-func (m *Execution_Data) GetModified() *google_protobuf1.Timestamp {
+func (m *Execution_Data) GetModified() *timestamp.Timestamp {
 	if m != nil {
 		return m.Modified
 	}
@@ -1418,27 +1936,27 @@ func _Execution_Data_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.ExecutionType.(type) {
 	case *Execution_Data_Scheduling_:
 		s := proto.Size(x.Scheduling)
-		n += proto.SizeVarint(4<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Execution_Data_Running_:
 		s := proto.Size(x.Running)
-		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Execution_Data_Stopping_:
 		s := proto.Size(x.Stopping)
-		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Execution_Data_Finished_:
 		s := proto.Size(x.Finished)
-		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Execution_Data_AbnormalFinish:
 		s := proto.Size(x.AbnormalFinish)
-		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -1449,18 +1967,38 @@ func _Execution_Data_OneofSizer(msg proto.Message) (n int) {
 }
 
 type Execution_Data_DistributorInfo struct {
-	ConfigName    string `protobuf:"bytes,1,opt,name=config_name,json=configName" json:"config_name,omitempty"`
-	ConfigVersion string `protobuf:"bytes,2,opt,name=config_version,json=configVersion" json:"config_version,omitempty"`
-	Token         string `protobuf:"bytes,3,opt,name=token" json:"token,omitempty"`
-	Url           string `protobuf:"bytes,4,opt,name=url" json:"url,omitempty"`
+	ConfigName           string   `protobuf:"bytes,1,opt,name=config_name,json=configName" json:"config_name,omitempty"`
+	ConfigVersion        string   `protobuf:"bytes,2,opt,name=config_version,json=configVersion" json:"config_version,omitempty"`
+	Token                string   `protobuf:"bytes,3,opt,name=token" json:"token,omitempty"`
+	Url                  string   `protobuf:"bytes,4,opt,name=url" json:"url,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *Execution_Data_DistributorInfo) Reset()         { *m = Execution_Data_DistributorInfo{} }
 func (m *Execution_Data_DistributorInfo) String() string { return proto.CompactTextString(m) }
 func (*Execution_Data_DistributorInfo) ProtoMessage()    {}
 func (*Execution_Data_DistributorInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{5, 2, 0}
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2, 0}
 }
+func (m *Execution_Data_DistributorInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data_DistributorInfo.Unmarshal(m, b)
+}
+func (m *Execution_Data_DistributorInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data_DistributorInfo.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data_DistributorInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data_DistributorInfo.Merge(dst, src)
+}
+func (m *Execution_Data_DistributorInfo) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data_DistributorInfo.Size(m)
+}
+func (m *Execution_Data_DistributorInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data_DistributorInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data_DistributorInfo proto.InternalMessageInfo
 
 func (m *Execution_Data_DistributorInfo) GetConfigName() string {
 	if m != nil {
@@ -1491,37 +2029,125 @@ func (m *Execution_Data_DistributorInfo) GetUrl() string {
 }
 
 type Execution_Data_Scheduling struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Execution_Data_Scheduling) Reset()                    { *m = Execution_Data_Scheduling{} }
-func (m *Execution_Data_Scheduling) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Data_Scheduling) ProtoMessage()               {}
-func (*Execution_Data_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 2, 1} }
+func (m *Execution_Data_Scheduling) Reset()         { *m = Execution_Data_Scheduling{} }
+func (m *Execution_Data_Scheduling) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data_Scheduling) ProtoMessage()    {}
+func (*Execution_Data_Scheduling) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2, 1}
+}
+func (m *Execution_Data_Scheduling) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data_Scheduling.Unmarshal(m, b)
+}
+func (m *Execution_Data_Scheduling) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data_Scheduling.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data_Scheduling) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data_Scheduling.Merge(dst, src)
+}
+func (m *Execution_Data_Scheduling) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data_Scheduling.Size(m)
+}
+func (m *Execution_Data_Scheduling) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data_Scheduling.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data_Scheduling proto.InternalMessageInfo
 
 type Execution_Data_Running struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Execution_Data_Running) Reset()                    { *m = Execution_Data_Running{} }
-func (m *Execution_Data_Running) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Data_Running) ProtoMessage()               {}
-func (*Execution_Data_Running) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 2, 2} }
+func (m *Execution_Data_Running) Reset()         { *m = Execution_Data_Running{} }
+func (m *Execution_Data_Running) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data_Running) ProtoMessage()    {}
+func (*Execution_Data_Running) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2, 2}
+}
+func (m *Execution_Data_Running) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data_Running.Unmarshal(m, b)
+}
+func (m *Execution_Data_Running) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data_Running.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data_Running) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data_Running.Merge(dst, src)
+}
+func (m *Execution_Data_Running) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data_Running.Size(m)
+}
+func (m *Execution_Data_Running) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data_Running.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data_Running proto.InternalMessageInfo
 
 type Execution_Data_Stopping struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Execution_Data_Stopping) Reset()                    { *m = Execution_Data_Stopping{} }
-func (m *Execution_Data_Stopping) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Data_Stopping) ProtoMessage()               {}
-func (*Execution_Data_Stopping) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 2, 3} }
+func (m *Execution_Data_Stopping) Reset()         { *m = Execution_Data_Stopping{} }
+func (m *Execution_Data_Stopping) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data_Stopping) ProtoMessage()    {}
+func (*Execution_Data_Stopping) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2, 3}
+}
+func (m *Execution_Data_Stopping) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data_Stopping.Unmarshal(m, b)
+}
+func (m *Execution_Data_Stopping) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data_Stopping.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data_Stopping) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data_Stopping.Merge(dst, src)
+}
+func (m *Execution_Data_Stopping) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data_Stopping.Size(m)
+}
+func (m *Execution_Data_Stopping) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data_Stopping.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data_Stopping proto.InternalMessageInfo
 
 type Execution_Data_Finished struct {
-	Data *JsonResult `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	Data                 *JsonResult `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *Execution_Data_Finished) Reset()                    { *m = Execution_Data_Finished{} }
-func (m *Execution_Data_Finished) String() string            { return proto.CompactTextString(m) }
-func (*Execution_Data_Finished) ProtoMessage()               {}
-func (*Execution_Data_Finished) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5, 2, 4} }
+func (m *Execution_Data_Finished) Reset()         { *m = Execution_Data_Finished{} }
+func (m *Execution_Data_Finished) String() string { return proto.CompactTextString(m) }
+func (*Execution_Data_Finished) ProtoMessage()    {}
+func (*Execution_Data_Finished) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{5, 2, 4}
+}
+func (m *Execution_Data_Finished) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Execution_Data_Finished.Unmarshal(m, b)
+}
+func (m *Execution_Data_Finished) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Execution_Data_Finished.Marshal(b, m, deterministic)
+}
+func (dst *Execution_Data_Finished) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Execution_Data_Finished.Merge(dst, src)
+}
+func (m *Execution_Data_Finished) XXX_Size() int {
+	return xxx_messageInfo_Execution_Data_Finished.Size(m)
+}
+func (m *Execution_Data_Finished) XXX_DiscardUnknown() {
+	xxx_messageInfo_Execution_Data_Finished.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Execution_Data_Finished proto.InternalMessageInfo
 
 func (m *Execution_Data_Finished) GetData() *JsonResult {
 	if m != nil {
@@ -1559,13 +2185,35 @@ type GraphData struct {
 	//
 	// Note that this is different than the Partial booleans: This refers
 	// specifically to situations when Queries do not run to completion.
-	HadMore bool `protobuf:"varint,3,opt,name=had_more,json=hadMore" json:"had_more,omitempty"`
+	HadMore              bool     `protobuf:"varint,3,opt,name=had_more,json=hadMore" json:"had_more,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GraphData) Reset()                    { *m = GraphData{} }
-func (m *GraphData) String() string            { return proto.CompactTextString(m) }
-func (*GraphData) ProtoMessage()               {}
-func (*GraphData) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
+func (m *GraphData) Reset()         { *m = GraphData{} }
+func (m *GraphData) String() string { return proto.CompactTextString(m) }
+func (*GraphData) ProtoMessage()    {}
+func (*GraphData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_graph_data_a96aa9ff795be36a, []int{6}
+}
+func (m *GraphData) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GraphData.Unmarshal(m, b)
+}
+func (m *GraphData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GraphData.Marshal(b, m, deterministic)
+}
+func (dst *GraphData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphData.Merge(dst, src)
+}
+func (m *GraphData) XXX_Size() int {
+	return xxx_messageInfo_GraphData.Size(m)
+}
+func (m *GraphData) XXX_DiscardUnknown() {
+	xxx_messageInfo_GraphData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GraphData proto.InternalMessageInfo
 
 func (m *GraphData) GetQuests() map[string]*Quest {
 	if m != nil {
@@ -1591,6 +2239,7 @@ func (m *GraphData) GetHadMore() bool {
 func init() {
 	proto.RegisterType((*AbnormalFinish)(nil), "dm.AbnormalFinish")
 	proto.RegisterType((*Quest)(nil), "dm.Quest")
+	proto.RegisterMapType((map[uint32]*Attempt)(nil), "dm.Quest.AttemptsEntry")
 	proto.RegisterType((*Quest_ID)(nil), "dm.Quest.ID")
 	proto.RegisterType((*Quest_Desc)(nil), "dm.Quest.Desc")
 	proto.RegisterType((*Quest_Desc_Meta)(nil), "dm.Quest.Desc.Meta")
@@ -1601,6 +2250,7 @@ func init() {
 	proto.RegisterType((*JsonResult)(nil), "dm.JsonResult")
 	proto.RegisterType((*Result)(nil), "dm.Result")
 	proto.RegisterType((*Attempt)(nil), "dm.Attempt")
+	proto.RegisterMapType((map[uint32]*Execution)(nil), "dm.Attempt.ExecutionsEntry")
 	proto.RegisterType((*Attempt_ID)(nil), "dm.Attempt.ID")
 	proto.RegisterType((*Attempt_Data)(nil), "dm.Attempt.Data")
 	proto.RegisterType((*Attempt_Data_Scheduling)(nil), "dm.Attempt.Data.Scheduling")
@@ -1618,6 +2268,7 @@ func init() {
 	proto.RegisterType((*Execution_Data_Stopping)(nil), "dm.Execution.Data.Stopping")
 	proto.RegisterType((*Execution_Data_Finished)(nil), "dm.Execution.Data.Finished")
 	proto.RegisterType((*GraphData)(nil), "dm.GraphData")
+	proto.RegisterMapType((map[string]*Quest)(nil), "dm.GraphData.QuestsEntry")
 	proto.RegisterEnum("dm.AbnormalFinish_Status", AbnormalFinish_Status_name, AbnormalFinish_Status_value)
 	proto.RegisterEnum("dm.Attempt_State", Attempt_State_name, Attempt_State_value)
 	proto.RegisterEnum("dm.Attempt_Partial_Result", Attempt_Partial_Result_name, Attempt_Partial_Result_value)
@@ -1625,10 +2276,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_data.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_data.proto", fileDescriptor_graph_data_a96aa9ff795be36a)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_graph_data_a96aa9ff795be36a = []byte{
 	// 1762 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x57, 0x4b, 0x93, 0x1b, 0x57,
 	0x15, 0x1e, 0x8d, 0x5e, 0xad, 0x33, 0x23, 0x8d, 0xb8, 0x71, 0x1c, 0xb9, 0x27, 0xb1, 0x8d, 0x20,

@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -35,6 +37,13 @@ func TestEnsureQuests(t *testing.T) {
 			DistributorConfigName: "fakeDistributor",
 			Parameters:            payload,
 			DistributorParameters: "{}",
+		}
+	}
+
+	assertSameQuests := func(a, b map[string]*dm.Quest) {
+		So(a, ShouldHaveLength, len(b))
+		for id := range a {
+			So(proto.Equal(a[id], b[id]), ShouldBeTrue)
 		}
 	}
 
@@ -76,7 +85,7 @@ func TestEnsureQuests(t *testing.T) {
 			Convey("0/2 exist", func() {
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
-				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
+				assertSameQuests(rsp.Result.Quests, map[string]*dm.Quest{
 					q.ID:  {DNE: true, Attempts: map[uint32]*dm.Attempt{1: {DNE: true}}},
 					q2.ID: {DNE: true, Attempts: map[uint32]*dm.Attempt{2: {DNE: true}}},
 				})
@@ -84,7 +93,7 @@ func TestEnsureQuests(t *testing.T) {
 				rsp, err = s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
 				rsp.Result.PurgeTimestamps()
-				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
+				assertSameQuests(rsp.Result.Quests, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{
 							Desc:    qd,
@@ -108,7 +117,7 @@ func TestEnsureQuests(t *testing.T) {
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
 				rsp.Result.PurgeTimestamps()
-				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
+				assertSameQuests(rsp.Result.Quests, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{
 							Desc:    qd,
@@ -137,7 +146,7 @@ func TestEnsureQuests(t *testing.T) {
 				rsp, err := s.EnsureGraphData(c, req)
 				So(err, ShouldBeNil)
 				rsp.Result.PurgeTimestamps()
-				So(rsp.Result.Quests, ShouldResemble, map[string]*dm.Quest{
+				assertSameQuests(rsp.Result.Quests, map[string]*dm.Quest{
 					q.ID: {
 						Data: &dm.Quest_Data{
 							Desc:    qd,

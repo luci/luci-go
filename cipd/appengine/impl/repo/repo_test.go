@@ -104,7 +104,9 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata happy path", func() {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, []*api.PrefixMetadata{rootMeta, leafMeta})
+			So(resp, ShouldHaveLength, 2)
+			So(proto.Equal(resp[0], rootMeta), ShouldBeTrue)
+			So(proto.Equal(resp[1], leafMeta), ShouldBeTrue)
 		})
 
 		Convey("GetPrefixMetadata bad prefix", func() {
@@ -128,7 +130,8 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata no metadata, caller has access", func() {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+			So(resp, ShouldHaveLength, 1)
+			So(proto.Equal(resp[0], rootMeta), ShouldBeTrue)
 		})
 
 		Convey("GetPrefixMetadata no metadata, caller has no access", func() {
@@ -226,7 +229,7 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			}
-			So(meta, ShouldResemble, expected)
+			So(proto.Equal(meta, expected), ShouldBeTrue)
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
@@ -234,12 +237,12 @@ func TestMetadataUpdating(t *testing.T) {
 			updated.Acls = nil
 			meta, err = callUpdate("user:top-owner@example.com", &updated)
 			So(err, ShouldBeNil)
-			So(meta, ShouldResemble, &api.PrefixMetadata{
+			So(proto.Equal(meta, &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  google.NewTimestamp(testTime.Add(time.Hour)),
 				UpdateUser:  "user:top-owner@example.com",
-			})
+			}), ShouldBeTrue)
 		})
 
 		Convey("Validation works", func() {

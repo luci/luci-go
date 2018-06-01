@@ -157,7 +157,7 @@ func TestOutput(t *testing.T) {
 			h, b, err := deconstructMessage(msg)
 			So(err, ShouldBeNil)
 			So(h.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
-			So(b, ShouldResemble, bundle)
+			So(proto.Equal(b, bundle), ShouldBeTrue)
 
 			Convey(`And records stats.`, func() {
 				st := o.Stats()

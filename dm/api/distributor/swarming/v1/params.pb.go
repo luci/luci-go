@@ -6,25 +6,53 @@ package swarmingV1
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Parameters represents the set of swarming parameters that the Swarming v1
 // distributor can interpret for use with a Swarming v1 compatible service.
 type Parameters struct {
-	Scheduling *Parameters_Scheduling `protobuf:"bytes,1,opt,name=scheduling" json:"scheduling,omitempty"`
-	Meta       *Parameters_Meta       `protobuf:"bytes,2,opt,name=meta" json:"meta,omitempty"`
-	Job        *Parameters_Job        `protobuf:"bytes,3,opt,name=job" json:"job,omitempty"`
+	Scheduling           *Parameters_Scheduling `protobuf:"bytes,1,opt,name=scheduling" json:"scheduling,omitempty"`
+	Meta                 *Parameters_Meta       `protobuf:"bytes,2,opt,name=meta" json:"meta,omitempty"`
+	Job                  *Parameters_Job        `protobuf:"bytes,3,opt,name=job" json:"job,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *Parameters) Reset()                    { *m = Parameters{} }
-func (m *Parameters) String() string            { return proto.CompactTextString(m) }
-func (*Parameters) ProtoMessage()               {}
-func (*Parameters) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *Parameters) Reset()         { *m = Parameters{} }
+func (m *Parameters) String() string { return proto.CompactTextString(m) }
+func (*Parameters) ProtoMessage()    {}
+func (*Parameters) Descriptor() ([]byte, []int) {
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0}
+}
+func (m *Parameters) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Parameters.Unmarshal(m, b)
+}
+func (m *Parameters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Parameters.Marshal(b, m, deterministic)
+}
+func (dst *Parameters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters.Merge(dst, src)
+}
+func (m *Parameters) XXX_Size() int {
+	return xxx_messageInfo_Parameters.Size(m)
+}
+func (m *Parameters) XXX_DiscardUnknown() {
+	xxx_messageInfo_Parameters.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Parameters proto.InternalMessageInfo
 
 func (m *Parameters) GetScheduling() *Parameters_Scheduling {
 	if m != nil {
@@ -74,13 +102,35 @@ type Parameters_Scheduling struct {
 	SnapshotDimensions []string `protobuf:"bytes,3,rep,name=snapshot_dimensions,json=snapshotDimensions" json:"snapshot_dimensions,omitempty"`
 	// This indicates the maximum amount of time that an Execution may run
 	// without emitting IO on stdout/err. 0 means 'no timeout'.
-	IoTimeout *google_protobuf.Duration `protobuf:"bytes,4,opt,name=io_timeout,json=ioTimeout" json:"io_timeout,omitempty"`
+	IoTimeout            *duration.Duration `protobuf:"bytes,4,opt,name=io_timeout,json=ioTimeout" json:"io_timeout,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *Parameters_Scheduling) Reset()                    { *m = Parameters_Scheduling{} }
-func (m *Parameters_Scheduling) String() string            { return proto.CompactTextString(m) }
-func (*Parameters_Scheduling) ProtoMessage()               {}
-func (*Parameters_Scheduling) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
+func (m *Parameters_Scheduling) Reset()         { *m = Parameters_Scheduling{} }
+func (m *Parameters_Scheduling) String() string { return proto.CompactTextString(m) }
+func (*Parameters_Scheduling) ProtoMessage()    {}
+func (*Parameters_Scheduling) Descriptor() ([]byte, []int) {
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 0}
+}
+func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Parameters_Scheduling.Unmarshal(m, b)
+}
+func (m *Parameters_Scheduling) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Parameters_Scheduling.Marshal(b, m, deterministic)
+}
+func (dst *Parameters_Scheduling) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Scheduling.Merge(dst, src)
+}
+func (m *Parameters_Scheduling) XXX_Size() int {
+	return xxx_messageInfo_Parameters_Scheduling.Size(m)
+}
+func (m *Parameters_Scheduling) XXX_DiscardUnknown() {
+	xxx_messageInfo_Parameters_Scheduling.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Parameters_Scheduling proto.InternalMessageInfo
 
 func (m *Parameters_Scheduling) GetPriority() uint32 {
 	if m != nil {
@@ -103,7 +153,7 @@ func (m *Parameters_Scheduling) GetSnapshotDimensions() []string {
 	return nil
 }
 
-func (m *Parameters_Scheduling) GetIoTimeout() *google_protobuf.Duration {
+func (m *Parameters_Scheduling) GetIoTimeout() *duration.Duration {
 	if m != nil {
 		return m.IoTimeout
 	}
@@ -115,13 +165,35 @@ type Parameters_Meta struct {
 	// automatically prepend this to the execution ID. So if this was "cool
 	// job", the swarming task name would be
 	//   "cool job / <quest_ID>|<attempt>|<execution>"
-	NamePrefix string `protobuf:"bytes,1,opt,name=name_prefix,json=namePrefix" json:"name_prefix,omitempty"`
+	NamePrefix           string   `protobuf:"bytes,1,opt,name=name_prefix,json=namePrefix" json:"name_prefix,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Parameters_Meta) Reset()                    { *m = Parameters_Meta{} }
-func (m *Parameters_Meta) String() string            { return proto.CompactTextString(m) }
-func (*Parameters_Meta) ProtoMessage()               {}
-func (*Parameters_Meta) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 1} }
+func (m *Parameters_Meta) Reset()         { *m = Parameters_Meta{} }
+func (m *Parameters_Meta) String() string { return proto.CompactTextString(m) }
+func (*Parameters_Meta) ProtoMessage()    {}
+func (*Parameters_Meta) Descriptor() ([]byte, []int) {
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 1}
+}
+func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Parameters_Meta.Unmarshal(m, b)
+}
+func (m *Parameters_Meta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Parameters_Meta.Marshal(b, m, deterministic)
+}
+func (dst *Parameters_Meta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Meta.Merge(dst, src)
+}
+func (m *Parameters_Meta) XXX_Size() int {
+	return xxx_messageInfo_Parameters_Meta.Size(m)
+}
+func (m *Parameters_Meta) XXX_DiscardUnknown() {
+	xxx_messageInfo_Parameters_Meta.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Parameters_Meta proto.InternalMessageInfo
 
 func (m *Parameters_Meta) GetNamePrefix() string {
 	if m != nil {
@@ -152,13 +224,35 @@ type Parameters_Job struct {
 	// inputs WILL NOT DO ANYTHING.
 	Command []string `protobuf:"bytes,2,rep,name=command" json:"command,omitempty"`
 	// Environment variables for the executions.
-	Env map[string]string `protobuf:"bytes,3,rep,name=env" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Env                  map[string]string `protobuf:"bytes,3,rep,name=env" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Parameters_Job) Reset()                    { *m = Parameters_Job{} }
-func (m *Parameters_Job) String() string            { return proto.CompactTextString(m) }
-func (*Parameters_Job) ProtoMessage()               {}
-func (*Parameters_Job) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 2} }
+func (m *Parameters_Job) Reset()         { *m = Parameters_Job{} }
+func (m *Parameters_Job) String() string { return proto.CompactTextString(m) }
+func (*Parameters_Job) ProtoMessage()    {}
+func (*Parameters_Job) Descriptor() ([]byte, []int) {
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2}
+}
+func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Parameters_Job.Unmarshal(m, b)
+}
+func (m *Parameters_Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Parameters_Job.Marshal(b, m, deterministic)
+}
+func (dst *Parameters_Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job.Merge(dst, src)
+}
+func (m *Parameters_Job) XXX_Size() int {
+	return xxx_messageInfo_Parameters_Job.Size(m)
+}
+func (m *Parameters_Job) XXX_DiscardUnknown() {
+	xxx_messageInfo_Parameters_Job.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Parameters_Job proto.InternalMessageInfo
 
 func (m *Parameters_Job) GetInputs() *Parameters_Job_Inputs {
 	if m != nil {
@@ -195,13 +289,35 @@ type Parameters_Job_Inputs struct {
 	// resolve+snapshot all package names and versions. These package names
 	// and versions will be used for all subsequent executions of that
 	// attempt.
-	Cipd *CipdSpec `protobuf:"bytes,2,opt,name=cipd" json:"cipd,omitempty"`
+	Cipd                 *CipdSpec `protobuf:"bytes,2,opt,name=cipd" json:"cipd,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
-func (m *Parameters_Job_Inputs) Reset()                    { *m = Parameters_Job_Inputs{} }
-func (m *Parameters_Job_Inputs) String() string            { return proto.CompactTextString(m) }
-func (*Parameters_Job_Inputs) ProtoMessage()               {}
-func (*Parameters_Job_Inputs) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 2, 0} }
+func (m *Parameters_Job_Inputs) Reset()         { *m = Parameters_Job_Inputs{} }
+func (m *Parameters_Job_Inputs) String() string { return proto.CompactTextString(m) }
+func (*Parameters_Job_Inputs) ProtoMessage()    {}
+func (*Parameters_Job_Inputs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2, 0}
+}
+func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Parameters_Job_Inputs.Unmarshal(m, b)
+}
+func (m *Parameters_Job_Inputs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Parameters_Job_Inputs.Marshal(b, m, deterministic)
+}
+func (dst *Parameters_Job_Inputs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job_Inputs.Merge(dst, src)
+}
+func (m *Parameters_Job_Inputs) XXX_Size() int {
+	return xxx_messageInfo_Parameters_Job_Inputs.Size(m)
+}
+func (m *Parameters_Job_Inputs) XXX_DiscardUnknown() {
+	xxx_messageInfo_Parameters_Job_Inputs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Parameters_Job_Inputs proto.InternalMessageInfo
 
 func (m *Parameters_Job_Inputs) GetIsolated() []*IsolatedRef {
 	if m != nil {
@@ -220,16 +336,18 @@ func (m *Parameters_Job_Inputs) GetCipd() *CipdSpec {
 func init() {
 	proto.RegisterType((*Parameters)(nil), "swarmingV1.Parameters")
 	proto.RegisterType((*Parameters_Scheduling)(nil), "swarmingV1.Parameters.Scheduling")
+	proto.RegisterMapType((map[string]string)(nil), "swarmingV1.Parameters.Scheduling.DimensionsEntry")
 	proto.RegisterType((*Parameters_Meta)(nil), "swarmingV1.Parameters.Meta")
 	proto.RegisterType((*Parameters_Job)(nil), "swarmingV1.Parameters.Job")
+	proto.RegisterMapType((map[string]string)(nil), "swarmingV1.Parameters.Job.EnvEntry")
 	proto.RegisterType((*Parameters_Job_Inputs)(nil), "swarmingV1.Parameters.Job.Inputs")
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor_params_7b134476c4c1eb9c)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_params_7b134476c4c1eb9c = []byte{
 	// 513 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x8b, 0x13, 0x31,
 	0x10, 0xc7, 0x69, 0xb7, 0xd6, 0xeb, 0x14, 0x51, 0xe2, 0x81, 0xeb, 0x0a, 0x7a, 0xea, 0x83, 0x7d,

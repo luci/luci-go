@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
@@ -270,7 +272,7 @@ func TestQuery(t *testing.T) {
 
 					So(resp.Streams, ShouldHaveLength, 1)
 					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
+					So(proto.Equal(resp.Streams[0].Desc, tls.Desc), ShouldBeTrue)
 					So(resp.Streams[0].DescProto, ShouldBeNil)
 				})
 
@@ -295,7 +297,7 @@ func TestQuery(t *testing.T) {
 
 					So(resp.Streams, ShouldHaveLength, 1)
 					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
+					So(proto.Equal(resp.Streams[0].Desc, tls.Desc), ShouldBeTrue)
 				})
 			})
 		})

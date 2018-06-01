@@ -6,12 +6,18 @@ package svcconfig
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Storage is the in-transit storage configuration.
 type Storage struct {
@@ -33,13 +39,35 @@ type Storage struct {
 	// good because a user may be streaming logs from intermediate storage as they
 	// become archived. Waiting a *lot* longer is useful to prevent data loss in
 	// the event of issues with the archival process.
-	MaxLogAge *google_protobuf.Duration `protobuf:"bytes,2,opt,name=max_log_age,json=maxLogAge" json:"max_log_age,omitempty"`
+	MaxLogAge            *duration.Duration `protobuf:"bytes,2,opt,name=max_log_age,json=maxLogAge" json:"max_log_age,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *Storage) Reset()                    { *m = Storage{} }
-func (m *Storage) String() string            { return proto.CompactTextString(m) }
-func (*Storage) ProtoMessage()               {}
-func (*Storage) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *Storage) Reset()         { *m = Storage{} }
+func (m *Storage) String() string { return proto.CompactTextString(m) }
+func (*Storage) ProtoMessage()    {}
+func (*Storage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0}
+}
+func (m *Storage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Storage.Unmarshal(m, b)
+}
+func (m *Storage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Storage.Marshal(b, m, deterministic)
+}
+func (dst *Storage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage.Merge(dst, src)
+}
+func (m *Storage) XXX_Size() int {
+	return xxx_messageInfo_Storage.Size(m)
+}
+func (m *Storage) XXX_DiscardUnknown() {
+	xxx_messageInfo_Storage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Storage proto.InternalMessageInfo
 
 type isStorage_Type interface {
 	isStorage_Type()
@@ -65,7 +93,7 @@ func (m *Storage) GetBigtable() *Storage_BigTable {
 	return nil
 }
 
-func (m *Storage) GetMaxLogAge() *google_protobuf.Duration {
+func (m *Storage) GetMaxLogAge() *duration.Duration {
 	if m != nil {
 		return m.MaxLogAge
 	}
@@ -117,7 +145,7 @@ func _Storage_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Type.(type) {
 	case *Storage_Bigtable:
 		s := proto.Size(x.Bigtable)
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -134,13 +162,35 @@ type Storage_BigTable struct {
 	// The name of the BigTable instance.
 	Instance string `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
 	// The name of the BigTable instance's log table.
-	LogTableName string `protobuf:"bytes,3,opt,name=log_table_name,json=logTableName" json:"log_table_name,omitempty"`
+	LogTableName         string   `protobuf:"bytes,3,opt,name=log_table_name,json=logTableName" json:"log_table_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Storage_BigTable) Reset()                    { *m = Storage_BigTable{} }
-func (m *Storage_BigTable) String() string            { return proto.CompactTextString(m) }
-func (*Storage_BigTable) ProtoMessage()               {}
-func (*Storage_BigTable) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0, 0} }
+func (m *Storage_BigTable) Reset()         { *m = Storage_BigTable{} }
+func (m *Storage_BigTable) String() string { return proto.CompactTextString(m) }
+func (*Storage_BigTable) ProtoMessage()    {}
+func (*Storage_BigTable) Descriptor() ([]byte, []int) {
+	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0, 0}
+}
+func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Storage_BigTable.Unmarshal(m, b)
+}
+func (m *Storage_BigTable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Storage_BigTable.Marshal(b, m, deterministic)
+}
+func (dst *Storage_BigTable) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage_BigTable.Merge(dst, src)
+}
+func (m *Storage_BigTable) XXX_Size() int {
+	return xxx_messageInfo_Storage_BigTable.Size(m)
+}
+func (m *Storage_BigTable) XXX_DiscardUnknown() {
+	xxx_messageInfo_Storage_BigTable.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Storage_BigTable proto.InternalMessageInfo
 
 func (m *Storage_BigTable) GetProject() string {
 	if m != nil {
@@ -169,10 +219,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor_storage_e0fe2006e05c8c73)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_storage_e0fe2006e05c8c73 = []byte{
 	// 260 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xb1, 0x4e, 0xc3, 0x30,
 	0x10, 0x86, 0x29, 0xa0, 0x36, 0x71, 0x11, 0x83, 0xa7, 0x10, 0x24, 0x84, 0x10, 0x03, 0x93, 0x2d,

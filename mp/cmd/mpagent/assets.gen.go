@@ -9,15 +9,25 @@
 // It contains all [*.css *.html *.js *.tmpl] files found in the package as byte arrays.
 package main
 
-// GetAsset returns an asset by its name. Returns nil if no such asset.
+// GetAsset returns an asset by its name. Returns nil if no such asset exists.
 func GetAsset(name string) []byte {
 	return []byte(files[name])
 }
 
 // GetAssetString is version of GetAsset that returns string instead of byte
-// slice. Returns empty string if no such asset.
+// slice. Returns empty string if no such asset exists.
 func GetAssetString(name string) string {
 	return files[name]
+}
+
+// GetAssetSHA256 returns the asset checksum. Returns nil if no such asset
+// exists.
+func GetAssetSHA256(name string) []byte {
+	data := fileSha256s[name]
+	if data == nil {
+		return nil
+	}
+	return append([]byte(nil), data...)
 }
 
 // Assets returns a map of all assets.
@@ -132,4 +142,31 @@ var files = map[string]string{
 		111, 116, 10, 10, 91, 73, 110, 115, 116, 97, 108, 108, 93, 10,
 		87, 97, 110, 116, 101, 100, 66, 121, 61, 109, 117, 108, 116, 105,
 		45, 117, 115, 101, 114, 46, 116, 97, 114, 103, 101, 116, 10}),
+}
+
+var fileSha256s = map[string][]byte{
+	"machine-provider-agent.bat.tmpl": {121, 188,
+		123, 162, 148, 198, 140, 190, 167, 156, 60, 25, 113, 193, 76, 75,
+		50, 75, 64, 132, 154, 229, 141, 78, 47, 207, 184, 225, 92, 72,
+		0, 62},
+	"machine-provider-agent.conf.tmpl": {65, 184,
+		196, 155, 34, 98, 55, 207, 238, 141, 208, 34, 245, 172, 50, 231,
+		76, 218, 226, 94, 121, 17, 118, 29, 126, 147, 39, 175, 70, 2,
+		211, 160},
+	"machine-provider-agent.service.tmpl": {71, 37,
+		20, 30, 60, 233, 7, 63, 93, 3, 204, 102, 40, 154, 178, 244,
+		235, 238, 102, 128, 255, 143, 45, 180, 241, 82, 94, 185, 183, 161,
+		200, 97},
+	"swarming-start-bot.bat.tmpl": {223, 155,
+		52, 23, 163, 162, 69, 31, 35, 140, 191, 28, 4, 51, 228, 141,
+		7, 182, 247, 255, 182, 222, 218, 80, 171, 191, 144, 114, 152, 108,
+		186, 166},
+	"swarming-start-bot.conf.tmpl": {221, 2,
+		18, 31, 41, 228, 47, 83, 82, 230, 243, 33, 204, 75, 178, 26,
+		212, 144, 200, 146, 42, 181, 159, 244, 4, 118, 78, 75, 75, 27,
+		15, 217},
+	"swarming-start-bot.service.tmpl": {96, 182,
+		122, 152, 147, 106, 192, 117, 43, 172, 201, 101, 137, 30, 94, 130,
+		72, 57, 135, 160, 136, 124, 104, 104, 126, 204, 155, 163, 245, 128,
+		140, 229},
 }

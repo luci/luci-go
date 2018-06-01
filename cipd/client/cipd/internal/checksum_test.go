@@ -17,6 +17,8 @@ package internal
 import (
 	"testing"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -38,7 +40,7 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 		out := messages.TagCache{}
 		So(UnmarshalWithSHA1(buf, &out), ShouldBeNil)
-		So(out, ShouldResemble, msg)
+		So(proto.Equal(&out, &msg), ShouldBeTrue)
 	})
 
 	Convey("Rejects bad msg", t, func(c C) {

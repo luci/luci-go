@@ -175,6 +175,10 @@ func getFieldInfosLocked(t reflect.Type) ([]fieldInfo, error) {
 	props := proto.GetProperties(t).Prop
 	fields := make([]fieldInfo, 0, len(props))
 	for _, p := range props {
+		if strings.HasPrefix(p.Name, "XXX_") {
+			continue
+		}
+
 		f, ok := t.FieldByName(p.Name)
 		switch {
 		case !ok:
