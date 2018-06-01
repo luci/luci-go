@@ -186,7 +186,14 @@
           close = ']' + close;
         }
 
-        switch (field.type) {
+        let type = field.type;
+        if (field.typeName == '.google.protobuf.FieldMask') {
+          // google.protobuf.FieldMask is a message, but in JSON it is encoded
+          // as a string.
+          // https://github.com/google/protobuf/blob/f8262db9191280d9e8ed0b2f4a77f71f86960c46/src/google/protobuf/field_mask.proto#L187
+          type = 'TYPE_STRING';
+        }
+        switch (type) {
           case 'TYPE_MESSAGE':
             open += '{';
             close = '}' + close;
