@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8256854e_d8f0e48d",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T21:06:39Z",
+      "side": 1,
+      "message": "yeah, sounds like a bug in Gostdlb. On the other hand, typically js is in a separate file.",
+      "parentUuid": "084c132d_5cb5ed93",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 39
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08c69ead_f9d40755",
         "filename": "milo/frontend/appengine/templates/pages/search.html",
         "patchSetId": 2
