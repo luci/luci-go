@@ -2,6 +2,246 @@
   "comments": [
     {
       "key": {
+        "uuid": "e7697e16_e761d71c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "+1",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 6
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d462c072_711ea440",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "please document format. Is it a URL? Can it include ref? Can it end with .git?",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13aa4403_8743d2fa",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "let\u0027s be more concrete and call it ProjectKey.",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 7
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f8fd8ea_e45232fb",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "(since we are making breaking changes)\nlet\u0027s delete this part",
+      "range": {
+        "startLine": 31,
+        "startChar": 43,
+        "endLine": 31,
+        "endChar": 65
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e9a31af_cc1dc7a8",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "I don\u0027t see much value in this function. It is used only in one place and is very specific to its callsite (it was just repurposed from one callsite to another). Let\u0027s inline it.",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "291da20c_a5bdf396",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "this overwrite Repository in builders\n\nalso, make sure to clear rev if repo changed",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05854aef_db6d605f",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "let\u0027s be more explicit and check that merr is not MultiError, then wrap it in multi error",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ca0f1ad_f3204d58",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "errors.MultiError{merr}",
+      "range": {
+        "startLine": 81,
+        "startChar": 10,
+        "endLine": 81,
+        "endChar": 42
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69fe45d9_c4eabc3c",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "are you sure this whole thing actually necessary?",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 82,
+        "endChar": 3
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c77cbd6_a5499fca",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 83,
+        "startChar": 26,
+        "endLine": 83,
+        "endChar": 36
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a6234c7_63d5d392",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "it seems that Notifier entity is unnecessary now.\nNow we can store Notifications right in the Builder and we no longer need to query Notifier by BuilderID",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c2e659ce_f0e3da57",
+        "filename": "luci_notify/config/validate.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/api/gitiles#ValidateRepoURL",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5cd50aea_c12c6040",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 5
@@ -46,6 +286,80 @@
       "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "64a1528d_50e21fc9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "consider making it a case of the switch above",
+      "range": {
+        "startLine": 154,
+        "startChar": 2,
+        "endLine": 155,
+        "endChar": 31
+      },
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0680184e_91f88e01",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "consider making it a case of the switch above",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "113b3d65_9f8cb970",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "consider making it a case of the switch above",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a815108a_472fb0ca",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T15:08:55Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/api/gitiles#ParseRepoURL",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
