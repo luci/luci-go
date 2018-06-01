@@ -22,6 +22,47 @@
       "revId": "acaeda59ff90c4244419b16e4092a2eedf450240",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "72a16204_5a8cef3b",
+        "filename": "cipd/appengine/impl/gs/gs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T20:29:57Z",
+      "side": 1,
+      "message": "how ugly?\n\n\nswitch code :\u003d StatusCode(err); {\ncase srcGen \u003c 0 \u0026\u0026 code \u003d\u003d http.StatusPreconditionFailed:\n  return nil\n\ncase code \u003d\u003d http.StatusNotFound || code \u003d\u003d http.StatusPreconditionFailed:\n  switch exists, dstErr :\u003d gs.Exists(c, dst); {\n  case dstErr !\u003d nil:\n    return errors.Annotate(dstErr, \"failed to check the destination object presence\").Err()\n  case !exists \u0026\u0026 code \u003d\u003d http.StatusNotFound:\n    // Both \u0027src\u0027 and \u0027dst\u0027 are missing. It means we are not retying a failed\n    // move (it would have left either \u0027src\u0027 or \u0027dst\u0027 or both present), and\n    // \u0027src\u0027 is genuinely missing.\n    return errors.Annotate(err, \"the source object is missing\").Err()\n  case !exists \u0026\u0026 code \u003d\u003d http.StatusPreconditionFailed:\n    // \u0027dst\u0027 is still missing. It means we failed \u0027srcGen\u0027 precondition.\n    return errors.Annotate(err, \"the source object has unexpected generation number\").Err()\n  default:\n    return nil // \u0027dst\u0027 exists, Publish is considered successful\n  }\n\ndefault:\n  return errors.Annotate(err, \"failed to copy the object\").Err()\n}",
+      "parentUuid": "404a1968_3cc14236",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 3
+      },
+      "revId": "acaeda59ff90c4244419b16e4092a2eedf450240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "75e8f758_9c710a2b",
+        "filename": "cipd/appengine/impl/gs/gs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T20:29:57Z",
+      "side": 1,
+      "message": "nit: this check is stricter than the one in L233, so consider placing it before L233. It might lead to reduction of explanatory comments",
+      "revId": "acaeda59ff90c4244419b16e4092a2eedf450240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
