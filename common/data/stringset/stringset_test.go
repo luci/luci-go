@@ -21,7 +21,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestThreadUnsafeSet(t *testing.T) {
+func TestSet(t *testing.T) {
 	t.Parallel()
 
 	Convey("Test Thread Unsafe Set", t, func() {
