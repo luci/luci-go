@@ -22,6 +22,30 @@
       "revId": "2a393e39a3a65796c8a488cafb3b1bfaa0bde757",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "012edd71_07a4bba1",
+        "filename": "web/inc/rpcexplorer/rpc-completer.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T18:11:55Z",
+      "side": 1,
+      "message": "i think so. This is not the only such thing. google.protobuf.Struct is serialized as a JSON object (which is cool)",
+      "parentUuid": "c9e0ea45_d2dbf97d",
+      "range": {
+        "startLine": 193,
+        "startChar": 13,
+        "endLine": 193,
+        "endChar": 135
+      },
+      "revId": "2a393e39a3a65796c8a488cafb3b1bfaa0bde757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
