@@ -263,7 +263,6 @@ func TestHandleArchive(t *testing.T) {
 		}
 
 		// Set up our testing archival task.
-		now := tc.Now()
 		expired := 10 * time.Minute
 		archiveTask := logdog.ArchiveTask{
 			Project:        project,
@@ -271,7 +270,6 @@ func TestHandleArchive(t *testing.T) {
 			SettleDelay:    google.NewDuration(10 * time.Second),
 			CompletePeriod: google.NewDuration(expired),
 			Key:            []byte("random archival key"),
-			DispatchedAt:   google.NewTimestamp(now.Add(-dispatchThreshold)),
 		}
 		expired++ // This represents a time PAST CompletePeriod.
 
@@ -354,34 +352,6 @@ func TestHandleArchive(t *testing.T) {
 			archiveRequest.DataSize = 0
 			return true
 		}
-
-		Convey(`Testing dispatch threshold`, func() {
-			Convey(`Will return task if it is within dispatch threshold (greater).`, func() {
-				archiveTask.DispatchedAt = google.NewTimestamp(now.Add(dispatchThreshold - time.Second))
-
-				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is within dispatch threshold")
-				So(task.consumed, ShouldBeFalse)
-			})
-
-			Convey(`Will return task if it is within dispatch threshold (less).`, func() {
-				archiveTask.DispatchedAt = google.NewTimestamp(now.Add(-dispatchThreshold + time.Second))
-
-				So(ar.archiveTaskImpl(c, task), ShouldErrLike, "log stream is within dispatch threshold")
-				So(task.consumed, ShouldBeFalse)
-			})
-
-			Convey(`Will process task if current time is well before dispatch time (clock skew).`, func() {
-				stream.State.TerminalIndex = 3
-				addTestEntry(project, 0, 1, 2, 3)
-
-				// Set the dispatch. We do this after addTestEntry because that updates
-				// our time.
-				archiveTask.DispatchedAt = google.NewTimestamp(tc.Now().Add(dispatchThreshold + time.Second))
-
-				So(ar.archiveTaskImpl(c, task), ShouldBeNil)
-				So(task.consumed, ShouldBeTrue)
-			})
-		})
 
 		Convey(`Will return task and fail to archive if the specified stream state could not be loaded.`, func() {
 			sc.lsCallback = func(*logdog.LoadStreamRequest) (*logdog.LoadStreamResponse, error) {
