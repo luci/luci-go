@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f2759caf_2bbb04a8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T02:35:59Z",
+      "side": 1,
+      "message": "proof: https://ci.chromium.org/p/infra-internal/builds/b8944961288439022272",
+      "revId": "e9fc32b0ebc5fc05a7f5007bac413fd1c567752b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17572e0f_a371c830",
+        "filename": "milo/buildsource/swarming/build.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 389,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T02:35:59Z",
+      "side": 1,
+      "message": "https://cs.chromium.org/chromium/infra/go/src/infra/tools/recipe_bundler/cmd_bundle.go?q\u003dcmd_bundle.go\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d33",
+      "revId": "e9fc32b0ebc5fc05a7f5007bac413fd1c567752b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
