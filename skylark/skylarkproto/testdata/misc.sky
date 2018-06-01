@@ -28,6 +28,11 @@ assert.true(bool(m))
 # Stringification works.
 assert.eq(str(testprotos.Simple(i=123)), "i:123 ")
 
+# Protobuf lib abstraction leaking fields are not accessible.
+def get_XXX_sizecache():
+  print(m.XXX_sizecache)
+assert.fails(get_XXX_sizecache, 'has no field "XXX_sizecache"')
+
 # Broken protos also stringify, but to an error message.
 assert.eq(
   str(testprotos.Simple(many_i=[None])),

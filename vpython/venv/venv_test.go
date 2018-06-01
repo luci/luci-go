@@ -263,7 +263,7 @@ func testVirtualEnvWith(t *testing.T, ri *resolvedInterpreter) {
 				if archetype == nil {
 					archetype = env
 				} else {
-					So(env, ShouldResemble, archetype)
+					So(env, ShouldResembleProto, archetype)
 				}
 			}
 		})

@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
+	empty "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedAdmin struct {
@@ -24,7 +24,7 @@ type DecoratedAdmin struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) SetConfig(c context.Context, req *SetConfigRequest) (rsp *google_protobuf.Empty, err error) {
+func (s *DecoratedAdmin) SetConfig(c context.Context, req *SetConfigRequest) (rsp *empty.Empty, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "SetConfig", req)

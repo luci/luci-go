@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
@@ -94,13 +95,13 @@ func (w *errWriter) Write(d []byte) (int, error) {
 }
 
 // indexParams umarshals an index from a byte stream and removes any entries.
-func indexParams(d []byte) logpb.LogIndex {
+func indexParams(d []byte) *logpb.LogIndex {
 	var index logpb.LogIndex
 	if err := proto.Unmarshal(d, &index); err != nil {
 		panic(fmt.Errorf("failed to unmarshal index protobuf: %v", err))
 	}
 	index.Entries = nil
-	return index
+	return &index
 }
 
 type indexChecker struct {
@@ -142,7 +143,7 @@ func (ic *indexChecker) shouldContainIndexFor(actual interface{}, expected ...in
 	}
 
 	// Descriptors must match.
-	if err := ShouldResemble(index.Desc, desc); err != "" {
+	if err := ShouldResembleProto(index.Desc, desc); err != "" {
 		return err
 	}
 
@@ -248,7 +249,7 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB)
-			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
@@ -262,7 +263,7 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 6)
-			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 12,
 				LastStreamIndex: 6,
@@ -277,7 +278,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 3)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 6,
 					LastStreamIndex: 3,
@@ -294,7 +295,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
@@ -311,7 +312,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 3, 4)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 8,
 					LastStreamIndex: 4,
@@ -329,7 +330,7 @@ func TestArchive(t *testing.T) {
 			So(Archive(m), ShouldBeNil)
 
 			So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 1, 2, 3, 4)
-			So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+			So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 				Desc:            desc,
 				LastPrefixIndex: 8,
 				LastStreamIndex: 4,
@@ -384,7 +385,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 3, 5)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
@@ -398,7 +399,7 @@ func TestArchive(t *testing.T) {
 
 				// Note that in our generated logs, PrefixIndex = 2*StreamIndex.
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 4, 5)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,
@@ -416,7 +417,7 @@ func TestArchive(t *testing.T) {
 				So(Archive(m), ShouldBeNil)
 
 				So(&indexB, ic.shouldContainIndexFor, desc, &logB, 0, 2, 5)
-				So(indexParams(indexB.Bytes()), ShouldResemble, logpb.LogIndex{
+				So(indexParams(indexB.Bytes()), ShouldResembleProto, &logpb.LogIndex{
 					Desc:            desc,
 					LastPrefixIndex: 10,
 					LastStreamIndex: 5,

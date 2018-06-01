@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestChecksumCheckingWorks(t *testing.T) {
@@ -38,7 +39,7 @@ func TestChecksumCheckingWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 		out := messages.TagCache{}
 		So(UnmarshalWithSHA1(buf, &out), ShouldBeNil)
-		So(out, ShouldResemble, msg)
+		So(&out, ShouldResembleProto, &msg)
 	})
 
 	Convey("Rejects bad msg", t, func(c C) {

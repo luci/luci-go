@@ -12,18 +12,46 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // An operating system to store in the database.
 type OS struct {
 	// The name of this operating system. Must be unique.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this operating system.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OS) Reset()                    { *m = OS{} }
-func (m *OS) String() string            { return proto.CompactTextString(m) }
-func (*OS) ProtoMessage()               {}
-func (*OS) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *OS) Reset()         { *m = OS{} }
+func (m *OS) String() string { return proto.CompactTextString(m) }
+func (*OS) ProtoMessage()    {}
+func (*OS) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oses_f5f81609645a8d7a, []int{0}
+}
+func (m *OS) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OS.Unmarshal(m, b)
+}
+func (m *OS) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OS.Marshal(b, m, deterministic)
+}
+func (dst *OS) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OS.Merge(dst, src)
+}
+func (m *OS) XXX_Size() int {
+	return xxx_messageInfo_OS.Size(m)
+}
+func (m *OS) XXX_DiscardUnknown() {
+	xxx_messageInfo_OS.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OS proto.InternalMessageInfo
 
 func (m *OS) GetName() string {
 	if m != nil {
@@ -42,13 +70,35 @@ func (m *OS) GetDescription() string {
 // A list of operating systems.
 type OSes struct {
 	// A list of operating systems.
-	OperatingSystem []*OS `protobuf:"bytes,1,rep,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`
+	OperatingSystem      []*OS    `protobuf:"bytes,1,rep,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OSes) Reset()                    { *m = OSes{} }
-func (m *OSes) String() string            { return proto.CompactTextString(m) }
-func (*OSes) ProtoMessage()               {}
-func (*OSes) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *OSes) Reset()         { *m = OSes{} }
+func (m *OSes) String() string { return proto.CompactTextString(m) }
+func (*OSes) ProtoMessage()    {}
+func (*OSes) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oses_f5f81609645a8d7a, []int{1}
+}
+func (m *OSes) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OSes.Unmarshal(m, b)
+}
+func (m *OSes) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OSes.Marshal(b, m, deterministic)
+}
+func (dst *OSes) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OSes.Merge(dst, src)
+}
+func (m *OSes) XXX_Size() int {
+	return xxx_messageInfo_OSes.Size(m)
+}
+func (m *OSes) XXX_DiscardUnknown() {
+	xxx_messageInfo_OSes.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OSes proto.InternalMessageInfo
 
 func (m *OSes) GetOperatingSystem() []*OS {
 	if m != nil {
@@ -63,10 +113,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/oses.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/oses.proto", fileDescriptor_oses_f5f81609645a8d7a)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_oses_f5f81609645a8d7a = []byte{
 	// 182 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0xc1, 0x8a, 0x83, 0x30,
 	0x18, 0x84, 0xd1, 0x15, 0x61, 0xe3, 0x61, 0x97, 0x9c, 0x3c, 0x8a, 0x27, 0x2f, 0x9b, 0xb0, 0xbb,

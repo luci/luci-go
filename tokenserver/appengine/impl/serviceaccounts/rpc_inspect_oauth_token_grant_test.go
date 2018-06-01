@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectOAuthTokenGrant(t *testing.T) {
@@ -74,7 +75,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Token: tok,
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
 			Valid:          true,
 			Signed:         true,
 			NonExpired:     true,
@@ -90,7 +91,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Token: "@@@@@@@@@@@@@",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
 		})
 	})
@@ -100,8 +101,8 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Token: "zzzz",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7 for tokenserver.OAuthTokenGrantEnvelope",
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
+			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
 		})
 	})
 
@@ -116,7 +117,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
 			Valid:            false,
 			Signed:           false,
 			NonExpired:       true,
@@ -137,7 +138,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Token: tok,
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
 			Valid:            false,
 			Signed:           true,
 			NonExpired:       true,
@@ -155,7 +156,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		So(resp, ShouldResemble, &admin.InspectOAuthTokenGrantResponse{
+		So(resp, ShouldResembleProto, &admin.InspectOAuthTokenGrantResponse{
 			Valid:            false,
 			Signed:           true,
 			NonExpired:       false,

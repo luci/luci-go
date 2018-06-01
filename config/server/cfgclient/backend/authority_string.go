@@ -2,7 +2,7 @@
 
 package backend
 
-import "fmt"
+import "strconv"
 
 const _Authority_name = "AsAnonymousAsServiceAsUser"
 
@@ -10,7 +10,7 @@ var _Authority_index = [...]uint8{0, 11, 20, 26}
 
 func (i Authority) String() string {
 	if i < 0 || i >= Authority(len(_Authority_index)-1) {
-		return fmt.Sprintf("Authority(%d)", i)
+		return "Authority(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _Authority_name[_Authority_index[i]:_Authority_index[i+1]]
 }

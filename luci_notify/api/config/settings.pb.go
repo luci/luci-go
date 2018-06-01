@@ -12,19 +12,47 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Settings is the top-level configuration message.
 type Settings struct {
 	// MiloHost is the hostname of the Milo instance luci-notify queries for
 	// additional build information.
 	//
 	// Required.
-	MiloHost string `protobuf:"bytes,1,opt,name=milo_host,json=miloHost" json:"milo_host,omitempty"`
+	MiloHost             string   `protobuf:"bytes,1,opt,name=milo_host,json=miloHost" json:"milo_host,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Settings) Reset()                    { *m = Settings{} }
-func (m *Settings) String() string            { return proto.CompactTextString(m) }
-func (*Settings) ProtoMessage()               {}
-func (*Settings) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Settings) Reset()         { *m = Settings{} }
+func (m *Settings) String() string { return proto.CompactTextString(m) }
+func (*Settings) ProtoMessage()    {}
+func (*Settings) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_1ee284b2bd30ffbc, []int{0}
+}
+func (m *Settings) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings.Unmarshal(m, b)
+}
+func (m *Settings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings.Marshal(b, m, deterministic)
+}
+func (dst *Settings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings.Merge(dst, src)
+}
+func (m *Settings) XXX_Size() int {
+	return xxx_messageInfo_Settings.Size(m)
+}
+func (m *Settings) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings proto.InternalMessageInfo
 
 func (m *Settings) GetMiloHost() string {
 	if m != nil {
@@ -38,10 +66,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/settings.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/settings.proto", fileDescriptor_settings_1ee284b2bd30ffbc)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_settings_1ee284b2bd30ffbc = []byte{
 	// 130 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4a, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
