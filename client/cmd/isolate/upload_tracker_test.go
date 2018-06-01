@@ -149,7 +149,6 @@ func (uploader *fakeUploader) UploadFile(item *Item, ps *isolatedclient.PushStat
 func (uploader *fakeUploader) Close() error { return nil }
 
 func TestSkipsUpload(t *testing.T) {
-	t.Parallel()
 	Convey(`nil push state signals that upload should be skipped`, t, func() {
 		isol := &isolated.Isolated{}
 
@@ -185,7 +184,6 @@ func TestSkipsUpload(t *testing.T) {
 }
 
 func TestDontSkipUpload(t *testing.T) {
-	t.Parallel()
 	Convey(`passing non-nil push state signals that upload should be performed`, t, func() {
 		isol := &isolated.Isolated{}
 
@@ -224,7 +222,6 @@ func TestDontSkipUpload(t *testing.T) {
 }
 
 func TestHandlesSymlinks(t *testing.T) {
-	t.Parallel()
 	Convey(`Symlinks should be stored in the isolated json`, t, func() {
 		isol := &isolated.Isolated{}
 
@@ -274,7 +271,6 @@ func TestHandlesSymlinks(t *testing.T) {
 }
 
 func TestHandlesIndividualFiles(t *testing.T) {
-	t.Parallel()
 	Convey(`Individual files should be stored in the isolated json and uploaded`, t, func() {
 		isol := &isolated.Isolated{}
 

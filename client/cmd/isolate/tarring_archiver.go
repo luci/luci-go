@@ -22,7 +22,6 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/client/internal/common"
-	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/isolated"
 )
 
@@ -39,30 +38,18 @@ func NewTarringArchiver(checker Checker, uploader Uploader) *TarringArchiver {
 }
 
 // Archive uploads a single isolate.
-func (ta *TarringArchiver) Archive(archiveOpts *isolate.ArchiveOptions) (IsolatedSummary, error) {
-	// Parse the incoming isolate file.
-	deps, rootDir, isol, err := isolate.ProcessIsolate(archiveOpts)
+func (ta *TarringArchiver) Archive(deps []string, rootDir string, isol *isolated.Isolated, blacklist []string, isolated string) (IsolatedSummary, error) {
+	parts, err := partitionDeps(deps, rootDir, blacklist)
 	if err != nil {
-		return IsolatedSummary{}, fmt.Errorf("isolate %s: failed to process:%v", archiveOpts.Isolate, err)
+		return IsolatedSummary{}, fmt.Errorf("partitioning deps: %v", err)
 	}
-	log.Printf("Isolate %s referenced %d deps", archiveOpts.Isolate, len(deps))
-
-	parts, err := partitionDeps(deps, rootDir, archiveOpts.Blacklist)
-	if err != nil {
-		return IsolatedSummary{}, fmt.Errorf("isolate %s: partitioning deps: %v", archiveOpts.Isolate, err)
-	}
-
-	log.Printf("Isolate %s expanded to the following items to be isolated:\n%s", archiveOpts.Isolate, parts)
+	log.Printf("Expanded to the following items to be isolated:\n%s", parts)
 
 	tracker := NewUploadTracker(ta.checker, ta.uploader, isol)
 	if err := tracker.UploadDeps(parts); err != nil {
-		return IsolatedSummary{}, fmt.Errorf("isolate %s: %v", archiveOpts.Isolate, err)
+		return IsolatedSummary{}, err
 	}
-	isolSummary, err := tracker.Finalize(archiveOpts.Isolated)
-	if err != nil {
-		return IsolatedSummary{}, fmt.Errorf("isolate %s: %v", archiveOpts.Isolate, err)
-	}
-	return isolSummary, nil
+	return tracker.Finalize(isolated)
 }
 
 // Item represents a file or symlink referenced by an isolate file.
