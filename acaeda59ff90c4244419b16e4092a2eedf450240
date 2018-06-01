@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "404a1968_3cc14236",
+        "filename": "cipd/appengine/impl/gs/gs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T19:26:05Z",
+      "side": 1,
+      "message": "I initially wrote it as a series of nested \u0027switch\u0027 blocks and it looked ugly AF. Thus \u0027if\u0027s to keep nesting low.",
+      "range": {
+        "startLine": 233,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 3
+      },
+      "revId": "acaeda59ff90c4244419b16e4092a2eedf450240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
