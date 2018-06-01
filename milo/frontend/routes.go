@@ -78,7 +78,6 @@ func Run(templatePath string) {
 	r.GET("/admin/configs", htmlMW, ConfigsHandler)
 
 	// Cron endpoints
-	r.GET("/internal/cron/fix-datastore", cronMW, cronHandler(fixDatastoreHandler))
 	r.GET("/internal/cron/stats", cronMW, cronHandler(buildbot.StatsHandler))
 	r.GET("/internal/cron/update-config", cronMW, UpdateConfigHandler)
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
