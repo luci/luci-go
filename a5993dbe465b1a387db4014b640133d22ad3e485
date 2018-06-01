@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "084c132d_5cb5ed93",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-01T21:02:25Z",
+      "side": 1,
+      "message": "This is hilarious\n\nGolang\u0027s html parser doesn\u0027t recognize `` as template string literals, so it parsed\nurl \u003d `https://$(.....`\nas \nurl \u003d `https:(everything here is a comment so strip it out)\n\nAnd thus, this was rendered:\nurl \u003d `https:\n\nSo yes, apparently this is too modern to be used in Milo.",
+      "parentUuid": "8441e57b_fc998c49",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 41,
+        "endChar": 39
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "08c69ead_f9d40755",
         "filename": "milo/frontend/appengine/templates/pages/search.html",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "6e646e16_2cc108bb",
+        "filename": "milo/frontend/appengine/templates/pages/search.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-01T21:02:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08c69ead_f9d40755",
+      "range": {
+        "startLine": 42,
+        "startChar": 36,
+        "endLine": 42,
+        "endChar": 37
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e907dfe6_af0f6946",
         "filename": "milo/frontend/expectations/search-Basic_search_page.html",
         "patchSetId": 2
@@ -60,6 +108,30 @@
       "side": 1,
       "message": "lol",
       "parentUuid": "7545f0bb_7501e3fe",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 5
+      },
+      "revId": "a5993dbe465b1a387db4014b640133d22ad3e485",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0dc4acde_f0a077d3",
+        "filename": "milo/frontend/expectations/search-Basic_search_page.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-01T21:02:25Z",
+      "side": 1,
+      "message": "I\u0027ve thought about sticking the html into an auto-formatter before getting emitted as expectation.",
+      "parentUuid": "e907dfe6_af0f6946",
       "range": {
         "startLine": 29,
         "startChar": 0,
