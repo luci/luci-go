@@ -88,6 +88,7 @@ type partitioningWalker struct {
 	fsView common.FilesystemView
 
 	parts partitionedDeps
+	seen  map[string]struct{}
 }
 
 // partitionedDeps contains a list of items to be archived, partitioned into symlinks and files categorized by size.
@@ -115,6 +116,10 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 	if err != nil {
 		return err
 	}
+	if _, ok := pw.seen[relPath]; ok {
+		return filepath.SkipDir
+	}
+	pw.seen[relPath] = struct{}{}
 
 	if relPath == "" { // empty string indicates skip.
 		return common.WalkFuncSkipFile(info)
@@ -149,7 +154,7 @@ func partitionDeps(deps []string, rootDir string, blacklist []string) (partition
 		return partitionedDeps{}, err
 	}
 
-	walker := partitioningWalker{fsView: fsView}
+	walker := partitioningWalker{fsView: fsView, seen: map[string]struct{}{}}
 	for _, dep := range deps {
 		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
 		if err := filepath.Walk(filepath.Clean(dep), walker.walkFn); err != nil {
