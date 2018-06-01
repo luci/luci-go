@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ee1fba5_52c38681",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "8",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e7124d2_48fcb4e7",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 27,
+        "startChar": 68,
+        "endLine": 27,
+        "endChar": 69
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68e73c27_5384b661",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "don\u0027t you need \\n in front too? Or is MarshallText guaranteed to end with \\n?",
+      "range": {
+        "startLine": 72,
+        "startChar": 22,
+        "endLine": 72,
+        "endChar": 23
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "777f5691_5ceece58",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "thereof",
+      "range": {
+        "startLine": 87,
+        "startChar": 49,
+        "endLine": 87,
+        "endChar": 50
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "884c8c50_c5e24735",
+        "filename": "dm/appengine/deps/ensure_quests_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "if this fails, figuring out which key won\u0027t be easy :(",
+      "range": {
+        "startLine": 45,
+        "startChar": 3,
+        "endLine": 45,
+        "endChar": 40
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19034fdc_ecef2409",
+        "filename": "dm/appengine/model/template_info.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:30:37Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 39,
+        "startChar": 55,
+        "endLine": 39,
+        "endChar": 56
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
