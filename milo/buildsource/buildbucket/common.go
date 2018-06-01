@@ -38,7 +38,7 @@ func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Servic
 	if err != nil {
 		return nil, err
 	}
-	client.BasePath = fmt.Sprintf("https://%s/api/swarmbucket/v1/", server)
+	client.BasePath = fmt.Sprintf("https://%s/_ah/api/swarmbucket/v1/", server)
 	return client, nil
 }
 
@@ -52,7 +52,7 @@ func newBuildbucketClient(c context.Context, server string) (*bbv1.Service, erro
 	if err != nil {
 		return nil, err
 	}
-	client.BasePath = fmt.Sprintf("https://%s/api/buildbucket/v1/", server)
+	client.BasePath = fmt.Sprintf("https://%s/_ah/api/buildbucket/v1/", server)
 	return client, nil
 }
 

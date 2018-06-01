@@ -76,7 +76,7 @@ func (r *baseCommandRun) createClient(ctx context.Context) (*client, error) {
 		baseURL: &url.URL{
 			Scheme: protocol,
 			Host:   r.host,
-			Path:   "/api/buildbucket/v1/",
+			Path:   "/_ah/api/buildbucket/v1/",
 		},
 	}, nil
 }
