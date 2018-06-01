@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
@@ -385,11 +386,23 @@ func addBuildsetInfo(build *ui.MiloBuild, tags strpair.Map) {
 	build.Trigger.Changelist = link
 }
 
+var regexRepoFromRecipeBundle = regexp.MustCompile(`/[^/]+\.googlesource\.com/.+$`)
+
 func AddRecipeLink(build *ui.MiloBuild, tags strpair.Map) {
 	name := tags.Get("recipe_name")
 	repoURL := tags.Get("recipe_repository")
-	if name == "" || repoURL == "" {
+	switch {
+	case name == "":
 		return
+	case repoURL == "":
+		// Was recipe_bundler-created CIPD package used?
+		repoURL = regexRepoFromRecipeBundle.FindString(tags.Get("recipe_package"))
+		if repoURL == "" {
+			return
+		}
+		// note that regex match will start with a slash, e.g.,
+		// "/chromium.googlesource.com/infra/infra"
+		repoURL = "https:/" + repoURL // make it valid URL.
 	}
 
 	// We don't know location of recipes within the repo and getting that
