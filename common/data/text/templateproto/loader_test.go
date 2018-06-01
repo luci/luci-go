@@ -100,12 +100,12 @@ func TestLoadFromConfig(t *testing.T) {
 					Param: map[string]*File_Template_Parameter{
 						"${json_key}": {
 							Doc:    "it's a json key",
-							Schema: &Schema{&Schema_Int{&Schema_Atom{}}},
+							Schema: &Schema{Schema: &Schema_Int{&Schema_Atom{}}},
 						},
 						"${thing}": {
 							Doc: "${thing} represents a color or a fruit",
 							Schema: &Schema{
-								&Schema_Enum{&Schema_Set{Entry: []*Schema_Set_Entry{
+								Schema: &Schema_Enum{&Schema_Set{Entry: []*Schema_Set_Entry{
 									{Doc: "fruit", Token: "banana"},
 									{Doc: "color", Token: "white"},
 									{Doc: "color", Token: "purple"},
@@ -114,7 +114,7 @@ func TestLoadFromConfig(t *testing.T) {
 						},
 						"${extra}": {
 							Nullable: true,
-							Schema:   &Schema{&Schema_Object{&Schema_JSON{}}},
+							Schema:   &Schema{Schema: &Schema_Object{&Schema_JSON{}}},
 							Default:  MustNewValue(map[string]interface{}{"yes": "please"}),
 						},
 					},

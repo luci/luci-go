@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Spec is a "vpython" environment specification.
 type Spec struct {
 	// The Python version to use. This should be of the form:
@@ -39,13 +45,35 @@ type Spec struct {
 	// environment parameters. However, a given specification may offer its own
 	// set of PEP425 tags representing the systems that it wants to be verified
 	// against.
-	VerifyPep425Tag []*PEP425Tag `protobuf:"bytes,4,rep,name=verify_pep425_tag,json=verifyPep425Tag" json:"verify_pep425_tag,omitempty"`
+	VerifyPep425Tag      []*PEP425Tag `protobuf:"bytes,4,rep,name=verify_pep425_tag,json=verifyPep425Tag" json:"verify_pep425_tag,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *Spec) Reset()                    { *m = Spec{} }
-func (m *Spec) String() string            { return proto.CompactTextString(m) }
-func (*Spec) ProtoMessage()               {}
-func (*Spec) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *Spec) Reset()         { *m = Spec{} }
+func (m *Spec) String() string { return proto.CompactTextString(m) }
+func (*Spec) ProtoMessage()    {}
+func (*Spec) Descriptor() ([]byte, []int) {
+	return fileDescriptor_spec_3f7e364ce64c2759, []int{0}
+}
+func (m *Spec) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Spec.Unmarshal(m, b)
+}
+func (m *Spec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Spec.Marshal(b, m, deterministic)
+}
+func (dst *Spec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec.Merge(dst, src)
+}
+func (m *Spec) XXX_Size() int {
+	return xxx_messageInfo_Spec.Size(m)
+}
+func (m *Spec) XXX_DiscardUnknown() {
+	xxx_messageInfo_Spec.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Spec proto.InternalMessageInfo
 
 func (m *Spec) GetPythonVersion() string {
 	if m != nil {
@@ -105,13 +133,35 @@ type Spec_Package struct {
 	//
 	// A "not_match_tag" overrides a "match_tag", so if a host has tags that
 	// match entries in both, the package will be not considered a match.
-	NotMatchTag []*PEP425Tag `protobuf:"bytes,4,rep,name=not_match_tag,json=notMatchTag" json:"not_match_tag,omitempty"`
+	NotMatchTag          []*PEP425Tag `protobuf:"bytes,4,rep,name=not_match_tag,json=notMatchTag" json:"not_match_tag,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *Spec_Package) Reset()                    { *m = Spec_Package{} }
-func (m *Spec_Package) String() string            { return proto.CompactTextString(m) }
-func (*Spec_Package) ProtoMessage()               {}
-func (*Spec_Package) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (m *Spec_Package) Reset()         { *m = Spec_Package{} }
+func (m *Spec_Package) String() string { return proto.CompactTextString(m) }
+func (*Spec_Package) ProtoMessage()    {}
+func (*Spec_Package) Descriptor() ([]byte, []int) {
+	return fileDescriptor_spec_3f7e364ce64c2759, []int{0, 0}
+}
+func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Spec_Package.Unmarshal(m, b)
+}
+func (m *Spec_Package) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Spec_Package.Marshal(b, m, deterministic)
+}
+func (dst *Spec_Package) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec_Package.Merge(dst, src)
+}
+func (m *Spec_Package) XXX_Size() int {
+	return xxx_messageInfo_Spec_Package.Size(m)
+}
+func (m *Spec_Package) XXX_DiscardUnknown() {
+	xxx_messageInfo_Spec_Package.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Spec_Package proto.InternalMessageInfo
 
 func (m *Spec_Package) GetName() string {
 	if m != nil {
@@ -147,10 +197,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor_spec_3f7e364ce64c2759)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_spec_3f7e364ce64c2759 = []byte{
 	// 287 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xcf, 0x4a, 0xf4, 0x30,
 	0x14, 0xc5, 0xe9, 0x9f, 0xef, 0xab, 0x73, 0x87, 0x51, 0x0c, 0x08, 0x65, 0x56, 0x45, 0x10, 0x06,

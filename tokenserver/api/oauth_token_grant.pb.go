@@ -6,12 +6,18 @@ package tokenserver
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // OAuthTokenGrantBody contains the internal guts of an oauth token grant.
 //
@@ -40,18 +46,40 @@ type OAuthTokenGrantBody struct {
 	// Used by MintOAuthTokenViaGrant to recheck that the access is still allowed.
 	EndUser string `protobuf:"bytes,4,opt,name=end_user,json=endUser" json:"end_user,omitempty"`
 	// When the token was generated (and when it becomes valid).
-	IssuedAt *google_protobuf.Timestamp `protobuf:"bytes,5,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
+	IssuedAt *timestamp.Timestamp `protobuf:"bytes,5,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
 	// How long the token is considered valid (in seconds).
 	//
 	// It may become invalid sooner if the token server policy changes and the
 	// new policy doesn't allow this token.
-	ValidityDuration int64 `protobuf:"varint,6,opt,name=validity_duration,json=validityDuration" json:"validity_duration,omitempty"`
+	ValidityDuration     int64    `protobuf:"varint,6,opt,name=validity_duration,json=validityDuration" json:"validity_duration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OAuthTokenGrantBody) Reset()                    { *m = OAuthTokenGrantBody{} }
-func (m *OAuthTokenGrantBody) String() string            { return proto.CompactTextString(m) }
-func (*OAuthTokenGrantBody) ProtoMessage()               {}
-func (*OAuthTokenGrantBody) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *OAuthTokenGrantBody) Reset()         { *m = OAuthTokenGrantBody{} }
+func (m *OAuthTokenGrantBody) String() string { return proto.CompactTextString(m) }
+func (*OAuthTokenGrantBody) ProtoMessage()    {}
+func (*OAuthTokenGrantBody) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{0}
+}
+func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OAuthTokenGrantBody.Unmarshal(m, b)
+}
+func (m *OAuthTokenGrantBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OAuthTokenGrantBody.Marshal(b, m, deterministic)
+}
+func (dst *OAuthTokenGrantBody) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantBody.Merge(dst, src)
+}
+func (m *OAuthTokenGrantBody) XXX_Size() int {
+	return xxx_messageInfo_OAuthTokenGrantBody.Size(m)
+}
+func (m *OAuthTokenGrantBody) XXX_DiscardUnknown() {
+	xxx_messageInfo_OAuthTokenGrantBody.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OAuthTokenGrantBody proto.InternalMessageInfo
 
 func (m *OAuthTokenGrantBody) GetTokenId() int64 {
 	if m != nil {
@@ -81,7 +109,7 @@ func (m *OAuthTokenGrantBody) GetEndUser() string {
 	return ""
 }
 
-func (m *OAuthTokenGrantBody) GetIssuedAt() *google_protobuf.Timestamp {
+func (m *OAuthTokenGrantBody) GetIssuedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.IssuedAt
 	}
@@ -99,15 +127,37 @@ func (m *OAuthTokenGrantBody) GetValidityDuration() int64 {
 // the callers of MintOAuthTokenGrant (after being encoded using base64 standard
 // raw encoding).
 type OAuthTokenGrantEnvelope struct {
-	TokenBody      []byte `protobuf:"bytes,1,opt,name=token_body,json=tokenBody,proto3" json:"token_body,omitempty"`
-	KeyId          string `protobuf:"bytes,2,opt,name=key_id,json=keyId" json:"key_id,omitempty"`
-	Pkcs1Sha256Sig []byte `protobuf:"bytes,3,opt,name=pkcs1_sha256_sig,json=pkcs1Sha256Sig,proto3" json:"pkcs1_sha256_sig,omitempty"`
+	TokenBody            []byte   `protobuf:"bytes,1,opt,name=token_body,json=tokenBody,proto3" json:"token_body,omitempty"`
+	KeyId                string   `protobuf:"bytes,2,opt,name=key_id,json=keyId" json:"key_id,omitempty"`
+	Pkcs1Sha256Sig       []byte   `protobuf:"bytes,3,opt,name=pkcs1_sha256_sig,json=pkcs1Sha256Sig,proto3" json:"pkcs1_sha256_sig,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OAuthTokenGrantEnvelope) Reset()                    { *m = OAuthTokenGrantEnvelope{} }
-func (m *OAuthTokenGrantEnvelope) String() string            { return proto.CompactTextString(m) }
-func (*OAuthTokenGrantEnvelope) ProtoMessage()               {}
-func (*OAuthTokenGrantEnvelope) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *OAuthTokenGrantEnvelope) Reset()         { *m = OAuthTokenGrantEnvelope{} }
+func (m *OAuthTokenGrantEnvelope) String() string { return proto.CompactTextString(m) }
+func (*OAuthTokenGrantEnvelope) ProtoMessage()    {}
+func (*OAuthTokenGrantEnvelope) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{1}
+}
+func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OAuthTokenGrantEnvelope.Unmarshal(m, b)
+}
+func (m *OAuthTokenGrantEnvelope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OAuthTokenGrantEnvelope.Marshal(b, m, deterministic)
+}
+func (dst *OAuthTokenGrantEnvelope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantEnvelope.Merge(dst, src)
+}
+func (m *OAuthTokenGrantEnvelope) XXX_Size() int {
+	return xxx_messageInfo_OAuthTokenGrantEnvelope.Size(m)
+}
+func (m *OAuthTokenGrantEnvelope) XXX_DiscardUnknown() {
+	xxx_messageInfo_OAuthTokenGrantEnvelope.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OAuthTokenGrantEnvelope proto.InternalMessageInfo
 
 func (m *OAuthTokenGrantEnvelope) GetTokenBody() []byte {
 	if m != nil {
@@ -136,10 +186,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor_oauth_token_grant_480c9516e875a2c8)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_oauth_token_grant_480c9516e875a2c8 = []byte{
 	// 346 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4d, 0x4b, 0xeb, 0x40,
 	0x14, 0x86, 0xc9, 0xed, 0xed, 0xd7, 0xb4, 0xf4, 0xf6, 0xce, 0xbd, 0x62, 0x2c, 0x88, 0xa5, 0x1b,

@@ -270,7 +270,7 @@ func TestQuery(t *testing.T) {
 
 					So(resp.Streams, ShouldHaveLength, 1)
 					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
+					So(resp.Streams[0].Desc, ShouldResembleProto, tls.Desc)
 					So(resp.Streams[0].DescProto, ShouldBeNil)
 				})
 
@@ -295,7 +295,7 @@ func TestQuery(t *testing.T) {
 
 					So(resp.Streams, ShouldHaveLength, 1)
 					So(resp.Streams[0].State, ShouldResemble, buildLogStreamState(tls.Stream, tls.State))
-					So(resp.Streams[0].Desc, ShouldResemble, tls.Desc)
+					So(resp.Streams[0].Desc, ShouldResembleProto, tls.Desc)
 				})
 			})
 		})

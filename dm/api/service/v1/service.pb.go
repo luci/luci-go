@@ -8,7 +8,7 @@ import prpc "go.chromium.org/luci/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import empty "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -20,6 +20,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
@@ -28,15 +34,16 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Deps service
-
+// DepsClient is the client API for Deps service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type DepsClient interface {
 	// allows you to add additional data to the current dependency graph.
 	EnsureGraphData(ctx context.Context, in *EnsureGraphDataReq, opts ...grpc.CallOption) (*EnsureGraphDataRsp, error)
 	// is called by Execution clients to activate themselves with DM.
-	ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error)
+	ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*empty.Empty, error)
 	// is called by Execution clients to indicate that an Attempt is finished.
-	FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error)
+	FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*empty.Empty, error)
 	// runs queries, and walks along the dependency graph from the query results.
 	WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error)
 }
@@ -57,8 +64,8 @@ func (c *depsPRPCClient) EnsureGraphData(ctx context.Context, in *EnsureGraphDat
 	return out, nil
 }
 
-func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
-	out := new(google_protobuf2.Empty)
+func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.client.Call(ctx, "dm.Deps", "ActivateExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -66,8 +73,8 @@ func (c *depsPRPCClient) ActivateExecution(ctx context.Context, in *ActivateExec
 	return out, nil
 }
 
-func (c *depsPRPCClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
-	out := new(google_protobuf2.Empty)
+func (c *depsPRPCClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
 	err := c.client.Call(ctx, "dm.Deps", "FinishAttempt", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -94,25 +101,25 @@ func NewDepsClient(cc *grpc.ClientConn) DepsClient {
 
 func (c *depsClient) EnsureGraphData(ctx context.Context, in *EnsureGraphDataReq, opts ...grpc.CallOption) (*EnsureGraphDataRsp, error) {
 	out := new(EnsureGraphDataRsp)
-	err := grpc.Invoke(ctx, "/dm.Deps/EnsureGraphData", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/dm.Deps/EnsureGraphData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *depsClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
-	out := new(google_protobuf2.Empty)
-	err := grpc.Invoke(ctx, "/dm.Deps/ActivateExecution", in, out, c.cc, opts...)
+func (c *depsClient) ActivateExecution(ctx context.Context, in *ActivateExecutionReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/dm.Deps/ActivateExecution", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *depsClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*google_protobuf2.Empty, error) {
-	out := new(google_protobuf2.Empty)
-	err := grpc.Invoke(ctx, "/dm.Deps/FinishAttempt", in, out, c.cc, opts...)
+func (c *depsClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/dm.Deps/FinishAttempt", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,22 +128,21 @@ func (c *depsClient) FinishAttempt(ctx context.Context, in *FinishAttemptReq, op
 
 func (c *depsClient) WalkGraph(ctx context.Context, in *WalkGraphReq, opts ...grpc.CallOption) (*GraphData, error) {
 	out := new(GraphData)
-	err := grpc.Invoke(ctx, "/dm.Deps/WalkGraph", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/dm.Deps/WalkGraph", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Deps service
-
+// DepsServer is the server API for Deps service.
 type DepsServer interface {
 	// allows you to add additional data to the current dependency graph.
 	EnsureGraphData(context.Context, *EnsureGraphDataReq) (*EnsureGraphDataRsp, error)
 	// is called by Execution clients to activate themselves with DM.
-	ActivateExecution(context.Context, *ActivateExecutionReq) (*google_protobuf2.Empty, error)
+	ActivateExecution(context.Context, *ActivateExecutionReq) (*empty.Empty, error)
 	// is called by Execution clients to indicate that an Attempt is finished.
-	FinishAttempt(context.Context, *FinishAttemptReq) (*google_protobuf2.Empty, error)
+	FinishAttempt(context.Context, *FinishAttemptReq) (*empty.Empty, error)
 	// runs queries, and walks along the dependency graph from the query results.
 	WalkGraph(context.Context, *WalkGraphReq) (*GraphData, error)
 }
@@ -243,10 +249,10 @@ var _Deps_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/service.proto", fileDescriptor5)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/service.proto", fileDescriptor_service_8907f222c15c0f56)
 }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor_service_8907f222c15c0f56 = []byte{
 	// 278 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0x4d, 0x4b, 0xc4, 0x30,
 	0x10, 0x86, 0x51, 0x44, 0x30, 0xb0, 0xa8, 0x41, 0x44, 0xea, 0x5f, 0x90, 0x04, 0x3f, 0xc0, 0x83,

@@ -45,7 +45,7 @@ func NewExecutionFinished(result *JsonResult) *Execution {
 	return &Execution{
 		Data: &Execution_Data{
 			ExecutionType: &Execution_Data_Finished_{
-				&Execution_Data_Finished{result}}}}
+				&Execution_Data_Finished{Data: result}}}}
 }
 
 // NewExecutionAbnormalFinish creates an Execution in the ABNORMAL_FINISH state.

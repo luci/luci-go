@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf1 "github.com/golang/protobuf/ptypes/empty"
+	empty "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedServices struct {
@@ -24,7 +24,7 @@ type DecoratedServices struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedServices) GetConfig(c context.Context, req *google_protobuf1.Empty) (rsp *GetConfigResponse, err error) {
+func (s *DecoratedServices) GetConfig(c context.Context, req *empty.Empty) (rsp *GetConfigResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetConfig", req)
@@ -69,7 +69,7 @@ func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest
 	return
 }
 
-func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (rsp *empty.Empty, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "TerminateStream", req)
@@ -84,7 +84,7 @@ func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStr
 	return
 }
 
-func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (rsp *google_protobuf1.Empty, err error) {
+func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (rsp *empty.Empty, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ArchiveStream", req)

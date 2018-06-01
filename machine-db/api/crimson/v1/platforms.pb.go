@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // A platform in the database.
 type Platform struct {
 	// The name of this platform. Uniquely identifies this platform.
@@ -19,13 +25,35 @@ type Platform struct {
 	// A description of this platform.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
 	// The manufacturer of this platform.
-	Manufacturer string `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Platform) Reset()                    { *m = Platform{} }
-func (m *Platform) String() string            { return proto.CompactTextString(m) }
-func (*Platform) ProtoMessage()               {}
-func (*Platform) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{0} }
+func (m *Platform) Reset()         { *m = Platform{} }
+func (m *Platform) String() string { return proto.CompactTextString(m) }
+func (*Platform) ProtoMessage()    {}
+func (*Platform) Descriptor() ([]byte, []int) {
+	return fileDescriptor_platforms_91eb230287ccad6a, []int{0}
+}
+func (m *Platform) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Platform.Unmarshal(m, b)
+}
+func (m *Platform) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Platform.Marshal(b, m, deterministic)
+}
+func (dst *Platform) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platform.Merge(dst, src)
+}
+func (m *Platform) XXX_Size() int {
+	return xxx_messageInfo_Platform.Size(m)
+}
+func (m *Platform) XXX_DiscardUnknown() {
+	xxx_messageInfo_Platform.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Platform proto.InternalMessageInfo
 
 func (m *Platform) GetName() string {
 	if m != nil {
@@ -53,13 +81,35 @@ type ListPlatformsRequest struct {
 	// The names of platforms to retrieve.
 	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
 	// The manufacturers to filter retrieved platforms on.
-	Manufacturers []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
+	Manufacturers        []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListPlatformsRequest) Reset()                    { *m = ListPlatformsRequest{} }
-func (m *ListPlatformsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListPlatformsRequest) ProtoMessage()               {}
-func (*ListPlatformsRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{1} }
+func (m *ListPlatformsRequest) Reset()         { *m = ListPlatformsRequest{} }
+func (m *ListPlatformsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListPlatformsRequest) ProtoMessage()    {}
+func (*ListPlatformsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_platforms_91eb230287ccad6a, []int{1}
+}
+func (m *ListPlatformsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPlatformsRequest.Unmarshal(m, b)
+}
+func (m *ListPlatformsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPlatformsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListPlatformsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPlatformsRequest.Merge(dst, src)
+}
+func (m *ListPlatformsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListPlatformsRequest.Size(m)
+}
+func (m *ListPlatformsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPlatformsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPlatformsRequest proto.InternalMessageInfo
 
 func (m *ListPlatformsRequest) GetNames() []string {
 	if m != nil {
@@ -78,13 +128,35 @@ func (m *ListPlatformsRequest) GetManufacturers() []string {
 // A response containing a list of platforms in the database.
 type ListPlatformsResponse struct {
 	// The platforms matching the request.
-	Platforms []*Platform `protobuf:"bytes,1,rep,name=platforms" json:"platforms,omitempty"`
+	Platforms            []*Platform `protobuf:"bytes,1,rep,name=platforms" json:"platforms,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *ListPlatformsResponse) Reset()                    { *m = ListPlatformsResponse{} }
-func (m *ListPlatformsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListPlatformsResponse) ProtoMessage()               {}
-func (*ListPlatformsResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{2} }
+func (m *ListPlatformsResponse) Reset()         { *m = ListPlatformsResponse{} }
+func (m *ListPlatformsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListPlatformsResponse) ProtoMessage()    {}
+func (*ListPlatformsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_platforms_91eb230287ccad6a, []int{2}
+}
+func (m *ListPlatformsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListPlatformsResponse.Unmarshal(m, b)
+}
+func (m *ListPlatformsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListPlatformsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListPlatformsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPlatformsResponse.Merge(dst, src)
+}
+func (m *ListPlatformsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListPlatformsResponse.Size(m)
+}
+func (m *ListPlatformsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListPlatformsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListPlatformsResponse proto.InternalMessageInfo
 
 func (m *ListPlatformsResponse) GetPlatforms() []*Platform {
 	if m != nil {
@@ -100,10 +172,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor10)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor_platforms_91eb230287ccad6a)
 }
 
-var fileDescriptor10 = []byte{
+var fileDescriptor_platforms_91eb230287ccad6a = []byte{
 	// 229 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4f, 0x4f, 0x03, 0x21,
 	0x14, 0xc4, 0xb3, 0xad, 0xff, 0xf6, 0x55, 0x0f, 0x92, 0x9a, 0x70, 0xdc, 0x10, 0x0f, 0xbd, 0x08,
