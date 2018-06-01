@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "537600fe_7bbe0724",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-01T19:24:56Z",
+      "side": 1,
+      "message": "incomplete or extra",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "200b934ca5781233fc8dbab0744c636c048d8f01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
