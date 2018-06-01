@@ -92,24 +92,24 @@ func walk(root string, fsView common.FilesystemView, c chan<- *walkItem) {
 
 // PushDirectory walks a directory at root and creates a .isolated file.
 //
-// It walks the directories synchronously, then returns a *Item to signal when
-// the background work is completed. The Item is signaled once all files are
-// hashed. In particular, the *Item is signaled before server side cache
-// lookups and upload is completed. Use archiver.Close() to wait for
-// completion.
+// It walks the directories synchronously, then returns a *PendingItem to
+// signal when the background work is completed. The PendingItem is signaled
+// once all files are hashed. In particular, the *PendingItem is signaled
+// before server side cache lookups and upload is completed. Use
+// archiver.Close() to wait for completion.
 //
 // relDir is a relative directory to offset relative paths against in the
 // generated .isolated file.
 //
 // blacklist is a list of globs of files to ignore.
-func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) *Item {
+func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) *PendingItem {
 	total := 0
 	end := tracer.Span(a, "PushDirectory", tracer.Args{"path": relDir, "root": root})
 	defer func() { end(tracer.Args{"total": total}) }()
 	c := make(chan *walkItem)
 
 	displayName := filepath.Base(root) + ".isolated"
-	s := &Item{DisplayName: displayName}
+	s := &PendingItem{DisplayName: displayName}
 	fsView, err := common.NewFilesystemView(root, blacklist)
 	if err != nil {
 		s.SetErr(err)
@@ -126,7 +126,7 @@ func PushDirectory(a *Archiver, root string, relDir string, blacklist []string) 
 		Files:   map[string]isolated.File{},
 		Version: isolated.IsolatedFormatVersion,
 	}
-	items := []*Item{}
+	items := []*PendingItem{}
 	for item := range c {
 		if s.Error() != nil {
 			// Empty the queue.

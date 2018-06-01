@@ -134,10 +134,10 @@ func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver
 		maxConcurrentUpload:   8,
 		containsBatchingDelay: 100 * time.Millisecond,
 		containsBatchSize:     50,
-		stage1DedupeChan:      make(chan *Item),
-		stage2HashChan:        make(chan *Item),
-		stage3LookupChan:      make(chan *Item),
-		stage4UploadChan:      make(chan *Item),
+		stage1DedupeChan:      make(chan *PendingItem),
+		stage2HashChan:        make(chan *PendingItem),
+		stage3LookupChan:      make(chan *PendingItem),
+		stage4UploadChan:      make(chan *PendingItem),
 	}
 	tracer.NewPID(a, "archiver")
 
@@ -175,10 +175,10 @@ func New(ctx context.Context, c *isolatedclient.Client, out io.Writer) *Archiver
 	return a
 }
 
-// Item is an item to process.
+// PendingItem is an item being processed.
 //
 // It is caried over from pipeline stage to stage to do processing on it.
-type Item struct {
+type PendingItem struct {
 	// Immutable.
 	DisplayName string         // Name to use to qualify this item
 	wgHashed    sync.WaitGroup // Released once .digestItem.Digest is set
@@ -188,57 +188,57 @@ type Item struct {
 
 	// Mutable.
 	lock       sync.Mutex
-	err        error                                    // Item specific error
+	err        error                                    // PendingItem specific error
 	digestItem isolateservice.HandlersEndpointsV1Digest // Mutated by hashLoop(), used by doContains()
-	linked     []*Item                                  // Deduplicated item.
+	linked     []*PendingItem                           // Deduplicated item.
 
 	// Mutable but not accessible externally.
 	source isolatedclient.Source     // Source of data
 	state  *isolatedclient.PushState // Server-side push state for cache miss
 }
 
-func newItem(a *Archiver, displayName, path string, source isolatedclient.Source, priority int64) *Item {
+func newItem(a *Archiver, displayName, path string, source isolatedclient.Source, priority int64) *PendingItem {
 	tracer.CounterAdd(a, "itemsProcessing", 1)
-	i := &Item{a: a, DisplayName: displayName, path: path, source: source, priority: priority}
+	i := &PendingItem{a: a, DisplayName: displayName, path: path, source: source, priority: priority}
 	i.wgHashed.Add(1)
 	return i
 }
 
-// done is called when the Item processing is done.
+// done is called when the PendingItem processing is done.
 //
 // It can be because there was an error, it was linked to another item, it was
 // present on the server or finally it was uploaded successfully.
-func (i *Item) done() error {
+func (i *PendingItem) done() error {
 	tracer.CounterAdd(i.a, "itemsProcessing", -1)
 	i.a = nil
 	return nil
 }
 
 // WaitForHashed hangs until the item hash is known.
-func (i *Item) WaitForHashed() {
+func (i *PendingItem) WaitForHashed() {
 	i.wgHashed.Wait()
 }
 
 // Error returns any error that occurred for this item if any.
-func (i *Item) Error() error {
+func (i *PendingItem) Error() error {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return i.err
 }
 
 // Digest returns the calculated digest once calculated, empty otherwise.
-func (i *Item) Digest() isolated.HexDigest {
+func (i *PendingItem) Digest() isolated.HexDigest {
 	i.lock.Lock()
 	defer i.lock.Unlock()
 	return isolated.HexDigest(i.digestItem.Digest)
 }
 
-func (i *Item) isFile() bool {
+func (i *PendingItem) isFile() bool {
 	return len(i.path) != 0
 }
 
 // SetErr forcibly set an item as failed. Normally not used by callers.
-func (i *Item) SetErr(err error) {
+func (i *PendingItem) SetErr(err error) {
 	if err == nil {
 		panic("internal error")
 	}
@@ -254,13 +254,13 @@ func (i *Item) SetErr(err error) {
 	}
 }
 
-func (i *Item) calcDigest() error {
+func (i *PendingItem) calcDigest() error {
 	defer i.wgHashed.Done()
 	var d isolateservice.HandlersEndpointsV1Digest
 
 	src, err := i.source()
 	if err != nil {
-		return fmt.Errorf("source(%s) failed: %s\n", i.DisplayName, err)
+		return fmt.Errorf("source(%s) failed: %s", i.DisplayName, err)
 	}
 	defer src.Close()
 
@@ -268,7 +268,7 @@ func (i *Item) calcDigest() error {
 	size, err := io.Copy(h, src)
 	if err != nil {
 		i.SetErr(err)
-		return fmt.Errorf("read(%s) failed: %s\n", i.DisplayName, err)
+		return fmt.Errorf("read(%s) failed: %s", i.DisplayName, err)
 	}
 	d = isolateservice.HandlersEndpointsV1Digest{Digest: string(isolated.Sum(h)), IsIsolated: true, Size: size}
 
@@ -285,7 +285,7 @@ func (i *Item) calcDigest() error {
 	return nil
 }
 
-func (i *Item) link(child *Item) {
+func (i *PendingItem) link(child *PendingItem) {
 	child.lock.Lock()
 	defer child.lock.Unlock()
 	if !child.isFile() || child.state != nil || child.linked != nil || child.err != nil {
@@ -321,10 +321,10 @@ type Archiver struct {
 	containsBatchingDelay time.Duration // Used by stage 3
 	containsBatchSize     int           // Used by stage 3
 	closeLock             sync.Mutex
-	stage1DedupeChan      chan *Item
-	stage2HashChan        chan *Item
-	stage3LookupChan      chan *Item
-	stage4UploadChan      chan *Item
+	stage1DedupeChan      chan *PendingItem
+	stage2HashChan        chan *PendingItem
+	stage3LookupChan      chan *PendingItem
+	stage4UploadChan      chan *PendingItem
 	wg                    sync.WaitGroup
 	canceler              common.Canceler
 	progress              progress.Progress
@@ -377,13 +377,13 @@ func (a *Archiver) Channel() <-chan error {
 
 // Push schedules item upload to the isolate server. Smaller priority value
 // means earlier processing.
-func (a *Archiver) Push(displayName string, source isolatedclient.Source, priority int64) *Item {
+func (a *Archiver) Push(displayName string, source isolatedclient.Source, priority int64) *PendingItem {
 	return a.push(newItem(a, displayName, "", source, priority))
 }
 
 // PushFile schedules file upload to the isolate server. Smaller priority
 // value means earlier processing.
-func (a *Archiver) PushFile(displayName, path string, priority int64) *Item {
+func (a *Archiver) PushFile(displayName, path string, priority int64) *PendingItem {
 	source := func() (io.ReadCloser, error) {
 		return os.Open(path)
 	}
@@ -397,7 +397,7 @@ func (a *Archiver) Stats() *Stats {
 	return a.stats.deepCopy()
 }
 
-func (a *Archiver) push(item *Item) *Item {
+func (a *Archiver) push(item *PendingItem) *PendingItem {
 	if a.pushLocked(item) {
 		tracer.Instant(a, "itemAdded", tracer.Thread, tracer.Args{"item": item.DisplayName})
 		tracer.CounterAdd(a, "itemsAdded", 1)
@@ -408,7 +408,7 @@ func (a *Archiver) push(item *Item) *Item {
 	return nil
 }
 
-func (a *Archiver) pushLocked(item *Item) bool {
+func (a *Archiver) pushLocked(item *PendingItem) bool {
 	// The close(a.stage1DedupeChan) call is always occurring with the lock held.
 	a.closeLock.Lock()
 	defer a.closeLock.Unlock()
@@ -425,13 +425,13 @@ func (a *Archiver) pushLocked(item *Item) bool {
 func (a *Archiver) stage1DedupeLoop() {
 	c := a.stage1DedupeChan
 	defer close(a.stage2HashChan)
-	seen := map[string]*Item{}
+	seen := map[string]*PendingItem{}
 	// Create our own goroutine-local channel buffer, which doesn't need to be
 	// synchronized (unlike channels).
-	buildUp := []*Item{}
+	buildUp := []*PendingItem{}
 	for {
 		// Pull or push an item, dependending if there is build up.
-		var item *Item
+		var item *PendingItem
 		ok := true
 		if len(buildUp) == 0 {
 			item, ok = <-c
@@ -530,7 +530,7 @@ func (a *Archiver) stage3LookupLoop() {
 	defer func() {
 		_ = pool.Wait()
 	}()
-	items := []*Item{}
+	items := []*PendingItem{}
 	never := make(<-chan time.Time)
 	timer := never
 	loop := true
@@ -541,7 +541,7 @@ func (a *Archiver) stage3LookupLoop() {
 			pool.Schedule(func() {
 				a.doContains(batch)
 			}, nil)
-			items = []*Item{}
+			items = []*PendingItem{}
 			timer = never
 
 		case item, ok := <-a.stage3LookupChan:
@@ -555,7 +555,7 @@ func (a *Archiver) stage3LookupLoop() {
 				pool.Schedule(func() {
 					a.doContains(batch)
 				}, nil)
-				items = []*Item{}
+				items = []*PendingItem{}
 				timer = never
 			} else if timer == never {
 				timer = time.After(a.containsBatchingDelay)
@@ -593,10 +593,10 @@ func (a *Archiver) stage4UploadLoop() {
 var emptyBackgroundContext = context.Background()
 
 // doContains is called by stage 3.
-func (a *Archiver) doContains(items []*Item) {
+func (a *Archiver) doContains(items []*PendingItem) {
 	tmp := make([]*isolateservice.HandlersEndpointsV1Digest, len(items))
 	// No need to lock each item at that point, no mutation occurs on
-	// Item.digestItem after stage 2.
+	// PendingItem.digestItem after stage 2.
 	for i, item := range items {
 		tmp[i] = &item.digestItem
 	}
@@ -624,14 +624,14 @@ func (a *Archiver) doContains(items []*Item) {
 			a.stage4UploadChan <- items[index]
 		}
 	}
-	logging.Infof(a.ctx, "Looked up %d items\n", len(items))
+	logging.Infof(a.ctx, "Looked up %d items", len(items))
 }
 
 // doUpload is called by stage 4.
-func (a *Archiver) doUpload(item *Item) {
+func (a *Archiver) doUpload(item *PendingItem) {
 	start := time.Now()
 	if err := a.c.Push(emptyBackgroundContext, item.state, item.source); err != nil {
-		err = fmt.Errorf("push(%s) failed: %s\n", item.path, err)
+		err = fmt.Errorf("push(%s) failed: %s", item.path, err)
 		a.Cancel(err)
 		item.SetErr(err)
 	} else {
@@ -644,5 +644,5 @@ func (a *Archiver) doUpload(item *Item) {
 	a.statsLock.Lock()
 	a.stats.Pushed = append(a.stats.Pushed, u)
 	a.statsLock.Unlock()
-	logging.Infof(a.ctx, "Uploaded %7s: %s\n", size, item.DisplayName)
+	logging.Infof(a.ctx, "Uploaded %7s: %s", size, item.DisplayName)
 }

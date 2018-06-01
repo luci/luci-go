@@ -142,14 +142,14 @@ func ReplaceVariables(str string, opts *ArchiveOptions) (string, error) {
 }
 
 // Archive processes a .isolate, generates a .isolated and archive it.
-// Returns a *Item to the .isolated.
-func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.Item {
+// Returns a *PendingItem to the .isolated.
+func Archive(arch *archiver.Archiver, opts *ArchiveOptions) *archiver.PendingItem {
 	displayName := filepath.Base(opts.Isolated)
 	defer tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":archive", nil)(nil)
 	f, err := archive(arch, opts, displayName)
 	if err != nil {
 		arch.Cancel(err)
-		i := &archiver.Item{DisplayName: displayName}
+		i := &archiver.PendingItem{DisplayName: displayName}
 		i.SetErr(err)
 		return i
 	}
@@ -261,7 +261,7 @@ func join(p1, p2 string) string {
 	return joined
 }
 
-func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.Item, error) {
+func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) (*archiver.PendingItem, error) {
 	end := tracer.Span(arch, strings.SplitN(displayName, ".", 2)[0]+":loading", nil)
 	filesCount, dirsCount, deps, rootDir, i, err := processing(opts)
 	end(tracer.Args{"err": err})
@@ -269,8 +269,8 @@ func archive(arch *archiver.Archiver, opts *ArchiveOptions, displayName string) 
 		return nil, err
 	}
 	// Handle each dependency, either a file or a directory..
-	fileItems := make([]*archiver.Item, 0, filesCount)
-	dirItems := make([]*archiver.Item, 0, dirsCount)
+	fileItems := make([]*archiver.PendingItem, 0, filesCount)
+	dirItems := make([]*archiver.PendingItem, 0, dirsCount)
 	for _, dep := range deps {
 		relPath, err := filepath.Rel(rootDir, dep)
 		if err != nil {
