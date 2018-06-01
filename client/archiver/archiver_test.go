@@ -154,7 +154,7 @@ func TestArchiverCancel(t *testing.T) {
 		if common.IsWindows() {
 			osErr = "The system cannot find the file specified."
 		}
-		expected := fmt.Errorf("source(foo) failed: open %s: %s\n", nonexistent, osErr)
+		expected := fmt.Errorf("source(foo) failed: open %s: %s", nonexistent, osErr)
 		So(<-a.Channel(), ShouldResemble, expected)
 		So(a.Close(), ShouldResemble, expected)
 		So(server.Error(), ShouldBeNil)
