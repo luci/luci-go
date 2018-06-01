@@ -30,22 +30,22 @@ var osOpen = func(name string) (io.ReadCloser, error) {
 	return os.Open(name)
 }
 
-// ItemBundle is a slice of *Items that will be archived together.
-type ItemBundle struct {
-	Items []*Item
-	// ItemSize is the total size (in bytes) of the constituent files. It will be
+// itemBundle is a slice of *Item that will be archived together.
+type itemBundle struct {
+	items []*Item
+	// itemSize is the total size (in bytes) of the constituent files. It will be
 	// smaller than the resultant tar.
-	ItemSize int64
+	itemSize int64
 }
 
-// ShardItems shards the provided items into ItemBundles, using the provided
+// shardItems shards the provided items into itemBundles, using the provided
 // threshold as the maximum size the resultant tars should be.
 //
-// ShardItems does not access the filesystem.
-func ShardItems(items []*Item, threshold int64) []*ItemBundle {
+// shardItems does not access the filesystem.
+func shardItems(items []*Item, threshold int64) []*itemBundle {
 	var (
-		bundles []*ItemBundle
-		bundle  *ItemBundle
+		bundles []*itemBundle
+		bundle  *itemBundle
 	)
 
 	// For deterministic isolated hashes, sort the items by path.
@@ -58,8 +58,8 @@ func ShardItems(items []*Item, threshold int64) []*ItemBundle {
 	return bundles
 }
 
-func oneBundle(items []*Item, threshold int64) (*ItemBundle, []*Item) {
-	bundle := &ItemBundle{}
+func oneBundle(items []*Item, threshold int64) (*itemBundle, []*Item) {
+	bundle := &itemBundle{}
 	bundleTarSize := int64(1024) // two trailing blank 512-byte records.
 
 	for i, item := range items {
@@ -70,8 +70,8 @@ func oneBundle(items []*Item, threshold int64) (*ItemBundle, []*Item) {
 			return bundle, items[i:]
 		}
 
-		bundle.Items = items[:i+1]
-		bundle.ItemSize += item.Size
+		bundle.items = items[:i+1]
+		bundle.itemSize += item.Size
 		bundleTarSize += tarSize
 	}
 	return bundle, nil
@@ -79,7 +79,7 @@ func oneBundle(items []*Item, threshold int64) (*ItemBundle, []*Item) {
 
 // Digest returns the hash and total size of the tar constructed from the
 // bundle's items.
-func (b *ItemBundle) Digest() (isolated.HexDigest, int64, error) {
+func (b *itemBundle) Digest() (isolated.HexDigest, int64, error) {
 	h := sha1.New()
 	cw := &iotools.CountingWriter{Writer: h}
 	if err := b.writeTar(cw); err != nil {
@@ -89,7 +89,7 @@ func (b *ItemBundle) Digest() (isolated.HexDigest, int64, error) {
 }
 
 // Contents returns an io.ReadCloser containing the tar's contents.
-func (b *ItemBundle) Contents() (io.ReadCloser, error) {
+func (b *itemBundle) Contents() (io.ReadCloser, error) {
 	pr, pw := io.Pipe()
 	go func() {
 		pw.CloseWithError(b.writeTar(pw))
@@ -97,10 +97,10 @@ func (b *ItemBundle) Contents() (io.ReadCloser, error) {
 	return pr, nil
 }
 
-func (b *ItemBundle) writeTar(w io.Writer) error {
+func (b *itemBundle) writeTar(w io.Writer) error {
 	tw := tar.NewWriter(w)
 
-	for _, item := range b.Items {
+	for _, item := range b.items {
 		if err := tw.WriteHeader(&tar.Header{
 			Name:     item.RelPath,
 			Mode:     int64(item.Mode),
