@@ -6,12 +6,18 @@ package scheduler
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/struct"
+import _struct "github.com/golang/protobuf/ptypes/struct"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Trigger can be emitted by triggering tasks (such as Gitiles tasks) or through
 // API and consumed by triggered tasks (such as Buildbucket tasks).
@@ -39,13 +45,35 @@ type Trigger struct {
 	//	*Trigger_Noop
 	//	*Trigger_Gitiles
 	//	*Trigger_Buildbucket
-	Payload isTrigger_Payload `protobuf_oneof:"payload"`
+	Payload              isTrigger_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Trigger) Reset()                    { *m = Trigger{} }
-func (m *Trigger) String() string            { return proto.CompactTextString(m) }
-func (*Trigger) ProtoMessage()               {}
-func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Trigger) Reset()         { *m = Trigger{} }
+func (m *Trigger) String() string { return proto.CompactTextString(m) }
+func (*Trigger) ProtoMessage()    {}
+func (*Trigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_33a38775f66862b6, []int{0}
+}
+func (m *Trigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Trigger.Unmarshal(m, b)
+}
+func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
+}
+func (dst *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(dst, src)
+}
+func (m *Trigger) XXX_Size() int {
+	return xxx_messageInfo_Trigger.Size(m)
+}
+func (m *Trigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_Trigger.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Trigger proto.InternalMessageInfo
 
 type isTrigger_Payload interface {
 	isTrigger_Payload()
@@ -212,22 +240,22 @@ func _Trigger_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Payload.(type) {
 	case *Trigger_Cron:
 		s := proto.Size(x.Cron)
-		n += proto.SizeVarint(40<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Noop:
 		s := proto.Size(x.Noop)
-		n += proto.SizeVarint(50<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Gitiles:
 		s := proto.Size(x.Gitiles)
-		n += proto.SizeVarint(51<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Buildbucket:
 		s := proto.Size(x.Buildbucket)
-		n += proto.SizeVarint(52<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -245,13 +273,35 @@ func _Trigger_OneofSizer(msg proto.Message) (n int) {
 // Note: such triggers can't be scheduled through external Scheduler API. They
 // may appear in the API responses though.
 type CronTrigger struct {
-	Generation int64 `protobuf:"varint,1,opt,name=generation" json:"generation,omitempty"`
+	Generation           int64    `protobuf:"varint,1,opt,name=generation" json:"generation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CronTrigger) Reset()                    { *m = CronTrigger{} }
-func (m *CronTrigger) String() string            { return proto.CompactTextString(m) }
-func (*CronTrigger) ProtoMessage()               {}
-func (*CronTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *CronTrigger) Reset()         { *m = CronTrigger{} }
+func (m *CronTrigger) String() string { return proto.CompactTextString(m) }
+func (*CronTrigger) ProtoMessage()    {}
+func (*CronTrigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_33a38775f66862b6, []int{1}
+}
+func (m *CronTrigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CronTrigger.Unmarshal(m, b)
+}
+func (m *CronTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CronTrigger.Marshal(b, m, deterministic)
+}
+func (dst *CronTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CronTrigger.Merge(dst, src)
+}
+func (m *CronTrigger) XXX_Size() int {
+	return xxx_messageInfo_CronTrigger.Size(m)
+}
+func (m *CronTrigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_CronTrigger.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CronTrigger proto.InternalMessageInfo
 
 func (m *CronTrigger) GetGeneration() int64 {
 	if m != nil {
@@ -263,13 +313,35 @@ func (m *CronTrigger) GetGeneration() int64 {
 // NoopTrigger is used by Scheduler integration tests to represent test
 // triggers.
 type NoopTrigger struct {
-	Data string `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	Data                 string   `protobuf:"bytes,1,opt,name=data" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NoopTrigger) Reset()                    { *m = NoopTrigger{} }
-func (m *NoopTrigger) String() string            { return proto.CompactTextString(m) }
-func (*NoopTrigger) ProtoMessage()               {}
-func (*NoopTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *NoopTrigger) Reset()         { *m = NoopTrigger{} }
+func (m *NoopTrigger) String() string { return proto.CompactTextString(m) }
+func (*NoopTrigger) ProtoMessage()    {}
+func (*NoopTrigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_33a38775f66862b6, []int{2}
+}
+func (m *NoopTrigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NoopTrigger.Unmarshal(m, b)
+}
+func (m *NoopTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NoopTrigger.Marshal(b, m, deterministic)
+}
+func (dst *NoopTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NoopTrigger.Merge(dst, src)
+}
+func (m *NoopTrigger) XXX_Size() int {
+	return xxx_messageInfo_NoopTrigger.Size(m)
+}
+func (m *NoopTrigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_NoopTrigger.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NoopTrigger proto.InternalMessageInfo
 
 func (m *NoopTrigger) GetData() string {
 	if m != nil {
@@ -283,15 +355,37 @@ func (m *NoopTrigger) GetData() string {
 //
 // Such triggers are emitted whenever the repository state changes.
 type GitilesTrigger struct {
-	Repo     string `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
-	Ref      string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
-	Revision string `protobuf:"bytes,3,opt,name=revision" json:"revision,omitempty"`
+	Repo                 string   `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
+	Ref                  string   `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
+	Revision             string   `protobuf:"bytes,3,opt,name=revision" json:"revision,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GitilesTrigger) Reset()                    { *m = GitilesTrigger{} }
-func (m *GitilesTrigger) String() string            { return proto.CompactTextString(m) }
-func (*GitilesTrigger) ProtoMessage()               {}
-func (*GitilesTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *GitilesTrigger) Reset()         { *m = GitilesTrigger{} }
+func (m *GitilesTrigger) String() string { return proto.CompactTextString(m) }
+func (*GitilesTrigger) ProtoMessage()    {}
+func (*GitilesTrigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_33a38775f66862b6, []int{3}
+}
+func (m *GitilesTrigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GitilesTrigger.Unmarshal(m, b)
+}
+func (m *GitilesTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GitilesTrigger.Marshal(b, m, deterministic)
+}
+func (dst *GitilesTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesTrigger.Merge(dst, src)
+}
+func (m *GitilesTrigger) XXX_Size() int {
+	return xxx_messageInfo_GitilesTrigger.Size(m)
+}
+func (m *GitilesTrigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_GitilesTrigger.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GitilesTrigger proto.InternalMessageInfo
 
 func (m *GitilesTrigger) GetRepo() string {
 	if m != nil {
@@ -323,16 +417,38 @@ func (m *GitilesTrigger) GetRevision() string {
 // configuration (when one job triggers another) or via the API request
 // parameters (when triggering through public API).
 type BuildbucketTrigger struct {
-	Properties *google_protobuf1.Struct `protobuf:"bytes,1,opt,name=properties" json:"properties,omitempty"`
-	Tags       []string                 `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+	Properties           *_struct.Struct `protobuf:"bytes,1,opt,name=properties" json:"properties,omitempty"`
+	Tags                 []string        `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *BuildbucketTrigger) Reset()                    { *m = BuildbucketTrigger{} }
-func (m *BuildbucketTrigger) String() string            { return proto.CompactTextString(m) }
-func (*BuildbucketTrigger) ProtoMessage()               {}
-func (*BuildbucketTrigger) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *BuildbucketTrigger) Reset()         { *m = BuildbucketTrigger{} }
+func (m *BuildbucketTrigger) String() string { return proto.CompactTextString(m) }
+func (*BuildbucketTrigger) ProtoMessage()    {}
+func (*BuildbucketTrigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_33a38775f66862b6, []int{4}
+}
+func (m *BuildbucketTrigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BuildbucketTrigger.Unmarshal(m, b)
+}
+func (m *BuildbucketTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BuildbucketTrigger.Marshal(b, m, deterministic)
+}
+func (dst *BuildbucketTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbucketTrigger.Merge(dst, src)
+}
+func (m *BuildbucketTrigger) XXX_Size() int {
+	return xxx_messageInfo_BuildbucketTrigger.Size(m)
+}
+func (m *BuildbucketTrigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_BuildbucketTrigger.DiscardUnknown(m)
+}
 
-func (m *BuildbucketTrigger) GetProperties() *google_protobuf1.Struct {
+var xxx_messageInfo_BuildbucketTrigger proto.InternalMessageInfo
+
+func (m *BuildbucketTrigger) GetProperties() *_struct.Struct {
 	if m != nil {
 		return m.Properties
 	}
@@ -355,10 +471,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto", fileDescriptor_triggers_33a38775f66862b6)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_triggers_33a38775f66862b6 = []byte{
 	// 378 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x92, 0xcf, 0x8e, 0xd4, 0x30,
 	0x0c, 0xc6, 0x99, 0x76, 0x61, 0x18, 0x57, 0x5a, 0xa1, 0x08, 0x41, 0x58, 0x01, 0x1a, 0x7a, 0x9a,

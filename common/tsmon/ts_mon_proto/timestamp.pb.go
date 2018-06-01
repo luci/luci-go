@@ -12,16 +12,43 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type Timestamp struct {
-	Seconds          *int64 `protobuf:"varint,1,opt,name=seconds" json:"seconds,omitempty"`
-	Nanos            *int32 `protobuf:"varint,2,opt,name=nanos" json:"nanos,omitempty"`
-	XXX_unrecognized []byte `json:"-"`
+	Seconds              *int64   `protobuf:"varint,1,opt,name=seconds" json:"seconds,omitempty"`
+	Nanos                *int32   `protobuf:"varint,2,opt,name=nanos" json:"nanos,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Timestamp) Reset()                    { *m = Timestamp{} }
-func (m *Timestamp) String() string            { return proto.CompactTextString(m) }
-func (*Timestamp) ProtoMessage()               {}
-func (*Timestamp) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
+func (m *Timestamp) Reset()         { *m = Timestamp{} }
+func (m *Timestamp) String() string { return proto.CompactTextString(m) }
+func (*Timestamp) ProtoMessage()    {}
+func (*Timestamp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_timestamp_53867b78885234be, []int{0}
+}
+func (m *Timestamp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Timestamp.Unmarshal(m, b)
+}
+func (m *Timestamp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Timestamp.Marshal(b, m, deterministic)
+}
+func (dst *Timestamp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Timestamp.Merge(dst, src)
+}
+func (m *Timestamp) XXX_Size() int {
+	return xxx_messageInfo_Timestamp.Size(m)
+}
+func (m *Timestamp) XXX_DiscardUnknown() {
+	xxx_messageInfo_Timestamp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Timestamp proto.InternalMessageInfo
 
 func (m *Timestamp) GetSeconds() int64 {
 	if m != nil && m.Seconds != nil {
@@ -42,10 +69,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/timestamp.proto", fileDescriptor5)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/timestamp.proto", fileDescriptor_timestamp_53867b78885234be)
 }
 
-var fileDescriptor5 = []byte{
+var fileDescriptor_timestamp_53867b78885234be = []byte{
 	// 131 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4b, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

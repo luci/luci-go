@@ -3,12 +3,13 @@
 
 package buildbucketpb
 
-import prpc "go.chromium.org/luci/grpc/prpc"
+import // import "go.chromium.org/luci/buildbucket/proto"
+prpc "go.chromium.org/luci/grpc/prpc"
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf2 "google.golang.org/genproto/protobuf/field_mask"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 import (
 	context "golang.org/x/net/context"
@@ -19,6 +20,12 @@ import (
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A request message for GetBuild rpc.
 type GetBuildRequest struct {
@@ -39,13 +46,35 @@ type GetBuildRequest struct {
 	// https://chromium.googlesource.com/infra/luci/luci-py/+/f9ae69a37c4bdd0e08a8b0f7e123f6e403e774eb/appengine/components/components/protoutil/field_masks.py#7
 	// In particular, if the client needs only some output properties, they
 	// can be requested with paths "output.properties.fields.foo".
-	Fields *google_protobuf2.FieldMask `protobuf:"bytes,100,opt,name=fields" json:"fields,omitempty"`
+	Fields               *field_mask.FieldMask `protobuf:"bytes,100,opt,name=fields" json:"fields,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *GetBuildRequest) Reset()                    { *m = GetBuildRequest{} }
-func (m *GetBuildRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetBuildRequest) ProtoMessage()               {}
-func (*GetBuildRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *GetBuildRequest) Reset()         { *m = GetBuildRequest{} }
+func (m *GetBuildRequest) String() string { return proto.CompactTextString(m) }
+func (*GetBuildRequest) ProtoMessage()    {}
+func (*GetBuildRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_58207b2e3128405e, []int{0}
+}
+func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetBuildRequest.Unmarshal(m, b)
+}
+func (m *GetBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetBuildRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetBuildRequest.Merge(dst, src)
+}
+func (m *GetBuildRequest) XXX_Size() int {
+	return xxx_messageInfo_GetBuildRequest.Size(m)
+}
+func (m *GetBuildRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetBuildRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetBuildRequest proto.InternalMessageInfo
 
 func (m *GetBuildRequest) GetId() int64 {
 	if m != nil {
@@ -68,7 +97,7 @@ func (m *GetBuildRequest) GetBuildNumber() int32 {
 	return 0
 }
 
-func (m *GetBuildRequest) GetFields() *google_protobuf2.FieldMask {
+func (m *GetBuildRequest) GetFields() *field_mask.FieldMask {
 	if m != nil {
 		return m.Fields
 	}
@@ -82,19 +111,41 @@ type SearchBuildsRequest struct {
 	// Fields to include in the response, see GetBuildRequest.fields.
 	// Note that this applies to the response, not each build, so e.g. steps must
 	// be requested with a path "builds.*.steps".
-	Fields *google_protobuf2.FieldMask `protobuf:"bytes,100,opt,name=fields" json:"fields,omitempty"`
+	Fields *field_mask.FieldMask `protobuf:"bytes,100,opt,name=fields" json:"fields,omitempty"`
 	// Number of builds to return.
 	// Any value >100 is interpreted as 100.
 	PageSize int32 `protobuf:"varint,101,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
 	// Value of SearchBuildsResponse.next_page_token from the previous response.
 	// Use it to continue searching.
-	PageToken string `protobuf:"bytes,102,opt,name=page_token,json=pageToken" json:"page_token,omitempty"`
+	PageToken            string   `protobuf:"bytes,102,opt,name=page_token,json=pageToken" json:"page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SearchBuildsRequest) Reset()                    { *m = SearchBuildsRequest{} }
-func (m *SearchBuildsRequest) String() string            { return proto.CompactTextString(m) }
-func (*SearchBuildsRequest) ProtoMessage()               {}
-func (*SearchBuildsRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *SearchBuildsRequest) Reset()         { *m = SearchBuildsRequest{} }
+func (m *SearchBuildsRequest) String() string { return proto.CompactTextString(m) }
+func (*SearchBuildsRequest) ProtoMessage()    {}
+func (*SearchBuildsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_58207b2e3128405e, []int{1}
+}
+func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchBuildsRequest.Unmarshal(m, b)
+}
+func (m *SearchBuildsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchBuildsRequest.Marshal(b, m, deterministic)
+}
+func (dst *SearchBuildsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchBuildsRequest.Merge(dst, src)
+}
+func (m *SearchBuildsRequest) XXX_Size() int {
+	return xxx_messageInfo_SearchBuildsRequest.Size(m)
+}
+func (m *SearchBuildsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchBuildsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SearchBuildsRequest proto.InternalMessageInfo
 
 func (m *SearchBuildsRequest) GetPredicate() *BuildPredicate {
 	if m != nil {
@@ -103,7 +154,7 @@ func (m *SearchBuildsRequest) GetPredicate() *BuildPredicate {
 	return nil
 }
 
-func (m *SearchBuildsRequest) GetFields() *google_protobuf2.FieldMask {
+func (m *SearchBuildsRequest) GetFields() *field_mask.FieldMask {
 	if m != nil {
 		return m.Fields
 	}
@@ -132,13 +183,35 @@ type SearchBuildsResponse struct {
 	// other words the order is newest-to-oldest.
 	Builds []*Build `protobuf:"bytes,1,rep,name=builds" json:"builds,omitempty"`
 	// Value for SearchBuildsRequest.page_token to continue searching.
-	NextPageToken string `protobuf:"bytes,100,opt,name=next_page_token,json=nextPageToken" json:"next_page_token,omitempty"`
+	NextPageToken        string   `protobuf:"bytes,100,opt,name=next_page_token,json=nextPageToken" json:"next_page_token,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SearchBuildsResponse) Reset()                    { *m = SearchBuildsResponse{} }
-func (m *SearchBuildsResponse) String() string            { return proto.CompactTextString(m) }
-func (*SearchBuildsResponse) ProtoMessage()               {}
-func (*SearchBuildsResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *SearchBuildsResponse) Reset()         { *m = SearchBuildsResponse{} }
+func (m *SearchBuildsResponse) String() string { return proto.CompactTextString(m) }
+func (*SearchBuildsResponse) ProtoMessage()    {}
+func (*SearchBuildsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_58207b2e3128405e, []int{2}
+}
+func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SearchBuildsResponse.Unmarshal(m, b)
+}
+func (m *SearchBuildsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SearchBuildsResponse.Marshal(b, m, deterministic)
+}
+func (dst *SearchBuildsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchBuildsResponse.Merge(dst, src)
+}
+func (m *SearchBuildsResponse) XXX_Size() int {
+	return xxx_messageInfo_SearchBuildsResponse.Size(m)
+}
+func (m *SearchBuildsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SearchBuildsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SearchBuildsResponse proto.InternalMessageInfo
 
 func (m *SearchBuildsResponse) GetBuilds() []*Build {
 	if m != nil {
@@ -176,13 +249,35 @@ type BuildPredicate struct {
 	CreateTime *TimeRange `protobuf:"bytes,7,opt,name=create_time,json=createTime" json:"create_time,omitempty"`
 	// If false (default), a build must be non-experimental.
 	// Otherwise it may be experimental or non-experimental.
-	IncludeExperimental bool `protobuf:"varint,8,opt,name=include_experimental,json=includeExperimental" json:"include_experimental,omitempty"`
+	IncludeExperimental  bool     `protobuf:"varint,8,opt,name=include_experimental,json=includeExperimental" json:"include_experimental,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *BuildPredicate) Reset()                    { *m = BuildPredicate{} }
-func (m *BuildPredicate) String() string            { return proto.CompactTextString(m) }
-func (*BuildPredicate) ProtoMessage()               {}
-func (*BuildPredicate) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *BuildPredicate) Reset()         { *m = BuildPredicate{} }
+func (m *BuildPredicate) String() string { return proto.CompactTextString(m) }
+func (*BuildPredicate) ProtoMessage()    {}
+func (*BuildPredicate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_58207b2e3128405e, []int{3}
+}
+func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BuildPredicate.Unmarshal(m, b)
+}
+func (m *BuildPredicate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BuildPredicate.Marshal(b, m, deterministic)
+}
+func (dst *BuildPredicate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildPredicate.Merge(dst, src)
+}
+func (m *BuildPredicate) XXX_Size() int {
+	return xxx_messageInfo_BuildPredicate.Size(m)
+}
+func (m *BuildPredicate) XXX_DiscardUnknown() {
+	xxx_messageInfo_BuildPredicate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BuildPredicate proto.InternalMessageInfo
 
 func (m *BuildPredicate) GetBuilder() *Builder_ID {
 	if m != nil {
@@ -248,8 +343,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Builds service
-
+// BuildsClient is the client API for Builds service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type BuildsClient interface {
 	// Gets a build.
 	//
@@ -295,7 +391,7 @@ func NewBuildsClient(cc *grpc.ClientConn) BuildsClient {
 
 func (c *buildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error) {
 	out := new(Build)
-	err := grpc.Invoke(ctx, "/buildbucket.v2.Builds/GetBuild", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/GetBuild", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -304,15 +400,14 @@ func (c *buildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts .
 
 func (c *buildsClient) SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error) {
 	out := new(SearchBuildsResponse)
-	err := grpc.Invoke(ctx, "/buildbucket.v2.Builds/SearchBuilds", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/SearchBuilds", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// Server API for Builds service
-
+// BuildsServer is the server API for Builds service.
 type BuildsServer interface {
 	// Gets a build.
 	//
@@ -380,9 +475,11 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 	Metadata: "go.chromium.org/luci/buildbucket/proto/rpc.proto",
 }
 
-func init() { proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor2) }
+func init() {
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_58207b2e3128405e)
+}
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_rpc_58207b2e3128405e = []byte{
 	// 581 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
 	0x10, 0xad, 0x13, 0x9a, 0xa6, 0x9b, 0x36, 0x95, 0xb6, 0x05, 0x2d, 0xe6, 0xcb, 0x04, 0x84, 0x7c,

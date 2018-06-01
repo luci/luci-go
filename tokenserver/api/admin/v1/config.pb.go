@@ -12,16 +12,44 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // TokenServerConfig is read from tokenserver.cfg in luci-config.
 type TokenServerConfig struct {
 	// List of CAs we trust.
 	CertificateAuthority []*CertificateAuthorityConfig `protobuf:"bytes,1,rep,name=certificate_authority,json=certificateAuthority" json:"certificate_authority,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *TokenServerConfig) Reset()                    { *m = TokenServerConfig{} }
-func (m *TokenServerConfig) String() string            { return proto.CompactTextString(m) }
-func (*TokenServerConfig) ProtoMessage()               {}
-func (*TokenServerConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *TokenServerConfig) Reset()         { *m = TokenServerConfig{} }
+func (m *TokenServerConfig) String() string { return proto.CompactTextString(m) }
+func (*TokenServerConfig) ProtoMessage()    {}
+func (*TokenServerConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{0}
+}
+func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TokenServerConfig.Unmarshal(m, b)
+}
+func (m *TokenServerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TokenServerConfig.Marshal(b, m, deterministic)
+}
+func (dst *TokenServerConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenServerConfig.Merge(dst, src)
+}
+func (m *TokenServerConfig) XXX_Size() int {
+	return xxx_messageInfo_TokenServerConfig.Size(m)
+}
+func (m *TokenServerConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_TokenServerConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TokenServerConfig proto.InternalMessageInfo
 
 func (m *TokenServerConfig) GetCertificateAuthority() []*CertificateAuthorityConfig {
 	if m != nil {
@@ -50,13 +78,35 @@ type CertificateAuthorityConfig struct {
 	UseOauth    bool     `protobuf:"varint,4,opt,name=use_oauth,json=useOauth" json:"use_oauth,omitempty"`
 	OauthScopes []string `protobuf:"bytes,7,rep,name=oauth_scopes,json=oauthScopes" json:"oauth_scopes,omitempty"`
 	// KnownDomains describes parameters to use for each particular domain.
-	KnownDomains []*DomainConfig `protobuf:"bytes,5,rep,name=known_domains,json=knownDomains" json:"known_domains,omitempty"`
+	KnownDomains         []*DomainConfig `protobuf:"bytes,5,rep,name=known_domains,json=knownDomains" json:"known_domains,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *CertificateAuthorityConfig) Reset()                    { *m = CertificateAuthorityConfig{} }
-func (m *CertificateAuthorityConfig) String() string            { return proto.CompactTextString(m) }
-func (*CertificateAuthorityConfig) ProtoMessage()               {}
-func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *CertificateAuthorityConfig) Reset()         { *m = CertificateAuthorityConfig{} }
+func (m *CertificateAuthorityConfig) String() string { return proto.CompactTextString(m) }
+func (*CertificateAuthorityConfig) ProtoMessage()    {}
+func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{1}
+}
+func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CertificateAuthorityConfig.Unmarshal(m, b)
+}
+func (m *CertificateAuthorityConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CertificateAuthorityConfig.Marshal(b, m, deterministic)
+}
+func (dst *CertificateAuthorityConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CertificateAuthorityConfig.Merge(dst, src)
+}
+func (m *CertificateAuthorityConfig) XXX_Size() int {
+	return xxx_messageInfo_CertificateAuthorityConfig.Size(m)
+}
+func (m *CertificateAuthorityConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_CertificateAuthorityConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CertificateAuthorityConfig proto.InternalMessageInfo
 
 func (m *CertificateAuthorityConfig) GetUniqueId() int64 {
 	if m != nil {
@@ -118,13 +168,35 @@ type DomainConfig struct {
 	// MachineTokenLifetime is how long generated machine tokens live, in seconds.
 	//
 	// If 0, machine tokens are not allowed.
-	MachineTokenLifetime int64 `protobuf:"varint,5,opt,name=machine_token_lifetime,json=machineTokenLifetime" json:"machine_token_lifetime,omitempty"`
+	MachineTokenLifetime int64    `protobuf:"varint,5,opt,name=machine_token_lifetime,json=machineTokenLifetime" json:"machine_token_lifetime,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DomainConfig) Reset()                    { *m = DomainConfig{} }
-func (m *DomainConfig) String() string            { return proto.CompactTextString(m) }
-func (*DomainConfig) ProtoMessage()               {}
-func (*DomainConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *DomainConfig) Reset()         { *m = DomainConfig{} }
+func (m *DomainConfig) String() string { return proto.CompactTextString(m) }
+func (*DomainConfig) ProtoMessage()    {}
+func (*DomainConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{2}
+}
+func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DomainConfig.Unmarshal(m, b)
+}
+func (m *DomainConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DomainConfig.Marshal(b, m, deterministic)
+}
+func (dst *DomainConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DomainConfig.Merge(dst, src)
+}
+func (m *DomainConfig) XXX_Size() int {
+	return xxx_messageInfo_DomainConfig.Size(m)
+}
+func (m *DomainConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_DomainConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DomainConfig proto.InternalMessageInfo
 
 func (m *DomainConfig) GetDomain() []string {
 	if m != nil {
@@ -149,13 +221,35 @@ type DelegationPermissions struct {
 	// the request will be denied.
 	//
 	// See DelegationRule comments for more details.
-	Rules []*DelegationRule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
+	Rules                []*DelegationRule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *DelegationPermissions) Reset()                    { *m = DelegationPermissions{} }
-func (m *DelegationPermissions) String() string            { return proto.CompactTextString(m) }
-func (*DelegationPermissions) ProtoMessage()               {}
-func (*DelegationPermissions) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *DelegationPermissions) Reset()         { *m = DelegationPermissions{} }
+func (m *DelegationPermissions) String() string { return proto.CompactTextString(m) }
+func (*DelegationPermissions) ProtoMessage()    {}
+func (*DelegationPermissions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{3}
+}
+func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DelegationPermissions.Unmarshal(m, b)
+}
+func (m *DelegationPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DelegationPermissions.Marshal(b, m, deterministic)
+}
+func (dst *DelegationPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationPermissions.Merge(dst, src)
+}
+func (m *DelegationPermissions) XXX_Size() int {
+	return xxx_messageInfo_DelegationPermissions.Size(m)
+}
+func (m *DelegationPermissions) XXX_DiscardUnknown() {
+	xxx_messageInfo_DelegationPermissions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DelegationPermissions proto.InternalMessageInfo
 
 func (m *DelegationPermissions) GetRules() []*DelegationRule {
 	if m != nil {
@@ -245,13 +339,35 @@ type DelegationRule struct {
 	// Maximum allowed validity duration (sec) of minted delegation tokens.
 	//
 	// Default is 12 hours.
-	MaxValidityDuration int64 `protobuf:"varint,7,opt,name=max_validity_duration,json=maxValidityDuration" json:"max_validity_duration,omitempty"`
+	MaxValidityDuration  int64    `protobuf:"varint,7,opt,name=max_validity_duration,json=maxValidityDuration" json:"max_validity_duration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DelegationRule) Reset()                    { *m = DelegationRule{} }
-func (m *DelegationRule) String() string            { return proto.CompactTextString(m) }
-func (*DelegationRule) ProtoMessage()               {}
-func (*DelegationRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (m *DelegationRule) Reset()         { *m = DelegationRule{} }
+func (m *DelegationRule) String() string { return proto.CompactTextString(m) }
+func (*DelegationRule) ProtoMessage()    {}
+func (*DelegationRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{4}
+}
+func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DelegationRule.Unmarshal(m, b)
+}
+func (m *DelegationRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DelegationRule.Marshal(b, m, deterministic)
+}
+func (dst *DelegationRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationRule.Merge(dst, src)
+}
+func (m *DelegationRule) XXX_Size() int {
+	return xxx_messageInfo_DelegationRule.Size(m)
+}
+func (m *DelegationRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_DelegationRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DelegationRule proto.InternalMessageInfo
 
 func (m *DelegationRule) GetName() string {
 	if m != nil {
@@ -322,13 +438,35 @@ type ServiceAccountsPermissions struct {
 	//
 	// See docs for individual fields to figure out how defaults are merged into
 	// the rules.
-	Defaults *ServiceAccountRuleDefaults `protobuf:"bytes,2,opt,name=defaults" json:"defaults,omitempty"`
+	Defaults             *ServiceAccountRuleDefaults `protobuf:"bytes,2,opt,name=defaults" json:"defaults,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
 }
 
-func (m *ServiceAccountsPermissions) Reset()                    { *m = ServiceAccountsPermissions{} }
-func (m *ServiceAccountsPermissions) String() string            { return proto.CompactTextString(m) }
-func (*ServiceAccountsPermissions) ProtoMessage()               {}
-func (*ServiceAccountsPermissions) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (m *ServiceAccountsPermissions) Reset()         { *m = ServiceAccountsPermissions{} }
+func (m *ServiceAccountsPermissions) String() string { return proto.CompactTextString(m) }
+func (*ServiceAccountsPermissions) ProtoMessage()    {}
+func (*ServiceAccountsPermissions) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{5}
+}
+func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServiceAccountsPermissions.Unmarshal(m, b)
+}
+func (m *ServiceAccountsPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServiceAccountsPermissions.Marshal(b, m, deterministic)
+}
+func (dst *ServiceAccountsPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountsPermissions.Merge(dst, src)
+}
+func (m *ServiceAccountsPermissions) XXX_Size() int {
+	return xxx_messageInfo_ServiceAccountsPermissions.Size(m)
+}
+func (m *ServiceAccountsPermissions) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServiceAccountsPermissions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServiceAccountsPermissions proto.InternalMessageInfo
 
 func (m *ServiceAccountsPermissions) GetRules() []*ServiceAccountRule {
 	if m != nil {
@@ -418,13 +556,35 @@ type ServiceAccountRule struct {
 	//
 	// Default is taken from ServiceAccountRuleDefaults or 48 hours if not
 	// specified there.
-	MaxGrantValidityDuration int64 `protobuf:"varint,7,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	MaxGrantValidityDuration int64    `protobuf:"varint,7,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
+	XXX_unrecognized         []byte   `json:"-"`
+	XXX_sizecache            int32    `json:"-"`
 }
 
-func (m *ServiceAccountRule) Reset()                    { *m = ServiceAccountRule{} }
-func (m *ServiceAccountRule) String() string            { return proto.CompactTextString(m) }
-func (*ServiceAccountRule) ProtoMessage()               {}
-func (*ServiceAccountRule) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
+func (m *ServiceAccountRule) Reset()         { *m = ServiceAccountRule{} }
+func (m *ServiceAccountRule) String() string { return proto.CompactTextString(m) }
+func (*ServiceAccountRule) ProtoMessage()    {}
+func (*ServiceAccountRule) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{6}
+}
+func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServiceAccountRule.Unmarshal(m, b)
+}
+func (m *ServiceAccountRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServiceAccountRule.Marshal(b, m, deterministic)
+}
+func (dst *ServiceAccountRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRule.Merge(dst, src)
+}
+func (m *ServiceAccountRule) XXX_Size() int {
+	return xxx_messageInfo_ServiceAccountRule.Size(m)
+}
+func (m *ServiceAccountRule) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServiceAccountRule.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServiceAccountRule proto.InternalMessageInfo
 
 func (m *ServiceAccountRule) GetName() string {
 	if m != nil {
@@ -501,13 +661,35 @@ type ServiceAccountRuleDefaults struct {
 	// there.
 	//
 	// Default is 48 hours.
-	MaxGrantValidityDuration int64 `protobuf:"varint,2,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	MaxGrantValidityDuration int64    `protobuf:"varint,2,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
+	XXX_unrecognized         []byte   `json:"-"`
+	XXX_sizecache            int32    `json:"-"`
 }
 
-func (m *ServiceAccountRuleDefaults) Reset()                    { *m = ServiceAccountRuleDefaults{} }
-func (m *ServiceAccountRuleDefaults) String() string            { return proto.CompactTextString(m) }
-func (*ServiceAccountRuleDefaults) ProtoMessage()               {}
-func (*ServiceAccountRuleDefaults) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
+func (m *ServiceAccountRuleDefaults) Reset()         { *m = ServiceAccountRuleDefaults{} }
+func (m *ServiceAccountRuleDefaults) String() string { return proto.CompactTextString(m) }
+func (*ServiceAccountRuleDefaults) ProtoMessage()    {}
+func (*ServiceAccountRuleDefaults) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_b36d6463a87a68ec, []int{7}
+}
+func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServiceAccountRuleDefaults.Unmarshal(m, b)
+}
+func (m *ServiceAccountRuleDefaults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServiceAccountRuleDefaults.Marshal(b, m, deterministic)
+}
+func (dst *ServiceAccountRuleDefaults) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRuleDefaults.Merge(dst, src)
+}
+func (m *ServiceAccountRuleDefaults) XXX_Size() int {
+	return xxx_messageInfo_ServiceAccountRuleDefaults.Size(m)
+}
+func (m *ServiceAccountRuleDefaults) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServiceAccountRuleDefaults.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServiceAccountRuleDefaults proto.InternalMessageInfo
 
 func (m *ServiceAccountRuleDefaults) GetAllowedScope() []string {
 	if m != nil {
@@ -535,10 +717,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor_config_b36d6463a87a68ec)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_config_b36d6463a87a68ec = []byte{
 	// 755 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x4d, 0x8f, 0x22, 0x45,
 	0x18, 0x0e, 0x4d, 0x03, 0x4d, 0x2d, 0xc3, 0xb2, 0xb5, 0xcc, 0x5a, 0xee, 0x9a, 0xc8, 0x62, 0x36,

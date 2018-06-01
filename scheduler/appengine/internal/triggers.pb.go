@@ -6,13 +6,19 @@ package internal
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
-import scheduler "go.chromium.org/luci/scheduler/api/scheduler/v1"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Trigger can be emitted by the engine itself (e.g. on a schedule) or by
 // triggering tasks (such as Gitiles tasks).
@@ -48,7 +54,7 @@ type Trigger struct {
 	// Together with 'order_in_batch' used for weak ordering of triggers that
 	// aren't directly comparable (e.g. git commits from different repositories).
 	// This ordering shouldn't be considered reliable.
-	Created *google_protobuf.Timestamp `protobuf:"bytes,4,opt,name=created" json:"created,omitempty"`
+	Created *timestamp.Timestamp `protobuf:"bytes,4,opt,name=created" json:"created,omitempty"`
 	// If a bunch of triggers were emitted at the same moment in time (for example
 	// through a single RPC or by a single invocation in a tight loop), a trigger
 	// with smaller 'order_in_batch' is considered to be older. Value of
@@ -81,29 +87,51 @@ type Trigger struct {
 	//	*Trigger_Noop
 	//	*Trigger_Gitiles
 	//	*Trigger_Buildbucket
-	Payload isTrigger_Payload `protobuf_oneof:"payload"`
+	Payload              isTrigger_Payload `protobuf_oneof:"payload"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Trigger) Reset()                    { *m = Trigger{} }
-func (m *Trigger) String() string            { return proto.CompactTextString(m) }
-func (*Trigger) ProtoMessage()               {}
-func (*Trigger) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *Trigger) Reset()         { *m = Trigger{} }
+func (m *Trigger) String() string { return proto.CompactTextString(m) }
+func (*Trigger) ProtoMessage()    {}
+func (*Trigger) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_d5c70b81999e9321, []int{0}
+}
+func (m *Trigger) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Trigger.Unmarshal(m, b)
+}
+func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
+}
+func (dst *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(dst, src)
+}
+func (m *Trigger) XXX_Size() int {
+	return xxx_messageInfo_Trigger.Size(m)
+}
+func (m *Trigger) XXX_DiscardUnknown() {
+	xxx_messageInfo_Trigger.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Trigger proto.InternalMessageInfo
 
 type isTrigger_Payload interface {
 	isTrigger_Payload()
 }
 
 type Trigger_Cron struct {
-	Cron *scheduler.CronTrigger `protobuf:"bytes,40,opt,name=cron,oneof"`
+	Cron *v1.CronTrigger `protobuf:"bytes,40,opt,name=cron,oneof"`
 }
 type Trigger_Noop struct {
-	Noop *scheduler.NoopTrigger `protobuf:"bytes,50,opt,name=noop,oneof"`
+	Noop *v1.NoopTrigger `protobuf:"bytes,50,opt,name=noop,oneof"`
 }
 type Trigger_Gitiles struct {
-	Gitiles *scheduler.GitilesTrigger `protobuf:"bytes,51,opt,name=gitiles,oneof"`
+	Gitiles *v1.GitilesTrigger `protobuf:"bytes,51,opt,name=gitiles,oneof"`
 }
 type Trigger_Buildbucket struct {
-	Buildbucket *scheduler.BuildbucketTrigger `protobuf:"bytes,52,opt,name=buildbucket,oneof"`
+	Buildbucket *v1.BuildbucketTrigger `protobuf:"bytes,52,opt,name=buildbucket,oneof"`
 }
 
 func (*Trigger_Cron) isTrigger_Payload()        {}
@@ -139,7 +167,7 @@ func (m *Trigger) GetInvocationId() int64 {
 	return 0
 }
 
-func (m *Trigger) GetCreated() *google_protobuf.Timestamp {
+func (m *Trigger) GetCreated() *timestamp.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -174,28 +202,28 @@ func (m *Trigger) GetEmittedByUser() string {
 	return ""
 }
 
-func (m *Trigger) GetCron() *scheduler.CronTrigger {
+func (m *Trigger) GetCron() *v1.CronTrigger {
 	if x, ok := m.GetPayload().(*Trigger_Cron); ok {
 		return x.Cron
 	}
 	return nil
 }
 
-func (m *Trigger) GetNoop() *scheduler.NoopTrigger {
+func (m *Trigger) GetNoop() *v1.NoopTrigger {
 	if x, ok := m.GetPayload().(*Trigger_Noop); ok {
 		return x.Noop
 	}
 	return nil
 }
 
-func (m *Trigger) GetGitiles() *scheduler.GitilesTrigger {
+func (m *Trigger) GetGitiles() *v1.GitilesTrigger {
 	if x, ok := m.GetPayload().(*Trigger_Gitiles); ok {
 		return x.Gitiles
 	}
 	return nil
 }
 
-func (m *Trigger) GetBuildbucket() *scheduler.BuildbucketTrigger {
+func (m *Trigger) GetBuildbucket() *v1.BuildbucketTrigger {
 	if x, ok := m.GetPayload().(*Trigger_Buildbucket); ok {
 		return x.Buildbucket
 	}
@@ -250,7 +278,7 @@ func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(scheduler.CronTrigger)
+		msg := new(v1.CronTrigger)
 		err := b.DecodeMessage(msg)
 		m.Payload = &Trigger_Cron{msg}
 		return true, err
@@ -258,7 +286,7 @@ func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(scheduler.NoopTrigger)
+		msg := new(v1.NoopTrigger)
 		err := b.DecodeMessage(msg)
 		m.Payload = &Trigger_Noop{msg}
 		return true, err
@@ -266,7 +294,7 @@ func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(scheduler.GitilesTrigger)
+		msg := new(v1.GitilesTrigger)
 		err := b.DecodeMessage(msg)
 		m.Payload = &Trigger_Gitiles{msg}
 		return true, err
@@ -274,7 +302,7 @@ func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(scheduler.BuildbucketTrigger)
+		msg := new(v1.BuildbucketTrigger)
 		err := b.DecodeMessage(msg)
 		m.Payload = &Trigger_Buildbucket{msg}
 		return true, err
@@ -289,22 +317,22 @@ func _Trigger_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Payload.(type) {
 	case *Trigger_Cron:
 		s := proto.Size(x.Cron)
-		n += proto.SizeVarint(40<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Noop:
 		s := proto.Size(x.Noop)
-		n += proto.SizeVarint(50<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Gitiles:
 		s := proto.Size(x.Gitiles)
-		n += proto.SizeVarint(51<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Trigger_Buildbucket:
 		s := proto.Size(x.Buildbucket)
-		n += proto.SizeVarint(52<<3 | proto.WireBytes)
+		n += 2 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -316,13 +344,35 @@ func _Trigger_OneofSizer(msg proto.Message) (n int) {
 
 // TriggerList is what we store in datastore entities.
 type TriggerList struct {
-	Triggers []*Trigger `protobuf:"bytes,1,rep,name=triggers" json:"triggers,omitempty"`
+	Triggers             []*Trigger `protobuf:"bytes,1,rep,name=triggers" json:"triggers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *TriggerList) Reset()                    { *m = TriggerList{} }
-func (m *TriggerList) String() string            { return proto.CompactTextString(m) }
-func (*TriggerList) ProtoMessage()               {}
-func (*TriggerList) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (m *TriggerList) Reset()         { *m = TriggerList{} }
+func (m *TriggerList) String() string { return proto.CompactTextString(m) }
+func (*TriggerList) ProtoMessage()    {}
+func (*TriggerList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_triggers_d5c70b81999e9321, []int{1}
+}
+func (m *TriggerList) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TriggerList.Unmarshal(m, b)
+}
+func (m *TriggerList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TriggerList.Marshal(b, m, deterministic)
+}
+func (dst *TriggerList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TriggerList.Merge(dst, src)
+}
+func (m *TriggerList) XXX_Size() int {
+	return xxx_messageInfo_TriggerList.Size(m)
+}
+func (m *TriggerList) XXX_DiscardUnknown() {
+	xxx_messageInfo_TriggerList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TriggerList proto.InternalMessageInfo
 
 func (m *TriggerList) GetTriggers() []*Trigger {
 	if m != nil {
@@ -337,10 +387,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor_triggers_d5c70b81999e9321)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor_triggers_d5c70b81999e9321 = []byte{
 	// 437 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x92, 0xcd, 0x6e, 0xd3, 0x4c,
 	0x14, 0x86, 0x3f, 0xc7, 0x4d, 0x9c, 0x4e, 0xbe, 0x16, 0x18, 0x01, 0x1a, 0x22, 0x21, 0xa2, 0x82,
