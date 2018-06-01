@@ -6,12 +6,18 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A rack in the database.
 type Rack struct {
@@ -22,15 +28,37 @@ type Rack struct {
 	// The datacenter this rack belongs to.
 	Datacenter string `protobuf:"bytes,3,opt,name=datacenter" json:"datacenter,omitempty"`
 	// The state of this rack.
-	State common.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
 	// The KVM serving this rack.
-	Kvm string `protobuf:"bytes,5,opt,name=kvm" json:"kvm,omitempty"`
+	Kvm                  string   `protobuf:"bytes,5,opt,name=kvm" json:"kvm,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Rack) Reset()                    { *m = Rack{} }
-func (m *Rack) String() string            { return proto.CompactTextString(m) }
-func (*Rack) ProtoMessage()               {}
-func (*Rack) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{0} }
+func (m *Rack) Reset()         { *m = Rack{} }
+func (m *Rack) String() string { return proto.CompactTextString(m) }
+func (*Rack) ProtoMessage()    {}
+func (*Rack) Descriptor() ([]byte, []int) {
+	return fileDescriptor_racks_c2c44a3b56347bdb, []int{0}
+}
+func (m *Rack) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Rack.Unmarshal(m, b)
+}
+func (m *Rack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Rack.Marshal(b, m, deterministic)
+}
+func (dst *Rack) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Rack.Merge(dst, src)
+}
+func (m *Rack) XXX_Size() int {
+	return xxx_messageInfo_Rack.Size(m)
+}
+func (m *Rack) XXX_DiscardUnknown() {
+	xxx_messageInfo_Rack.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Rack proto.InternalMessageInfo
 
 func (m *Rack) GetName() string {
 	if m != nil {
@@ -53,11 +81,11 @@ func (m *Rack) GetDatacenter() string {
 	return ""
 }
 
-func (m *Rack) GetState() common.State {
+func (m *Rack) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 func (m *Rack) GetKvm() string {
@@ -74,13 +102,35 @@ type ListRacksRequest struct {
 	// The datacenters to filter retrieved racks on.
 	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters" json:"datacenters,omitempty"`
 	// The KVMs to filter retrieved racks on.
-	Kvms []string `protobuf:"bytes,3,rep,name=kvms" json:"kvms,omitempty"`
+	Kvms                 []string `protobuf:"bytes,3,rep,name=kvms" json:"kvms,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListRacksRequest) Reset()                    { *m = ListRacksRequest{} }
-func (m *ListRacksRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListRacksRequest) ProtoMessage()               {}
-func (*ListRacksRequest) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{1} }
+func (m *ListRacksRequest) Reset()         { *m = ListRacksRequest{} }
+func (m *ListRacksRequest) String() string { return proto.CompactTextString(m) }
+func (*ListRacksRequest) ProtoMessage()    {}
+func (*ListRacksRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_racks_c2c44a3b56347bdb, []int{1}
+}
+func (m *ListRacksRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListRacksRequest.Unmarshal(m, b)
+}
+func (m *ListRacksRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListRacksRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListRacksRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListRacksRequest.Merge(dst, src)
+}
+func (m *ListRacksRequest) XXX_Size() int {
+	return xxx_messageInfo_ListRacksRequest.Size(m)
+}
+func (m *ListRacksRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListRacksRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListRacksRequest proto.InternalMessageInfo
 
 func (m *ListRacksRequest) GetNames() []string {
 	if m != nil {
@@ -106,13 +156,35 @@ func (m *ListRacksRequest) GetKvms() []string {
 // A response containing a list of racks in the database.
 type ListRacksResponse struct {
 	// The racks matching the request.
-	Racks []*Rack `protobuf:"bytes,1,rep,name=racks" json:"racks,omitempty"`
+	Racks                []*Rack  `protobuf:"bytes,1,rep,name=racks" json:"racks,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListRacksResponse) Reset()                    { *m = ListRacksResponse{} }
-func (m *ListRacksResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListRacksResponse) ProtoMessage()               {}
-func (*ListRacksResponse) Descriptor() ([]byte, []int) { return fileDescriptor11, []int{2} }
+func (m *ListRacksResponse) Reset()         { *m = ListRacksResponse{} }
+func (m *ListRacksResponse) String() string { return proto.CompactTextString(m) }
+func (*ListRacksResponse) ProtoMessage()    {}
+func (*ListRacksResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_racks_c2c44a3b56347bdb, []int{2}
+}
+func (m *ListRacksResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListRacksResponse.Unmarshal(m, b)
+}
+func (m *ListRacksResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListRacksResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListRacksResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListRacksResponse.Merge(dst, src)
+}
+func (m *ListRacksResponse) XXX_Size() int {
+	return xxx_messageInfo_ListRacksResponse.Size(m)
+}
+func (m *ListRacksResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListRacksResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListRacksResponse proto.InternalMessageInfo
 
 func (m *ListRacksResponse) GetRacks() []*Rack {
 	if m != nil {
@@ -128,10 +200,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor11)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor_racks_c2c44a3b56347bdb)
 }
 
-var fileDescriptor11 = []byte{
+var fileDescriptor_racks_c2c44a3b56347bdb = []byte{
 	// 277 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x31, 0x4f, 0xc3, 0x30,
 	0x10, 0x85, 0x95, 0xa6, 0x05, 0xd5, 0x15, 0xa8, 0x58, 0x0c, 0x16, 0x03, 0x8a, 0xc2, 0x92, 0x05,

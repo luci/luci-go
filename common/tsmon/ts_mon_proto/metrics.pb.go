@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type StreamKind int32
 
 const (
@@ -47,7 +53,9 @@ func (x *StreamKind) UnmarshalJSON(data []byte) error {
 	*x = StreamKind(value)
 	return nil
 }
-func (StreamKind) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (StreamKind) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{0}
+}
 
 type ValueType int32
 
@@ -90,7 +98,9 @@ func (x *ValueType) UnmarshalJSON(data []byte) error {
 	*x = ValueType(value)
 	return nil
 }
-func (ValueType) EnumDescriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (ValueType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{1}
+}
 
 type MetricsDataSet_MetricFieldDescriptor_FieldType int32
 
@@ -128,18 +138,39 @@ func (x *MetricsDataSet_MetricFieldDescriptor_FieldType) UnmarshalJSON(data []by
 	return nil
 }
 func (MetricsDataSet_MetricFieldDescriptor_FieldType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{2, 0, 0}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{2, 0, 0}
 }
 
 type MetricsPayload struct {
-	MetricsCollection []*MetricsCollection `protobuf:"bytes,1,rep,name=metrics_collection,json=metricsCollection" json:"metrics_collection,omitempty"`
-	XXX_unrecognized  []byte               `json:"-"`
+	MetricsCollection    []*MetricsCollection `protobuf:"bytes,1,rep,name=metrics_collection,json=metricsCollection" json:"metrics_collection,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *MetricsPayload) Reset()                    { *m = MetricsPayload{} }
-func (m *MetricsPayload) String() string            { return proto.CompactTextString(m) }
-func (*MetricsPayload) ProtoMessage()               {}
-func (*MetricsPayload) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *MetricsPayload) Reset()         { *m = MetricsPayload{} }
+func (m *MetricsPayload) String() string { return proto.CompactTextString(m) }
+func (*MetricsPayload) ProtoMessage()    {}
+func (*MetricsPayload) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{0}
+}
+func (m *MetricsPayload) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsPayload.Unmarshal(m, b)
+}
+func (m *MetricsPayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsPayload.Marshal(b, m, deterministic)
+}
+func (dst *MetricsPayload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsPayload.Merge(dst, src)
+}
+func (m *MetricsPayload) XXX_Size() int {
+	return xxx_messageInfo_MetricsPayload.Size(m)
+}
+func (m *MetricsPayload) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsPayload.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsPayload proto.InternalMessageInfo
 
 func (m *MetricsPayload) GetMetricsCollection() []*MetricsCollection {
 	if m != nil {
@@ -153,14 +184,35 @@ type MetricsCollection struct {
 	// Types that are valid to be assigned to TargetSchema:
 	//	*MetricsCollection_NetworkDevice
 	//	*MetricsCollection_Task
-	TargetSchema     isMetricsCollection_TargetSchema `protobuf_oneof:"target_schema"`
-	XXX_unrecognized []byte                           `json:"-"`
+	TargetSchema         isMetricsCollection_TargetSchema `protobuf_oneof:"target_schema"`
+	XXX_NoUnkeyedLiteral struct{}                         `json:"-"`
+	XXX_unrecognized     []byte                           `json:"-"`
+	XXX_sizecache        int32                            `json:"-"`
 }
 
-func (m *MetricsCollection) Reset()                    { *m = MetricsCollection{} }
-func (m *MetricsCollection) String() string            { return proto.CompactTextString(m) }
-func (*MetricsCollection) ProtoMessage()               {}
-func (*MetricsCollection) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (m *MetricsCollection) Reset()         { *m = MetricsCollection{} }
+func (m *MetricsCollection) String() string { return proto.CompactTextString(m) }
+func (*MetricsCollection) ProtoMessage()    {}
+func (*MetricsCollection) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{1}
+}
+func (m *MetricsCollection) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsCollection.Unmarshal(m, b)
+}
+func (m *MetricsCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsCollection.Marshal(b, m, deterministic)
+}
+func (dst *MetricsCollection) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsCollection.Merge(dst, src)
+}
+func (m *MetricsCollection) XXX_Size() int {
+	return xxx_messageInfo_MetricsCollection.Size(m)
+}
+func (m *MetricsCollection) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsCollection.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsCollection proto.InternalMessageInfo
 
 type isMetricsCollection_TargetSchema interface {
 	isMetricsCollection_TargetSchema()
@@ -263,12 +315,12 @@ func _MetricsCollection_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.TargetSchema.(type) {
 	case *MetricsCollection_NetworkDevice:
 		s := proto.Size(x.NetworkDevice)
-		n += proto.SizeVarint(11<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *MetricsCollection_Task:
 		s := proto.Size(x.Task)
-		n += proto.SizeVarint(12<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -279,20 +331,41 @@ func _MetricsCollection_OneofSizer(msg proto.Message) (n int) {
 }
 
 type MetricsDataSet struct {
-	MetricName       *string                                 `protobuf:"bytes,1,opt,name=metric_name,json=metricName" json:"metric_name,omitempty"`
-	FieldDescriptor  []*MetricsDataSet_MetricFieldDescriptor `protobuf:"bytes,2,rep,name=field_descriptor,json=fieldDescriptor" json:"field_descriptor,omitempty"`
-	StreamKind       *StreamKind                             `protobuf:"varint,3,opt,name=stream_kind,json=streamKind,enum=ts_mon.proto.StreamKind" json:"stream_kind,omitempty"`
-	ValueType        *ValueType                              `protobuf:"varint,4,opt,name=value_type,json=valueType,enum=ts_mon.proto.ValueType" json:"value_type,omitempty"`
-	Description      *string                                 `protobuf:"bytes,5,opt,name=description" json:"description,omitempty"`
-	Annotations      *Annotations                            `protobuf:"bytes,6,opt,name=annotations" json:"annotations,omitempty"`
-	Data             []*MetricsData                          `protobuf:"bytes,7,rep,name=data" json:"data,omitempty"`
-	XXX_unrecognized []byte                                  `json:"-"`
+	MetricName           *string                                 `protobuf:"bytes,1,opt,name=metric_name,json=metricName" json:"metric_name,omitempty"`
+	FieldDescriptor      []*MetricsDataSet_MetricFieldDescriptor `protobuf:"bytes,2,rep,name=field_descriptor,json=fieldDescriptor" json:"field_descriptor,omitempty"`
+	StreamKind           *StreamKind                             `protobuf:"varint,3,opt,name=stream_kind,json=streamKind,enum=ts_mon.proto.StreamKind" json:"stream_kind,omitempty"`
+	ValueType            *ValueType                              `protobuf:"varint,4,opt,name=value_type,json=valueType,enum=ts_mon.proto.ValueType" json:"value_type,omitempty"`
+	Description          *string                                 `protobuf:"bytes,5,opt,name=description" json:"description,omitempty"`
+	Annotations          *Annotations                            `protobuf:"bytes,6,opt,name=annotations" json:"annotations,omitempty"`
+	Data                 []*MetricsData                          `protobuf:"bytes,7,rep,name=data" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
+	XXX_unrecognized     []byte                                  `json:"-"`
+	XXX_sizecache        int32                                   `json:"-"`
 }
 
-func (m *MetricsDataSet) Reset()                    { *m = MetricsDataSet{} }
-func (m *MetricsDataSet) String() string            { return proto.CompactTextString(m) }
-func (*MetricsDataSet) ProtoMessage()               {}
-func (*MetricsDataSet) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (m *MetricsDataSet) Reset()         { *m = MetricsDataSet{} }
+func (m *MetricsDataSet) String() string { return proto.CompactTextString(m) }
+func (*MetricsDataSet) ProtoMessage()    {}
+func (*MetricsDataSet) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{2}
+}
+func (m *MetricsDataSet) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsDataSet.Unmarshal(m, b)
+}
+func (m *MetricsDataSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsDataSet.Marshal(b, m, deterministic)
+}
+func (dst *MetricsDataSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsDataSet.Merge(dst, src)
+}
+func (m *MetricsDataSet) XXX_Size() int {
+	return xxx_messageInfo_MetricsDataSet.Size(m)
+}
+func (m *MetricsDataSet) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsDataSet.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsDataSet proto.InternalMessageInfo
 
 func (m *MetricsDataSet) GetMetricName() string {
 	if m != nil && m.MetricName != nil {
@@ -344,17 +417,36 @@ func (m *MetricsDataSet) GetData() []*MetricsData {
 }
 
 type MetricsDataSet_MetricFieldDescriptor struct {
-	Name             *string                                         `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	FieldType        *MetricsDataSet_MetricFieldDescriptor_FieldType `protobuf:"varint,2,opt,name=field_type,json=fieldType,enum=ts_mon.proto.MetricsDataSet_MetricFieldDescriptor_FieldType" json:"field_type,omitempty"`
-	XXX_unrecognized []byte                                          `json:"-"`
+	Name                 *string                                         `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	FieldType            *MetricsDataSet_MetricFieldDescriptor_FieldType `protobuf:"varint,2,opt,name=field_type,json=fieldType,enum=ts_mon.proto.MetricsDataSet_MetricFieldDescriptor_FieldType" json:"field_type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                        `json:"-"`
+	XXX_unrecognized     []byte                                          `json:"-"`
+	XXX_sizecache        int32                                           `json:"-"`
 }
 
 func (m *MetricsDataSet_MetricFieldDescriptor) Reset()         { *m = MetricsDataSet_MetricFieldDescriptor{} }
 func (m *MetricsDataSet_MetricFieldDescriptor) String() string { return proto.CompactTextString(m) }
 func (*MetricsDataSet_MetricFieldDescriptor) ProtoMessage()    {}
 func (*MetricsDataSet_MetricFieldDescriptor) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{2, 0}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{2, 0}
 }
+func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Unmarshal(m, b)
+}
+func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Marshal(b, m, deterministic)
+}
+func (dst *MetricsDataSet_MetricFieldDescriptor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Merge(dst, src)
+}
+func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Size() int {
+	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Size(m)
+}
+func (m *MetricsDataSet_MetricFieldDescriptor) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor proto.InternalMessageInfo
 
 func (m *MetricsDataSet_MetricFieldDescriptor) GetName() string {
 	if m != nil && m.Name != nil {
@@ -377,17 +469,38 @@ type MetricsData struct {
 	//	*MetricsData_Int64Value
 	//	*MetricsData_DoubleValue
 	//	*MetricsData_DistributionValue
-	Value            isMetricsData_Value        `protobuf_oneof:"value"`
-	Field            []*MetricsData_MetricField `protobuf:"bytes,6,rep,name=field" json:"field,omitempty"`
-	StartTimestamp   *Timestamp                 `protobuf:"bytes,7,opt,name=start_timestamp,json=startTimestamp" json:"start_timestamp,omitempty"`
-	EndTimestamp     *Timestamp                 `protobuf:"bytes,8,opt,name=end_timestamp,json=endTimestamp" json:"end_timestamp,omitempty"`
-	XXX_unrecognized []byte                     `json:"-"`
+	Value                isMetricsData_Value        `protobuf_oneof:"value"`
+	Field                []*MetricsData_MetricField `protobuf:"bytes,6,rep,name=field" json:"field,omitempty"`
+	StartTimestamp       *Timestamp                 `protobuf:"bytes,7,opt,name=start_timestamp,json=startTimestamp" json:"start_timestamp,omitempty"`
+	EndTimestamp         *Timestamp                 `protobuf:"bytes,8,opt,name=end_timestamp,json=endTimestamp" json:"end_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
-func (m *MetricsData) Reset()                    { *m = MetricsData{} }
-func (m *MetricsData) String() string            { return proto.CompactTextString(m) }
-func (*MetricsData) ProtoMessage()               {}
-func (*MetricsData) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3} }
+func (m *MetricsData) Reset()         { *m = MetricsData{} }
+func (m *MetricsData) String() string { return proto.CompactTextString(m) }
+func (*MetricsData) ProtoMessage()    {}
+func (*MetricsData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3}
+}
+func (m *MetricsData) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData.Unmarshal(m, b)
+}
+func (m *MetricsData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData.Merge(dst, src)
+}
+func (m *MetricsData) XXX_Size() int {
+	return xxx_messageInfo_MetricsData.Size(m)
+}
+func (m *MetricsData) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData proto.InternalMessageInfo
 
 type isMetricsData_Value interface {
 	isMetricsData_Value()
@@ -570,21 +683,21 @@ func _MetricsData_OneofSizer(msg proto.Message) (n int) {
 	// value
 	switch x := m.Value.(type) {
 	case *MetricsData_BoolValue:
-		n += proto.SizeVarint(1<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += 1
 	case *MetricsData_StringValue:
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.StringValue)))
 		n += len(x.StringValue)
 	case *MetricsData_Int64Value:
-		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Int64Value))
 	case *MetricsData_DoubleValue:
-		n += proto.SizeVarint(4<<3 | proto.WireFixed64)
+		n += 1 // tag and wire
 		n += 8
 	case *MetricsData_DistributionValue:
 		s := proto.Size(x.DistributionValue)
-		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -600,14 +713,35 @@ type MetricsData_MetricField struct {
 	//	*MetricsData_MetricField_StringValue
 	//	*MetricsData_MetricField_Int64Value
 	//	*MetricsData_MetricField_BoolValue
-	Value            isMetricsData_MetricField_Value `protobuf_oneof:"value"`
-	XXX_unrecognized []byte                          `json:"-"`
+	Value                isMetricsData_MetricField_Value `protobuf_oneof:"value"`
+	XXX_NoUnkeyedLiteral struct{}                        `json:"-"`
+	XXX_unrecognized     []byte                          `json:"-"`
+	XXX_sizecache        int32                           `json:"-"`
 }
 
-func (m *MetricsData_MetricField) Reset()                    { *m = MetricsData_MetricField{} }
-func (m *MetricsData_MetricField) String() string            { return proto.CompactTextString(m) }
-func (*MetricsData_MetricField) ProtoMessage()               {}
-func (*MetricsData_MetricField) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3, 0} }
+func (m *MetricsData_MetricField) Reset()         { *m = MetricsData_MetricField{} }
+func (m *MetricsData_MetricField) String() string { return proto.CompactTextString(m) }
+func (*MetricsData_MetricField) ProtoMessage()    {}
+func (*MetricsData_MetricField) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 0}
+}
+func (m *MetricsData_MetricField) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_MetricField.Unmarshal(m, b)
+}
+func (m *MetricsData_MetricField) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_MetricField.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_MetricField) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_MetricField.Merge(dst, src)
+}
+func (m *MetricsData_MetricField) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_MetricField.Size(m)
+}
+func (m *MetricsData_MetricField) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_MetricField.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_MetricField proto.InternalMessageInfo
 
 type isMetricsData_MetricField_Value interface {
 	isMetricsData_MetricField_Value()
@@ -729,14 +863,14 @@ func _MetricsData_MetricField_OneofSizer(msg proto.Message) (n int) {
 	// value
 	switch x := m.Value.(type) {
 	case *MetricsData_MetricField_StringValue:
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.StringValue)))
 		n += len(x.StringValue)
 	case *MetricsData_MetricField_Int64Value:
-		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Int64Value))
 	case *MetricsData_MetricField_BoolValue:
-		n += proto.SizeVarint(4<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += 1
 	case nil:
 	default:
@@ -755,16 +889,37 @@ type MetricsData_Distribution struct {
 	//	*MetricsData_Distribution_LinearBuckets
 	//	*MetricsData_Distribution_ExponentialBuckets
 	//	*MetricsData_Distribution_ExplicitBuckets
-	BucketOptions    isMetricsData_Distribution_BucketOptions `protobuf_oneof:"bucket_options"`
-	BucketCount      []int64                                  `protobuf:"varint,9,rep,packed,name=bucket_count,json=bucketCount" json:"bucket_count,omitempty"`
-	Exemplar         []*MetricsData_Distribution_Exemplar     `protobuf:"bytes,10,rep,name=exemplar" json:"exemplar,omitempty"`
-	XXX_unrecognized []byte                                   `json:"-"`
+	BucketOptions        isMetricsData_Distribution_BucketOptions `protobuf_oneof:"bucket_options"`
+	BucketCount          []int64                                  `protobuf:"varint,9,rep,packed,name=bucket_count,json=bucketCount" json:"bucket_count,omitempty"`
+	Exemplar             []*MetricsData_Distribution_Exemplar     `protobuf:"bytes,10,rep,name=exemplar" json:"exemplar,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
+	XXX_unrecognized     []byte                                   `json:"-"`
+	XXX_sizecache        int32                                    `json:"-"`
 }
 
-func (m *MetricsData_Distribution) Reset()                    { *m = MetricsData_Distribution{} }
-func (m *MetricsData_Distribution) String() string            { return proto.CompactTextString(m) }
-func (*MetricsData_Distribution) ProtoMessage()               {}
-func (*MetricsData_Distribution) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{3, 1} }
+func (m *MetricsData_Distribution) Reset()         { *m = MetricsData_Distribution{} }
+func (m *MetricsData_Distribution) String() string { return proto.CompactTextString(m) }
+func (*MetricsData_Distribution) ProtoMessage()    {}
+func (*MetricsData_Distribution) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1}
+}
+func (m *MetricsData_Distribution) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_Distribution.Unmarshal(m, b)
+}
+func (m *MetricsData_Distribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_Distribution.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_Distribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution.Merge(dst, src)
+}
+func (m *MetricsData_Distribution) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_Distribution.Size(m)
+}
+func (m *MetricsData_Distribution) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_Distribution.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_Distribution proto.InternalMessageInfo
 
 type isMetricsData_Distribution_BucketOptions interface {
 	isMetricsData_Distribution_BucketOptions()
@@ -934,17 +1089,17 @@ func _MetricsData_Distribution_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.BucketOptions.(type) {
 	case *MetricsData_Distribution_LinearBuckets:
 		s := proto.Size(x.LinearBuckets)
-		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *MetricsData_Distribution_ExponentialBuckets:
 		s := proto.Size(x.ExponentialBuckets)
-		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *MetricsData_Distribution_ExplicitBuckets:
 		s := proto.Size(x.ExplicitBuckets)
-		n += proto.SizeVarint(8<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -955,10 +1110,12 @@ func _MetricsData_Distribution_OneofSizer(msg proto.Message) (n int) {
 }
 
 type MetricsData_Distribution_LinearOptions struct {
-	NumFiniteBuckets *int32   `protobuf:"varint,1,opt,name=num_finite_buckets,json=numFiniteBuckets" json:"num_finite_buckets,omitempty"`
-	Width            *float64 `protobuf:"fixed64,2,opt,name=width" json:"width,omitempty"`
-	Offset           *float64 `protobuf:"fixed64,3,opt,name=offset" json:"offset,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
+	NumFiniteBuckets     *int32   `protobuf:"varint,1,opt,name=num_finite_buckets,json=numFiniteBuckets" json:"num_finite_buckets,omitempty"`
+	Width                *float64 `protobuf:"fixed64,2,opt,name=width" json:"width,omitempty"`
+	Offset               *float64 `protobuf:"fixed64,3,opt,name=offset" json:"offset,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MetricsData_Distribution_LinearOptions) Reset() {
@@ -967,8 +1124,25 @@ func (m *MetricsData_Distribution_LinearOptions) Reset() {
 func (m *MetricsData_Distribution_LinearOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_LinearOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_LinearOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{3, 1, 0}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 0}
 }
+func (m *MetricsData_Distribution_LinearOptions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Unmarshal(m, b)
+}
+func (m *MetricsData_Distribution_LinearOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_Distribution_LinearOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_LinearOptions.Merge(dst, src)
+}
+func (m *MetricsData_Distribution_LinearOptions) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Size(m)
+}
+func (m *MetricsData_Distribution_LinearOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_Distribution_LinearOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_Distribution_LinearOptions proto.InternalMessageInfo
 
 func (m *MetricsData_Distribution_LinearOptions) GetNumFiniteBuckets() int32 {
 	if m != nil && m.NumFiniteBuckets != nil {
@@ -992,10 +1166,12 @@ func (m *MetricsData_Distribution_LinearOptions) GetOffset() float64 {
 }
 
 type MetricsData_Distribution_ExponentialOptions struct {
-	NumFiniteBuckets *int32   `protobuf:"varint,1,opt,name=num_finite_buckets,json=numFiniteBuckets" json:"num_finite_buckets,omitempty"`
-	GrowthFactor     *float64 `protobuf:"fixed64,2,opt,name=growth_factor,json=growthFactor" json:"growth_factor,omitempty"`
-	Scale            *float64 `protobuf:"fixed64,3,opt,name=scale" json:"scale,omitempty"`
-	XXX_unrecognized []byte   `json:"-"`
+	NumFiniteBuckets     *int32   `protobuf:"varint,1,opt,name=num_finite_buckets,json=numFiniteBuckets" json:"num_finite_buckets,omitempty"`
+	GrowthFactor         *float64 `protobuf:"fixed64,2,opt,name=growth_factor,json=growthFactor" json:"growth_factor,omitempty"`
+	Scale                *float64 `protobuf:"fixed64,3,opt,name=scale" json:"scale,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MetricsData_Distribution_ExponentialOptions) Reset() {
@@ -1006,8 +1182,25 @@ func (m *MetricsData_Distribution_ExponentialOptions) String() string {
 }
 func (*MetricsData_Distribution_ExponentialOptions) ProtoMessage() {}
 func (*MetricsData_Distribution_ExponentialOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{3, 1, 1}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 1}
 }
+func (m *MetricsData_Distribution_ExponentialOptions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Unmarshal(m, b)
+}
+func (m *MetricsData_Distribution_ExponentialOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_Distribution_ExponentialOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Merge(dst, src)
+}
+func (m *MetricsData_Distribution_ExponentialOptions) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Size(m)
+}
+func (m *MetricsData_Distribution_ExponentialOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_Distribution_ExponentialOptions proto.InternalMessageInfo
 
 func (m *MetricsData_Distribution_ExponentialOptions) GetNumFiniteBuckets() int32 {
 	if m != nil && m.NumFiniteBuckets != nil {
@@ -1031,8 +1224,10 @@ func (m *MetricsData_Distribution_ExponentialOptions) GetScale() float64 {
 }
 
 type MetricsData_Distribution_ExplicitOptions struct {
-	Bound            []float64 `protobuf:"fixed64,1,rep,packed,name=bound" json:"bound,omitempty"`
-	XXX_unrecognized []byte    `json:"-"`
+	Bound                []float64 `protobuf:"fixed64,1,rep,packed,name=bound" json:"bound,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
 func (m *MetricsData_Distribution_ExplicitOptions) Reset() {
@@ -1041,8 +1236,25 @@ func (m *MetricsData_Distribution_ExplicitOptions) Reset() {
 func (m *MetricsData_Distribution_ExplicitOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_ExplicitOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_ExplicitOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{3, 1, 2}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 2}
 }
+func (m *MetricsData_Distribution_ExplicitOptions) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Unmarshal(m, b)
+}
+func (m *MetricsData_Distribution_ExplicitOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_Distribution_ExplicitOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Merge(dst, src)
+}
+func (m *MetricsData_Distribution_ExplicitOptions) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Size(m)
+}
+func (m *MetricsData_Distribution_ExplicitOptions) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_Distribution_ExplicitOptions proto.InternalMessageInfo
 
 func (m *MetricsData_Distribution_ExplicitOptions) GetBound() []float64 {
 	if m != nil {
@@ -1052,18 +1264,37 @@ func (m *MetricsData_Distribution_ExplicitOptions) GetBound() []float64 {
 }
 
 type MetricsData_Distribution_Exemplar struct {
-	Value            *float64   `protobuf:"fixed64,1,opt,name=value" json:"value,omitempty"`
-	Timestamp        *Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty"`
-	Attachment       []*Any     `protobuf:"bytes,3,rep,name=attachment" json:"attachment,omitempty"`
-	XXX_unrecognized []byte     `json:"-"`
+	Value                *float64   `protobuf:"fixed64,1,opt,name=value" json:"value,omitempty"`
+	Timestamp            *Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty"`
+	Attachment           []*Any     `protobuf:"bytes,3,rep,name=attachment" json:"attachment,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
 func (m *MetricsData_Distribution_Exemplar) Reset()         { *m = MetricsData_Distribution_Exemplar{} }
 func (m *MetricsData_Distribution_Exemplar) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_Exemplar) ProtoMessage()    {}
 func (*MetricsData_Distribution_Exemplar) Descriptor() ([]byte, []int) {
-	return fileDescriptor4, []int{3, 1, 3}
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 3}
 }
+func (m *MetricsData_Distribution_Exemplar) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Unmarshal(m, b)
+}
+func (m *MetricsData_Distribution_Exemplar) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Marshal(b, m, deterministic)
+}
+func (dst *MetricsData_Distribution_Exemplar) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_Exemplar.Merge(dst, src)
+}
+func (m *MetricsData_Distribution_Exemplar) XXX_Size() int {
+	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Size(m)
+}
+func (m *MetricsData_Distribution_Exemplar) XXX_DiscardUnknown() {
+	xxx_messageInfo_MetricsData_Distribution_Exemplar.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MetricsData_Distribution_Exemplar proto.InternalMessageInfo
 
 func (m *MetricsData_Distribution_Exemplar) GetValue() float64 {
 	if m != nil && m.Value != nil {
@@ -1087,17 +1318,38 @@ func (m *MetricsData_Distribution_Exemplar) GetAttachment() []*Any {
 }
 
 type Annotations struct {
-	Unit             *string `protobuf:"bytes,1,opt,name=unit" json:"unit,omitempty"`
-	Timestamp        *bool   `protobuf:"varint,2,opt,name=timestamp" json:"timestamp,omitempty"`
-	Deprecation      *string `protobuf:"bytes,3,opt,name=deprecation" json:"deprecation,omitempty"`
-	Annotation       []*Any  `protobuf:"bytes,4,rep,name=annotation" json:"annotation,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+	Unit                 *string  `protobuf:"bytes,1,opt,name=unit" json:"unit,omitempty"`
+	Timestamp            *bool    `protobuf:"varint,2,opt,name=timestamp" json:"timestamp,omitempty"`
+	Deprecation          *string  `protobuf:"bytes,3,opt,name=deprecation" json:"deprecation,omitempty"`
+	Annotation           []*Any   `protobuf:"bytes,4,rep,name=annotation" json:"annotation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Annotations) Reset()                    { *m = Annotations{} }
-func (m *Annotations) String() string            { return proto.CompactTextString(m) }
-func (*Annotations) ProtoMessage()               {}
-func (*Annotations) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{4} }
+func (m *Annotations) Reset()         { *m = Annotations{} }
+func (m *Annotations) String() string { return proto.CompactTextString(m) }
+func (*Annotations) ProtoMessage()    {}
+func (*Annotations) Descriptor() ([]byte, []int) {
+	return fileDescriptor_metrics_8b185898353ce4c5, []int{4}
+}
+func (m *Annotations) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Annotations.Unmarshal(m, b)
+}
+func (m *Annotations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Annotations.Marshal(b, m, deterministic)
+}
+func (dst *Annotations) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Annotations.Merge(dst, src)
+}
+func (m *Annotations) XXX_Size() int {
+	return xxx_messageInfo_Annotations.Size(m)
+}
+func (m *Annotations) XXX_DiscardUnknown() {
+	xxx_messageInfo_Annotations.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Annotations proto.InternalMessageInfo
 
 func (m *Annotations) GetUnit() string {
 	if m != nil && m.Unit != nil {
@@ -1146,10 +1398,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto", fileDescriptor_metrics_8b185898353ce4c5)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor_metrics_8b185898353ce4c5 = []byte{
 	// 1236 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x6e, 0xdb, 0xb6,
 	0x17, 0xb7, 0xfc, 0x91, 0xd8, 0x47, 0x8e, 0xa3, 0xf0, 0xdf, 0xfe, 0xa7, 0x7a, 0x05, 0x9a, 0xa5,

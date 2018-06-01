@@ -6,13 +6,19 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "google.golang.org/genproto/protobuf/field_mask"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A machine in the database.
 type Machine struct {
@@ -31,16 +37,38 @@ type Machine struct {
 	// The deployment ticket associated with this machine.
 	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket" json:"deployment_ticket,omitempty"`
 	// The state of this machine.
-	State common.State `protobuf:"varint,8,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,8,opt,name=state,enum=common.State" json:"state,omitempty"`
 	// The datacenter this machine belongs to.
 	// When creating a machine, omit this field. It will be inferred from the rack.
-	Datacenter string `protobuf:"bytes,9,opt,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter           string   `protobuf:"bytes,9,opt,name=datacenter" json:"datacenter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Machine) Reset()                    { *m = Machine{} }
-func (m *Machine) String() string            { return proto.CompactTextString(m) }
-func (*Machine) ProtoMessage()               {}
-func (*Machine) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (m *Machine) Reset()         { *m = Machine{} }
+func (m *Machine) String() string { return proto.CompactTextString(m) }
+func (*Machine) ProtoMessage()    {}
+func (*Machine) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{0}
+}
+func (m *Machine) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Machine.Unmarshal(m, b)
+}
+func (m *Machine) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Machine.Marshal(b, m, deterministic)
+}
+func (dst *Machine) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Machine.Merge(dst, src)
+}
+func (m *Machine) XXX_Size() int {
+	return xxx_messageInfo_Machine.Size(m)
+}
+func (m *Machine) XXX_DiscardUnknown() {
+	xxx_messageInfo_Machine.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Machine proto.InternalMessageInfo
 
 func (m *Machine) GetName() string {
 	if m != nil {
@@ -91,11 +119,11 @@ func (m *Machine) GetDeploymentTicket() string {
 	return ""
 }
 
-func (m *Machine) GetState() common.State {
+func (m *Machine) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 func (m *Machine) GetDatacenter() string {
@@ -108,13 +136,35 @@ func (m *Machine) GetDatacenter() string {
 // A request to create a new machine in the database.
 type CreateMachineRequest struct {
 	// The machine to create in the database.
-	Machine *Machine `protobuf:"bytes,1,opt,name=machine" json:"machine,omitempty"`
+	Machine              *Machine `protobuf:"bytes,1,opt,name=machine" json:"machine,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateMachineRequest) Reset()                    { *m = CreateMachineRequest{} }
-func (m *CreateMachineRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateMachineRequest) ProtoMessage()               {}
-func (*CreateMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
+func (m *CreateMachineRequest) Reset()         { *m = CreateMachineRequest{} }
+func (m *CreateMachineRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateMachineRequest) ProtoMessage()    {}
+func (*CreateMachineRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{1}
+}
+func (m *CreateMachineRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateMachineRequest.Unmarshal(m, b)
+}
+func (m *CreateMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateMachineRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateMachineRequest.Merge(dst, src)
+}
+func (m *CreateMachineRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateMachineRequest.Size(m)
+}
+func (m *CreateMachineRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateMachineRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateMachineRequest proto.InternalMessageInfo
 
 func (m *CreateMachineRequest) GetMachine() *Machine {
 	if m != nil {
@@ -126,13 +176,35 @@ func (m *CreateMachineRequest) GetMachine() *Machine {
 // A request to delete a machine from the database.
 type DeleteMachineRequest struct {
 	// The name of the machine to delete.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteMachineRequest) Reset()                    { *m = DeleteMachineRequest{} }
-func (m *DeleteMachineRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteMachineRequest) ProtoMessage()               {}
-func (*DeleteMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
+func (m *DeleteMachineRequest) Reset()         { *m = DeleteMachineRequest{} }
+func (m *DeleteMachineRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteMachineRequest) ProtoMessage()    {}
+func (*DeleteMachineRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{2}
+}
+func (m *DeleteMachineRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteMachineRequest.Unmarshal(m, b)
+}
+func (m *DeleteMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteMachineRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteMachineRequest.Merge(dst, src)
+}
+func (m *DeleteMachineRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteMachineRequest.Size(m)
+}
+func (m *DeleteMachineRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteMachineRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteMachineRequest proto.InternalMessageInfo
 
 func (m *DeleteMachineRequest) GetName() string {
 	if m != nil {
@@ -150,15 +222,37 @@ type ListMachinesRequest struct {
 	// The racks to filter retrieved machines on.
 	Racks []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
 	// The states to filter retrieved machines on.
-	States []common.State `protobuf:"varint,4,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States []v1.State `protobuf:"varint,4,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
 	// The datacenters to filter retrieved machines on.
-	Datacenters []string `protobuf:"bytes,5,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters          []string `protobuf:"bytes,5,rep,name=datacenters" json:"datacenters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListMachinesRequest) Reset()                    { *m = ListMachinesRequest{} }
-func (m *ListMachinesRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListMachinesRequest) ProtoMessage()               {}
-func (*ListMachinesRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{3} }
+func (m *ListMachinesRequest) Reset()         { *m = ListMachinesRequest{} }
+func (m *ListMachinesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListMachinesRequest) ProtoMessage()    {}
+func (*ListMachinesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{3}
+}
+func (m *ListMachinesRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListMachinesRequest.Unmarshal(m, b)
+}
+func (m *ListMachinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListMachinesRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListMachinesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListMachinesRequest.Merge(dst, src)
+}
+func (m *ListMachinesRequest) XXX_Size() int {
+	return xxx_messageInfo_ListMachinesRequest.Size(m)
+}
+func (m *ListMachinesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListMachinesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListMachinesRequest proto.InternalMessageInfo
 
 func (m *ListMachinesRequest) GetNames() []string {
 	if m != nil {
@@ -181,7 +275,7 @@ func (m *ListMachinesRequest) GetRacks() []string {
 	return nil
 }
 
-func (m *ListMachinesRequest) GetStates() []common.State {
+func (m *ListMachinesRequest) GetStates() []v1.State {
 	if m != nil {
 		return m.States
 	}
@@ -198,13 +292,35 @@ func (m *ListMachinesRequest) GetDatacenters() []string {
 // A response containing a list of machines in the database.
 type ListMachinesResponse struct {
 	// The machines matching this request.
-	Machines []*Machine `protobuf:"bytes,1,rep,name=machines" json:"machines,omitempty"`
+	Machines             []*Machine `protobuf:"bytes,1,rep,name=machines" json:"machines,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *ListMachinesResponse) Reset()                    { *m = ListMachinesResponse{} }
-func (m *ListMachinesResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListMachinesResponse) ProtoMessage()               {}
-func (*ListMachinesResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{4} }
+func (m *ListMachinesResponse) Reset()         { *m = ListMachinesResponse{} }
+func (m *ListMachinesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListMachinesResponse) ProtoMessage()    {}
+func (*ListMachinesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{4}
+}
+func (m *ListMachinesResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListMachinesResponse.Unmarshal(m, b)
+}
+func (m *ListMachinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListMachinesResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListMachinesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListMachinesResponse.Merge(dst, src)
+}
+func (m *ListMachinesResponse) XXX_Size() int {
+	return xxx_messageInfo_ListMachinesResponse.Size(m)
+}
+func (m *ListMachinesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListMachinesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListMachinesResponse proto.InternalMessageInfo
 
 func (m *ListMachinesResponse) GetMachines() []*Machine {
 	if m != nil {
@@ -218,13 +334,35 @@ type RenameMachineRequest struct {
 	// The name of the machine to rename.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The new name to give this machine.
-	NewName string `protobuf:"bytes,2,opt,name=new_name,json=newName" json:"new_name,omitempty"`
+	NewName              string   `protobuf:"bytes,2,opt,name=new_name,json=newName" json:"new_name,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *RenameMachineRequest) Reset()                    { *m = RenameMachineRequest{} }
-func (m *RenameMachineRequest) String() string            { return proto.CompactTextString(m) }
-func (*RenameMachineRequest) ProtoMessage()               {}
-func (*RenameMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{5} }
+func (m *RenameMachineRequest) Reset()         { *m = RenameMachineRequest{} }
+func (m *RenameMachineRequest) String() string { return proto.CompactTextString(m) }
+func (*RenameMachineRequest) ProtoMessage()    {}
+func (*RenameMachineRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{5}
+}
+func (m *RenameMachineRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RenameMachineRequest.Unmarshal(m, b)
+}
+func (m *RenameMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RenameMachineRequest.Marshal(b, m, deterministic)
+}
+func (dst *RenameMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RenameMachineRequest.Merge(dst, src)
+}
+func (m *RenameMachineRequest) XXX_Size() int {
+	return xxx_messageInfo_RenameMachineRequest.Size(m)
+}
+func (m *RenameMachineRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_RenameMachineRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RenameMachineRequest proto.InternalMessageInfo
 
 func (m *RenameMachineRequest) GetName() string {
 	if m != nil {
@@ -245,13 +383,35 @@ type UpdateMachineRequest struct {
 	// The machine to update in the database.
 	Machine *Machine `protobuf:"bytes,1,opt,name=machine" json:"machine,omitempty"`
 	// The fields to update in the machine.
-	UpdateMask *google_protobuf1.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdateMachineRequest) Reset()                    { *m = UpdateMachineRequest{} }
-func (m *UpdateMachineRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateMachineRequest) ProtoMessage()               {}
-func (*UpdateMachineRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{6} }
+func (m *UpdateMachineRequest) Reset()         { *m = UpdateMachineRequest{} }
+func (m *UpdateMachineRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateMachineRequest) ProtoMessage()    {}
+func (*UpdateMachineRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_machines_fce42b476c409013, []int{6}
+}
+func (m *UpdateMachineRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateMachineRequest.Unmarshal(m, b)
+}
+func (m *UpdateMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateMachineRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateMachineRequest.Merge(dst, src)
+}
+func (m *UpdateMachineRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateMachineRequest.Size(m)
+}
+func (m *UpdateMachineRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateMachineRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateMachineRequest proto.InternalMessageInfo
 
 func (m *UpdateMachineRequest) GetMachine() *Machine {
 	if m != nil {
@@ -260,7 +420,7 @@ func (m *UpdateMachineRequest) GetMachine() *Machine {
 	return nil
 }
 
-func (m *UpdateMachineRequest) GetUpdateMask() *google_protobuf1.FieldMask {
+func (m *UpdateMachineRequest) GetUpdateMask() *field_mask.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}
@@ -278,10 +438,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor6)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor_machines_fce42b476c409013)
 }
 
-var fileDescriptor6 = []byte{
+var fileDescriptor_machines_fce42b476c409013 = []byte{
 	// 502 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x4d, 0x8f, 0xd3, 0x30,
 	0x10, 0x55, 0xbf, 0xdb, 0xa9, 0x40, 0x8b, 0xc9, 0xc1, 0x14, 0x04, 0x51, 0x10, 0x52, 0xb5, 0x40,

@@ -6,12 +6,18 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "google.golang.org/genproto/protobuf/field_mask"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A DRAC in the database.
 type DRAC struct {
@@ -29,13 +35,35 @@ type DRAC struct {
 	// The switch this DRAC is connected to.
 	Switch string `protobuf:"bytes,6,opt,name=switch" json:"switch,omitempty"`
 	// The switchport this DRAC is connected to.
-	Switchport int32 `protobuf:"varint,7,opt,name=switchport" json:"switchport,omitempty"`
+	Switchport           int32    `protobuf:"varint,7,opt,name=switchport" json:"switchport,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DRAC) Reset()                    { *m = DRAC{} }
-func (m *DRAC) String() string            { return proto.CompactTextString(m) }
-func (*DRAC) ProtoMessage()               {}
-func (*DRAC) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *DRAC) Reset()         { *m = DRAC{} }
+func (m *DRAC) String() string { return proto.CompactTextString(m) }
+func (*DRAC) ProtoMessage()    {}
+func (*DRAC) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{0}
+}
+func (m *DRAC) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DRAC.Unmarshal(m, b)
+}
+func (m *DRAC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DRAC.Marshal(b, m, deterministic)
+}
+func (dst *DRAC) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DRAC.Merge(dst, src)
+}
+func (m *DRAC) XXX_Size() int {
+	return xxx_messageInfo_DRAC.Size(m)
+}
+func (m *DRAC) XXX_DiscardUnknown() {
+	xxx_messageInfo_DRAC.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DRAC proto.InternalMessageInfo
 
 func (m *DRAC) GetName() string {
 	if m != nil {
@@ -89,13 +117,35 @@ func (m *DRAC) GetSwitchport() int32 {
 // A request to create a new DRAC in the database.
 type CreateDRACRequest struct {
 	// The DRAC to create in the database.
-	Drac *DRAC `protobuf:"bytes,1,opt,name=drac" json:"drac,omitempty"`
+	Drac                 *DRAC    `protobuf:"bytes,1,opt,name=drac" json:"drac,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateDRACRequest) Reset()                    { *m = CreateDRACRequest{} }
-func (m *CreateDRACRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateDRACRequest) ProtoMessage()               {}
-func (*CreateDRACRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *CreateDRACRequest) Reset()         { *m = CreateDRACRequest{} }
+func (m *CreateDRACRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateDRACRequest) ProtoMessage()    {}
+func (*CreateDRACRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{1}
+}
+func (m *CreateDRACRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDRACRequest.Unmarshal(m, b)
+}
+func (m *CreateDRACRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDRACRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateDRACRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDRACRequest.Merge(dst, src)
+}
+func (m *CreateDRACRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateDRACRequest.Size(m)
+}
+func (m *CreateDRACRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDRACRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDRACRequest proto.InternalMessageInfo
 
 func (m *CreateDRACRequest) GetDrac() *DRAC {
 	if m != nil {
@@ -117,13 +167,35 @@ type ListDRACsRequest struct {
 	// The MAC addresses to filter retrieved DRACs on.
 	MacAddresses []string `protobuf:"bytes,5,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`
 	// The switches to filter retrieved DRACs on.
-	Switches []string `protobuf:"bytes,6,rep,name=switches" json:"switches,omitempty"`
+	Switches             []string `protobuf:"bytes,6,rep,name=switches" json:"switches,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListDRACsRequest) Reset()                    { *m = ListDRACsRequest{} }
-func (m *ListDRACsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListDRACsRequest) ProtoMessage()               {}
-func (*ListDRACsRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *ListDRACsRequest) Reset()         { *m = ListDRACsRequest{} }
+func (m *ListDRACsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListDRACsRequest) ProtoMessage()    {}
+func (*ListDRACsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{2}
+}
+func (m *ListDRACsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDRACsRequest.Unmarshal(m, b)
+}
+func (m *ListDRACsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDRACsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListDRACsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDRACsRequest.Merge(dst, src)
+}
+func (m *ListDRACsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListDRACsRequest.Size(m)
+}
+func (m *ListDRACsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDRACsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDRACsRequest proto.InternalMessageInfo
 
 func (m *ListDRACsRequest) GetNames() []string {
 	if m != nil {
@@ -170,13 +242,35 @@ func (m *ListDRACsRequest) GetSwitches() []string {
 // A response containing a list of DRACs in the database.
 type ListDRACsResponse struct {
 	// The DRACs matching this request.
-	Dracs []*DRAC `protobuf:"bytes,1,rep,name=dracs" json:"dracs,omitempty"`
+	Dracs                []*DRAC  `protobuf:"bytes,1,rep,name=dracs" json:"dracs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListDRACsResponse) Reset()                    { *m = ListDRACsResponse{} }
-func (m *ListDRACsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListDRACsResponse) ProtoMessage()               {}
-func (*ListDRACsResponse) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *ListDRACsResponse) Reset()         { *m = ListDRACsResponse{} }
+func (m *ListDRACsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListDRACsResponse) ProtoMessage()    {}
+func (*ListDRACsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{3}
+}
+func (m *ListDRACsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDRACsResponse.Unmarshal(m, b)
+}
+func (m *ListDRACsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDRACsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListDRACsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDRACsResponse.Merge(dst, src)
+}
+func (m *ListDRACsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListDRACsResponse.Size(m)
+}
+func (m *ListDRACsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDRACsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDRACsResponse proto.InternalMessageInfo
 
 func (m *ListDRACsResponse) GetDracs() []*DRAC {
 	if m != nil {
@@ -190,13 +284,35 @@ type UpdateDRACRequest struct {
 	// The DRAC to update in the database.
 	Drac *DRAC `protobuf:"bytes,1,opt,name=drac" json:"drac,omitempty"`
 	// The fields to update in the DRAC.
-	UpdateMask *google_protobuf1.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdateDRACRequest) Reset()                    { *m = UpdateDRACRequest{} }
-func (m *UpdateDRACRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateDRACRequest) ProtoMessage()               {}
-func (*UpdateDRACRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (m *UpdateDRACRequest) Reset()         { *m = UpdateDRACRequest{} }
+func (m *UpdateDRACRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateDRACRequest) ProtoMessage()    {}
+func (*UpdateDRACRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{4}
+}
+func (m *UpdateDRACRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateDRACRequest.Unmarshal(m, b)
+}
+func (m *UpdateDRACRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateDRACRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateDRACRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDRACRequest.Merge(dst, src)
+}
+func (m *UpdateDRACRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateDRACRequest.Size(m)
+}
+func (m *UpdateDRACRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateDRACRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateDRACRequest proto.InternalMessageInfo
 
 func (m *UpdateDRACRequest) GetDrac() *DRAC {
 	if m != nil {
@@ -205,7 +321,7 @@ func (m *UpdateDRACRequest) GetDrac() *DRAC {
 	return nil
 }
 
-func (m *UpdateDRACRequest) GetUpdateMask() *google_protobuf1.FieldMask {
+func (m *UpdateDRACRequest) GetUpdateMask() *field_mask.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}
@@ -221,10 +337,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor_dracs_ceb8ad6005f9d841)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_dracs_ceb8ad6005f9d841 = []byte{
 	// 407 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xc1, 0x8e, 0xd3, 0x30,
 	0x10, 0x55, 0x36, 0x69, 0xcb, 0x4e, 0x59, 0x89, 0x5a, 0x08, 0x59, 0x3d, 0x40, 0xc8, 0x5e, 0x72,

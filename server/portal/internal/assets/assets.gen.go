@@ -9,15 +9,25 @@
 // It contains all [*.css *.html *.js *.tmpl] files found in the package as byte arrays.
 package assets
 
-// GetAsset returns an asset by its name. Returns nil if no such asset.
+// GetAsset returns an asset by its name. Returns nil if no such asset exists.
 func GetAsset(name string) []byte {
 	return []byte(files[name])
 }
 
 // GetAssetString is version of GetAsset that returns string instead of byte
-// slice. Returns empty string if no such asset.
+// slice. Returns empty string if no such asset exists.
 func GetAssetString(name string) string {
 	return files[name]
+}
+
+// GetAssetSHA256 returns the asset checksum. Returns nil if no such asset
+// exists.
+func GetAssetSHA256(name string) []byte {
+	data := fileSha256s[name]
+	if data == nil {
+		return nil
+	}
+	return append([]byte(nil), data...)
 }
 
 // Assets returns a map of all assets.
@@ -4277,4 +4287,47 @@ var files = map[string]string{
 		44, 116, 41, 123, 114, 101, 116, 117, 114, 110, 32, 101, 46, 108,
 		105, 115, 116, 101, 110, 101, 114, 67, 111, 117, 110, 116, 40, 116,
 		41, 125, 125, 93, 41, 59}),
+}
+
+var fileSha256s = map[string][]byte{
+	"includes/base.html": {70, 188,
+		56, 192, 111, 39, 81, 189, 0, 108, 123, 227, 239, 61, 226, 38,
+		150, 89, 97, 112, 140, 149, 146, 217, 249, 247, 73, 217, 45, 121,
+		142, 181},
+	"pages/access_denied.html": {219, 160,
+		175, 223, 41, 244, 123, 222, 104, 196, 200, 249, 82, 21, 200, 212,
+		151, 83, 207, 71, 24, 27, 236, 167, 136, 194, 84, 46, 4, 174,
+		145, 87},
+	"pages/action_done.html": {25, 216,
+		69, 193, 189, 150, 215, 237, 71, 36, 30, 122, 152, 24, 40, 131,
+		181, 169, 46, 154, 115, 208, 232, 190, 100, 11, 82, 216, 121, 192,
+		158, 195},
+	"pages/done.html": {142, 208,
+		141, 15, 126, 190, 142, 23, 84, 139, 11, 63, 93, 252, 119, 133,
+		213, 240, 198, 53, 70, 101, 23, 188, 195, 54, 175, 35, 185, 202,
+		103, 74},
+	"pages/error.html": {210, 245,
+		199, 77, 45, 33, 62, 35, 31, 51, 23, 193, 186, 61, 209, 186,
+		212, 207, 120, 47, 239, 162, 190, 198, 0, 156, 172, 241, 0, 14,
+		67, 233},
+	"pages/index.html": {176, 87,
+		241, 46, 246, 242, 147, 32, 172, 127, 111, 92, 127, 10, 71, 228,
+		140, 211, 91, 126, 53, 149, 132, 10, 182, 121, 149, 232, 219, 92,
+		50, 118},
+	"pages/page.html": {97, 34,
+		106, 68, 132, 4, 212, 181, 50, 97, 73, 237, 208, 158, 168, 253,
+		214, 97, 46, 180, 243, 164, 183, 21, 99, 3, 71, 254, 119, 123,
+		240, 110},
+	"pages/validation_error.html": {140, 70,
+		88, 210, 63, 198, 117, 241, 223, 26, 135, 236, 111, 223, 242, 57,
+		111, 21, 112, 30, 213, 141, 192, 69, 34, 42, 72, 138, 116, 78,
+		113, 13},
+	"third_party/bootstrap/bootstrap.min.css": {41, 77,
+		68, 34, 205, 116, 196, 68, 132, 8, 180, 8, 217, 171, 120, 168,
+		154, 242, 199, 220, 137, 63, 71, 32, 240, 24, 25, 150, 155, 51,
+		177, 96},
+	"third_party/modal-vanilla/modal.min.js": {44, 88,
+		27, 130, 221, 157, 227, 112, 149, 187, 45, 226, 165, 195, 62, 210,
+		30, 56, 57, 112, 67, 62, 56, 205, 146, 164, 179, 102, 131, 161,
+		131, 11},
 }

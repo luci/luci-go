@@ -17,6 +17,7 @@ package model
 import (
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -44,6 +45,14 @@ type Quest struct {
 	BuiltBy TemplateInfo  `gae:",noindex"`
 
 	Created time.Time `gae:",noindex"`
+}
+
+// Equals is true if q and a and equal.
+func (q *Quest) Equals(a *Quest) bool {
+	return q == a || (q.ID == a.ID &&
+		proto.Equal(&q.Desc, &a.Desc) &&
+		q.BuiltBy.Equals(a.BuiltBy) &&
+		q.Created.Equal(a.Created))
 }
 
 // QueryAttemptsForQuest returns all Attempt objects that exist for this Quest.

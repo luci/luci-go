@@ -133,14 +133,14 @@ func TestTemplateNormalize(t *testing.T) {
 				Convey("not obj value", func() {
 					m, err := (LiteralMap{"$key": &Value_Object{"querp"}}).Convert()
 					So(err, ShouldBeNil)
-					spec := &Specifier{"thing", m}
+					spec := &Specifier{TemplateName: "thing", Params: m}
 					So(spec.Normalize(), ShouldErrLike, "param \"$key\": invalid character 'q'")
 				})
 
 				Convey("not ary value", func() {
 					m, err := (LiteralMap{"$key": &Value_Array{"querp"}}).Convert()
 					So(err, ShouldBeNil)
-					spec := &Specifier{"thing", m}
+					spec := &Specifier{TemplateName: "thing", Params: m}
 					So(spec.Normalize(), ShouldErrLike, "param \"$key\": invalid character 'q'")
 				})
 			})
@@ -195,7 +195,7 @@ func TestTemplateNormalize(t *testing.T) {
 					m, err := (LiteralMap{
 						"${value}": &Value_Object{`{}, "otherKey": {}`}}).Convert()
 					So(err, ShouldBeNil)
-					spec := &Specifier{"thing", m}
+					spec := &Specifier{TemplateName: "thing", Params: m}
 					So(spec.Normalize(), ShouldErrLike, "param \"${value}\": got extra junk")
 
 					spec.Params["${value}"].Value.(*Value_Object).Object = `{"extra": "space"}      `

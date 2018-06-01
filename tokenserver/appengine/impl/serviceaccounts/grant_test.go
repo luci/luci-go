@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/tokenserver/api"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSignGrant(t *testing.T) {
@@ -49,7 +50,7 @@ func TestSignGrant(t *testing.T) {
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		So(err, ShouldBeNil)
-		So(back, ShouldResemble, original)
+		So(back, ShouldResembleProto, original)
 		So(envelope.KeyId, ShouldEqual, "f9da5a0d0903bda58c6d664e3852a89c283d7fe9")
 	})
 }

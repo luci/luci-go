@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectToken(t *testing.T) {
@@ -59,7 +60,7 @@ func TestInspectToken(t *testing.T) {
 		So(ins.NonExpired, ShouldBeTrue)
 		So(ins.InvalidityReason, ShouldEqual, "")
 		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResemble, original)
+		So(ins.Body, ShouldResembleProto, original)
 	})
 
 	Convey("Not base64", t, func() {
@@ -74,7 +75,7 @@ func TestInspectToken(t *testing.T) {
 		ins, err := inspector.InspectToken(ctx, "zzzz")
 		So(err, ShouldBeNil)
 		So(ins, ShouldResemble, &Inspection{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7 for messages.DelegationToken",
+			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
 		})
 	})
 
@@ -90,7 +91,7 @@ func TestInspectToken(t *testing.T) {
 		So(ins.NonExpired, ShouldBeTrue)
 		So(ins.InvalidityReason, ShouldEqual, "bad signature - crypto/rsa: verification error")
 		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResemble, original) // recovered the token body nonetheless
+		So(ins.Body, ShouldResembleProto, original) // recovered the token body nonetheless
 	})
 
 	Convey("Wrong SigningContext", t, func() {
@@ -103,7 +104,7 @@ func TestInspectToken(t *testing.T) {
 		So(ins.NonExpired, ShouldBeTrue)
 		So(ins.InvalidityReason, ShouldEqual, "bad signature - crypto/rsa: verification error")
 		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResemble, original) // recovered the token body nonetheless
+		So(ins.Body, ShouldResembleProto, original) // recovered the token body nonetheless
 	})
 
 	Convey("Expired", t, func() {
@@ -115,7 +116,7 @@ func TestInspectToken(t *testing.T) {
 		So(ins.NonExpired, ShouldBeFalse)
 		So(ins.InvalidityReason, ShouldEqual, "expired")
 		So(ins.Envelope, ShouldHaveSameTypeAs, &messages.DelegationToken{})
-		So(ins.Body, ShouldResemble, original)
+		So(ins.Body, ShouldResembleProto, original)
 	})
 }
 

@@ -173,7 +173,7 @@ func TestMint(t *testing.T) {
 			}
 			body, token, err := Mint(ctx, &params)
 			So(err, ShouldBeNil)
-			So(body, ShouldResemble, &tokenserver.MachineTokenBody{
+			So(body, ShouldResembleProto, &tokenserver.MachineTokenBody{
 				MachineFqdn: "host.domain",
 				IssuedBy:    "token-server@example.com",
 				IssuedAt:    1422936306,

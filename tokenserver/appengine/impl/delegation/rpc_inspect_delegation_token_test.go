@@ -31,6 +31,7 @@ import (
 	admin "go.chromium.org/luci/tokenserver/api/admin/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestInspectDelegationToken(t *testing.T) {
@@ -62,7 +63,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
+		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
 			Valid:      true,
 			Signed:     true,
 			NonExpired: true,
@@ -79,7 +80,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			Token: "@@@@@@@@@@@@@",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
+		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
 			InvalidityReason: "not base64 - illegal base64 data at input byte 0",
 		})
 	})
@@ -89,8 +90,8 @@ func TestInspectDelegationToken(t *testing.T) {
 			Token: "zzzz",
 		})
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
-			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7 for messages.DelegationToken",
+		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
+			InvalidityReason: "can't unmarshal the envelope - proto: can't skip unknown wire type 7",
 		})
 	})
 
@@ -107,7 +108,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
+		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "bad signature - crypto/rsa: verification error",
 			Signed:           false,
@@ -130,7 +131,7 @@ func TestInspectDelegationToken(t *testing.T) {
 
 		resp.Envelope.Pkcs1Sha256Sig = nil
 		resp.Envelope.SerializedSubtoken = nil
-		So(resp, ShouldResemble, &admin.InspectDelegationTokenResponse{
+		So(resp, ShouldResembleProto, &admin.InspectDelegationTokenResponse{
 			Valid:            false,
 			InvalidityReason: "expired",
 			Signed:           true,

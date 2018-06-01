@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // A platform to store in the database.
 type Platform struct {
 	// The name of this platform. Must be unique.
@@ -19,13 +25,35 @@ type Platform struct {
 	// A description of this platform.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
 	// The name of the hardware manufacturer of this platform.
-	Manufacturer string `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Platform) Reset()                    { *m = Platform{} }
-func (m *Platform) String() string            { return proto.CompactTextString(m) }
-func (*Platform) ProtoMessage()               {}
-func (*Platform) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *Platform) Reset()         { *m = Platform{} }
+func (m *Platform) String() string { return proto.CompactTextString(m) }
+func (*Platform) ProtoMessage()    {}
+func (*Platform) Descriptor() ([]byte, []int) {
+	return fileDescriptor_platforms_6088d7eae4835437, []int{0}
+}
+func (m *Platform) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Platform.Unmarshal(m, b)
+}
+func (m *Platform) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Platform.Marshal(b, m, deterministic)
+}
+func (dst *Platform) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platform.Merge(dst, src)
+}
+func (m *Platform) XXX_Size() int {
+	return xxx_messageInfo_Platform.Size(m)
+}
+func (m *Platform) XXX_DiscardUnknown() {
+	xxx_messageInfo_Platform.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Platform proto.InternalMessageInfo
 
 func (m *Platform) GetName() string {
 	if m != nil {
@@ -51,13 +79,35 @@ func (m *Platform) GetManufacturer() string {
 // A list of platforms.
 type Platforms struct {
 	// A list of platforms.
-	Platform []*Platform `protobuf:"bytes,1,rep,name=platform" json:"platform,omitempty"`
+	Platform             []*Platform `protobuf:"bytes,1,rep,name=platform" json:"platform,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
+	XXX_unrecognized     []byte      `json:"-"`
+	XXX_sizecache        int32       `json:"-"`
 }
 
-func (m *Platforms) Reset()                    { *m = Platforms{} }
-func (m *Platforms) String() string            { return proto.CompactTextString(m) }
-func (*Platforms) ProtoMessage()               {}
-func (*Platforms) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *Platforms) Reset()         { *m = Platforms{} }
+func (m *Platforms) String() string { return proto.CompactTextString(m) }
+func (*Platforms) ProtoMessage()    {}
+func (*Platforms) Descriptor() ([]byte, []int) {
+	return fileDescriptor_platforms_6088d7eae4835437, []int{1}
+}
+func (m *Platforms) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Platforms.Unmarshal(m, b)
+}
+func (m *Platforms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Platforms.Marshal(b, m, deterministic)
+}
+func (dst *Platforms) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platforms.Merge(dst, src)
+}
+func (m *Platforms) XXX_Size() int {
+	return xxx_messageInfo_Platforms.Size(m)
+}
+func (m *Platforms) XXX_DiscardUnknown() {
+	xxx_messageInfo_Platforms.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Platforms proto.InternalMessageInfo
 
 func (m *Platforms) GetPlatform() []*Platform {
 	if m != nil {
@@ -72,10 +122,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/platforms.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/platforms.proto", fileDescriptor_platforms_6088d7eae4835437)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_platforms_6088d7eae4835437 = []byte{
 	// 185 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x8e, 0xb1, 0x0e, 0x82, 0x30,
 	0x14, 0x45, 0x83, 0x18, 0x02, 0xc5, 0xc1, 0x74, 0xea, 0x48, 0x98, 0x18, 0xb4, 0x8d, 0x3a, 0x39,
