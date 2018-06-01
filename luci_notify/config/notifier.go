@@ -96,13 +96,21 @@ func NewNotifier(parent *datastore.Key, cfg *notifyConfig.Notifier, builderIDs [
 	}
 }
 
-// LookupNotifiers retrieves all notifiers from the datastore for a particular builder ID.
-func LookupNotifiers(c context.Context, project, builderID string) ([]*Notifier, error) {
+// LookupNotifier retrieves the one notifier from the datastore associated with a particular builder ID.
+func LookupNotifier(c context.Context, project, builderID string) (*Notifier, error) {
 	var notifiers []*Notifier
 	parentKey := datastore.MakeKey(c, "Project", project)
 	query := datastore.NewQuery("Notifier").Ancestor(parentKey).Eq("BuilderIDs", builderID)
 	err := datastore.GetAll(c, query, &notifiers)
-	return notifiers, err
+	if err != nil {
+		return nil, err
+	}
+	if len(notifiers) > 1 {
+		return nil, errors.New("more than one notifier found for builder %s", builderID)
+	} else if len(notifiers) == 0 {
+		return nil, nil
+	}
+	return notifiers[0], nil
 }
 
 // Load loads a Notifier's information from props.
