@@ -145,7 +145,7 @@ func buildbucketClient(c context.Context) (*bbv1.Service, error) {
 		return nil, errors.New("missing buildbucket host in settings")
 	}
 
-	client.BasePath = fmt.Sprintf("https://%s/api/buildbucket/v1/", settings.Buildbucket.Host)
+	client.BasePath = fmt.Sprintf("https://%s/_ah/api/buildbucket/v1/", settings.Buildbucket.Host)
 	return client, nil
 }
 
