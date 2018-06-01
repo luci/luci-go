@@ -71,6 +71,47 @@
     },
     {
       "key": {
+        "uuid": "7265267f_d8f1d83f",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T07:46:38Z",
+      "side": 1,
+      "message": "unlike CompactText, MarshalText ends with \\n",
+      "parentUuid": "68e73c27_5384b661",
+      "range": {
+        "startLine": 72,
+        "startChar": 22,
+        "endLine": 72,
+        "endChar": 23
+      },
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc509351_cf4e59c1",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T07:46:38Z",
+      "side": 1,
+      "message": "consider extracting this loop to a separate function that accepts a slice. Then call the func for lVal and rVal. It would be slightly simpler",
+      "revId": "bb9c5168f69f725ac087b31d8e564cc631f5c35d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "777f5691_5ceece58",
         "filename": "common/testing/assertions/proto_tests.go",
         "patchSetId": 5
