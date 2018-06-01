@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "49e7746b_62f7e21d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-01T06:55:09Z",
+      "side": 1,
+      "message": "oops. This is the right one:\nhttps://3152-928030a-tainted-tandrii-dot-luci-milo-dev.appspot.com/p/fuchsia/builds/b8944950255990130272\nvs \nhttps://luci-milo-dev.appspot.com/p/fuchsia/builds/b8944950255990130272",
+      "parentUuid": "9831c6c4_daf5c72a",
+      "revId": "e9fc32b0ebc5fc05a7f5007bac413fd1c567752b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "17572e0f_a371c830",
         "filename": "milo/buildsource/swarming/build.go",
         "patchSetId": 1
