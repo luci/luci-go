@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c9e0ea45_d2dbf97d",
+        "filename": "web/inc/rpcexplorer/rpc-completer.html",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T17:14:23Z",
+      "side": 1,
+      "message": "wth, how does it work? Do they have some conditional logic for google.protobuf.FieldMask in jsonpb module?",
+      "range": {
+        "startLine": 193,
+        "startChar": 13,
+        "endLine": 193,
+        "endChar": 135
+      },
+      "revId": "2a393e39a3a65796c8a488cafb3b1bfaa0bde757",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
