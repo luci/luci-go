@@ -29,6 +29,7 @@ import (
 	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
+	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
@@ -161,12 +162,12 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
 	// disk at once.
-	checker := NewChecker(ctx, client, concurrentChecks)
-	uploader := NewUploader(ctx, client, concurrentUploads)
-	archiver := NewTarringArchiver(checker, uploader)
+	checker := archiver.NewChecker(ctx, client, concurrentChecks)
+	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
+	a := archiver.NewTarringArchiver(checker, uploader)
 
 	var errArchive error
-	var isolSummaries []IsolatedSummary
+	var isolSummaries []archiver.IsolatedSummary
 	for _, genJSONPath := range genJSONPaths {
 		opts, err := processGenJSON(genJSONPath)
 		if err != nil {
@@ -179,7 +180,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		}
 		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
-		isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
+		isolSummary, err := a.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 		if err != nil && errArchive == nil {
 			errArchive = fmt.Errorf("isolate %s: %v", opts.Isolate, err)
 		} else {
@@ -209,7 +210,7 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 }
 
 // digests extracts the digests from the supplied IsolatedSummarys.
-func digests(summaries []IsolatedSummary) []string {
+func digests(summaries []archiver.IsolatedSummary) []string {
 	var result []string
 	for _, summary := range summaries {
 		result = append(result, string(summary.Digest))

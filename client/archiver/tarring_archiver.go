@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package archiver
 
 import (
 	"fmt"
@@ -61,6 +61,15 @@ type Item struct {
 
 	Digest isolated.HexDigest
 }
+
+// Private code.
+
+const (
+	// archiveThreshold is the size (in bytes) used to determine whether to add
+	// files to a tar archive before uploading. Files smaller than this size will
+	// be combined into archives before being uploaded to the server.
+	archiveThreshold = 100e3 // 100kB
+)
 
 // itemGroup is a list of Items, plus a count of the aggregate size.
 type itemGroup struct {

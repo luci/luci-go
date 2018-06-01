@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -30,18 +31,11 @@ import (
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 )
 
 const (
-	// archiveThreshold is the size (in bytes) used to determine whether to add
-	// files to a tar archive before uploading. Files smaller than this size will
-	// be combined into archives before being uploaded to the server.
-	archiveThreshold = 100e3 // 100kB
-
-	// archiveMaxSize is the maximum size of the created archives.
-	archiveMaxSize = 10e6
-
 	// infraFailExit is the exit code used when the exparchive fails due to
 	// infrastructure errors (for example, failed server requests).
 	infraFailExit = 2
@@ -156,9 +150,9 @@ func archive(ctx context.Context, client *isolatedclient.Client, opts *isolate.A
 	log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
 	// Set up a checker and uploader.
-	checker := NewChecker(ctx, client, concurrentChecks)
-	uploader := NewUploader(ctx, client, concurrentUploads)
-	archiver := NewTarringArchiver(checker, uploader)
+	checker := archiver.NewChecker(ctx, client, concurrentChecks)
+	uploader := archiver.NewUploader(ctx, client, concurrentUploads)
+	archiver := archiver.NewTarringArchiver(checker, uploader)
 
 	isolSummary, err := archiver.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 	if err != nil {
@@ -216,4 +210,25 @@ func CancelOnCtrlC(arch *archiver.Archiver) {
 		case <-arch.Channel():
 		}
 	}()
+}
+
+func printSummary(al archiveLogger, summary archiver.IsolatedSummary) {
+	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
+}
+
+func dumpSummaryJSON(filename string, summaries ...archiver.IsolatedSummary) error {
+	if len(filename) == 0 {
+		return nil
+	}
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	m := map[string]isolated.HexDigest{}
+	for _, summary := range summaries {
+		m[summary.Name] = summary.Digest
+	}
+	return json.NewEncoder(f).Encode(m)
 }
