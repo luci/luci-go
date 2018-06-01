@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "249e8f7a_a524e5b1",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:14:18Z",
+      "side": 1,
+      "message": "this was WTF #2, not sure why XXX_ end up there...",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 180,
+        "endChar": 3
+      },
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "12272a8d_0315a7c9",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:14:18Z",
+      "side": 1,
+      "message": "This is new code. See doc.go for why it named _tests.go.\n\nAlso, if you don\u0027t like the approach I invite you to fix it in the followup CL, because I\u0027m extremely tired dealing with this stuff already.",
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "62d528c8_662b8172",
+        "filename": "common/testing/assertions/proto_tests.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:14:18Z",
+      "side": 1,
+      "message": "So(proto.Equal(a, b), ShouldBeTrue) gives EXTREMELY useless response when protos are not equal.",
+      "range": {
+        "startLine": 38,
+        "startChar": 1,
+        "endLine": 41,
+        "endChar": 62
+      },
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46de9224_018d0cec",
+        "filename": "dm/appengine/model/quest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:14:18Z",
+      "side": 1,
+      "message": "ah, crap\nwill fix in following patch set",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 1
+      },
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c29ff6be_2684f399",
+        "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:14:18Z",
+      "side": 1,
+      "message": "this is not very useful for us :-/",
+      "range": {
+        "startLine": 121,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 145
+      },
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
