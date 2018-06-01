@@ -128,7 +128,7 @@ func TestImpl(t *testing.T) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
-				Code:   404,
+				Code:   http.StatusNotFound,
 			})
 			yes, err := gs.Exists(ctx, "/bucket/a/b/c")
 			So(err, ShouldBeNil)
@@ -139,10 +139,10 @@ func TestImpl(t *testing.T) {
 			expect(call{
 				Method: "GET",
 				Path:   "/b/bucket/o/a/b/c",
-				Code:   403,
+				Code:   http.StatusForbidden,
 			})
 			yes, err := gs.Exists(ctx, "/bucket/a/b/c")
-			So(StatusCode(err), ShouldEqual, 403)
+			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
 			So(yes, ShouldBeFalse)
 		})
 
@@ -170,10 +170,10 @@ func TestImpl(t *testing.T) {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
-				Code:   403,
+				Code:   http.StatusForbidden,
 			})
 			err := gs.Copy(ctx, "/dst_bucket/dst_obj", -1, "/src_bucket/src_obj", -1)
-			So(StatusCode(err), ShouldEqual, 403)
+			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
 		})
 
 		Convey("Delete present", func() {
@@ -188,7 +188,7 @@ func TestImpl(t *testing.T) {
 			expect(call{
 				Method: "DELETE",
 				Path:   "/b/bucket/o/a/b/c",
-				Code:   404,
+				Code:   http.StatusNotFound,
 			})
 			So(gs.Delete(ctx, "/bucket/a/b/c"), ShouldBeNil)
 		})
@@ -197,9 +197,9 @@ func TestImpl(t *testing.T) {
 			expect(call{
 				Method: "DELETE",
 				Path:   "/b/bucket/o/a/b/c",
-				Code:   403,
+				Code:   http.StatusForbidden,
 			})
-			So(StatusCode(gs.Delete(ctx, "/bucket/a/b/c")), ShouldEqual, 403)
+			So(StatusCode(gs.Delete(ctx, "/bucket/a/b/c")), ShouldEqual, http.StatusForbidden)
 		})
 
 		Convey("Publish success", func() {
@@ -207,20 +207,27 @@ func TestImpl(t *testing.T) {
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
 			})
 			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), ShouldBeNil)
 		})
 
-		Convey("Publish bad precondition", func() {
+		Convey("Publish bad precondition on srcGen", func() {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
 				Code: http.StatusPreconditionFailed,
+			})
+			expect(call{
+				Method: "GET",
+				Path:   "/b/dst_bucket/o/dst_obj",
+				Code:   http.StatusNotFound,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
 			So(StatusCode(err), ShouldEqual, http.StatusPreconditionFailed)
@@ -232,41 +239,44 @@ func TestImpl(t *testing.T) {
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
-				Code: 403,
+				Code: http.StatusForbidden,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, 403)
+			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
 		})
 
-		Convey("Publish missing object", func() {
+		Convey("Publish missing source object", func() {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
-				Code: 404,
+				Code: http.StatusNotFound,
 			})
 			expect(call{
 				Method: "GET",
 				Path:   "/b/dst_bucket/o/dst_obj",
-				Code:   404,
+				Code:   http.StatusNotFound,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, 404)
+			So(StatusCode(err), ShouldEqual, http.StatusNotFound)
 			So(err, ShouldErrLike, "the source object is missing")
 		})
 
-		Convey("Publish already published", func() {
+		Convey("Publish already published (failed precondition on dstGen)", func() {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
-				Code: 404,
+				Code: http.StatusPreconditionFailed,
 			})
 			expect(call{
 				Method: "GET",
@@ -275,22 +285,35 @@ func TestImpl(t *testing.T) {
 			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1), ShouldBeNil)
 		})
 
+		Convey("Publish already published, only srcDst precondition", func() {
+			expect(call{
+				Method: "POST",
+				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
+				Query: url.Values{
+					"ifGenerationMatch": {"0"},
+				},
+				Code: http.StatusPreconditionFailed,
+			})
+			So(gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", -1), ShouldBeNil)
+		})
+
 		Convey("Publish error when checking presence", func() {
 			expect(call{
 				Method: "POST",
 				Path:   "/b/src_bucket/o/src_obj/copyTo/b/dst_bucket/o/dst_obj",
 				Query: url.Values{
+					"ifGenerationMatch":       {"0"},
 					"ifSourceGenerationMatch": {"1"},
 				},
-				Code: 404,
+				Code: http.StatusNotFound,
 			})
 			expect(call{
 				Method: "GET",
 				Path:   "/b/dst_bucket/o/dst_obj",
-				Code:   403,
+				Code:   http.StatusForbidden,
 			})
 			err := gs.Publish(ctx, "/dst_bucket/dst_obj", "/src_bucket/src_obj", 1)
-			So(StatusCode(err), ShouldEqual, 403)
+			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
 		})
 
 		Convey("StartUpload success", func() {
@@ -316,10 +339,10 @@ func TestImpl(t *testing.T) {
 					"name":       {"a/b/c"},
 					"uploadType": {"resumable"},
 				},
-				Code: 403,
+				Code: http.StatusForbidden,
 			})
 			url, err := gs.StartUpload(ctx, "/bucket/a/b/c")
-			So(StatusCode(err), ShouldEqual, 403)
+			So(StatusCode(err), ShouldEqual, http.StatusForbidden)
 			So(url, ShouldEqual, "")
 		})
 

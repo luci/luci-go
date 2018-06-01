@@ -70,19 +70,19 @@ type GoogleStorage interface {
 	//
 	// 'src' will be copied to 'dst' only if source generation number matches
 	// 'srcGen'. If 'srcGen' is negative, the generation check is not performed.
-	// Also assumes 'dst' is ether missing, or already contains data matching 'src'
-	// (so 'dst' should usually be a content-addressed path). This allows the
-	// conditional move operation to be safely retried even if it failed midway
-	// before.
+	// Also assumes 'dst' is ether missing, or already contains data matching
+	// 'src' (so 'dst' should usually be a content-addressed path). This allows
+	// the conditional move operation to be safely retried even if it failed
+	// midway before.
 	//
-	// Note that it keeps 'src' intact. Use Delete to get rid of it when necessary.
-	// Google Storage doesn't have atomic "move" operation.
+	// Note that it keeps 'src' intact. Use Delete to get rid of it when
+	// necessary. Google Storage doesn't have atomic "move" operation.
 	Publish(c context.Context, dst, src string, srcGen int64) error
 
 	// StartUpload opens a new resumable upload session to a given path.
 	//
-	// Returns an URL to use in Resumable Upload protocol. It contains uploadId that
-	// acts as an authentication token, treat the URL as a secret.
+	// Returns an URL to use in Resumable Upload protocol. It contains uploadId
+	// that acts as an authentication token, treat the URL as a secret.
 	//
 	// The upload protocol is finished by the CIPD client, and so it's not
 	// implemented here.
@@ -213,32 +213,48 @@ func (gs *impl) Delete(c context.Context, path string) error {
 }
 
 func (gs *impl) Publish(c context.Context, dst, src string, srcGen int64) error {
-	switch err := gs.Copy(c, dst, -1, src, srcGen); {
-	case StatusCode(err) == http.StatusNotFound:
-		// 'src' is missing. Maybe we attempted to publish already and this is a
-		// retry. If so, 'dst' should exist already, and we assume it matches 'src'
-		// per the method contract. Note that there's no efficient way to check
-		// this other than fetching and comparing files (which is insanely costly),
-		// so we assume callers consistently provide same 'dst' when retrying.
-		//
-		// If 'dst' is also missing, then we are not retying a failed move (it would
-		// have left either 'src' or 'dst' or both present), and 'src' is genuinely
-		// missing.
-		switch exists, dstErr := gs.Exists(c, dst); {
-		case dstErr != nil:
-			return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
-		case !exists:
-			return errors.Annotate(err, "the source object is missing").Err()
-		default:
-			return nil // 'dst' exists, Publish is considered successful
-		}
-	case StatusCode(err) == http.StatusPreconditionFailed:
-		return errors.Annotate(err, "the source object has unexpected generation number").Err()
-	case err != nil:
-		return errors.Annotate(err, "failed to copy the object").Err()
-	default:
+	err := gs.Copy(c, dst, 0, src, srcGen)
+	if err == nil {
 		return nil
 	}
+	code := StatusCode(err)
+
+	// srcGen < 0 means we check only precondition on 'dst', so if the copy
+	// failed, we already know why: 'dst' already exists (which means the publish
+	// operation is successful overall). Other error conditions handled below.
+	if code == http.StatusPreconditionFailed && srcGen < 0 {
+		return nil
+	}
+
+	// StatusNotFound means 'src' is missing. This can happen if we attempted to
+	// publish before, failed midway and retrying now. If so, 'dst' should exist
+	// already.
+	//
+	// StatusPreconditionFailed means either 'src' has changed (its generation no
+	// longer matches srcGen generation), or 'dst' already exists (its generation
+	// is no longer 0).
+	//
+	// We want to check for 'dst' presence to figure out what to do next.
+	//
+	// Any other code is unexpected error.
+	if code != http.StatusNotFound && code != http.StatusPreconditionFailed {
+		return errors.Annotate(err, "failed to copy the object").Err()
+	}
+
+	switch exists, dstErr := gs.Exists(c, dst); {
+	case dstErr != nil:
+		return errors.Annotate(dstErr, "failed to check the destination object presence").Err()
+	case !exists && code == http.StatusNotFound:
+		// Both 'src' and 'dst' are missing. It means we are not retying a failed
+		// move (it would have left either 'src' or 'dst' or both present), and
+		// 'src' is genuinely missing.
+		return errors.Annotate(err, "the source object is missing").Err()
+	case !exists && code == http.StatusPreconditionFailed:
+		// 'dst' is still missing. It means we failed 'srcGen' precondition.
+		return errors.Annotate(err, "the source object has unexpected generation number").Err()
+	}
+
+	return nil // 'dst' exists, Publish is considered successful
 }
 
 func (gs *impl) StartUpload(c context.Context, path string) (uploadURL string, err error) {
