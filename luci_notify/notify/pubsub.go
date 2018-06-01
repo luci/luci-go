@@ -306,6 +306,8 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	logging.Infof(c, "fetching build %d", message.Build.Id)
 	res, err := buildsClient.GetBuild(c, &buildbucketpb.GetBuildRequest{
 		Id:     message.Build.Id,
 		Fields: buildFieldMask,
