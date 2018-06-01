@@ -22,6 +22,30 @@
       "revId": "200b934ca5781233fc8dbab0744c636c048d8f01",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c64e7d0_c6910910",
+        "filename": "client/archiver/tarring_archiver.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-06-01T19:36:48Z",
+      "side": 1,
+      "message": "I use this to separate private and public sections but I agree this is opaque, replaced with \"// Private code.\" to be clear.",
+      "parentUuid": "537600fe_7bbe0724",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 65,
+        "endChar": 2
+      },
+      "revId": "200b934ca5781233fc8dbab0744c636c048d8f01",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
