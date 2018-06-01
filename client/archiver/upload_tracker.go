@@ -134,7 +134,7 @@ func (ut *UploadTracker) populateSymlinks(symlinks []*Item) error {
 
 // tarAndUploadFiles creates bundles of files, uploads them, and adds each bundle to files.
 func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
-	bundles := ShardItems(smallFiles, archiveMaxSize)
+	bundles := shardItems(smallFiles, archiveMaxSize)
 	log.Printf("\t%d TAR archives to be isolated", len(bundles))
 
 	for _, bundle := range bundles {
@@ -145,7 +145,7 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 		}
 
 		log.Printf("Created tar archive %q (%s)", digest, humanize.Bytes(uint64(tarSize)))
-		log.Printf("\tcontains %d files (total %s)", len(bundle.Items), humanize.Bytes(uint64(bundle.ItemSize)))
+		log.Printf("\tcontains %d files (total %s)", len(bundle.items), humanize.Bytes(uint64(bundle.itemSize)))
 		// Mint an item for this tar.
 		item := &Item{
 			Path:    fmt.Sprintf(".%s.tar", digest),

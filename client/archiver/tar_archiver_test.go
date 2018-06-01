@@ -126,21 +126,21 @@ func TestItemBundle(t *testing.T) {
 			},
 		}
 
-		bundles := ShardItems(testItems, 0)
+		bundles := shardItems(testItems, 0)
 		So(len(bundles), ShouldEqual, 2)
 		for _, bundle := range bundles {
 			if _, _, err := bundle.Digest(); err == nil {
-				t.Errorf("Path %q, bundle.Digest gave nil error; want some error", bundle.Items[0].Path)
+				t.Errorf("Path %q, bundle.Digest gave nil error; want some error", bundle.items[0].Path)
 			}
 			rc, err := bundle.Contents()
 			if err != nil {
-				t.Errorf("Path %q, bundle.Contents gave error %v; want nil error", bundle.Items[0].Path, err)
+				t.Errorf("Path %q, bundle.Contents gave error %v; want nil error", bundle.items[0].Path, err)
 				continue
 			}
 			_, err = ioutil.ReadAll(rc)
 			rc.Close()
 			if err == nil {
-				t.Errorf("Path %q, reading contents gave nil error, want some error", bundle.Items[0].Path)
+				t.Errorf("Path %q, reading contents gave nil error, want some error", bundle.items[0].Path)
 			}
 		}
 	})
@@ -179,7 +179,7 @@ func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 		})
 	}
 	r := &shards{}
-	bundles := ShardItems(items, threshold)
+	bundles := shardItems(items, threshold)
 	for i, b := range bundles {
 		digest, size, err := b.Digest()
 		if err != nil {
@@ -197,7 +197,7 @@ func runShardItems(sizes []int64, threshold int64) (*shards, error) {
 		if got := len(tar); int64(got) != size {
 			return nil, fmt.Errorf("bundle[%d] Contents size %d differs from Digest size %d", i, got, size)
 		}
-		r.bundles = append(r.bundles, len(b.Items))
+		r.bundles = append(r.bundles, len(b.items))
 		r.sizes = append(r.sizes, size)
 		r.digests = append(r.digests, digest)
 	}
