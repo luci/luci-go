@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package archiver
 
 import (
 	"errors"
@@ -151,10 +151,7 @@ func TestCheckerDelay(t *testing.T) {
 	}
 }
 
-func TestCheckerErrors(t *testing.T) {
-	// TODO(djd): Re-enable test when this error handling is fixed.
-	return
-
+func disabledTestCheckerErrors(t *testing.T) {
 	// Make an error channel which sends errBang on the second receive.
 	errc := make(chan error, 2)
 	errBang := errors.New("bang")

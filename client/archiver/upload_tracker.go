@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package archiver
 
 import (
 	"bytes"
@@ -27,6 +27,11 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
+)
+
+const (
+	// archiveMaxSize is the maximum size of the created archives.
+	archiveMaxSize = 10e6
 )
 
 // limitedOS contains a subset of the functions from the os package.
@@ -204,27 +209,6 @@ type IsolatedSummary struct {
 	// Name is the base name an isolated file with any extension stripped
 	Name   string
 	Digest isolated.HexDigest
-}
-
-func dumpSummaryJSON(filename string, summaries ...IsolatedSummary) error {
-	if len(filename) == 0 {
-		return nil
-	}
-	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	m := map[string]isolated.HexDigest{}
-	for _, summary := range summaries {
-		m[summary.Name] = summary.Digest
-	}
-	return json.NewEncoder(f).Encode(m)
-}
-
-func printSummary(al archiveLogger, summary IsolatedSummary) {
-	al.Printf("%s\t%s\n", summary.Digest, summary.Name)
 }
 
 // Finalize creates and uploads the isolate JSON at the isolatePath, and closes the checker and uploader.
