@@ -106,26 +106,24 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 	return false
 }
 
-// Notify discovers, consolidates and filters recipients from notifiers, and
+// Notify discovers, consolidates and filters recipients from the notifier, and
 // 'email_notify' properties, then dispatches notifications if necessary.
 // Does not dispatch a notification for same email, template and build more than
 // once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, notifiers []*notifyConfig.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
+func Notify(c context.Context, d *tq.Dispatcher, notifier *notifyConfig.Notifier, oldStatus buildbucketpb.Status, build *Build) error {
 	c = datastore.WithoutTransaction(c)
 
 	var recipients []EmailNotify
-	// Notify based on configured notifiers.
-	for _, n := range notifiers {
-		for _, nc := range n.Notifications {
-			if !shouldNotify(&nc, oldStatus, build.Status) {
-				continue
-			}
-			for _, r := range nc.EmailRecipients {
-				recipients = append(recipients, EmailNotify{
-					Email:    r,
-					Template: nc.Template,
-				})
-			}
+	// Notify based on configured notifier.
+	for _, nc := range notifier.Notifications {
+		if !shouldNotify(&nc, oldStatus, build.Status) {
+			continue
+		}
+		for _, r := range nc.EmailRecipients {
+			recipients = append(recipients, EmailNotify{
+				Email:    r,
+				Template: nc.Template,
+			})
 		}
 	}
 

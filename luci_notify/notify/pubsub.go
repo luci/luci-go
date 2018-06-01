@@ -107,23 +107,23 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 // notifyFunc represents a closed-over version of Notify with the other arguments already curried.
 type notifyFunc func(c context.Context, status buildbucketpb.Status) error
 
-// lookupNotifiers looks up notifiers in the datastore and returns them.
+// lookupNotifier looks up the notifier for the build (related to the build's builder) in the datastore and returns it.
 //
 // Returns a list of notifiers, whether we should continue, and potentially an error.
-func lookupNotifiers(c context.Context, build *Build, notify notifyFunc) ([]*notifyConfig.Notifier, bool, error) {
+func lookupNotifier(c context.Context, build *Build, notify notifyFunc) (*notifyConfig.Notifier, bool, error) {
 	builderID := getBuilderID(build)
 	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
-	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
+	notifier, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
 	if err != nil {
 		return nil, false, errors.Annotate(err, "looking up notifiers").Tag(transient.Tag).Err()
 	}
-	if len(notifiers) == 0 {
+	if notifier == nil {
 		// No configurations were found, but we might need to generate notifications
 		// based on properties. Don't fall through to avoid storing build status for
 		// builds without configurations.
 		return nil, false, notify(c, notifyConfig.StatusUnknown)
 	}
-	return notifiers, true, nil
+	return notifier, true, nil
 }
 
 // tryHandleBuild attempts to handle a build without revision information available.
@@ -277,11 +277,11 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil // This project is not tracked by luci-notify
 	}
 
-	var notifiers []*notifyConfig.Notifier
+	var notifier *notifyConfig.Notifier
 	notify := func(c context.Context, status buildbucketpb.Status) error {
-		return Notify(c, d, notifiers, status, build)
+		return Notify(c, d, notifier, status, build)
 	}
-	notifiers, ok, err := lookupNotifiers(c, build, notify)
+	notifiers, ok, err := lookupNotifier(c, build, notify)
 	if err != nil || !ok {
 		return err
 	}
