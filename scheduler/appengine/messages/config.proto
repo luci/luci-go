@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package scheduler;
+package scheduler.config;
 
 option go_package = "messages";
 
