@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "96ee2a23_1707cc46",
+        "filename": "appengine/gaemiddleware/standard/urlfetch.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-01T21:57:41Z",
+      "side": 1,
+      "message": "let\u0027s use context.Background() here. Even Request.Context does that https://golang.org/src/net/http/request.go#L320\n\noverall, this assumes that context.Background() returns same thing each time / deterministic. Please leave a comment about that.",
+      "range": {
+        "startLine": 45,
+        "startChar": 11,
+        "endLine": 45,
+        "endChar": 21
+      },
+      "revId": "2846ab0035bee37a621ef2cf7b4b05f2f71fab4a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
