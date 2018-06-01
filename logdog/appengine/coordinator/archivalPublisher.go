@@ -67,8 +67,6 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 		return err
 	}
 
-	// TODO: Route this through some system (e.g., task queue, tumble) that can
-	// impose a dispatch delay for the settle period.
 	msg := gcps.Message{
 		Data: d,
 	}
