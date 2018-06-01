@@ -34,9 +34,9 @@
   <hr>
   
 <div class="search">
-  <form action="/search" method="GET">
+  <div class="form">
     <input id="search-text" type="text" name="q" placeholder="Search for builders..." autofocus>
-  </form>
+  </div>
 </div>
 
 <div id="search-content">
@@ -62,10 +62,16 @@
 <script>
 (function () {
   'use strict';
-  $("#search-text").keyup(function() {
+  $("#search-text").keyup(function(e) {
+    if (e.keyCode == 13 && history.pushState) {
+      
+      var url = ("https://" + window.location.host + window.location.pathname +
+                 "?q=" + $(this).val());
+      window.history.pushState({path: url}, "", url);
+    }
     milo.filter($("#search-content"), $(this).val());
   });
-  const q = milo.getUrlParameter("q").replace("+", " ");
+  const q = milo.getUrlParameter("q").replace(/\+/g, " ");
   if (q) {
     $("#search-text").val(q).trigger("keyup");
   }
