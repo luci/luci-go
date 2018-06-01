@@ -100,11 +100,12 @@ func TestMintOAuthTokenViaGrant(t *testing.T) {
 		})
 
 		// LogOAuthToken called.
+		So(loggedInfo.GrantBody, ShouldResembleProto, grantBody)
+		loggedInfo.GrantBody = nil
 		So(loggedInfo, ShouldResemble, &MintedOAuthTokenInfo{
 			RequestedAt: testclock.TestTimeUTC,
 			Request:     req,
 			Response:    resp,
-			GrantBody:   grantBody,
 			ConfigRev:   "fake-revision",
 			Rule:        rules.rulesPerAcc["serviceaccount@robots.com"].Rule,
 			PeerIP:      net.ParseIP("127.10.10.10"),

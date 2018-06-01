@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestPubSubWorkflow(t *testing.T) {
@@ -247,7 +248,7 @@ func TestDeflateInflate(t *testing.T) {
 		So(err, ShouldBeNil)
 		inflated, err := InflateAuthDB(blob)
 		So(err, ShouldBeNil)
-		So(inflated, ShouldResemble, initial)
+		So(inflated, ShouldResembleProto, initial)
 	})
 }
 

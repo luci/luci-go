@@ -122,14 +122,14 @@ func TestLegacyMetadata(t *testing.T) {
 		Convey("GetMetadata handles one prefix", func() {
 			md, err := impl.GetMetadata(ctx, "a")
 			So(err, ShouldBeNil)
-			So(md, ShouldResemble, []*api.PrefixMetadata{expected["a"]})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{expected["a"]})
 		})
 
 		Convey("GetMetadata handles many prefixes", func() {
 			// Returns only existing metadata, silently skipping undefined.
 			md, err := impl.GetMetadata(ctx, "a/b/c/d/e/")
 			So(err, ShouldBeNil)
-			So(md, ShouldResemble, []*api.PrefixMetadata{
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{
 				expected["a"],
 				expected["a/b"],
 				expected["a/b/c/d"],
@@ -143,11 +143,11 @@ func TestLegacyMetadata(t *testing.T) {
 
 		Convey("UpdateMetadata noop call with existing metadata", func() {
 			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
-				So(md, ShouldResemble, expected["a"])
+				So(md, ShouldResembleProto, expected["a"])
 				return nil
 			})
 			So(err, ShouldBeNil)
-			So(updated, ShouldResemble, expected["a"])
+			So(updated, ShouldResembleProto, expected["a"])
 		})
 
 		Convey("UpdateMetadata updates existing metadata", func() {
@@ -163,7 +163,7 @@ func TestLegacyMetadata(t *testing.T) {
 			}
 
 			updated, err := impl.UpdateMetadata(ctx, "a", func(md *api.PrefixMetadata) error {
-				So(md, ShouldResemble, expected["a"])
+				So(md, ShouldResembleProto, expected["a"])
 				*md = *newMD
 				return nil
 			})
@@ -177,12 +177,12 @@ func TestLegacyMetadata(t *testing.T) {
 				"group:another-group",
 			}
 			newMD.Fingerprint = "MCRIAGe9tfXGxAZ-mTQbjQiJAlA" // new FP
-			So(updated, ShouldResemble, newMD)
+			So(updated, ShouldResembleProto, newMD)
 
 			// GetMetadata sees the new metadata.
 			md, err := impl.GetMetadata(ctx, "a")
 			So(err, ShouldBeNil)
-			So(md, ShouldResemble, []*api.PrefixMetadata{newMD})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{newMD})
 
 			// Only touched "OWNER:..." legacy entity, since only owners changed.
 			legacy := prefixACLs(ctx, "a", nil)
@@ -274,12 +274,12 @@ func TestLegacyMetadata(t *testing.T) {
 					},
 				},
 			}
-			So(updated, ShouldResemble, expected)
+			So(updated, ShouldResembleProto, expected)
 
 			// Stored indeed.
 			md, err := impl.GetMetadata(ctx, "z")
 			So(err, ShouldBeNil)
-			So(md, ShouldResemble, []*api.PrefixMetadata{expected})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{expected})
 		})
 
 		Convey("UpdateMetadata call with failing callback", func() {

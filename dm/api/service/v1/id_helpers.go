@@ -21,7 +21,7 @@ func (q *Quest_ID) Equals(o *Quest_ID) bool {
 
 // QuestID is a helper function to obtain the *Quest_ID from this Attempt_ID.
 func (a *Attempt_ID) QuestID() *Quest_ID {
-	return &Quest_ID{a.Quest}
+	return &Quest_ID{Id: a.Quest}
 }
 
 // Equals returns true iff the two Attempt_IDs are equivalent.
@@ -31,18 +31,18 @@ func (a *Attempt_ID) Equals(o *Attempt_ID) bool {
 
 // Execution returns an Execution_ID for this Attempt.
 func (a *Attempt_ID) Execution(eid uint32) *Execution_ID {
-	return &Execution_ID{a.Quest, a.Id, eid}
+	return &Execution_ID{Quest: a.Quest, Attempt: a.Id, Id: eid}
 }
 
 // QuestID is a helper function to obtain the *Quest_ID from this Execution_ID.
 func (e *Execution_ID) QuestID() *Quest_ID {
-	return &Quest_ID{e.Quest}
+	return &Quest_ID{Id: e.Quest}
 }
 
 // AttemptID is a helper function to obtain the *Attempt_ID from this
 // Execution_ID.
 func (e *Execution_ID) AttemptID() *Attempt_ID {
-	return &Attempt_ID{e.Quest, e.Attempt}
+	return &Attempt_ID{Quest: e.Quest, Id: e.Attempt}
 }
 
 // Equals returns true iff the two Execution_IDs are equivalent.

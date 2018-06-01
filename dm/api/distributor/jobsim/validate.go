@@ -34,7 +34,7 @@ func (p *Phrase) Normalize() error {
 			}
 		}
 		if p.ReturnStage == nil {
-			p.ReturnStage = &ReturnStage{1, nil}
+			p.ReturnStage = &ReturnStage{Retval: 1}
 		}
 	}
 	return nil
@@ -95,7 +95,7 @@ func (d *Dependency) Normalize() error {
 // Normalize checks SparseRange for errors and converts it to its normalized form.
 func (s *SparseRange) Normalize() error {
 	if len(s.Items) == 0 {
-		s.Items = []*RangeItem{{&RangeItem_Single{1}}}
+		s.Items = []*RangeItem{{RangeItem: &RangeItem_Single{1}}}
 		return nil
 	}
 	current := uint32(0)

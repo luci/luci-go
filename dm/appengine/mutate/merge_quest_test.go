@@ -52,7 +52,7 @@ func TestMergeQuest(t *testing.T) {
 
 			q := &model.Quest{ID: qst.ID}
 			So(ds.Get(c, q), ShouldBeNil)
-			So(q, ShouldResemble, qst)
+			So(q.Equals(qst), ShouldBeTrue)
 		})
 
 		Convey("assuming it exists", func() {

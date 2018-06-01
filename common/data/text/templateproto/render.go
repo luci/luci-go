@@ -50,33 +50,33 @@ func MustNewValue(v interface{}) *Value {
 func NewValue(v interface{}) (*Value, error) {
 	switch x := v.(type) {
 	case isValue_Value:
-		return &Value{x}, nil
+		return &Value{Value: x}, nil
 	case nil:
-		return &Value{&Value_Null{}}, nil
+		return &Value{Value: &Value_Null{}}, nil
 	case int8, int16, int32, int64, int:
-		return &Value{&Value_Int{reflect.ValueOf(v).Int()}}, nil
+		return &Value{Value: &Value_Int{reflect.ValueOf(v).Int()}}, nil
 	case uint8, uint16, uint32, uint64, uint:
-		return &Value{&Value_Uint{reflect.ValueOf(v).Uint()}}, nil
+		return &Value{Value: &Value_Uint{reflect.ValueOf(v).Uint()}}, nil
 	case float32, float64:
-		return &Value{&Value_Float{reflect.ValueOf(v).Float()}}, nil
+		return &Value{Value: &Value_Float{reflect.ValueOf(v).Float()}}, nil
 	case string:
-		return &Value{&Value_Str{x}}, nil
+		return &Value{Value: &Value_Str{x}}, nil
 	case []byte:
-		return &Value{&Value_Bytes{x}}, nil
+		return &Value{Value: &Value_Bytes{x}}, nil
 	case bool:
-		return &Value{&Value_Bool{x}}, nil
+		return &Value{Value: &Value_Bool{x}}, nil
 	case map[string]interface{}:
 		ret, err := json.Marshal(x)
 		if err != nil {
 			return nil, err
 		}
-		return &Value{&Value_Object{string(ret)}}, nil
+		return &Value{Value: &Value_Object{string(ret)}}, nil
 	case []interface{}:
 		ret, err := json.Marshal(x)
 		if err != nil {
 			return nil, err
 		}
-		return &Value{&Value_Array{string(ret)}}, nil
+		return &Value{Value: &Value_Array{string(ret)}}, nil
 	}
 	return nil, fmt.Errorf("unknown type %T", v)
 }

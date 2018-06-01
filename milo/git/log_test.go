@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestLog(t *testing.T) {
@@ -99,25 +100,25 @@ func TestLog(t *testing.T) {
 			Convey("with ref in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", "refs/heads/master", &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResemble, res.Log[:50])
+				So(commits, ShouldResembleProto, res.Log[:50])
 			})
 
 			Convey("with top commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[1].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResemble, res.Log[:50])
+				So(commits, ShouldResembleProto, res.Log[:50])
 			})
 
 			Convey("with ancestor commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResemble, res.Log[1:51])
+				So(commits, ShouldResembleProto, res.Log[1:51])
 			})
 
 			Convey("with second ancestor commit in cache", func() {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[3].Id, &LogOptions{Limit: 50})
 				So(err, ShouldBeNil)
-				So(commits, ShouldResemble, res.Log[2:52])
+				So(commits, ShouldResembleProto, res.Log[2:52])
 			})
 
 			Convey("min is honored", func() {
@@ -134,7 +135,7 @@ func TestLog(t *testing.T) {
 				commits, err := impl.Log(cAllowed, host, "project", fakeCommits[2].Id, &LogOptions{Limit: 100})
 				So(err, ShouldBeNil)
 				So(commits, ShouldHaveLength, 100)
-				So(commits, ShouldResemble, res2.Log)
+				So(commits, ShouldResembleProto, res2.Log)
 			})
 
 			Convey("request of item not in cache", func() {

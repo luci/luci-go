@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestSignToken(t *testing.T) {
@@ -54,11 +55,11 @@ func TestSignToken(t *testing.T) {
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		So(err, ShouldBeNil)
-		So(back, ShouldResemble, original)
+		So(back, ShouldResembleProto, original)
 
 		envelope.Pkcs1Sha256Sig = nil
 		envelope.SerializedSubtoken = nil
-		So(envelope, ShouldResemble, &messages.DelegationToken{
+		So(envelope, ShouldResembleProto, &messages.DelegationToken{
 			SignerId:     "user:service@example.com",
 			SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
 		})

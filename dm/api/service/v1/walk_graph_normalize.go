@@ -40,13 +40,27 @@ const (
 // the server (and draining your DM quotas unnecessarially).
 func MakeWalkGraphIncludeAll() *WalkGraphReq_Include {
 	return &WalkGraphReq_Include{
-		&WalkGraphReq_Include_Options{
+		Quest: &WalkGraphReq_Include_Options{
 			Ids:  true,
 			Data: true,
 		},
-		&WalkGraphReq_Include_Options{true, true, true, true, true},
-		&WalkGraphReq_Include_Options{true, true, true, true, true},
-		math.MaxUint32, true, true,
+		Attempt: &WalkGraphReq_Include_Options{
+			Ids:      true,
+			Data:     true,
+			Result:   true,
+			Abnormal: true,
+			Expired:  true,
+		},
+		Execution: &WalkGraphReq_Include_Options{
+			Ids:      true,
+			Data:     true,
+			Result:   true,
+			Abnormal: true,
+			Expired:  true,
+		},
+		NumExecutions: math.MaxUint32,
+		FwdDeps:       true,
+		BackDeps:      true,
 	}
 }
 

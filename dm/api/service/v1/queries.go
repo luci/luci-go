@@ -29,5 +29,5 @@ func AttemptListQueryL(fanout map[string][]uint32) *GraphQuery {
 // specification.
 func AttemptRangeQuery(quest string, low, high uint32) *GraphQuery {
 	return &GraphQuery{
-		AttemptRange: []*GraphQuery_AttemptRange{{quest, low, high}}}
+		AttemptRange: []*GraphQuery_AttemptRange{{Quest: quest, Low: low, High: high}}}
 }

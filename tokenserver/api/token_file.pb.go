@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // TokenFile is representation of a token file on disk (serialized as JSON).
 //
 // The token file is consumed by whoever wishes to use machine tokens. It is
@@ -41,13 +47,35 @@ type TokenFile struct {
 	//
 	// Consumers of the token file should ignore this field. It is used
 	// exclusively by tokend daemon.
-	TokendState []byte `protobuf:"bytes,50,opt,name=tokend_state,proto3" json:"tokend_state,omitempty"`
+	TokendState          []byte   `protobuf:"bytes,50,opt,name=tokend_state,proto3" json:"tokend_state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TokenFile) Reset()                    { *m = TokenFile{} }
-func (m *TokenFile) String() string            { return proto.CompactTextString(m) }
-func (*TokenFile) ProtoMessage()               {}
-func (*TokenFile) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *TokenFile) Reset()         { *m = TokenFile{} }
+func (m *TokenFile) String() string { return proto.CompactTextString(m) }
+func (*TokenFile) ProtoMessage()    {}
+func (*TokenFile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_token_file_ce0c8711b61c4342, []int{0}
+}
+func (m *TokenFile) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TokenFile.Unmarshal(m, b)
+}
+func (m *TokenFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TokenFile.Marshal(b, m, deterministic)
+}
+func (dst *TokenFile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenFile.Merge(dst, src)
+}
+func (m *TokenFile) XXX_Size() int {
+	return xxx_messageInfo_TokenFile.Size(m)
+}
+func (m *TokenFile) XXX_DiscardUnknown() {
+	xxx_messageInfo_TokenFile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TokenFile proto.InternalMessageInfo
 
 func (m *TokenFile) GetAccessToken() string {
 	if m != nil {
@@ -117,10 +145,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/token_file.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/token_file.proto", fileDescriptor_token_file_ce0c8711b61c4342)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_token_file_ce0c8711b61c4342 = []byte{
 	// 260 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xcd, 0x4e, 0xc3, 0x30,
 	0x10, 0x84, 0x95, 0x16, 0x02, 0xdd, 0xf6, 0x64, 0x09, 0x64, 0x2e, 0x28, 0xea, 0x29, 0xa7, 0x44,

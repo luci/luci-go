@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // An IP address in the database.
 type IP struct {
 	// The IPv4 address. Uniquely identifies this IP address.
@@ -19,13 +25,35 @@ type IP struct {
 	// The VLAN this IP address belongs to.
 	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
 	// The hostname this IP address is assigned to.
-	Hostname string `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
+	Hostname             string   `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *IP) Reset()                    { *m = IP{} }
-func (m *IP) String() string            { return proto.CompactTextString(m) }
-func (*IP) ProtoMessage()               {}
-func (*IP) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *IP) Reset()         { *m = IP{} }
+func (m *IP) String() string { return proto.CompactTextString(m) }
+func (*IP) ProtoMessage()    {}
+func (*IP) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ips_15ccf5479b268b8b, []int{0}
+}
+func (m *IP) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_IP.Unmarshal(m, b)
+}
+func (m *IP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_IP.Marshal(b, m, deterministic)
+}
+func (dst *IP) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IP.Merge(dst, src)
+}
+func (m *IP) XXX_Size() int {
+	return xxx_messageInfo_IP.Size(m)
+}
+func (m *IP) XXX_DiscardUnknown() {
+	xxx_messageInfo_IP.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_IP proto.InternalMessageInfo
 
 func (m *IP) GetIpv4() string {
 	if m != nil {
@@ -53,13 +81,35 @@ type ListFreeIPsRequest struct {
 	// The VLAN to list free IP addresses on.
 	Vlan int64 `protobuf:"varint,1,opt,name=vlan" json:"vlan,omitempty"`
 	// The maximum number of free IP addresses to return, or 0 to let the server decide.
-	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize             int32    `protobuf:"varint,2,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListFreeIPsRequest) Reset()                    { *m = ListFreeIPsRequest{} }
-func (m *ListFreeIPsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListFreeIPsRequest) ProtoMessage()               {}
-func (*ListFreeIPsRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (m *ListFreeIPsRequest) Reset()         { *m = ListFreeIPsRequest{} }
+func (m *ListFreeIPsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListFreeIPsRequest) ProtoMessage()    {}
+func (*ListFreeIPsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ips_15ccf5479b268b8b, []int{1}
+}
+func (m *ListFreeIPsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListFreeIPsRequest.Unmarshal(m, b)
+}
+func (m *ListFreeIPsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListFreeIPsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListFreeIPsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListFreeIPsRequest.Merge(dst, src)
+}
+func (m *ListFreeIPsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListFreeIPsRequest.Size(m)
+}
+func (m *ListFreeIPsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListFreeIPsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListFreeIPsRequest proto.InternalMessageInfo
 
 func (m *ListFreeIPsRequest) GetVlan() int64 {
 	if m != nil {
@@ -78,13 +128,35 @@ func (m *ListFreeIPsRequest) GetPageSize() int32 {
 // A response containing a list of IP addresses in the database.
 type ListIPsResponse struct {
 	// The IP addresses matching this request.
-	Ips []*IP `protobuf:"bytes,1,rep,name=ips" json:"ips,omitempty"`
+	Ips                  []*IP    `protobuf:"bytes,1,rep,name=ips" json:"ips,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListIPsResponse) Reset()                    { *m = ListIPsResponse{} }
-func (m *ListIPsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListIPsResponse) ProtoMessage()               {}
-func (*ListIPsResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{2} }
+func (m *ListIPsResponse) Reset()         { *m = ListIPsResponse{} }
+func (m *ListIPsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListIPsResponse) ProtoMessage()    {}
+func (*ListIPsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ips_15ccf5479b268b8b, []int{2}
+}
+func (m *ListIPsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListIPsResponse.Unmarshal(m, b)
+}
+func (m *ListIPsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListIPsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListIPsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListIPsResponse.Merge(dst, src)
+}
+func (m *ListIPsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListIPsResponse.Size(m)
+}
+func (m *ListIPsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListIPsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListIPsResponse proto.InternalMessageInfo
 
 func (m *ListIPsResponse) GetIps() []*IP {
 	if m != nil {
@@ -100,10 +172,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor_ips_15ccf5479b268b8b)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor_ips_15ccf5479b268b8b = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0x4b, 0x6a, 0xc3, 0x30,
 	0x10, 0x40, 0x51, 0xdc, 0x4f, 0xa2, 0x2c, 0x0a, 0x5a, 0x99, 0x96, 0x82, 0xf1, 0xca, 0x9b, 0x4a,
