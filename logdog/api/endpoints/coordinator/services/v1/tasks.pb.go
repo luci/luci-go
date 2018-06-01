@@ -6,13 +6,19 @@ package logdog
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/timestamp"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // The type of archival task.
 type ArchiveDispatchTask_Tag int32
@@ -34,7 +40,9 @@ var ArchiveDispatchTask_Tag_value = map[string]int32{
 func (x ArchiveDispatchTask_Tag) String() string {
 	return proto.EnumName(ArchiveDispatchTask_Tag_name, int32(x))
 }
-func (ArchiveDispatchTask_Tag) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (ArchiveDispatchTask_Tag) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{0, 0}
+}
 
 // ArchiveDispatchTask is an internal task used by the Coordinator to schedule
 // an archival dispatch.
@@ -47,20 +55,42 @@ type ArchiveDispatchTask struct {
 	// This is in place to prevent overly-aggressive archivals from wasting time
 	// trying, then failing, becuase the log stream data is still being collected
 	// into intermediate storage.
-	SettleDelay *google_protobuf.Duration `protobuf:"bytes,3,opt,name=settle_delay,json=settleDelay" json:"settle_delay,omitempty"`
+	SettleDelay *duration.Duration `protobuf:"bytes,3,opt,name=settle_delay,json=settleDelay" json:"settle_delay,omitempty"`
 	// The amount of time after the task was created that log stream completeness
 	// will be used as a success criteria. If the task's age is older than this
 	// value, completeness will not be enforced.
 	//
 	// The task's age can be calculated by subtracting its lease expiration time
 	// (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
-	CompletePeriod *google_protobuf.Duration `protobuf:"bytes,4,opt,name=complete_period,json=completePeriod" json:"complete_period,omitempty"`
+	CompletePeriod       *duration.Duration `protobuf:"bytes,4,opt,name=complete_period,json=completePeriod" json:"complete_period,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *ArchiveDispatchTask) Reset()                    { *m = ArchiveDispatchTask{} }
-func (m *ArchiveDispatchTask) String() string            { return proto.CompactTextString(m) }
-func (*ArchiveDispatchTask) ProtoMessage()               {}
-func (*ArchiveDispatchTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *ArchiveDispatchTask) Reset()         { *m = ArchiveDispatchTask{} }
+func (m *ArchiveDispatchTask) String() string { return proto.CompactTextString(m) }
+func (*ArchiveDispatchTask) ProtoMessage()    {}
+func (*ArchiveDispatchTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{0}
+}
+func (m *ArchiveDispatchTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ArchiveDispatchTask.Unmarshal(m, b)
+}
+func (m *ArchiveDispatchTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ArchiveDispatchTask.Marshal(b, m, deterministic)
+}
+func (dst *ArchiveDispatchTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveDispatchTask.Merge(dst, src)
+}
+func (m *ArchiveDispatchTask) XXX_Size() int {
+	return xxx_messageInfo_ArchiveDispatchTask.Size(m)
+}
+func (m *ArchiveDispatchTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_ArchiveDispatchTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ArchiveDispatchTask proto.InternalMessageInfo
 
 func (m *ArchiveDispatchTask) GetId() string {
 	if m != nil {
@@ -76,14 +106,14 @@ func (m *ArchiveDispatchTask) GetTag() ArchiveDispatchTask_Tag {
 	return ArchiveDispatchTask_TERMINATED
 }
 
-func (m *ArchiveDispatchTask) GetSettleDelay() *google_protobuf.Duration {
+func (m *ArchiveDispatchTask) GetSettleDelay() *duration.Duration {
 	if m != nil {
 		return m.SettleDelay
 	}
 	return nil
 }
 
-func (m *ArchiveDispatchTask) GetCompletePeriod() *google_protobuf.Duration {
+func (m *ArchiveDispatchTask) GetCompletePeriod() *duration.Duration {
 	if m != nil {
 		return m.CompletePeriod
 	}
@@ -105,14 +135,14 @@ type ArchiveTask struct {
 	// This is in place to prevent overly-aggressive archivals from wasting time
 	// trying, then failing, becuase the log stream data is still being collected
 	// into intermediate storage.
-	SettleDelay *google_protobuf.Duration `protobuf:"bytes,4,opt,name=settle_delay,json=settleDelay" json:"settle_delay,omitempty"`
+	SettleDelay *duration.Duration `protobuf:"bytes,4,opt,name=settle_delay,json=settleDelay" json:"settle_delay,omitempty"`
 	// The amount of time after the task was created that log stream completeness
 	// will be used as a success criteria. If the task's age is older than this
 	// value, completeness will not be enforced.
 	//
 	// The task's age can be calculated by subtracting its lease expiration time
 	// (leaseTimestamp) from its enqueued timestamp (enqueueTimestamp).
-	CompletePeriod *google_protobuf.Duration `protobuf:"bytes,5,opt,name=complete_period,json=completePeriod" json:"complete_period,omitempty"`
+	CompletePeriod *duration.Duration `protobuf:"bytes,5,opt,name=complete_period,json=completePeriod" json:"complete_period,omitempty"`
 	// The time when this archive task was dispatched.
 	//
 	// This time is optional, and will be based on the Coordinator's clock. If not
@@ -123,13 +153,35 @@ type ArchiveTask struct {
 	// Because archival is dispatched by Tumble, the actual encoding of archival
 	// parameters is oftentimes delayed such that the request is dispatched to
 	// Pub/Sub before the datastore has been updated.
-	DispatchedAt *google_protobuf2.Timestamp `protobuf:"bytes,6,opt,name=dispatched_at,json=dispatchedAt" json:"dispatched_at,omitempty"`
+	DispatchedAt         *timestamp.Timestamp `protobuf:"bytes,6,opt,name=dispatched_at,json=dispatchedAt" json:"dispatched_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *ArchiveTask) Reset()                    { *m = ArchiveTask{} }
-func (m *ArchiveTask) String() string            { return proto.CompactTextString(m) }
-func (*ArchiveTask) ProtoMessage()               {}
-func (*ArchiveTask) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *ArchiveTask) Reset()         { *m = ArchiveTask{} }
+func (m *ArchiveTask) String() string { return proto.CompactTextString(m) }
+func (*ArchiveTask) ProtoMessage()    {}
+func (*ArchiveTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{1}
+}
+func (m *ArchiveTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ArchiveTask.Unmarshal(m, b)
+}
+func (m *ArchiveTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ArchiveTask.Marshal(b, m, deterministic)
+}
+func (dst *ArchiveTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveTask.Merge(dst, src)
+}
+func (m *ArchiveTask) XXX_Size() int {
+	return xxx_messageInfo_ArchiveTask.Size(m)
+}
+func (m *ArchiveTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_ArchiveTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ArchiveTask proto.InternalMessageInfo
 
 func (m *ArchiveTask) GetProject() string {
 	if m != nil {
@@ -152,21 +204,21 @@ func (m *ArchiveTask) GetKey() []byte {
 	return nil
 }
 
-func (m *ArchiveTask) GetSettleDelay() *google_protobuf.Duration {
+func (m *ArchiveTask) GetSettleDelay() *duration.Duration {
 	if m != nil {
 		return m.SettleDelay
 	}
 	return nil
 }
 
-func (m *ArchiveTask) GetCompletePeriod() *google_protobuf.Duration {
+func (m *ArchiveTask) GetCompletePeriod() *duration.Duration {
 	if m != nil {
 		return m.CompletePeriod
 	}
 	return nil
 }
 
-func (m *ArchiveTask) GetDispatchedAt() *google_protobuf2.Timestamp {
+func (m *ArchiveTask) GetDispatchedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.DispatchedAt
 	}
@@ -180,10 +232,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto", fileDescriptor_tasks_8ff0358e7d37f1a6)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_tasks_8ff0358e7d37f1a6 = []byte{
 	// 377 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x92, 0xbf, 0x8f, 0xd3, 0x30,
 	0x14, 0xc7, 0x49, 0x72, 0xf4, 0x84, 0x53, 0x42, 0x65, 0x96, 0xd0, 0x81, 0xab, 0x32, 0x75, 0xb2,

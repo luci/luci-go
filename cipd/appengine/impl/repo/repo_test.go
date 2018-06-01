@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -104,7 +103,7 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata happy path", func() {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, []*api.PrefixMetadata{rootMeta, leafMeta})
+			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, leafMeta})
 		})
 
 		Convey("GetPrefixMetadata bad prefix", func() {
@@ -128,7 +127,7 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata no metadata, caller has access", func() {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 		})
 
 		Convey("GetPrefixMetadata no metadata, caller has no access", func() {
@@ -226,7 +225,7 @@ func TestMetadataUpdating(t *testing.T) {
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
 				},
 			}
-			So(meta, ShouldResemble, expected)
+			So(meta, ShouldResembleProto, expected)
 
 			// Update it a bit later.
 			tc.Add(time.Hour)
@@ -234,7 +233,7 @@ func TestMetadataUpdating(t *testing.T) {
 			updated.Acls = nil
 			meta, err = callUpdate("user:top-owner@example.com", &updated)
 			So(err, ShouldBeNil)
-			So(meta, ShouldResemble, &api.PrefixMetadata{
+			So(meta, ShouldResembleProto, &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  google.NewTimestamp(testTime.Add(time.Hour)),
@@ -588,7 +587,7 @@ func TestProcessors(t *testing.T) {
 		Convey("runProcessorsTask happy path", func() {
 			// Setup two pending processors that read 'file2'.
 			runCB := func(i *model.Instance, r *processing.PackageReader) (processing.Result, error) {
-				So(proto.Equal(i.Proto(), inst), ShouldBeTrue)
+				So(i.Proto(), ShouldResembleProto, inst)
 
 				rd, _, err := r.Open("file2")
 				So(err, ShouldBeNil)
@@ -606,7 +605,7 @@ func TestProcessors(t *testing.T) {
 
 			// Setup the package.
 			cas.GetReaderImpl = func(_ context.Context, ref *api.ObjectRef) (gs.Reader, error) {
-				So(proto.Equal(inst.Instance, ref), ShouldBeTrue)
+				So(inst.Instance, ShouldResembleProto, ref)
 				return testutil.NewMockGSReader(testZip), nil
 			}
 

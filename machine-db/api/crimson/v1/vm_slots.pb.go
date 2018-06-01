@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // A request to find available VM slots in the database.
 type FindVMSlotsRequest struct {
 	// The number of available VM slots to find.
@@ -20,13 +26,35 @@ type FindVMSlotsRequest struct {
 	// The platform manufacturers to filter found VM slots on.
 	Manufacturers []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
 	// The virtual datacenter to filter found VM slots on.
-	VirtualDatacenters []string `protobuf:"bytes,3,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	VirtualDatacenters   []string `protobuf:"bytes,3,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *FindVMSlotsRequest) Reset()                    { *m = FindVMSlotsRequest{} }
-func (m *FindVMSlotsRequest) String() string            { return proto.CompactTextString(m) }
-func (*FindVMSlotsRequest) ProtoMessage()               {}
-func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{0} }
+func (m *FindVMSlotsRequest) Reset()         { *m = FindVMSlotsRequest{} }
+func (m *FindVMSlotsRequest) String() string { return proto.CompactTextString(m) }
+func (*FindVMSlotsRequest) ProtoMessage()    {}
+func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vm_slots_1e65b87452185a98, []int{0}
+}
+func (m *FindVMSlotsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FindVMSlotsRequest.Unmarshal(m, b)
+}
+func (m *FindVMSlotsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FindVMSlotsRequest.Marshal(b, m, deterministic)
+}
+func (dst *FindVMSlotsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FindVMSlotsRequest.Merge(dst, src)
+}
+func (m *FindVMSlotsRequest) XXX_Size() int {
+	return xxx_messageInfo_FindVMSlotsRequest.Size(m)
+}
+func (m *FindVMSlotsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_FindVMSlotsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FindVMSlotsRequest proto.InternalMessageInfo
 
 func (m *FindVMSlotsRequest) GetSlots() int32 {
 	if m != nil {
@@ -54,13 +82,35 @@ type FindVMSlotsResponse struct {
 	// The hosts with available VM slots.
 	// Only includes name, vlan_id, and vm_slots.
 	// vm_slots in this context means the number of available VM slots.
-	Hosts []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *FindVMSlotsResponse) Reset()                    { *m = FindVMSlotsResponse{} }
-func (m *FindVMSlotsResponse) String() string            { return proto.CompactTextString(m) }
-func (*FindVMSlotsResponse) ProtoMessage()               {}
-func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) { return fileDescriptor14, []int{1} }
+func (m *FindVMSlotsResponse) Reset()         { *m = FindVMSlotsResponse{} }
+func (m *FindVMSlotsResponse) String() string { return proto.CompactTextString(m) }
+func (*FindVMSlotsResponse) ProtoMessage()    {}
+func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vm_slots_1e65b87452185a98, []int{1}
+}
+func (m *FindVMSlotsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FindVMSlotsResponse.Unmarshal(m, b)
+}
+func (m *FindVMSlotsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FindVMSlotsResponse.Marshal(b, m, deterministic)
+}
+func (dst *FindVMSlotsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FindVMSlotsResponse.Merge(dst, src)
+}
+func (m *FindVMSlotsResponse) XXX_Size() int {
+	return xxx_messageInfo_FindVMSlotsResponse.Size(m)
+}
+func (m *FindVMSlotsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_FindVMSlotsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FindVMSlotsResponse proto.InternalMessageInfo
 
 func (m *FindVMSlotsResponse) GetHosts() []*PhysicalHost {
 	if m != nil {
@@ -75,10 +125,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor14)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor_vm_slots_1e65b87452185a98)
 }
 
-var fileDescriptor14 = []byte{
+var fileDescriptor_vm_slots_1e65b87452185a98 = []byte{
 	// 241 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x8f, 0x41, 0x4b, 0xc4, 0x30,
 	0x10, 0x85, 0xa9, 0xa5, 0x8a, 0x11, 0x2f, 0x59, 0x85, 0xe2, 0xa9, 0x2c, 0x1e, 0x0a, 0x62, 0x82,

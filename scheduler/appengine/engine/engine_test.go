@@ -143,7 +143,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// The first tick is scheduled.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 			})
 
@@ -175,7 +175,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 		Convey("updating job's schedule", func() {
 			// Adding a job that ticks every 5 sec. Make sure its tick is scheduled.
 			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{jobDef}), ShouldBeNil)
-			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 			})
 
@@ -208,7 +208,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// The new tick is scheduled now too.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 6278013164014963328},
 				&internal.CronTickTask{JobId: "proj/1", TickNonce: 2673062197574995716},
 			})
@@ -220,7 +220,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			job := jobDef
 			job.Schedule = "triggered"
 			So(e.UpdateProjectJobs(c, "proj", []catalog.Definition{job}), ShouldBeNil)
-			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{})
+			So(tq.GetScheduledTasks().Payloads(), ShouldHaveLength, 0)
 
 			// Update its triggering policy. It should emit a triage to evaluate
 			// the state of the job using this new policy.
@@ -251,7 +251,7 @@ func TestUpdateProjectJobs(t *testing.T) {
 			})
 
 			// Kicked the triage indeed.
-			So(tq.GetScheduledTasks().Payloads(), ShouldResemble, []proto.Message{
+			So(tq.GetScheduledTasks().Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.KickTriageTask{JobId: "proj/1"},
 			})
 		})
@@ -958,7 +958,7 @@ func TestForceInvocation(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job", InvId: expectedInvID}},
 				},
@@ -1080,7 +1080,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1129,7 +1129,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: jobID, InvId: expectedInvID}},
 				},
@@ -1155,7 +1155,7 @@ func TestAbortJob(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				// The delayed triage directly from AbortJob.
 				&internal.KickTriageTask{JobId: jobID},
 				// The invocation finalization from AbortInvocation.
@@ -1244,14 +1244,14 @@ func TestEmitTriggers(t *testing.T) {
 			expect.triage()
 			expect.invocationSequence(9200093521727759856)
 			expect.triage()
-			So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 
 			// The task manager received all triggers (though maybe out of order, it
 			// is not defined).
 			sort.Slice(incomingTriggers, func(i, j int) bool {
 				return incomingTriggers[i].Id < incomingTriggers[j].Id
 			})
-			So(incomingTriggers, ShouldResemble, emittedTriggers)
+			So(incomingTriggers, ShouldResembleProto, emittedTriggers)
 		})
 
 		Convey("no TRIGGERER permission", func() {
@@ -1278,7 +1278,7 @@ func TestEmitTriggers(t *testing.T) {
 			expect := expectedTasks{JobID: testingJob, Epoch: epoch}
 			expect.kickTriage()
 			expect.triage()
-			So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+			So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 
 			// Make the RPC, which succeeds.
 			asOne := auth.WithState(c, &authtest.FakeState{Identity: "user:one@example.com"})
@@ -1292,7 +1292,7 @@ func TestEmitTriggers(t *testing.T) {
 			// But nothing really happens.
 			tasks, _, err = tq.RunSimulation(c, nil)
 			So(err, ShouldBeNil)
-			So(len(tasks.Payloads()), ShouldEqual, 0)
+			So(tasks.Payloads(), ShouldHaveLength, 0)
 		})
 	})
 }
@@ -1372,7 +1372,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			}
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: triggeringJob, InvId: triggeringInvID}},
@@ -1434,7 +1434,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				// Triggered job is getting triaged (because pending triggers).
 				&internal.TriageJobStateTask{
 					JobId: triggeredJob,
@@ -1552,7 +1552,7 @@ func TestInvocationTimers(t *testing.T) {
 			})
 
 			// All the tasks we've just executed.
-			So(tasks.Payloads(), ShouldResemble, []proto.Message{
+			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
 				// Triggering job begins execution.
 				&internal.LaunchInvocationsBatchTask{
 					Tasks: []*internal.LaunchInvocationTask{{JobId: testJobID, InvId: testInvID}},
@@ -1652,7 +1652,7 @@ func TestCron(t *testing.T) {
 				expect.triage()
 				// ... and so on
 
-				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 
 			Convey("schedule changes", func() {
@@ -1689,7 +1689,7 @@ func TestCron(t *testing.T) {
 				expect.triage()
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 
 			Convey("pause/unpause", func() {
@@ -1725,7 +1725,7 @@ func TestCron(t *testing.T) {
 				// and nothing else happens ...
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
 
 				// Some time later we unpause the job, it starts again immediately.
 				clock.Get(c).(testclock.TestClock).Set(epoch.Add(time.Hour))
@@ -1741,7 +1741,7 @@ func TestCron(t *testing.T) {
 				expect.cronTickSequence(325298467681248558, 7, time.Hour)
 				expect.invocationSequence(9200089746854060480)
 				expect.triage()
-				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 
 			Convey("disabling", func() {
@@ -1775,7 +1775,7 @@ func TestCron(t *testing.T) {
 				// and nothing else happens ...
 
 				// Got it?
-				So(append(tasks, moreTasks...).Payloads(), ShouldResemble, expect.Tasks)
+				So(append(tasks, moreTasks...).Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 		})
 
@@ -1803,7 +1803,7 @@ func TestCron(t *testing.T) {
 				expect.triage()
 				// ... and so on
 
-				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 
 			Convey("overrun", func() {
@@ -1846,7 +1846,7 @@ func TestCron(t *testing.T) {
 				// right away.
 				expect.invocationStart(9200093509144748480)
 
-				So(tasks.Payloads(), ShouldResemble, expect.Tasks)
+				So(tasks.Payloads(), ShouldResembleProto, expect.Tasks)
 			})
 		})
 	})

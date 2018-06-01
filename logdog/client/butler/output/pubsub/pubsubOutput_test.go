@@ -39,6 +39,7 @@ import (
 	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 type testTopic struct {
@@ -157,7 +158,7 @@ func TestOutput(t *testing.T) {
 			h, b, err := deconstructMessage(msg)
 			So(err, ShouldBeNil)
 			So(h.Compression, ShouldEqual, logpb.ButlerMetadata_NONE)
-			So(b, ShouldResemble, bundle)
+			So(b, ShouldResembleProto, bundle)
 
 			Convey(`And records stats.`, func() {
 				st := o.Stats()

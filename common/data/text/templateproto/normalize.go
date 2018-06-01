@@ -293,9 +293,9 @@ func (s *Schema) Zero() *Value {
 	case *Schema_Enum:
 		return MustNewValue(sub.Enum.Entry[0].Token)
 	case *Schema_Object:
-		return &Value{&Value_Object{"{}"}}
+		return &Value{Value: &Value_Object{"{}"}}
 	case *Schema_Array:
-		return &Value{&Value_Array{"[]"}}
+		return &Value{Value: &Value_Array{"[]"}}
 	}
 	panic(fmt.Errorf("unknown schema type: %v", s))
 }

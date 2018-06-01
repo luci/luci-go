@@ -63,7 +63,7 @@ func sayHello(c C) http.HandlerFunc {
 		}
 		w.Header().Set("X-Lower-Case-Header", "CamelCaseValueStays")
 
-		res := HelloReply{"Hello " + req.Name}
+		res := HelloReply{Message: "Hello " + req.Name}
 		buf, err := proto.Marshal(&res)
 		c.So(err, ShouldBeNil)
 
@@ -161,7 +161,7 @@ func TestClient(t *testing.T) {
 			}
 		}
 
-		req := &HelloRequest{"John"}
+		req := &HelloRequest{Name: "John"}
 		res := &HelloReply{}
 
 		Convey("Call", func() {

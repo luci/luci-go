@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Depending on repository type, config service imports configuration files
 // differently.
 type ConfigSetLocation_StorageType int32
@@ -36,7 +42,7 @@ func (x ConfigSetLocation_StorageType) String() string {
 	return proto.EnumName(ConfigSetLocation_StorageType_name, int32(x))
 }
 func (ConfigSetLocation_StorageType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{0, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{0, 0}
 }
 
 // Severity of a validation response message. In JSON encoded as a string.
@@ -72,7 +78,7 @@ func (x ValidationResponseMessage_Severity) String() string {
 	return proto.EnumName(ValidationResponseMessage_Severity_name, int32(x))
 }
 func (ValidationResponseMessage_Severity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{12, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{12, 0}
 }
 
 // Used to specify project/service configuration location.
@@ -80,13 +86,35 @@ type ConfigSetLocation struct {
 	// URL of the repository where project-wide configurations are stored.
 	Url string `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
 	// Type of the configuration repository, e.g. GITILES.
-	StorageType ConfigSetLocation_StorageType `protobuf:"varint,2,opt,name=storage_type,json=storageType,enum=config.ConfigSetLocation_StorageType" json:"storage_type,omitempty"`
+	StorageType          ConfigSetLocation_StorageType `protobuf:"varint,2,opt,name=storage_type,json=storageType,enum=config.ConfigSetLocation_StorageType" json:"storage_type,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *ConfigSetLocation) Reset()                    { *m = ConfigSetLocation{} }
-func (m *ConfigSetLocation) String() string            { return proto.CompactTextString(m) }
-func (*ConfigSetLocation) ProtoMessage()               {}
-func (*ConfigSetLocation) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *ConfigSetLocation) Reset()         { *m = ConfigSetLocation{} }
+func (m *ConfigSetLocation) String() string { return proto.CompactTextString(m) }
+func (*ConfigSetLocation) ProtoMessage()    {}
+func (*ConfigSetLocation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{0}
+}
+func (m *ConfigSetLocation) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ConfigSetLocation.Unmarshal(m, b)
+}
+func (m *ConfigSetLocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ConfigSetLocation.Marshal(b, m, deterministic)
+}
+func (dst *ConfigSetLocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigSetLocation.Merge(dst, src)
+}
+func (m *ConfigSetLocation) XXX_Size() int {
+	return xxx_messageInfo_ConfigSetLocation.Size(m)
+}
+func (m *ConfigSetLocation) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfigSetLocation.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfigSetLocation proto.InternalMessageInfo
 
 func (m *ConfigSetLocation) GetUrl() string {
 	if m != nil {
@@ -107,13 +135,35 @@ type Project struct {
 	// Globally unique id of the project.
 	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
 	// Where to import "projects/<id>" config set from.
-	ConfigLocation *ConfigSetLocation `protobuf:"bytes,2,opt,name=config_location,json=configLocation" json:"config_location,omitempty"`
+	ConfigLocation       *ConfigSetLocation `protobuf:"bytes,2,opt,name=config_location,json=configLocation" json:"config_location,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *Project) Reset()                    { *m = Project{} }
-func (m *Project) String() string            { return proto.CompactTextString(m) }
-func (*Project) ProtoMessage()               {}
-func (*Project) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *Project) Reset()         { *m = Project{} }
+func (m *Project) String() string { return proto.CompactTextString(m) }
+func (*Project) ProtoMessage()    {}
+func (*Project) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{1}
+}
+func (m *Project) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Project.Unmarshal(m, b)
+}
+func (m *Project) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Project.Marshal(b, m, deterministic)
+}
+func (dst *Project) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Project.Merge(dst, src)
+}
+func (m *Project) XXX_Size() int {
+	return xxx_messageInfo_Project.Size(m)
+}
+func (m *Project) XXX_DiscardUnknown() {
+	xxx_messageInfo_Project.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Project proto.InternalMessageInfo
 
 func (m *Project) GetId() string {
 	if m != nil {
@@ -132,13 +182,35 @@ func (m *Project) GetConfigLocation() *ConfigSetLocation {
 // Schema of projects.cfg file. Represents luci tenants registry.
 type ProjectsCfg struct {
 	// All projects served by this instance of Luci.
-	Projects []*Project `protobuf:"bytes,1,rep,name=projects" json:"projects,omitempty"`
+	Projects             []*Project `protobuf:"bytes,1,rep,name=projects" json:"projects,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *ProjectsCfg) Reset()                    { *m = ProjectsCfg{} }
-func (m *ProjectsCfg) String() string            { return proto.CompactTextString(m) }
-func (*ProjectsCfg) ProtoMessage()               {}
-func (*ProjectsCfg) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *ProjectsCfg) Reset()         { *m = ProjectsCfg{} }
+func (m *ProjectsCfg) String() string { return proto.CompactTextString(m) }
+func (*ProjectsCfg) ProtoMessage()    {}
+func (*ProjectsCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{2}
+}
+func (m *ProjectsCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProjectsCfg.Unmarshal(m, b)
+}
+func (m *ProjectsCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProjectsCfg.Marshal(b, m, deterministic)
+}
+func (dst *ProjectsCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectsCfg.Merge(dst, src)
+}
+func (m *ProjectsCfg) XXX_Size() int {
+	return xxx_messageInfo_ProjectsCfg.Size(m)
+}
+func (m *ProjectsCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProjectsCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProjectsCfg proto.InternalMessageInfo
 
 func (m *ProjectsCfg) GetProjects() []*Project {
 	if m != nil {
@@ -168,13 +240,35 @@ type Service struct {
 	// * "<kind>:<value>" (for non-email identities)
 	//
 	// If not specified, only admins and trusted services have access.
-	Access []string `protobuf:"bytes,5,rep,name=access" json:"access,omitempty"`
+	Access               []string `protobuf:"bytes,5,rep,name=access" json:"access,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Service) Reset()                    { *m = Service{} }
-func (m *Service) String() string            { return proto.CompactTextString(m) }
-func (*Service) ProtoMessage()               {}
-func (*Service) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *Service) Reset()         { *m = Service{} }
+func (m *Service) String() string { return proto.CompactTextString(m) }
+func (*Service) ProtoMessage()    {}
+func (*Service) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{3}
+}
+func (m *Service) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Service.Unmarshal(m, b)
+}
+func (m *Service) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Service.Marshal(b, m, deterministic)
+}
+func (dst *Service) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Service.Merge(dst, src)
+}
+func (m *Service) XXX_Size() int {
+	return xxx_messageInfo_Service.Size(m)
+}
+func (m *Service) XXX_DiscardUnknown() {
+	xxx_messageInfo_Service.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Service proto.InternalMessageInfo
 
 func (m *Service) GetId() string {
 	if m != nil {
@@ -220,13 +314,35 @@ type ServiceDynamicMetadata struct {
 	// Format version. Supported versions: 1.0.
 	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
 	// What configs this service can validate and how to validate them.
-	Validation *Validator `protobuf:"bytes,2,opt,name=validation" json:"validation,omitempty"`
+	Validation           *Validator `protobuf:"bytes,2,opt,name=validation" json:"validation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *ServiceDynamicMetadata) Reset()                    { *m = ServiceDynamicMetadata{} }
-func (m *ServiceDynamicMetadata) String() string            { return proto.CompactTextString(m) }
-func (*ServiceDynamicMetadata) ProtoMessage()               {}
-func (*ServiceDynamicMetadata) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *ServiceDynamicMetadata) Reset()         { *m = ServiceDynamicMetadata{} }
+func (m *ServiceDynamicMetadata) String() string { return proto.CompactTextString(m) }
+func (*ServiceDynamicMetadata) ProtoMessage()    {}
+func (*ServiceDynamicMetadata) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{4}
+}
+func (m *ServiceDynamicMetadata) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServiceDynamicMetadata.Unmarshal(m, b)
+}
+func (m *ServiceDynamicMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServiceDynamicMetadata.Marshal(b, m, deterministic)
+}
+func (dst *ServiceDynamicMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceDynamicMetadata.Merge(dst, src)
+}
+func (m *ServiceDynamicMetadata) XXX_Size() int {
+	return xxx_messageInfo_ServiceDynamicMetadata.Size(m)
+}
+func (m *ServiceDynamicMetadata) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServiceDynamicMetadata.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServiceDynamicMetadata proto.InternalMessageInfo
 
 func (m *ServiceDynamicMetadata) GetVersion() string {
 	if m != nil {
@@ -245,13 +361,35 @@ func (m *ServiceDynamicMetadata) GetValidation() *Validator {
 // Schema of services.cfg
 type ServicesCfg struct {
 	// A list of all luci services. Should be sorted by id.
-	Services []*Service `protobuf:"bytes,1,rep,name=services" json:"services,omitempty"`
+	Services             []*Service `protobuf:"bytes,1,rep,name=services" json:"services,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *ServicesCfg) Reset()                    { *m = ServicesCfg{} }
-func (m *ServicesCfg) String() string            { return proto.CompactTextString(m) }
-func (*ServicesCfg) ProtoMessage()               {}
-func (*ServicesCfg) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (m *ServicesCfg) Reset()         { *m = ServicesCfg{} }
+func (m *ServicesCfg) String() string { return proto.CompactTextString(m) }
+func (*ServicesCfg) ProtoMessage()    {}
+func (*ServicesCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{5}
+}
+func (m *ServicesCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ServicesCfg.Unmarshal(m, b)
+}
+func (m *ServicesCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ServicesCfg.Marshal(b, m, deterministic)
+}
+func (dst *ServicesCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServicesCfg.Merge(dst, src)
+}
+func (m *ServicesCfg) XXX_Size() int {
+	return xxx_messageInfo_ServicesCfg.Size(m)
+}
+func (m *ServicesCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_ServicesCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ServicesCfg proto.InternalMessageInfo
 
 func (m *ServicesCfg) GetServices() []*Service {
 	if m != nil {
@@ -272,13 +410,35 @@ type AclCfg struct {
 	// Name of the group that may call validation API.
 	ValidationGroup string `protobuf:"bytes,5,opt,name=validation_group,json=validationGroup" json:"validation_group,omitempty"`
 	// Name of the group that may call reimport API.
-	ReimportGroup string `protobuf:"bytes,6,opt,name=reimport_group,json=reimportGroup" json:"reimport_group,omitempty"`
+	ReimportGroup        string   `protobuf:"bytes,6,opt,name=reimport_group,json=reimportGroup" json:"reimport_group,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AclCfg) Reset()                    { *m = AclCfg{} }
-func (m *AclCfg) String() string            { return proto.CompactTextString(m) }
-func (*AclCfg) ProtoMessage()               {}
-func (*AclCfg) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (m *AclCfg) Reset()         { *m = AclCfg{} }
+func (m *AclCfg) String() string { return proto.CompactTextString(m) }
+func (*AclCfg) ProtoMessage()    {}
+func (*AclCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{6}
+}
+func (m *AclCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AclCfg.Unmarshal(m, b)
+}
+func (m *AclCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AclCfg.Marshal(b, m, deterministic)
+}
+func (dst *AclCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AclCfg.Merge(dst, src)
+}
+func (m *AclCfg) XXX_Size() int {
+	return xxx_messageInfo_AclCfg.Size(m)
+}
+func (m *AclCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_AclCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AclCfg proto.InternalMessageInfo
 
 func (m *AclCfg) GetProjectAccessGroup() string {
 	if m != nil {
@@ -319,13 +479,35 @@ func (m *AclCfg) GetReimportGroup() string {
 // external sources.
 type ImportCfg struct {
 	// Configuration of import from Gitiles repositories.
-	Gitiles *ImportCfg_Gitiles `protobuf:"bytes,1,opt,name=gitiles" json:"gitiles,omitempty"`
+	Gitiles              *ImportCfg_Gitiles `protobuf:"bytes,1,opt,name=gitiles" json:"gitiles,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *ImportCfg) Reset()                    { *m = ImportCfg{} }
-func (m *ImportCfg) String() string            { return proto.CompactTextString(m) }
-func (*ImportCfg) ProtoMessage()               {}
-func (*ImportCfg) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (m *ImportCfg) Reset()         { *m = ImportCfg{} }
+func (m *ImportCfg) String() string { return proto.CompactTextString(m) }
+func (*ImportCfg) ProtoMessage()    {}
+func (*ImportCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{7}
+}
+func (m *ImportCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ImportCfg.Unmarshal(m, b)
+}
+func (m *ImportCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ImportCfg.Marshal(b, m, deterministic)
+}
+func (dst *ImportCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportCfg.Merge(dst, src)
+}
+func (m *ImportCfg) XXX_Size() int {
+	return xxx_messageInfo_ImportCfg.Size(m)
+}
+func (m *ImportCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImportCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImportCfg proto.InternalMessageInfo
 
 func (m *ImportCfg) GetGitiles() *ImportCfg_Gitiles {
 	if m != nil {
@@ -344,13 +526,35 @@ type ImportCfg_Gitiles struct {
 	// Default directory for project configs.
 	ProjectConfigDefaultPath string `protobuf:"bytes,4,opt,name=project_config_default_path,json=projectConfigDefaultPath" json:"project_config_default_path,omitempty"`
 	// Default directory for ref configs.
-	RefConfigDefaultPath string `protobuf:"bytes,5,opt,name=ref_config_default_path,json=refConfigDefaultPath" json:"ref_config_default_path,omitempty"`
+	RefConfigDefaultPath string   `protobuf:"bytes,5,opt,name=ref_config_default_path,json=refConfigDefaultPath" json:"ref_config_default_path,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ImportCfg_Gitiles) Reset()                    { *m = ImportCfg_Gitiles{} }
-func (m *ImportCfg_Gitiles) String() string            { return proto.CompactTextString(m) }
-func (*ImportCfg_Gitiles) ProtoMessage()               {}
-func (*ImportCfg_Gitiles) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7, 0} }
+func (m *ImportCfg_Gitiles) Reset()         { *m = ImportCfg_Gitiles{} }
+func (m *ImportCfg_Gitiles) String() string { return proto.CompactTextString(m) }
+func (*ImportCfg_Gitiles) ProtoMessage()    {}
+func (*ImportCfg_Gitiles) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{7, 0}
+}
+func (m *ImportCfg_Gitiles) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ImportCfg_Gitiles.Unmarshal(m, b)
+}
+func (m *ImportCfg_Gitiles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ImportCfg_Gitiles.Marshal(b, m, deterministic)
+}
+func (dst *ImportCfg_Gitiles) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportCfg_Gitiles.Merge(dst, src)
+}
+func (m *ImportCfg_Gitiles) XXX_Size() int {
+	return xxx_messageInfo_ImportCfg_Gitiles.Size(m)
+}
+func (m *ImportCfg_Gitiles) XXX_DiscardUnknown() {
+	xxx_messageInfo_ImportCfg_Gitiles.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ImportCfg_Gitiles proto.InternalMessageInfo
 
 func (m *ImportCfg_Gitiles) GetFetchLogDeadline() int32 {
 	if m != nil {
@@ -391,13 +595,35 @@ func (m *ImportCfg_Gitiles) GetRefConfigDefaultPath() string {
 type SchemasCfg struct {
 	// List of known schemas. They are available at /schemas/<name> as a short
 	// mutable link.
-	Schemas []*SchemasCfg_Schema `protobuf:"bytes,1,rep,name=schemas" json:"schemas,omitempty"`
+	Schemas              []*SchemasCfg_Schema `protobuf:"bytes,1,rep,name=schemas" json:"schemas,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *SchemasCfg) Reset()                    { *m = SchemasCfg{} }
-func (m *SchemasCfg) String() string            { return proto.CompactTextString(m) }
-func (*SchemasCfg) ProtoMessage()               {}
-func (*SchemasCfg) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+func (m *SchemasCfg) Reset()         { *m = SchemasCfg{} }
+func (m *SchemasCfg) String() string { return proto.CompactTextString(m) }
+func (*SchemasCfg) ProtoMessage()    {}
+func (*SchemasCfg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{8}
+}
+func (m *SchemasCfg) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SchemasCfg.Unmarshal(m, b)
+}
+func (m *SchemasCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SchemasCfg.Marshal(b, m, deterministic)
+}
+func (dst *SchemasCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SchemasCfg.Merge(dst, src)
+}
+func (m *SchemasCfg) XXX_Size() int {
+	return xxx_messageInfo_SchemasCfg.Size(m)
+}
+func (m *SchemasCfg) XXX_DiscardUnknown() {
+	xxx_messageInfo_SchemasCfg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SchemasCfg proto.InternalMessageInfo
 
 func (m *SchemasCfg) GetSchemas() []*SchemasCfg_Schema {
 	if m != nil {
@@ -413,13 +639,35 @@ type SchemasCfg_Schema struct {
 	// For ref configs, "projects/refs:<path>"
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// URL to the schema definition, e.g. to a .proto file in a repository.
-	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Url                  string   `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SchemasCfg_Schema) Reset()                    { *m = SchemasCfg_Schema{} }
-func (m *SchemasCfg_Schema) String() string            { return proto.CompactTextString(m) }
-func (*SchemasCfg_Schema) ProtoMessage()               {}
-func (*SchemasCfg_Schema) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8, 0} }
+func (m *SchemasCfg_Schema) Reset()         { *m = SchemasCfg_Schema{} }
+func (m *SchemasCfg_Schema) String() string { return proto.CompactTextString(m) }
+func (*SchemasCfg_Schema) ProtoMessage()    {}
+func (*SchemasCfg_Schema) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{8, 0}
+}
+func (m *SchemasCfg_Schema) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SchemasCfg_Schema.Unmarshal(m, b)
+}
+func (m *SchemasCfg_Schema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SchemasCfg_Schema.Marshal(b, m, deterministic)
+}
+func (dst *SchemasCfg_Schema) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SchemasCfg_Schema.Merge(dst, src)
+}
+func (m *SchemasCfg_Schema) XXX_Size() int {
+	return xxx_messageInfo_SchemasCfg_Schema.Size(m)
+}
+func (m *SchemasCfg_Schema) XXX_DiscardUnknown() {
+	xxx_messageInfo_SchemasCfg_Schema.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SchemasCfg_Schema proto.InternalMessageInfo
 
 func (m *SchemasCfg_Schema) GetName() string {
 	if m != nil {
@@ -441,13 +689,35 @@ type ConfigPattern struct {
 	// A string pattern for config_set.
 	ConfigSet string `protobuf:"bytes,1,opt,name=config_set,json=configSet" json:"config_set,omitempty"`
 	// A string pattern for config file path.
-	Path string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	Path                 string   `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ConfigPattern) Reset()                    { *m = ConfigPattern{} }
-func (m *ConfigPattern) String() string            { return proto.CompactTextString(m) }
-func (*ConfigPattern) ProtoMessage()               {}
-func (*ConfigPattern) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
+func (m *ConfigPattern) Reset()         { *m = ConfigPattern{} }
+func (m *ConfigPattern) String() string { return proto.CompactTextString(m) }
+func (*ConfigPattern) ProtoMessage()    {}
+func (*ConfigPattern) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{9}
+}
+func (m *ConfigPattern) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ConfigPattern.Unmarshal(m, b)
+}
+func (m *ConfigPattern) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ConfigPattern.Marshal(b, m, deterministic)
+}
+func (dst *ConfigPattern) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigPattern.Merge(dst, src)
+}
+func (m *ConfigPattern) XXX_Size() int {
+	return xxx_messageInfo_ConfigPattern.Size(m)
+}
+func (m *ConfigPattern) XXX_DiscardUnknown() {
+	xxx_messageInfo_ConfigPattern.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ConfigPattern proto.InternalMessageInfo
 
 func (m *ConfigPattern) GetConfigSet() string {
 	if m != nil {
@@ -471,13 +741,35 @@ type Validator struct {
 	// request to the endpoint, where body is JSON-encoded
 	// ValidationRequestMessage. The endpoint is expected to respond with
 	// HTTP status 200 and JSON-encoded ValidationResponseMessage.
-	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Url                  string   `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Validator) Reset()                    { *m = Validator{} }
-func (m *Validator) String() string            { return proto.CompactTextString(m) }
-func (*Validator) ProtoMessage()               {}
-func (*Validator) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{10} }
+func (m *Validator) Reset()         { *m = Validator{} }
+func (m *Validator) String() string { return proto.CompactTextString(m) }
+func (*Validator) ProtoMessage()    {}
+func (*Validator) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{10}
+}
+func (m *Validator) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Validator.Unmarshal(m, b)
+}
+func (m *Validator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Validator.Marshal(b, m, deterministic)
+}
+func (dst *Validator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Validator.Merge(dst, src)
+}
+func (m *Validator) XXX_Size() int {
+	return xxx_messageInfo_Validator.Size(m)
+}
+func (m *Validator) XXX_DiscardUnknown() {
+	xxx_messageInfo_Validator.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Validator proto.InternalMessageInfo
 
 func (m *Validator) GetPatterns() []*ConfigPattern {
 	if m != nil {
@@ -501,13 +793,35 @@ type ValidationRequestMessage struct {
 	// Path of the config file to validate.
 	Path string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
 	// Contents of the file.
-	Content []byte `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Content              []byte   `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ValidationRequestMessage) Reset()                    { *m = ValidationRequestMessage{} }
-func (m *ValidationRequestMessage) String() string            { return proto.CompactTextString(m) }
-func (*ValidationRequestMessage) ProtoMessage()               {}
-func (*ValidationRequestMessage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{11} }
+func (m *ValidationRequestMessage) Reset()         { *m = ValidationRequestMessage{} }
+func (m *ValidationRequestMessage) String() string { return proto.CompactTextString(m) }
+func (*ValidationRequestMessage) ProtoMessage()    {}
+func (*ValidationRequestMessage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{11}
+}
+func (m *ValidationRequestMessage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ValidationRequestMessage.Unmarshal(m, b)
+}
+func (m *ValidationRequestMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ValidationRequestMessage.Marshal(b, m, deterministic)
+}
+func (dst *ValidationRequestMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationRequestMessage.Merge(dst, src)
+}
+func (m *ValidationRequestMessage) XXX_Size() int {
+	return xxx_messageInfo_ValidationRequestMessage.Size(m)
+}
+func (m *ValidationRequestMessage) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidationRequestMessage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ValidationRequestMessage proto.InternalMessageInfo
 
 func (m *ValidationRequestMessage) GetConfigSet() string {
 	if m != nil {
@@ -535,13 +849,35 @@ func (m *ValidationRequestMessage) GetContent() []byte {
 type ValidationResponseMessage struct {
 	// Errors, warnings and other information found during validation.
 	// If at least one error is found, the config is considered invalid.
-	Messages []*ValidationResponseMessage_Message `protobuf:"bytes,1,rep,name=messages" json:"messages,omitempty"`
+	Messages             []*ValidationResponseMessage_Message `protobuf:"bytes,1,rep,name=messages" json:"messages,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                             `json:"-"`
+	XXX_unrecognized     []byte                               `json:"-"`
+	XXX_sizecache        int32                                `json:"-"`
 }
 
-func (m *ValidationResponseMessage) Reset()                    { *m = ValidationResponseMessage{} }
-func (m *ValidationResponseMessage) String() string            { return proto.CompactTextString(m) }
-func (*ValidationResponseMessage) ProtoMessage()               {}
-func (*ValidationResponseMessage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{12} }
+func (m *ValidationResponseMessage) Reset()         { *m = ValidationResponseMessage{} }
+func (m *ValidationResponseMessage) String() string { return proto.CompactTextString(m) }
+func (*ValidationResponseMessage) ProtoMessage()    {}
+func (*ValidationResponseMessage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_service_config_27e697587861a29c, []int{12}
+}
+func (m *ValidationResponseMessage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ValidationResponseMessage.Unmarshal(m, b)
+}
+func (m *ValidationResponseMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ValidationResponseMessage.Marshal(b, m, deterministic)
+}
+func (dst *ValidationResponseMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationResponseMessage.Merge(dst, src)
+}
+func (m *ValidationResponseMessage) XXX_Size() int {
+	return xxx_messageInfo_ValidationResponseMessage.Size(m)
+}
+func (m *ValidationResponseMessage) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidationResponseMessage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ValidationResponseMessage proto.InternalMessageInfo
 
 func (m *ValidationResponseMessage) GetMessages() []*ValidationResponseMessage_Message {
 	if m != nil {
@@ -555,15 +891,35 @@ type ValidationResponseMessage_Message struct {
 	// Textual representation of the message.
 	Text string `protobuf:"bytes,1,opt,name=text" json:"text,omitempty"`
 	// If an error, a config is considered invalid. Defaults to INFO.
-	Severity ValidationResponseMessage_Severity `protobuf:"varint,2,opt,name=severity,enum=config.ValidationResponseMessage_Severity" json:"severity,omitempty"`
+	Severity             ValidationResponseMessage_Severity `protobuf:"varint,2,opt,name=severity,enum=config.ValidationResponseMessage_Severity" json:"severity,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
 }
 
 func (m *ValidationResponseMessage_Message) Reset()         { *m = ValidationResponseMessage_Message{} }
 func (m *ValidationResponseMessage_Message) String() string { return proto.CompactTextString(m) }
 func (*ValidationResponseMessage_Message) ProtoMessage()    {}
 func (*ValidationResponseMessage_Message) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{12, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{12, 0}
 }
+func (m *ValidationResponseMessage_Message) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ValidationResponseMessage_Message.Unmarshal(m, b)
+}
+func (m *ValidationResponseMessage_Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ValidationResponseMessage_Message.Marshal(b, m, deterministic)
+}
+func (dst *ValidationResponseMessage_Message) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationResponseMessage_Message.Merge(dst, src)
+}
+func (m *ValidationResponseMessage_Message) XXX_Size() int {
+	return xxx_messageInfo_ValidationResponseMessage_Message.Size(m)
+}
+func (m *ValidationResponseMessage_Message) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValidationResponseMessage_Message.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ValidationResponseMessage_Message proto.InternalMessageInfo
 
 func (m *ValidationResponseMessage_Message) GetText() string {
 	if m != nil {
@@ -601,10 +957,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/config/service_config.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/config/service_config.proto", fileDescriptor_service_config_27e697587861a29c)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_service_config_27e697587861a29c = []byte{
 	// 904 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xdd, 0x6e, 0x1b, 0x45,
 	0x14, 0xae, 0x9d, 0xc4, 0x3f, 0xc7, 0x69, 0xb2, 0x1d, 0x99, 0xd4, 0x0d, 0x02, 0xc2, 0x4a, 0x91,

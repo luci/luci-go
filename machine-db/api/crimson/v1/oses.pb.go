@@ -12,18 +12,46 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // An operating system in the database.
 type OS struct {
 	// The name of this operating system. Uniquely identifies this operating system.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// A description of this operating system.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *OS) Reset()                    { *m = OS{} }
-func (m *OS) String() string            { return proto.CompactTextString(m) }
-func (*OS) ProtoMessage()               {}
-func (*OS) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{0} }
+func (m *OS) Reset()         { *m = OS{} }
+func (m *OS) String() string { return proto.CompactTextString(m) }
+func (*OS) ProtoMessage()    {}
+func (*OS) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oses_455e98695bf4123a, []int{0}
+}
+func (m *OS) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_OS.Unmarshal(m, b)
+}
+func (m *OS) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_OS.Marshal(b, m, deterministic)
+}
+func (dst *OS) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OS.Merge(dst, src)
+}
+func (m *OS) XXX_Size() int {
+	return xxx_messageInfo_OS.Size(m)
+}
+func (m *OS) XXX_DiscardUnknown() {
+	xxx_messageInfo_OS.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_OS proto.InternalMessageInfo
 
 func (m *OS) GetName() string {
 	if m != nil {
@@ -42,13 +70,35 @@ func (m *OS) GetDescription() string {
 // A request to list operating systems in the database.
 type ListOSesRequest struct {
 	// The names of operating systems to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names                []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListOSesRequest) Reset()                    { *m = ListOSesRequest{} }
-func (m *ListOSesRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListOSesRequest) ProtoMessage()               {}
-func (*ListOSesRequest) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{1} }
+func (m *ListOSesRequest) Reset()         { *m = ListOSesRequest{} }
+func (m *ListOSesRequest) String() string { return proto.CompactTextString(m) }
+func (*ListOSesRequest) ProtoMessage()    {}
+func (*ListOSesRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oses_455e98695bf4123a, []int{1}
+}
+func (m *ListOSesRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListOSesRequest.Unmarshal(m, b)
+}
+func (m *ListOSesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListOSesRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListOSesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListOSesRequest.Merge(dst, src)
+}
+func (m *ListOSesRequest) XXX_Size() int {
+	return xxx_messageInfo_ListOSesRequest.Size(m)
+}
+func (m *ListOSesRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListOSesRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListOSesRequest proto.InternalMessageInfo
 
 func (m *ListOSesRequest) GetNames() []string {
 	if m != nil {
@@ -60,13 +110,35 @@ func (m *ListOSesRequest) GetNames() []string {
 // A response containing a list of operating systems in the database.
 type ListOSesResponse struct {
 	// The operating systems matching the request.
-	Oses []*OS `protobuf:"bytes,1,rep,name=oses" json:"oses,omitempty"`
+	Oses                 []*OS    `protobuf:"bytes,1,rep,name=oses" json:"oses,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListOSesResponse) Reset()                    { *m = ListOSesResponse{} }
-func (m *ListOSesResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListOSesResponse) ProtoMessage()               {}
-func (*ListOSesResponse) Descriptor() ([]byte, []int) { return fileDescriptor8, []int{2} }
+func (m *ListOSesResponse) Reset()         { *m = ListOSesResponse{} }
+func (m *ListOSesResponse) String() string { return proto.CompactTextString(m) }
+func (*ListOSesResponse) ProtoMessage()    {}
+func (*ListOSesResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_oses_455e98695bf4123a, []int{2}
+}
+func (m *ListOSesResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListOSesResponse.Unmarshal(m, b)
+}
+func (m *ListOSesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListOSesResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListOSesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListOSesResponse.Merge(dst, src)
+}
+func (m *ListOSesResponse) XXX_Size() int {
+	return xxx_messageInfo_ListOSesResponse.Size(m)
+}
+func (m *ListOSesResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListOSesResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListOSesResponse proto.InternalMessageInfo
 
 func (m *ListOSesResponse) GetOses() []*OS {
 	if m != nil {
@@ -82,10 +154,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor8)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor_oses_455e98695bf4123a)
 }
 
-var fileDescriptor8 = []byte{
+var fileDescriptor_oses_455e98695bf4123a = []byte{
 	// 197 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0xc1, 0x4a, 0xc4, 0x30,
 	0x10, 0x86, 0xe9, 0xba, 0x2a, 0x3b, 0x3d, 0x28, 0xc1, 0x43, 0x6f, 0x96, 0x5e, 0xdc, 0x8b, 0x09,

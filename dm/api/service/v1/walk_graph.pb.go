@@ -6,13 +6,19 @@ package dm
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
 import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Direction indicates that direction of dependencies that the request should
 // walk.
@@ -39,7 +45,7 @@ func (x WalkGraphReq_Mode_Direction) String() string {
 	return proto.EnumName(WalkGraphReq_Mode_Direction_name, int32(x))
 }
 func (WalkGraphReq_Mode_Direction) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor7, []int{0, 0, 0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 0, 0}
 }
 
 // WalkGraphReq allows you to walk from one or more Quests through their
@@ -63,14 +69,36 @@ type WalkGraphReq struct {
 	Limit *WalkGraphReq_Limit `protobuf:"bytes,4,opt,name=limit" json:"limit,omitempty"`
 	// Include allows you to add additional information to the returned
 	// GraphData which is typically medium-to-large sized.
-	Include *WalkGraphReq_Include `protobuf:"bytes,5,opt,name=include" json:"include,omitempty"`
-	Exclude *WalkGraphReq_Exclude `protobuf:"bytes,6,opt,name=exclude" json:"exclude,omitempty"`
+	Include              *WalkGraphReq_Include `protobuf:"bytes,5,opt,name=include" json:"include,omitempty"`
+	Exclude              *WalkGraphReq_Exclude `protobuf:"bytes,6,opt,name=exclude" json:"exclude,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *WalkGraphReq) Reset()                    { *m = WalkGraphReq{} }
-func (m *WalkGraphReq) String() string            { return proto.CompactTextString(m) }
-func (*WalkGraphReq) ProtoMessage()               {}
-func (*WalkGraphReq) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
+func (m *WalkGraphReq) Reset()         { *m = WalkGraphReq{} }
+func (m *WalkGraphReq) String() string { return proto.CompactTextString(m) }
+func (*WalkGraphReq) ProtoMessage()    {}
+func (*WalkGraphReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0}
+}
+func (m *WalkGraphReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq.Unmarshal(m, b)
+}
+func (m *WalkGraphReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq.Merge(dst, src)
+}
+func (m *WalkGraphReq) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq.Size(m)
+}
+func (m *WalkGraphReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq proto.InternalMessageInfo
 
 func (m *WalkGraphReq) GetAuth() *Execution_Auth {
 	if m != nil {
@@ -119,14 +147,36 @@ type WalkGraphReq_Mode struct {
 	// Since the load operation is multi-threaded, the search order is best
 	// effort, but will actually be some hybrid between DFS and BFS. This setting
 	// controls the bias direction of the hybrid loading algorithm.
-	Dfs       bool                        `protobuf:"varint,1,opt,name=dfs" json:"dfs,omitempty"`
-	Direction WalkGraphReq_Mode_Direction `protobuf:"varint,2,opt,name=direction,enum=dm.WalkGraphReq_Mode_Direction" json:"direction,omitempty"`
+	Dfs                  bool                        `protobuf:"varint,1,opt,name=dfs" json:"dfs,omitempty"`
+	Direction            WalkGraphReq_Mode_Direction `protobuf:"varint,2,opt,name=direction,enum=dm.WalkGraphReq_Mode_Direction" json:"direction,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
 }
 
-func (m *WalkGraphReq_Mode) Reset()                    { *m = WalkGraphReq_Mode{} }
-func (m *WalkGraphReq_Mode) String() string            { return proto.CompactTextString(m) }
-func (*WalkGraphReq_Mode) ProtoMessage()               {}
-func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 0} }
+func (m *WalkGraphReq_Mode) Reset()         { *m = WalkGraphReq_Mode{} }
+func (m *WalkGraphReq_Mode) String() string { return proto.CompactTextString(m) }
+func (*WalkGraphReq_Mode) ProtoMessage()    {}
+func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) {
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 0}
+}
+func (m *WalkGraphReq_Mode) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq_Mode.Unmarshal(m, b)
+}
+func (m *WalkGraphReq_Mode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq_Mode.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq_Mode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Mode.Merge(dst, src)
+}
+func (m *WalkGraphReq_Mode) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq_Mode.Size(m)
+}
+func (m *WalkGraphReq_Mode) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq_Mode.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq_Mode proto.InternalMessageInfo
 
 func (m *WalkGraphReq_Mode) GetDfs() bool {
 	if m != nil {
@@ -154,7 +204,7 @@ type WalkGraphReq_Limit struct {
 	//
 	// This is different than the grpc timeout header, which will set a hard
 	// deadline for the request.
-	MaxTime *google_protobuf.Duration `protobuf:"bytes,2,opt,name=max_time,json=maxTime" json:"max_time,omitempty"`
+	MaxTime *duration.Duration `protobuf:"bytes,2,opt,name=max_time,json=maxTime" json:"max_time,omitempty"`
 	// MaxDataSize sets the maximum amount of 'Data' (in bytes) that can be
 	// returned, if include.quest_data, include.attempt_data, and/or
 	// include.attempt_result are set. If this limit is hit, then the
@@ -163,13 +213,35 @@ type WalkGraphReq_Limit struct {
 	//
 	// If this limit is 0, a default limit of 16MB will be used. If this limit
 	// exceeds 30MB, it will be reduced to 30MB.
-	MaxDataSize uint32 `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize" json:"max_data_size,omitempty"`
+	MaxDataSize          uint32   `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize" json:"max_data_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WalkGraphReq_Limit) Reset()                    { *m = WalkGraphReq_Limit{} }
-func (m *WalkGraphReq_Limit) String() string            { return proto.CompactTextString(m) }
-func (*WalkGraphReq_Limit) ProtoMessage()               {}
-func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 1} }
+func (m *WalkGraphReq_Limit) Reset()         { *m = WalkGraphReq_Limit{} }
+func (m *WalkGraphReq_Limit) String() string { return proto.CompactTextString(m) }
+func (*WalkGraphReq_Limit) ProtoMessage()    {}
+func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) {
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 1}
+}
+func (m *WalkGraphReq_Limit) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq_Limit.Unmarshal(m, b)
+}
+func (m *WalkGraphReq_Limit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq_Limit.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq_Limit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Limit.Merge(dst, src)
+}
+func (m *WalkGraphReq_Limit) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq_Limit.Size(m)
+}
+func (m *WalkGraphReq_Limit) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq_Limit.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq_Limit proto.InternalMessageInfo
 
 func (m *WalkGraphReq_Limit) GetMaxDepth() int64 {
 	if m != nil {
@@ -178,7 +250,7 @@ func (m *WalkGraphReq_Limit) GetMaxDepth() int64 {
 	return 0
 }
 
-func (m *WalkGraphReq_Limit) GetMaxTime() *google_protobuf.Duration {
+func (m *WalkGraphReq_Limit) GetMaxTime() *duration.Duration {
 	if m != nil {
 		return m.MaxTime
 	}
@@ -211,13 +283,35 @@ type WalkGraphReq_Include struct {
 	// information. This only changes the presence of information in the result;
 	// if the query is walking backward attempt dependencies, that will still
 	// occur even if this is false.
-	BackDeps bool `protobuf:"varint,6,opt,name=back_deps,json=backDeps" json:"back_deps,omitempty"`
+	BackDeps             bool     `protobuf:"varint,6,opt,name=back_deps,json=backDeps" json:"back_deps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *WalkGraphReq_Include) Reset()                    { *m = WalkGraphReq_Include{} }
-func (m *WalkGraphReq_Include) String() string            { return proto.CompactTextString(m) }
-func (*WalkGraphReq_Include) ProtoMessage()               {}
-func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 2} }
+func (m *WalkGraphReq_Include) Reset()         { *m = WalkGraphReq_Include{} }
+func (m *WalkGraphReq_Include) String() string { return proto.CompactTextString(m) }
+func (*WalkGraphReq_Include) ProtoMessage()    {}
+func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) {
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 2}
+}
+func (m *WalkGraphReq_Include) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq_Include.Unmarshal(m, b)
+}
+func (m *WalkGraphReq_Include) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq_Include.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq_Include) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Include.Merge(dst, src)
+}
+func (m *WalkGraphReq_Include) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq_Include.Size(m)
+}
+func (m *WalkGraphReq_Include) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq_Include.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq_Include proto.InternalMessageInfo
 
 func (m *WalkGraphReq_Include) GetQuest() *WalkGraphReq_Include_Options {
 	if m != nil {
@@ -287,15 +381,35 @@ type WalkGraphReq_Include_Options struct {
 	// If set to true, objects with an abnormal termination will be included.
 	Abnormal bool `protobuf:"varint,4,opt,name=abnormal" json:"abnormal,omitempty"`
 	// If set to true, expired objects will be included.
-	Expired bool `protobuf:"varint,5,opt,name=expired" json:"expired,omitempty"`
+	Expired              bool     `protobuf:"varint,5,opt,name=expired" json:"expired,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *WalkGraphReq_Include_Options) Reset()         { *m = WalkGraphReq_Include_Options{} }
 func (m *WalkGraphReq_Include_Options) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Include_Options) ProtoMessage()    {}
 func (*WalkGraphReq_Include_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor7, []int{0, 2, 0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 2, 0}
 }
+func (m *WalkGraphReq_Include_Options) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq_Include_Options.Unmarshal(m, b)
+}
+func (m *WalkGraphReq_Include_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq_Include_Options.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq_Include_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Include_Options.Merge(dst, src)
+}
+func (m *WalkGraphReq_Include_Options) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq_Include_Options.Size(m)
+}
+func (m *WalkGraphReq_Include_Options) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq_Include_Options.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq_Include_Options proto.InternalMessageInfo
 
 func (m *WalkGraphReq_Include_Options) GetIds() bool {
 	if m != nil {
@@ -336,13 +450,35 @@ type WalkGraphReq_Exclude struct {
 	// Do not include data from the following quests in the response.
 	Quests []string `protobuf:"bytes,1,rep,name=quests" json:"quests,omitempty"`
 	// Do not include data from the following attempts in the response.
-	Attempts *AttemptList `protobuf:"bytes,2,opt,name=attempts" json:"attempts,omitempty"`
+	Attempts             *AttemptList `protobuf:"bytes,2,opt,name=attempts" json:"attempts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *WalkGraphReq_Exclude) Reset()                    { *m = WalkGraphReq_Exclude{} }
-func (m *WalkGraphReq_Exclude) String() string            { return proto.CompactTextString(m) }
-func (*WalkGraphReq_Exclude) ProtoMessage()               {}
-func (*WalkGraphReq_Exclude) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0, 3} }
+func (m *WalkGraphReq_Exclude) Reset()         { *m = WalkGraphReq_Exclude{} }
+func (m *WalkGraphReq_Exclude) String() string { return proto.CompactTextString(m) }
+func (*WalkGraphReq_Exclude) ProtoMessage()    {}
+func (*WalkGraphReq_Exclude) Descriptor() ([]byte, []int) {
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 3}
+}
+func (m *WalkGraphReq_Exclude) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_WalkGraphReq_Exclude.Unmarshal(m, b)
+}
+func (m *WalkGraphReq_Exclude) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_WalkGraphReq_Exclude.Marshal(b, m, deterministic)
+}
+func (dst *WalkGraphReq_Exclude) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Exclude.Merge(dst, src)
+}
+func (m *WalkGraphReq_Exclude) XXX_Size() int {
+	return xxx_messageInfo_WalkGraphReq_Exclude.Size(m)
+}
+func (m *WalkGraphReq_Exclude) XXX_DiscardUnknown() {
+	xxx_messageInfo_WalkGraphReq_Exclude.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WalkGraphReq_Exclude proto.InternalMessageInfo
 
 func (m *WalkGraphReq_Exclude) GetQuests() []string {
 	if m != nil {
@@ -369,10 +505,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/walk_graph.proto", fileDescriptor7)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/walk_graph.proto", fileDescriptor_walk_graph_1df281be071ebbf3)
 }
 
-var fileDescriptor7 = []byte{
+var fileDescriptor_walk_graph_1df281be071ebbf3 = []byte{
 	// 655 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0x6d, 0x6b, 0x13, 0x4d,
 	0x14, 0x7d, 0xd2, 0xbc, 0x6d, 0x6e, 0x9b, 0x3e, 0xe5, 0x82, 0x65, 0xbb, 0x82, 0x2d, 0x45, 0xa5,

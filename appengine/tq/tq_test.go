@@ -99,7 +99,7 @@ func TestDispatcher(t *testing.T) {
 			// Added the task.
 			expectedPath := "/internal/tasks/default/abc-def"
 			expectedName := "prefix-afc6f8271b8598ee04e359916e6c584a9bc3c520a11dd5244e3399346ac0d3a7"
-			expectedBody := []byte(`{"type":"google.protobuf.Duration","body":"123.000s"}`)
+			expectedBody := []byte(`{"type":"google.protobuf.Duration","body":"123s"}`)
 			tasks := taskqueue.GetTestable(ctx).GetScheduledTasks()
 			So(tasks, ShouldResemble, taskqueue.QueueData{
 				"default": map[string]*taskqueue.Task{

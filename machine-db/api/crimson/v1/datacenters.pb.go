@@ -6,12 +6,18 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A datacenter in the database.
 type Datacenter struct {
@@ -20,13 +26,35 @@ type Datacenter struct {
 	// A description of this datacenter.
 	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
 	// The state of this datacenter.
-	State common.State `protobuf:"varint,3,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,3,opt,name=state,enum=common.State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Datacenter) Reset()                    { *m = Datacenter{} }
-func (m *Datacenter) String() string            { return proto.CompactTextString(m) }
-func (*Datacenter) ProtoMessage()               {}
-func (*Datacenter) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Datacenter) Reset()         { *m = Datacenter{} }
+func (m *Datacenter) String() string { return proto.CompactTextString(m) }
+func (*Datacenter) ProtoMessage()    {}
+func (*Datacenter) Descriptor() ([]byte, []int) {
+	return fileDescriptor_datacenters_e066802756d06571, []int{0}
+}
+func (m *Datacenter) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Datacenter.Unmarshal(m, b)
+}
+func (m *Datacenter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Datacenter.Marshal(b, m, deterministic)
+}
+func (dst *Datacenter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datacenter.Merge(dst, src)
+}
+func (m *Datacenter) XXX_Size() int {
+	return xxx_messageInfo_Datacenter.Size(m)
+}
+func (m *Datacenter) XXX_DiscardUnknown() {
+	xxx_messageInfo_Datacenter.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Datacenter proto.InternalMessageInfo
 
 func (m *Datacenter) GetName() string {
 	if m != nil {
@@ -42,23 +70,45 @@ func (m *Datacenter) GetDescription() string {
 	return ""
 }
 
-func (m *Datacenter) GetState() common.State {
+func (m *Datacenter) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 // A request to list datacenters in the database.
 type ListDatacentersRequest struct {
 	// The names of datacenters to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names                []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListDatacentersRequest) Reset()                    { *m = ListDatacentersRequest{} }
-func (m *ListDatacentersRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListDatacentersRequest) ProtoMessage()               {}
-func (*ListDatacentersRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *ListDatacentersRequest) Reset()         { *m = ListDatacentersRequest{} }
+func (m *ListDatacentersRequest) String() string { return proto.CompactTextString(m) }
+func (*ListDatacentersRequest) ProtoMessage()    {}
+func (*ListDatacentersRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_datacenters_e066802756d06571, []int{1}
+}
+func (m *ListDatacentersRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDatacentersRequest.Unmarshal(m, b)
+}
+func (m *ListDatacentersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDatacentersRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListDatacentersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDatacentersRequest.Merge(dst, src)
+}
+func (m *ListDatacentersRequest) XXX_Size() int {
+	return xxx_messageInfo_ListDatacentersRequest.Size(m)
+}
+func (m *ListDatacentersRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDatacentersRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDatacentersRequest proto.InternalMessageInfo
 
 func (m *ListDatacentersRequest) GetNames() []string {
 	if m != nil {
@@ -70,13 +120,35 @@ func (m *ListDatacentersRequest) GetNames() []string {
 // A response containing a list of datacenters in the database.
 type ListDatacentersResponse struct {
 	// The datacenters matching the request.
-	Datacenters []*Datacenter `protobuf:"bytes,1,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters          []*Datacenter `protobuf:"bytes,1,rep,name=datacenters" json:"datacenters,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *ListDatacentersResponse) Reset()                    { *m = ListDatacentersResponse{} }
-func (m *ListDatacentersResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListDatacentersResponse) ProtoMessage()               {}
-func (*ListDatacentersResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *ListDatacentersResponse) Reset()         { *m = ListDatacentersResponse{} }
+func (m *ListDatacentersResponse) String() string { return proto.CompactTextString(m) }
+func (*ListDatacentersResponse) ProtoMessage()    {}
+func (*ListDatacentersResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_datacenters_e066802756d06571, []int{2}
+}
+func (m *ListDatacentersResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListDatacentersResponse.Unmarshal(m, b)
+}
+func (m *ListDatacentersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListDatacentersResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListDatacentersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDatacentersResponse.Merge(dst, src)
+}
+func (m *ListDatacentersResponse) XXX_Size() int {
+	return xxx_messageInfo_ListDatacentersResponse.Size(m)
+}
+func (m *ListDatacentersResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListDatacentersResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListDatacentersResponse proto.InternalMessageInfo
 
 func (m *ListDatacentersResponse) GetDatacenters() []*Datacenter {
 	if m != nil {
@@ -92,10 +164,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto", fileDescriptor_datacenters_e066802756d06571)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_datacenters_e066802756d06571 = []byte{
 	// 243 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xb1, 0x4e, 0xf4, 0x30,
 	0x10, 0x84, 0x95, 0xff, 0xfe, 0x03, 0xdd, 0x46, 0x50, 0x18, 0x04, 0x11, 0x55, 0x14, 0x9a, 0x34,

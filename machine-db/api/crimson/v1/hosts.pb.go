@@ -12,18 +12,46 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // A request to delete a physical or virtual host from the database.
 type DeleteHostRequest struct {
 	// The name of the host to delete.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The VLAN the host belongs to.
-	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan                 int64    `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteHostRequest) Reset()                    { *m = DeleteHostRequest{} }
-func (m *DeleteHostRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteHostRequest) ProtoMessage()               {}
-func (*DeleteHostRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *DeleteHostRequest) Reset()         { *m = DeleteHostRequest{} }
+func (m *DeleteHostRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteHostRequest) ProtoMessage()    {}
+func (*DeleteHostRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_hosts_77bd50d2491322df, []int{0}
+}
+func (m *DeleteHostRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteHostRequest.Unmarshal(m, b)
+}
+func (m *DeleteHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteHostRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteHostRequest.Merge(dst, src)
+}
+func (m *DeleteHostRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteHostRequest.Size(m)
+}
+func (m *DeleteHostRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteHostRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteHostRequest proto.InternalMessageInfo
 
 func (m *DeleteHostRequest) GetName() string {
 	if m != nil {
@@ -44,10 +72,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor_hosts_77bd50d2491322df)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_hosts_77bd50d2491322df = []byte{
 	// 144 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x2c, 0xcc, 0xb1, 0x0e, 0xc2, 0x20,
 	0x10, 0x80, 0xe1, 0x54, 0x8d, 0x46, 0x36, 0x99, 0x3a, 0x36, 0x4e, 0x5d, 0xe4, 0x62, 0xdc, 0x74,

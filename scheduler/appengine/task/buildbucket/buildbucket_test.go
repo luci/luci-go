@@ -302,6 +302,6 @@ func TestTriggeredFlow(t *testing.T) {
 
 func makePayload(repo, ref, rev string) *internal.Trigger_Gitiles {
 	return &internal.Trigger_Gitiles{
-		Gitiles: &api.GitilesTrigger{repo, ref, rev},
+		Gitiles: &api.GitilesTrigger{Repo: repo, Ref: ref, Revision: rev},
 	}
 }

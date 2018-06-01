@@ -6,12 +6,18 @@ package svcconfig
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Config is the overall instance configuration.
 type Config struct {
@@ -24,13 +30,35 @@ type Config struct {
 	// Collector is the collector fleet configuration.
 	Collector *Collector `protobuf:"bytes,21,opt,name=collector" json:"collector,omitempty"`
 	// Archivist microservice configuration.
-	Archivist *Archivist `protobuf:"bytes,22,opt,name=archivist" json:"archivist,omitempty"`
+	Archivist            *Archivist `protobuf:"bytes,22,opt,name=archivist" json:"archivist,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *Config) Reset()                    { *m = Config{} }
-func (m *Config) String() string            { return proto.CompactTextString(m) }
-func (*Config) ProtoMessage()               {}
-func (*Config) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Config) Reset()         { *m = Config{} }
+func (m *Config) String() string { return proto.CompactTextString(m) }
+func (*Config) ProtoMessage()    {}
+func (*Config) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_063571ab0c6ae9e1, []int{0}
+}
+func (m *Config) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Config.Unmarshal(m, b)
+}
+func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Config.Marshal(b, m, deterministic)
+}
+func (dst *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(dst, src)
+}
+func (m *Config) XXX_Size() int {
+	return xxx_messageInfo_Config.Size(m)
+}
+func (m *Config) XXX_DiscardUnknown() {
+	xxx_messageInfo_Config.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Config proto.InternalMessageInfo
 
 func (m *Config) GetTransport() *Transport {
 	if m != nil {
@@ -84,7 +112,7 @@ type Coordinator struct {
 	// Project configurations or stream prefix regitrations may override this by
 	// providing >= 0 values for prefix expiration. The smallest configured
 	// expiration will be applied.
-	PrefixExpiration *google_protobuf.Duration `protobuf:"bytes,21,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
+	PrefixExpiration *duration.Duration `protobuf:"bytes,21,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
 	// The full path of the archival Pub/Sub topic.
 	//
 	// The Coordinator must have permission to publish to this topic.
@@ -99,7 +127,7 @@ type Coordinator struct {
 	//
 	// This parameter is an optimization to stop the archivist from wasting its
 	// time until the log stream has a reasonable expectation of being available.
-	ArchiveSettleDelay *google_protobuf.Duration `protobuf:"bytes,31,opt,name=archive_settle_delay,json=archiveSettleDelay" json:"archive_settle_delay,omitempty"`
+	ArchiveSettleDelay *duration.Duration `protobuf:"bytes,31,opt,name=archive_settle_delay,json=archiveSettleDelay" json:"archive_settle_delay,omitempty"`
 	// The amount of time before a log stream is candidate for archival regardless
 	// of whether or not it's been terminated or complete.
 	//
@@ -112,13 +140,35 @@ type Coordinator struct {
 	//
 	// If a project's "max_stream_age" is smaller than this value, it will be used
 	// on that project's streams.
-	ArchiveDelayMax *google_protobuf.Duration `protobuf:"bytes,32,opt,name=archive_delay_max,json=archiveDelayMax" json:"archive_delay_max,omitempty"`
+	ArchiveDelayMax      *duration.Duration `protobuf:"bytes,32,opt,name=archive_delay_max,json=archiveDelayMax" json:"archive_delay_max,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *Coordinator) Reset()                    { *m = Coordinator{} }
-func (m *Coordinator) String() string            { return proto.CompactTextString(m) }
-func (*Coordinator) ProtoMessage()               {}
-func (*Coordinator) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *Coordinator) Reset()         { *m = Coordinator{} }
+func (m *Coordinator) String() string { return proto.CompactTextString(m) }
+func (*Coordinator) ProtoMessage()    {}
+func (*Coordinator) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_063571ab0c6ae9e1, []int{1}
+}
+func (m *Coordinator) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Coordinator.Unmarshal(m, b)
+}
+func (m *Coordinator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Coordinator.Marshal(b, m, deterministic)
+}
+func (dst *Coordinator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Coordinator.Merge(dst, src)
+}
+func (m *Coordinator) XXX_Size() int {
+	return xxx_messageInfo_Coordinator.Size(m)
+}
+func (m *Coordinator) XXX_DiscardUnknown() {
+	xxx_messageInfo_Coordinator.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Coordinator proto.InternalMessageInfo
 
 func (m *Coordinator) GetAdminAuthGroup() string {
 	if m != nil {
@@ -141,7 +191,7 @@ func (m *Coordinator) GetRpcAllowOrigins() []string {
 	return nil
 }
 
-func (m *Coordinator) GetPrefixExpiration() *google_protobuf.Duration {
+func (m *Coordinator) GetPrefixExpiration() *duration.Duration {
 	if m != nil {
 		return m.PrefixExpiration
 	}
@@ -155,14 +205,14 @@ func (m *Coordinator) GetArchiveTopic() string {
 	return ""
 }
 
-func (m *Coordinator) GetArchiveSettleDelay() *google_protobuf.Duration {
+func (m *Coordinator) GetArchiveSettleDelay() *duration.Duration {
 	if m != nil {
 		return m.ArchiveSettleDelay
 	}
 	return nil
 }
 
-func (m *Coordinator) GetArchiveDelayMax() *google_protobuf.Duration {
+func (m *Coordinator) GetArchiveDelayMax() *duration.Duration {
 	if m != nil {
 		return m.ArchiveDelayMax
 	}
@@ -182,13 +232,35 @@ type Collector struct {
 	StateCacheSize int32 `protobuf:"varint,3,opt,name=state_cache_size,json=stateCacheSize" json:"state_cache_size,omitempty"`
 	// The maximum amount of time that cached stream state is valid. If <= 0, a
 	// default will be used.
-	StateCacheExpiration *google_protobuf.Duration `protobuf:"bytes,4,opt,name=state_cache_expiration,json=stateCacheExpiration" json:"state_cache_expiration,omitempty"`
+	StateCacheExpiration *duration.Duration `protobuf:"bytes,4,opt,name=state_cache_expiration,json=stateCacheExpiration" json:"state_cache_expiration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *Collector) Reset()                    { *m = Collector{} }
-func (m *Collector) String() string            { return proto.CompactTextString(m) }
-func (*Collector) ProtoMessage()               {}
-func (*Collector) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *Collector) Reset()         { *m = Collector{} }
+func (m *Collector) String() string { return proto.CompactTextString(m) }
+func (*Collector) ProtoMessage()    {}
+func (*Collector) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_063571ab0c6ae9e1, []int{2}
+}
+func (m *Collector) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Collector.Unmarshal(m, b)
+}
+func (m *Collector) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Collector.Marshal(b, m, deterministic)
+}
+func (dst *Collector) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Collector.Merge(dst, src)
+}
+func (m *Collector) XXX_Size() int {
+	return xxx_messageInfo_Collector.Size(m)
+}
+func (m *Collector) XXX_DiscardUnknown() {
+	xxx_messageInfo_Collector.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Collector proto.InternalMessageInfo
 
 func (m *Collector) GetMaxConcurrentMessages() int32 {
 	if m != nil {
@@ -211,7 +283,7 @@ func (m *Collector) GetStateCacheSize() int32 {
 	return 0
 }
 
-func (m *Collector) GetStateCacheExpiration() *google_protobuf.Duration {
+func (m *Collector) GetStateCacheExpiration() *duration.Duration {
 	if m != nil {
 		return m.StateCacheExpiration
 	}
@@ -256,13 +328,35 @@ type Archivist struct {
 	//
 	// Streams without an explicit binary file extension will default to ".bin" if
 	// this is enabled.
-	RenderAllStreams bool `protobuf:"varint,13,opt,name=render_all_streams,json=renderAllStreams" json:"render_all_streams,omitempty"`
+	RenderAllStreams     bool     `protobuf:"varint,13,opt,name=render_all_streams,json=renderAllStreams" json:"render_all_streams,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Archivist) Reset()                    { *m = Archivist{} }
-func (m *Archivist) String() string            { return proto.CompactTextString(m) }
-func (*Archivist) ProtoMessage()               {}
-func (*Archivist) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *Archivist) Reset()         { *m = Archivist{} }
+func (m *Archivist) String() string { return proto.CompactTextString(m) }
+func (*Archivist) ProtoMessage()    {}
+func (*Archivist) Descriptor() ([]byte, []int) {
+	return fileDescriptor_config_063571ab0c6ae9e1, []int{3}
+}
+func (m *Archivist) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Archivist.Unmarshal(m, b)
+}
+func (m *Archivist) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Archivist.Marshal(b, m, deterministic)
+}
+func (dst *Archivist) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Archivist.Merge(dst, src)
+}
+func (m *Archivist) XXX_Size() int {
+	return xxx_messageInfo_Archivist.Size(m)
+}
+func (m *Archivist) XXX_DiscardUnknown() {
+	xxx_messageInfo_Archivist.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Archivist proto.InternalMessageInfo
 
 func (m *Archivist) GetSubscription() string {
 	if m != nil {
@@ -307,10 +401,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/config.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/config.proto", fileDescriptor_config_063571ab0c6ae9e1)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_config_063571ab0c6ae9e1 = []byte{
 	// 661 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdb, 0x6a, 0xdb, 0x3c,
 	0x1c, 0x27, 0xed, 0xd7, 0x7e, 0x8b, 0xd2, 0x43, 0xa2, 0xa5, 0x9d, 0x57, 0x58, 0x17, 0xb2, 0x9b,

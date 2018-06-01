@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/sortby"
 )
@@ -29,17 +31,17 @@ var _ datastore.PropertyConverter = (*Attempt_ID)(nil)
 
 // NewQuestID is a shorthand to New a new *Quest_ID
 func NewQuestID(qst string) *Quest_ID {
-	return &Quest_ID{qst}
+	return &Quest_ID{Id: qst}
 }
 
 // NewAttemptID is a shorthand to New a new *Attempt_ID
 func NewAttemptID(qst string, aid uint32) *Attempt_ID {
-	return &Attempt_ID{qst, aid}
+	return &Attempt_ID{Quest: qst, Id: aid}
 }
 
 // NewExecutionID is a shorthand to New a new *Execution_ID
 func NewExecutionID(qst string, aid, eid uint32) *Execution_ID {
-	return &Execution_ID{qst, aid, eid}
+	return &Execution_ID{Quest: qst, Attempt: aid, Id: eid}
 }
 
 // ToProperty implements datastore.PropertyConverter for the purpose of
@@ -106,18 +108,28 @@ func (g *GraphData) GetQuest(qid string) (*Quest, bool) {
 
 // NewQuestDesc is a shorthand method for building a new *Quest_Desc.
 func NewQuestDesc(cfg string, params, distParams string, meta *Quest_Desc_Meta) *Quest_Desc {
-	return &Quest_Desc{cfg, params, distParams, meta}
+	return &Quest_Desc{
+		DistributorConfigName: cfg,
+		Parameters:            params,
+		DistributorParameters: distParams,
+		Meta: meta,
+	}
 }
 
 // NewTemplateSpec is a shorthand method for building a new *Quest_TemplateSpec.
 func NewTemplateSpec(project, ref, version, name string) *Quest_TemplateSpec {
-	return &Quest_TemplateSpec{project, ref, version, name}
+	return &Quest_TemplateSpec{
+		Project: project,
+		Ref:     ref,
+		Version: version,
+		Name:    name,
+	}
 }
 
 // Equals returns true iff this Quest_TemplateSpec matches all of the fields of
 // the `o` Quest_TemplateSpec.
 func (t *Quest_TemplateSpec) Equals(o *Quest_TemplateSpec) bool {
-	return *t == *o
+	return proto.Equal(t, o)
 }
 
 // QuestTemplateSpecs is a sortable slice of *Quest_TemplateSpec.

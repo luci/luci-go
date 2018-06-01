@@ -12,19 +12,47 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Transport is the transport configuration.
 type Transport struct {
 	// Type is the transport configuration that is being used.
 	//
 	// Types that are valid to be assigned to Type:
 	//	*Transport_Pubsub
-	Type isTransport_Type `protobuf_oneof:"Type"`
+	Type                 isTransport_Type `protobuf_oneof:"Type"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *Transport) Reset()                    { *m = Transport{} }
-func (m *Transport) String() string            { return proto.CompactTextString(m) }
-func (*Transport) ProtoMessage()               {}
-func (*Transport) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *Transport) Reset()         { *m = Transport{} }
+func (m *Transport) String() string { return proto.CompactTextString(m) }
+func (*Transport) ProtoMessage()    {}
+func (*Transport) Descriptor() ([]byte, []int) {
+	return fileDescriptor_transport_28459ab8cb867951, []int{0}
+}
+func (m *Transport) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Transport.Unmarshal(m, b)
+}
+func (m *Transport) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Transport.Marshal(b, m, deterministic)
+}
+func (dst *Transport) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Transport.Merge(dst, src)
+}
+func (m *Transport) XXX_Size() int {
+	return xxx_messageInfo_Transport.Size(m)
+}
+func (m *Transport) XXX_DiscardUnknown() {
+	xxx_messageInfo_Transport.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Transport proto.InternalMessageInfo
 
 type isTransport_Type interface {
 	isTransport_Type()
@@ -95,7 +123,7 @@ func _Transport_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Type.(type) {
 	case *Transport_Pubsub:
 		s := proto.Size(x.Pubsub)
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -112,13 +140,35 @@ type Transport_PubSub struct {
 	// The name of the authentication group for administrators.
 	Topic string `protobuf:"bytes,2,opt,name=topic" json:"topic,omitempty"`
 	// The name of the authentication group for administrators.
-	Subscription string `protobuf:"bytes,3,opt,name=subscription" json:"subscription,omitempty"`
+	Subscription         string   `protobuf:"bytes,3,opt,name=subscription" json:"subscription,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Transport_PubSub) Reset()                    { *m = Transport_PubSub{} }
-func (m *Transport_PubSub) String() string            { return proto.CompactTextString(m) }
-func (*Transport_PubSub) ProtoMessage()               {}
-func (*Transport_PubSub) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0, 0} }
+func (m *Transport_PubSub) Reset()         { *m = Transport_PubSub{} }
+func (m *Transport_PubSub) String() string { return proto.CompactTextString(m) }
+func (*Transport_PubSub) ProtoMessage()    {}
+func (*Transport_PubSub) Descriptor() ([]byte, []int) {
+	return fileDescriptor_transport_28459ab8cb867951, []int{0, 0}
+}
+func (m *Transport_PubSub) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Transport_PubSub.Unmarshal(m, b)
+}
+func (m *Transport_PubSub) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Transport_PubSub.Marshal(b, m, deterministic)
+}
+func (dst *Transport_PubSub) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Transport_PubSub.Merge(dst, src)
+}
+func (m *Transport_PubSub) XXX_Size() int {
+	return xxx_messageInfo_Transport_PubSub.Size(m)
+}
+func (m *Transport_PubSub) XXX_DiscardUnknown() {
+	xxx_messageInfo_Transport_PubSub.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Transport_PubSub proto.InternalMessageInfo
 
 func (m *Transport_PubSub) GetProject() string {
 	if m != nil {
@@ -147,10 +197,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/transport.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/transport.proto", fileDescriptor_transport_28459ab8cb867951)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor_transport_28459ab8cb867951 = []byte{
 	// 202 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x8e, 0x3b, 0x4f, 0xc3, 0x30,
 	0x14, 0x46, 0x09, 0x0f, 0xa3, 0x5c, 0x98, 0x2c, 0x06, 0x0b, 0x16, 0x94, 0x89, 0xc9, 0x96, 0x40,

@@ -32,6 +32,7 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/task"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestTriageOp(t *testing.T) {
@@ -152,13 +153,11 @@ func TestTriageOp(t *testing.T) {
 			after, err := tb.runTestTriage(c, before)
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldResemble, []int64{1, 2, 3, 4})
-			So(tb.requests, ShouldResemble, []task.Request{
-				{IncomingTriggers: []*internal.Trigger{triggers[2]}},
-				{IncomingTriggers: []*internal.Trigger{triggers[3]}},
-				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
-				{IncomingTriggers: []*internal.Trigger{triggers[1]}},
-			})
-
+			So(tb.requests, ShouldHaveLength, 4)
+			So(tb.requests[0].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[2]})
+			So(tb.requests[1].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[3]})
+			So(tb.requests[2].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[0]})
+			So(tb.requests[3].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[1]})
 			tb.requests = nil
 
 			// Cycle 2. Nothing new.
@@ -226,9 +225,8 @@ func TestTriageOp(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 			So(after.ActiveInvocations, ShouldHaveLength, 1)
-			So(tb.requests, ShouldResemble, []task.Request{
-				{IncomingTriggers: []*internal.Trigger{triggers[0]}},
-			})
+			So(tb.requests, ShouldHaveLength, 1)
+			So(tb.requests[0].IncomingTriggers, ShouldResembleProto, []*internal.Trigger{triggers[0]})
 
 			// No triggers there anymore.
 			listing, err := pendingTriggersSet(c, "job").List(c)

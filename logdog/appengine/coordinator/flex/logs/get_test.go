@@ -577,7 +577,7 @@ func testGetImpl(t *testing.T, archived bool) {
 					So(resp.Logs[0], ShouldNotBeNil)
 
 					// Confirm that there is a descriptor protobuf.
-					So(resp.Desc, ShouldResemble, tls.Desc)
+					So(resp.Desc, ShouldResembleProto, tls.Desc)
 
 					// Confirm that the state was returned.
 					So(resp.State, ShouldNotBeNil)
@@ -599,8 +599,8 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					So(resp.Logs[0].GetText(), ShouldResemble, &logpb.Text{
 						Lines: []*logpb.Text_Line{
-							{"log entry #0", "\n"},
-							{"another line of text", ""},
+							{Value: "log entry #0", Delimiter: "\n"},
+							{Value: "another line of text", Delimiter: ""},
 						},
 					})
 				})

@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestMintMachineTokenRPC(t *testing.T) {
@@ -57,7 +58,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 
 		resp, err := impl.MintMachineToken(ctx, testingMachineTokenRequest(ctx))
 		So(err, ShouldBeNil)
-		So(resp, ShouldResemble, &minter.MintMachineTokenResponse{
+		So(resp, ShouldResembleProto, &minter.MintMachineTokenResponse{
 			ServiceVersion: "unit-tests/mocked-ver",
 			TokenResponse: &minter.MachineTokenResponse{
 				ServiceVersion: "unit-tests/mocked-ver",
@@ -70,17 +71,18 @@ func TestMintMachineTokenRPC(t *testing.T) {
 			},
 		})
 
+		So(loggedInfo.TokenBody, ShouldResembleProto, &tokenserver.MachineTokenBody{
+			MachineFqdn: "luci-token-server-test-1.fake.domain",
+			IssuedBy:    "signer@testing.host",
+			IssuedAt:    1422936306,
+			Lifetime:    3600,
+			CaId:        123,
+			CertSn:      4096,
+		})
+		loggedInfo.TokenBody = nil
 		So(loggedInfo, ShouldResemble, &MintedTokenInfo{
-			Request:  testingRawRequest(ctx),
-			Response: resp.TokenResponse,
-			TokenBody: &tokenserver.MachineTokenBody{
-				MachineFqdn: "luci-token-server-test-1.fake.domain",
-				IssuedBy:    "signer@testing.host",
-				IssuedAt:    1422936306,
-				Lifetime:    3600,
-				CaId:        123,
-				CertSn:      4096,
-			},
+			Request:   testingRawRequest(ctx),
+			Response:  resp.TokenResponse,
 			CA:        &testingCA,
 			PeerIP:    net.ParseIP("127.10.10.10"),
 			RequestID: "gae-request-id",

@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // LogStreamState is the log stream state value communicated to services.
 type LogStreamState struct {
 	// ProtoVersion is the protobuf version for this stream.
@@ -29,13 +35,35 @@ type LogStreamState struct {
 	// If the log stream has been archived.
 	Archived bool `protobuf:"varint,4,opt,name=archived" json:"archived,omitempty"`
 	// If the log stream has been purged.
-	Purged bool `protobuf:"varint,5,opt,name=purged" json:"purged,omitempty"`
+	Purged               bool     `protobuf:"varint,5,opt,name=purged" json:"purged,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LogStreamState) Reset()                    { *m = LogStreamState{} }
-func (m *LogStreamState) String() string            { return proto.CompactTextString(m) }
-func (*LogStreamState) ProtoMessage()               {}
-func (*LogStreamState) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *LogStreamState) Reset()         { *m = LogStreamState{} }
+func (m *LogStreamState) String() string { return proto.CompactTextString(m) }
+func (*LogStreamState) ProtoMessage()    {}
+func (*LogStreamState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_state_a9d912265b015cb7, []int{0}
+}
+func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogStreamState.Unmarshal(m, b)
+}
+func (m *LogStreamState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogStreamState.Marshal(b, m, deterministic)
+}
+func (dst *LogStreamState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState.Merge(dst, src)
+}
+func (m *LogStreamState) XXX_Size() int {
+	return xxx_messageInfo_LogStreamState.Size(m)
+}
+func (m *LogStreamState) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogStreamState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogStreamState proto.InternalMessageInfo
 
 func (m *LogStreamState) GetProtoVersion() string {
 	if m != nil {
@@ -77,10 +105,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.proto", fileDescriptor_state_a9d912265b015cb7)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_state_a9d912265b015cb7 = []byte{
 	// 222 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xc1, 0x4a, 0xc4, 0x30,
 	0x10, 0x40, 0x89, 0xab, 0x65, 0x0d, 0xbb, 0x7b, 0xc8, 0x41, 0x82, 0xa7, 0xa2, 0x08, 0x3d, 0x35,

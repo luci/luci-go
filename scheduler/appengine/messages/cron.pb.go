@@ -12,11 +12,17 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/cron.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/cron.proto", fileDescriptor_cron_3ffe7548626f066b)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_cron_3ffe7548626f066b = []byte{
 	// 94 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0xca, 0x31, 0x0a, 0x80, 0x30,
 	0x0c, 0x05, 0xd0, 0x4d, 0xd0, 0xd1, 0x83, 0x34, 0x83, 0xab, 0x97, 0xa9, 0x31, 0xa4, 0x85, 0xb6,

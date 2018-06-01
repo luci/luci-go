@@ -90,8 +90,11 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 		return nil, err
 	}
 
-	ret := (gerritpb.ChangeInfo)(resp)
-	return &ret, nil
+	return &gerritpb.ChangeInfo{
+		Number:  resp.Number,
+		Owner:   resp.Owner,
+		Project: resp.Project,
+	}, nil
 }
 
 func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessRequest, opts ...grpc.CallOption) (

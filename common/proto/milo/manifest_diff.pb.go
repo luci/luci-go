@@ -13,6 +13,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Stat indicates how a given item has changed.
 type ManifestDiff_Stat int32
 
@@ -53,7 +59,9 @@ var ManifestDiff_Stat_value = map[string]int32{
 func (x ManifestDiff_Stat) String() string {
 	return proto.EnumName(ManifestDiff_Stat_name, int32(x))
 }
-func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_diff_0c29ec2e8e2398d2, []int{0, 0}
+}
 
 // ManifestDiff holds basic difference information between two source manifests.
 type ManifestDiff struct {
@@ -62,14 +70,36 @@ type ManifestDiff struct {
 	// The newer of the two manifests.
 	New *Manifest `protobuf:"bytes,2,opt,name=new" json:"new,omitempty"`
 	// Indicates if there is some overall difference between old and new.
-	Overall     ManifestDiff_Stat                  `protobuf:"varint,3,opt,name=overall,enum=milo.ManifestDiff_Stat" json:"overall,omitempty"`
-	Directories map[string]*ManifestDiff_Directory `protobuf:"bytes,4,rep,name=directories" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Overall              ManifestDiff_Stat                  `protobuf:"varint,3,opt,name=overall,enum=milo.ManifestDiff_Stat" json:"overall,omitempty"`
+	Directories          map[string]*ManifestDiff_Directory `protobuf:"bytes,4,rep,name=directories" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
 }
 
-func (m *ManifestDiff) Reset()                    { *m = ManifestDiff{} }
-func (m *ManifestDiff) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff) ProtoMessage()               {}
-func (*ManifestDiff) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *ManifestDiff) Reset()         { *m = ManifestDiff{} }
+func (m *ManifestDiff) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff) ProtoMessage()    {}
+func (*ManifestDiff) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_diff_0c29ec2e8e2398d2, []int{0}
+}
+func (m *ManifestDiff) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff.Unmarshal(m, b)
+}
+func (m *ManifestDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff.Marshal(b, m, deterministic)
+}
+func (dst *ManifestDiff) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff.Merge(dst, src)
+}
+func (m *ManifestDiff) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff.Size(m)
+}
+func (m *ManifestDiff) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff proto.InternalMessageInfo
 
 func (m *ManifestDiff) GetOld() *Manifest {
 	if m != nil {
@@ -120,13 +150,35 @@ type ManifestDiff_GitCheckout struct {
 	RepoUrl string `protobuf:"bytes,4,opt,name=repo_url,json=repoUrl" json:"repo_url,omitempty"`
 	// If revision==DIFF, this may be populated with git history occuring
 	// between the two base revisions.
-	History []*git.Commit `protobuf:"bytes,5,rep,name=history" json:"history,omitempty"`
+	History              []*git.Commit `protobuf:"bytes,5,rep,name=history" json:"history,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *ManifestDiff_GitCheckout) Reset()                    { *m = ManifestDiff_GitCheckout{} }
-func (m *ManifestDiff_GitCheckout) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff_GitCheckout) ProtoMessage()               {}
-func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 0} }
+func (m *ManifestDiff_GitCheckout) Reset()         { *m = ManifestDiff_GitCheckout{} }
+func (m *ManifestDiff_GitCheckout) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff_GitCheckout) ProtoMessage()    {}
+func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_diff_0c29ec2e8e2398d2, []int{0, 0}
+}
+func (m *ManifestDiff_GitCheckout) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Unmarshal(m, b)
+}
+func (m *ManifestDiff_GitCheckout) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Marshal(b, m, deterministic)
+}
+func (dst *ManifestDiff_GitCheckout) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_GitCheckout.Merge(dst, src)
+}
+func (m *ManifestDiff_GitCheckout) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Size(m)
+}
+func (m *ManifestDiff_GitCheckout) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff_GitCheckout.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff_GitCheckout proto.InternalMessageInfo
 
 func (m *ManifestDiff_GitCheckout) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -178,13 +230,35 @@ type ManifestDiff_Directory struct {
 	//
 	// Since order-of-application for isolateds matters, this will indicate
 	// MODIFIED if the order of isolated hashes changes.
-	Isolated ManifestDiff_Stat `protobuf:"varint,6,opt,name=isolated,enum=milo.ManifestDiff_Stat" json:"isolated,omitempty"`
+	Isolated             ManifestDiff_Stat `protobuf:"varint,6,opt,name=isolated,enum=milo.ManifestDiff_Stat" json:"isolated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *ManifestDiff_Directory) Reset()                    { *m = ManifestDiff_Directory{} }
-func (m *ManifestDiff_Directory) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff_Directory) ProtoMessage()               {}
-func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0, 1} }
+func (m *ManifestDiff_Directory) Reset()         { *m = ManifestDiff_Directory{} }
+func (m *ManifestDiff_Directory) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff_Directory) ProtoMessage()    {}
+func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_diff_0c29ec2e8e2398d2, []int{0, 1}
+}
+func (m *ManifestDiff_Directory) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff_Directory.Unmarshal(m, b)
+}
+func (m *ManifestDiff_Directory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff_Directory.Marshal(b, m, deterministic)
+}
+func (dst *ManifestDiff_Directory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_Directory.Merge(dst, src)
+}
+func (m *ManifestDiff_Directory) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff_Directory.Size(m)
+}
+func (m *ManifestDiff_Directory) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff_Directory.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff_Directory proto.InternalMessageInfo
 
 func (m *ManifestDiff_Directory) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -230,16 +304,18 @@ func (m *ManifestDiff_Directory) GetIsolated() ManifestDiff_Stat {
 
 func init() {
 	proto.RegisterType((*ManifestDiff)(nil), "milo.ManifestDiff")
+	proto.RegisterMapType((map[string]*ManifestDiff_Directory)(nil), "milo.ManifestDiff.DirectoriesEntry")
 	proto.RegisterType((*ManifestDiff_GitCheckout)(nil), "milo.ManifestDiff.GitCheckout")
 	proto.RegisterType((*ManifestDiff_Directory)(nil), "milo.ManifestDiff.Directory")
+	proto.RegisterMapType((map[string]ManifestDiff_Stat)(nil), "milo.ManifestDiff.Directory.CipdPackageEntry")
 	proto.RegisterEnum("milo.ManifestDiff_Stat", ManifestDiff_Stat_name, ManifestDiff_Stat_value)
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest_diff.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest_diff.proto", fileDescriptor_manifest_diff_0c29ec2e8e2398d2)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_manifest_diff_0c29ec2e8e2398d2 = []byte{
 	// 547 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0x51, 0x8b, 0xda, 0x40,
 	0x10, 0xc7, 0x9b, 0x33, 0x9e, 0x3a, 0xb1, 0x12, 0x96, 0x42, 0xd3, 0x50, 0x8a, 0x5c, 0x29, 0xf8,

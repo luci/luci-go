@@ -6,22 +6,50 @@ package dm
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/timestamp"
-import google_protobuf2 "github.com/golang/protobuf/ptypes/empty"
+import empty "github.com/golang/protobuf/ptypes/empty"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type MultiPropertyValue struct {
-	Values []*PropertyValue `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	Values               []*PropertyValue `protobuf:"bytes,1,rep,name=values" json:"values,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *MultiPropertyValue) Reset()                    { *m = MultiPropertyValue{} }
-func (m *MultiPropertyValue) String() string            { return proto.CompactTextString(m) }
-func (*MultiPropertyValue) ProtoMessage()               {}
-func (*MultiPropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (m *MultiPropertyValue) Reset()         { *m = MultiPropertyValue{} }
+func (m *MultiPropertyValue) String() string { return proto.CompactTextString(m) }
+func (*MultiPropertyValue) ProtoMessage()    {}
+func (*MultiPropertyValue) Descriptor() ([]byte, []int) {
+	return fileDescriptor_types_77f8d79627685e00, []int{0}
+}
+func (m *MultiPropertyValue) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MultiPropertyValue.Unmarshal(m, b)
+}
+func (m *MultiPropertyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MultiPropertyValue.Marshal(b, m, deterministic)
+}
+func (dst *MultiPropertyValue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultiPropertyValue.Merge(dst, src)
+}
+func (m *MultiPropertyValue) XXX_Size() int {
+	return xxx_messageInfo_MultiPropertyValue.Size(m)
+}
+func (m *MultiPropertyValue) XXX_DiscardUnknown() {
+	xxx_messageInfo_MultiPropertyValue.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MultiPropertyValue proto.InternalMessageInfo
 
 func (m *MultiPropertyValue) GetValues() []*PropertyValue {
 	if m != nil {
@@ -38,13 +66,35 @@ type PropertyValue struct {
 	//	*PropertyValue_Bin
 	//	*PropertyValue_Time
 	//	*PropertyValue_Null
-	Value isPropertyValue_Value `protobuf_oneof:"value"`
+	Value                isPropertyValue_Value `protobuf_oneof:"value"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *PropertyValue) Reset()                    { *m = PropertyValue{} }
-func (m *PropertyValue) String() string            { return proto.CompactTextString(m) }
-func (*PropertyValue) ProtoMessage()               {}
-func (*PropertyValue) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
+func (m *PropertyValue) Reset()         { *m = PropertyValue{} }
+func (m *PropertyValue) String() string { return proto.CompactTextString(m) }
+func (*PropertyValue) ProtoMessage()    {}
+func (*PropertyValue) Descriptor() ([]byte, []int) {
+	return fileDescriptor_types_77f8d79627685e00, []int{1}
+}
+func (m *PropertyValue) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PropertyValue.Unmarshal(m, b)
+}
+func (m *PropertyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PropertyValue.Marshal(b, m, deterministic)
+}
+func (dst *PropertyValue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PropertyValue.Merge(dst, src)
+}
+func (m *PropertyValue) XXX_Size() int {
+	return xxx_messageInfo_PropertyValue.Size(m)
+}
+func (m *PropertyValue) XXX_DiscardUnknown() {
+	xxx_messageInfo_PropertyValue.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PropertyValue proto.InternalMessageInfo
 
 type isPropertyValue_Value interface {
 	isPropertyValue_Value()
@@ -63,10 +113,10 @@ type PropertyValue_Bin struct {
 	Bin bool `protobuf:"varint,5,opt,name=bin,oneof"`
 }
 type PropertyValue_Time struct {
-	Time *google_protobuf1.Timestamp `protobuf:"bytes,6,opt,name=time,oneof"`
+	Time *timestamp.Timestamp `protobuf:"bytes,6,opt,name=time,oneof"`
 }
 type PropertyValue_Null struct {
-	Null *google_protobuf2.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
+	Null *empty.Empty `protobuf:"bytes,7,opt,name=null,oneof"`
 }
 
 func (*PropertyValue_Str) isPropertyValue_Value()  {}
@@ -111,14 +161,14 @@ func (m *PropertyValue) GetBin() bool {
 	return false
 }
 
-func (m *PropertyValue) GetTime() *google_protobuf1.Timestamp {
+func (m *PropertyValue) GetTime() *timestamp.Timestamp {
 	if x, ok := m.GetValue().(*PropertyValue_Time); ok {
 		return x.Time
 	}
 	return nil
 }
 
-func (m *PropertyValue) GetNull() *google_protobuf2.Empty {
+func (m *PropertyValue) GetNull() *empty.Empty {
 	if x, ok := m.GetValue().(*PropertyValue_Null); ok {
 		return x.Null
 	}
@@ -209,7 +259,7 @@ func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(google_protobuf1.Timestamp)
+		msg := new(timestamp.Timestamp)
 		err := b.DecodeMessage(msg)
 		m.Value = &PropertyValue_Time{msg}
 		return true, err
@@ -217,7 +267,7 @@ func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(google_protobuf2.Empty)
+		msg := new(empty.Empty)
 		err := b.DecodeMessage(msg)
 		m.Value = &PropertyValue_Null{msg}
 		return true, err
@@ -231,27 +281,27 @@ func _PropertyValue_OneofSizer(msg proto.Message) (n int) {
 	// value
 	switch x := m.Value.(type) {
 	case *PropertyValue_Str:
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.Str)))
 		n += len(x.Str)
 	case *PropertyValue_Dat:
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(len(x.Dat)))
 		n += len(x.Dat)
 	case *PropertyValue_Num:
-		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Num))
 	case *PropertyValue_Bin:
-		n += proto.SizeVarint(5<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += 1
 	case *PropertyValue_Time:
 		s := proto.Size(x.Time)
-		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *PropertyValue_Null:
 		s := proto.Size(x.Null)
-		n += proto.SizeVarint(7<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -271,13 +321,35 @@ type AttemptList struct {
 	//     "foo": [1, 2],
 	//     "bar": [1],
 	//   }
-	To map[string]*AttemptList_Nums `protobuf:"bytes,2,rep,name=to" json:"to,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	To                   map[string]*AttemptList_Nums `protobuf:"bytes,2,rep,name=to" json:"to,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
 }
 
-func (m *AttemptList) Reset()                    { *m = AttemptList{} }
-func (m *AttemptList) String() string            { return proto.CompactTextString(m) }
-func (*AttemptList) ProtoMessage()               {}
-func (*AttemptList) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
+func (m *AttemptList) Reset()         { *m = AttemptList{} }
+func (m *AttemptList) String() string { return proto.CompactTextString(m) }
+func (*AttemptList) ProtoMessage()    {}
+func (*AttemptList) Descriptor() ([]byte, []int) {
+	return fileDescriptor_types_77f8d79627685e00, []int{2}
+}
+func (m *AttemptList) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AttemptList.Unmarshal(m, b)
+}
+func (m *AttemptList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AttemptList.Marshal(b, m, deterministic)
+}
+func (dst *AttemptList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttemptList.Merge(dst, src)
+}
+func (m *AttemptList) XXX_Size() int {
+	return xxx_messageInfo_AttemptList.Size(m)
+}
+func (m *AttemptList) XXX_DiscardUnknown() {
+	xxx_messageInfo_AttemptList.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AttemptList proto.InternalMessageInfo
 
 func (m *AttemptList) GetTo() map[string]*AttemptList_Nums {
 	if m != nil {
@@ -287,13 +359,35 @@ func (m *AttemptList) GetTo() map[string]*AttemptList_Nums {
 }
 
 type AttemptList_Nums struct {
-	Nums []uint32 `protobuf:"varint,1,rep,packed,name=nums" json:"nums,omitempty"`
+	Nums                 []uint32 `protobuf:"varint,1,rep,packed,name=nums" json:"nums,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AttemptList_Nums) Reset()                    { *m = AttemptList_Nums{} }
-func (m *AttemptList_Nums) String() string            { return proto.CompactTextString(m) }
-func (*AttemptList_Nums) ProtoMessage()               {}
-func (*AttemptList_Nums) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2, 0} }
+func (m *AttemptList_Nums) Reset()         { *m = AttemptList_Nums{} }
+func (m *AttemptList_Nums) String() string { return proto.CompactTextString(m) }
+func (*AttemptList_Nums) ProtoMessage()    {}
+func (*AttemptList_Nums) Descriptor() ([]byte, []int) {
+	return fileDescriptor_types_77f8d79627685e00, []int{2, 0}
+}
+func (m *AttemptList_Nums) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_AttemptList_Nums.Unmarshal(m, b)
+}
+func (m *AttemptList_Nums) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_AttemptList_Nums.Marshal(b, m, deterministic)
+}
+func (dst *AttemptList_Nums) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttemptList_Nums.Merge(dst, src)
+}
+func (m *AttemptList_Nums) XXX_Size() int {
+	return xxx_messageInfo_AttemptList_Nums.Size(m)
+}
+func (m *AttemptList_Nums) XXX_DiscardUnknown() {
+	xxx_messageInfo_AttemptList_Nums.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_AttemptList_Nums proto.InternalMessageInfo
 
 func (m *AttemptList_Nums) GetNums() []uint32 {
 	if m != nil {
@@ -306,12 +400,15 @@ func init() {
 	proto.RegisterType((*MultiPropertyValue)(nil), "dm.MultiPropertyValue")
 	proto.RegisterType((*PropertyValue)(nil), "dm.PropertyValue")
 	proto.RegisterType((*AttemptList)(nil), "dm.AttemptList")
+	proto.RegisterMapType((map[string]*AttemptList_Nums)(nil), "dm.AttemptList.ToEntry")
 	proto.RegisterType((*AttemptList_Nums)(nil), "dm.AttemptList.Nums")
 }
 
-func init() { proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/types.proto", fileDescriptor6) }
+func init() {
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/types.proto", fileDescriptor_types_77f8d79627685e00)
+}
 
-var fileDescriptor6 = []byte{
+var fileDescriptor_types_77f8d79627685e00 = []byte{
 	// 380 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x90, 0xdf, 0x8a, 0xd4, 0x30,
 	0x14, 0xc6, 0x37, 0x6d, 0x67, 0x66, 0x4d, 0x5d, 0x18, 0x83, 0xac, 0xa1, 0x82, 0x96, 0xb9, 0xb1,

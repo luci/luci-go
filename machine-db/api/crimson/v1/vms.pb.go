@@ -6,13 +6,19 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "google.golang.org/genproto/protobuf/field_mask"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A VM in the database.
 type VM struct {
@@ -34,13 +40,35 @@ type VM struct {
 	// The IPv4 address associated with this host.
 	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4" json:"ipv4,omitempty"`
 	// The state of this VM.
-	State common.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VM) Reset()                    { *m = VM{} }
-func (m *VM) String() string            { return proto.CompactTextString(m) }
-func (*VM) ProtoMessage()               {}
-func (*VM) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{0} }
+func (m *VM) Reset()         { *m = VM{} }
+func (m *VM) String() string { return proto.CompactTextString(m) }
+func (*VM) ProtoMessage()    {}
+func (*VM) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vms_0aa6bb694fc6c462, []int{0}
+}
+func (m *VM) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VM.Unmarshal(m, b)
+}
+func (m *VM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VM.Marshal(b, m, deterministic)
+}
+func (dst *VM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VM.Merge(dst, src)
+}
+func (m *VM) XXX_Size() int {
+	return xxx_messageInfo_VM.Size(m)
+}
+func (m *VM) XXX_DiscardUnknown() {
+	xxx_messageInfo_VM.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VM proto.InternalMessageInfo
 
 func (m *VM) GetName() string {
 	if m != nil {
@@ -98,23 +126,45 @@ func (m *VM) GetIpv4() string {
 	return ""
 }
 
-func (m *VM) GetState() common.State {
+func (m *VM) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 // A request to create a new VM in the database.
 type CreateVMRequest struct {
 	// The VM to create in the database.
-	Vm *VM `protobuf:"bytes,1,opt,name=vm" json:"vm,omitempty"`
+	Vm                   *VM      `protobuf:"bytes,1,opt,name=vm" json:"vm,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateVMRequest) Reset()                    { *m = CreateVMRequest{} }
-func (m *CreateVMRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateVMRequest) ProtoMessage()               {}
-func (*CreateVMRequest) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{1} }
+func (m *CreateVMRequest) Reset()         { *m = CreateVMRequest{} }
+func (m *CreateVMRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateVMRequest) ProtoMessage()    {}
+func (*CreateVMRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vms_0aa6bb694fc6c462, []int{1}
+}
+func (m *CreateVMRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateVMRequest.Unmarshal(m, b)
+}
+func (m *CreateVMRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateVMRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateVMRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateVMRequest.Merge(dst, src)
+}
+func (m *CreateVMRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateVMRequest.Size(m)
+}
+func (m *CreateVMRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateVMRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateVMRequest proto.InternalMessageInfo
 
 func (m *CreateVMRequest) GetVm() *VM {
 	if m != nil {
@@ -138,13 +188,35 @@ type ListVMsRequest struct {
 	// The operating system to filter retrieved VMs on.
 	Oses []string `protobuf:"bytes,6,rep,name=oses" json:"oses,omitempty"`
 	// The states to filter retrieved VMs on.
-	States []common.State `protobuf:"varint,10,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States               []v1.State `protobuf:"varint,10,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *ListVMsRequest) Reset()                    { *m = ListVMsRequest{} }
-func (m *ListVMsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListVMsRequest) ProtoMessage()               {}
-func (*ListVMsRequest) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{2} }
+func (m *ListVMsRequest) Reset()         { *m = ListVMsRequest{} }
+func (m *ListVMsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListVMsRequest) ProtoMessage()    {}
+func (*ListVMsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vms_0aa6bb694fc6c462, []int{2}
+}
+func (m *ListVMsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListVMsRequest.Unmarshal(m, b)
+}
+func (m *ListVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListVMsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListVMsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListVMsRequest.Merge(dst, src)
+}
+func (m *ListVMsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListVMsRequest.Size(m)
+}
+func (m *ListVMsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListVMsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListVMsRequest proto.InternalMessageInfo
 
 func (m *ListVMsRequest) GetNames() []string {
 	if m != nil {
@@ -188,7 +260,7 @@ func (m *ListVMsRequest) GetOses() []string {
 	return nil
 }
 
-func (m *ListVMsRequest) GetStates() []common.State {
+func (m *ListVMsRequest) GetStates() []v1.State {
 	if m != nil {
 		return m.States
 	}
@@ -198,13 +270,35 @@ func (m *ListVMsRequest) GetStates() []common.State {
 // A response containing a list of VMs in the database.
 type ListVMsResponse struct {
 	// The VMs matching this request.
-	Vms []*VM `protobuf:"bytes,1,rep,name=vms" json:"vms,omitempty"`
+	Vms                  []*VM    `protobuf:"bytes,1,rep,name=vms" json:"vms,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListVMsResponse) Reset()                    { *m = ListVMsResponse{} }
-func (m *ListVMsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListVMsResponse) ProtoMessage()               {}
-func (*ListVMsResponse) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{3} }
+func (m *ListVMsResponse) Reset()         { *m = ListVMsResponse{} }
+func (m *ListVMsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListVMsResponse) ProtoMessage()    {}
+func (*ListVMsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vms_0aa6bb694fc6c462, []int{3}
+}
+func (m *ListVMsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListVMsResponse.Unmarshal(m, b)
+}
+func (m *ListVMsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListVMsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListVMsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListVMsResponse.Merge(dst, src)
+}
+func (m *ListVMsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListVMsResponse.Size(m)
+}
+func (m *ListVMsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListVMsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListVMsResponse proto.InternalMessageInfo
 
 func (m *ListVMsResponse) GetVms() []*VM {
 	if m != nil {
@@ -218,13 +312,35 @@ type UpdateVMRequest struct {
 	// The VM to update in the database.
 	Vm *VM `protobuf:"bytes,1,opt,name=vm" json:"vm,omitempty"`
 	// The fields to update in the VM.
-	UpdateMask *google_protobuf1.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdateVMRequest) Reset()                    { *m = UpdateVMRequest{} }
-func (m *UpdateVMRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateVMRequest) ProtoMessage()               {}
-func (*UpdateVMRequest) Descriptor() ([]byte, []int) { return fileDescriptor15, []int{4} }
+func (m *UpdateVMRequest) Reset()         { *m = UpdateVMRequest{} }
+func (m *UpdateVMRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateVMRequest) ProtoMessage()    {}
+func (*UpdateVMRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vms_0aa6bb694fc6c462, []int{4}
+}
+func (m *UpdateVMRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateVMRequest.Unmarshal(m, b)
+}
+func (m *UpdateVMRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateVMRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateVMRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVMRequest.Merge(dst, src)
+}
+func (m *UpdateVMRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateVMRequest.Size(m)
+}
+func (m *UpdateVMRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateVMRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateVMRequest proto.InternalMessageInfo
 
 func (m *UpdateVMRequest) GetVm() *VM {
 	if m != nil {
@@ -233,7 +349,7 @@ func (m *UpdateVMRequest) GetVm() *VM {
 	return nil
 }
 
-func (m *UpdateVMRequest) GetUpdateMask() *google_protobuf1.FieldMask {
+func (m *UpdateVMRequest) GetUpdateMask() *field_mask.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}
@@ -249,10 +365,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor15)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor_vms_0aa6bb694fc6c462)
 }
 
-var fileDescriptor15 = []byte{
+var fileDescriptor_vms_0aa6bb694fc6c462 = []byte{
 	// 462 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x41, 0x8f, 0xd3, 0x30,
 	0x10, 0x85, 0x95, 0xa4, 0xed, 0x6e, 0xa7, 0xa2, 0x05, 0x8b, 0x83, 0x55, 0xb4, 0x52, 0x54, 0x84,

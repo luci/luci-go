@@ -334,8 +334,7 @@ func decodeInvCursor(cursor string, cur *internal.InvocationsCursor) error {
 
 // encodeInvCursor serializes the cursor to base64-encoded string.
 func encodeInvCursor(cur *internal.InvocationsCursor) (string, error) {
-	zero := internal.InvocationsCursor{}
-	if *cur == zero {
+	if cur.LastScanned == 0 {
 		return "", nil
 	}
 

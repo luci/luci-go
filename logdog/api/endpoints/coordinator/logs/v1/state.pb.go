@@ -6,12 +6,18 @@ package logdog
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // LogStreamState is a bidirectional state value used in UpdateStream calls.
 //
@@ -20,7 +26,7 @@ type LogStreamState struct {
 	// ProtoVersion is the protobuf version for this stream.
 	ProtoVersion string `protobuf:"bytes,1,opt,name=proto_version,json=protoVersion" json:"proto_version,omitempty"`
 	// The time when the log stream was registered with the Coordinator.
-	Created *google_protobuf.Timestamp `protobuf:"bytes,2,opt,name=created" json:"created,omitempty"`
+	Created *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created" json:"created,omitempty"`
 	// The stream index of the log stream's terminal message. If the value is -1,
 	// the log is still streaming.
 	TerminalIndex int64 `protobuf:"varint,3,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
@@ -29,13 +35,35 @@ type LogStreamState struct {
 	Archive *LogStreamState_ArchiveInfo `protobuf:"bytes,4,opt,name=archive" json:"archive,omitempty"`
 	// Indicates the purged state of a log. A log that has been purged is only
 	// acknowledged to administrative clients.
-	Purged bool `protobuf:"varint,5,opt,name=purged" json:"purged,omitempty"`
+	Purged               bool     `protobuf:"varint,5,opt,name=purged" json:"purged,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LogStreamState) Reset()                    { *m = LogStreamState{} }
-func (m *LogStreamState) String() string            { return proto.CompactTextString(m) }
-func (*LogStreamState) ProtoMessage()               {}
-func (*LogStreamState) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *LogStreamState) Reset()         { *m = LogStreamState{} }
+func (m *LogStreamState) String() string { return proto.CompactTextString(m) }
+func (*LogStreamState) ProtoMessage()    {}
+func (*LogStreamState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_state_a725b322fbb28ebb, []int{0}
+}
+func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogStreamState.Unmarshal(m, b)
+}
+func (m *LogStreamState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogStreamState.Marshal(b, m, deterministic)
+}
+func (dst *LogStreamState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState.Merge(dst, src)
+}
+func (m *LogStreamState) XXX_Size() int {
+	return xxx_messageInfo_LogStreamState.Size(m)
+}
+func (m *LogStreamState) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogStreamState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogStreamState proto.InternalMessageInfo
 
 func (m *LogStreamState) GetProtoVersion() string {
 	if m != nil {
@@ -44,7 +72,7 @@ func (m *LogStreamState) GetProtoVersion() string {
 	return ""
 }
 
-func (m *LogStreamState) GetCreated() *google_protobuf.Timestamp {
+func (m *LogStreamState) GetCreated() *timestamp.Timestamp {
 	if m != nil {
 		return m.Created
 	}
@@ -85,13 +113,35 @@ type LogStreamState_ArchiveInfo struct {
 	// intermediate storage when the archival interval expired.
 	Complete bool `protobuf:"varint,4,opt,name=complete" json:"complete,omitempty"`
 	// The number of log
-	LogEntryCount int64 `protobuf:"varint,5,opt,name=log_entry_count,json=logEntryCount" json:"log_entry_count,omitempty"`
+	LogEntryCount        int64    `protobuf:"varint,5,opt,name=log_entry_count,json=logEntryCount" json:"log_entry_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LogStreamState_ArchiveInfo) Reset()                    { *m = LogStreamState_ArchiveInfo{} }
-func (m *LogStreamState_ArchiveInfo) String() string            { return proto.CompactTextString(m) }
-func (*LogStreamState_ArchiveInfo) ProtoMessage()               {}
-func (*LogStreamState_ArchiveInfo) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (m *LogStreamState_ArchiveInfo) Reset()         { *m = LogStreamState_ArchiveInfo{} }
+func (m *LogStreamState_ArchiveInfo) String() string { return proto.CompactTextString(m) }
+func (*LogStreamState_ArchiveInfo) ProtoMessage()    {}
+func (*LogStreamState_ArchiveInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_state_a725b322fbb28ebb, []int{0, 0}
+}
+func (m *LogStreamState_ArchiveInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogStreamState_ArchiveInfo.Unmarshal(m, b)
+}
+func (m *LogStreamState_ArchiveInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogStreamState_ArchiveInfo.Marshal(b, m, deterministic)
+}
+func (dst *LogStreamState_ArchiveInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState_ArchiveInfo.Merge(dst, src)
+}
+func (m *LogStreamState_ArchiveInfo) XXX_Size() int {
+	return xxx_messageInfo_LogStreamState_ArchiveInfo.Size(m)
+}
+func (m *LogStreamState_ArchiveInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogStreamState_ArchiveInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogStreamState_ArchiveInfo proto.InternalMessageInfo
 
 func (m *LogStreamState_ArchiveInfo) GetIndexUrl() string {
 	if m != nil {
@@ -134,10 +184,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto", fileDescriptor_state_a725b322fbb28ebb)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_state_a725b322fbb28ebb = []byte{
 	// 361 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xcd, 0x6a, 0xe3, 0x30,
 	0x14, 0x85, 0x71, 0x3c, 0x93, 0x38, 0xca, 0x24, 0x03, 0x5a, 0x0c, 0x1e, 0x0f, 0xc3, 0x98, 0x0c,

@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // A Manifest attempts to make an accurate accounting of source/data directories
 // during the execution of a LUCI task.
 //
@@ -54,13 +60,35 @@ type Manifest struct {
 	// Ex.
 	//   "": {...}  // root directory
 	//   "src/third_party/something": {...}
-	Directories map[string]*Manifest_Directory `protobuf:"bytes,2,rep,name=directories" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Directories          map[string]*Manifest_Directory `protobuf:"bytes,2,rep,name=directories" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
 }
 
-func (m *Manifest) Reset()                    { *m = Manifest{} }
-func (m *Manifest) String() string            { return proto.CompactTextString(m) }
-func (*Manifest) ProtoMessage()               {}
-func (*Manifest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Manifest) Reset()         { *m = Manifest{} }
+func (m *Manifest) String() string { return proto.CompactTextString(m) }
+func (*Manifest) ProtoMessage()    {}
+func (*Manifest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{0}
+}
+func (m *Manifest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Manifest.Unmarshal(m, b)
+}
+func (m *Manifest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Manifest.Marshal(b, m, deterministic)
+}
+func (dst *Manifest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Manifest.Merge(dst, src)
+}
+func (m *Manifest) XXX_Size() int {
+	return xxx_messageInfo_Manifest.Size(m)
+}
+func (m *Manifest) XXX_DiscardUnknown() {
+	xxx_messageInfo_Manifest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Manifest proto.InternalMessageInfo
 
 func (m *Manifest) GetVersion() int32 {
 	if m != nil {
@@ -134,13 +162,35 @@ type Manifest_GitCheckout struct {
 	//
 	// Ex.
 	//   refs/changes/04/511804/4
-	PatchFetchRef string `protobuf:"bytes,6,opt,name=patch_fetch_ref,json=patchFetchRef" json:"patch_fetch_ref,omitempty"`
+	PatchFetchRef        string   `protobuf:"bytes,6,opt,name=patch_fetch_ref,json=patchFetchRef" json:"patch_fetch_ref,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Manifest_GitCheckout) Reset()                    { *m = Manifest_GitCheckout{} }
-func (m *Manifest_GitCheckout) String() string            { return proto.CompactTextString(m) }
-func (*Manifest_GitCheckout) ProtoMessage()               {}
-func (*Manifest_GitCheckout) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (m *Manifest_GitCheckout) Reset()         { *m = Manifest_GitCheckout{} }
+func (m *Manifest_GitCheckout) String() string { return proto.CompactTextString(m) }
+func (*Manifest_GitCheckout) ProtoMessage()    {}
+func (*Manifest_GitCheckout) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{0, 0}
+}
+func (m *Manifest_GitCheckout) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Manifest_GitCheckout.Unmarshal(m, b)
+}
+func (m *Manifest_GitCheckout) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Manifest_GitCheckout.Marshal(b, m, deterministic)
+}
+func (dst *Manifest_GitCheckout) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Manifest_GitCheckout.Merge(dst, src)
+}
+func (m *Manifest_GitCheckout) XXX_Size() int {
+	return xxx_messageInfo_Manifest_GitCheckout.Size(m)
+}
+func (m *Manifest_GitCheckout) XXX_DiscardUnknown() {
+	xxx_messageInfo_Manifest_GitCheckout.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Manifest_GitCheckout proto.InternalMessageInfo
 
 func (m *Manifest_GitCheckout) GetRepoUrl() string {
 	if m != nil {
@@ -200,13 +250,35 @@ type Manifest_CIPDPackage struct {
 	// Ex.
 	//   git_revision:aaf3a2cfccc227b5141caa1b6b3502c9907d7420
 	//   latest
-	Version string `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
+	Version              string   `protobuf:"bytes,3,opt,name=version" json:"version,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Manifest_CIPDPackage) Reset()                    { *m = Manifest_CIPDPackage{} }
-func (m *Manifest_CIPDPackage) String() string            { return proto.CompactTextString(m) }
-func (*Manifest_CIPDPackage) ProtoMessage()               {}
-func (*Manifest_CIPDPackage) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
+func (m *Manifest_CIPDPackage) Reset()         { *m = Manifest_CIPDPackage{} }
+func (m *Manifest_CIPDPackage) String() string { return proto.CompactTextString(m) }
+func (*Manifest_CIPDPackage) ProtoMessage()    {}
+func (*Manifest_CIPDPackage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{0, 1}
+}
+func (m *Manifest_CIPDPackage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Manifest_CIPDPackage.Unmarshal(m, b)
+}
+func (m *Manifest_CIPDPackage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Manifest_CIPDPackage.Marshal(b, m, deterministic)
+}
+func (dst *Manifest_CIPDPackage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Manifest_CIPDPackage.Merge(dst, src)
+}
+func (m *Manifest_CIPDPackage) XXX_Size() int {
+	return xxx_messageInfo_Manifest_CIPDPackage.Size(m)
+}
+func (m *Manifest_CIPDPackage) XXX_DiscardUnknown() {
+	xxx_messageInfo_Manifest_CIPDPackage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Manifest_CIPDPackage proto.InternalMessageInfo
 
 func (m *Manifest_CIPDPackage) GetPackagePattern() string {
 	if m != nil {
@@ -239,13 +311,35 @@ type Manifest_Isolated struct {
 	//
 	// Ex.
 	//   62a7df62ea122380afb306bb4d9cdac1bc7e9a96
-	Hash string `protobuf:"bytes,2,opt,name=hash" json:"hash,omitempty"`
+	Hash                 string   `protobuf:"bytes,2,opt,name=hash" json:"hash,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Manifest_Isolated) Reset()                    { *m = Manifest_Isolated{} }
-func (m *Manifest_Isolated) String() string            { return proto.CompactTextString(m) }
-func (*Manifest_Isolated) ProtoMessage()               {}
-func (*Manifest_Isolated) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 2} }
+func (m *Manifest_Isolated) Reset()         { *m = Manifest_Isolated{} }
+func (m *Manifest_Isolated) String() string { return proto.CompactTextString(m) }
+func (*Manifest_Isolated) ProtoMessage()    {}
+func (*Manifest_Isolated) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{0, 2}
+}
+func (m *Manifest_Isolated) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Manifest_Isolated.Unmarshal(m, b)
+}
+func (m *Manifest_Isolated) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Manifest_Isolated.Marshal(b, m, deterministic)
+}
+func (dst *Manifest_Isolated) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Manifest_Isolated.Merge(dst, src)
+}
+func (m *Manifest_Isolated) XXX_Size() int {
+	return xxx_messageInfo_Manifest_Isolated.Size(m)
+}
+func (m *Manifest_Isolated) XXX_DiscardUnknown() {
+	xxx_messageInfo_Manifest_Isolated.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Manifest_Isolated proto.InternalMessageInfo
 
 func (m *Manifest_Isolated) GetNamespace() string {
 	if m != nil {
@@ -287,13 +381,35 @@ type Manifest_Directory struct {
 	//   isolateserver.appspot.com
 	IsolatedServerHost string `protobuf:"bytes,5,opt,name=isolated_server_host,json=isolatedServerHost" json:"isolated_server_host,omitempty"`
 	// A list of all isolateds which have been installed in this directory.
-	Isolated []*Manifest_Isolated `protobuf:"bytes,6,rep,name=isolated" json:"isolated,omitempty"`
+	Isolated             []*Manifest_Isolated `protobuf:"bytes,6,rep,name=isolated" json:"isolated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *Manifest_Directory) Reset()                    { *m = Manifest_Directory{} }
-func (m *Manifest_Directory) String() string            { return proto.CompactTextString(m) }
-func (*Manifest_Directory) ProtoMessage()               {}
-func (*Manifest_Directory) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 3} }
+func (m *Manifest_Directory) Reset()         { *m = Manifest_Directory{} }
+func (m *Manifest_Directory) String() string { return proto.CompactTextString(m) }
+func (*Manifest_Directory) ProtoMessage()    {}
+func (*Manifest_Directory) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{0, 3}
+}
+func (m *Manifest_Directory) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Manifest_Directory.Unmarshal(m, b)
+}
+func (m *Manifest_Directory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Manifest_Directory.Marshal(b, m, deterministic)
+}
+func (dst *Manifest_Directory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Manifest_Directory.Merge(dst, src)
+}
+func (m *Manifest_Directory) XXX_Size() int {
+	return xxx_messageInfo_Manifest_Directory.Size(m)
+}
+func (m *Manifest_Directory) XXX_DiscardUnknown() {
+	xxx_messageInfo_Manifest_Directory.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Manifest_Directory proto.InternalMessageInfo
 
 func (m *Manifest_Directory) GetGitCheckout() *Manifest_GitCheckout {
 	if m != nil {
@@ -348,13 +464,35 @@ type ManifestLink struct {
 	// Milo may render this build with the wrong manifest.
 	//
 	// This is the raw sha256, so it must be exactly 32 bytes.
-	Sha256 []byte `protobuf:"bytes,2,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	Sha256               []byte   `protobuf:"bytes,2,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ManifestLink) Reset()                    { *m = ManifestLink{} }
-func (m *ManifestLink) String() string            { return proto.CompactTextString(m) }
-func (*ManifestLink) ProtoMessage()               {}
-func (*ManifestLink) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *ManifestLink) Reset()         { *m = ManifestLink{} }
+func (m *ManifestLink) String() string { return proto.CompactTextString(m) }
+func (*ManifestLink) ProtoMessage()    {}
+func (*ManifestLink) Descriptor() ([]byte, []int) {
+	return fileDescriptor_manifest_6c171d9612b862d6, []int{1}
+}
+func (m *ManifestLink) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestLink.Unmarshal(m, b)
+}
+func (m *ManifestLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestLink.Marshal(b, m, deterministic)
+}
+func (dst *ManifestLink) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestLink.Merge(dst, src)
+}
+func (m *ManifestLink) XXX_Size() int {
+	return xxx_messageInfo_ManifestLink.Size(m)
+}
+func (m *ManifestLink) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestLink.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestLink proto.InternalMessageInfo
 
 func (m *ManifestLink) GetUrl() string {
 	if m != nil {
@@ -372,18 +510,20 @@ func (m *ManifestLink) GetSha256() []byte {
 
 func init() {
 	proto.RegisterType((*Manifest)(nil), "milo.Manifest")
+	proto.RegisterMapType((map[string]*Manifest_Directory)(nil), "milo.Manifest.DirectoriesEntry")
 	proto.RegisterType((*Manifest_GitCheckout)(nil), "milo.Manifest.GitCheckout")
 	proto.RegisterType((*Manifest_CIPDPackage)(nil), "milo.Manifest.CIPDPackage")
 	proto.RegisterType((*Manifest_Isolated)(nil), "milo.Manifest.Isolated")
 	proto.RegisterType((*Manifest_Directory)(nil), "milo.Manifest.Directory")
+	proto.RegisterMapType((map[string]*Manifest_CIPDPackage)(nil), "milo.Manifest.Directory.CipdPackageEntry")
 	proto.RegisterType((*ManifestLink)(nil), "milo.ManifestLink")
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/manifest.proto", fileDescriptor_manifest_6c171d9612b862d6)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_manifest_6c171d9612b862d6 = []byte{
 	// 544 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x54, 0x5d, 0x8b, 0xd3, 0x4c,
 	0x14, 0xa6, 0xdf, 0xed, 0x49, 0xdf, 0xbe, 0x65, 0x10, 0x8d, 0x51, 0xd8, 0x65, 0x41, 0xad, 0x37,

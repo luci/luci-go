@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // This is the swarming-specific result for Executions run via swarming.
 type Result struct {
 	ExitCode int64 `protobuf:"varint,1,opt,name=exit_code,json=exitCode" json:"exit_code,omitempty"`
@@ -20,13 +26,35 @@ type Result struct {
 	// The pinned cipd packages that this task actually used.
 	CipdPins *CipdSpec `protobuf:"bytes,3,opt,name=cipd_pins,json=cipdPins" json:"cipd_pins,omitempty"`
 	// The captured snapshot dimensions that the bot actually had.
-	SnapshotDimensions map[string]string `protobuf:"bytes,4,rep,name=snapshot_dimensions,json=snapshotDimensions" json:"snapshot_dimensions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	SnapshotDimensions   map[string]string `protobuf:"bytes,4,rep,name=snapshot_dimensions,json=snapshotDimensions" json:"snapshot_dimensions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Result) Reset()                    { *m = Result{} }
-func (m *Result) String() string            { return proto.CompactTextString(m) }
-func (*Result) ProtoMessage()               {}
-func (*Result) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (m *Result) Reset()         { *m = Result{} }
+func (m *Result) String() string { return proto.CompactTextString(m) }
+func (*Result) ProtoMessage()    {}
+func (*Result) Descriptor() ([]byte, []int) {
+	return fileDescriptor_result_0c0267f9a31228d6, []int{0}
+}
+func (m *Result) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Result.Unmarshal(m, b)
+}
+func (m *Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Result.Marshal(b, m, deterministic)
+}
+func (dst *Result) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Result.Merge(dst, src)
+}
+func (m *Result) XXX_Size() int {
+	return xxx_messageInfo_Result.Size(m)
+}
+func (m *Result) XXX_DiscardUnknown() {
+	xxx_messageInfo_Result.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Result proto.InternalMessageInfo
 
 func (m *Result) GetExitCode() int64 {
 	if m != nil {
@@ -58,13 +86,14 @@ func (m *Result) GetSnapshotDimensions() map[string]string {
 
 func init() {
 	proto.RegisterType((*Result)(nil), "swarmingV1.Result")
+	proto.RegisterMapType((map[string]string)(nil), "swarmingV1.Result.SnapshotDimensionsEntry")
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/result.proto", fileDescriptor4)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/result.proto", fileDescriptor_result_0c0267f9a31228d6)
 }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor_result_0c0267f9a31228d6 = []byte{
 	// 313 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x90, 0xcf, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0xe9, 0xaa, 0x63, 0xcd, 0x40, 0x25, 0x0e, 0x56, 0xe6, 0x65, 0x78, 0x1a, 0x1e, 0x1a,

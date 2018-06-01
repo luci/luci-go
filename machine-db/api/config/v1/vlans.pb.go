@@ -6,12 +6,18 @@ package config
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import common "go.chromium.org/luci/machine-db/api/common/v1"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A VLAN to store in the database.
 type VLAN struct {
@@ -22,13 +28,35 @@ type VLAN struct {
 	// The block of IPv4 addresses belonging to this VLAN.
 	CidrBlock string `protobuf:"bytes,3,opt,name=cidr_block,json=cidrBlock" json:"cidr_block,omitempty"`
 	// The state of this VLAN.
-	State common.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VLAN) Reset()                    { *m = VLAN{} }
-func (m *VLAN) String() string            { return proto.CompactTextString(m) }
-func (*VLAN) ProtoMessage()               {}
-func (*VLAN) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *VLAN) Reset()         { *m = VLAN{} }
+func (m *VLAN) String() string { return proto.CompactTextString(m) }
+func (*VLAN) ProtoMessage()    {}
+func (*VLAN) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vlans_bee7e5b545f8c7cd, []int{0}
+}
+func (m *VLAN) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VLAN.Unmarshal(m, b)
+}
+func (m *VLAN) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VLAN.Marshal(b, m, deterministic)
+}
+func (dst *VLAN) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VLAN.Merge(dst, src)
+}
+func (m *VLAN) XXX_Size() int {
+	return xxx_messageInfo_VLAN.Size(m)
+}
+func (m *VLAN) XXX_DiscardUnknown() {
+	xxx_messageInfo_VLAN.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VLAN proto.InternalMessageInfo
 
 func (m *VLAN) GetId() int64 {
 	if m != nil {
@@ -51,23 +79,45 @@ func (m *VLAN) GetCidrBlock() string {
 	return ""
 }
 
-func (m *VLAN) GetState() common.State {
+func (m *VLAN) GetState() v1.State {
 	if m != nil {
 		return m.State
 	}
-	return common.State_STATE_UNSPECIFIED
+	return v1.State_STATE_UNSPECIFIED
 }
 
 // A list of VLANs.
 type VLANs struct {
 	// A list of VLANs.
-	Vlan []*VLAN `protobuf:"bytes,1,rep,name=vlan" json:"vlan,omitempty"`
+	Vlan                 []*VLAN  `protobuf:"bytes,1,rep,name=vlan" json:"vlan,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *VLANs) Reset()                    { *m = VLANs{} }
-func (m *VLANs) String() string            { return proto.CompactTextString(m) }
-func (*VLANs) ProtoMessage()               {}
-func (*VLANs) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (m *VLANs) Reset()         { *m = VLANs{} }
+func (m *VLANs) String() string { return proto.CompactTextString(m) }
+func (*VLANs) ProtoMessage()    {}
+func (*VLANs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_vlans_bee7e5b545f8c7cd, []int{1}
+}
+func (m *VLANs) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_VLANs.Unmarshal(m, b)
+}
+func (m *VLANs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_VLANs.Marshal(b, m, deterministic)
+}
+func (dst *VLANs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VLANs.Merge(dst, src)
+}
+func (m *VLANs) XXX_Size() int {
+	return xxx_messageInfo_VLANs.Size(m)
+}
+func (m *VLANs) XXX_DiscardUnknown() {
+	xxx_messageInfo_VLANs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_VLANs proto.InternalMessageInfo
 
 func (m *VLANs) GetVlan() []*VLAN {
 	if m != nil {
@@ -82,10 +132,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/vlans.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/vlans.proto", fileDescriptor_vlans_bee7e5b545f8c7cd)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_vlans_bee7e5b545f8c7cd = []byte{
 	// 224 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x8f, 0x3f, 0x4b, 0x04, 0x31,
 	0x10, 0x47, 0xc9, 0xfe, 0x39, 0xb8, 0x51, 0xaf, 0x08, 0x16, 0x41, 0x10, 0xc2, 0xd9, 0xac, 0x85,

@@ -67,8 +67,8 @@ func TestAttemptListNormalize(t *testing.T) {
 		list := &AttemptList{}
 		list.AddAIDs(NewAttemptID("a", 1), NewAttemptID("b", 1), NewAttemptID("b", 2))
 		So(list.To, ShouldResemble, map[string]*AttemptList_Nums{
-			"a": {[]uint32{1}},
-			"b": {[]uint32{1, 2}},
+			"a": {Nums: []uint32{1}},
+			"b": {Nums: []uint32{1, 2}},
 		})
 	})
 }

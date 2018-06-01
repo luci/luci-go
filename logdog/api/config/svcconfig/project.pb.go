@@ -6,12 +6,18 @@ package svcconfig
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // ProjectConfig is a set of per-project configuration parameters. Each
 // luci-config project must include one of these configs in order to register
@@ -34,12 +40,12 @@ type ProjectConfig struct {
 	// forcefully archived, and additional stream data will be discarded.
 	//
 	// This is upper-bounded by the global "archive_delay_max" parameter.
-	MaxStreamAge *google_protobuf.Duration `protobuf:"bytes,4,opt,name=max_stream_age,json=maxStreamAge" json:"max_stream_age,omitempty"`
+	MaxStreamAge *duration.Duration `protobuf:"bytes,4,opt,name=max_stream_age,json=maxStreamAge" json:"max_stream_age,omitempty"`
 	// The maximum amount of time after a prefix has been registered when log
 	// streams may also be registered under that prefix.
 	//
 	// See Config's "prefix_expiration" for more information.
-	PrefixExpiration *google_protobuf.Duration `protobuf:"bytes,5,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
+	PrefixExpiration *duration.Duration `protobuf:"bytes,5,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
 	// The archival Google Storage bucket name.
 	//
 	// Log streams artifacts will be stored in a subdirectory of this bucket:
@@ -61,13 +67,35 @@ type ProjectConfig struct {
 	//
 	// Any unspecified index configuration will default to the service archival
 	// config.
-	ArchiveIndexConfig *ArchiveIndexConfig `protobuf:"bytes,12,opt,name=archive_index_config,json=archiveIndexConfig" json:"archive_index_config,omitempty"`
+	ArchiveIndexConfig   *ArchiveIndexConfig `protobuf:"bytes,12,opt,name=archive_index_config,json=archiveIndexConfig" json:"archive_index_config,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
-func (m *ProjectConfig) Reset()                    { *m = ProjectConfig{} }
-func (m *ProjectConfig) String() string            { return proto.CompactTextString(m) }
-func (*ProjectConfig) ProtoMessage()               {}
-func (*ProjectConfig) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
+func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
+func (*ProjectConfig) ProtoMessage()    {}
+func (*ProjectConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_project_fe097ae8484075f9, []int{0}
+}
+func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
+}
+func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
+}
+func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(dst, src)
+}
+func (m *ProjectConfig) XXX_Size() int {
+	return xxx_messageInfo_ProjectConfig.Size(m)
+}
+func (m *ProjectConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_ProjectConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ProjectConfig proto.InternalMessageInfo
 
 func (m *ProjectConfig) GetReaderAuthGroups() []string {
 	if m != nil {
@@ -83,14 +111,14 @@ func (m *ProjectConfig) GetWriterAuthGroups() []string {
 	return nil
 }
 
-func (m *ProjectConfig) GetMaxStreamAge() *google_protobuf.Duration {
+func (m *ProjectConfig) GetMaxStreamAge() *duration.Duration {
 	if m != nil {
 		return m.MaxStreamAge
 	}
 	return nil
 }
 
-func (m *ProjectConfig) GetPrefixExpiration() *google_protobuf.Duration {
+func (m *ProjectConfig) GetPrefixExpiration() *duration.Duration {
 	if m != nil {
 		return m.PrefixExpiration
 	}
@@ -123,10 +151,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor_project_fe097ae8484075f9)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_project_fe097ae8484075f9 = []byte{
 	// 344 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0xcd, 0x4e, 0xe3, 0x30,
 	0x14, 0x85, 0xd5, 0xe9, 0xcc, 0x68, 0xea, 0x76, 0xa0, 0x8d, 0x58, 0x84, 0x4a, 0xa0, 0x88, 0x55,

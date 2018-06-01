@@ -6,12 +6,18 @@ package crimson
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf1 "google.golang.org/genproto/protobuf/field_mask"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A network interface in the database.
 type NIC struct {
@@ -24,13 +30,35 @@ type NIC struct {
 	// The switch this NIC is connected to.
 	Switch string `protobuf:"bytes,4,opt,name=switch" json:"switch,omitempty"`
 	// The switchport this NIC is connected to.
-	Switchport int32 `protobuf:"varint,5,opt,name=switchport" json:"switchport,omitempty"`
+	Switchport           int32    `protobuf:"varint,5,opt,name=switchport" json:"switchport,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *NIC) Reset()                    { *m = NIC{} }
-func (m *NIC) String() string            { return proto.CompactTextString(m) }
-func (*NIC) ProtoMessage()               {}
-func (*NIC) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{0} }
+func (m *NIC) Reset()         { *m = NIC{} }
+func (m *NIC) String() string { return proto.CompactTextString(m) }
+func (*NIC) ProtoMessage()    {}
+func (*NIC) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{0}
+}
+func (m *NIC) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_NIC.Unmarshal(m, b)
+}
+func (m *NIC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_NIC.Marshal(b, m, deterministic)
+}
+func (dst *NIC) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NIC.Merge(dst, src)
+}
+func (m *NIC) XXX_Size() int {
+	return xxx_messageInfo_NIC.Size(m)
+}
+func (m *NIC) XXX_DiscardUnknown() {
+	xxx_messageInfo_NIC.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_NIC proto.InternalMessageInfo
 
 func (m *NIC) GetName() string {
 	if m != nil {
@@ -70,13 +98,35 @@ func (m *NIC) GetSwitchport() int32 {
 // A request to create a new NIC in the database.
 type CreateNICRequest struct {
 	// The NIC to create in the database.
-	Nic *NIC `protobuf:"bytes,1,opt,name=nic" json:"nic,omitempty"`
+	Nic                  *NIC     `protobuf:"bytes,1,opt,name=nic" json:"nic,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateNICRequest) Reset()                    { *m = CreateNICRequest{} }
-func (m *CreateNICRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateNICRequest) ProtoMessage()               {}
-func (*CreateNICRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{1} }
+func (m *CreateNICRequest) Reset()         { *m = CreateNICRequest{} }
+func (m *CreateNICRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateNICRequest) ProtoMessage()    {}
+func (*CreateNICRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{1}
+}
+func (m *CreateNICRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateNICRequest.Unmarshal(m, b)
+}
+func (m *CreateNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateNICRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateNICRequest.Merge(dst, src)
+}
+func (m *CreateNICRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateNICRequest.Size(m)
+}
+func (m *CreateNICRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateNICRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateNICRequest proto.InternalMessageInfo
 
 func (m *CreateNICRequest) GetNic() *NIC {
 	if m != nil {
@@ -90,13 +140,35 @@ type DeleteNICRequest struct {
 	// The name of the NIC to delete.
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// The machine the NIC belongs to.
-	Machine string `protobuf:"bytes,2,opt,name=machine" json:"machine,omitempty"`
+	Machine              string   `protobuf:"bytes,2,opt,name=machine" json:"machine,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteNICRequest) Reset()                    { *m = DeleteNICRequest{} }
-func (m *DeleteNICRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteNICRequest) ProtoMessage()               {}
-func (*DeleteNICRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{2} }
+func (m *DeleteNICRequest) Reset()         { *m = DeleteNICRequest{} }
+func (m *DeleteNICRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteNICRequest) ProtoMessage()    {}
+func (*DeleteNICRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{2}
+}
+func (m *DeleteNICRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteNICRequest.Unmarshal(m, b)
+}
+func (m *DeleteNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteNICRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteNICRequest.Merge(dst, src)
+}
+func (m *DeleteNICRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteNICRequest.Size(m)
+}
+func (m *DeleteNICRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteNICRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteNICRequest proto.InternalMessageInfo
 
 func (m *DeleteNICRequest) GetName() string {
 	if m != nil {
@@ -121,13 +193,35 @@ type ListNICsRequest struct {
 	// The MAC addresses to filter retrieved NICs on.
 	MacAddresses []string `protobuf:"bytes,3,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`
 	// The switches to filter retrieved NICs on.
-	Switches []string `protobuf:"bytes,4,rep,name=switches" json:"switches,omitempty"`
+	Switches             []string `protobuf:"bytes,4,rep,name=switches" json:"switches,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListNICsRequest) Reset()                    { *m = ListNICsRequest{} }
-func (m *ListNICsRequest) String() string            { return proto.CompactTextString(m) }
-func (*ListNICsRequest) ProtoMessage()               {}
-func (*ListNICsRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{3} }
+func (m *ListNICsRequest) Reset()         { *m = ListNICsRequest{} }
+func (m *ListNICsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListNICsRequest) ProtoMessage()    {}
+func (*ListNICsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{3}
+}
+func (m *ListNICsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListNICsRequest.Unmarshal(m, b)
+}
+func (m *ListNICsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListNICsRequest.Marshal(b, m, deterministic)
+}
+func (dst *ListNICsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNICsRequest.Merge(dst, src)
+}
+func (m *ListNICsRequest) XXX_Size() int {
+	return xxx_messageInfo_ListNICsRequest.Size(m)
+}
+func (m *ListNICsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNICsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNICsRequest proto.InternalMessageInfo
 
 func (m *ListNICsRequest) GetNames() []string {
 	if m != nil {
@@ -160,13 +254,35 @@ func (m *ListNICsRequest) GetSwitches() []string {
 // A response containing a list of NICs in the database.
 type ListNICsResponse struct {
 	// The NICs matching this request.
-	Nics []*NIC `protobuf:"bytes,1,rep,name=nics" json:"nics,omitempty"`
+	Nics                 []*NIC   `protobuf:"bytes,1,rep,name=nics" json:"nics,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ListNICsResponse) Reset()                    { *m = ListNICsResponse{} }
-func (m *ListNICsResponse) String() string            { return proto.CompactTextString(m) }
-func (*ListNICsResponse) ProtoMessage()               {}
-func (*ListNICsResponse) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{4} }
+func (m *ListNICsResponse) Reset()         { *m = ListNICsResponse{} }
+func (m *ListNICsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListNICsResponse) ProtoMessage()    {}
+func (*ListNICsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{4}
+}
+func (m *ListNICsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ListNICsResponse.Unmarshal(m, b)
+}
+func (m *ListNICsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ListNICsResponse.Marshal(b, m, deterministic)
+}
+func (dst *ListNICsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNICsResponse.Merge(dst, src)
+}
+func (m *ListNICsResponse) XXX_Size() int {
+	return xxx_messageInfo_ListNICsResponse.Size(m)
+}
+func (m *ListNICsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ListNICsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ListNICsResponse proto.InternalMessageInfo
 
 func (m *ListNICsResponse) GetNics() []*NIC {
 	if m != nil {
@@ -180,13 +296,35 @@ type UpdateNICRequest struct {
 	// The NIC to update in the database.
 	Nic *NIC `protobuf:"bytes,1,opt,name=nic" json:"nic,omitempty"`
 	// The fields to update in the NIC.
-	UpdateMask *google_protobuf1.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *UpdateNICRequest) Reset()                    { *m = UpdateNICRequest{} }
-func (m *UpdateNICRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateNICRequest) ProtoMessage()               {}
-func (*UpdateNICRequest) Descriptor() ([]byte, []int) { return fileDescriptor7, []int{5} }
+func (m *UpdateNICRequest) Reset()         { *m = UpdateNICRequest{} }
+func (m *UpdateNICRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateNICRequest) ProtoMessage()    {}
+func (*UpdateNICRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_nics_55893d0ad811429d, []int{5}
+}
+func (m *UpdateNICRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateNICRequest.Unmarshal(m, b)
+}
+func (m *UpdateNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateNICRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateNICRequest.Merge(dst, src)
+}
+func (m *UpdateNICRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateNICRequest.Size(m)
+}
+func (m *UpdateNICRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateNICRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateNICRequest proto.InternalMessageInfo
 
 func (m *UpdateNICRequest) GetNic() *NIC {
 	if m != nil {
@@ -195,7 +333,7 @@ func (m *UpdateNICRequest) GetNic() *NIC {
 	return nil
 }
 
-func (m *UpdateNICRequest) GetUpdateMask() *google_protobuf1.FieldMask {
+func (m *UpdateNICRequest) GetUpdateMask() *field_mask.FieldMask {
 	if m != nil {
 		return m.UpdateMask
 	}
@@ -212,10 +350,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor7)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor_nics_55893d0ad811429d)
 }
 
-var fileDescriptor7 = []byte{
+var fileDescriptor_nics_55893d0ad811429d = []byte{
 	// 380 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0x31, 0xaf, 0xd3, 0x30,
 	0x10, 0x56, 0x5e, 0xd2, 0xf7, 0xe8, 0xa5, 0x88, 0xc8, 0x42, 0xc8, 0xea, 0x50, 0xa2, 0xb0, 0x74,

@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type Task_TypeId int32
 
 const (
@@ -41,24 +47,47 @@ func (x *Task_TypeId) UnmarshalJSON(data []byte) error {
 	*x = Task_TypeId(value)
 	return nil
 }
-func (Task_TypeId) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
-
-type Task struct {
-	ProxyEnvironment *string `protobuf:"bytes,5,opt,name=proxy_environment,json=proxyEnvironment" json:"proxy_environment,omitempty"`
-	AcquisitionName  *string `protobuf:"bytes,10,opt,name=acquisition_name,json=acquisitionName" json:"acquisition_name,omitempty"`
-	ServiceName      *string `protobuf:"bytes,20,opt,name=service_name,json=serviceName" json:"service_name,omitempty"`
-	JobName          *string `protobuf:"bytes,30,opt,name=job_name,json=jobName" json:"job_name,omitempty"`
-	DataCenter       *string `protobuf:"bytes,40,opt,name=data_center,json=dataCenter" json:"data_center,omitempty"`
-	HostName         *string `protobuf:"bytes,50,opt,name=host_name,json=hostName" json:"host_name,omitempty"`
-	TaskNum          *int32  `protobuf:"varint,60,opt,name=task_num,json=taskNum" json:"task_num,omitempty"`
-	ProxyZone        *string `protobuf:"bytes,70,opt,name=proxy_zone,json=proxyZone" json:"proxy_zone,omitempty"`
-	XXX_unrecognized []byte  `json:"-"`
+func (Task_TypeId) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_acquisition_task_85a2e5727ab1a5ea, []int{0, 0}
 }
 
-func (m *Task) Reset()                    { *m = Task{} }
-func (m *Task) String() string            { return proto.CompactTextString(m) }
-func (*Task) ProtoMessage()               {}
-func (*Task) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+type Task struct {
+	ProxyEnvironment     *string  `protobuf:"bytes,5,opt,name=proxy_environment,json=proxyEnvironment" json:"proxy_environment,omitempty"`
+	AcquisitionName      *string  `protobuf:"bytes,10,opt,name=acquisition_name,json=acquisitionName" json:"acquisition_name,omitempty"`
+	ServiceName          *string  `protobuf:"bytes,20,opt,name=service_name,json=serviceName" json:"service_name,omitempty"`
+	JobName              *string  `protobuf:"bytes,30,opt,name=job_name,json=jobName" json:"job_name,omitempty"`
+	DataCenter           *string  `protobuf:"bytes,40,opt,name=data_center,json=dataCenter" json:"data_center,omitempty"`
+	HostName             *string  `protobuf:"bytes,50,opt,name=host_name,json=hostName" json:"host_name,omitempty"`
+	TaskNum              *int32   `protobuf:"varint,60,opt,name=task_num,json=taskNum" json:"task_num,omitempty"`
+	ProxyZone            *string  `protobuf:"bytes,70,opt,name=proxy_zone,json=proxyZone" json:"proxy_zone,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Task) Reset()         { *m = Task{} }
+func (m *Task) String() string { return proto.CompactTextString(m) }
+func (*Task) ProtoMessage()    {}
+func (*Task) Descriptor() ([]byte, []int) {
+	return fileDescriptor_acquisition_task_85a2e5727ab1a5ea, []int{0}
+}
+func (m *Task) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Task.Unmarshal(m, b)
+}
+func (m *Task) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Task.Marshal(b, m, deterministic)
+}
+func (dst *Task) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Task.Merge(dst, src)
+}
+func (m *Task) XXX_Size() int {
+	return xxx_messageInfo_Task.Size(m)
+}
+func (m *Task) XXX_DiscardUnknown() {
+	xxx_messageInfo_Task.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Task proto.InternalMessageInfo
 
 func (m *Task) GetProxyEnvironment() string {
 	if m != nil && m.ProxyEnvironment != nil {
@@ -122,10 +151,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto", fileDescriptor_acquisition_task_85a2e5727ab1a5ea)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_acquisition_task_85a2e5727ab1a5ea = []byte{
 	// 297 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0xd1, 0x4a, 0x32, 0x41,
 	0x14, 0x80, 0xf1, 0xe7, 0x37, 0xf5, 0x28, 0xb8, 0x0d, 0x11, 0x1b, 0x51, 0x99, 0x57, 0x46, 0xe0,

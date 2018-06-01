@@ -13,6 +13,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type TemplateInstantiation struct {
 	// project is the luci-config project which defines the template.
 	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
@@ -23,13 +29,35 @@ type TemplateInstantiation struct {
 	Ref string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
 	// specifier specifies the actual template name, as well as any substitution
 	// parameters which that template might require.
-	Specifier *templateproto.Specifier `protobuf:"bytes,4,opt,name=specifier" json:"specifier,omitempty"`
+	Specifier            *templateproto.Specifier `protobuf:"bytes,4,opt,name=specifier" json:"specifier,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
-func (m *TemplateInstantiation) Reset()                    { *m = TemplateInstantiation{} }
-func (m *TemplateInstantiation) String() string            { return proto.CompactTextString(m) }
-func (*TemplateInstantiation) ProtoMessage()               {}
-func (*TemplateInstantiation) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *TemplateInstantiation) Reset()         { *m = TemplateInstantiation{} }
+func (m *TemplateInstantiation) String() string { return proto.CompactTextString(m) }
+func (*TemplateInstantiation) ProtoMessage()    {}
+func (*TemplateInstantiation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{0}
+}
+func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TemplateInstantiation.Unmarshal(m, b)
+}
+func (m *TemplateInstantiation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TemplateInstantiation.Marshal(b, m, deterministic)
+}
+func (dst *TemplateInstantiation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TemplateInstantiation.Merge(dst, src)
+}
+func (m *TemplateInstantiation) XXX_Size() int {
+	return xxx_messageInfo_TemplateInstantiation.Size(m)
+}
+func (m *TemplateInstantiation) XXX_DiscardUnknown() {
+	xxx_messageInfo_TemplateInstantiation.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TemplateInstantiation proto.InternalMessageInfo
 
 func (m *TemplateInstantiation) GetProject() string {
 	if m != nil {
@@ -106,15 +134,37 @@ type EnsureGraphDataReq struct {
 	// If this omitted, then the request requires some user/bot authentication,
 	// and any quests/attempts provided will be made standalone (e.g. nothing will
 	// depend on them).
-	ForExecution *Execution_Auth             `protobuf:"bytes,6,opt,name=for_execution,json=forExecution" json:"for_execution,omitempty"`
-	Limit        *EnsureGraphDataReq_Limit   `protobuf:"bytes,7,opt,name=limit" json:"limit,omitempty"`
-	Include      *EnsureGraphDataReq_Include `protobuf:"bytes,8,opt,name=include" json:"include,omitempty"`
+	ForExecution         *Execution_Auth             `protobuf:"bytes,6,opt,name=for_execution,json=forExecution" json:"for_execution,omitempty"`
+	Limit                *EnsureGraphDataReq_Limit   `protobuf:"bytes,7,opt,name=limit" json:"limit,omitempty"`
+	Include              *EnsureGraphDataReq_Include `protobuf:"bytes,8,opt,name=include" json:"include,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
+	XXX_unrecognized     []byte                      `json:"-"`
+	XXX_sizecache        int32                       `json:"-"`
 }
 
-func (m *EnsureGraphDataReq) Reset()                    { *m = EnsureGraphDataReq{} }
-func (m *EnsureGraphDataReq) String() string            { return proto.CompactTextString(m) }
-func (*EnsureGraphDataReq) ProtoMessage()               {}
-func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *EnsureGraphDataReq) Reset()         { *m = EnsureGraphDataReq{} }
+func (m *EnsureGraphDataReq) String() string { return proto.CompactTextString(m) }
+func (*EnsureGraphDataReq) ProtoMessage()    {}
+func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1}
+}
+func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureGraphDataReq.Unmarshal(m, b)
+}
+func (m *EnsureGraphDataReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureGraphDataReq.Marshal(b, m, deterministic)
+}
+func (dst *EnsureGraphDataReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq.Merge(dst, src)
+}
+func (m *EnsureGraphDataReq) XXX_Size() int {
+	return xxx_messageInfo_EnsureGraphDataReq.Size(m)
+}
+func (m *EnsureGraphDataReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureGraphDataReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnsureGraphDataReq proto.InternalMessageInfo
 
 func (m *EnsureGraphDataReq) GetQuest() []*Quest_Desc {
 	if m != nil {
@@ -180,13 +230,35 @@ type EnsureGraphDataReq_Limit struct {
 	//
 	// If this limit is 0, a default limit of 16MB will be used. If this limit
 	// exceeds 30MB, it will be reduced to 30MB.
-	MaxDataSize uint32 `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize" json:"max_data_size,omitempty"`
+	MaxDataSize          uint32   `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize" json:"max_data_size,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *EnsureGraphDataReq_Limit) Reset()                    { *m = EnsureGraphDataReq_Limit{} }
-func (m *EnsureGraphDataReq_Limit) String() string            { return proto.CompactTextString(m) }
-func (*EnsureGraphDataReq_Limit) ProtoMessage()               {}
-func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
+func (m *EnsureGraphDataReq_Limit) Reset()         { *m = EnsureGraphDataReq_Limit{} }
+func (m *EnsureGraphDataReq_Limit) String() string { return proto.CompactTextString(m) }
+func (*EnsureGraphDataReq_Limit) ProtoMessage()    {}
+func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 0}
+}
+func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureGraphDataReq_Limit.Unmarshal(m, b)
+}
+func (m *EnsureGraphDataReq_Limit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureGraphDataReq_Limit.Marshal(b, m, deterministic)
+}
+func (dst *EnsureGraphDataReq_Limit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Limit.Merge(dst, src)
+}
+func (m *EnsureGraphDataReq_Limit) XXX_Size() int {
+	return xxx_messageInfo_EnsureGraphDataReq_Limit.Size(m)
+}
+func (m *EnsureGraphDataReq_Limit) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureGraphDataReq_Limit.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnsureGraphDataReq_Limit proto.InternalMessageInfo
 
 func (m *EnsureGraphDataReq_Limit) GetMaxDataSize() uint32 {
 	if m != nil {
@@ -196,13 +268,35 @@ func (m *EnsureGraphDataReq_Limit) GetMaxDataSize() uint32 {
 }
 
 type EnsureGraphDataReq_Include struct {
-	Attempt *EnsureGraphDataReq_Include_Options `protobuf:"bytes,4,opt,name=attempt" json:"attempt,omitempty"`
+	Attempt              *EnsureGraphDataReq_Include_Options `protobuf:"bytes,4,opt,name=attempt" json:"attempt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
+	XXX_unrecognized     []byte                              `json:"-"`
+	XXX_sizecache        int32                               `json:"-"`
 }
 
-func (m *EnsureGraphDataReq_Include) Reset()                    { *m = EnsureGraphDataReq_Include{} }
-func (m *EnsureGraphDataReq_Include) String() string            { return proto.CompactTextString(m) }
-func (*EnsureGraphDataReq_Include) ProtoMessage()               {}
-func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 1} }
+func (m *EnsureGraphDataReq_Include) Reset()         { *m = EnsureGraphDataReq_Include{} }
+func (m *EnsureGraphDataReq_Include) String() string { return proto.CompactTextString(m) }
+func (*EnsureGraphDataReq_Include) ProtoMessage()    {}
+func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1}
+}
+func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureGraphDataReq_Include.Unmarshal(m, b)
+}
+func (m *EnsureGraphDataReq_Include) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureGraphDataReq_Include.Marshal(b, m, deterministic)
+}
+func (dst *EnsureGraphDataReq_Include) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include.Merge(dst, src)
+}
+func (m *EnsureGraphDataReq_Include) XXX_Size() int {
+	return xxx_messageInfo_EnsureGraphDataReq_Include.Size(m)
+}
+func (m *EnsureGraphDataReq_Include) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureGraphDataReq_Include.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnsureGraphDataReq_Include proto.InternalMessageInfo
 
 func (m *EnsureGraphDataReq_Include) GetAttempt() *EnsureGraphDataReq_Include_Options {
 	if m != nil {
@@ -213,15 +307,35 @@ func (m *EnsureGraphDataReq_Include) GetAttempt() *EnsureGraphDataReq_Include_Op
 
 type EnsureGraphDataReq_Include_Options struct {
 	// Instructs finished objects to include the Result field.
-	Result bool `protobuf:"varint,3,opt,name=result" json:"result,omitempty"`
+	Result               bool     `protobuf:"varint,3,opt,name=result" json:"result,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *EnsureGraphDataReq_Include_Options) Reset()         { *m = EnsureGraphDataReq_Include_Options{} }
 func (m *EnsureGraphDataReq_Include_Options) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include_Options) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{1, 1, 0}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1, 0}
 }
+func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Unmarshal(m, b)
+}
+func (m *EnsureGraphDataReq_Include_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Marshal(b, m, deterministic)
+}
+func (dst *EnsureGraphDataReq_Include_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include_Options.Merge(dst, src)
+}
+func (m *EnsureGraphDataReq_Include_Options) XXX_Size() int {
+	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Size(m)
+}
+func (m *EnsureGraphDataReq_Include_Options) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureGraphDataReq_Include_Options.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnsureGraphDataReq_Include_Options proto.InternalMessageInfo
 
 func (m *EnsureGraphDataReq_Include_Options) GetResult() bool {
 	if m != nil {
@@ -281,13 +395,35 @@ type EnsureGraphDataRsp struct {
 	//
 	// If `for_execution` was provided in the request and this is false, it means
 	// that the execution may continue executing.
-	ShouldHalt bool `protobuf:"varint,6,opt,name=should_halt,json=shouldHalt" json:"should_halt,omitempty"`
+	ShouldHalt           bool     `protobuf:"varint,6,opt,name=should_halt,json=shouldHalt" json:"should_halt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *EnsureGraphDataRsp) Reset()                    { *m = EnsureGraphDataRsp{} }
-func (m *EnsureGraphDataRsp) String() string            { return proto.CompactTextString(m) }
-func (*EnsureGraphDataRsp) ProtoMessage()               {}
-func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *EnsureGraphDataRsp) Reset()         { *m = EnsureGraphDataRsp{} }
+func (m *EnsureGraphDataRsp) String() string { return proto.CompactTextString(m) }
+func (*EnsureGraphDataRsp) ProtoMessage()    {}
+func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{2}
+}
+func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnsureGraphDataRsp.Unmarshal(m, b)
+}
+func (m *EnsureGraphDataRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnsureGraphDataRsp.Marshal(b, m, deterministic)
+}
+func (dst *EnsureGraphDataRsp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataRsp.Merge(dst, src)
+}
+func (m *EnsureGraphDataRsp) XXX_Size() int {
+	return xxx_messageInfo_EnsureGraphDataRsp.Size(m)
+}
+func (m *EnsureGraphDataRsp) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnsureGraphDataRsp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnsureGraphDataRsp proto.InternalMessageInfo
 
 func (m *EnsureGraphDataRsp) GetAccepted() bool {
 	if m != nil {
@@ -341,10 +477,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor_ensure_graph_data_e53364bc98f83755)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_ensure_graph_data_e53364bc98f83755 = []byte{
 	// 649 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x55, 0x9a, 0xa4, 0x49, 0xdd, 0x76, 0x8b, 0xac, 0xdf, 0x0f, 0x85, 0x08, 0xc1, 0x54, 0x31,

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/config/validation"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfig(t *testing.T) {
@@ -83,7 +84,7 @@ func TestConfig(t *testing.T) {
 				rSettings, err := UpdateServiceConfig(c)
 				So(err, ShouldBeNil)
 				settings := GetSettings(c)
-				So(rSettings, ShouldResemble, settings)
+				So(rSettings, ShouldResembleProto, settings)
 				So(settings.Buildbot.InternalReader, ShouldEqual, "googlers")
 			})
 		})

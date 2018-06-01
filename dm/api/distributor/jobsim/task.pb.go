@@ -6,28 +6,56 @@ package jobsim
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Phrase is a task to do. It consists of zero or more stages, followed by
 // an optional ReturnStage.
 type Phrase struct {
 	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
 	// Seed should be selected via a fair dice roll (using a d1.84e19).
-	Seed        int64        `protobuf:"varint,2,opt,name=seed" json:"seed,omitempty"`
-	Stages      []*Stage     `protobuf:"bytes,3,rep,name=stages" json:"stages,omitempty"`
-	ReturnStage *ReturnStage `protobuf:"bytes,4,opt,name=return_stage,json=returnStage" json:"return_stage,omitempty"`
+	Seed                 int64        `protobuf:"varint,2,opt,name=seed" json:"seed,omitempty"`
+	Stages               []*Stage     `protobuf:"bytes,3,rep,name=stages" json:"stages,omitempty"`
+	ReturnStage          *ReturnStage `protobuf:"bytes,4,opt,name=return_stage,json=returnStage" json:"return_stage,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *Phrase) Reset()                    { *m = Phrase{} }
-func (m *Phrase) String() string            { return proto.CompactTextString(m) }
-func (*Phrase) ProtoMessage()               {}
-func (*Phrase) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{0} }
+func (m *Phrase) Reset()         { *m = Phrase{} }
+func (m *Phrase) String() string { return proto.CompactTextString(m) }
+func (*Phrase) ProtoMessage()    {}
+func (*Phrase) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{0}
+}
+func (m *Phrase) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Phrase.Unmarshal(m, b)
+}
+func (m *Phrase) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Phrase.Marshal(b, m, deterministic)
+}
+func (dst *Phrase) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Phrase.Merge(dst, src)
+}
+func (m *Phrase) XXX_Size() int {
+	return xxx_messageInfo_Phrase.Size(m)
+}
+func (m *Phrase) XXX_DiscardUnknown() {
+	xxx_messageInfo_Phrase.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Phrase proto.InternalMessageInfo
 
 func (m *Phrase) GetName() string {
 	if m != nil {
@@ -61,14 +89,36 @@ func (m *Phrase) GetReturnStage() *ReturnStage {
 // 'retval' as the result of the current Phrase. If expiration is provided,
 // it will set that as the expiration timestamp for the provided retval.
 type ReturnStage struct {
-	Retval     int64                      `protobuf:"varint,1,opt,name=retval" json:"retval,omitempty"`
-	Expiration *google_protobuf.Timestamp `protobuf:"bytes,2,opt,name=expiration" json:"expiration,omitempty"`
+	Retval               int64                `protobuf:"varint,1,opt,name=retval" json:"retval,omitempty"`
+	Expiration           *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiration" json:"expiration,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *ReturnStage) Reset()                    { *m = ReturnStage{} }
-func (m *ReturnStage) String() string            { return proto.CompactTextString(m) }
-func (*ReturnStage) ProtoMessage()               {}
-func (*ReturnStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{1} }
+func (m *ReturnStage) Reset()         { *m = ReturnStage{} }
+func (m *ReturnStage) String() string { return proto.CompactTextString(m) }
+func (*ReturnStage) ProtoMessage()    {}
+func (*ReturnStage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{1}
+}
+func (m *ReturnStage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReturnStage.Unmarshal(m, b)
+}
+func (m *ReturnStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReturnStage.Marshal(b, m, deterministic)
+}
+func (dst *ReturnStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReturnStage.Merge(dst, src)
+}
+func (m *ReturnStage) XXX_Size() int {
+	return xxx_messageInfo_ReturnStage.Size(m)
+}
+func (m *ReturnStage) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReturnStage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReturnStage proto.InternalMessageInfo
 
 func (m *ReturnStage) GetRetval() int64 {
 	if m != nil {
@@ -77,7 +127,7 @@ func (m *ReturnStage) GetRetval() int64 {
 	return 0
 }
 
-func (m *ReturnStage) GetExpiration() *google_protobuf.Timestamp {
+func (m *ReturnStage) GetExpiration() *timestamp.Timestamp {
 	if m != nil {
 		return m.Expiration
 	}
@@ -93,13 +143,35 @@ type Stage struct {
 	//	*Stage_Failure
 	//	*Stage_Stall
 	//	*Stage_Deps
-	StageType isStage_StageType `protobuf_oneof:"stage_type"`
+	StageType            isStage_StageType `protobuf_oneof:"stage_type"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Stage) Reset()                    { *m = Stage{} }
-func (m *Stage) String() string            { return proto.CompactTextString(m) }
-func (*Stage) ProtoMessage()               {}
-func (*Stage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
+func (m *Stage) Reset()         { *m = Stage{} }
+func (m *Stage) String() string { return proto.CompactTextString(m) }
+func (*Stage) ProtoMessage()    {}
+func (*Stage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{2}
+}
+func (m *Stage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Stage.Unmarshal(m, b)
+}
+func (m *Stage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Stage.Marshal(b, m, deterministic)
+}
+func (dst *Stage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Stage.Merge(dst, src)
+}
+func (m *Stage) XXX_Size() int {
+	return xxx_messageInfo_Stage.Size(m)
+}
+func (m *Stage) XXX_DiscardUnknown() {
+	xxx_messageInfo_Stage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Stage proto.InternalMessageInfo
 
 type isStage_StageType interface {
 	isStage_StageType()
@@ -220,17 +292,17 @@ func _Stage_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.StageType.(type) {
 	case *Stage_Failure:
 		s := proto.Size(x.Failure)
-		n += proto.SizeVarint(1<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Stage_Stall:
 		s := proto.Size(x.Stall)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Stage_Deps:
 		s := proto.Size(x.Deps)
-		n += proto.SizeVarint(3<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -248,13 +320,35 @@ func _Stage_OneofSizer(msg proto.Message) (n int) {
 // 0 is a 0-percent chance of failure.
 // 1 is a 100-percent chance of failure.
 type FailureStage struct {
-	Chance float32 `protobuf:"fixed32,1,opt,name=chance" json:"chance,omitempty"`
+	Chance               float32  `protobuf:"fixed32,1,opt,name=chance" json:"chance,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *FailureStage) Reset()                    { *m = FailureStage{} }
-func (m *FailureStage) String() string            { return proto.CompactTextString(m) }
-func (*FailureStage) ProtoMessage()               {}
-func (*FailureStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{3} }
+func (m *FailureStage) Reset()         { *m = FailureStage{} }
+func (m *FailureStage) String() string { return proto.CompactTextString(m) }
+func (*FailureStage) ProtoMessage()    {}
+func (*FailureStage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{3}
+}
+func (m *FailureStage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FailureStage.Unmarshal(m, b)
+}
+func (m *FailureStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FailureStage.Marshal(b, m, deterministic)
+}
+func (dst *FailureStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FailureStage.Merge(dst, src)
+}
+func (m *FailureStage) XXX_Size() int {
+	return xxx_messageInfo_FailureStage.Size(m)
+}
+func (m *FailureStage) XXX_DiscardUnknown() {
+	xxx_messageInfo_FailureStage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FailureStage proto.InternalMessageInfo
 
 func (m *FailureStage) GetChance() float32 {
 	if m != nil {
@@ -266,15 +360,37 @@ func (m *FailureStage) GetChance() float32 {
 // StallStage delays the phrase for the provided Duration. This could be used
 // to simulate long-running tasks (like builds).
 type StallStage struct {
-	Delay *google_protobuf1.Duration `protobuf:"bytes,1,opt,name=delay" json:"delay,omitempty"`
+	Delay                *duration.Duration `protobuf:"bytes,1,opt,name=delay" json:"delay,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *StallStage) Reset()                    { *m = StallStage{} }
-func (m *StallStage) String() string            { return proto.CompactTextString(m) }
-func (*StallStage) ProtoMessage()               {}
-func (*StallStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{4} }
+func (m *StallStage) Reset()         { *m = StallStage{} }
+func (m *StallStage) String() string { return proto.CompactTextString(m) }
+func (*StallStage) ProtoMessage()    {}
+func (*StallStage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{4}
+}
+func (m *StallStage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StallStage.Unmarshal(m, b)
+}
+func (m *StallStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StallStage.Marshal(b, m, deterministic)
+}
+func (dst *StallStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StallStage.Merge(dst, src)
+}
+func (m *StallStage) XXX_Size() int {
+	return xxx_messageInfo_StallStage.Size(m)
+}
+func (m *StallStage) XXX_DiscardUnknown() {
+	xxx_messageInfo_StallStage.DiscardUnknown(m)
+}
 
-func (m *StallStage) GetDelay() *google_protobuf1.Duration {
+var xxx_messageInfo_StallStage proto.InternalMessageInfo
+
+func (m *StallStage) GetDelay() *duration.Duration {
 	if m != nil {
 		return m.Delay
 	}
@@ -284,13 +400,35 @@ func (m *StallStage) GetDelay() *google_protobuf1.Duration {
 // DepsStage represents the opportunity to depend on 1 or more dependencies
 // simultaneously.
 type DepsStage struct {
-	Deps []*Dependency `protobuf:"bytes,1,rep,name=deps" json:"deps,omitempty"`
+	Deps                 []*Dependency `protobuf:"bytes,1,rep,name=deps" json:"deps,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *DepsStage) Reset()                    { *m = DepsStage{} }
-func (m *DepsStage) String() string            { return proto.CompactTextString(m) }
-func (*DepsStage) ProtoMessage()               {}
-func (*DepsStage) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
+func (m *DepsStage) Reset()         { *m = DepsStage{} }
+func (m *DepsStage) String() string { return proto.CompactTextString(m) }
+func (*DepsStage) ProtoMessage()    {}
+func (*DepsStage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{5}
+}
+func (m *DepsStage) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DepsStage.Unmarshal(m, b)
+}
+func (m *DepsStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DepsStage.Marshal(b, m, deterministic)
+}
+func (dst *DepsStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepsStage.Merge(dst, src)
+}
+func (m *DepsStage) XXX_Size() int {
+	return xxx_messageInfo_DepsStage.Size(m)
+}
+func (m *DepsStage) XXX_DiscardUnknown() {
+	xxx_messageInfo_DepsStage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DepsStage proto.InternalMessageInfo
 
 func (m *DepsStage) GetDeps() []*Dependency {
 	if m != nil {
@@ -315,14 +453,36 @@ type Dependency struct {
 	//   mix_seed phrase.seed!=0 -> dep uses blend(current seed, phrase.seed)
 	//  !mix_seed phrase.seed==0 -> dep uses current seed
 	//  !mix_seed phrase.seed!=0 -> dep uses phrase.seed
-	MixSeed bool    `protobuf:"varint,4,opt,name=mix_seed,json=mixSeed" json:"mix_seed,omitempty"`
-	Phrase  *Phrase `protobuf:"bytes,5,opt,name=phrase" json:"phrase,omitempty"`
+	MixSeed              bool     `protobuf:"varint,4,opt,name=mix_seed,json=mixSeed" json:"mix_seed,omitempty"`
+	Phrase               *Phrase  `protobuf:"bytes,5,opt,name=phrase" json:"phrase,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Dependency) Reset()                    { *m = Dependency{} }
-func (m *Dependency) String() string            { return proto.CompactTextString(m) }
-func (*Dependency) ProtoMessage()               {}
-func (*Dependency) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{6} }
+func (m *Dependency) Reset()         { *m = Dependency{} }
+func (m *Dependency) String() string { return proto.CompactTextString(m) }
+func (*Dependency) ProtoMessage()    {}
+func (*Dependency) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{6}
+}
+func (m *Dependency) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Dependency.Unmarshal(m, b)
+}
+func (m *Dependency) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Dependency.Marshal(b, m, deterministic)
+}
+func (dst *Dependency) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Dependency.Merge(dst, src)
+}
+func (m *Dependency) XXX_Size() int {
+	return xxx_messageInfo_Dependency.Size(m)
+}
+func (m *Dependency) XXX_DiscardUnknown() {
+	xxx_messageInfo_Dependency.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Dependency proto.InternalMessageInfo
 
 type isDependency_AttemptStrategy interface {
 	isDependency_AttemptStrategy()
@@ -436,11 +596,11 @@ func _Dependency_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.AttemptStrategy.(type) {
 	case *Dependency_Attempts:
 		s := proto.Size(x.Attempts)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *Dependency_Retries:
-		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Retries))
 	case nil:
 	default:
@@ -451,13 +611,35 @@ func _Dependency_OneofSizer(msg proto.Message) (n int) {
 
 // SparseRange allows the expression of mixed partial ranges like [1,3-10,19,21].
 type SparseRange struct {
-	Items []*RangeItem `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
+	Items                []*RangeItem `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *SparseRange) Reset()                    { *m = SparseRange{} }
-func (m *SparseRange) String() string            { return proto.CompactTextString(m) }
-func (*SparseRange) ProtoMessage()               {}
-func (*SparseRange) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{7} }
+func (m *SparseRange) Reset()         { *m = SparseRange{} }
+func (m *SparseRange) String() string { return proto.CompactTextString(m) }
+func (*SparseRange) ProtoMessage()    {}
+func (*SparseRange) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{7}
+}
+func (m *SparseRange) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SparseRange.Unmarshal(m, b)
+}
+func (m *SparseRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SparseRange.Marshal(b, m, deterministic)
+}
+func (dst *SparseRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SparseRange.Merge(dst, src)
+}
+func (m *SparseRange) XXX_Size() int {
+	return xxx_messageInfo_SparseRange.Size(m)
+}
+func (m *SparseRange) XXX_DiscardUnknown() {
+	xxx_messageInfo_SparseRange.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SparseRange proto.InternalMessageInfo
 
 func (m *SparseRange) GetItems() []*RangeItem {
 	if m != nil {
@@ -471,13 +653,35 @@ type RangeItem struct {
 	// Types that are valid to be assigned to RangeItem:
 	//	*RangeItem_Single
 	//	*RangeItem_Range
-	RangeItem isRangeItem_RangeItem `protobuf_oneof:"range_item"`
+	RangeItem            isRangeItem_RangeItem `protobuf_oneof:"range_item"`
+	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
+	XXX_unrecognized     []byte                `json:"-"`
+	XXX_sizecache        int32                 `json:"-"`
 }
 
-func (m *RangeItem) Reset()                    { *m = RangeItem{} }
-func (m *RangeItem) String() string            { return proto.CompactTextString(m) }
-func (*RangeItem) ProtoMessage()               {}
-func (*RangeItem) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{8} }
+func (m *RangeItem) Reset()         { *m = RangeItem{} }
+func (m *RangeItem) String() string { return proto.CompactTextString(m) }
+func (*RangeItem) ProtoMessage()    {}
+func (*RangeItem) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{8}
+}
+func (m *RangeItem) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RangeItem.Unmarshal(m, b)
+}
+func (m *RangeItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RangeItem.Marshal(b, m, deterministic)
+}
+func (dst *RangeItem) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RangeItem.Merge(dst, src)
+}
+func (m *RangeItem) XXX_Size() int {
+	return xxx_messageInfo_RangeItem.Size(m)
+}
+func (m *RangeItem) XXX_DiscardUnknown() {
+	xxx_messageInfo_RangeItem.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RangeItem proto.InternalMessageInfo
 
 type isRangeItem_RangeItem interface {
 	isRangeItem_RangeItem()
@@ -569,11 +773,11 @@ func _RangeItem_OneofSizer(msg proto.Message) (n int) {
 	// range_item
 	switch x := m.RangeItem.(type) {
 	case *RangeItem_Single:
-		n += proto.SizeVarint(1<<3 | proto.WireVarint)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(x.Single))
 	case *RangeItem_Range:
 		s := proto.Size(x.Range)
-		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -585,14 +789,36 @@ func _RangeItem_OneofSizer(msg proto.Message) (n int) {
 
 // Range represents a single low-high pair (e.g. [3-40])
 type Range struct {
-	Low  uint32 `protobuf:"varint,1,opt,name=low" json:"low,omitempty"`
-	High uint32 `protobuf:"varint,2,opt,name=high" json:"high,omitempty"`
+	Low                  uint32   `protobuf:"varint,1,opt,name=low" json:"low,omitempty"`
+	High                 uint32   `protobuf:"varint,2,opt,name=high" json:"high,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Range) Reset()                    { *m = Range{} }
-func (m *Range) String() string            { return proto.CompactTextString(m) }
-func (*Range) ProtoMessage()               {}
-func (*Range) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{9} }
+func (m *Range) Reset()         { *m = Range{} }
+func (m *Range) String() string { return proto.CompactTextString(m) }
+func (*Range) ProtoMessage()    {}
+func (*Range) Descriptor() ([]byte, []int) {
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{9}
+}
+func (m *Range) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Range.Unmarshal(m, b)
+}
+func (m *Range) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Range.Marshal(b, m, deterministic)
+}
+func (dst *Range) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Range.Merge(dst, src)
+}
+func (m *Range) XXX_Size() int {
+	return xxx_messageInfo_Range.Size(m)
+}
+func (m *Range) XXX_DiscardUnknown() {
+	xxx_messageInfo_Range.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Range proto.InternalMessageInfo
 
 func (m *Range) GetLow() uint32 {
 	if m != nil {
@@ -622,10 +848,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/task.proto", fileDescriptor2)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/task.proto", fileDescriptor_task_5fd4f9a35c9cef60)
 }
 
-var fileDescriptor2 = []byte{
+var fileDescriptor_task_5fd4f9a35c9cef60 = []byte{
 	// 592 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
 	0x10, 0xc6, 0x4d, 0xec, 0x36, 0xe3, 0x04, 0x95, 0x05, 0x21, 0x37, 0x07, 0x88, 0x2c, 0x35, 0x8d,

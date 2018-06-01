@@ -23,6 +23,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestConfigBundle(t *testing.T) {
@@ -51,7 +52,10 @@ func TestConfigBundle(t *testing.T) {
 		b2, unknown, err := deserializeBundle(blob)
 		So(err, ShouldBeNil)
 		So(unknown, ShouldEqual, nil)
-		So(b2, ShouldResemble, b1)
+		So(b2, ShouldHaveLength, len(b1))
+		for k := range b2 {
+			So(b2[k], ShouldResembleProto, b1[k])
+		}
 	})
 
 	Convey("Unknown proto", t, func() {

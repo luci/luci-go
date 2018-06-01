@@ -6,13 +6,19 @@ package logpb
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import google_protobuf "github.com/golang/protobuf/ptypes/timestamp"
-import google_protobuf1 "github.com/golang/protobuf/ptypes/duration"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A log stream type.
 type StreamType int32
@@ -37,7 +43,9 @@ var StreamType_value = map[string]int32{
 func (x StreamType) String() string {
 	return proto.EnumName(StreamType_name, int32(x))
 }
-func (StreamType) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (StreamType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{0}
+}
 
 // *
 // Log stream descriptor data. This is the full set of information that
@@ -74,7 +82,7 @@ type LogStreamDescriptor struct {
 	//
 	// This notes the start time of the log stream. All LogEntries express their
 	// timestamp as microsecond offsets from this field.
-	Timestamp *google_protobuf.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp *timestamp.Timestamp `protobuf:"bytes,5,opt,name=timestamp" json:"timestamp,omitempty"`
 	//
 	// Tag is an arbitrary key/value tag associated with this log stream.
 	//
@@ -83,13 +91,35 @@ type LogStreamDescriptor struct {
 	//
 	// If set, the stream will be joined together during archival to recreate the
 	// original stream and made available at <prefix>/+/<name>.ext.
-	BinaryFileExt string `protobuf:"bytes,7,opt,name=binary_file_ext,json=binaryFileExt" json:"binary_file_ext,omitempty"`
+	BinaryFileExt        string   `protobuf:"bytes,7,opt,name=binary_file_ext,json=binaryFileExt" json:"binary_file_ext,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LogStreamDescriptor) Reset()                    { *m = LogStreamDescriptor{} }
-func (m *LogStreamDescriptor) String() string            { return proto.CompactTextString(m) }
-func (*LogStreamDescriptor) ProtoMessage()               {}
-func (*LogStreamDescriptor) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *LogStreamDescriptor) Reset()         { *m = LogStreamDescriptor{} }
+func (m *LogStreamDescriptor) String() string { return proto.CompactTextString(m) }
+func (*LogStreamDescriptor) ProtoMessage()    {}
+func (*LogStreamDescriptor) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{0}
+}
+func (m *LogStreamDescriptor) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogStreamDescriptor.Unmarshal(m, b)
+}
+func (m *LogStreamDescriptor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogStreamDescriptor.Marshal(b, m, deterministic)
+}
+func (dst *LogStreamDescriptor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamDescriptor.Merge(dst, src)
+}
+func (m *LogStreamDescriptor) XXX_Size() int {
+	return xxx_messageInfo_LogStreamDescriptor.Size(m)
+}
+func (m *LogStreamDescriptor) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogStreamDescriptor.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogStreamDescriptor proto.InternalMessageInfo
 
 func (m *LogStreamDescriptor) GetPrefix() string {
 	if m != nil {
@@ -119,7 +149,7 @@ func (m *LogStreamDescriptor) GetContentType() string {
 	return ""
 }
 
-func (m *LogStreamDescriptor) GetTimestamp() *google_protobuf.Timestamp {
+func (m *LogStreamDescriptor) GetTimestamp() *timestamp.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
@@ -142,13 +172,35 @@ func (m *LogStreamDescriptor) GetBinaryFileExt() string {
 
 // Text stream content.
 type Text struct {
-	Lines []*Text_Line `protobuf:"bytes,1,rep,name=lines" json:"lines,omitempty"`
+	Lines                []*Text_Line `protobuf:"bytes,1,rep,name=lines" json:"lines,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
+	XXX_unrecognized     []byte       `json:"-"`
+	XXX_sizecache        int32        `json:"-"`
 }
 
-func (m *Text) Reset()                    { *m = Text{} }
-func (m *Text) String() string            { return proto.CompactTextString(m) }
-func (*Text) ProtoMessage()               {}
-func (*Text) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *Text) Reset()         { *m = Text{} }
+func (m *Text) String() string { return proto.CompactTextString(m) }
+func (*Text) ProtoMessage()    {}
+func (*Text) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{1}
+}
+func (m *Text) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Text.Unmarshal(m, b)
+}
+func (m *Text) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Text.Marshal(b, m, deterministic)
+}
+func (dst *Text) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Text.Merge(dst, src)
+}
+func (m *Text) XXX_Size() int {
+	return xxx_messageInfo_Text.Size(m)
+}
+func (m *Text) XXX_DiscardUnknown() {
+	xxx_messageInfo_Text.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Text proto.InternalMessageInfo
 
 func (m *Text) GetLines() []*Text_Line {
 	if m != nil {
@@ -166,13 +218,35 @@ type Text_Line struct {
 	//
 	// If this is an empty string, this line is continued in the next sequential
 	// line, and the line's sequence number does not advance.
-	Delimiter string `protobuf:"bytes,2,opt,name=delimiter" json:"delimiter,omitempty"`
+	Delimiter            string   `protobuf:"bytes,2,opt,name=delimiter" json:"delimiter,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Text_Line) Reset()                    { *m = Text_Line{} }
-func (m *Text_Line) String() string            { return proto.CompactTextString(m) }
-func (*Text_Line) ProtoMessage()               {}
-func (*Text_Line) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1, 0} }
+func (m *Text_Line) Reset()         { *m = Text_Line{} }
+func (m *Text_Line) String() string { return proto.CompactTextString(m) }
+func (*Text_Line) ProtoMessage()    {}
+func (*Text_Line) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{1, 0}
+}
+func (m *Text_Line) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Text_Line.Unmarshal(m, b)
+}
+func (m *Text_Line) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Text_Line.Marshal(b, m, deterministic)
+}
+func (dst *Text_Line) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Text_Line.Merge(dst, src)
+}
+func (m *Text_Line) XXX_Size() int {
+	return xxx_messageInfo_Text_Line.Size(m)
+}
+func (m *Text_Line) XXX_DiscardUnknown() {
+	xxx_messageInfo_Text_Line.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Text_Line proto.InternalMessageInfo
 
 func (m *Text_Line) GetValue() string {
 	if m != nil {
@@ -191,13 +265,35 @@ func (m *Text_Line) GetDelimiter() string {
 // Binary stream content.
 type Binary struct {
 	// The binary stream's data.
-	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Data                 []byte   `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Binary) Reset()                    { *m = Binary{} }
-func (m *Binary) String() string            { return proto.CompactTextString(m) }
-func (*Binary) ProtoMessage()               {}
-func (*Binary) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *Binary) Reset()         { *m = Binary{} }
+func (m *Binary) String() string { return proto.CompactTextString(m) }
+func (*Binary) ProtoMessage()    {}
+func (*Binary) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{2}
+}
+func (m *Binary) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Binary.Unmarshal(m, b)
+}
+func (m *Binary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Binary.Marshal(b, m, deterministic)
+}
+func (dst *Binary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Binary.Merge(dst, src)
+}
+func (m *Binary) XXX_Size() int {
+	return xxx_messageInfo_Binary.Size(m)
+}
+func (m *Binary) XXX_DiscardUnknown() {
+	xxx_messageInfo_Binary.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Binary proto.InternalMessageInfo
 
 func (m *Binary) GetData() []byte {
 	if m != nil {
@@ -209,14 +305,36 @@ func (m *Binary) GetData() []byte {
 // Datagram stream content type.
 type Datagram struct {
 	// This datagram data.
-	Data    []byte            `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	Partial *Datagram_Partial `protobuf:"bytes,2,opt,name=partial" json:"partial,omitempty"`
+	Data                 []byte            `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	Partial              *Datagram_Partial `protobuf:"bytes,2,opt,name=partial" json:"partial,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *Datagram) Reset()                    { *m = Datagram{} }
-func (m *Datagram) String() string            { return proto.CompactTextString(m) }
-func (*Datagram) ProtoMessage()               {}
-func (*Datagram) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *Datagram) Reset()         { *m = Datagram{} }
+func (m *Datagram) String() string { return proto.CompactTextString(m) }
+func (*Datagram) ProtoMessage()    {}
+func (*Datagram) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{3}
+}
+func (m *Datagram) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Datagram.Unmarshal(m, b)
+}
+func (m *Datagram) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Datagram.Marshal(b, m, deterministic)
+}
+func (dst *Datagram) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datagram.Merge(dst, src)
+}
+func (m *Datagram) XXX_Size() int {
+	return xxx_messageInfo_Datagram.Size(m)
+}
+func (m *Datagram) XXX_DiscardUnknown() {
+	xxx_messageInfo_Datagram.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Datagram proto.InternalMessageInfo
 
 func (m *Datagram) GetData() []byte {
 	if m != nil {
@@ -243,13 +361,35 @@ type Datagram_Partial struct {
 	// The size of the full datagram
 	Size uint64 `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
 	// If true, this is the last partial datagram in the overall datagram.
-	Last bool `protobuf:"varint,3,opt,name=last" json:"last,omitempty"`
+	Last                 bool     `protobuf:"varint,3,opt,name=last" json:"last,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Datagram_Partial) Reset()                    { *m = Datagram_Partial{} }
-func (m *Datagram_Partial) String() string            { return proto.CompactTextString(m) }
-func (*Datagram_Partial) ProtoMessage()               {}
-func (*Datagram_Partial) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3, 0} }
+func (m *Datagram_Partial) Reset()         { *m = Datagram_Partial{} }
+func (m *Datagram_Partial) String() string { return proto.CompactTextString(m) }
+func (*Datagram_Partial) ProtoMessage()    {}
+func (*Datagram_Partial) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{3, 0}
+}
+func (m *Datagram_Partial) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Datagram_Partial.Unmarshal(m, b)
+}
+func (m *Datagram_Partial) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Datagram_Partial.Marshal(b, m, deterministic)
+}
+func (dst *Datagram_Partial) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datagram_Partial.Merge(dst, src)
+}
+func (m *Datagram_Partial) XXX_Size() int {
+	return xxx_messageInfo_Datagram_Partial.Size(m)
+}
+func (m *Datagram_Partial) XXX_DiscardUnknown() {
+	xxx_messageInfo_Datagram_Partial.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Datagram_Partial proto.InternalMessageInfo
 
 func (m *Datagram_Partial) GetIndex() uint32 {
 	if m != nil {
@@ -283,7 +423,7 @@ type LogEntry struct {
 	//
 	// This offset is added to the log stream's base "timestamp" to resolve the
 	// timestamp for this specific Content.
-	TimeOffset *google_protobuf1.Duration `protobuf:"bytes,1,opt,name=time_offset,json=timeOffset" json:"time_offset,omitempty"`
+	TimeOffset *duration.Duration `protobuf:"bytes,1,opt,name=time_offset,json=timeOffset" json:"time_offset,omitempty"`
 	//
 	// The message index within the Prefix (required).
 	//
@@ -314,13 +454,35 @@ type LogEntry struct {
 	//	*LogEntry_Text
 	//	*LogEntry_Binary
 	//	*LogEntry_Datagram
-	Content isLogEntry_Content `protobuf_oneof:"content"`
+	Content              isLogEntry_Content `protobuf_oneof:"content"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *LogEntry) Reset()                    { *m = LogEntry{} }
-func (m *LogEntry) String() string            { return proto.CompactTextString(m) }
-func (*LogEntry) ProtoMessage()               {}
-func (*LogEntry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *LogEntry) Reset()         { *m = LogEntry{} }
+func (m *LogEntry) String() string { return proto.CompactTextString(m) }
+func (*LogEntry) ProtoMessage()    {}
+func (*LogEntry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{4}
+}
+func (m *LogEntry) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogEntry.Unmarshal(m, b)
+}
+func (m *LogEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogEntry.Marshal(b, m, deterministic)
+}
+func (dst *LogEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogEntry.Merge(dst, src)
+}
+func (m *LogEntry) XXX_Size() int {
+	return xxx_messageInfo_LogEntry.Size(m)
+}
+func (m *LogEntry) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogEntry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogEntry proto.InternalMessageInfo
 
 type isLogEntry_Content interface {
 	isLogEntry_Content()
@@ -347,7 +509,7 @@ func (m *LogEntry) GetContent() isLogEntry_Content {
 	return nil
 }
 
-func (m *LogEntry) GetTimeOffset() *google_protobuf1.Duration {
+func (m *LogEntry) GetTimeOffset() *duration.Duration {
 	if m != nil {
 		return m.TimeOffset
 	}
@@ -469,17 +631,17 @@ func _LogEntry_OneofSizer(msg proto.Message) (n int) {
 	switch x := m.Content.(type) {
 	case *LogEntry_Text:
 		s := proto.Size(x.Text)
-		n += proto.SizeVarint(10<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *LogEntry_Binary:
 		s := proto.Size(x.Binary)
-		n += proto.SizeVarint(11<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case *LogEntry_Datagram:
 		s := proto.Size(x.Datagram)
-		n += proto.SizeVarint(12<<3 | proto.WireBytes)
+		n += 1 // tag and wire
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -531,13 +693,35 @@ type LogIndex struct {
 	//
 	// This is optional. If zero, there is either no information about the number
 	// of log entries, or there are zero entries in the stream.
-	LogEntryCount uint64 `protobuf:"varint,5,opt,name=log_entry_count,json=logEntryCount" json:"log_entry_count,omitempty"`
+	LogEntryCount        uint64   `protobuf:"varint,5,opt,name=log_entry_count,json=logEntryCount" json:"log_entry_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LogIndex) Reset()                    { *m = LogIndex{} }
-func (m *LogIndex) String() string            { return proto.CompactTextString(m) }
-func (*LogIndex) ProtoMessage()               {}
-func (*LogIndex) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (m *LogIndex) Reset()         { *m = LogIndex{} }
+func (m *LogIndex) String() string { return proto.CompactTextString(m) }
+func (*LogIndex) ProtoMessage()    {}
+func (*LogIndex) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{5}
+}
+func (m *LogIndex) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogIndex.Unmarshal(m, b)
+}
+func (m *LogIndex) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogIndex.Marshal(b, m, deterministic)
+}
+func (dst *LogIndex) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogIndex.Merge(dst, src)
+}
+func (m *LogIndex) XXX_Size() int {
+	return xxx_messageInfo_LogIndex.Size(m)
+}
+func (m *LogIndex) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogIndex.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogIndex proto.InternalMessageInfo
 
 func (m *LogIndex) GetDesc() *LogStreamDescriptor {
 	if m != nil {
@@ -611,13 +795,35 @@ type LogIndex_Entry struct {
 	// This is added to the descriptor's "timestamp" field to identify the
 	// specific timestamp of this log. It is used by clients to identify a
 	// specific LogEntry by time.
-	TimeOffset *google_protobuf1.Duration `protobuf:"bytes,5,opt,name=time_offset,json=timeOffset" json:"time_offset,omitempty"`
+	TimeOffset           *duration.Duration `protobuf:"bytes,5,opt,name=time_offset,json=timeOffset" json:"time_offset,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
-func (m *LogIndex_Entry) Reset()                    { *m = LogIndex_Entry{} }
-func (m *LogIndex_Entry) String() string            { return proto.CompactTextString(m) }
-func (*LogIndex_Entry) ProtoMessage()               {}
-func (*LogIndex_Entry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5, 0} }
+func (m *LogIndex_Entry) Reset()         { *m = LogIndex_Entry{} }
+func (m *LogIndex_Entry) String() string { return proto.CompactTextString(m) }
+func (*LogIndex_Entry) ProtoMessage()    {}
+func (*LogIndex_Entry) Descriptor() ([]byte, []int) {
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{5, 0}
+}
+func (m *LogIndex_Entry) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LogIndex_Entry.Unmarshal(m, b)
+}
+func (m *LogIndex_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LogIndex_Entry.Marshal(b, m, deterministic)
+}
+func (dst *LogIndex_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogIndex_Entry.Merge(dst, src)
+}
+func (m *LogIndex_Entry) XXX_Size() int {
+	return xxx_messageInfo_LogIndex_Entry.Size(m)
+}
+func (m *LogIndex_Entry) XXX_DiscardUnknown() {
+	xxx_messageInfo_LogIndex_Entry.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LogIndex_Entry proto.InternalMessageInfo
 
 func (m *LogIndex_Entry) GetOffset() uint64 {
 	if m != nil {
@@ -647,7 +853,7 @@ func (m *LogIndex_Entry) GetStreamIndex() uint64 {
 	return 0
 }
 
-func (m *LogIndex_Entry) GetTimeOffset() *google_protobuf1.Duration {
+func (m *LogIndex_Entry) GetTimeOffset() *duration.Duration {
 	if m != nil {
 		return m.TimeOffset
 	}
@@ -656,6 +862,7 @@ func (m *LogIndex_Entry) GetTimeOffset() *google_protobuf1.Duration {
 
 func init() {
 	proto.RegisterType((*LogStreamDescriptor)(nil), "logpb.LogStreamDescriptor")
+	proto.RegisterMapType((map[string]string)(nil), "logpb.LogStreamDescriptor.TagsEntry")
 	proto.RegisterType((*Text)(nil), "logpb.Text")
 	proto.RegisterType((*Text_Line)(nil), "logpb.Text.Line")
 	proto.RegisterType((*Binary)(nil), "logpb.Binary")
@@ -667,9 +874,11 @@ func init() {
 	proto.RegisterEnum("logpb.StreamType", StreamType_name, StreamType_value)
 }
 
-func init() { proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/log.proto", fileDescriptor1) }
+func init() {
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/log.proto", fileDescriptor_log_0cb77fdc814e7bf8)
+}
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_log_0cb77fdc814e7bf8 = []byte{
 	// 783 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdd, 0x6e, 0xe3, 0x44,
 	0x14, 0xae, 0x1d, 0x27, 0x71, 0x8e, 0x53, 0x9a, 0x1d, 0x60, 0x31, 0x16, 0x82, 0x34, 0x42, 0x25,

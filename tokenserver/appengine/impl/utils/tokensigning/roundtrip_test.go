@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRoundtrip(t *testing.T) {
@@ -53,7 +54,7 @@ func TestRoundtrip(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(insp.Signed, ShouldBeTrue)
-		So(insp.Body, ShouldResemble, original)
+		So(insp.Body, ShouldResembleProto, original)
 	})
 
 	Convey("Sign/Inspect works (with context)", t, func() {
@@ -67,7 +68,7 @@ func TestRoundtrip(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		So(insp.Signed, ShouldBeTrue)
-		So(insp.Body, ShouldResemble, original)
+		So(insp.Body, ShouldResembleProto, original)
 	})
 
 	Convey("Sign/Inspect works (wrong context)", t, func() {

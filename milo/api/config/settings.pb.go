@@ -12,6 +12,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // Settings represents the format for the global (service) config for Milo.
 type Settings struct {
 	Buildbot    *Settings_Buildbot    `protobuf:"bytes,1,opt,name=buildbot" json:"buildbot,omitempty"`
@@ -23,13 +29,35 @@ type Settings struct {
 	//
 	// Multiple records are allowed, but each host and project must appear only in
 	// one record.
-	SourceAcls []*Settings_SourceAcls `protobuf:"bytes,4,rep,name=source_acls,json=sourceAcls" json:"source_acls,omitempty"`
+	SourceAcls           []*Settings_SourceAcls `protobuf:"bytes,4,rep,name=source_acls,json=sourceAcls" json:"source_acls,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
+	XXX_unrecognized     []byte                 `json:"-"`
+	XXX_sizecache        int32                  `json:"-"`
 }
 
-func (m *Settings) Reset()                    { *m = Settings{} }
-func (m *Settings) String() string            { return proto.CompactTextString(m) }
-func (*Settings) ProtoMessage()               {}
-func (*Settings) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *Settings) Reset()         { *m = Settings{} }
+func (m *Settings) String() string { return proto.CompactTextString(m) }
+func (*Settings) ProtoMessage()    {}
+func (*Settings) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0}
+}
+func (m *Settings) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings.Unmarshal(m, b)
+}
+func (m *Settings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings.Marshal(b, m, deterministic)
+}
+func (dst *Settings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings.Merge(dst, src)
+}
+func (m *Settings) XXX_Size() int {
+	return xxx_messageInfo_Settings.Size(m)
+}
+func (m *Settings) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings proto.InternalMessageInfo
 
 func (m *Settings) GetBuildbot() *Settings_Buildbot {
 	if m != nil {
@@ -68,13 +96,35 @@ type Settings_Buildbot struct {
 	PublicSubscription string `protobuf:"bytes,2,opt,name=public_subscription,json=publicSubscription" json:"public_subscription,omitempty"`
 	// internal_subscription is the name of the pubsub topic where internal builds
 	// come in from
-	InternalSubscription string `protobuf:"bytes,3,opt,name=internal_subscription,json=internalSubscription" json:"internal_subscription,omitempty"`
+	InternalSubscription string   `protobuf:"bytes,3,opt,name=internal_subscription,json=internalSubscription" json:"internal_subscription,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Settings_Buildbot) Reset()                    { *m = Settings_Buildbot{} }
-func (m *Settings_Buildbot) String() string            { return proto.CompactTextString(m) }
-func (*Settings_Buildbot) ProtoMessage()               {}
-func (*Settings_Buildbot) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (m *Settings_Buildbot) Reset()         { *m = Settings_Buildbot{} }
+func (m *Settings_Buildbot) String() string { return proto.CompactTextString(m) }
+func (*Settings_Buildbot) ProtoMessage()    {}
+func (*Settings_Buildbot) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 0}
+}
+func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings_Buildbot.Unmarshal(m, b)
+}
+func (m *Settings_Buildbot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings_Buildbot.Marshal(b, m, deterministic)
+}
+func (dst *Settings_Buildbot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbot.Merge(dst, src)
+}
+func (m *Settings_Buildbot) XXX_Size() int {
+	return xxx_messageInfo_Settings_Buildbot.Size(m)
+}
+func (m *Settings_Buildbot) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings_Buildbot.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings_Buildbot proto.InternalMessageInfo
 
 func (m *Settings_Buildbot) GetInternalReader() string {
 	if m != nil {
@@ -104,13 +154,35 @@ type Settings_Buildbucket struct {
 	Host string `protobuf:"bytes,2,opt,name=host" json:"host,omitempty"`
 	// project is the name of the Google Cloud project that the pubsub topic
 	// belongs to.
-	Project string `protobuf:"bytes,3,opt,name=project" json:"project,omitempty"`
+	Project              string   `protobuf:"bytes,3,opt,name=project" json:"project,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Settings_Buildbucket) Reset()                    { *m = Settings_Buildbucket{} }
-func (m *Settings_Buildbucket) String() string            { return proto.CompactTextString(m) }
-func (*Settings_Buildbucket) ProtoMessage()               {}
-func (*Settings_Buildbucket) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
+func (m *Settings_Buildbucket) Reset()         { *m = Settings_Buildbucket{} }
+func (m *Settings_Buildbucket) String() string { return proto.CompactTextString(m) }
+func (*Settings_Buildbucket) ProtoMessage()    {}
+func (*Settings_Buildbucket) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 1}
+}
+func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings_Buildbucket.Unmarshal(m, b)
+}
+func (m *Settings_Buildbucket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings_Buildbucket.Marshal(b, m, deterministic)
+}
+func (dst *Settings_Buildbucket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbucket.Merge(dst, src)
+}
+func (m *Settings_Buildbucket) XXX_Size() int {
+	return xxx_messageInfo_Settings_Buildbucket.Size(m)
+}
+func (m *Settings_Buildbucket) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings_Buildbucket.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings_Buildbucket proto.InternalMessageInfo
 
 func (m *Settings_Buildbucket) GetName() string {
 	if m != nil {
@@ -140,13 +212,35 @@ type Settings_Swarming struct {
 	// allowed_hosts is a whitelist of hostnames of swarming instances
 	// that Milo is allowed to talk to.  This is specified here for security
 	// reasons, because Milo will hand out its oauth2 token to a swarming host.
-	AllowedHosts []string `protobuf:"bytes,2,rep,name=allowed_hosts,json=allowedHosts" json:"allowed_hosts,omitempty"`
+	AllowedHosts         []string `protobuf:"bytes,2,rep,name=allowed_hosts,json=allowedHosts" json:"allowed_hosts,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Settings_Swarming) Reset()                    { *m = Settings_Swarming{} }
-func (m *Settings_Swarming) String() string            { return proto.CompactTextString(m) }
-func (*Settings_Swarming) ProtoMessage()               {}
-func (*Settings_Swarming) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 2} }
+func (m *Settings_Swarming) Reset()         { *m = Settings_Swarming{} }
+func (m *Settings_Swarming) String() string { return proto.CompactTextString(m) }
+func (*Settings_Swarming) ProtoMessage()    {}
+func (*Settings_Swarming) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 2}
+}
+func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings_Swarming.Unmarshal(m, b)
+}
+func (m *Settings_Swarming) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings_Swarming.Marshal(b, m, deterministic)
+}
+func (dst *Settings_Swarming) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Swarming.Merge(dst, src)
+}
+func (m *Settings_Swarming) XXX_Size() int {
+	return xxx_messageInfo_Settings_Swarming.Size(m)
+}
+func (m *Settings_Swarming) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings_Swarming.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings_Swarming proto.InternalMessageInfo
 
 func (m *Settings_Swarming) GetDefaultHost() string {
 	if m != nil {
@@ -187,13 +281,35 @@ type Settings_SourceAcls struct {
 	//  * Auth service identities.  For example: "kind:name"
 	//
 	// Required.
-	Readers []string `protobuf:"bytes,3,rep,name=readers" json:"readers,omitempty"`
+	Readers              []string `protobuf:"bytes,3,rep,name=readers" json:"readers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Settings_SourceAcls) Reset()                    { *m = Settings_SourceAcls{} }
-func (m *Settings_SourceAcls) String() string            { return proto.CompactTextString(m) }
-func (*Settings_SourceAcls) ProtoMessage()               {}
-func (*Settings_SourceAcls) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 3} }
+func (m *Settings_SourceAcls) Reset()         { *m = Settings_SourceAcls{} }
+func (m *Settings_SourceAcls) String() string { return proto.CompactTextString(m) }
+func (*Settings_SourceAcls) ProtoMessage()    {}
+func (*Settings_SourceAcls) Descriptor() ([]byte, []int) {
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 3}
+}
+func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Settings_SourceAcls.Unmarshal(m, b)
+}
+func (m *Settings_SourceAcls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Settings_SourceAcls.Marshal(b, m, deterministic)
+}
+func (dst *Settings_SourceAcls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_SourceAcls.Merge(dst, src)
+}
+func (m *Settings_SourceAcls) XXX_Size() int {
+	return xxx_messageInfo_Settings_SourceAcls.Size(m)
+}
+func (m *Settings_SourceAcls) XXX_DiscardUnknown() {
+	xxx_messageInfo_Settings_SourceAcls.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Settings_SourceAcls proto.InternalMessageInfo
 
 func (m *Settings_SourceAcls) GetHosts() []string {
 	if m != nil {
@@ -225,10 +341,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor_settings_de1143cae3c9b2b5)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_settings_de1143cae3c9b2b5 = []byte{
 	// 396 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0xbf, 0x8e, 0xd4, 0x30,
 	0x10, 0xc6, 0x95, 0xcb, 0xde, 0x91, 0x9d, 0x1c, 0x20, 0x99, 0x43, 0x84, 0x54, 0x0b, 0x14, 0x6c,

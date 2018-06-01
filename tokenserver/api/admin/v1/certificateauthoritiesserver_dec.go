@@ -6,7 +6,7 @@ import (
 	proto "github.com/golang/protobuf/proto"
 	context "golang.org/x/net/context"
 
-	google_protobuf "github.com/golang/protobuf/ptypes/empty"
+	empty "github.com/golang/protobuf/ptypes/empty"
 )
 
 type DecoratedCertificateAuthorities struct {
@@ -39,7 +39,7 @@ func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *Fetch
 	return
 }
 
-func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *google_protobuf.Empty) (rsp *ListCAsResponse, err error) {
+func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *empty.Empty) (rsp *ListCAsResponse, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListCAs", req)

@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/clock"
@@ -982,7 +983,7 @@ func (as *Step) SetSTDERRStream(st *milo.LogdogStream) (updated bool) {
 }
 
 func (as *Step) maybeSetLogDogStream(target *milo.LogdogStream, st *milo.LogdogStream) (*milo.LogdogStream, bool) {
-	if (target == nil && st == nil) || (target != nil && st != nil && *target == *st) {
+	if (target == nil && st == nil) || (target != nil && st != nil && proto.Equal(target, st)) {
 		return target, false
 	}
 	return st, true

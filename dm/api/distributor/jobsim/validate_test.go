@@ -34,7 +34,7 @@ func TestNormalization(t *testing.T) {
 			Name:   "FailureStage",
 			Phrase: `{"stages": [{"failure": {"chance": 0.75}}]}`,
 			Parsed: &Phrase{
-				Stages: []*Stage{{&Stage_Failure{&FailureStage{.75}}}},
+				Stages: []*Stage{{StageType: &Stage_Failure{&FailureStage{Chance: .75}}}},
 			},
 		},
 	}

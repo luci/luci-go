@@ -12,17 +12,45 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 // ReadProjectConfigTask is used to import jobs of some project.
 //
 // Queue: "read-project-config".
 type ReadProjectConfigTask struct {
-	ProjectId string `protobuf:"bytes,1,opt,name=project_id,json=projectId" json:"project_id,omitempty"`
+	ProjectId            string   `protobuf:"bytes,1,opt,name=project_id,json=projectId" json:"project_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ReadProjectConfigTask) Reset()                    { *m = ReadProjectConfigTask{} }
-func (m *ReadProjectConfigTask) String() string            { return proto.CompactTextString(m) }
-func (*ReadProjectConfigTask) ProtoMessage()               {}
-func (*ReadProjectConfigTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (m *ReadProjectConfigTask) Reset()         { *m = ReadProjectConfigTask{} }
+func (m *ReadProjectConfigTask) String() string { return proto.CompactTextString(m) }
+func (*ReadProjectConfigTask) ProtoMessage()    {}
+func (*ReadProjectConfigTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{0}
+}
+func (m *ReadProjectConfigTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ReadProjectConfigTask.Unmarshal(m, b)
+}
+func (m *ReadProjectConfigTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ReadProjectConfigTask.Marshal(b, m, deterministic)
+}
+func (dst *ReadProjectConfigTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReadProjectConfigTask.Merge(dst, src)
+}
+func (m *ReadProjectConfigTask) XXX_Size() int {
+	return xxx_messageInfo_ReadProjectConfigTask.Size(m)
+}
+func (m *ReadProjectConfigTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_ReadProjectConfigTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ReadProjectConfigTask proto.InternalMessageInfo
 
 func (m *ReadProjectConfigTask) GetProjectId() string {
 	if m != nil {
@@ -38,14 +66,36 @@ func (m *ReadProjectConfigTask) GetProjectId() string {
 //
 // Queue: "launches".
 type LaunchInvocationTask struct {
-	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	InvId int64  `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	InvId                int64    `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *LaunchInvocationTask) Reset()                    { *m = LaunchInvocationTask{} }
-func (m *LaunchInvocationTask) String() string            { return proto.CompactTextString(m) }
-func (*LaunchInvocationTask) ProtoMessage()               {}
-func (*LaunchInvocationTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (m *LaunchInvocationTask) Reset()         { *m = LaunchInvocationTask{} }
+func (m *LaunchInvocationTask) String() string { return proto.CompactTextString(m) }
+func (*LaunchInvocationTask) ProtoMessage()    {}
+func (*LaunchInvocationTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{1}
+}
+func (m *LaunchInvocationTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LaunchInvocationTask.Unmarshal(m, b)
+}
+func (m *LaunchInvocationTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LaunchInvocationTask.Marshal(b, m, deterministic)
+}
+func (dst *LaunchInvocationTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LaunchInvocationTask.Merge(dst, src)
+}
+func (m *LaunchInvocationTask) XXX_Size() int {
+	return xxx_messageInfo_LaunchInvocationTask.Size(m)
+}
+func (m *LaunchInvocationTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_LaunchInvocationTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LaunchInvocationTask proto.InternalMessageInfo
 
 func (m *LaunchInvocationTask) GetJobId() string {
 	if m != nil {
@@ -67,13 +117,35 @@ func (m *LaunchInvocationTask) GetInvId() int64 {
 //
 // Queue: "batches".
 type LaunchInvocationsBatchTask struct {
-	Tasks []*LaunchInvocationTask `protobuf:"bytes,1,rep,name=tasks" json:"tasks,omitempty"`
+	Tasks                []*LaunchInvocationTask `protobuf:"bytes,1,rep,name=tasks" json:"tasks,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
 }
 
-func (m *LaunchInvocationsBatchTask) Reset()                    { *m = LaunchInvocationsBatchTask{} }
-func (m *LaunchInvocationsBatchTask) String() string            { return proto.CompactTextString(m) }
-func (*LaunchInvocationsBatchTask) ProtoMessage()               {}
-func (*LaunchInvocationsBatchTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (m *LaunchInvocationsBatchTask) Reset()         { *m = LaunchInvocationsBatchTask{} }
+func (m *LaunchInvocationsBatchTask) String() string { return proto.CompactTextString(m) }
+func (*LaunchInvocationsBatchTask) ProtoMessage()    {}
+func (*LaunchInvocationsBatchTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{2}
+}
+func (m *LaunchInvocationsBatchTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LaunchInvocationsBatchTask.Unmarshal(m, b)
+}
+func (m *LaunchInvocationsBatchTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LaunchInvocationsBatchTask.Marshal(b, m, deterministic)
+}
+func (dst *LaunchInvocationsBatchTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LaunchInvocationsBatchTask.Merge(dst, src)
+}
+func (m *LaunchInvocationsBatchTask) XXX_Size() int {
+	return xxx_messageInfo_LaunchInvocationsBatchTask.Size(m)
+}
+func (m *LaunchInvocationsBatchTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_LaunchInvocationsBatchTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LaunchInvocationsBatchTask proto.InternalMessageInfo
 
 func (m *LaunchInvocationsBatchTask) GetTasks() []*LaunchInvocationTask {
 	if m != nil {
@@ -90,13 +162,35 @@ func (m *LaunchInvocationsBatchTask) GetTasks() []*LaunchInvocationTask {
 //
 // Queue: "triages".
 type TriageJobStateTask struct {
-	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TriageJobStateTask) Reset()                    { *m = TriageJobStateTask{} }
-func (m *TriageJobStateTask) String() string            { return proto.CompactTextString(m) }
-func (*TriageJobStateTask) ProtoMessage()               {}
-func (*TriageJobStateTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (m *TriageJobStateTask) Reset()         { *m = TriageJobStateTask{} }
+func (m *TriageJobStateTask) String() string { return proto.CompactTextString(m) }
+func (*TriageJobStateTask) ProtoMessage()    {}
+func (*TriageJobStateTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{3}
+}
+func (m *TriageJobStateTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TriageJobStateTask.Unmarshal(m, b)
+}
+func (m *TriageJobStateTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TriageJobStateTask.Marshal(b, m, deterministic)
+}
+func (dst *TriageJobStateTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TriageJobStateTask.Merge(dst, src)
+}
+func (m *TriageJobStateTask) XXX_Size() int {
+	return xxx_messageInfo_TriageJobStateTask.Size(m)
+}
+func (m *TriageJobStateTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_TriageJobStateTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TriageJobStateTask proto.InternalMessageInfo
 
 func (m *TriageJobStateTask) GetJobId() string {
 	if m != nil {
@@ -114,13 +208,35 @@ func (m *TriageJobStateTask) GetJobId() string {
 //
 // Queue: "triages".
 type KickTriageTask struct {
-	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *KickTriageTask) Reset()                    { *m = KickTriageTask{} }
-func (m *KickTriageTask) String() string            { return proto.CompactTextString(m) }
-func (*KickTriageTask) ProtoMessage()               {}
-func (*KickTriageTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (m *KickTriageTask) Reset()         { *m = KickTriageTask{} }
+func (m *KickTriageTask) String() string { return proto.CompactTextString(m) }
+func (*KickTriageTask) ProtoMessage()    {}
+func (*KickTriageTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{4}
+}
+func (m *KickTriageTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_KickTriageTask.Unmarshal(m, b)
+}
+func (m *KickTriageTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_KickTriageTask.Marshal(b, m, deterministic)
+}
+func (dst *KickTriageTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KickTriageTask.Merge(dst, src)
+}
+func (m *KickTriageTask) XXX_Size() int {
+	return xxx_messageInfo_KickTriageTask.Size(m)
+}
+func (m *KickTriageTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_KickTriageTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KickTriageTask proto.InternalMessageInfo
 
 func (m *KickTriageTask) GetJobId() string {
 	if m != nil {
@@ -135,15 +251,37 @@ func (m *KickTriageTask) GetJobId() string {
 //
 // Queue: "completions".
 type InvocationFinishedTask struct {
-	JobId    string              `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	InvId    int64               `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
-	Triggers *FanOutTriggersTask `protobuf:"bytes,3,opt,name=triggers" json:"triggers,omitempty"`
+	JobId                string              `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	InvId                int64               `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
+	Triggers             *FanOutTriggersTask `protobuf:"bytes,3,opt,name=triggers" json:"triggers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
-func (m *InvocationFinishedTask) Reset()                    { *m = InvocationFinishedTask{} }
-func (m *InvocationFinishedTask) String() string            { return proto.CompactTextString(m) }
-func (*InvocationFinishedTask) ProtoMessage()               {}
-func (*InvocationFinishedTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
+func (m *InvocationFinishedTask) Reset()         { *m = InvocationFinishedTask{} }
+func (m *InvocationFinishedTask) String() string { return proto.CompactTextString(m) }
+func (*InvocationFinishedTask) ProtoMessage()    {}
+func (*InvocationFinishedTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{5}
+}
+func (m *InvocationFinishedTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_InvocationFinishedTask.Unmarshal(m, b)
+}
+func (m *InvocationFinishedTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_InvocationFinishedTask.Marshal(b, m, deterministic)
+}
+func (dst *InvocationFinishedTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationFinishedTask.Merge(dst, src)
+}
+func (m *InvocationFinishedTask) XXX_Size() int {
+	return xxx_messageInfo_InvocationFinishedTask.Size(m)
+}
+func (m *InvocationFinishedTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_InvocationFinishedTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_InvocationFinishedTask proto.InternalMessageInfo
 
 func (m *InvocationFinishedTask) GetJobId() string {
 	if m != nil {
@@ -173,14 +311,36 @@ func (m *InvocationFinishedTask) GetTriggers() *FanOutTriggersTask {
 //
 // Queue: "triggers".
 type FanOutTriggersTask struct {
-	JobIds   []string   `protobuf:"bytes,1,rep,name=job_ids,json=jobIds" json:"job_ids,omitempty"`
-	Triggers []*Trigger `protobuf:"bytes,2,rep,name=triggers" json:"triggers,omitempty"`
+	JobIds               []string   `protobuf:"bytes,1,rep,name=job_ids,json=jobIds" json:"job_ids,omitempty"`
+	Triggers             []*Trigger `protobuf:"bytes,2,rep,name=triggers" json:"triggers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *FanOutTriggersTask) Reset()                    { *m = FanOutTriggersTask{} }
-func (m *FanOutTriggersTask) String() string            { return proto.CompactTextString(m) }
-func (*FanOutTriggersTask) ProtoMessage()               {}
-func (*FanOutTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
+func (m *FanOutTriggersTask) Reset()         { *m = FanOutTriggersTask{} }
+func (m *FanOutTriggersTask) String() string { return proto.CompactTextString(m) }
+func (*FanOutTriggersTask) ProtoMessage()    {}
+func (*FanOutTriggersTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{6}
+}
+func (m *FanOutTriggersTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FanOutTriggersTask.Unmarshal(m, b)
+}
+func (m *FanOutTriggersTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FanOutTriggersTask.Marshal(b, m, deterministic)
+}
+func (dst *FanOutTriggersTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FanOutTriggersTask.Merge(dst, src)
+}
+func (m *FanOutTriggersTask) XXX_Size() int {
+	return xxx_messageInfo_FanOutTriggersTask.Size(m)
+}
+func (m *FanOutTriggersTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_FanOutTriggersTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FanOutTriggersTask proto.InternalMessageInfo
 
 func (m *FanOutTriggersTask) GetJobIds() []string {
 	if m != nil {
@@ -203,14 +363,36 @@ func (m *FanOutTriggersTask) GetTriggers() []*Trigger {
 //
 // Queue: "triggers".
 type EnqueueTriggersTask struct {
-	JobId    string     `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	Triggers []*Trigger `protobuf:"bytes,2,rep,name=triggers" json:"triggers,omitempty"`
+	JobId                string     `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	Triggers             []*Trigger `protobuf:"bytes,2,rep,name=triggers" json:"triggers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
 }
 
-func (m *EnqueueTriggersTask) Reset()                    { *m = EnqueueTriggersTask{} }
-func (m *EnqueueTriggersTask) String() string            { return proto.CompactTextString(m) }
-func (*EnqueueTriggersTask) ProtoMessage()               {}
-func (*EnqueueTriggersTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{7} }
+func (m *EnqueueTriggersTask) Reset()         { *m = EnqueueTriggersTask{} }
+func (m *EnqueueTriggersTask) String() string { return proto.CompactTextString(m) }
+func (*EnqueueTriggersTask) ProtoMessage()    {}
+func (*EnqueueTriggersTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{7}
+}
+func (m *EnqueueTriggersTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EnqueueTriggersTask.Unmarshal(m, b)
+}
+func (m *EnqueueTriggersTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EnqueueTriggersTask.Marshal(b, m, deterministic)
+}
+func (dst *EnqueueTriggersTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnqueueTriggersTask.Merge(dst, src)
+}
+func (m *EnqueueTriggersTask) XXX_Size() int {
+	return xxx_messageInfo_EnqueueTriggersTask.Size(m)
+}
+func (m *EnqueueTriggersTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_EnqueueTriggersTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_EnqueueTriggersTask proto.InternalMessageInfo
 
 func (m *EnqueueTriggersTask) GetJobId() string {
 	if m != nil {
@@ -232,15 +414,37 @@ func (m *EnqueueTriggersTask) GetTriggers() []*Trigger {
 //
 // Queue: "timers".
 type ScheduleTimersTask struct {
-	JobId  string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	InvId  int64    `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
-	Timers []*Timer `protobuf:"bytes,3,rep,name=timers" json:"timers,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	InvId                int64    `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
+	Timers               []*Timer `protobuf:"bytes,3,rep,name=timers" json:"timers,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ScheduleTimersTask) Reset()                    { *m = ScheduleTimersTask{} }
-func (m *ScheduleTimersTask) String() string            { return proto.CompactTextString(m) }
-func (*ScheduleTimersTask) ProtoMessage()               {}
-func (*ScheduleTimersTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{8} }
+func (m *ScheduleTimersTask) Reset()         { *m = ScheduleTimersTask{} }
+func (m *ScheduleTimersTask) String() string { return proto.CompactTextString(m) }
+func (*ScheduleTimersTask) ProtoMessage()    {}
+func (*ScheduleTimersTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{8}
+}
+func (m *ScheduleTimersTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ScheduleTimersTask.Unmarshal(m, b)
+}
+func (m *ScheduleTimersTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ScheduleTimersTask.Marshal(b, m, deterministic)
+}
+func (dst *ScheduleTimersTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduleTimersTask.Merge(dst, src)
+}
+func (m *ScheduleTimersTask) XXX_Size() int {
+	return xxx_messageInfo_ScheduleTimersTask.Size(m)
+}
+func (m *ScheduleTimersTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_ScheduleTimersTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ScheduleTimersTask proto.InternalMessageInfo
 
 func (m *ScheduleTimersTask) GetJobId() string {
 	if m != nil {
@@ -270,15 +474,37 @@ func (m *ScheduleTimersTask) GetTimers() []*Timer {
 //
 // Queue: "timers".
 type TimerTask struct {
-	JobId string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	InvId int64  `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
-	Timer *Timer `protobuf:"bytes,3,opt,name=timer" json:"timer,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	InvId                int64    `protobuf:"varint,2,opt,name=inv_id,json=invId" json:"inv_id,omitempty"`
+	Timer                *Timer   `protobuf:"bytes,3,opt,name=timer" json:"timer,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *TimerTask) Reset()                    { *m = TimerTask{} }
-func (m *TimerTask) String() string            { return proto.CompactTextString(m) }
-func (*TimerTask) ProtoMessage()               {}
-func (*TimerTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{9} }
+func (m *TimerTask) Reset()         { *m = TimerTask{} }
+func (m *TimerTask) String() string { return proto.CompactTextString(m) }
+func (*TimerTask) ProtoMessage()    {}
+func (*TimerTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{9}
+}
+func (m *TimerTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_TimerTask.Unmarshal(m, b)
+}
+func (m *TimerTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_TimerTask.Marshal(b, m, deterministic)
+}
+func (dst *TimerTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TimerTask.Merge(dst, src)
+}
+func (m *TimerTask) XXX_Size() int {
+	return xxx_messageInfo_TimerTask.Size(m)
+}
+func (m *TimerTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_TimerTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TimerTask proto.InternalMessageInfo
 
 func (m *TimerTask) GetJobId() string {
 	if m != nil {
@@ -309,14 +535,36 @@ func (m *TimerTask) GetTimer() *Timer {
 //
 // Queue: "crons".
 type CronTickTask struct {
-	JobId     string `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
-	TickNonce int64  `protobuf:"varint,2,opt,name=tick_nonce,json=tickNonce" json:"tick_nonce,omitempty"`
+	JobId                string   `protobuf:"bytes,1,opt,name=job_id,json=jobId" json:"job_id,omitempty"`
+	TickNonce            int64    `protobuf:"varint,2,opt,name=tick_nonce,json=tickNonce" json:"tick_nonce,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CronTickTask) Reset()                    { *m = CronTickTask{} }
-func (m *CronTickTask) String() string            { return proto.CompactTextString(m) }
-func (*CronTickTask) ProtoMessage()               {}
-func (*CronTickTask) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{10} }
+func (m *CronTickTask) Reset()         { *m = CronTickTask{} }
+func (m *CronTickTask) String() string { return proto.CompactTextString(m) }
+func (*CronTickTask) ProtoMessage()    {}
+func (*CronTickTask) Descriptor() ([]byte, []int) {
+	return fileDescriptor_tq_13dfa92515f55e36, []int{10}
+}
+func (m *CronTickTask) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CronTickTask.Unmarshal(m, b)
+}
+func (m *CronTickTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CronTickTask.Marshal(b, m, deterministic)
+}
+func (dst *CronTickTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CronTickTask.Merge(dst, src)
+}
+func (m *CronTickTask) XXX_Size() int {
+	return xxx_messageInfo_CronTickTask.Size(m)
+}
+func (m *CronTickTask) XXX_DiscardUnknown() {
+	xxx_messageInfo_CronTickTask.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CronTickTask proto.InternalMessageInfo
 
 func (m *CronTickTask) GetJobId() string {
 	if m != nil {
@@ -347,10 +595,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/tq.proto", fileDescriptor3)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/tq.proto", fileDescriptor_tq_13dfa92515f55e36)
 }
 
-var fileDescriptor3 = []byte{
+var fileDescriptor_tq_13dfa92515f55e36 = []byte{
 	// 456 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x6b, 0x13, 0x41,
 	0x10, 0xc7, 0xb9, 0x86, 0xc4, 0xde, 0x44, 0x7c, 0x38, 0x6d, 0x0d, 0x81, 0x62, 0xbc, 0x17, 0x03,
