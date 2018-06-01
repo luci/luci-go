@@ -88,6 +88,30 @@
     },
     {
       "key": {
+        "uuid": "9b92acc1_0a18dd99",
+        "filename": "dm/appengine/model/quest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-01T04:15:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46de9224_018d0cec",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 1
+      },
+      "revId": "45bd6e0cf840498cd943ac644a513190bb8d1007",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c29ff6be_2684f399",
         "filename": "grpc/cmd/cproto/testdata/helloworld/test.pb.golden",
         "patchSetId": 4
