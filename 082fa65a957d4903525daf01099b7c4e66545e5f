@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "ca9aecb1_559c01a9",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:27:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d462c072_711ea440",
+      "revId": "082fa65a957d4903525daf01099b7c4e66545e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13aa4403_8743d2fa",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 5
