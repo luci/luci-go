@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d20eb29f_7b264128",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T03:14:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fa95298_0070ca2a",
+      "range": {
+        "startLine": 72,
+        "startChar": 39,
+        "endLine": 72,
+        "endChar": 46
+      },
+      "revId": "1ea1d8a30765d668d639a4b009337172c1690ea0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa0ee4a4_7c561a33",
         "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "1ea1d8a30765d668d639a4b009337172c1690ea0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3bc03f4_bc7a0b99",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T03:14:16Z",
+      "side": 1,
+      "message": "Reads from Google Storage are buffered using BufferingReaderAt I added few days ago. What happens inside the guts of zip.Reader I don\u0027t care :) We basically read 512 Kb buffer from GS, then unzip it in memory via small 32Kb chunks into 2 Mb output buffer, and then flush it to GS.\n\nLeft a comment.",
+      "parentUuid": "6ae66020_efc42927",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 36
+      },
+      "revId": "1ea1d8a30765d668d639a4b009337172c1690ea0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
