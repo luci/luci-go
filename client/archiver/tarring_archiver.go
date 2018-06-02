@@ -22,6 +22,7 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/isolated"
 )
 
@@ -88,6 +89,7 @@ type partitioningWalker struct {
 	fsView common.FilesystemView
 
 	parts partitionedDeps
+	seen  stringset.Set
 }
 
 // partitionedDeps contains a list of items to be archived, partitioned into symlinks and files categorized by size.
@@ -115,11 +117,11 @@ func (pw *partitioningWalker) walkFn(path string, info os.FileInfo, err error) e
 	if err != nil {
 		return err
 	}
-
-	if relPath == "" { // empty string indicates skip.
+	if !pw.seen.Add(relPath) || relPath == "" {
+		// Either the file or directory was already walked, or empty string
+		// indicates skip.
 		return common.WalkFuncSkipFile(info)
 	}
-
 	if info.IsDir() {
 		return nil
 	}
@@ -149,7 +151,7 @@ func partitionDeps(deps []string, rootDir string, blacklist []string) (partition
 		return partitionedDeps{}, err
 	}
 
-	walker := partitioningWalker{fsView: fsView}
+	walker := partitioningWalker{fsView: fsView, seen: stringset.New(1024)}
 	for _, dep := range deps {
 		// Try to walk dep. If dep is a file (or symlink), the inner function is called exactly once.
 		if err := filepath.Walk(filepath.Clean(dep), walker.walkFn); err != nil {

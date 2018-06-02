@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/client/internal/common"
+	"go.chromium.org/luci/common/data/stringset"
 )
 
 // basicFileInfo implements some of os.FileInfo, and panics if unexpected parts
@@ -100,6 +101,8 @@ func TestWalkFn(t *testing.T) {
 			name: "partitions files",
 			files: []file{
 				symlink("/rootDir/patha", 1e3),
+				regularFile("/rootDir/pathb", 10e3),
+				// The duplicate entry will be skipped.
 				regularFile("/rootDir/pathb", 10e3),
 				regularFile("/rootDir/pathc", 100e3),
 			},
@@ -252,7 +255,7 @@ func TestWalkFn(t *testing.T) {
 
 TestCases:
 	for _, tc := range testCases {
-		pw := partitioningWalker{fsView: fsView("/rootDir")}
+		pw := partitioningWalker{fsView: fsView("/rootDir"), seen: stringset.New(0)}
 		for _, f := range tc.files {
 			if err := pw.walkFn(f.path, f.bfi, tc.walkFnErr); err != nil {
 				t.Errorf("partitioning deps(%s): walkFn got err %v; want nil", tc.name, err)
@@ -267,7 +270,7 @@ TestCases:
 }
 
 func TestWalkFn_BadRelpath(t *testing.T) {
-	pw := partitioningWalker{fsView: fsView("/rootDir")}
+	pw := partitioningWalker{fsView: fsView("/rootDir"), seen: stringset.New(0)}
 	f := regularFile("./patha", 1)
 	if err := pw.walkFn(f.path, f.bfi, nil); err == nil {
 		t.Errorf("testing bad relpath: walkFn returned nil err; want non-nil err")
@@ -275,7 +278,7 @@ func TestWalkFn_BadRelpath(t *testing.T) {
 }
 
 func TestWalkFn_ReturnsErrorsUnchanged(t *testing.T) {
-	pw := partitioningWalker{fsView: fsView("/rootDir")}
+	pw := partitioningWalker{fsView: fsView("/rootDir"), seen: stringset.New(0)}
 	f := regularFile("/rootDir/patha", 1)
 	if err := pw.walkFn(f.path, f.bfi, errBang); err != errBang {
 		t.Errorf("walkFn err: got: %v; want %v", err, errBang)
@@ -283,7 +286,7 @@ func TestWalkFn_ReturnsErrorsUnchanged(t *testing.T) {
 }
 
 func TestWalkFn_DoesNothingForDirectories(t *testing.T) {
-	pw := partitioningWalker{fsView: fsView("/rootDir")}
+	pw := partitioningWalker{fsView: fsView("/rootDir"), seen: stringset.New(0)}
 	f := directory("/rootDir/patha")
 	if err := pw.walkFn(f.path, f.bfi, nil); err != nil {
 		t.Errorf("walkFn err: got: %v; want nil", err)
