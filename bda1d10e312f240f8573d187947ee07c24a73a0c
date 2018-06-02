@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6aa807b_06663c77",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T04:05:33Z",
+      "side": 1,
+      "message": "if you remove these 3 dots, then you can use []*Builder instead of []interface{}",
+      "range": {
+        "startLine": 96,
+        "startChar": 30,
+        "endLine": 96,
+        "endChar": 33
+      },
+      "revId": "bda1d10e312f240f8573d187947ee07c24a73a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7b021d2_f6b7de70",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T04:05:33Z",
+      "side": 1,
+      "message": "when comparing patch11 to base, you can see that the diff doesn\u0027t add much value, but adds complexity. The value was there in earlier patches. I think passing []*notifypb.Notification and oldStatus is simpler",
+      "range": {
+        "startLine": 114,
+        "startChar": 88,
+        "endLine": 114,
+        "endChar": 104
+      },
+      "revId": "bda1d10e312f240f8573d187947ee07c24a73a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1220a483_79e5f1af",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T04:05:33Z",
+      "side": 1,
+      "message": "i have just realized that buildbucket currently doesn\u0027t provide ref :/\nhttps://cr-buildbucket.appspot.com/rpcexplorer/services/buildbucket.v2.Builds/SearchBuilds?request\u003d{%20%20%20%20%22predicate%22:%20{%20%20%20%20%20%20%20%20%22builder%22:%20{%20%20%20%20%20%20%20%20%20%20%20%20%22project%22:%20%22infra%22,%20%20%20%20%20%20%20%20%20%20%20%20%22bucket%22:%20%22ci%22,%20%20%20%20%20%20%20%20%20%20%20%20%22builder%22:%20%22infra-continuous-xenial-64%22%20%20%20%20%20%20%20%20}%20%20%20%20}}\n\ncan we add ref constraint in a separate CL, if needed, when ref is available?",
+      "range": {
+        "startLine": 177,
+        "startChar": 79,
+        "endLine": 177,
+        "endChar": 106
+      },
+      "revId": "bda1d10e312f240f8573d187947ee07c24a73a0c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
