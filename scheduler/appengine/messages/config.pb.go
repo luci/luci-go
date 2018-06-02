@@ -685,10 +685,6 @@ type GitilesTask struct {
 	//    the literal prefix "refs/release-" contains only one slash. The regexp
 	//    should not start with ^ or end with $ as they will be added
 	//    automatically.
-	//  * (deprecated, use regexp instead) a refglob like "refs/heads/*" which
-	//    matches all immediate children of "refs/heads". Thus, "refs/heads/*"
-	//    will match "refs/heads/master", but will not match
-	//    "refs/heads/not/immediate/child".
 	Refs                 []string `protobuf:"bytes,2,rep,name=refs" json:"refs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`

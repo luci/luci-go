@@ -48,7 +48,7 @@ func TestTriggerBuild(t *testing.T) {
 		c := memory.Use(context.Background())
 		cfg := &messages.GitilesTask{
 			Repo: "https://a.googlesource.com/b.git",
-			Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
+			Refs: []string{"refs/heads/master", "refs/heads/branch", "regexp:refs/branch-heads/[^/]+"},
 		}
 		jobID := "proj/gitiles"
 		parsedURL, err := url.Parse(cfg.Repo)
@@ -206,33 +206,6 @@ func TestTriggerBuild(t *testing.T) {
 			So(google.TimeFromProto(ctl.Triggers[3].Created), ShouldEqual, epoch.Add(-1*time.Minute)) // newest on master
 		})
 
-		Convey("Refglobs: new, updated, and deleted refs", func() {
-			So(saveState(c, jobID, parsedURL, strmap{
-				"refs/branch-heads/1.2.3": "deadbeef01",
-				"refs/branch-heads/4.5":   "beefcafe",
-				"refs/branch-heads/6.7":   "deadcafe",
-			}), ShouldBeNil)
-			expectRefs("refs/heads", nil)
-			expectRefs("refs/branch-heads", strmap{
-				"refs/branch-heads/1.2.3":          "deadbeef00",
-				"refs/branch-heads/6.7":            "deadcafe",
-				"refs/branch-heads/8.9.0":          "beef44dead",
-				"refs/branch-heads/must/not/match": "deaddead",
-			})
-			expectLog("deadbeef00", "deadbeef01", 50, log("deadbeef00"))
-			expectLog("beef44dead", "", 1, log("beef44dead"))
-
-			So(m.LaunchTask(c, ctl), ShouldBeNil)
-			So(loadNoError(), ShouldResemble, strmap{
-				"refs/branch-heads/1.2.3": "deadbeef00", // updated.
-				"refs/branch-heads/6.7":   "deadcafe",   // same.
-				"refs/branch-heads/8.9.0": "beef44dead", // new.
-			})
-			So(ctl.Triggers, ShouldHaveLength, 2)
-			So(ctl.Triggers[0].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/1.2.3@deadbeef00")
-			So(ctl.Triggers[1].Id, ShouldEqual, "https://a.googlesource.com/b.git/+/refs/branch-heads/8.9.0@beef44dead")
-		})
-
 		Convey("do nothing at all if there are no changes", func() {
 			So(saveState(c, jobID, parsedURL, strmap{
 				"refs/heads/master": "deadbeef",
@@ -356,7 +329,7 @@ func TestValidateConfig(t *testing.T) {
 		Convey("refNamespace works", func() {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
-				Refs: []string{"refs/heads/master", "refs/heads/branch", "refs/branch-heads/*"},
+				Refs: []string{"refs/heads/master", "refs/heads/branch", "regexp:refs/branch-heads/[^/]+"},
 			}
 			Convey("proper refs", func() {
 				So(validate(cfg), ShouldBeNil)
@@ -367,18 +340,12 @@ func TestValidateConfig(t *testing.T) {
 			})
 		})
 
-		Convey("trailing refGlobs work", func() {
+		Convey("refGlobs are rejected", func() {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
-				Refs: []string{"refs/*", "refs/heads/*", "refs/other/something"},
+				Refs: []string{"refs/*"},
 			}
-			Convey("valid refGlobs", func() {
-				So(validate(cfg), ShouldBeNil)
-			})
-			Convey("invalid refGlob", func() {
-				cfg.Refs = []string{"refs/*/*"}
-				So(validate(cfg), ShouldNotBeNil)
-			})
+			So(validate(cfg), ShouldNotBeNil)
 		})
 
 		Convey("refRegexp works", func() {
