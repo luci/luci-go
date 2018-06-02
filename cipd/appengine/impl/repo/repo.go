@@ -54,6 +54,7 @@ func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) api.RepositoryServe
 		cas:  internalCAS,
 	}
 	impl.registerTasks()
+	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
 	return impl
 }
 
