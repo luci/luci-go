@@ -83,5 +83,16 @@ func TestRetryAndStatusCode(t *testing.T) {
 			So(transient.Tag.In(err), ShouldBeFalse)
 			So(StatusCode(err), ShouldEqual, 403)
 		})
+
+		Convey("Passes through *RestartUploadError", func() {
+			uploadErr := &RestartUploadError{Offset: 123}
+			calls := 0
+			err := withRetry(ctx, func() error {
+				calls++
+				return uploadErr
+			})
+			So(calls, ShouldEqual, 1)
+			So(err, ShouldEqual, uploadErr) // exact same error object
+		})
 	})
 }
