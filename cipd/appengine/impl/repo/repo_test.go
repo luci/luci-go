@@ -318,6 +318,54 @@ func TestMetadataUpdating(t *testing.T) {
 	})
 }
 
+func TestGetRolesInPrefix(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		call := func(prefix string, user identity.Identity) (*api.RolesInPrefix, error) {
+			ctx := auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: user,
+			})
+			return impl.GetRolesInPrefix(ctx, &api.PrefixRequest{Prefix: prefix})
+		}
+
+		Convey("Happy path", func() {
+			resp, err := call("a/b/c/d", "user:writer@example.com")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefix{
+				Roles: []*api.RolesInPrefix_RoleInPrefix{
+					{Role: api.Role_READER},
+					{Role: api.Role_WRITER},
+				},
+			})
+		})
+
+		Convey("Anonymous", func() {
+			resp, err := call("a/b/c/d", "anonymous:anonymous")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefix{})
+		})
+
+		Convey("Bad prefix", func() {
+			_, err := call("///", "user:writer@example.com")
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'prefix'")
+		})
+	})
+}
+
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 

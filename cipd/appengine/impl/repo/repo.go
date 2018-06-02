@@ -203,6 +203,27 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 	})
 }
 
+// GetRolesInPrefix implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) GetRolesInPrefix(c context.Context, r *api.PrefixRequest) (resp *api.RolesInPrefix, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+	}
+
+	metas, err := impl.meta.GetMetadata(c, r.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	roles, err := rolesInPrefix(c, metas)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
 // checkRole checks where the caller has the given role in the given prefix or
 // any of its parent prefixes.
 //
