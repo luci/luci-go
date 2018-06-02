@@ -269,6 +269,24 @@
       "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6cf3e55a_c47106a5",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T03:18:53Z",
+      "side": 1,
+      "message": "Relaxed \"resp.StatusCode in [200, 201]\" to be \"resp.StatusCode in [200, ..., 299]\". Now it is impossible.",
+      "parentUuid": "6bbfda09_52f78410",
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
