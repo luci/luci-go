@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9fa28b42_b22434ba",
+        "filename": "common/data/stringset/stringset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-06-02T00:23:02Z",
+      "side": 1,
+      "message": "I\u0027d prefer to not do that in case the map is changed to a struct or \"something\". It\u0027s harmless.",
+      "parentUuid": "f8a4e9f3_a8bed8f9",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 47
+      },
+      "revId": "5c30518dabba45350ea6481827aaa283e57e2352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "38809e86_c8402870",
         "filename": "common/data/stringset/stringset.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2018-06-01T22:35:14Z",
       "side": 1,
       "message": "i wonder if we can remove this.",
+      "range": {
+        "startLine": 70,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 35
+      },
+      "revId": "5c30518dabba45350ea6481827aaa283e57e2352",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b48038d_9958a1ac",
+        "filename": "common/data/stringset/stringset.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-06-02T00:23:02Z",
+      "side": 1,
+      "message": "I prefer to not change the API in this CL.",
+      "parentUuid": "38809e86_c8402870",
       "range": {
         "startLine": 70,
         "startChar": 0,
