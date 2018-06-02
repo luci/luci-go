@@ -22,6 +22,30 @@
       "revId": "8d6fc8b7f3b5253e4ab072e0e30a36ac9b2cd5e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3cfb1a5_45e1de7b",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 423,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-02T12:21:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29cd1a6d_fb236273",
+      "range": {
+        "startLine": 423,
+        "startChar": 1,
+        "endLine": 423,
+        "endChar": 13
+      },
+      "revId": "8d6fc8b7f3b5253e4ab072e0e30a36ac9b2cd5e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
