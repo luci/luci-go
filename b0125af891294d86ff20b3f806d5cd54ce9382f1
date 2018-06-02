@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ba1969f8_dafe7341",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-02T01:54:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "412c19ee_1f099a85",
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6596125c_70801193",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb44ea24_d56d7f6e",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-02T01:54:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6596125c_70801193",
+      "range": {
+        "startLine": 59,
+        "startChar": 64,
+        "endLine": 60,
+        "endChar": 70
+      },
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "34906240_41ca9a05",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-02T01:54:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0d2ab26d_f5cc6bb6",
+      "range": {
+        "startLine": 79,
+        "startChar": 0,
+        "endLine": 122,
+        "endChar": 1
+      },
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b91c8e32_670b043f",
         "filename": "luci_notify/config/notifier.go",
         "patchSetId": 6
@@ -79,6 +145,24 @@
       "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7ec36d18_448a9970",
+        "filename": "luci_notify/config/notifier.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-02T01:54:30Z",
+      "side": 1,
+      "message": "I deleted this file in an earlier change in this stack so this comment is now obsolete.",
+      "parentUuid": "b91c8e32_670b043f",
+      "revId": "b0125af891294d86ff20b3f806d5cd54ce9382f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
