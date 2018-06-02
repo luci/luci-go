@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "bc0592d4_e1e517aa",
+        "filename": "cipd/appengine/impl/gs/retry.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T03:22:07Z",
+      "side": 1,
+      "message": "i meant that IN GENERAL, if the caller is another proxy it will have to do this like L71-73 again. An error tag doesn\u0027t have such problem. But it is not important, i see that the caller is not a proxy.",
+      "parentUuid": "aac1ad91_559c1584",
+      "range": {
+        "startLine": 70,
+        "startChar": 63,
+        "endLine": 70,
+        "endChar": 74
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a37098e_06dfc555",
         "filename": "cipd/appengine/impl/gs/uploader.go",
         "patchSetId": 4
