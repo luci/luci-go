@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72113bcf_967ea220",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "to",
+      "range": {
+        "startLine": 9,
+        "startChar": 28,
+        "endLine": 9,
+        "endChar": 31
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e4a8200_c77f0bd7",
+        "filename": "cipd/appengine/impl/gs/retry.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "this is somewhat fragile. it should be an error tag",
+      "range": {
+        "startLine": 70,
+        "startChar": 63,
+        "endLine": 70,
+        "endChar": 74
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a37098e_06dfc555",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 57,
+        "startChar": 38,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "03b5556a_5ef8433e",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "this is very unexpected",
+      "range": {
+        "startLine": 105,
+        "startChar": 32,
+        "endLine": 105,
+        "endChar": 56
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd4e6f67_d262546b",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "Offset is documented as \"initial offset\". Perhaps the word \"initial\" shouldn\u0027t be there.\nit is not obvious from docs that Write mutates Offset",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 12
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b35c68a2_c548451d",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T01:55:10Z",
+      "side": 1,
+      "message": "this is impossible. please panic",
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
