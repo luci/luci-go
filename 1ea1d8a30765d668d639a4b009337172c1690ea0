@@ -117,6 +117,30 @@
       "revId": "1ea1d8a30765d668d639a4b009337172c1690ea0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bb9799d0_f84dffb3",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-02T03:17:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e3bc03f4_bc7a0b99",
+      "range": {
+        "startLine": 134,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 36
+      },
+      "revId": "1ea1d8a30765d668d639a4b009337172c1690ea0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
