@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "d012b2d2_878010c1",
+        "filename": "cipd/appengine/impl/gs/retry.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T03:26:44Z",
+      "side": 1,
+      "message": "Ah, yeah. I actually considered passing this as a tag, but decided it is unnecessary gymnastics in this case, since all involved parties are known in advance and there are like 2 of them.",
+      "parentUuid": "bc0592d4_e1e517aa",
+      "range": {
+        "startLine": 70,
+        "startChar": 63,
+        "endLine": 70,
+        "endChar": 74
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a37098e_06dfc555",
         "filename": "cipd/appengine/impl/gs/uploader.go",
         "patchSetId": 4
