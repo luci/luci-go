@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d9cd94ff_1a7bdaac",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "72113bcf_967ea220",
+      "range": {
+        "startLine": 9,
+        "startChar": 28,
+        "endLine": 9,
+        "endChar": 31
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e4a8200_c77f0bd7",
         "filename": "cipd/appengine/impl/gs/retry.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aac1ad91_559c1584",
+        "filename": "cipd/appengine/impl/gs/retry.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "What is fragile about it? This is internal function of a package that totally knows about error types in this package and knows how it is called (and I have a test that double checks all this). \n\nI want to return some random chunk of information with an error. The most sensible way to do it is to have custom \u0027error\u0027 implementation.",
+      "parentUuid": "9e4a8200_c77f0bd7",
+      "range": {
+        "startLine": 70,
+        "startChar": 63,
+        "endLine": 70,
+        "endChar": 74
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9209884f_64ad376e",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a37098e_06dfc555",
+      "range": {
+        "startLine": 57,
+        "startChar": 38,
+        "endLine": 57,
+        "endChar": 41
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "03b5556a_5ef8433e",
         "filename": "cipd/appengine/impl/gs/uploader.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47d63b84_0581ea51",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "\u0027resumeOffset\u0027 is ultimately controlled by Google Storage and here I\u0027m just handling all possibilities.\n\nI can imagine this happening if we upload to the same session concurrently. This is not impossible.",
+      "parentUuid": "03b5556a_5ef8433e",
+      "range": {
+        "startLine": 105,
+        "startChar": 32,
+        "endLine": 105,
+        "endChar": 56
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "d4fd17db_2619e1f9",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cd4e6f67_d262546b",
+      "range": {
+        "startLine": 110,
+        "startChar": 4,
+        "endLine": 110,
+        "endChar": 12
+      },
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b35c68a2_c548451d",
         "filename": "cipd/appengine/impl/gs/uploader.go",
         "patchSetId": 4
@@ -131,6 +251,24 @@
       "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bbfda09_52f78410",
+        "filename": "cipd/appengine/impl/gs/uploader.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-02T02:56:24Z",
+      "side": 1,
+      "message": "It is possible, e.g. on HTTP 204 or some other unexpected 2** response.",
+      "parentUuid": "b35c68a2_c548451d",
+      "revId": "fbfe6707472e66c0f91ad838075a7e4f50cfbf95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
