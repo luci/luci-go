@@ -22,6 +22,30 @@
       "revId": "50e68cc88966fc6545fd0c9e4596a4cd985f12a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3901317_7b815727",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T23:18:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04880293_4e794eba",
+      "range": {
+        "startLine": 186,
+        "startChar": 10,
+        "endLine": 186,
+        "endChar": 24
+      },
+      "revId": "50e68cc88966fc6545fd0c9e4596a4cd985f12a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
