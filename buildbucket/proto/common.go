@@ -14,7 +14,7 @@
 
 package buildbucketpb
 
-// Completed returns true if s is final.
-func (s Status) Completed() bool {
-	return s&Status_COMPLETED_STATUS_MASK == Status_COMPLETED_STATUS_MASK
+// Ended returns true if s is final.
+func (s Status) Ended() bool {
+	return s&Status_ENDED_MASK == Status_ENDED_MASK
 }
