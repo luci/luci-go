@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "69d23a4f_df0d05a1",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T22:47:47Z",
+      "side": 1,
+      "message": "\u003e comment\n\u003e \n\nI think it\u0027s pretty obvious what it is. Other response messages here uncommented too. Note that \u0027roles\u0027 field itself is commented and provides sufficient information.\n\n\u003e also the convention is to have \"Response\" suffix in response message names. I doubt we will reuse this message for anything else\n\nDone. I didn\u0027t want to do it because it makes the name too long, but whatever.",
+      "parentUuid": "b8e444b6_30b62e26",
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5201e876_e10cb735",
         "filename": "cipd/appengine/impl/repo/acl.go",
         "patchSetId": 2
@@ -59,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "772af635_97a13f1a",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T22:47:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01037a12_c5b5faed",
+      "range": {
+        "startLine": 133,
+        "startChar": 68,
+        "endLine": 133,
+        "endChar": 86
+      },
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b41560e1_0b4c8010",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 2
@@ -79,6 +121,30 @@
       "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5df4e85d_52c03859",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T22:47:47Z",
+      "side": 1,
+      "message": "This was just muscle memory of typing \u0027if err !\u003d nil\u0027 every other line...",
+      "parentUuid": "b41560e1_0b4c8010",
+      "range": {
+        "startLine": 220,
+        "startChar": 1,
+        "endLine": 220,
+        "endChar": 14
+      },
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
