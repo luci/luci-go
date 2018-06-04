@@ -46,6 +46,30 @@
       "revId": "5d3ca77372ee0bde3148e20a3957a6f1745405cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee415897_0d092312",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T17:32:52Z",
+      "side": 1,
+      "message": "that would be really cool, it would allow implementing https://en.wikipedia.org/wiki/Circuit_breaker per host, but that\u0027s outside of the scope. My concern is that there should be *some* bound. I believe, number of concurrent requests handled by a single instance is bound too, so if we put a bound here, there is still a limit (albeit a large one). My concern specifically is that we may go out of file descriptors for outgoing network connections. Ideally there is a semaphore for any system resource.\n\nimplementing a per-instance limit shouldn\u0027t hard. We already have our own transport. If we do that, then FanOutIn here is fine",
+      "parentUuid": "5b68787c_491c1822",
+      "range": {
+        "startLine": 207,
+        "startChar": 25,
+        "endLine": 207,
+        "endChar": 33
+      },
+      "revId": "5d3ca77372ee0bde3148e20a3957a6f1745405cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
