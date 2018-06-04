@@ -46,6 +46,30 @@
       "revId": "3ac83c8d572e26fb65ba46b977c2109f2dfa6a1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "84d1024f_70416150",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T21:26:37Z",
+      "side": 1,
+      "message": "interesting point about queruably in datastore. Does not apply to queries that have to do a range query over another field. For such cases we have a separate computed boolean property.\n\nI will rename to ENDED_MASK. This is accurate because it represents a predicate of a status, not an actual status.",
+      "parentUuid": "583fd924_ef8f2f75",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 7
+      },
+      "revId": "3ac83c8d572e26fb65ba46b977c2109f2dfa6a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
