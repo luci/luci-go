@@ -28,19 +28,21 @@ enum Status {
   SCHEDULED = 1;
   // Build/step has started.
   STARTED = 2;
-  // A bit present in all completed statuses. A build cannot have this value.
-  // Exists for backward compatibility.
-  COMPLETED_STATUS_MASK = 4;
+  // A union of all terminal statuses.
+  // Can be used in BuildPredicate.status.
+  // A concrete build cannot have this status.
+  // Can be used as a bitmask to check that a build ended.
+  ENDED_MASK = 4;
   // A build/step ended successfully.
-  SUCCESS = 12;  // 8 | COMPLETED_STATUS_MASK
+  SUCCESS = 12;  // 8 | ENDED
   // A build/step ended unsuccessfully due to its Build.Input,
   // e.g. tests failed, and NOT due to a build infrastructure failure.
-  FAILURE = 20;  // 16 | COMPLETED_STATUS_MASK
+  FAILURE = 20;  // 16 | ENDED
   // A build/step ended unsuccessfully due to a failure independent of the input,
   // e.g. swarming failed, or the recipe was unable to read the patch from gerrit..
-  INFRA_FAILURE = 36;  // 32 | COMPLETED_STATUS_MASK
+  INFRA_FAILURE = 36;  // 32 | ENDED
   // A build was cancelled explicitly, e.g. via an RPC.
-  CANCELED = 68;  // 64 | COMPLETED_STATUS_MASK
+  CANCELED = 68;  // 64 | ENDED
 }
 
 // A Gerrit patchset.

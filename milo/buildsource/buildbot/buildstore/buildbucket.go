@@ -71,7 +71,7 @@ func buildFromBuildbucket(c context.Context, master string, b *buildbucket.Build
 		// Note that this function should not be called on builds
 		// that the requester does not have access to, in the first place.
 		Internal:    b.Bucket != "luci.chromium.try",
-		Finished:    b.Status.Completed(),
+		Finished:    b.Status.Ended(),
 		Sourcestamp: &buildbot.SourceStamp{},
 
 		// non-nil slice because we want an array, not null,
