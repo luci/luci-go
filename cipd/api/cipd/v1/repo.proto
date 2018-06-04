@@ -101,6 +101,19 @@ service Repository {
   // On success returns PrefixMetadata object with the updated fingerprint.
   rpc UpdatePrefixMetadata(PrefixMetadata) returns (PrefixMetadata);
 
+  // GetRolesInPrefix returns a set of roles the caller has in the given prefix.
+  //
+  // Unlike GetPrefixMetadata call that requires OWNER access (since it returns
+  // a lot of detailed information), GetRolesInPrefix can be called by anyone.
+  //
+  // It understands and expands roles inheritance, e.g. if the caller is an
+  // OWNER, the result will also contain WRITER and READER (as they are implied
+  // by being an OWNER).
+  //
+  // Returns empty set of roles if the caller has no permissions to access the
+  // prefix at all or such prefix doesn't exist.
+  rpc GetRolesInPrefix(PrefixRequest) returns (RolesInPrefixResponse);
+
   // Registers a package instance in the repository (if it was uploaded to the
   // storage already and wasn't registered yet) or initiates a new upload
   // operation.
@@ -199,6 +212,16 @@ message InheritedPrefixMetadata {
   // contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
   // skipped in this example as not having any metadata attached).
   repeated PrefixMetadata per_prefix_metadata = 1;
+}
+
+
+message RolesInPrefixResponse {
+  message RoleInPrefix {
+    Role role = 1;
+  }
+
+  // Unordered set or roles the caller has in the requested prefix.
+  repeated RoleInPrefix roles = 1;
 }
 
 

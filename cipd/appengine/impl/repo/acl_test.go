@@ -29,12 +29,12 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestHasRole(t *testing.T) {
+func TestRoles(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
 		fakeDB := authtest.FakeDB{
-			"user:admin@example.com": {"administrators"},
+			"user:admin@example.com": {superGroup},
 
 			"user:top-owner@example.com":  {"top-owners"},
 			"user:top-writer@example.com": {"top-writers"},
@@ -57,8 +57,8 @@ func TestHasRole(t *testing.T) {
 			api.Role_READER: {"group:inner-readers"},
 		})
 
-		allRoles := []api.Role{api.Role_OWNER, api.Role_WRITER, api.Role_READER}
-		writerRoles := []api.Role{api.Role_WRITER, api.Role_READER}
+		allRoles := []api.Role{api.Role_READER, api.Role_WRITER, api.Role_OWNER}
+		writerRoles := []api.Role{api.Role_READER, api.Role_WRITER}
 		readerRoles := []api.Role{api.Role_READER}
 		noRoles := []api.Role{}
 
@@ -87,15 +87,26 @@ func TestHasRole(t *testing.T) {
 					Identity: tc.user,
 					FakeDB:   fakeDB,
 				})
-				haveRoles := []api.Role{}
-				for _, r := range allRoles {
-					yes, err := hasRole(ctx, metas, r)
-					So(err, ShouldBeNil)
-					if yes {
-						haveRoles = append(haveRoles, r)
+
+				// Get the roles by checking explicitly each one via hasRole.
+				Convey("hasRole works", func() {
+					haveRoles := []api.Role{}
+					for _, r := range allRoles {
+						yes, err := hasRole(ctx, metas, r)
+						So(err, ShouldBeNil)
+						if yes {
+							haveRoles = append(haveRoles, r)
+						}
 					}
-				}
-				So(haveRoles, ShouldResemble, tc.expectedRoles)
+					So(haveRoles, ShouldResemble, tc.expectedRoles)
+				})
+
+				// Get the same set of roles through rolesInPrefix.
+				Convey("rolesInPrefix", func() {
+					haveRoles, err := rolesInPrefix(ctx, metas)
+					So(err, ShouldBeNil)
+					So(haveRoles, ShouldResemble, tc.expectedRoles)
+				})
 			})
 		}
 	})
