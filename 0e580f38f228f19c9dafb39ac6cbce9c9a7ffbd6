@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8e444b6_30b62e26",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T14:41:48Z",
+      "side": 1,
+      "message": "comment\n\nalso the convention is to have \"Response\" suffix in response message names. I doubt we will reuse this message for anything else",
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5201e876_e10cb735",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T14:41:48Z",
+      "side": 1,
+      "message": "thanks, this is more intuitive",
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "01037a12_c5b5faed",
+        "filename": "cipd/appengine/impl/repo/acl.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T14:41:48Z",
+      "side": 1,
+      "message": "this file is rather low-level. I think we should return raw map[api.Role]struct{} here. Then makeRolesInPrefix can be inlined into the rolesInPrefix callsite",
+      "range": {
+        "startLine": 133,
+        "startChar": 68,
+        "endLine": 133,
+        "endChar": 86
+      },
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b41560e1_0b4c8010",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T14:41:48Z",
+      "side": 1,
+      "message": "you always make sure that in case of an error a function returns a zero value and an error, but at the same time your functions don\u0027t trust each other. This could be just return",
+      "range": {
+        "startLine": 220,
+        "startChar": 1,
+        "endLine": 220,
+        "endChar": 14
+      },
+      "revId": "0e580f38f228f19c9dafb39ac6cbce9c9a7ffbd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
