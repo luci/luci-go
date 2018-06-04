@@ -22,6 +22,30 @@
       "revId": "3ac83c8d572e26fb65ba46b977c2109f2dfa6a1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "583fd924_ef8f2f75",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T18:58:38Z",
+      "side": 1,
+      "message": "Oh, so it can be used in search queries as \u0027status\u0027... Fine then, but something smells.",
+      "parentUuid": "7f3f0085_555cdc9d",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 7
+      },
+      "revId": "3ac83c8d572e26fb65ba46b977c2109f2dfa6a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
