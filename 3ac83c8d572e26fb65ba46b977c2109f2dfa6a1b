@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f3f0085_555cdc9d",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-04T18:53:59Z",
+      "side": 1,
+      "message": "nit: I think it should be ENDED_MASK to make it clear that this is not a real state. Or just remove it from the enum completely.\n\nNote that instead of bitmask you can potentially use ranges: \u0027ended\u0027 is same as Status \u003e\u003d SUCCESS. This has an advantage of being queryable in datastore. Bit fields are usable if you have multiple properties (so each one can occupy its own bit).",
+      "range": {
+        "startLine": 35,
+        "startChar": 2,
+        "endLine": 35,
+        "endChar": 7
+      },
+      "revId": "3ac83c8d572e26fb65ba46b977c2109f2dfa6a1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
