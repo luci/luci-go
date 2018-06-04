@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a041dd9_c8919499",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "how is that possible? didn\u0027t we disallow same builder to appear in different notifiers?",
+      "range": {
+        "startLine": 45,
+        "startChar": 72,
+        "endLine": 47,
+        "endChar": 56
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "91983e89_9b3d43b1",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "typo?",
+      "range": {
+        "startLine": 94,
+        "startChar": 12,
+        "endLine": 94,
+        "endChar": 14
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e33a95f4_5357fd2d",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "can false here be represented by nil in BlamelistNotification?",
+      "range": {
+        "startLine": 51,
+        "startChar": 17,
+        "endLine": 51,
+        "endChar": 21
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30f2261f_9af3ac6c",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "currently, this cannot be nil. I think you meant to make it a pointer",
+      "range": {
+        "startLine": 54,
+        "startChar": 56,
+        "endLine": 54,
+        "endChar": 67
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06de6179_a49d799a",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "we need only commits from this. also buildbucket will grow build.output.gitiles_commits, not entire source manifest. Let\u0027s store only commits in form of *buildbucketpb.GitilesCommit objects",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "171ea3ec_8214512b",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "what if this was a transient logdog error? then we would skip this blamelist notification?",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "65321a68_2c313fcc",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "to be clear: pointers ARE supported by gae/datastore",
+      "range": {
+        "startLine": 160,
+        "startChar": 35,
+        "endLine": 160,
+        "endChar": 36
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05431611_1bde77ad",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "are you sure you don\u0027t need **?",
+      "range": {
+        "startLine": 53,
+        "startChar": 50,
+        "endLine": 53,
+        "endChar": 51
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fc06230d_cdf0e4c1",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "is there a reason why are not passing the renderer here?",
+      "range": {
+        "startLine": 77,
+        "startChar": 27,
+        "endLine": 77,
+        "endChar": 38
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "41bfd2c8_ca0dab1e",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "note that populateHistory and this func deal only with git-aspect of source manifest. This is a sign that we are at a wrong level of abstraction.\n\nbuildbucket api won\u0027t expose source manifests, so most of our code should not deal with them directly. We should only fetch them to retrieve commits (because buildbucket doesn\u0027t do so yet) and that code will be deleted as soon as buildbucket provides output commits.\n\nIf we accept two maps (repo -\u003e revision) for old and new build, then we can use history func to compute the blamelist, i.e. collapse populateHistory and this func into one. This will simplify this code because map[string]string and gitiles-level abstractions are simpler than source manifest.",
+      "range": {
+        "startLine": 135,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfc52bde_075fae3a",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-04T15:51:33Z",
+      "side": 1,
+      "message": "i didn\u0027t realize that you plan to use all repos in blamelist computation. This is interesting and I agree we should support it.\n\nthis is not obvious for most of blamelist users though. The default should be only the repo specified in the builder (e.g. a chromium builder sends blamelist emails only to authors of chromium CLs, and not V8 commits). Can we add \"Repository\" into the BlamelistNotification message? If not specified, it defaults to Builder.reposotory. If \"*\" or something like that, then all repos, i.e what you do here",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
