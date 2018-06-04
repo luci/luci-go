@@ -22,6 +22,30 @@
       "revId": "5d3ca77372ee0bde3148e20a3957a6f1745405cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b68787c_491c1822",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-04T17:02:18Z",
+      "side": 1,
+      "message": "Apparently 200 is OK :) However, setting a limit here doesn\u0027t guarantee that there are no other concurrent requests. In fact, there are 3 concurrent calls already in GetBuilds().\nGiven that Milo scales with # of instances by design, should we use some kind of per-instance pool?",
+      "parentUuid": "557611ab_ff17da6b",
+      "range": {
+        "startLine": 207,
+        "startChar": 25,
+        "endLine": 207,
+        "endChar": 33
+      },
+      "revId": "5d3ca77372ee0bde3148e20a3957a6f1745405cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
