@@ -74,7 +74,7 @@ func TestMetadataFetching(t *testing.T) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: user,
 				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {"administrators"},
+					"user:admin@example.com": {superGroup},
 				},
 			})
 			return impl.GetPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
@@ -84,7 +84,7 @@ func TestMetadataFetching(t *testing.T) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: user,
 				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {"administrators"},
+					"user:admin@example.com": {superGroup},
 				},
 			})
 			resp, err := impl.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
@@ -198,7 +198,7 @@ func TestMetadataUpdating(t *testing.T) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: user,
 				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {"administrators"},
+					"user:admin@example.com": {superGroup},
 				},
 			})
 			return impl.UpdatePrefixMetadata(ctx, m)
@@ -314,6 +314,69 @@ func TestMetadataUpdating(t *testing.T) {
 			// Trying to do it again fails, 'm' is stale now.
 			_, err = callUpdate("user:top-owner@example.com", m)
 			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+		})
+	})
+}
+
+func TestGetRolesInPrefix(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		call := func(prefix string, user identity.Identity) (*api.RolesInPrefixResponse, error) {
+			ctx := auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: user,
+				FakeDB: authtest.FakeDB{
+					"user:admin@example.com": {superGroup},
+				},
+			})
+			return impl.GetRolesInPrefix(ctx, &api.PrefixRequest{Prefix: prefix})
+		}
+
+		Convey("Happy path", func() {
+			resp, err := call("a/b/c/d", "user:writer@example.com")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+					{Role: api.Role_READER},
+					{Role: api.Role_WRITER},
+				},
+			})
+		})
+
+		Convey("Anonymous", func() {
+			resp, err := call("a/b/c/d", "anonymous:anonymous")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{})
+		})
+
+		Convey("Admin", func() {
+			resp, err := call("a/b/c/d", "user:admin@example.com")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.RolesInPrefixResponse{
+				Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+					{Role: api.Role_READER},
+					{Role: api.Role_WRITER},
+					{Role: api.Role_OWNER},
+				},
+			})
+		})
+
+		Convey("Bad prefix", func() {
+			_, err := call("///", "user:writer@example.com")
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'prefix'")
 		})
 	})
 }
