@@ -477,7 +477,6 @@ func (m *mockedRepoClient) GetInheritedPrefixMetadata(ctx context.Context, in *a
 		return nil, err
 	}
 	return out.(*api.InheritedPrefixMetadata), nil
-
 }
 
 func (m *mockedRepoClient) UpdatePrefixMetadata(ctx context.Context, in *api.PrefixMetadata, opts ...grpc.CallOption) (*api.PrefixMetadata, error) {
@@ -486,7 +485,14 @@ func (m *mockedRepoClient) UpdatePrefixMetadata(ctx context.Context, in *api.Pre
 		return nil, err
 	}
 	return out.(*api.PrefixMetadata), nil
+}
 
+func (m *mockedRepoClient) GetRolesInPrefix(ctx context.Context, in *api.PrefixRequest, opts ...grpc.CallOption) (*api.RolesInPrefixResponse, error) {
+	out, err := m.call("GetRolesInPrefix", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.RolesInPrefixResponse), nil
 }
 
 func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
