@@ -100,9 +100,12 @@ func (a *application) runArchivist(c context.Context) error {
 	}
 	sub := psClient.Subscription(psSubscriptionName)
 	sub.ReceiveSettings = pubsub.ReceiveSettings{
-		MaxExtension:           24 * time.Hour,
-		MaxOutstandingMessages: int(acfg.Tasks), // If < 1, default.
-		MaxOutstandingBytes:    0,               // Default.
+		// These must be -1 (unlimited), otherwise the flow controller will saturate
+		// since we do not Nack messages.  PubSub performs poorly as a Task Queue otherwise.
+		// https://github.com/GoogleCloudPlatform/google-cloud-go/issues/919#issuecomment-372403175
+		MaxExtension:           -1,
+		MaxOutstandingMessages: -1,
+		MaxOutstandingBytes:    -1,
 	}
 
 	// Initialize our Storage.
