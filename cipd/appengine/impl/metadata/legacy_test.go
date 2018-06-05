@@ -88,6 +88,8 @@ func TestLegacyMetadata(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
+		rootMeta := rootMetadata()
+
 		// Expected metadata per prefix.
 		expected := map[string]*api.PrefixMetadata{
 			"a": {
@@ -122,7 +124,10 @@ func TestLegacyMetadata(t *testing.T) {
 		Convey("GetMetadata handles one prefix", func() {
 			md, err := impl.GetMetadata(ctx, "a")
 			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{expected["a"]})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{
+				rootMeta,
+				expected["a"],
+			})
 		})
 
 		Convey("GetMetadata handles many prefixes", func() {
@@ -130,6 +135,7 @@ func TestLegacyMetadata(t *testing.T) {
 			md, err := impl.GetMetadata(ctx, "a/b/c/d/e/")
 			So(err, ShouldBeNil)
 			So(md, ShouldResembleProto, []*api.PrefixMetadata{
+				rootMeta,
 				expected["a"],
 				expected["a/b"],
 				expected["a/b/c/d"],
@@ -137,7 +143,7 @@ func TestLegacyMetadata(t *testing.T) {
 		})
 
 		Convey("GetMetadata fails on bad prefix", func() {
-			_, err := impl.GetMetadata(ctx, "")
+			_, err := impl.GetMetadata(ctx, "???")
 			So(err, ShouldErrLike, "invalid package prefix")
 		})
 
@@ -182,7 +188,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// GetMetadata sees the new metadata.
 			md, err := impl.GetMetadata(ctx, "a")
 			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{newMD})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, newMD})
 
 			// Only touched "OWNER:..." legacy entity, since only owners changed.
 			legacy := prefixACLs(ctx, "a", nil)
@@ -229,7 +235,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
 			So(err, ShouldBeNil)
-			So(md, ShouldHaveLength, 0)
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 		})
 
 		Convey("UpdateMetadata creates new metadata", func() {
@@ -279,7 +285,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// Stored indeed.
 			md, err := impl.GetMetadata(ctx, "z")
 			So(err, ShouldBeNil)
-			So(md, ShouldResembleProto, []*api.PrefixMetadata{expected})
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, expected})
 		})
 
 		Convey("UpdateMetadata call with failing callback", func() {
@@ -294,7 +300,7 @@ func TestLegacyMetadata(t *testing.T) {
 			// Still missing.
 			md, err := impl.GetMetadata(ctx, "z")
 			So(err, ShouldBeNil)
-			So(md, ShouldHaveLength, 0)
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 		})
 	})
 }
