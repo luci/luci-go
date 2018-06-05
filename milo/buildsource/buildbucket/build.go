@@ -295,7 +295,11 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		result.Trigger.Changelist = link
 
 		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
-		if err != nil {
+		switch {
+		case err == context.DeadlineExceeded:
+			result.Blame[0].AuthorEmail = "<Gerrit took too long respond>"
+			fallthrough
+		case err != nil:
 			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.ID)
 		}
 		break

@@ -207,6 +207,11 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 // toMiloBuildsSummaries computes summary for each build in parallel.
 func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) ([]*ui.BuildSummary, error) {
 	result := make([]*ui.BuildSummary, len(msgs))
+	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
+	// author email. Unfortunatel, as of June 2018 Gerrit is often taking >5s to
+	// report back. From UX PoV, author's email isn't the most important of
+	// builder's page, so limit waiting time.
+	c, _ = context.WithTimeout(c, 5*time.Second)
 	return result, parallel.WorkPool(50, func(work chan<- func() error) {
 		for i, m := range msgs {
 			i := i
