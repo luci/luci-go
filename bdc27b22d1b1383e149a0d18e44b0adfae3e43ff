@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2e999b4a_967a7535",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T04:36:13Z",
+      "side": 1,
+      "message": "This is actually very non-trivial to do correctly and efficiently :-/\n\nThe python backend does it inefficiently: it fetches EVERYTHING under \u0027prefix/\u0027 recursively (always), and then filters out invisible stuff and recursive things it weren\u0027t asked for.\n\nFor example, for [\"a\", \"a/b/c/d\"], if asked to list \"a\" non-recursively, it needs to fetch \"a/b/c/d\" anyway to discover that \"a/b/\" prefix exists, to be able to list it as one of a\u0027s subprefixes.\n\nAnother huge issue is timing side-channels when trying to list \"invisible\" things. E.g. listing non-existing prefix and a prefix the caller has no access to have different timing (even if both return empty result). I\u0027m not sure it would be possible to get rid of this weakness at all, so I\u0027m inclined to just recommend people to avoid using \"secret\" names in CIPD package paths.\n\nAnyway, I\u0027m still thinking what to do in Go implementation. I can just port Python approach and be done with it, or we can spend a week or two writing something better... Let me know if you have any bright ideas.\n\nFTR, here\u0027s python implementation: \n1. https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/cipd/api.py#742\n2. https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/cipd/impl.py#271\n\n(and it has a bug :) bonus points if you can spot it).",
+      "range": {
+        "startLine": 132,
+        "startChar": 54,
+        "endLine": 134,
+        "endChar": 26
+      },
+      "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
