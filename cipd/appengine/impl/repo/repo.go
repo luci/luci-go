@@ -289,6 +289,23 @@ func noMetadataErr(prefix string) error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Prefix listing.
+
+// ListPrefix implement the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) ListPrefix(c context.Context, r *api.ListPrefixRequest) (resp *api.ListPrefixResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	r.Prefix, err = common.ValidatePackagePrefix(r.Prefix)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
+	}
+
+	// TODO(vadimsh): Implement.
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Package instance registration and post-registration processing.
 
 // RegisterInstance implements the corresponding RPC method, see the proto doc.

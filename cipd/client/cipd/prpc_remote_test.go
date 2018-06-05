@@ -495,6 +495,14 @@ func (m *mockedRepoClient) GetRolesInPrefix(ctx context.Context, in *api.PrefixR
 	return out.(*api.RolesInPrefixResponse), nil
 }
 
+func (m *mockedRepoClient) ListPrefix(ctx context.Context, in *api.ListPrefixRequest, opts ...grpc.CallOption) (*api.ListPrefixResponse, error) {
+	out, err := m.call("ListPrefix", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ListPrefixResponse), nil
+}
+
 func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
 	out, err := m.call("RegisterInstance", in, opts)
 	if err != nil {
