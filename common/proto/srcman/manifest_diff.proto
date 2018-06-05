@@ -4,18 +4,18 @@
 
 syntax = "proto3";
 
-package milo;
+package srcman;
 
 import "go.chromium.org/luci/common/proto/git/commit.proto";
-import "go.chromium.org/luci/common/proto/milo/manifest.proto";
+import "go.chromium.org/luci/common/proto/srcman/manifest.proto";
 
 // ManifestDiff holds basic difference information between two source manifests.
 message ManifestDiff {
   // The older of the two manifests.
-  milo.Manifest old = 1;
+  srcman.Manifest old = 1;
 
   // The newer of the two manifests.
-  milo.Manifest new = 2;
+  srcman.Manifest new = 2;
 
   // Stat indicates how a given item has changed.
   enum Stat {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milo
+package srcman
 
-// ContentTypeAnnotations is a stream content type for annotation streams.
-const ContentTypeAnnotations = "text/x-chrome-infra-annotations; version=2"
+// ContentTypeSourceManifest is a stream content type for source manifests.
+const ContentTypeSourceManifest = "text/x-chrome-infra-source-manifest; version=1"

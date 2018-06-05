@@ -1,4 +1,4 @@
-// Copyright 2015 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package milo
+// Package srcman contains source manifest protobuf definitions.
+//
+// The package name here must match the protobuf package name, as the generated
+// files will reside in the same directory.
+package srcman
 
-// ContentTypeAnnotations is a stream content type for annotation streams.
-const ContentTypeAnnotations = "text/x-chrome-infra-annotations; version=2"
+import (
+	"github.com/golang/protobuf/proto"
+)
+
+//go:generate cproto
+//go:generate proto-gae -type Manifest -type ManifestDiff
+
+var _ = proto.Marshal
