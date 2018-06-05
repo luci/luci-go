@@ -296,6 +296,8 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 			log.ErrorKey: err,
 			"project":    at.Project,
 		}.Errorf(c, "Failed to load settings for project.")
+		// This project has bad or no archival settings, this is non-transient, discard the task.
+		task.Consume()
 		return err
 	}
 
