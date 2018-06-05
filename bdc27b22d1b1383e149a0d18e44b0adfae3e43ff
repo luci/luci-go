@@ -46,6 +46,30 @@
       "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "502c929e_d5a68073",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T18:22:21Z",
+      "side": 1,
+      "message": "\u003e 1. I\u0027d ignore optimizing, particularly since your time is more valuable elsewhere.\n\nOk. But we\u0027ll need to fix it if we really want a UI. Currently time to fetch the root page (https://chrome-infra-packages.appspot.com/) is O(\u003ctotal number of ALL registered packages\u003e) which will become only slower going forward.\n\n\u003e 2. Sadly, I don\u0027t see a certain bug in Python + I don\u0027t really understand semantics of `hidden` :(\n\n\"hidden\" just removes the packages from the listing, as if they don\u0027t exist. It is used to hide old deprecated packages without actually removing them (since removing them generally breaks old historical revisions that pin these old packages).\n\nThe bug is in \n\n          ndb.AND(Package.key \u003e\u003d ndb.Key(Package, dir_path),\n                  Package.key \u003c\u003d ndb.Key(Package, dir_path + u\u0027\\uffff\u0027)))\n\nI think it should be \n\n          ndb.AND(Package.key \u003e\u003d ndb.Key(Package, dir_path + \u0027/\u0027),\n                  Package.key \u003c\u003d ndb.Key(Package, dir_path + \u0027/\u0027 + u\u0027\\uffff\u0027)))\n\n(notice that dir_path is stripped of right \u0027/\u0027)\n\nOtherwise when listing \u0027a/b/c/\u0027 we\u0027ll also get \u0027a/b/ca\u0027. Though maybe _is_in_directory filters them out. This whole logic is weird... (I didn\u0027t write it).",
+      "parentUuid": "13bfff52_5535e544",
+      "range": {
+        "startLine": 132,
+        "startChar": 54,
+        "endLine": 134,
+        "endChar": 26
+      },
+      "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
