@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "79e3d3d6_10ca5fc8",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:02:48Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 60,
+        "startChar": 14,
+        "endLine": 60,
+        "endChar": 16
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd3733e3_0af7599e",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:02:48Z",
+      "side": 1,
+      "message": "is there implicit TODO here? bcz docs below sorta suggest that.",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 72
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36c8d186_3fa2a3b2",
+        "filename": "cipd/appengine/impl/metadata/legacy_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:02:48Z",
+      "side": 1,
+      "message": "new test for handling \"\" is actually useful, imo.",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 0
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8bb1f62_361c1706",
+        "filename": "cipd/appengine/impl/testutil/metadata_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:02:48Z",
+      "side": 1,
+      "message": "why not just \"\"?",
+      "range": {
+        "startLine": 128,
+        "startChar": 42,
+        "endLine": 128,
+        "endChar": 43
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
