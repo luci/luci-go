@@ -22,6 +22,30 @@
       "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13bfff52_5535e544",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T06:23:19Z",
+      "side": 1,
+      "message": "1. I\u0027d ignore optimizing, particularly since your time is more valuable elsewhere.\n2. Sadly, I don\u0027t see a certain bug in Python + I don\u0027t really understand semantics of `hidden` :(",
+      "parentUuid": "2e999b4a_967a7535",
+      "range": {
+        "startLine": 132,
+        "startChar": 54,
+        "endLine": 134,
+        "endChar": 26
+      },
+      "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
