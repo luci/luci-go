@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "37c82fc2_ccd55de5",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "stale comment, deleted.",
+      "parentUuid": "2a041dd9_c8919499",
+      "range": {
+        "startLine": 45,
+        "startChar": 72,
+        "endLine": 47,
+        "endChar": 56
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "91983e89_9b3d43b1",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 12
@@ -36,6 +60,30 @@
       "writtenOn": "2018-06-04T15:51:33Z",
       "side": 1,
       "message": "typo?",
+      "range": {
+        "startLine": 94,
+        "startChar": 12,
+        "endLine": 94,
+        "endChar": 14
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5bc4f16e_08f56077",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "I don\u0027t think so, I copied the comment from L88.",
+      "parentUuid": "91983e89_9b3d43b1",
       "range": {
         "startLine": 94,
         "startChar": 12,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "90d9a275_c9f85956",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e33a95f4_5357fd2d",
+      "range": {
+        "startLine": 51,
+        "startChar": 17,
+        "endLine": 51,
+        "endChar": 21
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30f2261f_9af3ac6c",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 12
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "a60dffef_46dc2d78",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "I did not realize pointers are supported. fixed.",
+      "parentUuid": "30f2261f_9af3ac6c",
+      "range": {
+        "startLine": 54,
+        "startChar": 56,
+        "endLine": 54,
+        "endChar": 67
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "06de6179_a49d799a",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 12
@@ -105,6 +201,24 @@
       "writtenOn": "2018-06-04T15:51:33Z",
       "side": 1,
       "message": "we need only commits from this. also buildbucket will grow build.output.gitiles_commits, not entire source manifest. Let\u0027s store only commits in form of *buildbucketpb.GitilesCommit objects",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bbeeb0c_0f2fc1fd",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "SGTM, but we probably need a wrapper proto message for this, no? that\u0027s what I did for now, let me know if I should do something else.",
+      "parentUuid": "06de6179_a49d799a",
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -125,6 +239,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9bc8e0ce_6825e691",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "yes, that was the intent, but it probably makes more sense to have pubsub retry.",
+      "parentUuid": "171ea3ec_8214512b",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -174,6 +306,30 @@
     },
     {
       "key": {
+        "uuid": "80de6afd_9de700cc",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "when running this via the logdog client, it seemed to work just fine with *, but I\u0027m not positive.",
+      "parentUuid": "05431611_1bde77ad",
+      "range": {
+        "startLine": 53,
+        "startChar": 50,
+        "endLine": 53,
+        "endChar": 51
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fc06230d_cdf0e4c1",
         "filename": "luci_notify/notify/srcman.go",
         "patchSetId": 12
@@ -185,6 +341,30 @@
       "writtenOn": "2018-06-04T15:51:33Z",
       "side": 1,
       "message": "is there a reason why are not passing the renderer here?",
+      "range": {
+        "startLine": 77,
+        "startChar": 27,
+        "endLine": 77,
+        "endChar": 38
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e1c2f95_06aad959",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "I didn\u0027t see a function in the docs which would let me unmarshal from a reader\n\nhttps://godoc.org/github.com/golang/protobuf/proto",
+      "parentUuid": "fc06230d_cdf0e4c1",
       "range": {
         "startLine": 77,
         "startChar": 27,
@@ -220,6 +400,30 @@
     },
     {
       "key": {
+        "uuid": "b0efdbf2_886590fb",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "good call; I was under the assumption that source manifests would be the lingua franca for this sort of stuff, but if it\u0027s not (and we\u0027re not actually dealing with them regularly once buildbucket supports gitiles_commits) then it totally makes sense not to use them as the data structure to carry all this information. it is indeed more complex. my notion was that one day perhaps one could trace even CIPD prebuilts toward a blamelist, but that\u0027s a lot more future work.",
+      "parentUuid": "41bfd2c8_ca0dab1e",
+      "range": {
+        "startLine": 135,
+        "startChar": 5,
+        "endLine": 135,
+        "endChar": 22
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dfc52bde_075fae3a",
         "filename": "luci_notify/notify/srcman.go",
         "patchSetId": 12
@@ -234,6 +438,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78c0cfa3_595ae183",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:02:02Z",
+      "side": 1,
+      "message": "this is pretty much what I was working toward :) it\u0027s what gets us blamelist notifications for our auto-rollers.\n\nadding a Repository field SGTM.",
+      "parentUuid": "dfc52bde_075fae3a",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
