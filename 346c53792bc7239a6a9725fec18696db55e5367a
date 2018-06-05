@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "52ff492f_4f8d7ac6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T07:00:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bf5a826_dc0f1bc4",
+      "range": {
+        "startLine": 7,
+        "startChar": 13,
+        "endLine": 7,
+        "endChar": 18
+      },
+      "revId": "346c53792bc7239a6a9725fec18696db55e5367a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee0e8a74_6a1438c0",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 1
@@ -36,6 +60,24 @@
       "writtenOn": "2018-06-05T06:58:50Z",
       "side": 1,
       "message": "lol",
+      "revId": "346c53792bc7239a6a9725fec18696db55e5367a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6e4219c8_ec881fab",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T07:00:30Z",
+      "side": 1,
+      "message": "telling golint to shut up :)",
+      "parentUuid": "ee0e8a74_6a1438c0",
       "revId": "346c53792bc7239a6a9725fec18696db55e5367a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
