@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "102aefd3_35c91d21",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T01:13:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "79e3d3d6_10ca5fc8",
+      "range": {
+        "startLine": 60,
+        "startChar": 14,
+        "endLine": 60,
+        "endChar": 16
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd3733e3_0af7599e",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a867d77b_c570f637",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T01:13:18Z",
+      "side": 1,
+      "message": "I\u0027m not sure yet. I think if we make root metadata configurable, it will be either through /admin/portal/cipd package or through LUCI Config. Thus there\u0027s no TODO here.",
+      "parentUuid": "bd3733e3_0af7599e",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 72
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "92f783d1_4a5d15a8",
+        "filename": "cipd/appengine/impl/metadata/legacy_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T01:13:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "36c8d186_3fa2a3b2",
+      "range": {
+        "startLine": 145,
+        "startChar": 2,
+        "endLine": 149,
+        "endChar": 0
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b8bb1f62_361c1706",
         "filename": "cipd/appengine/impl/testutil/metadata_test.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c850b03e_80e86c09",
+        "filename": "cipd/appengine/impl/testutil/metadata_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T01:13:18Z",
+      "side": 1,
+      "message": "Done. Wanted to check \u0027/\u0027 works too...",
+      "parentUuid": "b8bb1f62_361c1706",
+      "range": {
+        "startLine": 128,
+        "startChar": 42,
+        "endLine": 128,
+        "endChar": 43
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
