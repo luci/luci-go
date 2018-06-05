@@ -171,13 +171,14 @@ func (a *application) runArchivist(c context.Context) error {
 				"messageID": msg.ID,
 			})
 
-			// ACK (or not) the message based on whether our task was consumed.
+			// ACK or NACK the message based on whether our task was consumed.
 			deleteTask := false
 			defer func() {
-				// ACK the message if it is completed. If not, we do not NACK it, as we
-				// want to let Pub/Sub redelivery delay occur as a form of backoff.
+				// ACK the message if it is completed. If not, NACK it.
 				if deleteTask {
 					msg.Ack()
+				} else {
+					msg.Nack()
 				}
 			}()
 
