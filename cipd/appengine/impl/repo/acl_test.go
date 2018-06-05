@@ -34,7 +34,7 @@ func TestRoles(t *testing.T) {
 
 	Convey("Works", t, func() {
 		fakeDB := authtest.FakeDB{
-			"user:admin@example.com": {superGroup},
+			"user:admin@example.com": {"admins"},
 
 			"user:top-owner@example.com":  {"top-owners"},
 			"user:top-writer@example.com": {"top-writers"},
@@ -46,12 +46,15 @@ func TestRoles(t *testing.T) {
 		}
 
 		metas := []*api.PrefixMetadata{}
-		metas = addPrefixACLs(metas, "root", map[api.Role][]string{
+		metas = addPrefixACLs(metas, "", map[api.Role][]string{
+			api.Role_OWNER: {"group:admins"},
+		})
+		metas = addPrefixACLs(metas, "top", map[api.Role][]string{
 			api.Role_OWNER:  {"user:direct-owner@example.com", "group:top-owners"},
 			api.Role_WRITER: {"group:top-writers"},
 			api.Role_READER: {"group:top-readers"},
 		})
-		metas = addPrefixACLs(metas, "root/something/else", map[api.Role][]string{
+		metas = addPrefixACLs(metas, "top/something/else", map[api.Role][]string{
 			api.Role_OWNER:  {"group:inner-owners"},
 			api.Role_WRITER: {"group:inner-writers"},
 			api.Role_READER: {"group:inner-readers"},

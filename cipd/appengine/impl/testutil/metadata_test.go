@@ -95,7 +95,7 @@ func TestMetadataStore(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 
-		// Fetching root returns only root.
+		// Fetching 'a' returns only 'a'.
 		metas, err = s.GetMetadata(ctx, "a")
 		So(err, ShouldBeNil)
 		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a})
@@ -105,12 +105,12 @@ func TestMetadataStore(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(metas, ShouldBeNil)
 
-		// Still only root.
+		// Still only 'a'.
 		metas, err = s.GetMetadata(ctx, "a/b")
 		So(err, ShouldBeNil)
 		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a})
 
-		// And now we also see a/b/c.
+		// And now we also see 'a/b/c'.
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		So(err, ShouldBeNil)
 		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a, expected_abc})
@@ -119,5 +119,53 @@ func TestMetadataStore(t *testing.T) {
 		metas, err = s.GetMetadata(ctx, "a/b/c/d/e/f")
 		So(err, ShouldBeNil)
 		So(metas, ShouldResemble, []*api.PrefixMetadata{expected_a, expected_abc})
+	})
+
+	Convey("Root metadata", t, func() {
+		s := MetadataStore{}
+
+		// Create the metadata for the root.
+		rootMeta, err := s.UpdateMetadata(ctx, "", func(m *api.PrefixMetadata) error {
+			m.UpdateUser = "user:root@example.com"
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		So(rootMeta, ShouldResemble, &api.PrefixMetadata{
+			Fingerprint: "a7QYP7C3AXksn_pfotXl2OwBevc",
+			UpdateUser:  "user:root@example.com",
+		})
+
+		// Fetchable now.
+		metas, err := s.GetMetadata(ctx, "")
+		So(err, ShouldBeNil)
+		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+
+		// "/" is also accepted.
+		metas, err = s.GetMetadata(ctx, "/")
+		So(err, ShouldBeNil)
+		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+
+		// Make sure UpdateMetadata see the root metadata too.
+		_, err = s.UpdateMetadata(ctx, "", func(m *api.PrefixMetadata) error {
+			So(m, ShouldResemble, rootMeta)
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		// Create metadata for some prefix.
+		abMeta, err := s.UpdateMetadata(ctx, "a/b", func(m *api.PrefixMetadata) error {
+			m.UpdateUser = "user:ab@example.com"
+			return nil
+		})
+		So(err, ShouldBeNil)
+
+		// Fetching meta for prefixes picks up root metadata too.
+		metas, err = s.GetMetadata(ctx, "a")
+		So(err, ShouldBeNil)
+		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta})
+		metas, err = s.GetMetadata(ctx, "a/b/c")
+		So(err, ShouldBeNil)
+		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta, abMeta})
 	})
 }

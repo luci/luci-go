@@ -60,11 +60,14 @@ func ValidatePackageName(name string) error {
 // ValidatePackagePrefix normalizes and validates a package prefix.
 //
 // A prefix is basically like a package name, except it is allowed to have '/'
-// at the end. Such trailing '/' is stripped by this function.
+// at the end (such trailing '/' is stripped by this function), and it can be
+// an empty string or "/" (to indicate the root of the repository).
 func ValidatePackagePrefix(p string) (string, error) {
 	p = strings.TrimSuffix(p, "/")
-	if err := validatePathishString(p, "package prefix"); err != nil {
-		return "", err
+	if p != "" {
+		if err := validatePathishString(p, "package prefix"); err != nil {
+			return "", err
+		}
 	}
 	return p, nil
 }
