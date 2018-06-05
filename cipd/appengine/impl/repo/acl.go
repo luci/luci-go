@@ -26,14 +26,6 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
-// Administrators group has implicit permissions to do everything everywhere.
-//
-// TODO(vadimsh): Get rid of this. It's not entirely clear how to deal with
-// ACL for the root of the package namespace then, e.g. how to define who can
-// create root prefixes. Maybe we need a special RPC or special non-standard
-// non-inherited ACL just for dealing with the root.
-const superGroup = "administrators"
-
 // impliedRoles defines what roles are "inherited" by other roles, e.g.
 // WRITERs are automatically READERs, so hasRole(..., READER) should return true
 // for WRITERs too.
@@ -61,7 +53,7 @@ var impliedRolesRev = map[api.Role]map[api.Role]struct{}{
 	api.Role_OWNER:  roleSet(api.Role_OWNER),
 }
 
-// allRoles is a set of all possible roles (as granted to superGroup).
+// allRoles is a set of all possible roles.
 var allRoles = roleSet(api.Role_OWNER, api.Role_WRITER, api.Role_READER)
 
 func roleSet(roles ...api.Role) map[api.Role]struct{} {
@@ -114,9 +106,6 @@ func hasRole(c context.Context, metas []*api.PrefixMetadata, role api.Role) (boo
 		}
 	}
 
-	// Administrators group has implicit permissions to do everything everywhere.
-	groups.Add(superGroup)
-
 	yes, err := auth.IsMember(c, groups.ToSlice()...)
 	if err != nil {
 		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs for role %s", role).Err()
@@ -131,14 +120,6 @@ func hasRole(c context.Context, metas []*api.PrefixMetadata, role api.Role) (boo
 //
 // Returns only transient errors.
 func rolesInPrefix(c context.Context, metas []*api.PrefixMetadata) ([]api.Role, error) {
-	// Administrators group has implicit permissions to do everything everywhere.
-	switch yes, err := auth.IsMember(c, superGroup); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to check group memberships when checking ACLs").Err()
-	case yes:
-		return roleSetToList(allRoles), nil
-	}
-
 	roles := roleSet()
 	for _, meta := range metas {
 		for _, acl := range meta.Acls {
@@ -157,7 +138,14 @@ func rolesInPrefix(c context.Context, metas []*api.PrefixMetadata) ([]api.Role, 
 		}
 	}
 
-	return roleSetToList(roles), nil
+	// Arrange the result in the order of Role enum definition.
+	out := make([]api.Role, 0, len(roles))
+	for r := api.Role_READER; r <= api.Role_OWNER; r++ {
+		if _, ok := roles[r]; ok {
+			out = append(out, r)
+		}
+	}
+	return out, nil
 }
 
 // isInACL is true if the caller is in the given access control list.
@@ -179,17 +167,4 @@ func isInACL(c context.Context, acl *api.PrefixMetadata_ACL) (bool, error) {
 		return false, errors.Annotate(err, "failed to check group memberships when checking ACLs").Err()
 	}
 	return yes, nil
-}
-
-// roleSetToList converts a role set to a list of roles.
-//
-// Arrange the result in the order of Role enum definition.
-func roleSetToList(roles map[api.Role]struct{}) []api.Role {
-	out := make([]api.Role, 0, len(roles))
-	for r := api.Role_READER; r <= api.Role_OWNER; r++ {
-		if _, ok := roles[r]; ok {
-			out = append(out, r)
-		}
-	}
-	return out
 }

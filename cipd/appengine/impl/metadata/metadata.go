@@ -32,12 +32,16 @@ type Storage interface {
 	// GetMetadata fetches metadata associated with the given prefix and all
 	// parent prefixes.
 	//
+	// The prefix may be an empty string, in which case the root metadata will be
+	// returned, if it is defined.
+	//
 	// Does not check permissions.
 	//
 	// The return value is sorted by the prefix length. Prefixes without metadata
 	// are skipped. For example, when requesting metadata for prefix "a/b/c/d" the
-	// return value may contain entries for "a", "a/b", "a/b/c/d" (in that order,
-	// with "a/b/c" skipped in this example as not having any metadata attached).
+	// return value may contain entries for "", "a", "a/b", "a/b/c/d" (in that
+	// order, where "" indicates the root and "a/b/c" is skipped in this example
+	// as not having any metadata attached).
 	//
 	// Note that the prefix of the last entry doesn't necessary match 'prefix'.
 	// This happens if metadata for that prefix doesn't exist. Similarly, the
@@ -50,6 +54,9 @@ type Storage interface {
 
 	// UpdateMetadata transactionally updates or creates metadata of some
 	// prefix and returns it.
+	//
+	// The prefix may be an empty string, in which case the root metadata will
+	// be updated, if allowed.
 	//
 	// Does not check permissions. Does not check the format of the updated
 	// metadata.

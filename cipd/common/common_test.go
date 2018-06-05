@@ -34,6 +34,7 @@ func TestValidatePackageName(t *testing.T) {
 		So(ValidatePackageName("123-_/also/good/name"), ShouldBeNil)
 		So(ValidatePackageName("good.name/.name/..name"), ShouldBeNil)
 		So(ValidatePackageName(""), ShouldNotBeNil)
+		So(ValidatePackageName("/"), ShouldNotBeNil)
 		So(ValidatePackageName("BAD/name"), ShouldNotBeNil)
 		So(ValidatePackageName("bad//name"), ShouldNotBeNil)
 		So(ValidatePackageName("bad/name/"), ShouldNotBeNil)
@@ -66,8 +67,8 @@ func TestValidatePackagePrefix(t *testing.T) {
 		So(call("good_name"), ShouldBeNil)
 		So(call("123-_/also/good/name"), ShouldBeNil)
 		So(call("good.name/.name/..name"), ShouldBeNil)
-		So(call(""), ShouldNotBeNil)
-		So(call("/"), ShouldNotBeNil)
+		So(call(""), ShouldBeNil)  // repo root
+		So(call("/"), ShouldBeNil) // repo root
 		So(call("BAD/name"), ShouldNotBeNil)
 		So(call("bad//name"), ShouldNotBeNil)
 		So(call("bad/name//"), ShouldNotBeNil)

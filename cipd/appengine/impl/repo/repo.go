@@ -166,6 +166,11 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 		return nil, status.Errorf(codes.InvalidArgument, "bad prefix metadata - %s", err)
 	}
 
+	// The root metadata is not modifiable through API.
+	if r.Prefix == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "the root metadata is not modifiable")
+	}
+
 	// Check ACLs.
 	if _, err := impl.checkRole(c, r.Prefix, api.Role_OWNER); err != nil {
 		return nil, err
