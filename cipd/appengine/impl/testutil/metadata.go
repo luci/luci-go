@@ -81,7 +81,8 @@ func (s *MetadataStore) GetMetadata(c context.Context, prefix string) ([]*api.Pr
 
 	var metas []*api.PrefixMetadata
 	for p, meta := range s.metas {
-		if strings.HasPrefix(prefix, p) {
+		// Note: "/" is indicator of the root metadata.
+		if p == "/" || strings.HasPrefix(prefix, p) {
 			metas = append(metas, cloneMetadata(meta))
 		}
 	}

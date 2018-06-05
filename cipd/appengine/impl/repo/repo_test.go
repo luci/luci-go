@@ -54,7 +54,15 @@ func TestMetadataFetching(t *testing.T) {
 		meta := testutil.MetadataStore{}
 
 		// ACL.
-		rootMeta := meta.Populate("a", &api.PrefixMetadata{
+		rootMeta := meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:admin@example.com"},
+				},
+			},
+		})
+		topMeta := meta.Populate("a", &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{
 					Role:       api.Role_OWNER,
@@ -73,9 +81,6 @@ func TestMetadataFetching(t *testing.T) {
 		callGet := func(prefix string, user identity.Identity) (*api.PrefixMetadata, error) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: user,
-				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {superGroup},
-				},
 			})
 			return impl.GetPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
 		}
@@ -83,9 +88,6 @@ func TestMetadataFetching(t *testing.T) {
 		callGetInherited := func(prefix string, user identity.Identity) ([]*api.PrefixMetadata, error) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: user,
-				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {superGroup},
-				},
 			})
 			resp, err := impl.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
 			if err != nil {
@@ -103,7 +105,7 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata happy path", func() {
 			resp, err := callGetInherited("a/b/c/d", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, leafMeta})
+			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta, leafMeta})
 		})
 
 		Convey("GetPrefixMetadata bad prefix", func() {
@@ -127,7 +129,7 @@ func TestMetadataFetching(t *testing.T) {
 		Convey("GetInheritedPrefixMetadata no metadata, caller has access", func() {
 			resp, err := callGetInherited("a/b", "user:top-owner@example.com")
 			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+			So(resp, ShouldResembleProto, []*api.PrefixMetadata{rootMeta, topMeta})
 		})
 
 		Convey("GetPrefixMetadata no metadata, caller has no access", func() {
@@ -159,17 +161,6 @@ func TestMetadataFetching(t *testing.T) {
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(resp, ShouldBeNil)
 		})
-
-		Convey("GetInheritedPrefixMetadata admin", func() {
-			// Admins can see everything, in particular they can see absence of root
-			// prefixes: they receive empty metadata list for them. Note that
-			// non-admins can't ever see empty metadata list, since there's at least
-			// one (perhaps inherited) metadata entry that granted them the access
-			// in the first place.
-			resp, err := callGetInherited("zzz", "user:admin@example.com")
-			So(err, ShouldBeNil)
-			So(resp, ShouldBeNil)
-		})
 	})
 }
 
@@ -183,6 +174,14 @@ func TestMetadataUpdating(t *testing.T) {
 		meta := testutil.MetadataStore{}
 
 		// ACL.
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:admin@example.com"},
+				},
+			},
+		})
 		meta.Populate("a", &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{
@@ -197,9 +196,6 @@ func TestMetadataUpdating(t *testing.T) {
 		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (*api.PrefixMetadata, error) {
 			ctx := auth.WithState(ctx, &authtest.FakeState{
 				Identity: user,
-				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {superGroup},
-				},
 			})
 			return impl.UpdatePrefixMetadata(ctx, m)
 		}
@@ -323,6 +319,15 @@ func TestGetRolesInPrefix(t *testing.T) {
 
 	Convey("With fakes", t, func() {
 		meta := testutil.MetadataStore{}
+
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:admin@example.com"},
+				},
+			},
+		})
 		meta.Populate("a", &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
 				{
@@ -337,9 +342,6 @@ func TestGetRolesInPrefix(t *testing.T) {
 		call := func(prefix string, user identity.Identity) (*api.RolesInPrefixResponse, error) {
 			ctx := auth.WithState(context.Background(), &authtest.FakeState{
 				Identity: user,
-				FakeDB: authtest.FakeDB{
-					"user:admin@example.com": {superGroup},
-				},
 			})
 			return impl.GetRolesInPrefix(ctx, &api.PrefixRequest{Prefix: prefix})
 		}

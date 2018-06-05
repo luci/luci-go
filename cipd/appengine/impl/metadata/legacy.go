@@ -56,6 +56,8 @@ type legacyStorageImpl struct {
 // it fetches a bunch of packageACL entities (one per possible role), and merges
 // them into single PrefixMetadata object, thus faking new metadata API on top
 // of legacy entities.
+//
+// The result also always includes the hardcoded root metadata.
 func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
@@ -71,6 +73,15 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 	}
 	pfxs = append(pfxs, prefix)
 
+	// Start with the root metadata.
+	out := make([]*api.PrefixMetadata, 0, len(pfxs)+1)
+	out = append(out, rootMetadata())
+
+	// And finish with it if nothing else is requested.
+	if len(pfxs) == 0 {
+		return out, nil
+	}
+
 	// Prepare the keys.
 	ents := make([]*packageACL, 0, len(pfxs)*len(legacyRoles))
 	for _, p := range pfxs {
@@ -83,7 +94,6 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 	}
 
 	// Combine the result into a bunch of PrefixMetadata structs.
-	out := make([]*api.PrefixMetadata, 0, len(pfxs))
 	legLen := len(legacyRoles)
 	for i, pfx := range pfxs {
 		if md := mergeIntoPrefixMetadata(c, pfx, ents[i*legLen:(i+1)*legLen]); md != nil {
@@ -102,6 +112,9 @@ func (legacyStorageImpl) UpdateMetadata(c context.Context, prefix string, cb fun
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
 		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
+	}
+	if prefix == "" {
+		return nil, errors.Reason("the root metadata is not modifiable").Err()
 	}
 
 	var cbErr error                 // error from 'cb'
@@ -227,6 +240,23 @@ func isInternalDSError(err error) bool {
 	}
 
 	return false // all suberrors are either nil or ErrNoSuchEntity
+}
+
+// rootMetadata returns metadata of the root prefix.
+//
+// It is inherited by all prefixes.
+func rootMetadata() *api.PrefixMetadata {
+	// Administrators group has implicit permissions to do everything everywhere.
+	//
+	// TODO(vadimsh): Make this configurable.
+	return &api.PrefixMetadata{
+		Acls: []*api.PrefixMetadata_ACL{
+			{
+				Role:       api.Role_OWNER,
+				Principals: []string{"group:administrators"},
+			},
+		},
+	}
 }
 
 // rootKey returns a key of the root entity that stores ACL hierarchy.
