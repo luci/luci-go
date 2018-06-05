@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "5d030730_b639ce8f",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:22:09Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "81de2971_6211d24e",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 72
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36c8d186_3fa2a3b2",
         "filename": "cipd/appengine/impl/metadata/legacy_test.go",
         "patchSetId": 1
@@ -202,6 +226,30 @@
       "side": 1,
       "message": "Done. Wanted to check \u0027/\u0027 works too...",
       "parentUuid": "b8bb1f62_361c1706",
+      "range": {
+        "startLine": 128,
+        "startChar": 42,
+        "endLine": 128,
+        "endChar": 43
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a19e7213_39187720",
+        "filename": "cipd/appengine/impl/testutil/metadata_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-05T01:22:09Z",
+      "side": 1,
+      "message": "ah, well, you can do so separately with a comment :)\ni see you did just that.",
+      "parentUuid": "c850b03e_80e86c09",
       "range": {
         "startLine": 128,
         "startChar": 42,
