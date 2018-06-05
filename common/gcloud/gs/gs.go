@@ -158,7 +158,8 @@ func (c *prodClient) Rename(src, dst Path) error {
 		if _, err := dstObj.CopierFrom(srcObj).Run(c); err != nil {
 			// The storage library doesn't return gs.ErrObjectNotExist when Delete
 			// returns a 404. Catch that explicitly.
-			if isNotFoundError(err) {
+			// 403 errors are non-transient.
+			if isNotFoundError(err) || isForbidden(err) {
 				return err
 			}
 
@@ -207,6 +208,11 @@ func (c *prodClient) deleteObject(o *gs.ObjectHandle) error {
 				return nil
 			}
 
+			// 403 errors are non-transient.
+			if isForbidden(err) {
+				return err
+			}
+
 			// Assume all unexpected errors are transient.
 			return transient.Tag.Apply(err)
 		}
@@ -247,6 +253,16 @@ func splitPathErr(p Path) (bucket, filename string, err error) {
 		err = errors.New("path has no filename")
 	}
 	return
+}
+
+func isForbidden(err error) bool {
+	if t, ok := err.(*googleapi.Error); ok {
+		switch t.Code {
+		case http.StatusForbidden:
+			return true
+		}
+	}
+	return false
 }
 
 func isNotFoundError(err error) bool {
