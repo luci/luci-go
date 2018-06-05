@@ -55,7 +55,7 @@ var _ = ctxhttp.Do
 const apiId = "catalog:v1"
 const apiName = "catalog"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/api/catalog/v1"
+const basePath = "http://localhost:8080/_ah/api/catalog/v1"
 
 // OAuth2 scopes used by this API.
 const (
@@ -98,8 +98,8 @@ type ComponentsMachineProviderDimensionsDimensions struct {
 	Hostname string `json:"hostname,omitempty"`
 
 	// Possible values:
-	//   "UBUNTU"
 	//   "DEBIAN"
+	//   "UBUNTU"
 	LinuxFlavor string `json:"linux_flavor,omitempty"`
 
 	MemoryGb float64 `json:"memory_gb,omitempty"`
@@ -210,9 +210,9 @@ type ComponentsMachineProviderPoliciesPolicies struct {
 	MachineServiceAccount string `json:"machine_service_account,omitempty"`
 
 	// Possible values:
+	//   "DELETE"
 	//   "MAKE_AVAILABLE" (default)
 	//   "RECLAIM"
-	//   "DELETE"
 	OnReclamation string `json:"on_reclamation,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "BackendAttributes")
@@ -485,15 +485,15 @@ func (s *ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse) Ma
 // Represents a response to a catalog manipulation request.
 type ComponentsMachineProviderRpcMessagesCatalogManipulationResponse struct {
 	// Possible values:
-	//   "HOSTNAME_REUSE"
 	//   "ENTRY_NOT_FOUND"
-	//   "UNSPECIFIED_BACKEND"
-	//   "MISMATCHED_BACKEND"
-	//   "UNSPECIFIED_HOSTNAME"
-	//   "INVALID_TOPIC"
+	//   "HOSTNAME_REUSE"
 	//   "INVALID_PROJECT"
-	//   "UNSPECIFIED_TOPIC"
+	//   "INVALID_TOPIC"
 	//   "LEASED"
+	//   "MISMATCHED_BACKEND"
+	//   "UNSPECIFIED_BACKEND"
+	//   "UNSPECIFIED_HOSTNAME"
+	//   "UNSPECIFIED_TOPIC"
 	Error string `json:"error,omitempty"`
 
 	// MachineAdditionRequest: Represents a request to add a machine to the
@@ -536,16 +536,16 @@ func (s *ComponentsMachineProviderRpcMessagesCatalogManipulationResponse) Marsha
 
 type AddMachineCall struct {
 	s                                                                 *Service
-	componentsMachineProviderRpcMessagesCatalogmachineadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest
+	componentsmachineproviderrpcmessagescatalogmachineadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest
 	urlParams_                                                        gensupport.URLParams
 	ctx_                                                              context.Context
 	header_                                                           http.Header
 }
 
 // AddMachine: Handles an incoming CatalogMachineAdditionRequest.
-func (s *Service) AddMachine(componentsMachineProviderRpcMessagesCatalogmachineadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest) *AddMachineCall {
+func (s *Service) AddMachine(componentsmachineproviderrpcmessagescatalogmachineadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest) *AddMachineCall {
 	c := &AddMachineCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsMachineProviderRpcMessagesCatalogmachineadditionrequest = componentsMachineProviderRpcMessagesCatalogmachineadditionrequest
+	c.componentsmachineproviderrpcmessagescatalogmachineadditionrequest = componentsmachineproviderrpcmessagescatalogmachineadditionrequest
 	return c
 }
 
@@ -581,7 +581,7 @@ func (c *AddMachineCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesCatalogmachineadditionrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagescatalogmachineadditionrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -640,11 +640,11 @@ func (c *AddMachineCall) Do(opts ...googleapi.CallOption) (*ComponentsMachinePro
 	//   "id": "catalog.add_machine",
 	//   "path": "add_machine",
 	//   "request": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogMachineAdditionRequest",
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineAdditionRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogManipulationResponse"
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -657,7 +657,7 @@ func (c *AddMachineCall) Do(opts ...googleapi.CallOption) (*ComponentsMachinePro
 
 type AddMachinesCall struct {
 	s                                                                      *Service
-	componentsMachineProviderRpcMessagesCatalogmachinebatchadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest
+	componentsmachineproviderrpcmessagescatalogmachinebatchadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest
 	urlParams_                                                             gensupport.URLParams
 	ctx_                                                                   context.Context
 	header_                                                                http.Header
@@ -666,9 +666,9 @@ type AddMachinesCall struct {
 // AddMachines: Handles an incoming CatalogMachineBatchAdditionRequest.
 // Batches are intended to save on RPCs only. The batched requests will
 // not execute transactionally.
-func (s *Service) AddMachines(componentsMachineProviderRpcMessagesCatalogmachinebatchadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest) *AddMachinesCall {
+func (s *Service) AddMachines(componentsmachineproviderrpcmessagescatalogmachinebatchadditionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest) *AddMachinesCall {
 	c := &AddMachinesCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsMachineProviderRpcMessagesCatalogmachinebatchadditionrequest = componentsMachineProviderRpcMessagesCatalogmachinebatchadditionrequest
+	c.componentsmachineproviderrpcmessagescatalogmachinebatchadditionrequest = componentsmachineproviderrpcmessagescatalogmachinebatchadditionrequest
 	return c
 }
 
@@ -704,7 +704,7 @@ func (c *AddMachinesCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesCatalogmachinebatchadditionrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagescatalogmachinebatchadditionrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -763,11 +763,11 @@ func (c *AddMachinesCall) Do(opts ...googleapi.CallOption) (*ComponentsMachinePr
 	//   "id": "catalog.add_machines",
 	//   "path": "add_machines",
 	//   "request": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogMachineBatchAdditionRequest",
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineBatchAdditionRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogBatchManipulationResponse"
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogBatchManipulationResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -780,16 +780,16 @@ func (c *AddMachinesCall) Do(opts ...googleapi.CallOption) (*ComponentsMachinePr
 
 type DeleteMachineCall struct {
 	s                                                                 *Service
-	componentsMachineProviderRpcMessagesCatalogmachinedeletionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest
+	componentsmachineproviderrpcmessagescatalogmachinedeletionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest
 	urlParams_                                                        gensupport.URLParams
 	ctx_                                                              context.Context
 	header_                                                           http.Header
 }
 
 // DeleteMachine: Handles an incoming CatalogMachineDeletionRequest.
-func (s *Service) DeleteMachine(componentsMachineProviderRpcMessagesCatalogmachinedeletionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest) *DeleteMachineCall {
+func (s *Service) DeleteMachine(componentsmachineproviderrpcmessagescatalogmachinedeletionrequest *ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest) *DeleteMachineCall {
 	c := &DeleteMachineCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsMachineProviderRpcMessagesCatalogmachinedeletionrequest = componentsMachineProviderRpcMessagesCatalogmachinedeletionrequest
+	c.componentsmachineproviderrpcmessagescatalogmachinedeletionrequest = componentsmachineproviderrpcmessagescatalogmachinedeletionrequest
 	return c
 }
 
@@ -825,7 +825,7 @@ func (c *DeleteMachineCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesCatalogmachinedeletionrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagescatalogmachinedeletionrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -884,11 +884,11 @@ func (c *DeleteMachineCall) Do(opts ...googleapi.CallOption) (*ComponentsMachine
 	//   "id": "catalog.delete_machine",
 	//   "path": "delete_machine",
 	//   "request": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogMachineDeletionRequest",
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineDeletionRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogManipulationResponse"
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogManipulationResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
@@ -901,16 +901,16 @@ func (c *DeleteMachineCall) Do(opts ...googleapi.CallOption) (*ComponentsMachine
 
 type GetCall struct {
 	s                                                                  *Service
-	componentsMachineProviderRpcMessagesCatalogmachineretrievalrequest *ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest
+	componentsmachineproviderrpcmessagescatalogmachineretrievalrequest *ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest
 	urlParams_                                                         gensupport.URLParams
 	ctx_                                                               context.Context
 	header_                                                            http.Header
 }
 
 // Get: Handles an incoming CatalogMachineRetrievalRequest.
-func (s *Service) Get(componentsMachineProviderRpcMessagesCatalogmachineretrievalrequest *ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest) *GetCall {
+func (s *Service) Get(componentsmachineproviderrpcmessagescatalogmachineretrievalrequest *ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest) *GetCall {
 	c := &GetCall{s: s, urlParams_: make(gensupport.URLParams)}
-	c.componentsMachineProviderRpcMessagesCatalogmachineretrievalrequest = componentsMachineProviderRpcMessagesCatalogmachineretrievalrequest
+	c.componentsmachineproviderrpcmessagescatalogmachineretrievalrequest = componentsmachineproviderrpcmessagescatalogmachineretrievalrequest
 	return c
 }
 
@@ -946,7 +946,7 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("User-Agent", c.s.userAgent())
 	var body io.Reader = nil
-	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsMachineProviderRpcMessagesCatalogmachineretrievalrequest)
+	body, err := googleapi.WithoutDataWrapper.JSONReader(c.componentsmachineproviderrpcmessagescatalogmachineretrievalrequest)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,11 +1005,11 @@ func (c *GetCall) Do(opts ...googleapi.CallOption) (*ComponentsMachineProviderRp
 	//   "id": "catalog.get",
 	//   "path": "get",
 	//   "request": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogMachineRetrievalRequest",
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalRequest",
 	//     "parameterName": "resource"
 	//   },
 	//   "response": {
-	//     "$ref": "components.machine_provider.rpc_messages.CatalogMachineRetrievalResponse"
+	//     "$ref": "ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse"
 	//   },
 	//   "scopes": [
 	//     "https://www.googleapis.com/auth/userinfo.email"
