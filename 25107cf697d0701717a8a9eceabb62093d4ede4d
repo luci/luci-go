@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a85c179c_acbe3269",
+        "filename": "cipd/appengine/impl/repo/repo_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T00:46:12Z",
+      "side": 0,
+      "message": "this is no longer a special case and this logic is already covered by another test",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 163,
+        "endChar": 53
+      },
+      "revId": "25107cf697d0701717a8a9eceabb62093d4ede4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
