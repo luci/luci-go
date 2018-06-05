@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "81de2971_6211d24e",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-05T01:14:26Z",
+      "side": 1,
+      "message": "\u003e I\u0027m not sure yet. I think if we make root metadata configurable, it will be either through /admin/portal/cipd package or through LUCI Config. Thus there\u0027s no TODO here.\n\nErr... I meant /admin/portal/cipd page, not package.",
+      "parentUuid": "a867d77b_c570f637",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 117,
+        "endChar": 72
+      },
+      "revId": "3c417264a0e55890eda4d72e1c58c9c9909f64c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36c8d186_3fa2a3b2",
         "filename": "cipd/appengine/impl/metadata/legacy_test.go",
         "patchSetId": 1
