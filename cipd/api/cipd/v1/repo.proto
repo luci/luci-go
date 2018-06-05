@@ -114,6 +114,26 @@ service Repository {
   // prefix at all or such prefix doesn't exist.
   rpc GetRolesInPrefix(PrefixRequest) returns (RolesInPrefixResponse);
 
+  // ListPrefix lists packages and subprefixes registered under the prefix.
+  //
+  // Lists either only direct descendants or recursively all descendants. The
+  // result is sorted lexicographically.
+  //
+  // For example, for packages ["a", "a/b", "a/c/d", "a/c/e/f"], listing of "a"
+  // will be:
+  //   * {packages: ["a/b"], prefixes: ["a/c"]} if listing non-recursively.
+  //   * {packages: ["a/b", "a/c/d", "a/c/e/f"], prefixes: ["a/c", "a/c/e"]} if
+  //     listing recursively.
+  //
+  // Returns only packages and prefixes visible to the caller. This applies even
+  // when listing a prefix the caller has no direct read access to. For example,
+  // recursively listing the root prefix will return all packages the caller has
+  // read access to (no matter when in the hierarchy they are located), even if
+  // the caller has no READER permission in the root. It works as if the caller
+  // can freely browse the repository that contains only the packages they can
+  // see and nothing else.
+  rpc ListPrefix(ListPrefixRequest) returns (ListPrefixResponse);
+
   // Registers a package instance in the repository (if it was uploaded to the
   // storage already and wasn't registered yet) or initiates a new upload
   // operation.
@@ -222,6 +242,28 @@ message RolesInPrefixResponse {
 
   // Unordered set or roles the caller has in the requested prefix.
   repeated RoleInPrefix roles = 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message ListPrefixRequest {
+  // A prefix within the repository to list, e.g. "a/b/c". Empty prefix is also
+  // accepted: it means "root of the repository".
+  string prefix = 1;
+  // If false, list only direct descendants of the prefix, otherwise all.
+  bool recursive = 2;
+  // If true, include hidden packages in the result.
+  bool include_hidden = 3;
+}
+
+
+message ListPrefixResponse {
+  // Lexicographically sorted list of full packages names.
+  repeated string packages = 1;
+  // Lexicographically sorted list of child prefixes (without trailing '/').
+  repeated string prefixes = 2;
 }
 
 

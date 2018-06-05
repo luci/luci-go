@@ -383,6 +383,42 @@ func TestGetRolesInPrefix(t *testing.T) {
 	})
 }
 
+func TestListPrefix(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		meta := testutil.MetadataStore{}
+
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:admin@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*api.ListPrefixResponse, error) {
+			ctx := auth.WithState(context.Background(), &authtest.FakeState{
+				Identity: user,
+			})
+			return impl.ListPrefix(ctx, &api.ListPrefixRequest{
+				Prefix:        prefix,
+				Recursive:     recursive,
+				IncludeHidden: hidden,
+			})
+		}
+
+		Convey("Full root recursive listing", func() {
+			// TODO(vadimsh): Implement.
+			_, err := call("", true, true, "user:admin@example.com")
+			So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
+		})
+	})
+}
+
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
