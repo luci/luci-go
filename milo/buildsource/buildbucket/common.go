@@ -28,8 +28,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
+const bbRPCTimeout = time.Minute
+
 func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Service, error) {
-	c, _ = context.WithTimeout(c, time.Minute)
+	c, _ = context.WithTimeout(c, bbRPCTimeout)
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, err
@@ -43,7 +45,7 @@ func newSwarmbucketClient(c context.Context, server string) (*swarmbucket.Servic
 }
 
 func newBuildbucketClient(c context.Context, server string) (*bbv1.Service, error) {
-	c, _ = context.WithTimeout(c, time.Minute)
+	c, _ = context.WithTimeout(c, bbRPCTimeout)
 	t, err := auth.GetRPCTransport(c, auth.AsUser)
 	if err != nil {
 		return nil, err

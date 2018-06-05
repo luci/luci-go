@@ -50,6 +50,7 @@ type BuilderID struct {
 	buildbucketpb.Builder_ID
 }
 
+// NewBuilderID does what it says.
 func NewBuilderID(v1Bucket, builder string) (bid BuilderID) {
 	bid.Project, bid.Bucket = bb.BucketNameToV2(v1Bucket)
 	bid.Builder = builder
@@ -73,7 +74,9 @@ func (b BuilderID) String() string {
 func fetchBuilds(c context.Context, client *bbv1.Service, bid BuilderID,
 	status string, limit int, cursor string) ([]*bbv1.ApiCommonBuildMessage, string, error) {
 
+	c, _ = context.WithTimeout(c, bbRPCTimeout)
 	search := client.Search()
+	search.Context(c)
 	search.Bucket(bid.V1Bucket())
 	search.Status(status)
 	search.Tag(strpair.Format(bbv1.TagBuilder, bid.Builder))
