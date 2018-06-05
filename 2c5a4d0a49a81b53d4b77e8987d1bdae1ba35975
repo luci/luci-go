@@ -45,6 +45,54 @@
       "revId": "2c5a4d0a49a81b53d4b77e8987d1bdae1ba35975",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "350038dc_9f6b186d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-05T06:51:03Z",
+      "side": 1,
+      "message": "edited... the sub.Receive() interface is weird.  You give it a func(msg) error, which gets called on every pubsub message.\n\nAs of v0.19, if you don\u0027t call msg.Nack or msg.Ack, the whole thing just stops working.",
+      "parentUuid": "7d36335a_38e747d7",
+      "range": {
+        "startLine": 9,
+        "startChar": 54,
+        "endLine": 10,
+        "endChar": 8
+      },
+      "revId": "2c5a4d0a49a81b53d4b77e8987d1bdae1ba35975",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0de2dacd_509b14f8",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-05T06:51:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b924f85_fb16f832",
+      "range": {
+        "startLine": 10,
+        "startChar": 14,
+        "endLine": 10,
+        "endChar": 17
+      },
+      "revId": "2c5a4d0a49a81b53d4b77e8987d1bdae1ba35975",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
