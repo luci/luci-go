@@ -474,6 +474,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09f86a5b_a03994ef",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-05T21:06:51Z",
+      "side": 1,
+      "message": "actually, I\u0027m not sure how this would work...\n\nthe whole reason Builder.repository is there is to pick a repository we\u0027re checking commits against for ordering. if we use \"*\" to indicate multiple repos, we can no longer use a repo for ordering and only build time. I think it\u0027s desirable to be able to determine ordering based on a certain repo, but also use all the repos that went into the change as a blamelist. in fact, this exactly covers our use-case right now.",
+      "parentUuid": "9375ca65_106ba315",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
