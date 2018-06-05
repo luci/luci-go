@@ -20,11 +20,20 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
+// Visiter is a callback passed to VisitMetadata.
+//
+// It decides whether to continue exploring this metadata subtree or not.
+type Visiter func(prefix string, md []*api.PrefixMetadata) (cont bool, err error)
+
 // Storage knows how to store, fetch and update prefix metadata, as well as
 // how to calculate its fingerprint.
 //
-// Doesn't try to understand what metadata means, just fingerprints and stores
-// it.
+// The metadata is organizes in a forest-like structure, where each node is
+// associated with some package prefix (e.g. has a name "a/b/c"). The single
+// root ("") may or may not be present, depending on the implementation.
+//
+// Doesn't try to understand what metadata means, just fingerprints, stores and
+// enumerates it.
 //
 // This functionality is organized into an interface to simplify mocking. Use
 // GetStorage to grab a real implementation.
@@ -51,6 +60,22 @@ type Storage interface {
 	// Returns a fatal error if the prefix is malformed, all other errors are
 	// transient.
 	GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error)
+
+	// VisitMetadata enumerates the metadata in breadth-first order.
+	//
+	// Can be used to fetch all metadata items at and under the given prefix.
+	//
+	// The callback is called for each visited node (starting from 'prefix' itself
+	// if metadata for it exists), receiving same metadata list as if GetMetadata
+	// was used to fetch it. The callback can decide whether to proceed with the
+	// enumeration of the corresponding subtree or skip it (by returning either
+	// true or false).
+	//
+	// Abort the traversal on a first error from the callback.
+	//
+	// Returns either a transient error if fetching failed, or whatever error the
+	// callback returned.
+	VisitMetadata(c context.Context, prefix string, cb Visiter) error
 
 	// UpdateMetadata transactionally updates or creates metadata of some
 	// prefix and returns it.
