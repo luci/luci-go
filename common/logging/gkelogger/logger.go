@@ -83,6 +83,9 @@ func (l *jsonLogger) LogCall(lv logging.Level, calldepth int, format string, arg
 		Time:     clock.Now(l.ctx).Format(time.RFC3339Nano),
 		Fields:   logging.GetFields(l.ctx),
 	}
+	if logError, ok := entry.Fields[logging.ErrorKey]; ok {
+		entry.Fields[logging.ErrorKey] = fmt.Sprintf("%s", logError)
+	}
 	buf, err := json.Marshal(&entry)
 	if err != nil {
 		buf = []byte(fmt.Sprintf("Logging error: %q - Original Log: %q", err, entry))
