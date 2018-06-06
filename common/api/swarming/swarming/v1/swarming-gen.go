@@ -3786,7 +3786,10 @@ type ServerTokenCall struct {
 	header_    http.Header
 }
 
-// Token: Returns a token to bootstrap a new bot.
+// Token: Returns a token to bootstrap a new bot. This may seem strange
+// to be a POST and not a GET, but it's very important to make sure GET
+// requests are idempotent and safe to be pre-fetched; generating a
+// token is neither of those things.
 func (r *ServerService) Token() *ServerTokenCall {
 	c := &ServerTokenCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	return c
@@ -3870,7 +3873,7 @@ func (c *ServerTokenCall) Do(opts ...googleapi.CallOption) (*SwarmingRpcsBootstr
 	}
 	return ret, nil
 	// {
-	//   "description": "Returns a token to bootstrap a new bot.",
+	//   "description": "Returns a token to bootstrap a new bot. This may seem strange to be a POST and not a GET, but it's very important to make sure GET requests are idempotent and safe to be pre-fetched; generating a token is neither of those things.",
 	//   "httpMethod": "POST",
 	//   "id": "swarming.server.token",
 	//   "path": "server/token",

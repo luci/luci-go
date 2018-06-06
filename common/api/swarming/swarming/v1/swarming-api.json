@@ -496,7 +496,7 @@
           ]
         },
         "token": {
-          "description": "Returns a token to bootstrap a new bot.",
+          "description": "Returns a token to bootstrap a new bot. This may seem strange to be a POST and not a GET, but it's very important to make sure GET requests are idempotent and safe to be pre-fetched; generating a token is neither of those things.",
           "httpMethod": "POST",
           "id": "swarming.server.token",
           "path": "server/token",
