@@ -8,8 +8,8 @@
       }
     }
   },
-  "basePath": "/api/buildbucket/v1",
-  "baseUrl": "https://cr-buildbucket.appspot.com/api/buildbucket/v1",
+  "basePath": "/_ah/api/buildbucket/v1",
+  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/buildbucket/v1",
   "batchPath": "batch",
   "description": "API for scheduling builds.",
   "discoveryVersion": "v1",
@@ -636,7 +636,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://cr-buildbucket.appspot.com/api/",
+  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
   "schemas": {
     "ApiBucketMessage": {
       "id": "ApiBucketMessage",

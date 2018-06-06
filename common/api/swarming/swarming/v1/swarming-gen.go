@@ -55,7 +55,7 @@ var _ = ctxhttp.Do
 const apiId = "swarming:v1"
 const apiName = "swarming"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/api/swarming/v1"
+const basePath = "http://localhost:8080/_ah/api/swarming/v1"
 
 // OAuth2 scopes used by this API.
 const (

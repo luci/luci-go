@@ -55,7 +55,7 @@ var _ = ctxhttp.Do
 const apiId = "isolateservice:v1"
 const apiName = "isolateservice"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/api/isolateservice/v1"
+const basePath = "http://localhost:8080/_ah/api/isolateservice/v1"
 
 // OAuth2 scopes used by this API.
 const (

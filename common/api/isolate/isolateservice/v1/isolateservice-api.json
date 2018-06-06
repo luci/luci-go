@@ -8,8 +8,8 @@
       }
     }
   },
-  "basePath": "/api/isolateservice/v1",
-  "baseUrl": "https://isolateserver.appspot.com/api/isolateservice/v1",
+  "basePath": "/_ah/api/isolateservice/v1",
+  "baseUrl": "https://isolateserver.appspot.com/_ah/api/isolateservice/v1",
   "batchPath": "batch",
   "description": "Version 1 of Isolate Service",
   "discoveryVersion": "v1",
@@ -143,7 +143,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://isolateserver.appspot.com/api/",
+  "rootUrl": "https://isolateserver.appspot.com/_ah/api/",
   "schemas": {
     "HandlersEndpointsV1Digest": {
       "description": "ProtoRPC message containing digest information.",

@@ -8,8 +8,8 @@
       }
     }
   },
-  "basePath": "/api/swarmbucket/v1",
-  "baseUrl": "https://cr-buildbucket.appspot.com/api/swarmbucket/v1",
+  "basePath": "/_ah/api/swarmbucket/v1",
+  "baseUrl": "https://cr-buildbucket.appspot.com/_ah/api/swarmbucket/v1",
   "batchPath": "batch",
   "description": "API specific to swarmbucket.",
   "discoveryVersion": "v1",
@@ -116,7 +116,7 @@
     }
   },
   "protocol": "rest",
-  "rootUrl": "https://cr-buildbucket.appspot.com/api/",
+  "rootUrl": "https://cr-buildbucket.appspot.com/_ah/api/",
   "schemas": {
     "ApiPubSubCallbackMessage": {
       "id": "ApiPubSubCallbackMessage",

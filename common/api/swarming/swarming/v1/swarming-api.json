@@ -8,8 +8,8 @@
       }
     }
   },
-  "basePath": "/api/swarming/v1",
-  "baseUrl": "https://chromium-swarm.appspot.com/api/swarming/v1",
+  "basePath": "/_ah/api/swarming/v1",
+  "baseUrl": "https://chromium-swarm.appspot.com/_ah/api/swarming/v1",
   "batchPath": "batch",
   "description": "API to interact with the Swarming service. Permits to create, view and cancel tasks, query tasks and bots",
   "discoveryVersion": "v1",
@@ -918,7 +918,7 @@
       }
     }
   },
-  "rootUrl": "https://chromium-swarm.appspot.com/api/",
+  "rootUrl": "https://chromium-swarm.appspot.com/_ah/api/",
   "schemas": {
     "SwarmingRpcsBootstrapToken": {
       "description": "Returns a token to bootstrap a new bot.",
