@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "eb4c6ff7_89484cb4",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-06T01:47:46Z",
+      "side": 1,
+      "message": "y",
+      "range": {
+        "startLine": 80,
+        "startChar": 50,
+        "endLine": 80,
+        "endChar": 53
+      },
+      "revId": "bf7a5d3b011f64aeaf67cd195d0b2f3d41f39a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "154d4fb5_2ee59149",
+        "filename": "cipd/appengine/impl/model/package_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-06T01:47:46Z",
+      "side": 1,
+      "message": "const hidden true\nconst visible false\ns/true/hidden\ns/false/visible",
+      "range": {
+        "startLine": 45,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 18
+      },
+      "revId": "bf7a5d3b011f64aeaf67cd195d0b2f3d41f39a58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
