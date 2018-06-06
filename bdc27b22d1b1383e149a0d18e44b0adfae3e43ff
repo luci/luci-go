@@ -94,6 +94,30 @@
       "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0424d2b_a16cfede",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T18:06:51Z",
+      "side": 1,
+      "message": "\u003e I didn\u0027t realize we intend to build UI on top as Pri1 :) I thought waiting for slow \"cipd ls\" just like \"find /\" would be is good enough.\n\u003e \n\nIt is not like \"find /\". It is like slow \"cd .\". Even non-recursive listing of the root directory fetches EVERYTHING.\n\n\u003e Good catch about missing \u0027/\u0027 -- it should be there even if is_in_directory filters it out.",
+      "parentUuid": "869271c2_1290d99b",
+      "range": {
+        "startLine": 132,
+        "startChar": 54,
+        "endLine": 134,
+        "endChar": 26
+      },
+      "revId": "bdc27b22d1b1383e149a0d18e44b0adfae3e43ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
