@@ -59,7 +59,7 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		Treeish:  newRevision,
 	}
 	logging.Infof(c, "Gitiles request to host %q: %q", host, req)
-	res, err := client.Log(c, req)
+	res, err := gitiles.PagingLog(c, client, req, 0)
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
