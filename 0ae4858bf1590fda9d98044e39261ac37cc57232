@@ -552,6 +552,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3730b221_d43a885b",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-06T01:59:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85046ffb_247794df",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
