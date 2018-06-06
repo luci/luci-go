@@ -534,6 +534,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85046ffb_247794df",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-06T01:27:00Z",
+      "side": 1,
+      "message": "oh wow I totally misread your comment the first time; my bad :( I thought you were suggesting to add * to Builder.Repository but re-reading your original comment I realize you meant adding this to BlamelistNotification.\n\nyes this sounds good to me. and yeah uh... fair point, the notifications will be pretty out of control with \"*\". I\u0027ll add a repeated repository field.",
+      "parentUuid": "3d710535_6eaa408c",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
