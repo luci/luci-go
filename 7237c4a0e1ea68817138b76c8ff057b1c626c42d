@@ -111,6 +111,70 @@
     },
     {
       "key": {
+        "uuid": "490e84c5_6db44fe4",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T16:11:13Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "c86b1fa5_2447ce64",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 0
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1ca1c16_62a263d6",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T16:11:13Z",
+      "side": 1,
+      "message": "nit: strings.Trim(pfg, \"/\")",
+      "range": {
+        "startLine": 120,
+        "startChar": 11,
+        "endLine": 121,
+        "endChar": 0
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73fe82eb_ac8e6e6e",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T16:11:13Z",
+      "side": 1,
+      "message": "given that directDescendants is O(N^2), VisitMetadata seems to be O(N^3).\n\ni suspect we\u0027d have less code if we had a `node` struct for each node, with children. Then you don\u0027t need s.sorted thing, this, or stringDeque",
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "04c14758_f07a0c0a",
         "filename": "cipd/appengine/impl/testutil/metadata.go",
         "patchSetId": 3
@@ -122,6 +186,30 @@
       "writtenOn": "2018-06-06T07:05:49Z",
       "side": 1,
       "message": "Just iterating map and explicitly sort before returning is more readable.",
+      "range": {
+        "startLine": 230,
+        "startChar": 20,
+        "endLine": 230,
+        "endChar": 29
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c3cafc1f_52642f86",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T16:11:13Z",
+      "side": 1,
+      "message": "L235 relies on the order of iteration.\n\nthis func is O(N^2). Sorting before the loop would be O(N log(N)), so it would not negatively affect time complexity, but it would simplify this code",
+      "parentUuid": "04c14758_f07a0c0a",
       "range": {
         "startLine": 230,
         "startChar": 20,
