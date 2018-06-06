@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e9cecad5_0e8a15bc",
+        "filename": "common/api/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-06-06T00:00:57Z",
+      "side": 0,
+      "message": "MP no longer serves anything at /api so we can\u0027t use it to generate clients anymore. The adapter serves at /_ah/api though so the clients are still generated based on the adapter\u0027s discovery doc.",
+      "revId": "2d92ca945b664b7cc438eef33849dcee48484cea",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
