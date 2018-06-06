@@ -55,7 +55,7 @@ var _ = ctxhttp.Do
 const apiId = "swarmbucket:v1"
 const apiName = "swarmbucket"
 const apiVersion = "v1"
-const basePath = "http://localhost:8080/api/swarmbucket/v1"
+const basePath = "http://localhost:8080/_ah/api/swarmbucket/v1"
 
 // OAuth2 scopes used by this API.
 const (
