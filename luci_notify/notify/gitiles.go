@@ -49,7 +49,7 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		return nil, errors.Annotate(err, "creating Gitiles client").Err()
 	}
 
-	req := &gitilespb.LogRequest{
+	req := gitilespb.LogRequest{
 		Project: project,
 		// With ~1, if newCommit.Revision == oldRevision,
 		// we'll get one commit,
@@ -58,14 +58,14 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		Ancestor: oldRevision + "~1",
 		Treeish:  newRevision,
 	}
-	logging.Infof(c, "Gitiles request to host %q: %q", host, req)
-	res, err := client.Log(c, req)
+	logging.Infof(c, "Gitiles request to host %q: %q", host, &req)
+	res, err := gitiles.PagingLog(c, client, req, 0)
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
-	case len(res.Log) > 0 && res.Log[0].Id != newRevision: // Sanity check.
+	case len(res) > 0 && res[0].Id != newRevision: // Sanity check.
 		return nil, errors.Reason("gitiles returned inconsistent results").Err()
 	default:
-		return res.Log, nil
+		return res, nil
 	}
 }
