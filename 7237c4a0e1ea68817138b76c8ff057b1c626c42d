@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "894912fa_c2fd3af4",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b94137af_7b9165c3",
+      "range": {
+        "startLine": 107,
+        "startChar": 76,
+        "endLine": 107,
+        "endChar": 83
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4dbbd164_aefeb7fd",
         "filename": "cipd/appengine/impl/metadata/metadata.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2831a8a6_d62f50c1",
+        "filename": "cipd/appengine/impl/metadata/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4dbbd164_aefeb7fd",
+      "range": {
+        "startLine": 31,
+        "startChar": 27,
+        "endLine": 31,
+        "endChar": 28
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ce05b5d5_a5be189e",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f045cc60_278da7e2",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 2
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd7137e4_710764b0",
         "filename": "cipd/appengine/impl/testutil/metadata.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6044e890_32a2d502",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Fine, whatever. I wanted to avoid materializing the real graph since all I really want is a function to list children of a node and I assumed it is simple enough when implemented directly on top of \u0027metas\u0027. (But looks like it is not).",
+      "parentUuid": "bd7137e4_710764b0",
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -135,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "33dc77df_f2e2692c",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "490e84c5_6db44fe4",
+      "range": {
+        "startLine": 106,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 0
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d1ca1c16_62a263d6",
         "filename": "cipd/appengine/impl/testutil/metadata.go",
         "patchSetId": 3
@@ -158,6 +272,30 @@
     },
     {
       "key": {
+        "uuid": "731f8c94_3dc098d3",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1ca1c16_62a263d6",
+      "range": {
+        "startLine": 120,
+        "startChar": 11,
+        "endLine": 121,
+        "endChar": 0
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73fe82eb_ac8e6e6e",
         "filename": "cipd/appengine/impl/testutil/metadata.go",
         "patchSetId": 3
@@ -172,6 +310,24 @@
       "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89e3a42f_7d464e7e",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73fe82eb_ac8e6e6e",
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -219,6 +375,30 @@
       "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82a103d0_bba6456a",
+        "filename": "cipd/appengine/impl/testutil/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-06T19:52:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3cafc1f_52642f86",
+      "range": {
+        "startLine": 230,
+        "startChar": 20,
+        "endLine": 230,
+        "endChar": 29
+      },
+      "revId": "7237c4a0e1ea68817138b76c8ff057b1c626c42d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
