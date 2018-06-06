@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3502f2f3_4159d31f",
+        "filename": "common/api/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-06-06T00:07:17Z",
+      "side": 1,
+      "message": "Machine Provider has other changes, so I created a separate CL: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1087929.",
+      "range": {
+        "startLine": 19,
+        "startChar": 140,
+        "endLine": 19,
+        "endChar": 161
+      },
+      "revId": "2263a0dd18ddfc1836228b12c4ba96a452ee3720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
