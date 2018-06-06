@@ -204,6 +204,25 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 	return prevCursor
 }
 
+// toMiloBuildsSummaries computes summary for each build in parallel.
+func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) ([]*ui.BuildSummary, error) {
+	result := make([]*ui.BuildSummary, len(msgs))
+	return result, parallel.WorkPool(50, func(work chan<- func() error) {
+		for i, m := range msgs {
+			i := i
+			m := m
+			work <- func() error {
+				mb, err := toMiloBuild(c, m)
+				if err != nil {
+					return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
+				}
+				result[i] = mb.BuildSummary()
+				return nil
+			}
+		}
+	})
+}
+
 // GetBuilder is used by buildsource.BuilderID.Get to obtain the resp.Builder.
 func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui.Builder, error) {
 	host, err := getHost(c)
@@ -232,16 +251,7 @@ func GetBuilder(c context.Context, bid BuilderID, limit int, cursor string) (*ui
 			logging.WithError(err).Errorf(c, "Could not fetch %s builds", statusFilter)
 			return
 		}
-		result = make([]*ui.BuildSummary, len(msgs))
-		for i, m := range msgs {
-			var mb *ui.MiloBuild
-			mb, err = toMiloBuild(c, m)
-			if err != nil {
-				err = errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
-				return
-			}
-			result[i] = mb.BuildSummary()
-		}
+		result, err = toMiloBuildsSummaries(c, msgs)
 		return
 	}
 	return result, parallel.FanOutIn(func(work chan<- func() error) {

@@ -436,9 +436,9 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 // * Fetch the full Buildbucket build from Buildbucket
 // * Fetch the step information from LogDog
 // * Fetch the blame information from Gitiles
-// This only errors out on failures to reach BuildBucket.  LogDog and Gitiles errors
+// This only errors out on failures to reach BuildBucket. LogDog and Gitiles errors
 // are surfaced in the UI.
-// TODO(hinoka): Some of this can be done concurrently.  Investigate if this call
+// TODO(hinoka): Some of this can be done concurrently. Investigate if this call
 // takes >500ms on average.
 func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	bbBuildMessage, err := getBuildbucketBuild(c, b.Address)
