@@ -103,6 +103,11 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 	return out, nil
 }
 
+// VisitMetadata is part of Storage interface.
+func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visitor) error {
+	return fmt.Errorf("not implemented yet")
+}
+
 // UpdateMetadata is part of Storage interface.
 //
 // It assembles prefix metadata from a bunch of packageACL entities, passes it

@@ -29,6 +29,22 @@ func TestMetadataStore(t *testing.T) {
 
 	ctx := context.Background()
 
+	populateMD := func(s *MetadataStore, prefixes []string) {
+		for _, p := range prefixes {
+			s.Populate(p, &api.PrefixMetadata{UpdateUser: "user:someone@example.com"})
+		}
+	}
+
+	getMD := func(s *MetadataStore, pfx string) []string {
+		md, err := s.GetMetadata(ctx, pfx)
+		So(err, ShouldBeNil)
+		out := make([]string, len(md))
+		for i, m := range md {
+			out[i] = m.Prefix
+		}
+		return out
+	}
+
 	Convey("Works", t, func() {
 		s := MetadataStore{}
 
@@ -167,5 +183,84 @@ func TestMetadataStore(t *testing.T) {
 		metas, err = s.GetMetadata(ctx, "a/b/c")
 		So(err, ShouldBeNil)
 		So(metas, ShouldResemble, []*api.PrefixMetadata{rootMeta, abMeta})
+	})
+
+	Convey("GetMetadata filters by prefix correctly", t, func() {
+		s := MetadataStore{}
+		populateMD(&s, []string{"", "a", "ab", "a/b", "b", "a/b/c"})
+
+		So(getMD(&s, ""), ShouldResemble, []string{""})
+		So(getMD(&s, "a"), ShouldResemble, []string{"", "a"})
+		So(getMD(&s, "a/b"), ShouldResemble, []string{"", "a", "a/b"})
+		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"", "a", "a/b", "a/b/c"})
+	})
+
+	Convey("Purge works", t, func() {
+		s := MetadataStore{}
+		populateMD(&s, []string{"", "a", "a/b", "a/b/c"})
+
+		s.Purge("a/b")
+		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"", "a", "a/b/c"})
+
+		s.Purge("")
+		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"a", "a/b/c"})
+
+		s.Purge("a/b/c")
+		So(getMD(&s, "a/b/c"), ShouldResemble, []string{"a"})
+
+		s.Purge("a")
+		So(getMD(&s, "a/b/c"), ShouldResemble, []string{})
+	})
+
+	Convey("VisitMetadata visits everything", t, func() {
+		s := MetadataStore{}
+		populateMD(&s, []string{
+			"", "a", "ab", "a/b", "a/b/c",
+			"b", "b/c/d/e", "b/c/d/f",
+		})
+
+		var visited []string
+		s.VisitMetadata(ctx, "", func(p string, md []*api.PrefixMetadata) (bool, error) {
+			visited = append(visited, p)
+			return true, nil
+		})
+
+		So(visited, ShouldResemble, []string{
+			"", "a", "a/b", "a/b/c", "ab", "b", "b/c/d/e", "b/c/d/f",
+		})
+	})
+
+	Convey("VisitMetadata visits direct descendants if pfx is missing", t, func() {
+		s := MetadataStore{}
+		populateMD(&s, []string{"a", "ab", "a/b", "a/b/c", "a/c"})
+
+		var visited []string
+		s.VisitMetadata(ctx, "", func(p string, md []*api.PrefixMetadata) (bool, error) {
+			visited = append(visited, p)
+			return true, nil
+		})
+
+		So(visited, ShouldResemble, []string{
+			"a", "a/b", "a/b/c", "a/c", "ab",
+		})
+	})
+
+	Convey("VisitMetadata respects callback return value", t, func() {
+		s := MetadataStore{}
+		populateMD(&s, []string{
+			"1", "1/a", "1/a/b", "1/a/b/c",
+			"2", "2/a", "2/a/b", "2/a/b/c",
+		})
+
+		var visited []string
+		s.VisitMetadata(ctx, "", func(p string, md []*api.PrefixMetadata) (bool, error) {
+			visited = append(visited, p)
+			return len(md) <= 2, nil // explore no deeper than 3 levels
+		})
+
+		So(visited, ShouldResemble, []string{
+			"1", "1/a", "1/a/b",
+			"2", "2/a", "2/a/b",
+		})
 	})
 }
