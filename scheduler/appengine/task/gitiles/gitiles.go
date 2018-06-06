@@ -142,8 +142,9 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 			c.Errorf("ref must start with 'refs/' not %q", ref)
 		}
 		cnt := strings.Count(ref, "*")
-		if cnt > 1 || (cnt == 1 && !strings.HasSuffix(ref, "/*")) {
-			c.Errorf("only trailing (e.g. refs/blah/*) globs are supported, not %q", ref)
+		if cnt > 0 {
+			regexpRef := "regexp:" + strings.Replace(regexp.QuoteMeta(ref), `\*`, `[^/]+`, -1)
+			c.Errorf("globs are not supported anymore, please use regexp instead: %q", regexpRef)
 		}
 	}
 	c.Exit()
@@ -416,45 +417,30 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 
 type watchedRefNamespace struct {
 	namespace string // no trailing "/".
-	// TODO(sergiyb): remove allChildren while removing support of ref globs after
-	// all configs using them are updated to use regexp.
-	allChildren bool // if true, someChildren is ignored.
-	// someChildren is a set of immediate children, not grandchildren. i.e., may
+	// exactChildren is a set of immediate children, not grandchildren. i.e., may
 	// contain 'child', but not 'grand/child', which would be contained in
 	// refsNamespace of (namespace + "/child").
-	someChildren stringset.Set
+	exactChildren stringset.Set
 	// descendantRegexp is a regular expression matching all descendants.
 	descendantRegexp *regexp.Regexp
 }
 
 func (w watchedRefNamespace) hasSuffix(suffix string) bool {
 	switch {
-	case suffix == "*":
-		panic(fmt.Errorf("watchedRefNamespace membership should only be checked for refs, not ref glob %s", suffix))
-	case w.allChildren && !strings.Contains(suffix, "/"):
-		return true
 	case w.descendantRegexp != nil && w.descendantRegexp.MatchString(suffix):
 		return true
-	case w.someChildren == nil:
+	case w.exactChildren == nil:
 		return false
 	default:
-		return w.someChildren.Has(suffix)
+		return w.exactChildren.Has(suffix)
 	}
 }
 
 func (w *watchedRefNamespace) addSuffix(c context.Context, suffix string) {
-	switch {
-	case w.allChildren:
-		return
-	case suffix == "*":
-		logging.Warningf(c, "globs are deprecated, please update configs to use regexp instead")
-		w.allChildren = true
-		w.someChildren = nil
-		return
-	case w.someChildren == nil:
-		w.someChildren = stringset.New(1)
+	if w.exactChildren == nil {
+		w.exactChildren = stringset.New(1)
 	}
-	w.someChildren.Add(suffix)
+	w.exactChildren.Add(suffix)
 }
 
 type watchedRefs struct {
