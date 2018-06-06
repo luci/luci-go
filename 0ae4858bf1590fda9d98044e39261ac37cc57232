@@ -377,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "e2021962_c48255ec",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T01:21:43Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1e1c2f95_06aad959",
+      "range": {
+        "startLine": 77,
+        "startChar": 27,
+        "endLine": 77,
+        "endChar": 38
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "41bfd2c8_ca0dab1e",
         "filename": "luci_notify/notify/srcman.go",
         "patchSetId": 12
@@ -489,6 +513,24 @@
       "side": 1,
       "message": "actually, I\u0027m not sure how this would work...\n\nthe whole reason Builder.repository is there is to pick a repository we\u0027re checking commits against for ordering. if we use \"*\" to indicate multiple repos, we can no longer use a repo for ordering and only build time. I think it\u0027s desirable to be able to determine ordering based on a certain repo, but also use all the repos that went into the change as a blamelist. in fact, this exactly covers our use-case right now.",
       "parentUuid": "9375ca65_106ba315",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d710535_6eaa408c",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-06T01:21:43Z",
+      "side": 1,
+      "message": "i didn\u0027t meant to change the semantics of Builder.repository: it stays the same, used to establish order of builds. Nothing changes here. Star is not supported there.\n\nI suggest to add BlamelistNotification.repository that controls only blamelist computation. It is the repository for which we take commit diff and compute the list of emails, and it is defaults to Builder.repository. It has nothing to do with build ordering. In other words, the only thing it controls is the loop@L137 in patchset 12, i.e. we consider only commits of that repo (there should be only one commit for that repo). Also we can support special value \"*\" for BlameNotification.repository that does not filter commits on a repo. That\u0027s what fuchsia needs.\n\nAlternative to star, we can make BlameNotification.repository repeated, so that you have better control where notifications are sent to. For example, imagine that fuchsia happens to depend on a third party repo and there was a recent roll there. I am not sure we would want to send notifications to third party.",
+      "parentUuid": "09f86a5b_a03994ef",
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
