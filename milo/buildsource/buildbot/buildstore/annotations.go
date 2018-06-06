@@ -23,6 +23,8 @@ import (
 	"sort"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
@@ -30,11 +32,13 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/coordinator"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/milo/api/buildbot"
+	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -72,6 +76,9 @@ func fetchAnnotationProto(c context.Context, addr *types.StreamAddr) (*miloProto
 	switch {
 	case err == coordinator.ErrNoSuchStream:
 		return nil, errAnnotationNotFound
+	case grpcutil.Code(err) == codes.PermissionDenied:
+		// Use internal Milo error tags.
+		return nil, errors.Annotate(err, "getting logdog stream").Tag(common.CodeNoAccess).Err()
 	case err != nil:
 		return nil, err
 	case state.Desc.StreamType != logpb.StreamType_DATAGRAM:
