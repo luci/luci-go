@@ -16,6 +16,9 @@ package repo
 
 import (
 	"fmt"
+	"sort"
+	"strings"
+	"sync"
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
@@ -27,11 +30,13 @@ import (
 
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
@@ -300,9 +305,141 @@ func (impl *repoImpl) ListPrefix(c context.Context, r *api.ListPrefixRequest) (r
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'prefix' - %s", err)
 	}
 
-	// TODO(vadimsh): Implement.
+	// Discover prefixes the caller is allowed to see. Note that checking only
+	// r.Prefix ACL is not sufficient, since the caller may not see it, but still
+	// see some deeper prefix, thus we need to enumerate the metadata subtree.
+	var visibleRoots []string // sorted list of prefixes visible to the caller
+	err = impl.meta.VisitMetadata(c, r.Prefix, func(pfx string, md []*api.PrefixMetadata) (cont bool, err error) {
+		switch visible, err := hasRole(c, md, api.Role_READER); {
+		case err != nil:
+			return false, err
+		case visible:
+			// Found a visible root. Everything under 'pfx' is visible to the caller,
+			// no sense in recursing deeper into this subtree.
+			visibleRoots = append(visibleRoots, pfx)
+			return false, nil
+		default:
+			// Continue exploring this subtree until we find something visible there,
+			// if anything.
+			return true, nil
+		}
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to enumerate the metadata").Err()
+	}
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// One of 'visibleRoots' => its full sorted recursive listing.
+	perVisibleRoot := make(map[string][]string, len(visibleRoots))
+
+	// ListPackages used below lists only packages that are under the prefix. It
+	// is possible there are packages that match some of visibleRoots directly
+	// (have exact same name as some visible root). We check it here. Note that
+	// this applies only to subprefixes of r.Prefix: we don't want to return a
+	// package named r.Prefix in the result (if any). So if visibleRoots is
+	// [r.Prefix] itself, we skip this check. Note that if r.Prefix is in
+	// visibleRoots, then it is the only item there, by construction.
+	if len(visibleRoots) != 1 || visibleRoots[0] != r.Prefix {
+		rootPkgs, err := model.CheckPackages(c, visibleRoots, r.IncludeHidden)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to check presence of packages").Err()
+		}
+		for _, name := range rootPkgs {
+			perVisibleRoot[name] = []string{name}
+		}
+	}
+
+	// Fetch the listing of each visible root in parallel. Note that there's no
+	// intersection between them due to the order of VisitMetadata enumeration.
+	err = parallel.WorkPool(8, func(tasks chan<- func() error) {
+		mu := sync.Mutex{}
+		for _, pfx := range visibleRoots {
+			pfx := pfx
+			tasks <- func() error {
+				// TODO(vadimsh): This is inefficient for non-recursive listings.
+				// Unfortunately we have to do the recursive listing to discover
+				// subprefixes. E.g. when listing 'a', we need to return 'a/b' as a
+				// subprefix if there's a package 'a/b/c', so to discover 'a/b/c' we
+				// need full recursive listing of 'a'.
+				//
+				// One possible improvement is:
+				//  1. Introduce a new parallel entity group just for browsing:
+				//     Entry {
+				//       Name: <full path to the package or the prefix>,
+				//       Children: [<names of all child prefixes and packages>],
+				//       HiddenChildren: [<names of hidden prefixes and packages>],
+				//       Hidden: <true|false>,  // also true if all children are hidden
+				//     }
+				//  2. 'Entry' basically represents a browsable item (either a package
+				//     or a "directory" aka prefix).
+				//  3. Update this entity group when registering, deleting, hiding or
+				//     showing packages. Will require O(<number of path components>)
+				//     entity writes in a single transaction, which is acceptable.
+				//  4. In non-recursive listing just look at Children of corresponding
+				//     entity.
+				listing, err := model.ListPackages(c, pfx, r.IncludeHidden)
+				if err == nil {
+					mu.Lock()
+					perVisibleRoot[pfx] = append(perVisibleRoot[pfx], listing...)
+					mu.Unlock()
+				}
+				return err
+			}
+		}
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to list a prefix").Err()
+	}
+
+	// searchRoot is lexicographical prefix of packages we are concerned about.
+	searchRoot := r.Prefix
+	if searchRoot != "" {
+		searchRoot += "/"
+	}
+
+	// Visit all discovered packages (in sorted order).
+	resp = &api.ListPrefixResponse{}
+	dirs := stringset.New(0)
+	for _, pfx := range visibleRoots {
+		for _, pkg := range perVisibleRoot[pfx] {
+			// By construction, ALL packages here must be within the search root.
+			if !strings.HasPrefix(pkg, searchRoot) {
+				panic(fmt.Sprintf(
+					"unexpected package %q in results when listing %q, visible roots are %q",
+					pkg, searchRoot, visibleRoots))
+			}
+
+			// E.g. "a/b/c", relative to searchRoot.
+			rel := strings.TrimPrefix(pkg, searchRoot)
+
+			if r.Recursive {
+				// If listing recursively, add everything to the result.
+				resp.Packages = append(resp.Packages, pkg)
+				// For rel "a/b/c", add [".../a", ".../a/b"] to the directories set.
+				if chunks := strings.Split(rel, "/"); len(chunks) > 1 {
+					for i := 1; i < len(chunks); i++ {
+						dirs.Add(searchRoot + strings.Join(chunks[:i], "/"))
+					}
+				}
+			} else {
+				// Otherwise add only packages that directly reside under searchRoot,
+				// and pick only first path component of directories, since we don't
+				// care about what's deeper.
+				if idx := strings.IndexRune(rel, '/'); idx != -1 {
+					// 'rel' has / => it is a directory, add its first path component.
+					dirs.Add(searchRoot + rel[:idx])
+				} else {
+					// 'rel' has no / inside => it's a package directly under searchRoot.
+					resp.Packages = append(resp.Packages, pkg)
+				}
+			}
+		}
+	}
+
+	// Note: resp.Packages are already sorted by construction.
+	resp.Prefixes = dirs.ToSlice()
+	sort.Strings(resp.Prefixes)
+
+	return resp, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
