@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b038fa1_1ad292a7",
+        "filename": "scheduler/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T21:36:52Z",
+      "side": 1,
+      "message": "nit: move this and -dev to a var on top",
+      "range": {
+        "startLine": 11,
+        "startChar": 18,
+        "endLine": 11,
+        "endChar": 32
+      },
+      "revId": "eebfe15d81c885cb2b2133936d3762e4faa8543b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa160f25_482f5027",
+        "filename": "scheduler/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T21:36:52Z",
+      "side": 1,
+      "message": "what\u0027s wrong with \u0027gae.py switch -A luci-scheduler\u0027?",
+      "range": {
+        "startLine": 17,
+        "startChar": 1,
+        "endLine": 17,
+        "endChar": 130
+      },
+      "revId": "eebfe15d81c885cb2b2133936d3762e4faa8543b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f015bbe3_e4412887",
+        "filename": "scheduler/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T21:36:52Z",
+      "side": 1,
+      "message": "nit: swap, for other commands -dev comes after non-dev.",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 73
+      },
+      "revId": "eebfe15d81c885cb2b2133936d3762e4faa8543b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
