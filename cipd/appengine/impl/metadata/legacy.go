@@ -243,6 +243,25 @@ type packageACL struct {
 	ModifiedTS time.Time `gae:"modified_ts"`
 }
 
+// parseKey parses the entity key into its components, validating them.
+//
+// On success, role is one of legacyRoles and prefix is non-empty valid prefix.
+func (e *packageACL) parseKey() (role, prefix string, err error) {
+	chunks := strings.Split(e.ID, ":")
+	if len(chunks) != 2 {
+		return "", "", fmt.Errorf("invalid key %q, not <role>:<prefix> pair", e.ID)
+	}
+	role = chunks[0]
+	if _, ok := legacyRoleMap[role]; !ok {
+		return "", "", fmt.Errorf("unrecognized role in the key %q", e.ID)
+	}
+	prefix, err = common.ValidatePackagePrefix(chunks[1])
+	if err != nil || prefix == "" { // note: there's no ACLs for root in the datastore
+		return "", "", fmt.Errorf("invalid package prefix in the key %q", e.ID)
+	}
+	return
+}
+
 // isInternalDSError is true for datastore errors that aren't entirely
 // ErrNoSuchEntity.
 func isInternalDSError(err error) bool {
