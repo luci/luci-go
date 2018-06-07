@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "38e5ea44_cd7f8061",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T17:34:54Z",
+      "side": 1,
+      "message": "nit: move as close to usage as possible. Also use make and len(rootPkgs)",
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f05c835c_403eb6d7",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T17:34:54Z",
+      "side": 1,
+      "message": "i failed to understand this. FWIU, if there exists such a visible root that has prefix equal to r.Prefix, it should be the only such visible root AND there should be only one visible root. If so, and that\u0027s the case, suspects will be empty. What am I missing?",
+      "range": {
+        "startLine": 334,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 2
+      },
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
