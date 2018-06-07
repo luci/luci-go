@@ -28,10 +28,10 @@ up-dev-default:
 	gae.py upload -A luci-milo-dev --app-dir $(projdir)/frontend/appengine default
 
 switch:
-	gcloud --project luci-milo app versions migrate $$(gae.py version -A luci-milo --app-dir $(projdir)/frontend/appengine)
+	gae.py switch -A luci-milo --app-dir $(projdir)/frontend/appengine
 
 switch-dev:
-	gcloud --project luci-milo-dev app versions migrate $$(gae.py version -A luci-milo-dev --app-dir $(projdir)/frontend/appengine)
+	gae.py switch -A luci-milo-dev --app-dir $(projdir)/frontend/appengine
 
 test:
 	go test ./...
