@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b0d02ea6_c2cbb16c",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T17:17:32Z",
+      "side": 1,
+      "message": "How is it not? This is mostly likely RPC deadline. datastore.Get returns non-multierror only if it failed to do the GetMulti RPC.",
+      "parentUuid": "ee1b6974_7046863d",
+      "range": {
+        "startLine": 110,
+        "startChar": 15,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e350dcac_41535708",
         "filename": "cipd/appengine/impl/model/package.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "362c272e_6953f189",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T17:17:32Z",
+      "side": 1,
+      "message": "Fine, removed and pretending this edge case doesn\u0027t exit.",
+      "parentUuid": "e350dcac_41535708",
+      "range": {
+        "startLine": 127,
+        "startChar": 37,
+        "endLine": 127,
+        "endChar": 54
+      },
+      "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
