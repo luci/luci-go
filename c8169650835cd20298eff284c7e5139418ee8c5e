@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "2487a852_73a404ed",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T17:47:43Z",
+      "side": 1,
+      "message": "The doc is incomplete. If the underlying call returns something other than appengine.MultiError, it is returned as is (can be traced from here https://github.com/luci/gae/blob/master/impl/prod/raw_datastore.go#L143). The underlying call returns MultiError only if RPC succeeds. Otherwise it returns an RCP error: https://github.com/golang/appengine/blob/master/datastore/datastore.go#L275\n\nAlso I believe I saw deadline RPC errors for real myself.",
+      "parentUuid": "7e81ee29_35f85a0b",
+      "range": {
+        "startLine": 110,
+        "startChar": 15,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e350dcac_41535708",
         "filename": "cipd/appengine/impl/model/package.go",
         "patchSetId": 4
