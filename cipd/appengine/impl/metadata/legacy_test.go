@@ -363,3 +363,170 @@ func TestParseKey(t *testing.T) {
 		})
 	}
 }
+
+func TestMetadataGraph(t *testing.T) {
+	t.Parallel()
+
+	Convey("With metadataGraph", t, func() {
+		ctx := gaetesting.TestingContext()
+		ts := time.Unix(1525136124, 0).UTC()
+
+		gr := metadataGraph{}
+		gr.init(&api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"group:root"},
+				},
+			},
+		})
+
+		insert := func(role, prefix, group string) {
+			gr.insert(ctx, []*packageACL{
+				{
+					ID:         role + ":" + prefix,
+					Parent:     rootKey(ctx),
+					Groups:     []string{group},
+					ModifiedTS: ts, // to mark as non-empty
+				},
+			})
+		}
+
+		type visited struct {
+			prefix string
+			md     []string // pfx:role:principal, sorted
+		}
+
+		freezeAndVisit := func(node string) (v []visited) {
+			n := gr.node(node)
+			gr.freeze(ctx)
+
+			err := n.traverse(nil, func(n *metadataNode, md []*api.PrefixMetadata) (bool, error) {
+				extract := []string{}
+				for _, m := range md {
+					for _, acl := range m.Acls {
+						for _, p := range acl.Principals {
+							extract = append(extract, fmt.Sprintf("%s:%s:%s", m.Prefix, acl.Role, p))
+						}
+					}
+				}
+				v = append(v, visited{n.prefix, extract})
+				return true, nil
+			})
+			So(err, ShouldBeNil)
+			return
+		}
+
+		insert("OWNER", "a/b/c/d", "owner-abc")
+		insert("OWNER", "a", "owner-a")
+		insert("OWNER", "b", "owner-b")
+		insert("READER", "a", "reader-a")
+		insert("READER", "a/b", "reader-ab")
+		insert("READER", "a/bc", "reader-abc")
+		insert("BOGUS", "a/b", "bogus-ab")
+
+		Convey("Traverse from the root", func() {
+			So(freezeAndVisit(""), ShouldResemble, []visited{
+				{"", []string{":OWNER:group:root"}},
+				{
+					"a", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+					},
+				},
+				{
+					"a/b", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+					},
+				},
+				{
+					"a/b/c", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+					},
+				},
+				{
+					"a/b/c/d", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+						"a/b/c/d:OWNER:group:owner-abc",
+					},
+				},
+				{
+					"a/bc", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/bc:READER:group:reader-abc",
+					},
+				},
+				{
+					"b", []string{
+						":OWNER:group:root",
+						"b:OWNER:group:owner-b",
+					},
+				},
+			})
+		})
+
+		Convey("Traverse from some prefix", func() {
+			So(freezeAndVisit("a/b"), ShouldResemble, []visited{
+				{
+					"a/b", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+					},
+				},
+				{
+					"a/b/c", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+					},
+				},
+				{
+					"a/b/c/d", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+						"a/b/c/d:OWNER:group:owner-abc",
+					},
+				},
+			})
+		})
+
+		Convey("Traverse from some deep prefix", func() {
+			So(freezeAndVisit("a/b/c/d/e"), ShouldResemble, []visited{
+				{
+					"a/b/c/d/e", []string{
+						":OWNER:group:root",
+						"a:OWNER:group:owner-a",
+						"a:READER:group:reader-a",
+						"a/b:READER:group:reader-ab",
+						"a/b/c/d:OWNER:group:owner-abc",
+					},
+				},
+			})
+		})
+
+		Convey("Traverse from some non-existing prefix", func() {
+			So(freezeAndVisit("z/z/z"), ShouldResemble, []visited{
+				{
+					"z/z/z", []string{":OWNER:group:root"},
+				},
+			})
+		})
+	})
+}
