@@ -165,6 +165,13 @@ var codeToStatus = map[codes.Code]int{
 	codes.Aborted:            http.StatusConflict,
 }
 
+// ErrStatus extracts an http code out of an error that potentically wraps
+// a grpc error.
+// http.StatusInternalServerError is returned if no GRPC errors are detected.
+func ErrStatus(err error) int {
+	return CodeStatus(Code(err))
+}
+
 // CodeStatus maps gRPC codes to HTTP status codes.
 // Falls back to http.StatusInternalServerError.
 func CodeStatus(code codes.Code) int {
