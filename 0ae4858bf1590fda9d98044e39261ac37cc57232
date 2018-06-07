@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "87fd4e8d_e6734b6a",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 12
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5bc4f16e_08f56077",
+      "range": {
+        "startLine": 94,
+        "startChar": 12,
+        "endLine": 94,
+        "endChar": 14
+      },
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e33a95f4_5357fd2d",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 12
@@ -222,6 +246,24 @@
       "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50725fb1_2e5a24a1",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "yeah, a wrapper message is what I meant",
+      "parentUuid": "6bbeeb0c_0f2fc1fd",
+      "revId": "0ae4858bf1590fda9d98044e39261ac37cc57232",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

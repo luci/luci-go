@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c603f99b_d1d9d034",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "parallel.WorkPool(8, func(....",
+      "range": {
+        "startLine": 67,
+        "startChar": 8,
+        "endLine": 68,
+        "endChar": 20
+      },
+      "revId": "f9ae5d2294c9b016422b560e23d55995ef344197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "55f7c4bb_823bfe50",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "host, project",
+      "range": {
+        "startLine": 71,
+        "startChar": 4,
+        "endLine": 71,
+        "endChar": 17
+      },
+      "revId": "f9ae5d2294c9b016422b560e23d55995ef344197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f4ebfc7_3feda9f2",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "I am a bit confused why we need this. Don\u0027t we load history starting from this commit anyway? i.e. do we have to load the history we don\u0027t need?",
+      "range": {
+        "startLine": 93,
+        "startChar": 75,
+        "endLine": 93,
+        "endChar": 100
+      },
+      "revId": "f9ae5d2294c9b016422b560e23d55995ef344197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5c79cd7_a3636b59",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "nit: \"checked out by\"\n\nthere may be different kind of associations",
+      "range": {
+        "startLine": 67,
+        "startChar": 49,
+        "endLine": 67,
+        "endChar": 64
+      },
+      "revId": "44b9c75cec973cf900b822b16b55ea8931295fc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

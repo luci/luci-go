@@ -1,0 +1,204 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b17e2169_d94774ab",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "please add comment. it is not obvious what\u0027s the key here",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a02c5b3e_e349c1cf",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "nit: after reading this comment, a reader may be left under impression that by default luci-notify computes blamelist for all commits (false). Please rephrase.",
+      "range": {
+        "startLine": 99,
+        "startChar": 16,
+        "endLine": 103,
+        "endChar": 37
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8498986_e368760d",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "please sort result.Commits. Currently its order is random",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec4b0aec_fe6094fd",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "please add a comment. it is not clear what commits parameter means",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfa2c5e4_d36c016f",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "perhaps not for this CL: the signature of this function is getting big. It seems to be not generic: it covers 3 cases (configured recipients, recipients in build, recipients in blamelist) as 3 distinct set of parameters, as opposed to using an abstraction that cover all 3 cases. It seems EmailNotify abstraction would work? i.e. the function could be split into 3:\n1) extracts EmailNotify from notifications, i.e. L118-L128\n2) extract EmailNotify from blamelist, i.e. L129-L136\n3) this function accepts a slice of EmailNotify, does dedup and isAllowed check and puts tasks",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be7a6fb0_0412dfce",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "there is no blamelist here?",
+      "range": {
+        "startLine": 144,
+        "startChar": 23,
+        "endLine": 144,
+        "endChar": 40
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2deb10a4_dc75fe46",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "here we mutate buildCommits and then in L257 save the filtered commits, while in L150 we save unfilteered.\nStepping back a bit, we have L254-257 lines duplicated a few times in this function. I understand that you want original builder values. Can we make a second builder variable that would store new values and update it as soon as a new value is discovered? It would the problem in this line and reduce duplication",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "852aa1ed_576cffa8",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "nit: ideally we don\u0027t use term manifest because eventually it will be irrelevant",
+      "range": {
+        "startLine": 237,
+        "startChar": 48,
+        "endLine": 237,
+        "endChar": 56
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed7c406e_e6de0235",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "omit",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 59
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fef283c1_a7934383",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T16:54:48Z",
+      "side": 1,
+      "message": "use https://godoc.org/go.chromium.org/luci/common/api/gitiles#NormalizeRepoURL\nit does removes .git suffix",
+      "range": {
+        "startLine": 88,
+        "startChar": 26,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
