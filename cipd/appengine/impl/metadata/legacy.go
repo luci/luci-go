@@ -33,6 +33,23 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
+// rootMeta is metadata of the root prefix, it is inherited by all prefixes.
+//
+// TODO(vadimsh): Make this configurable.
+var rootMeta = &api.PrefixMetadata{
+	Acls: []*api.PrefixMetadata_ACL{
+		// Administrators have implicit permissions to do everything everywhere.
+		{
+			Role:       api.Role_OWNER,
+			Principals: []string{"group:administrators"},
+		},
+	},
+}
+
+func init() {
+	rootMeta.Fingerprint = CalculateFingerprint(*rootMeta)
+}
+
 // legacyStorageImpl implements Storage on top of PackageACL entities inherited
 // from Python version of CIPD backend.
 //
@@ -247,21 +264,11 @@ func isInternalDSError(err error) bool {
 	return false // all suberrors are either nil or ErrNoSuchEntity
 }
 
-// rootMetadata returns metadata of the root prefix.
+// rootMetadata returns metadata of the root prefix (always a new copy).
 //
 // It is inherited by all prefixes.
 func rootMetadata() *api.PrefixMetadata {
-	// Administrators group has implicit permissions to do everything everywhere.
-	//
-	// TODO(vadimsh): Make this configurable.
-	return &api.PrefixMetadata{
-		Acls: []*api.PrefixMetadata_ACL{
-			{
-				Role:       api.Role_OWNER,
-				Principals: []string{"group:administrators"},
-			},
-		},
-	}
+	return proto.Clone(rootMeta).(*api.PrefixMetadata)
 }
 
 // rootKey returns a key of the root entity that stores ACL hierarchy.
