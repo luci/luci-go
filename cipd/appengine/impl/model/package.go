@@ -86,3 +86,45 @@ func ListPackages(c context.Context, prefix string, includeHidden bool) (out []s
 	}
 	return out, nil
 }
+
+// CheckPackages given a list of package names returns packages that exist, in
+// the order they are listed in the list.
+//
+// If includeHidden is false, omits hidden packages from the result.
+//
+// Returns only transient errors.
+func CheckPackages(c context.Context, names []string, includeHidden bool) ([]string, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+
+	pkgs := make([]*Package, len(names))
+	for i, n := range names {
+		pkgs[i] = &Package{Name: n}
+	}
+
+	if err := datastore.Get(c, pkgs); err != nil {
+		merr, ok := err.(errors.MultiError)
+		if !ok {
+			return nil, transient.Tag.Apply(err)
+		}
+		existing := pkgs[:0]
+		for i, pkg := range pkgs {
+			switch err := merr[i]; {
+			case err == nil:
+				existing = append(existing, pkg)
+			case err != datastore.ErrNoSuchEntity:
+				return nil, errors.Annotate(err, "failed to fetch %q", pkg.Name).Tag(transient.Tag).Err()
+			}
+		}
+		pkgs = existing
+	}
+
+	out := make([]string, 0, len(pkgs))
+	for _, p := range pkgs {
+		if !p.Hidden || includeHidden {
+			out = append(out, p.Name)
+		}
+	}
+	return out, nil
+}

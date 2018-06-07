@@ -90,3 +90,56 @@ func TestListPackages(t *testing.T) {
 		})
 	})
 }
+
+func TestCheckPackages(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		mk := func(name string, hidden bool) {
+			So(datastore.Put(ctx, &Package{
+				Name:   name,
+				Hidden: hidden,
+			}), ShouldBeNil)
+		}
+
+		check := func(names []string, includeHidden bool) []string {
+			p, err := CheckPackages(ctx, names, includeHidden)
+			So(err, ShouldBeNil)
+			return p
+		}
+
+		const hidden = true
+		const visible = false
+
+		mk("a", visible)
+		mk("b", hidden)
+		mk("c", visible)
+
+		Convey("Empty list", func() {
+			So(check(nil, true), ShouldHaveLength, 0)
+		})
+
+		Convey("One visible package", func() {
+			So(check([]string{"a"}, true), ShouldResemble, []string{"a"})
+		})
+
+		Convey("One hidden package", func() {
+			So(check([]string{"b"}, true), ShouldResemble, []string{"b"})
+			So(check([]string{"b"}, false), ShouldResemble, []string{})
+		})
+
+		Convey("One missing package", func() {
+			So(check([]string{"zzz"}, true), ShouldResemble, []string{})
+		})
+
+		Convey("Skips missing", func() {
+			So(check([]string{"zzz", "a", "c", "b"}, true), ShouldResemble, []string{"a", "c", "b"})
+		})
+
+		Convey("Skips hidden", func() {
+			So(check([]string{"a", "b", "c"}, false), ShouldResemble, []string{"a", "c"})
+		})
+	})
+}
