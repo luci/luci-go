@@ -387,6 +387,8 @@ func TestListPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+
 		meta := testutil.MetadataStore{}
 
 		meta.Populate("", &api.PrefixMetadata{
@@ -397,25 +399,202 @@ func TestListPrefix(t *testing.T) {
 				},
 			},
 		})
+		meta.Populate("1/a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+		meta.Populate("6", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+		meta.Populate("7", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
 
 		impl := repoImpl{meta: &meta}
 
 		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*api.ListPrefixResponse, error) {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: user,
-			})
-			return impl.ListPrefix(ctx, &api.ListPrefixRequest{
+			c := auth.WithState(ctx, &authtest.FakeState{Identity: user})
+			return impl.ListPrefix(c, &api.ListPrefixRequest{
 				Prefix:        prefix,
 				Recursive:     recursive,
 				IncludeHidden: hidden,
 			})
 		}
 
-		Convey("Full root recursive listing", func() {
-			// TODO(vadimsh): Implement.
-			_, err := call("", true, true, "user:admin@example.com")
-			So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
+		const hidden = true
+		const visible = false
+		mk := func(name string, hidden bool) {
+			So(datastore.Put(ctx, &model.Package{
+				Name:   name,
+				Hidden: hidden,
+			}), ShouldBeNil)
+		}
+
+		// Note: "1" is both a package and a prefix, this is allowed.
+		mk("1", visible)
+		mk("1/a", visible) // note: readable to reader@...
+		mk("1/b", visible)
+		mk("1/c", hidden)
+		mk("1/d/a", hidden)
+		mk("1/a/b", visible)   // note: readable to reader@...
+		mk("1/a/b/c", visible) // note: readable to reader@...
+		mk("1/a/c", hidden)    // note: readable to reader@...
+		mk("2/a/b/c", visible)
+		mk("3", visible)
+		mk("4", hidden)
+		mk("5/a/b", hidden)
+		mk("6", hidden)      // note: readable to reader@...
+		mk("6/a/b", visible) // note: readable to reader@...
+		mk("7/a", hidden)    // note: readable to reader@...
+		datastore.GetTestable(ctx).CatchupIndexes()
+
+		// Note about the test cases names below:
+		//  * "Full" means there are no ACL restriction.
+		//  * "Restricted" means some results are filtered out by ACLs.
+		//  * "Root" means listing root of the repo.
+		//  * "Non-root" means listing some prefix.
+		//  * "Recursive" is obvious.
+		//  * "Non-recursive" is also obvious.
+		//  * "Including hidden" means results includes hidden packages.
+		//  * "Visible only" means results includes only non-hidden packages.
+		//
+		// This 4 test dimensions => 16 test cases.
+
+		Convey("Full listing", func() {
+			Convey("Root recursive (including hidden)", func() {
+				resp, err := call("", true, true, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
+					"2/a/b/c", "3", "4", "5/a/b", "6", "6/a/b", "7/a",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "1/d", "2", "2/a", "2/a/b", "5", "5/a",
+					"6", "6/a", "7",
+				})
+			})
+
+			Convey("Root recursive (visible only)", func() {
+				resp, err := call("", true, false, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "1/a/b/c", "1/b", "2/a/b/c", "3", "6/a/b",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "2", "2/a", "2/a/b", "6", "6/a",
+				})
+			})
+
+			Convey("Root non-recursive (including hidden)", func() {
+				resp, err := call("", false, true, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{"1", "3", "4", "6"})
+				So(resp.Prefixes, ShouldResemble, []string{"1", "2", "5", "6", "7"})
+			})
+
+			Convey("Root non-recursive (visible only)", func() {
+				resp, err := call("", false, false, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{"1", "3"})
+				So(resp.Prefixes, ShouldResemble, []string{"1", "2", "6"})
+			})
+
+			Convey("Non-root recursive (including hidden)", func() {
+				resp, err := call("1", true, true, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "1/b", "1/c", "1/d/a",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b", "1/d"})
+			})
+
+			Convey("Non-root recursive (visible only)", func() {
+				resp, err := call("1", true, false, "user:admin@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c", "1/b",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+			})
 		})
+
+		Convey("Restricted listing", func() {
+			Convey("Root recursive (including hidden)", func() {
+				resp, err := call("", true, true, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c", "1/a/c", "6", "6/a/b", "7/a",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "6", "6/a", "7",
+				})
+			})
+
+			Convey("Root recursive (visible only)", func() {
+				resp, err := call("", true, false, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c", "6/a/b",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{
+					"1", "1/a", "1/a/b", "6", "6/a",
+				})
+			})
+
+			Convey("Root non-recursive (including hidden)", func() {
+				resp, err := call("", false, true, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{"6"})
+				So(resp.Prefixes, ShouldResemble, []string{"1", "6", "7"})
+			})
+
+			Convey("Root non-recursive (visible only)", func() {
+				resp, err := call("", false, false, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string(nil))
+				So(resp.Prefixes, ShouldResemble, []string{"1", "6"})
+			})
+
+			Convey("Non-root recursive (including hidden)", func() {
+				resp, err := call("1", true, true, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c", "1/a/c",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+			})
+
+			Convey("Non-root recursive (visible only)", func() {
+				resp, err := call("1", true, false, "user:reader@example.com")
+				So(err, ShouldBeNil)
+				So(resp.Packages, ShouldResemble, []string{
+					"1/a", "1/a/b", "1/a/b/c",
+				})
+				So(resp.Prefixes, ShouldResemble, []string{"1/a", "1/a/b"})
+			})
+		})
+
+		Convey("The package is not listed when listing its name directly", func() {
+			resp, err := call("3", true, true, "user:admin@example.com")
+			So(err, ShouldBeNil)
+			So(resp.Packages, ShouldHaveLength, 0)
+			So(resp.Prefixes, ShouldHaveLength, 0)
+		})
+
 	})
 }
 
