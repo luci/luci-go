@@ -121,6 +121,21 @@ func TestLegacyMetadata(t *testing.T) {
 			},
 		}
 
+		Convey("GetMetadata returns root metadata which has fingerprint", func() {
+			md, err := impl.GetMetadata(ctx, "")
+			So(err, ShouldBeNil)
+			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
+			So(rootMeta, ShouldResembleProto, &api.PrefixMetadata{
+				Acls: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"group:administrators"},
+					},
+				},
+				Fingerprint: "G7Hov8WrEwWHx1dQd7SMsKJERUI",
+			})
+		})
+
 		Convey("GetMetadata handles one prefix", func() {
 			md, err := impl.GetMetadata(ctx, "a")
 			So(err, ShouldBeNil)
