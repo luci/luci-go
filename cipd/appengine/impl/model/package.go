@@ -20,6 +20,11 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/cipd/common"
 )
 
 // Package represents a package as it is stored in the datastore.
@@ -47,4 +52,37 @@ type Package struct {
 // PackageKey returns a datastore key of some package, given its name.
 func PackageKey(c context.Context, pkg string) *datastore.Key {
 	return datastore.NewKey(c, "Package", pkg, 0, nil)
+}
+
+// ListPackages returns a list of names of packages under the given prefix.
+//
+// Lists all packages recursively. If there's package named as 'prefix' it is
+// NOT included in the result. Only packaged under the prefix are included.
+//
+// The result is sorted by the package name. Returns only transient errors.
+func ListPackages(c context.Context, prefix string, includeHidden bool) (out []string, err error) {
+	if prefix, err = common.ValidatePackagePrefix(prefix); err != nil {
+		return nil, err
+	}
+
+	// Note: __key__ queries are already ordered by key.
+	q := datastore.NewQuery("Package")
+	if prefix != "" {
+		q = q.Gte("__key__", PackageKey(c, prefix+"/\x00"))
+		q = q.Lt("__key__", PackageKey(c, prefix+"/\xff"))
+	}
+
+	err = datastore.Run(c, q, func(p *Package) error {
+		// We filter by Hidden manually since not all entities in the datastore have
+		// it set, so filtering using Eq("Hidden", false) actually skips all
+		// entities that don't have Hidden field at all.
+		if !p.Hidden || includeHidden {
+			out = append(out, p.Name)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to query the list of packages").Tag(transient.Tag).Err()
+	}
+	return out, nil
 }
