@@ -22,6 +22,30 @@
       "revId": "bdabafc32390e4952896c607c9057dcb79e90db3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c23c863_f136a3f4",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T21:37:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bb45c37c_38e52e1c",
+      "range": {
+        "startLine": 255,
+        "startChar": 27,
+        "endLine": 255,
+        "endChar": 36
+      },
+      "revId": "bdabafc32390e4952896c607c9057dcb79e90db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
