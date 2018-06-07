@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee1b6974_7046863d",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T17:01:10Z",
+      "side": 1,
+      "message": "how is this transient?",
+      "range": {
+        "startLine": 110,
+        "startChar": 15,
+        "endLine": 110,
+        "endChar": 24
+      },
+      "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e350dcac_41535708",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T17:01:10Z",
+      "side": 1,
+      "message": "document deduplication or don\u0027t do it",
+      "range": {
+        "startLine": 127,
+        "startChar": 37,
+        "endLine": 127,
+        "endChar": 54
+      },
+      "revId": "c8169650835cd20298eff284c7e5139418ee8c5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
