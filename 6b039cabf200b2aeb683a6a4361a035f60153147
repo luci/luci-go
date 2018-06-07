@@ -39,6 +39,30 @@
       "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ba692a7_b323cfde",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T17:41:06Z",
+      "side": 1,
+      "message": "This is not about prefixes. There may be a PACKAGE named as some of visible root. An example is this list of packages (in chrome-infra-auth-dev):\n\n  infra/tools/cipd\n  infra/tools/cipd/linux-amd64\n  infra/tools/cipd/linux-mac64\n  ...\n\nHere infra/tools/cipd is both a package and a prefix. This is allowed.\n\nNow imagine infra/tools/... is not readable, but infra/tools/cipd is, and the caller is listing infra/tools. In this case visibleRoots will be [\"infra/tools/cipd\"]. But ListPackages(\"infra/tools/cipd\") will return only [\"infra/tools/cipd/linux-amd64\", \"infra/tools/cipd/linux-mac64\", ...] and the package \"infra/tools/cipd\" itself will be lost.",
+      "parentUuid": "f05c835c_403eb6d7",
+      "range": {
+        "startLine": 334,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 2
+      },
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
