@@ -63,6 +63,30 @@
       "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "334f23aa_1088b70b",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-07T18:10:49Z",
+      "side": 1,
+      "message": "I see that this code correct, but I believe it could be simpler. suspects is either nil or \u003d\u003d visibleRoots. The code could be simplified to only cover these two cases rather than them plus everything in between",
+      "parentUuid": "2ba692a7_b323cfde",
+      "range": {
+        "startLine": 334,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 2
+      },
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
