@@ -45,6 +45,30 @@
       "revId": "4ea09210514f1b2465d86b92d3ef5e9f3d78d193",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c72b5c1_17b512a9",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-07T22:08:51Z",
+      "side": 1,
+      "message": "the goal is to limit clock time spent in this call, because that\u0027s what user cares about.\nIt\u0027s possible to do it by computing maximum acceptable individual Gerrit specific func timeout, say (total(5s) * parallel(50) / items(~200)), but looks more complex to me.\nFurtermore, toMiloBuild is used when rendering build page, where author is presumably more important and more waiting time is more justified.",
+      "parentUuid": "5bfeb81e_4703ee1e",
+      "range": {
+        "startLine": 214,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 45
+      },
+      "revId": "4ea09210514f1b2465d86b92d3ef5e9f3d78d193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
