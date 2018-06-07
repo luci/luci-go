@@ -33,6 +33,7 @@ import (
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
+	"go.chromium.org/luci/server/auth"
 )
 
 // LogOptions are options for Log function.
@@ -50,6 +51,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 	case err != nil:
 		return
 	case !allowed:
+		logging.Warningf(c, "%q not allowed for host %q project %q", auth.CurrentIdentity(c), host, project)
 		err = status.Errorf(codes.NotFound, "not found")
 		return
 	}
