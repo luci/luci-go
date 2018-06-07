@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "668c447f_5c6bc85f",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T18:34:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "38e5ea44_cd7f8061",
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f05c835c_403eb6d7",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 1
@@ -78,6 +96,30 @@
       "side": 1,
       "message": "I see that this code correct, but I believe it could be simpler. suspects is either nil or \u003d\u003d visibleRoots. The code could be simplified to only cover these two cases rather than them plus everything in between",
       "parentUuid": "2ba692a7_b323cfde",
+      "range": {
+        "startLine": 334,
+        "startChar": 1,
+        "endLine": 345,
+        "endChar": 2
+      },
+      "revId": "6b039cabf200b2aeb683a6a4361a035f60153147",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4942444b_7b6bdf6a",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-07T18:34:42Z",
+      "side": 1,
+      "message": "Done. It is indeed few less lines of code.",
+      "parentUuid": "334f23aa_1088b70b",
       "range": {
         "startLine": 334,
         "startChar": 1,
