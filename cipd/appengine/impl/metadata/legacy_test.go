@@ -16,6 +16,7 @@ package metadata
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -331,4 +332,34 @@ func TestLegacyMetadata(t *testing.T) {
 			So(md, ShouldResembleProto, []*api.PrefixMetadata{rootMeta})
 		})
 	})
+}
+
+func TestParseKey(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		id     string
+		role   string
+		prefix string
+		err    string
+	}{
+		{"OWNER:a/b/c", "OWNER", "a/b/c", ""},
+		{"OWNER", "", "", "not <role>:<prefix> pair"},
+		{"UNKNOWN:a/b/c", "", "", "unrecognized role"},
+		{"OWNER:///", "", "", "invalid package prefix"},
+		{"OWNER:", "", "", "invalid package prefix"},
+	}
+
+	for _, c := range cases {
+		Convey(fmt.Sprintf("works for %q", c.id), t, func() {
+			role, pfx, err := (&packageACL{ID: c.id}).parseKey()
+			So(role, ShouldEqual, c.role)
+			So(pfx, ShouldEqual, c.prefix)
+			if c.err == "" {
+				So(err, ShouldBeNil)
+			} else {
+				So(err, ShouldErrLike, c.err)
+			}
+		})
+	}
 }
