@@ -208,7 +208,7 @@ func backCursor(c context.Context, bid BuilderID, limit int, thisCursor, nextCur
 func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage) ([]*ui.BuildSummary, error) {
 	result := make([]*ui.BuildSummary, len(msgs))
 	// For each build, toMiloBuild may query Gerrit to fetch associated CL's
-	// author email. Unfortunatel, as of June 2018 Gerrit is often taking >5s to
+	// author email. Unfortunately, as of June 2018 Gerrit is often taking >5s to
 	// report back. From UX PoV, author's email isn't the most important of
 	// builder's page, so limit waiting time.
 	c, _ = context.WithTimeout(c, 5*time.Second)
