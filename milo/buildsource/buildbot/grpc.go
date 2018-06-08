@@ -72,7 +72,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 
 	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
 	switch {
-	case common.ErrorTag.In(err) == common.CodeNoAccess:
+	case common.ErrorCodeIn(err) == common.CodeNoAccess:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -129,7 +129,7 @@ func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBui
 	}
 	res, err := buildstore.GetBuilds(c, q)
 	switch {
-	case common.ErrorTag.In(err) == common.CodeNoAccess:
+	case common.ErrorCodeIn(err) == common.CodeNoAccess:
 		return nil, errNotFoundGRPC
 	case err != nil:
 		return nil, err
@@ -171,7 +171,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 
 	master, err := buildstore.GetMaster(c, req.Name, true)
 
-	switch code := common.ErrorTag.In(err); {
+	switch code := common.ErrorCodeIn(err); {
 	case code == common.CodeNotFound, code == common.CodeNoAccess:
 		return nil, errNotFoundGRPC
 	case err != nil:
@@ -229,7 +229,7 @@ func excludeDeprecatedFromBuild(b *buildbot.Build) {
 
 func grpcCanAccessMaster(c context.Context, master string) error {
 	err := buildstore.CanAccessMaster(c, master)
-	switch common.ErrorTag.In(err) {
+	switch common.ErrorCodeIn(err) {
 	case common.CodeNotFound:
 		return errNotFoundGRPC
 	case common.CodeUnauthorized:
