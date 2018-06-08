@@ -131,7 +131,12 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 			// This can happen when Prepare fails.
 			panic("global Flex config is not initialized")
 		}
-		return globalFlexConfig.Use(c, globalFlex.Request(c, req))
+
+		if localAddr, ok := c.Value(http.LocalAddrContextKey).(net.Addr); ok {
+			c = cloudlogging.WithLocalIP(localAddr).String()
+		}
+		c = withRequest(c, req)
+		return globalFlexConfig.Use(c, nil)
 	},
 	WithConfig: gaeconfig.UseFlex,
 	WithAuth: func(c context.Context) context.Context {
