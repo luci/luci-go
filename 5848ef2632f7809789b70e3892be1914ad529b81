@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b64e3786_9577ed60",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T21:15:03Z",
+      "side": 1,
+      "message": "remove?",
+      "range": {
+        "startLine": 470,
+        "startChar": 48,
+        "endLine": 470,
+        "endChar": 60
+      },
+      "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
