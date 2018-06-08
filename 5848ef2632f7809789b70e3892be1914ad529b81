@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a4171b93_4e0c72fd",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-08T21:45:13Z",
+      "side": 1,
+      "message": "why? \u0027freeze\u0027 is where md is constructed. I think it\u0027s valuable information.",
+      "parentUuid": "b64e3786_9577ed60",
+      "range": {
+        "startLine": 470,
+        "startChar": 48,
+        "endLine": 470,
+        "endChar": 60
+      },
+      "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e7e0e76f_c5498ba0",
         "filename": "cipd/appengine/impl/metadata/legacy.go",
         "patchSetId": 4
@@ -68,6 +92,30 @@
       "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a7ea8be_45083ca8",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 523,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-08T21:45:13Z",
+      "side": 1,
+      "message": "Done. Overwriting shouldn\u0027t happen, but nothing blows up if it does happen, so I didn\u0027t add an assert. But if it raises concerns, better to have it.",
+      "parentUuid": "83ed1100_6136fcba",
+      "range": {
+        "startLine": 523,
+        "startChar": 3,
+        "endLine": 523,
+        "endChar": 16
+      },
+      "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
