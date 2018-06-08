@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9732c184_0ecda382",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-08T22:19:11Z",
+      "side": 0,
+      "message": "the key cannot be equal to \"\u003cprefix\u003e/\\x00\"...",
+      "range": {
+        "startLine": 71,
+        "startChar": 10,
+        "endLine": 71,
+        "endChar": 11
+      },
+      "revId": "3ca6ca6a6f087acaee68946b6dfb5dbb046bdc14",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
