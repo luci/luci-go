@@ -78,12 +78,13 @@ var errorCodeTagKey = errors.NewTagKey("holds a milo ErrorCode")
 //   errors.Annotate(err).Tag(CodeNotFound)
 //   errors.New("terrible thing", CodeNotFound)
 func (c ErrorCode) GenerateErrorTagValue() errors.TagValue {
-	return errors.TagValue{Key: errorCodeTagKey, Value: c}
+	return c.Tag()
 }
 
 type errorTag struct{ Key errors.TagKey }
 
-// ErrorCodeIn returns the ErrorCode in err put using ErrorCode.Tag().
+// ErrorCodeIn returns the ErrorCode in err. If err is nil, returns CodeOK.
+// If not present, returns CodeUnknown.
 func ErrorCodeIn(err error) ErrorCode {
 	if err == nil {
 		return CodeOK
