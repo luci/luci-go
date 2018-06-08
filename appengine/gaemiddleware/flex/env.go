@@ -17,11 +17,13 @@
 package flex
 
 import (
+	"net"
 	"net/http"
 	"strings"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging/cloudlogger"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/server/auth"
@@ -131,6 +133,10 @@ var ReadOnlyFlex = gaemiddleware.Environment{
 			// This can happen when Prepare fails.
 			panic("global Flex config is not initialized")
 		}
+		if localAddr, ok := c.Value(http.LocalAddrContextKey).(net.Addr); ok {
+			c = cloudlogger.WithLocalIP(c, localAddr.String())
+		}
+		// TODO(hinoka): Remove globalFlex.Request().
 		return globalFlexConfig.Use(c, globalFlex.Request(c, req))
 	},
 	WithConfig: gaeconfig.UseFlex,
