@@ -168,7 +168,7 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 		return nil, nil, errors.Annotate(err, "invalid repo URL %q in the config", def.RepoUrl).Err()
 	}
 	rawCommits, err := git.Get(c).Log(c, repoHost, repoProject, def.Ref, &git.LogOptions{Limit: limit})
-	switch common.ErrorTag.In(err) {
+	switch common.ErrorCodeIn(err) {
 	case common.CodeOK:
 		// Do nothing, all is good.
 	case common.CodeNotFound:
