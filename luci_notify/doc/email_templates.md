@@ -54,9 +54,9 @@ The following functions are available to templates in addition to the
 ## Template example
 
 ```html
-A {{.Build.Bulider.Builder}} build completed
+A {{.Build.Builder.Builder}} build completed
 
-<a href="{{.Build.ViewURL}}">Build {{.Build.Number}}</a>
+<a href="{{.Build.ViewUrl}}">Build {{.Build.Number}}</a>
 has completed with status {{.Build.Status}}
 on `{{.Build.EndTime | time}}`
 ```
@@ -70,9 +70,9 @@ When rending, all template files are merged into one. Example:
 luci-notify/email-templates/default.template:
 
 ```html
-A {{.Build.Bulider.Builder}} completed
+A {{.Build.Builder.Builder}} completed
 
-A <a href="{{.Build.ViewURL}}">build</a> has completed.
+A <a href="{{.Build.ViewUrl}}">build</a> has completed.
 
 Steps: {{template "steps" .}}
 
