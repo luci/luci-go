@@ -21,6 +21,15 @@ func ErrorHandler(c *router.Context, err error) {
 	// 'container'; i.e. a build may link to its builder, a builder to its
 	// master/bucket, etc.
 
+	if r := common.HTTPRedirectIn(err); r != nil {
+		status := r.Status
+		if status == 0 {
+			status = http.StatusFound
+		}
+		http.Redirect(c.Writer, c.Request, r.URL, status)
+		return
+	}
+
 	code := common.ErrorCodeIn(err)
 	switch code {
 	case common.CodeUnknown:
