@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ef83c7a5_8469d3aa",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b17e2169_d94774ab",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a02c5b3e_e349c1cf",
         "filename": "luci_notify/api/config/notify.proto",
         "patchSetId": 15
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "6246b04c_00f12d13",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 15
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a02c5b3e_e349c1cf",
+      "range": {
+        "startLine": 99,
+        "startChar": 16,
+        "endLine": 103,
+        "endChar": 37
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8498986_e368760d",
         "filename": "luci_notify/notify/commits.go",
         "patchSetId": 15
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "bfe1c8c4_f4e9c6ef",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f8498986_e368760d",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec4b0aec_fe6094fd",
         "filename": "luci_notify/notify/commits.go",
         "patchSetId": 15
@@ -73,6 +133,24 @@
       "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ebcbd22_e35e4717",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "I\u0027ve restructured this whole file and added many comments.",
+      "parentUuid": "ec4b0aec_fe6094fd",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +189,24 @@
     },
     {
       "key": {
+        "uuid": "80ebbf76_742dcc82",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "09504cee_6ed80fbd",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "be7a6fb0_0412dfce",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -122,6 +218,30 @@
       "writtenOn": "2018-06-07T16:54:48Z",
       "side": 1,
       "message": "there is no blamelist here?",
+      "range": {
+        "startLine": 144,
+        "startChar": 23,
+        "endLine": 144,
+        "endChar": 40
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56bc3832_ff71fe73",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "there could be, right? it may not have an input commit, but it could have output commits. I think it\u0027s still worthwhile supporting this case in the future.",
+      "parentUuid": "be7a6fb0_0412dfce",
       "range": {
         "startLine": 144,
         "startChar": 23,
@@ -169,6 +289,24 @@
     },
     {
       "key": {
+        "uuid": "75af60b8_01b9bf6d",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2984896_615460e9",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "852aa1ed_576cffa8",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -189,6 +327,30 @@
       "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "170122cd_03454ed5",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "852aa1ed_576cffa8",
+      "range": {
+        "startLine": 237,
+        "startChar": 48,
+        "endLine": 237,
+        "endChar": 56
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -215,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "0569e9d0_bb23455a",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed7c406e_e6de0235",
+      "range": {
+        "startLine": 38,
+        "startChar": 54,
+        "endLine": 38,
+        "endChar": 59
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fef283c1_a7934383",
         "filename": "luci_notify/notify/srcman.go",
         "patchSetId": 15
@@ -235,6 +421,30 @@
       "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a3a7617_5f88ed5f",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fef283c1_a7934383",
+      "range": {
+        "startLine": 88,
+        "startChar": 26,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

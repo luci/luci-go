@@ -22,6 +22,30 @@
       "revId": "44b9c75cec973cf900b822b16b55ea8931295fc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6bd563dc_f20f42df",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T05:12:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5c79cd7_a3636b59",
+      "range": {
+        "startLine": 67,
+        "startChar": 49,
+        "endLine": 67,
+        "endChar": 64
+      },
+      "revId": "44b9c75cec973cf900b822b16b55ea8931295fc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
