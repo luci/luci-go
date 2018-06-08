@@ -68,34 +68,27 @@ func (c ErrorCode) HTTPStatus() int {
 
 // Tag returns an errors.TagValue for this code.
 func (c ErrorCode) Tag() errors.TagValue {
-	return ErrorTag.With(c)
+	return errors.TagValue{Key: errorCodeTagKey, Value: c}
 }
+
+var errorCodeTagKey = errors.NewTagKey("holds a milo ErrorCode")
 
 // GenerateErrorTagValue implements errors.TagValueGenerator so that ErrorCodes
 // can be used like:
 //   errors.Annotate(err).Tag(CodeNotFound)
 //   errors.New("terrible thing", CodeNotFound)
 func (c ErrorCode) GenerateErrorTagValue() errors.TagValue {
-	return ErrorTag.With(c)
+	return c.Tag()
 }
 
-type errorTag struct{ Key errors.TagKey }
-
-func (t *errorTag) In(err error) ErrorCode {
+// ErrorCodeIn returns the ErrorCode in err. If err is nil, returns CodeOK.
+// If not present, returns CodeUnknown.
+func ErrorCodeIn(err error) ErrorCode {
 	if err == nil {
 		return CodeOK
 	}
-	v, ok := errors.TagValueIn(t.Key, err)
-	if ok {
+	if v, ok := errors.TagValueIn(errorCodeTagKey, err); ok {
 		return v.(ErrorCode)
 	}
 	return CodeUnknown
 }
-
-func (t *errorTag) With(value ErrorCode) errors.TagValue {
-	return errors.TagValue{Key: t.Key, Value: value}
-}
-
-// ErrorTag should be used to tag errors in the milo ecosystem to categorize
-// them so they can be rendered properly in the frontend.
-var ErrorTag = errorTag{errors.NewTagKey("holds a milo ErrorCode")}

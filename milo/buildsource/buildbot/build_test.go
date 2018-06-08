@@ -111,7 +111,7 @@ func TestBuild(t *testing.T) {
 					Internal:    true,
 				})
 				_, err := Build(c, "fake", "fake", 1)
-				So(common.ErrorTag.In(err), ShouldEqual, common.CodeUnauthorized)
+				So(common.ErrorCodeIn(err), ShouldEqual, common.CodeUnauthorized)
 			})
 		})
 	})

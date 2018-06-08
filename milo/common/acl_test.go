@@ -101,7 +101,7 @@ func TestACL(t *testing.T) {
 					ok, err := IsAllowed(c, "misconfigured")
 					So(ok, ShouldEqual, false)
 					So(err, ShouldNotBeNil)
-					So(ErrorTag.In(err), ShouldEqual, CodeNotFound)
+					So(ErrorCodeIn(err), ShouldEqual, CodeNotFound)
 				})
 			})
 

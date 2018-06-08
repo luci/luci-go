@@ -21,7 +21,7 @@ func ErrorHandler(c *router.Context, err error) {
 	// 'container'; i.e. a build may link to its builder, a builder to its
 	// master/bucket, etc.
 
-	code := common.ErrorTag.In(err)
+	code := common.ErrorCodeIn(err)
 	switch code {
 	case common.CodeUnknown:
 		errors.Log(c.Context, err)
