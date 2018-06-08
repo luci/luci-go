@@ -16,6 +16,7 @@ package metadata
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -328,7 +329,11 @@ func mergeIntoPrefixMetadata(c context.Context, prefix string, ents []*packageAC
 	md := api.PrefixMetadata{Prefix: prefix} // to be returned if not empty
 
 	for i, r := range legacyRoles {
-		pkgACL := ents[i] // an instance of *packageACL
+		pkgACL := ents[i]
+		if pkgACL == nil {
+			continue // not present, no ACL for role 'r'
+		}
+
 		if expectedID := r + ":" + prefix; pkgACL.ID != expectedID {
 			panic(fmt.Sprintf("expecting key %q, got %q", expectedID, pkgACL.ID))
 		}
@@ -446,4 +451,215 @@ func isEqualStrSlice(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Metadata graph used by VisitMetadata implementation.
+
+// metadataNode is a single node in the metadata tree.
+//
+// It can be in non-frozen (== under construction) and frozen (== constructed)
+// states.
+type metadataNode struct {
+	prefix string        // this node's full prefix, e.g. "a/b/c"
+	acls   []*packageACL // exactly len(legacyRoles) items with node's ACLs, nil when frozen
+
+	parent   *metadataNode
+	children map[string]*metadataNode // direct children of the node
+
+	// md is finalized metadata derived from 'acls' in 'freeze'.
+	//
+	// It may be nil for intermediary nodes that do not have metadata attached to
+	// them.
+	md *api.PrefixMetadata
+}
+
+// assertFrozen panics if the node is not frozen yet.
+func (n *metadataNode) assertFrozen() {
+	if n.acls != nil {
+		panic("not frozen yet")
+	}
+}
+
+// assertNonFrozen panics if the node is already frozen.
+func (n *metadataNode) assertNonFrozen() {
+	if n.acls == nil {
+		panic("frozen already")
+	}
+}
+
+// child returns a direct child node, creating it if necessary.
+func (n *metadataNode) child(name string) *metadataNode {
+	if c, ok := n.children[name]; ok {
+		return c
+	}
+	n.assertNonFrozen()
+	if n.children == nil {
+		n.children = make(map[string]*metadataNode, 1)
+	}
+	c := &metadataNode{
+		parent: n,
+		acls:   make([]*packageACL, len(legacyRoles)),
+	}
+	if n.prefix == "" {
+		c.prefix = name
+	} else {
+		c.prefix = n.prefix + "/" + name
+	}
+	n.children[name] = c
+	return c
+}
+
+// attachACL attaches a packageACL to this node.
+//
+// All such attached ACLs are merged into single PrefixMetadata in 'freeze'.
+func (n *metadataNode) attachACL(role string, e *packageACL) {
+	n.assertNonFrozen()
+
+	// 'acls' are ordered by legacyRoles. Insert 'e' into the corresponding slot.
+	// Such ordering is required by mergeIntoPrefixMetadata used by 'freeze'.
+	for i, r := range legacyRoles {
+		if r == role {
+			if n.acls[i] != nil {
+				panic(fmt.Sprintf("metadata for role %q at %q is already attached", role, n.prefix))
+			}
+			n.acls[i] = e
+			return
+		}
+	}
+
+	// 'attachACL' is called only with roles validated by packageACL.parseKey(),
+	// so this is impossible.
+	panic(fmt.Sprintf("unexpected impossible role %q", role))
+}
+
+// freeze marks the node and its subtree as fully constructed, calculating their
+// PrefixMetadata from attached ACLs.
+//
+// The context is used only for logging.
+func (n *metadataNode) freeze(c context.Context) {
+	n.assertNonFrozen()
+
+	// md may be already non-nil for the root, this is fine.
+	if n.md == nil {
+		n.md = mergeIntoPrefixMetadata(c, n.prefix, n.acls)
+	}
+	n.acls = nil // mark as frozen, release unnecessary memory
+
+	for _, child := range n.children {
+		child.freeze(c)
+	}
+}
+
+// metadata returns this node's and all inherited metadata.
+//
+// Root metadata first. The return value is never nil. If there's no metadata,
+// returns non-nil empty slice.
+func (n *metadataNode) metadata() (md []*api.PrefixMetadata) {
+	n.assertFrozen()
+	if n.parent != nil {
+		md = n.parent.metadata()
+	} else {
+		md = make([]*api.PrefixMetadata, 0, 32) // 32 is picked arbitrarily
+	}
+	if n.md != nil {
+		md = append(md, n.md)
+	}
+	return
+}
+
+// traverse does depth-first traversal of the node's subtree starting from self.
+//
+// 'md', if non-nil, is metadata from all previous parents (starting from the
+// root). If it is nil, all inherited metadata will be calculated from scratch.
+//
+// Note that non-nil empty 'md' slice is a valid value (it means there's nothing
+// to inherit), no recalculation will be done in this case.
+//
+// Children are visited in lexicographical order.
+func (n *metadataNode) traverse(md []*api.PrefixMetadata, cb func(*metadataNode, []*api.PrefixMetadata) (bool, error)) error {
+	n.assertFrozen()
+
+	if md == nil {
+		md = n.metadata() // calculate from scratch
+	} else {
+		if n.md != nil {
+			md = append(md, n.md) // just extend what we have
+		}
+	}
+
+	switch cont, err := cb(n, md); {
+	case err != nil:
+		return err
+	case !cont:
+		return nil
+	}
+
+	keys := make([]string, 0, len(n.children))
+	for k := range n.children {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		if err := n.children[k].traverse(md, cb); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// metadataGraph is a in-memory metadata graph used by VisitMetadata.
+type metadataGraph struct {
+	root *metadataNode // matches prefix ""
+}
+
+// init initializes the root node.
+func (g *metadataGraph) init(root *api.PrefixMetadata) {
+	if root != nil && root.Prefix != "" {
+		panic("the root node metadata should have empty prefix")
+	}
+	g.root = &metadataNode{
+		acls: make([]*packageACL, len(legacyRoles)),
+		md:   root,
+	}
+}
+
+// node returns a node at the given path, constructing it if necessary.
+//
+// 'path' here has a form "a/b/c", relative to the absolute root ("").
+func (g *metadataGraph) node(path string) *metadataNode {
+	cur := g.root
+	if path != "" {
+		for _, elem := range strings.Split(path, "/") {
+			cur = cur.child(elem)
+		}
+	}
+	return cur
+}
+
+// insert attaches ACL in the given entities to nodes in the graph.
+//
+// Silently ignores empty entities (based on ModifiedTS value). Logs and ignores
+// broken ones. The context is used only for logging.
+func (g *metadataGraph) insert(c context.Context, ents []*packageACL) {
+	for _, e := range ents {
+		if e.ModifiedTS.IsZero() {
+			continue // zero body, no such entity in the datastore, skip
+		}
+		role, pfx, err := e.parseKey()
+		if err != nil {
+			logging.Errorf(c, "Skipping bad PackageACL entity - %s", err)
+			continue
+		}
+		g.node(pfx).attachACL(role, e)
+	}
+}
+
+// freeze finalizes graph construction by calculating all PrefixMetadata items.
+//
+// The graph is not modifiable after this point, but it becomes traversable.
+// The context is used only for logging.
+func (g *metadataGraph) freeze(c context.Context) {
+	g.root.freeze(c)
 }
