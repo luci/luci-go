@@ -106,16 +106,12 @@ func isRecipientAllowed(c context.Context, recipient string, build *Build) bool 
 	return false
 }
 
-// Notify discovers, consolidates and filters recipients from a Builder's notifications,
-// and 'email_notify' properties, then dispatches notifications if necessary.
-// Does not dispatch a notification for same email, template and build more than
-// once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notification, oldStatus buildbucketpb.Status, build *Build) error {
-	c = datastore.WithoutTransaction(c)
-
+// ExtractRecipients extracts email recipients to send from a set of notifications, using the old
+// status and the new status to determine which notifications actually got triggered.
+func ExtractRecipients(notifications notifypb.Notifications, oldStatus, newStatus buildbucketpb.Status) []EmailNotify {
 	var recipients []EmailNotify
-	for _, notification := range notifications {
-		if !shouldNotify(notification, oldStatus, build.Status) {
+	for _, notification := range notifications.GetNotifications() {
+		if !shouldNotify(notification, oldStatus, newStatus) {
 			continue
 		}
 		for _, recipient := range notification.GetEmail().GetRecipients() {
@@ -125,6 +121,15 @@ func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notif
 			})
 		}
 	}
+	return recipients
+}
+
+// Notify consolidates the given recipients with those from the 'email_notify' properties,
+// filters out unauthorized recipients, then dispatches notifications if necessary.
+// Does not dispatch a notification for same email, template and build more than
+// once. Ignores current transaction in c, if any.
+func Notify(c context.Context, d *tq.Dispatcher, build *Build, recipients []EmailNotify) error {
+	c = datastore.WithoutTransaction(c)
 
 	// Notify based on build request properties.
 	recipients = append(recipients, build.EmailNotify...)
