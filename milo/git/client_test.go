@@ -36,7 +36,7 @@ func TestTagError(t *testing.T) {
 		cUser := auth.WithState(c, &authtest.FakeState{Identity: "user:user@example.com"})
 		cAnon := auth.WithState(c, &authtest.FakeState{Identity: identity.AnonymousIdentity})
 
-		So(common.ErrorTag.In(tagError(cAnon, errGRPCNotFound)), ShouldEqual, common.CodeUnauthorized)
-		So(common.ErrorTag.In(tagError(cUser, errGRPCNotFound)), ShouldEqual, common.CodeNotFound)
+		So(common.ErrorCodeIn(tagError(cAnon, errGRPCNotFound)), ShouldEqual, common.CodeUnauthorized)
+		So(common.ErrorCodeIn(tagError(cUser, errGRPCNotFound)), ShouldEqual, common.CodeNotFound)
 	})
 }
