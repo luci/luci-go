@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43a6342c_b545c85c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T15:54:30Z",
+      "side": 1,
+      "message": "we still do have some repetition. Can we move this above, so that there is only one updatedBuiler variable in this func?",
+      "range": {
+        "startLine": 224,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 50
+      },
+      "revId": "258bf2fae3360a38f31b202992297e1f646dcd02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
