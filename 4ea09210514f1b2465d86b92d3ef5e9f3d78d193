@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "29398cb9_89ff320d",
+        "filename": "milo/buildsource/buildbucket/builder.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-08T21:37:54Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/#/c/infra/luci/luci-go/+/1093524",
+      "parentUuid": "49c32c80_8fa03086",
+      "range": {
+        "startLine": 211,
+        "startChar": 18,
+        "endLine": 211,
+        "endChar": 30
+      },
+      "revId": "4ea09210514f1b2465d86b92d3ef5e9f3d78d193",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5bfeb81e_4703ee1e",
         "filename": "milo/buildsource/buildbucket/builder.go",
         "patchSetId": 3
