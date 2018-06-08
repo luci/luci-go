@@ -187,3 +187,4 @@ func BucketPermissions(c context.Context, buckets ...string) (bbAccess.Permissio
 
 	return perms, nil
 }
+

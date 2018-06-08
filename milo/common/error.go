@@ -92,3 +92,27 @@ func ErrorCodeIn(err error) ErrorCode {
 	}
 	return CodeUnknown
 }
+
+// HTTPRedirect is a redirect HTTP response.
+type HTTPRedirect struct {
+	URL    string // redirect target
+	Status int    // if 0, 302 is used.
+}
+
+var redirectTagKey = errors.NewTagKey("HTTP redirect. Holds new URL.")
+
+// GenerateErrorTagValue implements errors.TagValueGenerator so that ErrorCodes
+// can be used like:
+//   errors.Annotate(err).Tag(HTTPRedirect{Location: "https://example.com"})
+func (r HTTPRedirect) GenerateErrorTagValue() errors.TagValue {
+	return errors.TagValue{Key: redirectTagKey, Value: r}
+}
+
+// HTTPRedirectIn returns an HTTPRedirect present in err.
+func HTTPRedirectIn(err error) *HTTPRedirect {
+	if v, ok := errors.TagValueIn(redirectTagKey, err); ok {
+		r := v.(HTTPRedirect)
+		return &r
+	}
+	return nil
+}
