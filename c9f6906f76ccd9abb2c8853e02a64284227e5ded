@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5cbf042c_9224dbf6",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T16:03:45Z",
+      "side": 1,
+      "message": "Build is a buildbucketpb.Build plus recipients.\nrecipients param is recipients.\n\ni think it would be simpler if we either accepted all recipients in build.EmailNotify, or accepted buildbucketpb.Build and recipients (I personally prefer latter).\n\nand if we squint enough, createEmailTasks does not use Build.EmailNotify. It only uses the buildbucketpb.Build, so same problem applies to createEmailTasks",
+      "range": {
+        "startLine": 131,
+        "startChar": 49,
+        "endLine": 131,
+        "endChar": 87
+      },
+      "revId": "c9f6906f76ccd9abb2c8853e02a64284227e5ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b7cfb9c_266e4d72",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T16:03:45Z",
+      "side": 1,
+      "message": "where is this defined?",
+      "range": {
+        "startLine": 133,
+        "startChar": 27,
+        "endLine": 133,
+        "endChar": 56
+      },
+      "revId": "c9f6906f76ccd9abb2c8853e02a64284227e5ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f1f3ddb_f8113be3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 261,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T16:03:45Z",
+      "side": 1,
+      "message": "can we dedup with L258",
+      "revId": "c9f6906f76ccd9abb2c8853e02a64284227e5ded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
