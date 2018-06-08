@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d8c3c35d_f84b7b06",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-08T23:47:18Z",
+      "side": 1,
+      "message": "I\u0027d use url.URL, it\u0027s more structured",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b3f3676_2dddd1c3",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-08T23:47:18Z",
+      "side": 1,
+      "message": "I feel like this is overbuilt, and introduces potential for errors.  There\u0027s really only two practical choices anyways, 302 (temporary) and 301 (cacheable).  Consider making the API surface smaller by changing this to a \"Permanent bool\" (or \"Cacheable bool\")",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1697a6db_ef06adb8",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-08T23:47:18Z",
+      "side": 1,
+      "message": "nit: Holds a",
+      "range": {
+        "startLine": 103,
+        "startChar": 54,
+        "endLine": 103,
+        "endChar": 60
+      },
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c673579_a813dd18",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-08T23:47:18Z",
+      "side": 1,
+      "message": "Maybe add in \nfunc (r HTTPRedirect) Apply(err error) error {}\n\nerrors.BoolTag does it and it seems like a nice interface.",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e460327_68c81e11",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-08T23:47:18Z",
+      "side": 1,
+      "message": "Pointer usage consistency: Either use a pointer in 108, or just use the value here.  Looks like the ErrorCode deals with values, so might as well make this return a value.",
+      "range": {
+        "startLine": 113,
+        "startChar": 32,
+        "endLine": 113,
+        "endChar": 44
+      },
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
