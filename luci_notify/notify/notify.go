@@ -34,8 +34,14 @@ import (
 	"go.chromium.org/luci/luci_notify/internal"
 )
 
+// emailNotify contains information for delivery and personalization of notification emails.
+type emailNotify struct {
+	Email    string
+	Template string
+}
+
 // createEmailTasks constructs EmailTasks to be dispatched onto the task queue.
-func createEmailTasks(c context.Context, recipients []EmailNotify, oldStatus buildbucketpb.Status, build *Build) ([]*tq.Task, error) {
+func createEmailTasks(c context.Context, recipients []emailNotify, oldStatus buildbucketpb.Status, build *buildbucketpb.Build) ([]*tq.Task, error) {
 	// Get templates.
 	bundle, err := getBundle(c, build.Builder.Project)
 	if err != nil {
@@ -44,7 +50,7 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, oldStatus bui
 
 	// Generate emails.
 	input := &emailTemplateInput{
-		Build:     &build.Build,
+		Build:     build,
 		OldStatus: oldStatus,
 	}
 	// An EmailTask with subject and body per template name.
@@ -84,8 +90,20 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, oldStatus bui
 	return tasks, nil
 }
 
-// shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *notifypb.Notification, oldStatus, newStatus buildbucketpb.Status) bool {
+
+// isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
+func isRecipientAllowed(c context.Context, recipient string, build *buildbucketpb.Build) bool {
+	// TODO(mknyszek): Do a real ACL check here.
+	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
+		return true
+	}
+	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", recipient, build.Id)
+	return false
+}
+
+
+// shouldNotify is the predicate function for whether a Notification's trigger conditions have been met.
+func shouldNotify(n *buildbucketpb.Notification, oldStatus, newStatus buildbucketpb.Status) bool {
 	switch {
 	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
 	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
@@ -96,38 +114,75 @@ func shouldNotify(n *notifypb.Notification, oldStatus, newStatus buildbucketpb.S
 	return true
 }
 
-// isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
-func isRecipientAllowed(c context.Context, recipient string, build *Build) bool {
-	// TODO(mknyszek): Do a real ACL check here.
-	if strings.HasSuffix(recipient, "@google.com") || strings.HasSuffix(recipient, "@chromium.org") {
-		return true
+func extractRecipientsFromBuild(build *buildbucketpb.Build) []emailNotify {
+	notifyField, ok := build.Input.Properties.Fields["email_notify"]
+	if !ok {
+		return nil
 	}
-	logging.Warningf(c, "Address %q is not allowed to be notified of build %d", recipient, build.Id)
-	return false
+	emailNotifyList := notifyField.GetListValue()
+	if emailNotifyList == nil {
+		return nil
+	}
+	recipients := make([]emailNotify, 0, len(emailNotifyList))
+	for _, value := range emailNotifyList.Values {
+		notifyValue := value.GetStructValue()
+		if notifyValue == nil {
+			continue
+		}
+		email, ok := notifyValue.Fields["email"]
+		if !ok {
+			continue
+		}
+		template, ok := notifyValue.Fields["template"]
+		if !ok {
+			continue
+		}
+		recipients = append(recipients, emailNotify{
+			Email: email,
+			Template: template,
+		})
+	}
+	return recipients
 }
 
-// Notify discovers, consolidates and filters recipients from a Builder's notifications,
-// and 'email_notify' properties, then dispatches notifications if necessary.
-// Does not dispatch a notification for same email, template and build more than
-// once. Ignores current transaction in c, if any.
-func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notification, oldStatus buildbucketpb.Status, build *Build) error {
-	c = datastore.WithoutTransaction(c)
-
-	var recipients []EmailNotify
-	for _, notification := range notifications {
-		if !shouldNotify(notification, oldStatus, build.Status) {
+func extractRecipientsFromNotifications(notifications notifypb.Notifications, oldStatus, newStatus buildbucketpb.Status) []emailNotify {
+	n := notifications.GetNotifications()
+	recipients := make([]emailNotify, 0, len(n))
+	for _, notification := range n {
+		if !shouldNotify(notification, oldStatus, newStatus) {
 			continue
 		}
 		for _, recipient := range notification.GetEmail().GetRecipients() {
-			recipients = append(recipients, EmailNotify{
+			recipients = append(recipients, emailNotify{
 				Email:    recipient,
 				Template: notification.Template,
 			})
 		}
 	}
+	return recipients
+}
 
-	// Notify based on build request properties.
-	recipients = append(recipients, build.EmailNotify...)
+// Notifier encapsulates the state necessary to construct a set of recipients and send
+// notifications. Note that the only field that must be set is Build.
+func Notifier struct {
+	Build *buildbucketpb.Build
+	OldStatus buildbucketpb.Status
+	Notifications notifypb.Notifications
+}
+
+// Notify consolidates the given recipients with those from the 'email_notify' properties,
+// filters out unauthorized recipients, then dispatches notifications if necessary.
+// Does not dispatch a notification for same email, template and build more than
+// once. Ignores current transaction in c, if any.
+func (n *Notifier) Notify(c context.Context, d *tq.Dispatcher) error {
+	c = datastore.WithoutTransaction(c)
+
+	if n.Build == nil {
+		return errors.Reason("no build found to notify about").Err()
+	}
+
+	recipients := extractRecipientsFromNotifications(n.Notifications, n.OldStatus, n.Build.Status)
+	recipients = append(recipients, extractRecipientsFromBuild(n.Build))
 
 	// Remove unallowed recipients.
 	allRecipients := recipients
@@ -142,7 +197,7 @@ func Notify(c context.Context, d *tq.Dispatcher, notifications []*notifypb.Notif
 		logging.Infof(c, "Nobody to notify...")
 		return nil
 	}
-	tasks, err := createEmailTasks(c, recipients, oldStatus, build)
+	tasks, err := createEmailTasks(c, recipients, n.OldStatus, n.Build)
 	if err != nil {
 		return errors.Annotate(err, "failed to create email tasks").Err()
 	}

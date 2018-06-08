@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
@@ -53,24 +54,53 @@ var (
 	}
 )
 
-func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
-	ret := &Build{
-		Build: buildbucketpb.Build{
-			Builder: &buildbucketpb.Builder_ID{
-				Project: "chromium",
-				Bucket:  "ci",
-				Builder: builder,
+func emailNotifyToProperties(notifyEmails ...EmailNotify) *structpb.Struct {
+	values := make([]*Value, 0, len(notifyEmails))
+	for _, notifyEmail := range notifyEmails {
+		fields := make(map[string]*structpb.Value)
+		fields["email"] = &structpb.Value{
+			Kind: &structpb.Value_StringValue{
+				StringValue: notifyEmail.Email
 			},
-			Status: status,
-			Input: &buildbucketpb.Build_Input{
-				GitilesCommit: &buildbucketpb.GitilesCommit{
-					Host:    "chromium.googlesource.com",
-					Project: "chromium/src",
-					Id:      revision,
-				},
+		}
+		fields["template"] = &structpb.Value{
+			Kind: &structpb.Value_StringValue{
+				StringValue: notifyEmail.Template
+			},
+		}
+		values = append(values, &structpb.Value{
+			Fields: fields,
+		})
+	}
+	s := &structpb.Struct{
+		Fields: make(map[string]*structpb.Value),
+	}
+	s.Fields["email_notify"] = &structpb.Value{
+		Kind: &structpb.Value_ListValue{
+			ListValue: &structpb.ListValue{
+				Values: values,
+			}
+		}
+	}
+	return s
+}
+
+func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *buildbucketpb.Build {
+	ret := &buildbucketpb.Build{
+		Builder: &buildbucketpb.Builder_ID{
+			Project: "chromium",
+			Bucket:  "ci",
+			Builder: builder,
+		},
+		Status: status,
+		Input: &buildbucketpb.Build_Input{
+			Properties:    emailNotifyToProperties(notifyEmails...),
+			GitilesCommit: &buildbucketpb.GitilesCommit{
+				Host:    "chromium.googlesource.com",
+				Project: "chromium/src",
+				Id:      revision,
 			},
 		},
-		EmailNotify: notifyEmails,
 	}
 	ret.Build.CreateTime, _ = ptypes.TimestampProto(creationTime)
 	return ret
@@ -152,7 +182,7 @@ func TestHandleBuild(t *testing.T) {
 		newTime := time.Date(2015, 2, 3, 12, 58, 7, 0, time.UTC)
 
 		dispatcher, tqTestable := createMockTaskQueue(c)
-		assertTasks := func(build *Build, expectedRecipients ...EmailNotify) {
+		assertTasks := func(build *buildbucketpb.Build, expectedRecipients ...EmailNotify) {
 			// Test handleBuild.
 			err := handleBuild(c, dispatcher, build, mockHistoryFunc(testCommits))
 			So(err, ShouldBeNil)
@@ -171,7 +201,7 @@ func TestHandleBuild(t *testing.T) {
 			So(actualEmails, ShouldResemble, expectedEmails)
 		}
 
-		verifyBuilder := func(build *Build, revision string) {
+		verifyBuilder := func(build *buildbucketpb.Build, revision string) {
 			datastore.GetTestable(c).CatchupIndexes()
 			id := getBuilderID(build)
 			builder := config.Builder{
@@ -229,15 +259,13 @@ func TestHandleBuild(t *testing.T) {
 		})
 
 		Convey(`no revision`, func() {
-			build := &Build{
-				Build: buildbucketpb.Build{
-					Builder: &buildbucketpb.Builder_ID{
-						Project: "chromium",
-						Bucket:  "ci",
-						Builder: "test-builder-1",
-					},
-					Status: buildbucketpb.Status_SUCCESS,
+			build := &buildbucketpb.Build{
+				Builder: &buildbucketpb.Builder_ID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "test-builder-1",
 				},
+				Status: buildbucketpb.Status_SUCCESS,
 			}
 			assertTasks(build)
 			grepLog("revision")
@@ -260,22 +288,20 @@ func TestHandleBuild(t *testing.T) {
 			assertTasks(build, failEmail, propEmail)
 			verifyBuilder(build, rev1)
 
-			newBuild := &Build{
-				Build: buildbucketpb.Build{
-					Builder: &buildbucketpb.Builder_ID{
-						Project: "chromium",
-						Bucket:  "ci",
-						Builder: "test-builder-1",
-					},
-					Status: buildbucketpb.Status_SUCCESS,
-					Input: &buildbucketpb.Build_Input{
-						GitilesCommit: &buildbucketpb.GitilesCommit{
-							Host:    "chromium.googlesource.com",
-							Project: "example/src",
-							Id:      rev2,
-						},
-					},
+			newBuild := &buildbucketpb.Build{
+				Builder: &buildbucketpb.Builder_ID{
+					Project: "chromium",
+					Bucket:  "ci",
+					Builder: "test-builder-1",
 				},
+				Status: buildbucketpb.Status_SUCCESS,
+				Input: &buildbucketpb.Build_Input{
+					GitilesCommit: &buildbucketpb.GitilesCommit{
+						Host:    "chromium.googlesource.com",
+						Project: "example/src",
+						Id:      rev2,
+					},
+				}
 			}
 			assertTasks(newBuild, failEmail, propEmail)
 			grepLog("triggered by commit")

@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func getBuilderID(b *Build) string {
+func getBuilderID(b *buildbucketpb.Build) string {
 	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
 }
 
@@ -82,27 +82,6 @@ func commitIndex(commits []*gitpb.Commit, revision string) int {
 	return -1
 }
 
-// EmailNotify contains information for delivery and personalization of notification emails.
-type EmailNotify struct {
-	Email    string `json:"email"`
-	Template string `json:"template"`
-}
-
-func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
-	if parametersJSON == "" {
-		return nil, nil
-	}
-	// json equivalent: {"email_notify": [{"email": "<address>"}, ...]}
-	var output struct {
-		EmailNotify []EmailNotify `json:"email_notify"`
-	}
-
-	if err := json.NewDecoder(strings.NewReader(parametersJSON)).Decode(&output); err != nil {
-		return nil, errors.Annotate(err, "invalid msg.ParametersJson").Err()
-	}
-	return output.EmailNotify, nil
-}
-
 // handleBuild processes a Build and sends appropriate notifications.
 //
 // This function should serve as documentation of the process of going from
@@ -112,7 +91,7 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 // history is a function that contacts gitiles to obtain the git history for
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
-func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
+func handleBuild(c context.Context, d *tq.Dispatcher, build *buildbucketpb.Build, history HistoryFunc) error {
 	project := &config.Project{Name: build.Builder.Project}
 	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
@@ -121,6 +100,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		return nil // This project is not tracked by luci-notify
 	}
 
+	notifier := Notifier{Build: build}
 	gCommit := build.Input.GetGitilesCommit()
 	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
@@ -138,28 +118,33 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
-			return Notify(c, d, nil, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			return notifier.Notify(c, d)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
+
+		// Update the notifier with the builder's notifications.
+		notifier.Notifications = builder.Notifications
 
 		// Create a new builder as a copy of the old, updated with build information.
 		updatedBuilder = builder
 		updatedBuilder.Status = build.Status
 		updatedBuilder.StatusBuildTime = buildCreateTime
 
+		var recipients []EmailNotify
 		switch {
 		case builder.Repository == "":
 			// Handle the case where there's no repository being tracked.
-			notifications := builder.Notifications.GetNotifications()
-			if builder.StatusBuildTime.Before(buildCreateTime) {
-				if err := Notify(c, d, notifications, builder.Status, build); err != nil {
-					return err
-				}
-				return datastore.Put(c, &updatedBuilder)
+			if builder.StatusBuildTime.After(buildCreateTime) {
+				logging.Infof(c, "Found build with old time")
+				return notifier.Notify(c, d)
 			}
-			logging.Infof(c, "Found build with old time")
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			// Explicitly set OldStatus to enable on_change notifications.
+			notifier.OldStatus = builder.Status
+			if err := notifier.Notify(c, d); err != nil {
+				return err
+			}
+			return datastore.Put(c, &updatedBuilder)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
@@ -174,7 +159,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// is uninitialized. Notify about the build as best as we can and then store
 		// the updated builder.
 		if builder.StatusRevision == "" {
-			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build); err != nil {
+			if err := notifier.Notify(c, d); err != nil {
 				return err
 			}
 			return datastore.Put(c, &updatedBuilder)
@@ -201,7 +186,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		return Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+		return notifier.Notify(c, d)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -226,6 +211,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// we're updating.
 		updatedBuilder.Notifications = builder.Notifications
 
+		// Update the notifier's notifications too, since that may have changed.
+		notifier.Notifications = builder.Notifications
+
 		// If there's been no change in status, don't bother updating.
 		if build.Status == builder.Status {
 			return nil
@@ -248,12 +236,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			outOfOrder = true
 		}
 
-		notifications := builder.Notifications.GetNotifications()
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			return notifier.Notify(c, d)
 		}
-		if err := Notify(c, d, notifications, builder.Status, build); err != nil {
+		notifier.OldStatus = builder.Status
+		if err := notifier.Notify(c, d); err != nil {
 			return err
 		}
 		return datastore.Put(c, &updatedBuilder)
@@ -292,14 +280,8 @@ func BuildbucketPubSubHandler(ctx *router.Context, d *tq.Dispatcher) error {
 	}
 }
 
-// Build is buildbucketpb.Build along with the parsed 'email_notify' values.
-type Build struct {
-	buildbucketpb.Build
-	EmailNotify []EmailNotify
-}
-
 // extractBuild constructs a Build from the PubSub HTTP request.
-func extractBuild(c context.Context, r *http.Request) (*Build, error) {
+func extractBuild(c context.Context, r *http.Request) (*buildbucketpb.Build, error) {
 	// sent by pubsub.
 	// This struct is just convenient for unwrapping the json message
 	var msg struct {
@@ -341,21 +323,9 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		Id:     message.Build.Id,
 		Fields: buildFieldMask,
 	})
-	switch {
-	case status.Code(err) == codes.NotFound:
+	if status.Code(err) == codes.NotFound {
 		logging.Warningf(c, "no access to build %d", message.Build.Id)
 		return nil, nil
-	case err != nil:
-		return nil, errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
 	}
-
-	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not decode email_notify").Err()
-	}
-
-	return &Build{
-		Build:       *res,
-		EmailNotify: emails,
-	}, nil
+	return res, errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
 }

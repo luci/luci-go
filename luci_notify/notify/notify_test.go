@@ -40,16 +40,14 @@ func TestNotify(t *testing.T) {
 		c = gologger.StdConfig.Use(c)
 		c = logging.SetLevel(c, logging.Debug)
 
-		build := &Build{
-			Build: buildbucketpb.Build{
-				Id: 54,
-				Builder: &buildbucketpb.Builder_ID{
-					Project: "chromium",
-					Bucket:  "ci",
-					Builder: "linux-rel",
-				},
-				Status: buildbucketpb.Status_SUCCESS,
+		build := &buildbucketpb.Build{
+			Id: 54,
+			Builder: &buildbucketpb.Builder_ID{
+				Project: "chromium",
+				Bucket:  "ci",
+				Builder: "linux-rel",
 			},
+			Status: buildbucketpb.Status_SUCCESS,
 		}
 
 		// Put Project and EmailTemplate entities.
