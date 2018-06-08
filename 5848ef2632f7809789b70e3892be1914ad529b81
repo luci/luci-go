@@ -22,6 +22,52 @@
       "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e7e0e76f_c5498ba0",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 490,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-08T21:23:37Z",
+      "side": 1,
+      "message": ":) 👍",
+      "range": {
+        "startLine": 477,
+        "startChar": 0,
+        "endLine": 490,
+        "endChar": 0
+      },
+      "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83ed1100_6136fcba",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 523,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-08T21:23:37Z",
+      "side": 1,
+      "message": "shouldn\u0027t you assert that n.acls[i] is nil? Or is overwriting intended?",
+      "range": {
+        "startLine": 523,
+        "startChar": 3,
+        "endLine": 523,
+        "endChar": 16
+      },
+      "revId": "5848ef2632f7809789b70e3892be1914ad529b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
