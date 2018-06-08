@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5ab7606_0d6bba9a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-08T15:50:10Z",
+      "side": 1,
+      "message": "good catch!",
+      "revId": "d34eda4183573b7ea6012112da7c87819b00a525",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
