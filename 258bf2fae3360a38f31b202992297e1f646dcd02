@@ -22,6 +22,30 @@
       "revId": "258bf2fae3360a38f31b202992297e1f646dcd02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4a5b7394_4d48d3f7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T23:14:34Z",
+      "side": 1,
+      "message": "I tried a little harder; below we basically have to explicitly update fields that could\u0027ve been updated, but it does seem somewhat simpler?",
+      "parentUuid": "43a6342c_b545c85c",
+      "range": {
+        "startLine": 224,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 50
+      },
+      "revId": "258bf2fae3360a38f31b202992297e1f646dcd02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
