@@ -334,6 +334,166 @@ func TestLegacyMetadata(t *testing.T) {
 	})
 }
 
+func TestVisitMetadata(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+		ts := time.Unix(1525136124, 0).UTC()
+
+		impl := legacyStorageImpl{}
+
+		add := func(role, pfx, group string) {
+			So(datastore.Put(ctx, &packageACL{
+				ID:         role + ":" + pfx,
+				Parent:     rootKey(ctx),
+				ModifiedTS: ts,
+				Groups:     []string{group},
+			}), ShouldBeNil)
+		}
+
+		type visited struct {
+			prefix string
+			md     []string // pfx:role:principal, sorted
+		}
+
+		visit := func(pfx string) (res []visited) {
+			err := impl.VisitMetadata(ctx, pfx, func(p string, md []*api.PrefixMetadata) (bool, error) {
+				extract := []string{}
+				for _, m := range md {
+					for _, acl := range m.Acls {
+						for _, p := range acl.Principals {
+							extract = append(extract, fmt.Sprintf("%s:%s:%s", m.Prefix, acl.Role, p))
+						}
+					}
+				}
+				res = append(res, visited{p, extract})
+				return true, nil
+			})
+			So(err, ShouldBeNil)
+			return
+		}
+
+		add("OWNER", "a", "o-a")
+		add("READER", "a", "r-a")
+
+		add("OWNER", "a/b/c", "o-abc")
+		add("READER", "a/b/c", "r-abc")
+		add("WRITER", "a/b/c", "w-abc")
+
+		add("READER", "a/b/c/d", "r-abcd")
+
+		add("OWNER", "ab", "o-ab")
+		add("READER", "ab", "r-ab")
+
+		Convey("Root listing", func() {
+			So(visit(""), ShouldResemble, []visited{
+				{
+					"", []string{
+						":OWNER:group:administrators",
+					},
+				},
+				{
+					"a", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+					},
+				},
+				{
+					"a/b/c", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+						"a/b/c:OWNER:group:o-abc",
+						"a/b/c:WRITER:group:w-abc",
+						"a/b/c:READER:group:r-abc",
+					},
+				},
+				{
+					"a/b/c/d", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+						"a/b/c:OWNER:group:o-abc",
+						"a/b/c:WRITER:group:w-abc",
+						"a/b/c:READER:group:r-abc",
+						"a/b/c/d:READER:group:r-abcd",
+					},
+				},
+				{
+					"ab", []string{
+						":OWNER:group:administrators",
+						"ab:OWNER:group:o-ab",
+						"ab:READER:group:r-ab",
+					},
+				},
+			})
+		})
+
+		Convey("Prefix listing", func() {
+			So(visit("a"), ShouldResemble, []visited{
+				{
+					"a", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+					},
+				},
+				{
+					"a/b/c", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+						"a/b/c:OWNER:group:o-abc",
+						"a/b/c:WRITER:group:w-abc",
+						"a/b/c:READER:group:r-abc",
+					},
+				},
+				{
+					"a/b/c/d", []string{
+						":OWNER:group:administrators",
+						"a:OWNER:group:o-a",
+						"a:READER:group:r-a",
+						"a/b/c:OWNER:group:o-abc",
+						"a/b/c:WRITER:group:w-abc",
+						"a/b/c:READER:group:r-abc",
+						"a/b/c/d:READER:group:r-abcd",
+					},
+				},
+			})
+		})
+
+		Convey("Missing prefix listing", func() {
+			So(visit("z/z/z"), ShouldResemble, []visited{
+				{
+					"z/z/z", []string{":OWNER:group:administrators"},
+				},
+			})
+		})
+
+		Convey("Callback return value is respected, stopping right away", func() {
+			seen := []string{}
+			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
+				seen = append(seen, p)
+				return false, nil
+			})
+			So(err, ShouldBeNil)
+			So(seen, ShouldResemble, []string{"a"})
+		})
+
+		Convey("Callback return value is respected, stopping later", func() {
+			seen := []string{}
+			err := impl.VisitMetadata(ctx, "a", func(p string, md []*api.PrefixMetadata) (bool, error) {
+				seen = append(seen, p)
+				return p != "a/b/c", nil
+			})
+			So(err, ShouldBeNil)
+			So(seen, ShouldResemble, []string{"a", "a/b/c"}) // no a/b/c/d
+		})
+	})
+}
+
 func TestParseKey(t *testing.T) {
 	t.Parallel()
 

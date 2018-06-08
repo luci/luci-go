@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -29,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -77,9 +79,18 @@ type legacyStorageImpl struct {
 //
 // The result also always includes the hardcoded root metadata.
 func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.PrefixMetadata, error) {
+	md, _, err := getMetadataImpl(c, prefix)
+	return md, err
+}
+
+// getMetadataImpl implements GetMetadata.
+//
+// As a bonus it returns all packageACL entities it fetched. This is used by
+// VisitMetadata to avoid unnecessary refetches.
+func getMetadataImpl(c context.Context, prefix string) ([]*api.PrefixMetadata, []*packageACL, error) {
 	prefix, err := common.ValidatePackagePrefix(prefix)
 	if err != nil {
-		return nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
+		return nil, nil, errors.Annotate(err, "bad prefix given to GetMetadata").Err()
 	}
 
 	// Grab all subprefixes, i.e. ["a", "a/b", "a/b/c"]
@@ -97,7 +108,7 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 
 	// And finish with it if nothing else is requested.
 	if len(pfxs) == 0 {
-		return out, nil
+		return out, nil, nil
 	}
 
 	// Prepare the keys.
@@ -108,7 +119,7 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 
 	// Fetch everything. ErrNoSuchEntity errors are fine, everything else is not.
 	if err = datastore.Get(c, ents); isInternalDSError(err) {
-		return nil, errors.Annotate(err, "datastore error when fetching PackageACL").Tag(transient.Tag).Err()
+		return nil, nil, errors.Annotate(err, "datastore error when fetching PackageACL").Tag(transient.Tag).Err()
 	}
 
 	// Combine the result into a bunch of PrefixMetadata structs.
@@ -118,12 +129,91 @@ func (legacyStorageImpl) GetMetadata(c context.Context, prefix string) ([]*api.P
 			out = append(out, md)
 		}
 	}
-	return out, nil
+	return out, ents, nil
 }
 
 // VisitMetadata is part of Storage interface.
 func (legacyStorageImpl) VisitMetadata(c context.Context, prefix string, cb Visitor) error {
-	return fmt.Errorf("not implemented yet")
+	prefix, err := common.ValidatePackagePrefix(prefix)
+	if err != nil {
+		return errors.Annotate(err, "bad prefix given to VisitMetadata").Err()
+	}
+
+	// Visit 'prefix' directly first, per VisitMetadata contract. There's a chance
+	// we won't need to recurse deeper at all and can skip all expensive fetches.
+	md, ents, err := getMetadataImpl(c, prefix)
+	if err != nil {
+		return err
+	}
+	switch cont, err := cb(prefix, md); {
+	case err != nil:
+		return err
+	case !cont:
+		return nil
+	}
+
+	// We'll have to recurse into metadata subtree after all. Unfortunately,
+	// with legacy entity structure there's no way to efficiently fetch only
+	// immediate children of 'prefix', so we fetch EVERYTHING in advance, building
+	// a metadata graph for prefix/... in memory.
+	gr := metadataGraph{}
+	gr.init(rootMetadata())
+
+	// Seed this graph with already fetched entities. They'll be needed to derive
+	// metadata inherited from 'prefix' and its parents when visiting nodes. For
+	// example, the metadata graph when visiting prefix "a/b" may look like this:
+	//
+	//                     - "a/b/c"
+	//                    /
+	//  ROOT - "a"- "a/b" -- "a/b/d"
+	//                    \
+	//                     - "a/b/e"
+	//
+	// The traversal will be started form "a/b", but we still need the nodes
+	// leading to the root to get all inherited metadata.
+	gr.insert(c, ents)
+
+	// Fetch each per-role subtree separately, they have different key prefixes.
+	err = parallel.FanOutIn(func(tasks chan<- func() error) {
+		mu := sync.Mutex{}
+		for _, role := range legacyRoles {
+			role := role
+			tasks <- func() error {
+				listing, err := listACLsByPrefix(c, role, prefix)
+				if err == nil {
+					mu.Lock()
+					gr.insert(c, listing)
+					mu.Unlock()
+				}
+				return err
+			}
+		}
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch metadata").Tag(transient.Tag).Err()
+	}
+
+	// Make sure we have a path to 'prefix' before we freeze the graph. We need it
+	// to start the traversal below. It may be missing if there's no metadata
+	// attached to it and it has no children. This will naturally be handled by
+	// 'traverse'.
+	pfx := gr.node(prefix)
+
+	// Calculate all PrefixMetadata entries in the graph.
+	gr.freeze(c)
+
+	// Traverse the graph, but make sure to skip 'prefix' itself, we've already
+	// visited it at the very beginning.
+	return pfx.traverse(nil, func(n *metadataNode, md []*api.PrefixMetadata) (cont bool, err error) {
+		switch {
+		case n.prefix == prefix:
+			return true, nil
+		case n.md == nil:
+			return true, nil // an intermediary node with no metadata, look deeper
+		default:
+			return cb(n.prefix, md)
+		}
+	})
 }
 
 // UpdateMetadata is part of Storage interface.
