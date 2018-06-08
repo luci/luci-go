@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -39,12 +40,10 @@ import (
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/config"
 )
 
 var (
-	errBuilderDeleted = fmt.Errorf("builder deleted between datastore.Get calls")
-
 	// buildFieldMask defines which buildbucketpb.Build fields to fetch and
 	// make available to email templates.
 	// If a message field is specified here without periods, e.g. "steps", all
@@ -71,7 +70,7 @@ var (
 )
 
 func getBuilderID(b *Build) string {
-	return "buildbucket/" + b.Builder.IDString()
+	return fmt.Sprintf("%s/%s", b.Builder.Bucket, b.Builder.Builder)
 }
 
 func commitIndex(commits []*gitpb.Commit, revision string) int {
@@ -114,65 +113,73 @@ func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
 // revision ordering purposes. It's passed in as a parameter in order to mock it
 // for testing.
 func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history HistoryFunc) error {
-	switch ex, err := datastore.Exists(c, &notifyConfig.Project{Name: build.Builder.Project}); {
+	project := &config.Project{Name: build.Builder.Project}
+	switch ex, err := datastore.Exists(c, project); {
 	case err != nil:
 		return err
 	case !ex.All():
 		return nil // This project is not tracked by luci-notify
 	}
 
-	builderID := getBuilderID(build)
-	logging.Infof(c, "Finding config for %q, %s", builderID, build.Status)
-	notifiers, err := notifyConfig.LookupNotifiers(c, build.Builder.Project, builderID)
-	if err != nil {
-		return errors.Annotate(err, "looking up notifiers").Tag(transient.Tag).Err()
-	}
-	if len(notifiers) == 0 {
-		// No configurations were found, but we might need to generate notifications
-		// based on properties. Don't fall through to avoid storing build status for
-		// builds without configurations.
-		return Notify(c, d, notifiers, StatusUnknown, build)
-	}
-
 	gCommit := build.Input.GetGitilesCommit()
-	if gCommit == nil {
-		logging.Infof(c, "No revision information found for this build, ignoring...")
-		return nil
-	}
+	buildCreateTime, _ := ptypes.Timestamp(build.CreateTime)
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
-	builder := &Builder{ID: builderID}
-	switch err := datastore.Get(c, builder); {
-	case err == datastore.ErrNoSuchEntity:
-		// If the Builder isn't found, start a transaction and try to store
-		// the builder for the first time.
-		keepGoing := false
-		err = datastore.RunInTransaction(c, func(c context.Context) error {
-			switch err := datastore.Get(c, builder); {
-			case err == datastore.ErrNoSuchEntity:
-				// Notify, but avoid on_change notification by setting Status to StatusUnknown.
-				builder.Status = StatusUnknown
-				if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+	builderID := getBuilderID(build)
+	builder := &config.Builder{
+		ProjectKey: datastore.KeyForObj(c, project),
+		ID:         builderID,
+	}
+	keepGoing := false
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		switch err := datastore.Get(c, builder); {
+		case err == datastore.ErrNoSuchEntity:
+			// Even if the builder isn't found, we may still want to notify if the build
+			// specifies email addresses to notify.
+			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
+			return Notify(c, d, nil, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+		case err != nil:
+			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
+		case builder.Repository == "":
+			// Handle the case where there's no repository being tracked.
+			notifications := builder.Notifications.GetNotifications()
+			if builder.StatusBuildTime.Before(buildCreateTime) {
+				if err := Notify(c, d, notifications, builder.Status, build); err != nil {
 					return err
 				}
-				// Initialize the Builder in the datastore.
-				if err := datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build)); err != nil {
-					return err
-				}
-				return nil
-			case err != nil:
+				builder.Status = build.Status
+				builder.StatusBuildTime = buildCreateTime
+				return datastore.Put(c, builder)
+			}
+			logging.Infof(c, "Found build with old time")
+			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+		case gCommit == nil:
+			// If there's no revision information, and the builder has a repository, ignore
+			// the build.
+			logging.Infof(c, "No revision information found for this build, ignoring...")
+			return nil
+		case builder.StatusRevision == "":
+			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build); err != nil {
 				return err
 			}
-			// If we actually managed to get a Builder, we should continue with the
-			// full code path.
-			keepGoing = true
-			return nil
-		}, nil)
-		if err != nil || !keepGoing {
-			return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
+			builder.Status = build.Status
+			builder.StatusBuildTime = buildCreateTime
+			builder.StatusRevision = gCommit.Id
+			return datastore.Put(c, builder)
 		}
-	case err != nil:
-		return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
+		keepGoing = true
+		return nil
+	}, nil)
+	if err != nil || !keepGoing {
+		return err
+	}
+
+	builderRepoHost, builderRepoProject, _ := gitiles.ParseRepoURL(builder.Repository)
+	if builderRepoHost != gCommit.Host || builderRepoProject != gCommit.Project {
+		logging.Infof(c, "Builder %s triggered by commit to https://%s/%s"+
+			"instead of known https://%s, ignoring...",
+			builderID, gCommit.Host, gCommit.Project, builder.Repository)
+		return nil
 	}
 
 	// commits contains a list of commits from builder.StatusRevision..gCommit.Revision (oldest..newest).
@@ -182,17 +189,23 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		// Notify about the build, but ignore on_change by creating a builder with an unknown status.
-		return Notify(c, d, notifiers, StatusUnknown, build)
+		return Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
+	oldRepository := builder.Repository
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, builder); {
 		case err == datastore.ErrNoSuchEntity:
-			return errBuilderDeleted
+			return errors.New("builder deleted between datastore.Get calls")
 		case err != nil:
 			return err
+		}
+
+		// If the builder's repository got updated in the meanwhile, we need to throw a
+		// transient error and retry this whole thing.
+		if builder.Repository != oldRepository {
+			return errors.Reason("failed to notify because builder repository updated").Tag(transient.Tag).Err()
 		}
 
 		// If there's been no change in status, don't bother updating.
@@ -202,7 +215,6 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 
 		index := commitIndex(commits, builder.StatusRevision)
 		outOfOrder := false
-		createTime, _ := ptypes.Timestamp(build.CreateTime)
 		switch {
 		// If the revision is not found, we can conclude that the Builder has
 		// advanced beyond gCommit.Revision. This is because:
@@ -213,21 +225,23 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			outOfOrder = true
 
 		// If the revision is current, check build creation time.
-		case index == 0 && builder.StatusBuildTime.After(createTime):
+		case index == 0 && builder.StatusBuildTime.After(buildCreateTime):
 			logging.Debugf(c, "Found build with the same commit but an old time.")
 			outOfOrder = true
 		}
 
-		// If the build is out-of-order, we want to ignore only on_change notifications.
-		// Since on_change only occurs when Builder Status != StatusUnknown, set builder
-		// to a new builder with exactly this property.
+		notifications := builder.Notifications.GetNotifications()
 		if outOfOrder {
-			return Notify(c, d, notifiers, StatusUnknown, build)
+			// If the build is out-of-order, we want to ignore only on_change notifications.
+			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
 		}
-		if err := Notify(c, d, notifiers, builder.Status, build); err != nil {
+		if err := Notify(c, d, notifications, builder.Status, build); err != nil {
 			return err
 		}
-		return datastore.Put(c, NewBuilder(builderID, gCommit.Id, &build.Build))
+		builder.Status = build.Status
+		builder.StatusBuildTime = buildCreateTime
+		builder.StatusRevision = gCommit.Id
+		return datastore.Put(c, builder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 }

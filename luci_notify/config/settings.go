@@ -27,7 +27,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/validation"
 
-	notifyConfig "go.chromium.org/luci/luci_notify/api/config"
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
 )
 
 // Settings represents the luci-notify configuration for a single instance of the service.
@@ -39,7 +39,7 @@ type Settings struct {
 	Revision string
 
 	// Settings is an embedded copy of this instance's configuration proto.
-	Settings notifyConfig.Settings `gae:"-"`
+	Settings notifypb.Settings `gae:"-"`
 }
 
 // Load loads a Settings's information from props.

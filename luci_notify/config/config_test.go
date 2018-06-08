@@ -20,10 +20,13 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/appengine/gaetesting"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/impl/memory"
+
+	notifypb "go.chromium.org/luci/luci_notify/api/config"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -50,6 +53,7 @@ func TestConfigIngestion(t *testing.T) {
 						builders {
 							bucket: "luci.chromium.ci"
 							name: "linux"
+							repository: "https://chromium.googlesource.com/chromium/src"
 						}
 					}
 				`,
@@ -90,28 +94,35 @@ func TestConfigIngestion(t *testing.T) {
 		So(projects[0].Name, ShouldEqual, "chromium")
 		So(projects[1].Name, ShouldEqual, "v8")
 
-		var notifiers []*Notifier
-		So(datastore.GetAll(c, datastore.NewQuery("Notifier"), &notifiers), ShouldBeNil)
-		So(notifiers, ShouldResemble, []*Notifier{
+		var builders []*Builder
+		So(datastore.GetAll(c, datastore.NewQuery("Builder"), &builders), ShouldBeNil)
+		So(builders, ShouldResemble, []*Builder{
 			{
-				Parent:     datastore.MakeKey(c, "Project", "chromium"),
-				Name:       "chromium-notifier",
-				BuilderIDs: []string{"buildbucket/chromium/luci.chromium.ci/linux"},
-				Notifications: []NotificationConfig{
-					{
-						OnSuccess:       true,
-						EmailRecipients: []string{"johndoe@chromium.org", "janedoe@chromium.org"},
+				ProjectKey: datastore.MakeKey(c, "Project", "chromium"),
+				ID:         "luci.chromium.ci/linux",
+				Repository: "https://chromium.googlesource.com/chromium/src",
+				Notifications: notifypb.Notifications{
+					Notifications: []*notifypb.Notification{
+						{
+							OnSuccess: true,
+							Email: &notifypb.Notification_Email{
+								Recipients: []string{"johndoe@chromium.org", "janedoe@chromium.org"},
+							},
+						},
 					},
 				},
 			},
 			{
-				Parent:     datastore.MakeKey(c, "Project", "v8"),
-				Name:       "v8-notifier",
-				BuilderIDs: []string{"buildbucket/v8/luci.v8.ci/win"},
-				Notifications: []NotificationConfig{
-					{
-						OnChange:        true,
-						EmailRecipients: []string{"johndoe@v8.org", "janedoe@v8.org"},
+				ProjectKey: datastore.MakeKey(c, "Project", "v8"),
+				ID:         "luci.v8.ci/win",
+				Notifications: notifypb.Notifications{
+					Notifications: []*notifypb.Notification{
+						{
+							OnChange: true,
+							Email: &notifypb.Notification_Email{
+								Recipients: []string{"johndoe@v8.org", "janedoe@v8.org"},
+							},
+						},
 					},
 				},
 			},
@@ -150,6 +161,29 @@ func TestConfigIngestion(t *testing.T) {
 			},
 		})
 
+		Convey("preserve updated fields", func() {
+			// Update the Chromium builder in the datastore, simulating that some request was handled.
+			chromiumBuilder := builders[0]
+			chromiumBuilder.Status = buildbucketpb.Status_FAILURE
+			chromiumBuilder.StatusRevision = "abc123"
+			So(datastore.Put(c, chromiumBuilder), ShouldBeNil)
+
+			datastore.GetTestable(c).CatchupIndexes()
+
+			So(updateProjects(c), ShouldBeNil)
+
+			chromium := &Project{Name: "chromium"}
+			chromiumKey := datastore.KeyForObj(c, chromium)
+
+			var newBuilders []*Builder
+			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(chromiumKey), &newBuilders), ShouldBeNil)
+			So(len(newBuilders), ShouldEqual, 1)
+			// Check the fields we care about explicitly, because generated proto structs may have
+			// size caches which are updated.
+			So(newBuilders[0].Status, ShouldEqual, chromiumBuilder.Status)
+			So(newBuilders[0].StatusRevision, ShouldEqual, chromiumBuilder.StatusRevision)
+		})
+
 		Convey("delete project", func() {
 			delete(cfg, "projects/v8")
 			So(updateProjects(c), ShouldBeNil)
@@ -160,9 +194,9 @@ func TestConfigIngestion(t *testing.T) {
 			So(datastore.Get(c, v8), ShouldEqual, datastore.ErrNoSuchEntity)
 			v8Key := datastore.KeyForObj(c, v8)
 
-			var notifiers []*Notifier
-			So(datastore.GetAll(c, datastore.NewQuery("Notifier").Ancestor(v8Key), &notifiers), ShouldBeNil)
-			So(notifiers, ShouldBeEmpty)
+			var builders []*Builder
+			So(datastore.GetAll(c, datastore.NewQuery("Builder").Ancestor(v8Key), &builders), ShouldBeNil)
+			So(builders, ShouldBeEmpty)
 
 			var emailTemplates []*EmailTemplate
 			So(datastore.GetAll(c, datastore.NewQuery("EmailTemplate").Ancestor(v8Key), &emailTemplates), ShouldBeNil)

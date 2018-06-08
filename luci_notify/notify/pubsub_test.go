@@ -16,6 +16,7 @@ package notify
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 
 	apicfg "go.chromium.org/luci/luci_notify/api/config"
-	notifyConfig "go.chromium.org/luci/luci_notify/config"
+	"go.chromium.org/luci/luci_notify/config"
 	"go.chromium.org/luci/luci_notify/internal"
 	"go.chromium.org/luci/luci_notify/testutil"
 
@@ -142,9 +143,9 @@ func TestHandleBuild(t *testing.T) {
 		user.GetTestable(c).Login("noreply@luci-notify-test.appspotmail.com", "", false)
 
 		// Add Project and Notifiers to datastore and update indexes.
-		project := &notifyConfig.Project{Name: "chromium"}
-		notifiers := makeNotifiers(c, "chromium", cfg)
-		So(datastore.Put(c, project, notifiers), ShouldBeNil)
+		project := &config.Project{Name: "chromium"}
+		builders := makeBuilders(c, "chromium", cfg)
+		So(datastore.Put(c, project, builders), ShouldBeNil)
 		datastore.GetTestable(c).CatchupIndexes()
 
 		oldTime := time.Date(2015, 2, 3, 12, 54, 3, 0, time.UTC)
@@ -173,7 +174,10 @@ func TestHandleBuild(t *testing.T) {
 		verifyBuilder := func(build *Build, revision string) {
 			datastore.GetTestable(c).CatchupIndexes()
 			id := getBuilderID(build)
-			builder := Builder{ID: id}
+			builder := config.Builder{
+				ProjectKey: datastore.KeyForObj(c, project),
+				ID:         id,
+			}
 			So(datastore.Get(c, &builder), ShouldBeNil)
 			So(builder.StatusRevision, ShouldResemble, revision)
 			So(builder.Status, ShouldEqual, build.Status)
@@ -202,12 +206,26 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`no config`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1)
 			assertTasks(build)
-			grepLog("Nobody to notify")
+			grepLog("No builder")
 		})
 
 		Convey(`no config w/property`, func() {
 			build := pubsubDummyBuild("not-a-builder", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, propEmail)
+		})
+
+		Convey(`no repository in-order`, func() {
+			build := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_FAILURE, oldTime, rev1)
+			assertTasks(build, failEmail)
+		})
+
+		Convey(`no repository out-of-order`, func() {
+			build := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_FAILURE, newTime, rev1)
+			assertTasks(build, failEmail)
+
+			newBuild := pubsubDummyBuild("test-builder-no-repo", buildbucketpb.Status_SUCCESS, oldTime, rev2)
+			assertTasks(newBuild, failEmail, successEmail)
+			grepLog("old time")
 		})
 
 		Convey(`no revision`, func() {
@@ -235,6 +253,32 @@ func TestHandleBuild(t *testing.T) {
 			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
 			assertTasks(build, failEmail, propEmail)
 			verifyBuilder(build, rev1)
+		})
+
+		Convey(`repository mismatch`, func() {
+			build := pubsubDummyBuild("test-builder-1", buildbucketpb.Status_FAILURE, oldTime, rev1, propEmail)
+			assertTasks(build, failEmail, propEmail)
+			verifyBuilder(build, rev1)
+
+			newBuild := &Build{
+				Build: buildbucketpb.Build{
+					Builder: &buildbucketpb.Builder_ID{
+						Project: "chromium",
+						Bucket:  "ci",
+						Builder: "test-builder-1",
+					},
+					Status: buildbucketpb.Status_SUCCESS,
+					Input: &buildbucketpb.Build_Input{
+						GitilesCommit: &buildbucketpb.GitilesCommit{
+							Host:    "chromium.googlesource.com",
+							Project: "example/src",
+							Id:      rev2,
+						},
+					},
+				},
+			}
+			assertTasks(newBuild, failEmail, propEmail)
+			grepLog("triggered by commit")
 		})
 
 		Convey(`out-of-order revision`, func() {
@@ -308,13 +352,22 @@ func mockHistoryFunc(mockCommits []*gitpb.Commit) HistoryFunc {
 	}
 }
 
-func makeNotifiers(c context.Context, projectID string, cfg *apicfg.ProjectConfig) []*notifyConfig.Notifier {
-	var notifiers []*notifyConfig.Notifier
+func makeBuilders(c context.Context, projectID string, cfg *apicfg.ProjectConfig) []*config.Builder {
+	var builders []*config.Builder
 	parentKey := datastore.MakeKey(c, "Project", projectID)
-	for _, n := range cfg.Notifiers {
-		notifiers = append(notifiers, notifyConfig.NewNotifier(parentKey, n))
+	for _, cfgNotifier := range cfg.Notifiers {
+		for _, cfgBuilder := range cfgNotifier.Builders {
+			builders = append(builders, &config.Builder{
+				ProjectKey: parentKey,
+				ID:         fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name),
+				Repository: cfgBuilder.Repository,
+				Notifications: apicfg.Notifications{
+					Notifications: cfgNotifier.Notifications,
+				},
+			})
+		}
 	}
-	return notifiers
+	return builders
 }
 
 func createMockTaskQueue(c context.Context) (*tq.Dispatcher, tqtesting.Testable) {
