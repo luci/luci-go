@@ -93,6 +93,24 @@
     },
     {
       "key": {
+        "uuid": "09504cee_6ed80fbd",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 115,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T02:35:04Z",
+      "side": 1,
+      "message": "I completely agree, and I think I\u0027ll actually make a CL underneath this one to do 1) and 3), and then add 2) in this CL.",
+      "parentUuid": "dfa2c5e4_d36c016f",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "be7a6fb0_0412dfce",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
@@ -127,6 +145,24 @@
       "writtenOn": "2018-06-07T16:54:48Z",
       "side": 1,
       "message": "here we mutate buildCommits and then in L257 save the filtered commits, while in L150 we save unfilteered.\nStepping back a bit, we have L254-257 lines duplicated a few times in this function. I understand that you want original builder values. Can we make a second builder variable that would store new values and update it as soon as a new value is discovered? It would the problem in this line and reduce duplication",
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2984896_615460e9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T02:35:04Z",
+      "side": 1,
+      "message": "I\u0027ll create a new CL under this one to do that refactoring for a second builder which stores the new values.",
+      "parentUuid": "2deb10a4_dc75fe46",
       "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

@@ -68,6 +68,30 @@
       "revId": "f9ae5d2294c9b016422b560e23d55995ef344197",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "24ee9781_df1a1c95",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T02:35:04Z",
+      "side": 1,
+      "message": "consider the following situation:\n\ntransaction 1: pull from the datastore, we get get a builder with some commits.\nbetween transactions: query gitiles for commits.\ntransaction 2: between transaction 1 and 2, the builder was updated and the commits moved forward! the commits we queried for _may_ be invalid. we only want to notify on the difference where we can.\n\nthe purpose of this function is to salvage what commit information we can from the \"between transactions\" step and use it to derive a blamelist where we can, since an RPC inside of transaction 2 is a bad idea.\n\nnote that in general this \"salvaging\" approach works because it\u0027s somewhat rare for a builder\u0027s builds to suddenly drop repos or add new ones. also in practice, if we detect that the builder\u0027s associated repository moved forward, then we can be pretty sure that the other associated commits only moved forward. at least in Fuchsia\u0027s infra this is always true because the manifests describing source dependencies live in the \"main\" repos, and I figure that\u0027s true for Chromium also. it\u0027s extremely rare for us to roll back a version in a manifest explicitly, it\u0027s far more likely we\u0027d revert in the associated tree. third party repos are probably the only culprits, and we won\u0027t be notifying on them. again, I believe this would be true for Chromium as well.",
+      "parentUuid": "2f4ebfc7_3feda9f2",
+      "range": {
+        "startLine": 93,
+        "startChar": 75,
+        "endLine": 93,
+        "endChar": 100
+      },
+      "revId": "f9ae5d2294c9b016422b560e23d55995ef344197",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
