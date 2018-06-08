@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "366054c1_e483930c",
+        "filename": "luci_notify/config/config_test.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-08T02:22:50Z",
+      "side": 1,
+      "message": "not sure what to do as a result of this... I can\u0027t use ShouldResemble because the sizecache fields get updated. I guess I should be making fresh Builders but that seemed excessive.",
+      "range": {
+        "startLine": 181,
+        "startChar": 3,
+        "endLine": 182,
+        "endChar": 36
+      },
+      "revId": "9ef9dc5d07976fefa122234365de3760b3320eb0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
