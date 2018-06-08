@@ -84,7 +84,7 @@ message Builder {
   // In recipes-based builds, the path is relative to api.paths['cache'] dir.
   // For example, a cache {"name": "foo", "path": "bar"} maps foo to bar and
   // the cache dir is available at
-  //   my_cache = api.path["cache"].join("bar")
+  //   my_cache = api.path['cache'].join('bar')
   //
   // If the bot is running out of space, caches are evicted in LRU manner.
   //
@@ -97,6 +97,7 @@ message Builder {
   //   {"name": "<hash(bucket/builder)>", "path": "builder"}.
   // This means that any LUCI builder has a "personal disk space" on the bot.
   // Builder cache is often a good start before customizing caching.
+  // In recipes, it is available at api.path['cache'].join('builder').
   //
   // In order to share the builder cache among multiple builders, it can be
   // overridden:
