@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "3202f7a8_fa83dbbe",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-09T00:20:57Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5f0a15a0_f15e894c",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7b3f3676_2dddd1c3",
         "filename": "milo/common/error.go",
         "patchSetId": 2
@@ -105,6 +123,24 @@
       "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10100c1f_a9992c7d",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-09T00:20:57Z",
+      "side": 1,
+      "message": "net/http is fairly low level, so it makes sense for that API layer to allow for flexibility.\n\nFrom an API design perspective, the point of passing in the http status code (at least in my mind) is to be able to signal if the redirect is permanent or temporary.  A good abstraction layer will pick good defaults.  Otherwise an API user may be confronted with a choice of \"Should I pass in 302? or 307?\".  Heck, they can pass in 403 and the library will do nothing to stop them.  Removing the choice space reduces cognitive load.\n\nThat being said, I can see a downside of this being a bool.  In practice if the external API surface looks like:\ncommon.RedirectError(\"...\", http.StatusMoved)\n\nIt looks fairly straightforward compared, even compared to\ncommon.RedirectError(\"...\", true)\nWhich requires one extra step to figure out what \"true\" means.",
+      "parentUuid": "ea96bee9_345e79e7",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -190,6 +226,24 @@
     },
     {
       "key": {
+        "uuid": "eb024cf9_be329bec",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-09T00:20:57Z",
+      "side": 1,
+      "message": "Err right, i meant \nfunc (r HTTPRedirect) Err() error {\n  return errors.New(\"redirect\", r)\n}\n\nIt depends if you like shorthands.  I just happen to like them.\n\nSo that instead of having this in user code:\nif redirect {\n  return nil, errors.New(\"redirect\", common.HTTPRedirect{\"/somewhere\", http.StatusMoved...})\n}\n\nIt\u0027d be\nif redirect {\n  return nil, common.HTTPRedirect{...}.Err()\n}\n\nActually, maybe this makes more sense\n\nif redirect {\n  return nil, common.RedirectError(\"/somewhere\", http.Status...)\n}",
+      "parentUuid": "6cf1a259_66a65d15",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e460327_68c81e11",
         "filename": "milo/common/error.go",
         "patchSetId": 2
@@ -234,6 +288,30 @@
       "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b329f6cf_c7eff6cc",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-09T00:20:57Z",
+      "side": 1,
+      "message": "Ah, makes sense.\n\nI like (HTTPRedirect, Ok) slightly better because it\u0027s more explicit, but I don\u0027t feel very strongly about it.",
+      "parentUuid": "ded7c505_65fa747e",
+      "range": {
+        "startLine": 113,
+        "startChar": 32,
+        "endLine": 113,
+        "endChar": 44
+      },
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
