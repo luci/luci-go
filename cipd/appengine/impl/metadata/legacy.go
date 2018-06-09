@@ -453,6 +453,43 @@ func isEqualStrSlice(a, b []string) bool {
 	return true
 }
 
+// listACLsByPrefix returns packageACL entities with ACLs for the given legacy
+// role under the given prefix.
+//
+// The prefix should be in a form produced by ValidatePackagePrefix, i.e. no
+// trailing / and "" denotes the root. ACLs for the prefix itself are NOT
+// listed. Only ACLs strictly underneath are.
+//
+// The return value is sorted by prefix.
+func listACLsByPrefix(c context.Context, role, prefix string) (acls []*packageACL, err error) {
+	if prefix, err = common.ValidatePackagePrefix(prefix); err != nil {
+		return nil, err
+	}
+
+	keyPfx := role + ":"
+	if prefix != "" {
+		keyPfx += prefix + "/"
+	}
+
+	root := rootKey(c)
+
+	// Note: __key__ queries are already ordered by key.
+	q := datastore.NewQuery("PackageACL").Ancestor(root)
+	q = q.Gt("__key__", datastore.KeyForObj(c, &packageACL{
+		ID:     keyPfx + "\x00",
+		Parent: root,
+	}))
+	q = q.Lt("__key__", datastore.KeyForObj(c, &packageACL{
+		ID:     keyPfx + "\xff",
+		Parent: root,
+	}))
+
+	if err = datastore.GetAll(c, q, &acls); err != nil {
+		return nil, errors.Annotate(err, "failed to query the list of ACLs").Tag(transient.Tag).Err()
+	}
+	return
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Metadata graph used by VisitMetadata implementation.
 

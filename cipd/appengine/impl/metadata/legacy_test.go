@@ -364,6 +364,60 @@ func TestParseKey(t *testing.T) {
 	}
 }
 
+func TestListACLsByPrefix(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		add := func(role, pfx string) {
+			So(datastore.Put(ctx, &packageACL{
+				ID:     role + ":" + pfx,
+				Parent: rootKey(ctx),
+				Groups: []string{"blah"}, //  to make sure bodies are fetched too
+			}), ShouldBeNil)
+		}
+
+		list := func(role, pfx string) (out []string) {
+			acls, err := listACLsByPrefix(ctx, role, pfx)
+			So(err, ShouldBeNil)
+			for _, acl := range acls {
+				So(acl.Groups, ShouldResemble, []string{"blah"})
+				out = append(out, acl.ID)
+			}
+			return
+		}
+
+		add("OWNER", "a")
+		add("OWNER", "a/b/c")
+		add("OWNER", "ab")
+		add("READER", "a")
+		add("READER", "a/b/c")
+		add("READER", "a/b/c/d")
+		add("READER", "ab")
+
+		Convey("Root listing", func() {
+			So(list("OWNER", ""), ShouldResemble, []string{
+				"OWNER:a", "OWNER:a/b/c", "OWNER:ab",
+			})
+			So(list("READER", ""), ShouldResemble, []string{
+				"READER:a", "READER:a/b/c", "READER:a/b/c/d", "READER:ab",
+			})
+			So(list("WRITER", ""), ShouldResemble, []string(nil))
+		})
+
+		Convey("Non-root listing", func() {
+			So(list("OWNER", "a"), ShouldResemble, []string{"OWNER:a/b/c"})
+			So(list("READER", "a"), ShouldResemble, []string{"READER:a/b/c", "READER:a/b/c/d"})
+			So(list("WRITER", "a"), ShouldResemble, []string(nil))
+		})
+
+		Convey("Non-existing prefix listing", func() {
+			So(list("OWNER", "z"), ShouldResemble, []string(nil))
+		})
+	})
+}
+
 func TestMetadataGraph(t *testing.T) {
 	t.Parallel()
 
