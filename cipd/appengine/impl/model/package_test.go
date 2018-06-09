@@ -42,19 +42,16 @@ func TestListPackages(t *testing.T) {
 			return p
 		}
 
-		const hidden = true
-		const visible = false
-
-		mk("a", visible)
-		mk("c/a/b", visible)
-		mk("c/a/d", visible)
-		mk("c/a/h", hidden)
-		mk("ca", visible)
-		mk("d", visible)
-		mk("d/a", visible)
-		mk("h1", hidden)
-		mk("h2/a", hidden)
-		mk("h2/b", hidden)
+		mk("a", Visible)
+		mk("c/a/b", Visible)
+		mk("c/a/d", Visible)
+		mk("c/a/h", Hidden)
+		mk("ca", Visible)
+		mk("d", Visible)
+		mk("d/a", Visible)
+		mk("h1", Hidden)
+		mk("h2/a", Hidden)
+		mk("h2/b", Hidden)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
 		Convey("Root listing, including hidden", func() {
@@ -110,12 +107,9 @@ func TestCheckPackages(t *testing.T) {
 			return p
 		}
 
-		const hidden = true
-		const visible = false
-
-		mk("a", visible)
-		mk("b", hidden)
-		mk("c", visible)
+		mk("a", Visible)
+		mk("b", Hidden)
+		mk("c", Visible)
 
 		Convey("Empty list", func() {
 			So(check(nil, true), ShouldHaveLength, 0)
@@ -162,5 +156,36 @@ func TestCheckPackages(t *testing.T) {
 				So(yes, ShouldBeFalse)
 			})
 		})
+	})
+}
+
+func TestSetPackageHidden(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		isHidden := func(p string) bool {
+			pkg := Package{Name: p}
+			So(datastore.Get(ctx, &pkg), ShouldBeNil)
+			return pkg.Hidden
+		}
+		hide := func(p string) error { return SetPackageHidden(ctx, p, Hidden) }
+		show := func(p string) error { return SetPackageHidden(ctx, p, Visible) }
+
+		So(hide("a"), ShouldEqual, datastore.ErrNoSuchEntity)
+
+		datastore.Put(ctx, &Package{Name: "a"})
+		So(isHidden("a"), ShouldBeFalse)
+
+		So(hide("a"), ShouldBeNil)
+		So(isHidden("a"), ShouldBeTrue)
+
+		So(show("a"), ShouldBeNil)
+		So(isHidden("a"), ShouldBeFalse)
+
+		// To test pre-txn check.
+		So(show("a"), ShouldBeNil)
+		So(isHidden("a"), ShouldBeFalse)
 	})
 }

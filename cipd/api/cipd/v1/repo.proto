@@ -18,6 +18,7 @@ package cipd;
 
 option go_package = "api";
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
@@ -133,6 +134,23 @@ service Repository {
   // can freely browse the repository that contains only the packages they can
   // see and nothing else.
   rpc ListPrefix(ListPrefixRequest) returns (ListPrefixResponse);
+
+  // HidePackage marks the package as hidden.
+  //
+  // This removes it from the ListPrefix results, but doesn't otherwise affect
+  // its usage (e.g. it is still fetchable).
+  //
+  // Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
+  // otherwise.
+  rpc HidePackage(PackageRequest) returns (google.protobuf.Empty);
+
+  // UnhidePackage marks the package as visible again.
+  //
+  // It's reverse of HidePackage.
+  //
+  // Requires OWNER role for the package prefix. Returns PERMISSION_DENIED
+  // otherwise.
+  rpc UnhidePackage(PackageRequest) returns (google.protobuf.Empty);
 
   // Registers a package instance in the repository (if it was uploaded to the
   // storage already and wasn't registered yet) or initiates a new upload
@@ -272,6 +290,15 @@ message ListPrefixResponse {
   repeated string packages = 1;
   // Lexicographically sorted list of child prefixes (without trailing '/').
   repeated string prefixes = 2;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// PackageRequest names a package and nothing else.
+message PackageRequest {
+  string package = 1;
 }
 
 

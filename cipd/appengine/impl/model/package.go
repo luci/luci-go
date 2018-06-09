@@ -27,6 +27,13 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
+const (
+	// Hidden can be used in place of 'true' when working with Package.Hidden flag.
+	Hidden = true
+	// Visible can be used in place of 'false' when working with Package.Hidden flag.
+	Visible = false
+)
+
 // Package represents a package as it is stored in the datastore.
 //
 // It is mostly a marker that the package exists plus some minimal metadata
@@ -135,4 +142,41 @@ func CheckPackages(c context.Context, names []string, includeHidden bool) ([]str
 func CheckPackage(c context.Context, pkg string, includeHidden bool) (bool, error) {
 	res, err := CheckPackages(c, []string{pkg}, includeHidden)
 	return len(res) == 1, err
+}
+
+// SetPackageHidden updates Hidden field of the package.
+//
+// If the package is missing returns datastore.ErrNoSuchEntity. All other errors
+// are transient.
+func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
+	// Avoid txn if it is already set.
+	p := &Package{Name: pkg}
+	switch err := datastore.Get(c, p); {
+	case err == datastore.ErrNoSuchEntity:
+		return err
+	case err != nil:
+		return transient.Tag.Apply(err)
+	case p.Hidden == hidden:
+		return nil
+	}
+
+	err := datastore.RunInTransaction(c, func(c context.Context) error {
+		p := &Package{Name: pkg}
+		switch err := datastore.Get(c, p); {
+		case err != nil:
+			return err
+		case p.Hidden == hidden:
+			return nil
+		}
+		p.Hidden = hidden
+		return datastore.Put(c, p)
+	}, nil)
+
+	switch {
+	case err == datastore.ErrNoSuchEntity:
+		return err
+	case err != nil:
+		return transient.Tag.Apply(err)
+	}
+	return nil
 }
