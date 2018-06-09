@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5f0a15a0_f15e894c",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:00:28Z",
+      "side": 1,
+      "message": "i am following existing API: https://godoc.org/net/http#Redirect\nit accepts a string *shrug*. In practice, I believe, having url.URL wouldn\u0027t a lot of value: if a url is simple, a user can do fmt.Sprintf. If not, they can do (\u0026url.URL{...}).String()",
+      "parentUuid": "d8c3c35d_f84b7b06",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7b3f3676_2dddd1c3",
         "filename": "milo/common/error.go",
         "patchSetId": 2
@@ -30,6 +48,24 @@
       "writtenOn": "2018-06-08T23:47:18Z",
       "side": 1,
       "message": "I feel like this is overbuilt, and introduces potential for errors.  There\u0027s really only two practical choices anyways, 302 (temporary) and 301 (cacheable).  Consider making the API surface smaller by changing this to a \"Permanent bool\" (or \"Cacheable bool\")",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "180d70ad_18f5f4af",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:00:28Z",
+      "side": 1,
+      "message": "i am following existing API: https://godoc.org/net/http#Redirect\nmaking this bool or having a separate enum for accepted values of status here would be an extra generalization, but I am not sure about its value *shrug*",
+      "parentUuid": "7b3f3676_2dddd1c3",
       "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "f0e8cc9b_7686c51e",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:00:28Z",
+      "side": 1,
+      "message": "will do",
+      "parentUuid": "1697a6db_ef06adb8",
+      "range": {
+        "startLine": 103,
+        "startChar": 54,
+        "endLine": 103,
+        "endChar": 60
+      },
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c673579_a813dd18",
         "filename": "milo/common/error.go",
         "patchSetId": 2
@@ -76,6 +136,24 @@
     },
     {
       "key": {
+        "uuid": "6cf1a259_66a65d15",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:00:28Z",
+      "side": 1,
+      "message": "is there a use case? ErrorHandler ignores error message if it is a redirect, so message of an existing error that we annotate would be ignored?",
+      "parentUuid": "8c673579_a813dd18",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1e460327_68c81e11",
         "filename": "milo/common/error.go",
         "patchSetId": 2
@@ -87,6 +165,30 @@
       "writtenOn": "2018-06-08T23:47:18Z",
       "side": 1,
       "message": "Pointer usage consistency: Either use a pointer in 108, or just use the value here.  Looks like the ErrorCode deals with values, so might as well make this return a value.",
+      "range": {
+        "startLine": 113,
+        "startChar": 32,
+        "endLine": 113,
+        "endChar": 44
+      },
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ded7c505_65fa747e",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:00:28Z",
+      "side": 1,
+      "message": "the reason HTTPRedirect uses a value receiver is that it has to make a copy in `Value: r` anyway. The reason this line uses pointer is that there may be no HTTPRedirect. Do you prefer explicit (HTTPRedirect, bool)? I thought a nil is simple enough indicator that there is no redirect",
+      "parentUuid": "1e460327_68c81e11",
       "range": {
         "startLine": 113,
         "startChar": 32,
