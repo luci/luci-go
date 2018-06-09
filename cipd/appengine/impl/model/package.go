@@ -128,3 +128,11 @@ func CheckPackages(c context.Context, names []string, includeHidden bool) ([]str
 	}
 	return out, nil
 }
+
+// CheckPackage returns true if the given package exists.
+//
+// If 'includeHidden' is false, will consider hidden packages as missing.
+func CheckPackage(c context.Context, pkg string, includeHidden bool) (bool, error) {
+	res, err := CheckPackages(c, []string{pkg}, includeHidden)
+	return len(res) == 1, err
+}
