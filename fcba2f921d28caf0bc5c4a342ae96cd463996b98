@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "f00e5e98_6bad3560",
+        "filename": "milo/common/error.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-09T00:10:22Z",
+      "side": 1,
+      "message": "i guess what I am saying is that url.URL wouldn\u0027t help here. Yes, it is more structured, but the consumer of HTTPRedirect would not benefit from it because the consumer just calls http.Redirect that does not require a structured url. If it did, I\u0027d require a structured URL at this level. Same for Status.",
+      "parentUuid": "5f0a15a0_f15e894c",
+      "revId": "fcba2f921d28caf0bc5c4a342ae96cd463996b98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "7b3f3676_2dddd1c3",
         "filename": "milo/common/error.go",
         "patchSetId": 2
