@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -440,6 +441,39 @@ func (impl *repoImpl) ListPrefix(c context.Context, r *api.ListPrefixRequest) (r
 	sort.Strings(resp.Prefixes)
 
 	return resp, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Hide/unhide package.
+
+// HidePackage implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) HidePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
+	return impl.setPackageHidden(c, r, model.Hidden)
+}
+
+// UnhidePackage implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) UnhidePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
+	return impl.setPackageHidden(c, r, model.Visible)
+}
+
+// setPackageHidden is common implementation of HidePackage and UnhidePackage.
+func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest, hidden bool) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if _, err := impl.checkRole(c, r.Package, api.Role_OWNER); err != nil {
+		return nil, err
+	}
+
+	switch err := model.SetPackageHidden(c, r.Package, hidden); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "no such package")
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to update the package").Err()
+	}
+	return &empty.Empty{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
