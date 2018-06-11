@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0321eb6c_5f39f339",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-11T22:36:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5a94659_1b12d816",
+      "range": {
+        "startLine": 179,
+        "startChar": 3,
+        "endLine": 179,
+        "endChar": 7
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5476a88e_1fdb60f0",
         "filename": "cipd/appengine/impl/model/instance.go",
         "patchSetId": 1
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "8273c6a3_e8ad781d",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-11T22:36:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3830a327_0e3fa4ca",
+      "range": {
+        "startLine": 181,
+        "startChar": 9,
+        "endLine": 181,
+        "endChar": 10
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bfcb81b3_49d48a58",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-11T22:36:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5476a88e_1fdb60f0",
+      "range": {
+        "startLine": 181,
+        "startChar": 26,
+        "endLine": 181,
+        "endChar": 42
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47c1fe94_29de4c1a",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4feb8ab2_b3f630b7",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 713,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-11T22:36:39Z",
+      "side": 1,
+      "message": "See line 715, if PageSize is 0, it is replaced with 100 (as documented in *.proto). Thus no full listings by default. If clients want a full listing, they should provide giant page size. I decided not to restrict this for now.",
+      "parentUuid": "47c1fe94_29de4c1a",
+      "range": {
+        "startLine": 713,
+        "startChar": 1,
+        "endLine": 713,
+        "endChar": 21
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
