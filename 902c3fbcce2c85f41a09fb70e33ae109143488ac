@@ -22,6 +22,30 @@
       "revId": "902c3fbcce2c85f41a09fb70e33ae109143488ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ff77ad5_4c40f7f8",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-11T22:40:28Z",
+      "side": 1,
+      "message": "if 0 or unspecified, defaults to 100.",
+      "parentUuid": "d59b5734_0747d0c6",
+      "range": {
+        "startLine": 328,
+        "startChar": 2,
+        "endLine": 329,
+        "endChar": 23
+      },
+      "revId": "902c3fbcce2c85f41a09fb70e33ae109143488ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
