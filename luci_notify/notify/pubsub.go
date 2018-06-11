@@ -130,6 +130,9 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         builderID,
 	}
+	templateParams := EmailTemplateInput{
+		Build: &build.Build,
+	}
 	keepGoing := false
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
 		switch err := datastore.Get(c, &builder); {
@@ -137,7 +140,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
 			logging.Infof(c, "No builder %q found for project %q", builderID, build.Builder.Project)
-			return Notify(c, d, nil, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			return Notify(c, d, nil, &templateParams)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
 		}
@@ -150,15 +153,17 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		switch {
 		case builder.Repository == "":
 			// Handle the case where there's no repository being tracked.
-			notifications := builder.Notifications.GetNotifications()
 			if builder.StatusBuildTime.Before(buildCreateTime) {
-				if err := Notify(c, d, notifications, builder.Status, build); err != nil {
+				recipients := ExtractRecipients(builder.Notifications, builder.Status, build.Status)
+				templateParams.OldStatus = builder.Status
+				if err := Notify(c, d, recipients, &templateParams); err != nil {
 					return err
 				}
 				return datastore.Put(c, &updatedBuilder)
 			}
 			logging.Infof(c, "Found build with old time")
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
+			return Notify(c, d, recipients, &templateParams)
 		case gCommit == nil:
 			// If there's no revision information, and the builder has a repository, ignore
 			// the build.
@@ -173,7 +178,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		// is uninitialized. Notify about the build as best as we can and then store
 		// the updated builder.
 		if builder.StatusRevision == "" {
-			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build); err != nil {
+			recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
+			if err := Notify(c, d, recipients, &templateParams); err != nil {
 				return err
 			}
 			return datastore.Put(c, &updatedBuilder)
@@ -200,7 +206,8 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	}
 	if len(commits) == 0 {
 		logging.Debugf(c, "Found build with old commit, ignoring...")
-		return Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+		recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
+		return Notify(c, d, recipients, &templateParams)
 	}
 
 	// Update `builder`, and check if we need to store a newer version, then store it.
@@ -247,12 +254,14 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			outOfOrder = true
 		}
 
-		notifications := builder.Notifications.GetNotifications()
 		if outOfOrder {
 			// If the build is out-of-order, we want to ignore only on_change notifications.
-			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
+			recipients := ExtractRecipients(builder.Notifications, 0, build.Status)
+			return Notify(c, d, recipients, &templateParams)
 		}
-		if err := Notify(c, d, notifications, builder.Status, build); err != nil {
+		recipients := ExtractRecipients(builder.Notifications, builder.Status, build.Status)
+		templateParams.OldStatus = builder.Status
+		if err := Notify(c, d, recipients, &templateParams); err != nil {
 			return err
 		}
 		return datastore.Put(c, &updatedBuilder)
