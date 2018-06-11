@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c5a94659_1b12d816",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-11T22:27:05Z",
+      "side": 1,
+      "message": "Only",
+      "range": {
+        "startLine": 179,
+        "startChar": 3,
+        "endLine": 179,
+        "endChar": 7
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5476a88e_1fdb60f0",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-11T22:27:05Z",
+      "side": 1,
+      "message": "very technically \"... is \u003c\u003d 0\"",
+      "range": {
+        "startLine": 181,
+        "startChar": 26,
+        "endLine": 181,
+        "endChar": 42
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3830a327_0e3fa4ca",
+        "filename": "cipd/appengine/impl/model/instance.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-11T22:27:05Z",
+      "side": 1,
+      "message": "re",
+      "range": {
+        "startLine": 181,
+        "startChar": 9,
+        "endLine": 181,
+        "endChar": 10
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47c1fe94_29de4c1a",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 713,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-11T22:27:05Z",
+      "side": 1,
+      "message": "Do you really mean to allow 0 for full listing? Why not force all clients to deal pagination?",
+      "range": {
+        "startLine": 713,
+        "startChar": 1,
+        "endLine": 713,
+        "endChar": 21
+      },
+      "revId": "f537928534c49eede6c13d2c39ce5b8e778fa759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
