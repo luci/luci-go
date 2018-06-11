@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a54f1e35_f04188a4",
+        "filename": "cipd/appengine/impl/metadata/legacy.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T20:40:45Z",
+      "side": 1,
+      "message": "why are we not calling cb here?",
+      "revId": "418647216649e49ec47cc238bd5f4d8b6c65c15b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
