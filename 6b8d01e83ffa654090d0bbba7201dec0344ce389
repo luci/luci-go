@@ -254,6 +254,30 @@
     },
     {
       "key": {
+        "uuid": "63134fd4_0163156a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T21:00:11Z",
+      "side": 1,
+      "message": "ah right",
+      "parentUuid": "56bc3832_ff71fe73",
+      "range": {
+        "startLine": 144,
+        "startChar": 23,
+        "endLine": 144,
+        "endChar": 40
+      },
+      "revId": "6b8d01e83ffa654090d0bbba7201dec0344ce389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2deb10a4_dc75fe46",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 15
