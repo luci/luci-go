@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d2d34464_752d2f8b",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-11T22:39:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e041ab86_05aaa3b9",
+      "range": {
+        "startLine": 106,
+        "startChar": 21,
+        "endLine": 106,
+        "endChar": 34
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c6b40b1b_cb3c96b9",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "55d81297_0f1c102c",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-11T22:39:39Z",
+      "side": 1,
+      "message": "ah crap, my bad. I misread the proto docs.",
+      "parentUuid": "c6b40b1b_cb3c96b9",
+      "range": {
+        "startLine": 118,
+        "startChar": 32,
+        "endLine": 118,
+        "endChar": 42
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1dbf0e7_d6f19d44",
         "filename": "luci_notify/notify/notify.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "53628631551dc38c3b771c5376addedb91efd50f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02dbd72a_9d5ab2f0",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-11T22:39:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a1dbf0e7_d6f19d44",
+      "range": {
+        "startLine": 185,
+        "startChar": 68,
+        "endLine": 185,
+        "endChar": 69
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
