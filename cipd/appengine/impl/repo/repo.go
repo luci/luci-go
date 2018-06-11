@@ -696,3 +696,13 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 	}
 	return err
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Instance listing.
+
+// ListInstances implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesRequest) (resp *api.ListInstancesResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}

@@ -510,3 +510,11 @@ func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instanc
 	}
 	return out.(*api.RegisterInstanceResponse), nil
 }
+
+func (m *mockedRepoClient) ListInstances(ctx context.Context, in *api.ListInstancesRequest, opts ...grpc.CallOption) (*api.ListInstancesResponse, error) {
+	out, err := m.call("ListInstances", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ListInstancesResponse), nil
+}

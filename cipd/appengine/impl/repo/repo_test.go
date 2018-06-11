@@ -47,6 +47,9 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+// Prefix metadata RPC methods + related helpers including ACL checks.
+
 func TestMetadataFetching(t *testing.T) {
 	t.Parallel()
 
@@ -383,6 +386,9 @@ func TestGetRolesInPrefix(t *testing.T) {
 	})
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Prefix listing.
+
 func TestListPrefix(t *testing.T) {
 	t.Parallel()
 
@@ -597,6 +603,9 @@ func TestListPrefix(t *testing.T) {
 
 	})
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Package instance registration and post-registration processing.
 
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
@@ -1004,4 +1013,35 @@ func (m *mockedProcessor) Run(_ context.Context, i *model.Instance, r *processin
 		return m.RunCB(i, r)
 	}
 	return m.Result, m.Err
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Instance listing.
+
+func TestListInstances(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("Works", func() {
+			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package: "a/b",
+			})
+			// TODO(vadimsh): Implement.
+			So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
+		})
+	})
 }
