@@ -38,7 +38,7 @@ import (
 	"go.chromium.org/luci/luci_notify/config"
 )
 
-type emailTemplateInput struct {
+type EmailTemplateInput struct {
 	*buildbucketpb.Build
 	OldStatus buildbucketpb.Status
 }
@@ -117,7 +117,7 @@ type bundle struct {
 // GenerateEmail generates an email using the named template. If the template
 // fails, an error template is used, which includes error details and a link to
 // the definition of the failed template.
-func (b *bundle) GenerateEmail(templateName string, input *emailTemplateInput) (subject, body string) {
+func (b *bundle) GenerateEmail(templateName string, input *EmailTemplateInput) (subject, body string) {
 	var err error
 	if subject, body, err = b.executeUserTemplate(templateName, input); err != nil {
 		// Execution of the user-defined template failed.
@@ -129,7 +129,7 @@ func (b *bundle) GenerateEmail(templateName string, input *emailTemplateInput) (
 
 // executeUserTemplate executed a user-defined template.
 // If b.err is not nil, returns it right away.
-func (b *bundle) executeUserTemplate(templateName string, input *emailTemplateInput) (subject, body string, err error) {
+func (b *bundle) executeUserTemplate(templateName string, input *EmailTemplateInput) (subject, body string, err error) {
 	if b.err != nil {
 		err = b.err
 		return
@@ -151,7 +151,7 @@ func (b *bundle) executeUserTemplate(templateName string, input *emailTemplateIn
 
 // executeErrorTemplate generates a spartan email that contains information
 // about an error during execution of a user-defined template.
-func (b *bundle) executeErrorTemplate(templateName string, input *emailTemplateInput, err error) (subject, body string) {
+func (b *bundle) executeErrorTemplate(templateName string, input *EmailTemplateInput, err error) (subject, body string) {
 	subject = fmt.Sprintf(`[Build Status] Builder %q`, input.Build.Builder.IDString())
 
 	errorTemplateInput := map[string]interface{}{
