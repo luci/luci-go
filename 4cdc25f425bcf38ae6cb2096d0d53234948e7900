@@ -1,0 +1,313 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8914edf1_194898c6",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 25
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "be included",
+      "range": {
+        "startLine": 98,
+        "startChar": 52,
+        "endLine": 98,
+        "endChar": 59
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4b991ca_a4398172",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 25
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "nit: chromium/src",
+      "range": {
+        "startLine": 105,
+        "startChar": 39,
+        "endLine": 105,
+        "endChar": 42
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3828586_bf027f8a",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": ", len(commits.GetCommits())",
+      "range": {
+        "startLine": 52,
+        "startChar": 25,
+        "endLine": 52,
+        "endChar": 26
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf52c51f_c6d2d09e",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/buildbucket/proto#GitilesCommit.RepoURL",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22c5628d_d0a15a4d",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "does history return transient errors?",
+      "range": {
+        "startLine": 123,
+        "startChar": 12,
+        "endLine": 123,
+        "endChar": 15
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51a494c7_72ca0ba8",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "let\u0027s sort them",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04390d08_91c64a2a",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "this file is nice",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e41f1d3f_ebac646b",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "nit: trailing space",
+      "range": {
+        "startLine": 217,
+        "startChar": 88,
+        "endLine": 217,
+        "endChar": 89
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "383f996c_bc735a5a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "people who should have notified would be upset if skip an email?",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a352bd16_2eaeeced",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "i am not sure this much improves the situation. If someone added a repo, it won\u0027t be in blamelistLogs. Worst case, someone will receive an email during the time of transition, which is not a big deal.\nI think we can either retry the whole thing if whitelist changed, just let it go and not do this check altogether",
+      "range": {
+        "startLine": 280,
+        "startChar": 3,
+        "endLine": 282,
+        "endChar": 4
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61ec5b2f_1308f9ee",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/grpc/grpcutil#WrapIfTransient\nplease",
+      "range": {
+        "startLine": 60,
+        "startChar": 14,
+        "endLine": 60,
+        "endChar": 17
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3dfdc15_7df54cad",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "what if log is nil? handle in switch",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd239acb_0f413cfc",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "this error is transient",
+      "range": {
+        "startLine": 70,
+        "startChar": 14,
+        "endLine": 70,
+        "endChar": 17
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d309b8bc_8ce37557",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "Checkout",
+      "range": {
+        "startLine": 79,
+        "startChar": 17,
+        "endLine": 79,
+        "endChar": 34
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d992615_1d506558",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:38:01Z",
+      "side": 1,
+      "message": "why this line is needed?",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
