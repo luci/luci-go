@@ -1022,7 +1022,13 @@ func TestListInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		ts := time.Unix(1525136124, 0).UTC()
 		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		datastore.GetTestable(ctx).AutoIndex(true)
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -1034,14 +1040,110 @@ func TestListInstances(t *testing.T) {
 			},
 		})
 
+		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+		So(datastore.Put(ctx, &model.Package{Name: "a/empty"}), ShouldBeNil)
+
+		for i := 0; i < 4; i++ {
+			So(datastore.Put(ctx, &model.Instance{
+				InstanceID:   fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
+				Package:      model.PackageKey(ctx, "a/b"),
+				RegisteredTs: ts.Add(time.Duration(i) * time.Minute),
+			}), ShouldBeNil)
+		}
+
+		inst := func(i int) *api.Instance {
+			return &api.Instance{
+				Package: "a/b",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
+				},
+				RegisteredTs: google.NewTimestamp(ts.Add(time.Duration(i) * time.Minute)),
+			}
+		}
+
 		impl := repoImpl{meta: &meta}
 
-		Convey("Works", func() {
+		Convey("Bad package name", func() {
 			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package: "///",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid package name")
+		})
+
+		Convey("Bad page size", func() {
+			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package:  "a/b",
+				PageSize: -1,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "it should be non-negative")
+		})
+
+		Convey("Bad page token", func() {
+			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package:   "a/b",
+				PageToken: "zzzz",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid cursor")
+		})
+
+		Convey("No access", func() {
+			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package: "z",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("No package", func() {
+			_, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package: "a/missing",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Empty listing", func() {
+			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package: "a/empty",
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &api.ListInstancesResponse{})
+		})
+
+		Convey("Full listing (no pagination)", func() {
+			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
 				Package: "a/b",
 			})
-			// TODO(vadimsh): Implement.
-			So(grpc.Code(err), ShouldEqual, codes.Unimplemented)
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &api.ListInstancesResponse{
+				Instances: []*api.Instance{inst(3), inst(2), inst(1), inst(0)},
+			})
+		})
+
+		Convey("Listing with pagination", func() {
+			// First page.
+			res, err := impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package:  "a/b",
+				PageSize: 3,
+			})
+			So(err, ShouldBeNil)
+			So(res.Instances, ShouldResembleProto, []*api.Instance{
+				inst(3), inst(2), inst(1),
+			})
+			So(res.NextPageToken, ShouldNotEqual, "")
+
+			// Second page.
+			res, err = impl.ListInstances(ctx, &api.ListInstancesRequest{
+				Package:   "a/b",
+				PageSize:  3,
+				PageToken: res.NextPageToken,
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResembleProto, &api.ListInstancesResponse{
+				Instances: []*api.Instance{inst(0)},
+			})
 		})
 	})
 }
