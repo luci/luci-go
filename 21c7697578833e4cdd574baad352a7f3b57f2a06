@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "084a9f17_04b4194b",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-11T22:41:03Z",
+      "side": 1,
+      "message": "I didn\u0027t understand your comment.\n\nIt follows same rules as all other calls:\n1. If caller has no READER role for the prefix, returns PERMISSION_DENIED.\n2. If caller has READER role for the prefix, but not OWNER, and package exists, returns PERMISSION_DENIED.\n3. If caller has READER role for the prefix or above, and packages does NOT exist, returns NOT_FOUND.\n\nSpelling this out in every RPC call is kind of frustrating, so I\u0027m omitting it to most common case of \"no access \u003d\u003e PERMISSION_DENIED\".",
+      "parentUuid": "8507290e_60ca9583",
+      "range": {
+        "startLine": 143,
+        "startChar": 49,
+        "endLine": 144,
+        "endChar": 15
+      },
+      "revId": "21c7697578833e4cdd574baad352a7f3b57f2a06",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6678d74e_4f584619",
         "filename": "cipd/appengine/impl/model/package.go",
         "patchSetId": 1
