@@ -141,5 +141,26 @@ func TestCheckPackages(t *testing.T) {
 		Convey("Skips hidden", func() {
 			So(check([]string{"a", "b", "c"}, false), ShouldResemble, []string{"a", "c"})
 		})
+
+		Convey("CheckPackage also works", func() {
+			Convey("Visible pkg", func() {
+				yes, err := CheckPackage(ctx, "a", true)
+				So(err, ShouldBeNil)
+				So(yes, ShouldBeTrue)
+			})
+			Convey("Missing pkg", func() {
+				yes, err := CheckPackage(ctx, "zzz", true)
+				So(err, ShouldBeNil)
+				So(yes, ShouldBeFalse)
+			})
+			Convey("Hidden pkg", func() {
+				yes, err := CheckPackage(ctx, "b", true)
+				So(err, ShouldBeNil)
+				So(yes, ShouldBeTrue)
+				yes, err = CheckPackage(ctx, "b", false)
+				So(err, ShouldBeNil)
+				So(yes, ShouldBeFalse)
+			})
+		})
 	})
 }
