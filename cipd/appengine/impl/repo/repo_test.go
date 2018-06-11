@@ -605,6 +605,73 @@ func TestListPrefix(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Hide/unhide package.
+
+func TestHideUnhidePackage(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:owner@example.com",
+		})
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
+				},
+			},
+		})
+
+		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+
+		fetch := func(pkg string) *model.Package {
+			p := &model.Package{Name: pkg}
+			So(datastore.Get(ctx, p), ShouldBeNil)
+			return p
+		}
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("Hides and unhides", func() {
+			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			So(err, ShouldBeNil)
+			So(fetch("a/b").Hidden, ShouldBeTrue)
+
+			// Noop is fine.
+			_, err = impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			So(err, ShouldBeNil)
+			So(fetch("a/b").Hidden, ShouldBeTrue)
+
+			_, err = impl.UnhidePackage(ctx, &api.PackageRequest{Package: "a/b"})
+			So(err, ShouldBeNil)
+			So(fetch("a/b").Hidden, ShouldBeFalse)
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "///"})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid package name")
+		})
+
+		Convey("No access", func() {
+			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "zzz"})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "not allowed to see it")
+		})
+
+		Convey("Missing package", func() {
+			_, err := impl.HidePackage(ctx, &api.PackageRequest{Package: "a/b/c"})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Package instance registration and post-registration processing.
 
 func TestRegisterInstance(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -501,6 +502,22 @@ func (m *mockedRepoClient) ListPrefix(ctx context.Context, in *api.ListPrefixReq
 		return nil, err
 	}
 	return out.(*api.ListPrefixResponse), nil
+}
+
+func (m *mockedRepoClient) HidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("HidePackage", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("UnhidePackage", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
 }
 
 func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
