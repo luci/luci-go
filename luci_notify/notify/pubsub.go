@@ -126,13 +126,13 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 
 	// Get the Builder for the first time, and initialize if there's nothing there.
 	builderID := getBuilderID(build)
-	builder := &config.Builder{
+	builder := config.Builder{
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         builderID,
 	}
 	keepGoing := false
 	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		switch err := datastore.Get(c, builder); {
+		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
 			// Even if the builder isn't found, we may still want to notify if the build
 			// specifies email addresses to notify.
@@ -140,6 +140,14 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			return Notify(c, d, nil, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
 		case err != nil:
 			return errors.Annotate(err, "failed to get builder").Tag(transient.Tag).Err()
+		}
+
+		// Create a new builder as a copy of the old, updated with build information.
+		updatedBuilder := builder
+		updatedBuilder.Status = build.Status
+		updatedBuilder.StatusBuildTime = buildCreateTime
+
+		switch {
 		case builder.Repository == "":
 			// Handle the case where there's no repository being tracked.
 			notifications := builder.Notifications.GetNotifications()
@@ -147,9 +155,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 				if err := Notify(c, d, notifications, builder.Status, build); err != nil {
 					return err
 				}
-				builder.Status = build.Status
-				builder.StatusBuildTime = buildCreateTime
-				return datastore.Put(c, builder)
+				return datastore.Put(c, &updatedBuilder)
 			}
 			logging.Infof(c, "Found build with old time")
 			return Notify(c, d, notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build)
@@ -158,14 +164,19 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 			// the build.
 			logging.Infof(c, "No revision information found for this build, ignoring...")
 			return nil
-		case builder.StatusRevision == "":
+		}
+
+		// Update the new builder with revision information as we know it's now available.
+		updatedBuilder.StatusRevision = gCommit.Id
+
+		// If there's no revision information on the Builder, this means the Builder
+		// is uninitialized. Notify about the build as best as we can and then store
+		// the updated builder.
+		if builder.StatusRevision == "" {
 			if err := Notify(c, d, builder.Notifications.Notifications, buildbucketpb.Status_STATUS_UNSPECIFIED, build); err != nil {
 				return err
 			}
-			builder.Status = build.Status
-			builder.StatusBuildTime = buildCreateTime
-			builder.StatusRevision = gCommit.Id
-			return datastore.Put(c, builder)
+			return datastore.Put(c, &updatedBuilder)
 		}
 		keepGoing = true
 		return nil
@@ -195,7 +206,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 	// Update `builder`, and check if we need to store a newer version, then store it.
 	oldRepository := builder.Repository
 	err = datastore.RunInTransaction(c, func(c context.Context) error {
-		switch err := datastore.Get(c, builder); {
+		switch err := datastore.Get(c, &builder); {
 		case err == datastore.ErrNoSuchEntity:
 			return errors.New("builder deleted between datastore.Get calls")
 		case err != nil:
@@ -207,6 +218,12 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		if builder.Repository != oldRepository {
 			return errors.Reason("failed to notify because builder repository updated").Tag(transient.Tag).Err()
 		}
+
+		// Create a new builder as a copy of the old, updated with build information.
+		updatedBuilder := builder
+		updatedBuilder.Status = build.Status
+		updatedBuilder.StatusBuildTime = buildCreateTime
+		updatedBuilder.StatusRevision = gCommit.Id
 
 		// If there's been no change in status, don't bother updating.
 		if build.Status == builder.Status {
@@ -238,10 +255,7 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, history Hist
 		if err := Notify(c, d, notifications, builder.Status, build); err != nil {
 			return err
 		}
-		builder.Status = build.Status
-		builder.StatusBuildTime = buildCreateTime
-		builder.StatusRevision = gCommit.Id
-		return datastore.Put(c, builder)
+		return datastore.Put(c, &updatedBuilder)
 	}, nil)
 	return errors.Annotate(err, "failed to save builder").Tag(transient.Tag).Err()
 }
