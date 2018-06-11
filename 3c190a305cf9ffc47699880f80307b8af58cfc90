@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edf636bf_1f94866c",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T23:13:35Z",
+      "side": 1,
+      "message": "this mutates the input parameter. It is somewhat unexpected from the caller perspective. Let\u0027s make a copy of the slice.",
+      "range": {
+        "startLine": 136,
+        "startChar": 15,
+        "endLine": 136,
+        "endChar": 32
+      },
+      "revId": "3c190a305cf9ffc47699880f80307b8af58cfc90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
