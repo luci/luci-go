@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e041ab86_05aaa3b9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T20:59:25Z",
+      "side": 1,
+      "message": "notifypb? buildbucketpb does not have Notification",
+      "range": {
+        "startLine": 106,
+        "startChar": 21,
+        "endLine": 106,
+        "endChar": 34
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6b40b1b_cb3c96b9",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T20:59:25Z",
+      "side": 1,
+      "message": "email_notify is not a property, but a parameter. Currently it is not surfaced in the proto, that\u0027s why we were extracting it from v1 pubsub message body",
+      "range": {
+        "startLine": 118,
+        "startChar": 32,
+        "endLine": 118,
+        "endChar": 42
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1dbf0e7_d6f19d44",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T20:59:25Z",
+      "side": 1,
+      "message": "this doesn\u0027t compile",
+      "range": {
+        "startLine": 185,
+        "startChar": 68,
+        "endLine": 185,
+        "endChar": 69
+      },
+      "revId": "53628631551dc38c3b771c5376addedb91efd50f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
