@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -170,5 +171,35 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 		out = &toPut
 		return nil
 	}, nil)
+	return
+}
+
+// ListInstances lists instances of a package, more recent first.
+//
+// Only does a query over Instances entities. Doesn't check whether the Package
+// entity exists. Returns up to pageSize entities, plus non-nil cursor (if
+// there are more results). If pageSize is <= 0, will fetch all entities.
+func ListInstances(c context.Context, pkg string, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
+	q := datastore.NewQuery("PackageInstance").Ancestor(PackageKey(c, pkg))
+	q = q.Order("-registered_ts")
+	if pageSize > 0 {
+		q = q.Limit(pageSize)
+	}
+	if cursor != nil {
+		q = q.Start(cursor)
+	}
+	err = datastore.Run(c, q, func(ent *Instance, cb datastore.CursorCB) error {
+		out = append(out, ent)
+		if pageSize != 0 && len(out) >= int(pageSize) {
+			if nextCur, err = cb(); err != nil {
+				return err
+			}
+			return datastore.Stop
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, nil, transient.Tag.Apply(err)
+	}
 	return
 }

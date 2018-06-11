@@ -704,5 +704,53 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesRequest) (resp *api.ListInstancesResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request, decode the cursor.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+
+	switch {
+	case r.PageSize < 0:
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'page_size' %d - it should be non-negative", r.PageSize)
+	case r.PageSize == 0:
+		r.PageSize = 100
+	}
+
+	var cursor datastore.Cursor
+	if r.PageToken != "" {
+		if cursor, err = datastore.DecodeCursor(c, r.PageToken); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "bad 'page_token' - %s", err)
+		}
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Check that the package is registered.
+	switch yes, err := model.CheckPackage(c, r.Package, true); {
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to check package presence").Err()
+	case !yes:
+		return nil, status.Errorf(codes.NotFound, "no such package")
+	}
+
+	// Do the actual listing.
+	inst, cursor, err := model.ListInstances(c, r.Package, r.PageSize, cursor)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to list instances").Err()
+	}
+
+	// Convert results to proto.
+	resp = &api.ListInstancesResponse{
+		Instances: make([]*api.Instance, len(inst)),
+	}
+	for i, ent := range inst {
+		resp.Instances[i] = ent.Proto()
+	}
+	if cursor != nil {
+		resp.NextPageToken = cursor.String()
+	}
+	return resp, nil
 }

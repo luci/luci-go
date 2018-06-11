@@ -15,6 +15,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -144,6 +145,46 @@ func TesRefIIDConversion(t *testing.T) {
 		So(InstanceIDToObjectRef(sha1), ShouldResemble, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: sha1,
+		})
+	})
+}
+
+func TestListInstances(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ts := time.Unix(1525136124, 0).UTC()
+		ctx := gaetesting.TestingContext()
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		inst := func(i int) *Instance {
+			return &Instance{
+				InstanceID:   fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
+				Package:      PackageKey(ctx, "a/b"),
+				RegisteredTs: ts.Add(time.Duration(i) * time.Minute),
+			}
+		}
+		for i := 0; i < 4; i++ {
+			So(datastore.Put(ctx, inst(i)), ShouldBeNil)
+		}
+
+		Convey("Full listing", func() {
+			out, cur, err := ListInstances(ctx, "a/b", 0, nil)
+			So(err, ShouldBeNil)
+			So(cur, ShouldBeNil)
+			So(out, ShouldResemble, []*Instance{inst(3), inst(2), inst(1), inst(0)})
+		})
+
+		Convey("Paginated listing", func() {
+			out, cur, err := ListInstances(ctx, "a/b", 3, nil)
+			So(err, ShouldBeNil)
+			So(cur, ShouldNotBeNil)
+			So(out, ShouldResemble, []*Instance{inst(3), inst(2), inst(1)})
+
+			out, cur, err = ListInstances(ctx, "a/b", 3, cur)
+			So(err, ShouldBeNil)
+			So(cur, ShouldBeNil)
+			So(out, ShouldResemble, []*Instance{inst(0)})
 		})
 	})
 }
