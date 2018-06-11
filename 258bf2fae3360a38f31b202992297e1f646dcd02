@@ -46,6 +46,30 @@
       "revId": "258bf2fae3360a38f31b202992297e1f646dcd02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "849140b8_7253ba47",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-11T20:54:12Z",
+      "side": 1,
+      "message": "oh, I see now. I forgot that we are reading builder in txn. I think ps2 was good. Sorry about that.",
+      "parentUuid": "4a5b7394_4d48d3f7",
+      "range": {
+        "startLine": 224,
+        "startChar": 2,
+        "endLine": 225,
+        "endChar": 50
+      },
+      "revId": "258bf2fae3360a38f31b202992297e1f646dcd02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
