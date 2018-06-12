@@ -94,7 +94,7 @@ Reusing templates from another files.
 		})
 
 		Convey(`GenerateEmail`, func() {
-			input := &emailTemplateInput{
+			input := &EmailTemplateInput{
 				Build: &buildbucketpb.Build{
 					Id: 54,
 					Builder: &buildbucketpb.Builder_ID{

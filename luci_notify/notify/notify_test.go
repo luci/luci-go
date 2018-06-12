@@ -84,7 +84,10 @@ func TestNotify(t *testing.T) {
 					Template: "non-default",
 				},
 			}
-			tasks, err := createEmailTasks(c, emailNotify, buildbucketpb.Status_SUCCESS, build)
+			tasks, err := createEmailTasks(c, emailNotify, &EmailTemplateInput{
+				Build:     &build.Build,
+				OldStatus: buildbucketpb.Status_SUCCESS,
+			})
 			So(err, ShouldBeNil)
 			So(tasks, ShouldResemble, []*tq.Task{
 				{
