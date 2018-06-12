@@ -139,6 +139,11 @@ func TestBuildIDLink(t *testing.T) {
 					buildID, project := "buildbucket/", "proj"
 					So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
 				})
+
+				Convey("due to missing project info", func() {
+					buildID, project := "buildbucket/123", ""
+					So(buildIDLink(buildID, project), ShouldEqual, "#invalid-build-id")
+				})
 			})
 		})
 

@@ -35,7 +35,6 @@ import "go.chromium.org/luci/buildbucket/proto/step.proto";
 // a build at completion time and does not change after that.
 // All fields are included.
 message Build {
-
   // Defines what to build/test.
   message Input {
     // Arbitrary JSON object. Available at build run time.
@@ -87,6 +86,8 @@ message Build {
     string summary_markdown = 2;
   }
 
+  reserved 5; // view_url
+
   // Identifier of the build, unique per LUCI deployment.
   // IDs are monotonically decreasing.
   int64 id = 1;
@@ -117,10 +118,6 @@ message Build {
 
   // Verified identity which created this build.
   string created_by = 4;
-
-  // URL of a human-oriented build page.
-  // Always populated.
-  string view_url = 5;
 
   // When the build was created.
   google.protobuf.Timestamp create_time = 6;
