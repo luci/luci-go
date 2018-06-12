@@ -148,7 +148,6 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		Builder:   builder,
 		Number:    int32(number),
 		CreatedBy: msg.CreatedBy,
-		ViewUrl:   msg.Url,
 
 		CreateTime: timestampToV2(msg.CreatedTs),
 		StartTime:  timestampToV2(msg.StartedTs),
