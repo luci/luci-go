@@ -686,16 +686,12 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 	}
 
 	// Mutate Instance entity, storing results that haven't been stored yet.
-	fatal := false
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
-		fatal = false // reset in case of txn retry
-
+	return model.Txn(c, "updateProcessors", func(c context.Context) error {
 		switch err := datastore.Get(c, instEnt); {
 		case err == datastore.ErrNoSuchEntity:
-			fatal = true
 			return fmt.Errorf("the entity is unexpectedly gone")
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch the entity").Err()
+			return errors.Annotate(err, "failed to fetch the entity").Tag(transient.Tag).Err()
 		}
 
 		var toPut []interface{}
@@ -722,13 +718,8 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 		if len(toPut) == 0 {
 			return nil
 		}
-		return datastore.Put(c, toPut, instEnt)
-	}, nil)
-
-	if !fatal {
-		err = transient.Tag.Apply(err)
-	}
-	return err
+		return transient.Tag.Apply(datastore.Put(c, toPut, instEnt))
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
