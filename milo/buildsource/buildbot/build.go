@@ -439,6 +439,15 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 
 // Build fetches a buildbot build and translates it into a miloBuild.
 func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBuild, error) {
+	switch {
+	case master == "":
+		return nil, errors.New("Master is required", common.CodeParameterError)
+	case builder == "":
+		return nil, errors.New("BuilderName is required", common.CodeParameterError)
+	case buildNum < 0:
+		return nil, errors.New("BuildNumber must be >= 0", common.CodeParameterError)
+	}
+
 	if err := buildstore.CanAccessMaster(c, master); err != nil {
 		return nil, err
 	}
@@ -452,36 +461,4 @@ func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBui
 			Err()
 	}
 	return renderBuild(c, b, true), nil
-}
-
-// BuildID is buildbots's notion of a Build. See buildsource.ID.
-type BuildID struct {
-	Master      string
-	BuilderName string
-	BuildNumber string
-}
-
-// GetLog implements buildsource.ID.
-func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
-
-// Get implements buildsource.ID.
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	num, err := strconv.ParseInt(b.BuildNumber, 10, 0)
-	if err != nil {
-		return nil, errors.Annotate(err, "BuildNumber is not a number").
-			Tag(common.CodeParameterError).
-			Err()
-	}
-	if num < 0 {
-		return nil, errors.New("BuildNumber must be >= 0", common.CodeParameterError)
-	}
-
-	if b.Master == "" {
-		return nil, errors.New("Master is required", common.CodeParameterError)
-	}
-	if b.BuilderName == "" {
-		return nil, errors.New("BuilderName is required", common.CodeParameterError)
-	}
-
-	return Build(c, b.Master, b.BuilderName, int(num))
 }
