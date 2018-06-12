@@ -106,6 +106,11 @@ type prodSwarmingService struct {
 }
 
 func NewProdService(c context.Context, host string) (*prodSwarmingService, error) {
+	host, err := getSwarmingHost(c, host)
+	if err != nil {
+		return nil, err
+	}
+
 	client, err := getSwarmingClient(c, host)
 	if err != nil {
 		return nil, err
@@ -796,61 +801,50 @@ type BuildID struct {
 	Host string
 }
 
-// getSwarmingHost parses the swarming hostname out of the context.  If
-// none is specified, get the default swarming host out of the global
-// configs.
-func (b *BuildID) getSwarmingHost(c context.Context) (host string, err error) {
-	host = b.Host
+// getSwarmingHost returns default hostname if host is empty.
+// If host is not empty and not allowed, returns an error.
+func getSwarmingHost(c context.Context, host string) (string, error) {
 	settings := common.GetSettings(c)
 	if settings.Swarming == nil {
 		err := errors.New("swarming not in settings")
 		logging.WithError(err).Errorf(c, "Go configure swarming in the settings page.")
 		return "", err
 	}
+
 	if host == "" || host == settings.Swarming.DefaultHost {
 		return settings.Swarming.DefaultHost, nil
 	}
 	// If it is specified, validate the hostname.
-	for _, hostname := range settings.Swarming.AllowedHosts {
-		if host == hostname {
+	for _, allowed := range settings.Swarming.AllowedHosts {
+		if host == allowed {
 			return host, nil
 		}
 	}
 	return "", errors.New("unknown swarming host", common.CodeParameterError)
 }
 
-func (b *BuildID) validate() error {
-	if b.TaskID == "" {
-		return errors.New("no swarming task id", common.CodeParameterError)
-	}
-	return nil
-}
-
-// Get implements buildsource.ID
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	if err := b.validate(); err != nil {
-		return nil, err
+// GetBuild returns a milo build from a swarming task id.
+func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuild, error) {
+	if taskId == "" {
+		return nil, errors.New("no swarming task id", common.CodeParameterError)
 	}
 
-	hostname, err := b.getSwarmingHost(c)
-	if err != nil {
-		return nil, err
-	}
-	sf, err := NewProdService(c, hostname)
+	sf, err := NewProdService(c, host)
 	if err != nil {
 		return nil, err
 	}
 
-	mb, err := SwarmingBuildImpl(c, sf, b.TaskID)
+	mb, err := SwarmingBuildImpl(c, sf, taskId)
 	if err != nil {
 		return nil, err
 	}
 	return mb, nil
 }
 
-// GetLog implements buildsource.ID
-func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
-	if err = b.validate(); err != nil {
+// GetLog loads a step log.
+func GetLog(c context.Context, host, taskID, logname string) (text string, closed bool, err error) {
+	if taskID == "" {
+		err = errors.New("no swarming task id", common.CodeParameterError)
 		return
 	}
 	if logname == "" {
@@ -858,15 +852,10 @@ func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed
 		return
 	}
 
-	hostname, err := b.getSwarmingHost(c)
+	sf, err := NewProdService(c, host)
 	if err != nil {
 		return
 	}
 
-	sf, err := NewProdService(c, hostname)
-	if err != nil {
-		return
-	}
-
-	return swarmingBuildLogImpl(c, sf, b.TaskID, logname)
+	return swarmingBuildLogImpl(c, sf, taskID, logname)
 }
