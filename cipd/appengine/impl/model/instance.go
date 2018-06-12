@@ -122,7 +122,7 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 // In either case, it returns the entity that is stored now in the datastore.
 // It is either the new instance, or something that existed there before.
 func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context, *Instance) error) (reg bool, out *Instance, err error) {
-	err = datastore.RunInTransaction(c, func(c context.Context) error {
+	err = Txn(c, "RegisterInstance", func(c context.Context) error {
 		// Reset the state in case of a txn retry.
 		reg = false
 		out = nil
@@ -137,13 +137,13 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 			out = &existing
 			return nil
 		case err != datastore.ErrNoSuchEntity:
-			return errors.Annotate(err, "failed to fetch the instance entity").Err()
+			return errors.Annotate(err, "failed to fetch the instance entity").Tag(transient.Tag).Err()
 		}
 
 		// Register the package entity too, if missing.
 		switch res, err := datastore.Exists(c, inst.Package); {
 		case err != nil:
-			return errors.Annotate(err, "failed to fetch the package entity existence").Err()
+			return errors.Annotate(err, "failed to fetch the package entity existence").Tag(transient.Tag).Err()
 		case !res.Any():
 			err := datastore.Put(c, &Package{
 				Name:         inst.Package.StringID(),
@@ -151,7 +151,7 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 				RegisteredTs: inst.RegisteredTs,
 			})
 			if err != nil {
-				return errors.Annotate(err, "failed to create the package entity").Err()
+				return errors.Annotate(err, "failed to create the package entity").Tag(transient.Tag).Err()
 			}
 		}
 
@@ -165,12 +165,12 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 
 		// Finally register the package instance entity.
 		if err := datastore.Put(c, &toPut); err != nil {
-			return errors.Annotate(err, "failed to create the package instance entity").Err()
+			return errors.Annotate(err, "failed to create the package instance entity").Tag(transient.Tag).Err()
 		}
 		reg = true
 		out = &toPut
 		return nil
-	}, nil)
+	})
 	return
 }
 

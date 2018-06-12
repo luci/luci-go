@@ -149,34 +149,17 @@ func CheckPackage(c context.Context, pkg string, includeHidden bool) (bool, erro
 // If the package is missing returns datastore.ErrNoSuchEntity. All other errors
 // are transient.
 func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
-	// Avoid txn if it is already set.
-	p := &Package{Name: pkg}
-	switch err := datastore.Get(c, p); {
-	case err == datastore.ErrNoSuchEntity:
-		return err
-	case err != nil:
-		return transient.Tag.Apply(err)
-	case p.Hidden == hidden:
-		return nil
-	}
-
-	err := datastore.RunInTransaction(c, func(c context.Context) error {
+	return Txn(c, "SetPackageHidden", func(c context.Context) error {
 		p := &Package{Name: pkg}
 		switch err := datastore.Get(c, p); {
-		case err != nil:
+		case err == datastore.ErrNoSuchEntity:
 			return err
+		case err != nil:
+			return transient.Tag.Apply(err)
 		case p.Hidden == hidden:
 			return nil
 		}
 		p.Hidden = hidden
-		return datastore.Put(c, p)
-	}, nil)
-
-	switch {
-	case err == datastore.ErrNoSuchEntity:
-		return err
-	case err != nil:
-		return transient.Tag.Apply(err)
-	}
-	return nil
+		return transient.Tag.Apply(datastore.Put(c, p))
+	})
 }
