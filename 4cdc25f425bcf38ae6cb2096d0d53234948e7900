@@ -225,6 +225,30 @@
     },
     {
       "key": {
+        "uuid": "bd5dabd0_4fa55432",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T23:54:16Z",
+      "side": 1,
+      "message": "i think the history func should wrap the error returned by the gitiles client using https://godoc.org/go.chromium.org/luci/grpc/grpcutil#WrapIfTransient",
+      "parentUuid": "fa4f7b70_29bc8d88",
+      "range": {
+        "startLine": 123,
+        "startChar": 12,
+        "endLine": 123,
+        "endChar": 15
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "51a494c7_72ca0ba8",
         "filename": "luci_notify/notify/commits.go",
         "patchSetId": 25
@@ -359,6 +383,24 @@
     },
     {
       "key": {
+        "uuid": "f1d49fbd_55eac913",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 219,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T23:54:16Z",
+      "side": 1,
+      "message": "yes",
+      "parentUuid": "d2862312_779450c4",
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a352bd16_2eaeeced",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 25
@@ -403,6 +445,30 @@
       "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6168bb2c_6dc315df",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 282,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T23:54:16Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "71030ee8_b3f366c9",
+      "range": {
+        "startLine": 280,
+        "startChar": 3,
+        "endLine": 282,
+        "endChar": 4
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

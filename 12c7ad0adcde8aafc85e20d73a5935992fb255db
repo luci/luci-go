@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cada8ab7_d97d7480",
+        "filename": "luci_notify/notify/srcman.go",
+        "patchSetId": 32
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T23:54:16Z",
+      "side": 1,
+      "message": "i believe this will break all clients that don\u0027t use source manifest, i.e. it is a breaking change. I think we should return nil, nil here (note that nil is a valid Checkout)",
+      "range": {
+        "startLine": 65,
+        "startChar": 14,
+        "endLine": 67,
+        "endChar": 45
+      },
+      "revId": "12c7ad0adcde8aafc85e20d73a5935992fb255db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
