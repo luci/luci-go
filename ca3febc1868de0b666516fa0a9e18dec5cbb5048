@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c825850c_3b136d54",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-12T00:55:20Z",
+      "side": 1,
+      "message": "well, this would also benefit from not having 2 extra output fields, which presumably will require validation.",
+      "range": {
+        "startLine": 202,
+        "startChar": 16,
+        "endLine": 202,
+        "endChar": 19
+      },
+      "revId": "ca3febc1868de0b666516fa0a9e18dec5cbb5048",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
