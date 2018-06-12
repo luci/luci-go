@@ -22,6 +22,30 @@
       "revId": "2f6e5de732b54f6b50c8095468690d727f56a5a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "04614dd9_826b510f",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-12T05:16:46Z",
+      "side": 0,
+      "message": ":) i\u0027ll push harder next time :P",
+      "parentUuid": "7aae3f81_5ed00b20",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 35
+      },
+      "revId": "2f6e5de732b54f6b50c8095468690d727f56a5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
