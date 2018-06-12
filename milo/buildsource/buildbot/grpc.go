@@ -70,7 +70,11 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		return nil, err
 	}
 
-	b, err := buildstore.GetBuild(c, req.Master, req.Builder, int(req.BuildNum))
+	b, err := buildstore.GetBuild(c, buildbot.BuildID{
+		Master:  req.Master,
+		Builder: req.Builder,
+		Number:  int(req.BuildNum),
+	})
 	switch {
 	case common.ErrorCodeIn(err) == common.CodeNoAccess:
 		return nil, errNotFoundGRPC

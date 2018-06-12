@@ -59,20 +59,20 @@ const maxDataSize = 950000
 // GetBuild fetches a buildbot build from the storage.
 // Returns (nil, nil) if build is not found.
 // Does not check access.
-func GetBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
-	return getBuild(c, master, builder, number, true, true)
+func GetBuild(c context.Context, id buildbot.BuildID) (*buildbot.Build, error) {
+	return getBuild(c, id, true, true)
 }
 
 // getBuild returns a build by master, builder and number.
 // The returned build may be coming from datastore or Buildbucket RPC.
 // Returns (nil, nil) if build is not found.
-func getBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
+func getBuild(c context.Context, id buildbot.BuildID, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
 	if !EmulationEnabled(c) {
-		return getDatastoreBuild(c, master, builder, number)
+		return getDatastoreBuild(c, id)
 	}
 
 	// Is it a LUCI build?
-	build, err := getEmulatedBuild(c, master, builder, number, fetchAnnotations, fetchChanges)
+	build, err := getEmulatedBuild(c, id, fetchAnnotations, fetchChanges)
 	switch {
 	case err != nil:
 		return nil, err
@@ -82,7 +82,7 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 	}
 
 	// Is it a Buildbot build?
-	build, err = getDatastoreBuild(c, master, builder, number)
+	build, err = getDatastoreBuild(c, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -97,13 +97,13 @@ func getBuild(c context.Context, master, builder string, number int, fetchAnnota
 
 // EmulationOf returns the Buildbucket build that the given Buildbot build is emulating.
 // Returns (nil, nil) if build is not found.
-func EmulationOf(c context.Context, master, builder string, number int) (*buildbucket.Build, error) {
+func EmulationOf(c context.Context, id buildbot.BuildID) (*buildbucket.Build, error) {
 	bb, err := buildbucketClient(c)
 	if err != nil {
 		return nil, err
 	}
 
-	bucket, err := BucketOf(c, master)
+	bucket, err := BucketOf(c, id.Master)
 	switch {
 	case err != nil:
 		return nil, err
@@ -113,7 +113,7 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 
 	msgs, _, err := bb.Search().
 		// this search is optimized, a datastore.get.
-		Tag(strpair.Format(bbv1.TagBuildAddress, bbv1.FormatBuildAddress(0, bucket, builder, number))).
+		Tag(strpair.Format(bbv1.TagBuildAddress, bbv1.FormatBuildAddress(0, bucket, id.Builder, id.Number))).
 		Context(c).
 		Fetch(1, nil)
 	switch {
@@ -129,8 +129,12 @@ func EmulationOf(c context.Context, master, builder string, number int) (*buildb
 
 // getEmulatedBuild returns a buildbot build derived from a LUCI build.
 // Returns (nil, nil) if build is not found.
-func getEmulatedBuild(c context.Context, master, builder string, number int, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
-	buildbucketBuild, err := EmulationOf(c, master, builder, number)
+func getEmulatedBuild(c context.Context, id buildbot.BuildID, fetchAnnotations, fetchChanges bool) (*buildbot.Build, error) {
+	if err := id.Validate(); err != nil {
+		return nil, err
+	}
+
+	buildbucketBuild, err := EmulationOf(c, id)
 	switch {
 	case err != nil:
 		return nil, err
@@ -138,7 +142,7 @@ func getEmulatedBuild(c context.Context, master, builder string, number int, fet
 		return nil, nil
 	}
 
-	buildbotBuild, err := buildFromBuildbucket(c, master, buildbucketBuild, fetchAnnotations)
+	buildbotBuild, err := buildFromBuildbucket(c, id.Master, buildbucketBuild, fetchAnnotations)
 	switch {
 	case ErrNoBuildNumber.In(err):
 		// This is an old buildbucket build without a build number.  Just drop it.
@@ -159,11 +163,15 @@ func getEmulatedBuild(c context.Context, master, builder string, number int, fet
 
 // getDatastoreBuild returns a buildbot build from the datastore.
 // Returns (nil, nil) if build is not found.
-func getDatastoreBuild(c context.Context, master, builder string, number int) (*buildbot.Build, error) {
+func getDatastoreBuild(c context.Context, id buildbot.BuildID) (*buildbot.Build, error) {
+	if err := id.Validate(); err != nil {
+		return nil, err
+	}
+
 	entity := &buildEntity{
-		Master:      master,
-		Buildername: builder,
-		Number:      number,
+		Master:      id.Master,
+		Buildername: id.Builder,
+		Number:      id.Number,
 	}
 
 	err := datastore.Get(c, entity)

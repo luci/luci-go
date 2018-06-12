@@ -37,6 +37,7 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	buildbotapi "go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
@@ -167,7 +168,11 @@ func Run(templatePath string) {
 
 		// If this build is emulated, redirect to LUCI.
 		if number, err := strconv.Atoi(id.BuildNumber); err == nil {
-			b, err := buildstore.EmulationOf(c.Context, id.Master, id.BuilderName, number)
+			b, err := buildstore.EmulationOf(c.Context, buildbotapi.BuildID{
+				Master:  id.Master,
+				Builder: id.BuilderName,
+				Number:  number,
+			})
 			switch {
 			case err != nil:
 				return err

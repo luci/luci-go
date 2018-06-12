@@ -156,9 +156,13 @@ type Build struct {
 	ViewPath string `json:"view_path"`
 }
 
-// ID returns "<master>/<builder>/<number>" string.
-func (b *Build) ID() string {
-	return fmt.Sprintf("%s/%s/%d", b.Master, b.Buildername, b.Number)
+// ID returns b's BuildID.
+func (b *Build) ID() BuildID {
+	return BuildID{
+		Master:  b.Master,
+		Builder: b.Buildername,
+		Number:  b.Number,
+	}
 }
 
 func (b *Build) Status() model.Status {
