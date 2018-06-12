@@ -81,9 +81,9 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Builds.
-	// TODO(nodir): replace the URL path template with "/b/:id". crbug.com/841603
-	r.GET("/p/:project/builds/b:id", projectMW, handleError(handleLUCIBuildByID))
-	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, handleError(handleLUCIBuildByNumber))
+	r.GET("/b/:id", projectMW, handleError(redirectLUCIBuild))
+	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
+	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", projectMW, handleError(handleLUCIBuild))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
