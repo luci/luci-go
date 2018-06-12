@@ -65,6 +65,8 @@ import (
 
 //// Global state. See init().
 
+const adminGroup = "administrators"
+
 var (
 	globalDispatcher = tq.Dispatcher{
 		// Default "/internal/tasks/" is already used by the old-style task queue
@@ -193,6 +195,7 @@ func init() {
 		Engine:  globalEngine.PublicAPI(),
 		Catalog: globalCatalog,
 	})
+	internal.RegisterAdminServer(&api, apiservers.AdminServerWithACL(globalEngine, globalCatalog, adminGroup))
 	discovery.Enable(&api)
 	api.InstallHandlers(r, base)
 
