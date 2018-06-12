@@ -438,16 +438,19 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 }
 
 // Build fetches a buildbot build and translates it into a miloBuild.
-func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBuild, error) {
-	if err := buildstore.CanAccessMaster(c, master); err != nil {
+func Build(c context.Context, id buildbot.BuildID) (*ui.MiloBuild, error) {
+	if err := id.Validate(); err != nil {
 		return nil, err
 	}
-	b, err := buildstore.GetBuild(c, master, builder, buildNum)
+	if err := buildstore.CanAccessMaster(c, id.Master); err != nil {
+		return nil, err
+	}
+	b, err := buildstore.GetBuild(c, id)
 	if err != nil {
 		return nil, err
 	}
 	if b == nil {
-		return nil, errors.Reason("build %s/%s/%d not found", master, builder, buildNum).
+		return nil, errors.Reason("build %s not found", &id).
 			Tag(common.CodeNotFound).
 			Err()
 	}
@@ -455,6 +458,7 @@ func Build(c context.Context, master, builder string, buildNum int) (*ui.MiloBui
 }
 
 // BuildID is buildbots's notion of a Build. See buildsource.ID.
+// TODO(nodir): remove this struct, reuse buildstore.BuildID.
 type BuildID struct {
 	Master      string
 	BuilderName string
@@ -466,22 +470,15 @@ func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic(
 
 // Get implements buildsource.ID.
 func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	num, err := strconv.ParseInt(b.BuildNumber, 10, 0)
+	num, err := strconv.Atoi(b.BuildNumber)
 	if err != nil {
 		return nil, errors.Annotate(err, "BuildNumber is not a number").
 			Tag(common.CodeParameterError).
 			Err()
 	}
-	if num < 0 {
-		return nil, errors.New("BuildNumber must be >= 0", common.CodeParameterError)
-	}
-
-	if b.Master == "" {
-		return nil, errors.New("Master is required", common.CodeParameterError)
-	}
-	if b.BuilderName == "" {
-		return nil, errors.New("BuilderName is required", common.CodeParameterError)
-	}
-
-	return Build(c, b.Master, b.BuilderName, int(num))
+	return Build(c, buildbot.BuildID{
+		Master:  b.Master,
+		Builder: b.BuilderName,
+		Number:  num,
+	})
 }
