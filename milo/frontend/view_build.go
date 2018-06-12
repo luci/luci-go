@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 
+	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
@@ -65,7 +67,7 @@ func handleLUCIBuildByNumber(c *router.Context) error {
 		c.Params.ByName("bucket"),
 		c.Params.ByName("builder"),
 		c.Params.ByName("number"))
-	build, err := buildbucket.GetBuild(c.Context, address)
+	build, err := buildbucket.GetBuild(c.Context, address, true, true)
 	return renderBuild(c, build, err)
 }
 
@@ -77,8 +79,24 @@ func handleLUCIBuildByID(c *router.Context) error {
 		return errors.Annotate(err, "invalid id").Tag(common.CodeParameterError).Err()
 	}
 
-	build, err := buildbucket.GetBuild(c.Context, idStr)
-	// TODO(nodir): redirect to build number handler if the build has a number.
+	// If the build has a number, redirect to a URL with it.
+	rawBuild, err := buildbucket.GetRawBuild(c.Context, idStr)
+	if err != nil {
+		return err
+	}
+	for _, t := range rawBuild.Tags {
+		k, v := strpair.Parse(t)
+		if k == bbv1.TagBuildAddress {
+			if _, project, bucket, builder, number, _ := bbv1.ParseBuildAddress(v); number > 0 {
+				u := *c.Request.URL
+				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", project, bucket, builder, number)
+				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
+				return nil
+			}
+		}
+	}
+
+	build, err := buildbucket.ToMiloBuild(c.Context, rawBuild, true, true)
 	return renderBuild(c, build, err)
 }
 

@@ -379,15 +379,14 @@ func buildIDLink(b string, project string) string {
 	case "buildbucket":
 		address := strings.TrimPrefix(b, source+"/")
 		id, proj, bucket, builder, number, err := bbv1.ParseBuildAddress(address)
-		if err != nil {
+		switch {
+		case err != nil:
 			return InvalidBuildIDURL
-		}
-		if id == 0 {
+		case number != 0:
 			return fmt.Sprintf("/p/%s/builders/%s/%s/%d", proj, bucket, builder, number)
-		} else if project != "" {
-			return fmt.Sprintf("/p/%s/builds/b%d", project, id)
+		default:
+			return fmt.Sprintf("/b/%d", id)
 		}
-		return InvalidBuildIDURL
 
 	default:
 		return InvalidBuildIDURL
