@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e09a7d37_992ce96b",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-12T18:08:35Z",
+      "side": 0,
+      "message": "stick 5 into reserved",
+      "range": {
+        "startLine": 123,
+        "startChar": 20,
+        "endLine": 123,
+        "endChar": 21
+      },
+      "revId": "96d5e61d43134e4e2b64e22c86be69bf9b1e9bec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
