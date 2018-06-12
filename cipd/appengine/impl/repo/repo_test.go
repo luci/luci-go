@@ -1214,3 +1214,34 @@ func TestListInstances(t *testing.T) {
 		})
 	})
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Refs support.
+
+func TestRefs(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:writer@example.com",
+		})
+
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		// TODO(vadimsh): Implement.
+		_ = impl
+	})
+}
