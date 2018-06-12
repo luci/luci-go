@@ -22,6 +22,30 @@
       "revId": "ca3febc1868de0b666516fa0a9e18dec5cbb5048",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "066c479c_191a5e93",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-12T04:01:35Z",
+      "side": 1,
+      "message": "No, this is per API guidelines: constructors take the full body of an object they are constructing.",
+      "parentUuid": "c825850c_3b136d54",
+      "range": {
+        "startLine": 202,
+        "startChar": 16,
+        "endLine": 202,
+        "endChar": 19
+      },
+      "revId": "ca3febc1868de0b666516fa0a9e18dec5cbb5048",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
