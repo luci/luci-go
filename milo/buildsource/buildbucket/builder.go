@@ -141,7 +141,7 @@ func getDebugBuilds(c context.Context, bid BuilderID, maxCompletedBuilds int, ta
 	}
 
 	for _, bb := range res.Builds {
-		mb, err := toMiloBuild(c, bb)
+		mb, err := ToMiloBuild(c, bb, false)
 		if err != nil {
 			return err
 		}
@@ -217,7 +217,7 @@ func toMiloBuildsSummaries(c context.Context, msgs []*bbv1.ApiCommonBuildMessage
 			i := i
 			m := m
 			work <- func() error {
-				mb, err := toMiloBuild(c, m)
+				mb, err := ToMiloBuild(c, m, false)
 				if err != nil {
 					return errors.Annotate(err, "failed to convert build %d to milo build", m.Id).Err()
 				}

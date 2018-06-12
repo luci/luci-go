@@ -212,10 +212,11 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 	return
 }
 
-// toMiloBuild converts a buildbucket build to a milo build.
+// toMiloBuildInMemory converts a buildbucket build to a milo build in memory.
+// Does not make RPCs.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
+func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
 	// Parse the build message into a buildbucket.Build struct, filling in the
 	// input and output properties that we expect to receive.
 	var b buildbucket.Build
@@ -323,7 +324,7 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 		idStr := strconv.FormatInt(b.ID, 10)
 		result.Summary.Label = ui.NewLink(
 			idStr,
-			fmt.Sprintf("/p/%s/builds/b%s", b.Project, idStr),
+			fmt.Sprintf("/b/%s", idStr),
 			fmt.Sprintf("build #%s", idStr))
 	}
 	return result, nil
@@ -346,7 +347,8 @@ func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
 	}
 }
 
-func getBuildbucketBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage, error) {
+// GetRawBuild fetches a buildbucket build given its address.
+func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage, error) {
 	host, err := getHost(c)
 	if err != nil {
 		return nil, err
@@ -402,34 +404,41 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 	return simplisticBlamelist(c, bs)
 }
 
-// GetBuild returns a ui.MiloBuild based off of the Buildbucket address.
-// It performs the following actions:
-// * Fetch the full Buildbucket build from Buildbucket
-// * Fetch the step information from LogDog
-// * Fetch the blame information from Gitiles
-// This only errors out on failures to reach BuildBucket. LogDog and Gitiles
-// errors are surfaced in the UI.
+// GetBuild is a shortcut for GetRawBuild and ToMiloBuild.
+func GetBuild(c context.Context, address string, fetchFull bool) (*ui.MiloBuild, error) {
+	bbBuildMessage, err := GetRawBuild(c, address)
+	if err != nil {
+		return nil, err
+	}
+	return ToMiloBuild(c, bbBuildMessage, fetchFull)
+}
+
+// ToMiloBuild converts a raw buildbucket build to a milo build.
+//
+// Returns an error only on failure to reach buildbucket.
+// Other errors are surfaced in the returned build.
+//
 // TODO(hinoka): Some of this can be done concurrently. Investigate if this call
 // takes >500ms on average.
-func GetBuild(c context.Context, address string) (*ui.MiloBuild, error) {
-	bbBuildMessage, err := getBuildbucketBuild(c, address)
+// TODO(crbug.com/850113): stop loading steps from logdog.
+func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuild, error) {
+	mb, err := toMiloBuildInMemory(c, b)
 	if err != nil {
 		return nil, err
 	}
 
-	mb, err := toMiloBuild(c, bbBuildMessage)
-	if err != nil {
-		return nil, err
+	if !fetchFull {
+		return mb, nil
 	}
 
 	// Add step information from LogDog.  If this fails, we still have perfectly
 	// valid information from Buildbucket, so just annotate the build with the
 	// error and continue.
-	if bbBuildMessage.StartedTs != 0 {
-		if addr, step, err := getStep(c, bbBuildMessage); err == nil {
+	if b.StartedTs != 0 {
+		if addr, step, err := getStep(c, b); err == nil {
 			ub := rawpresentation.NewURLBuilder(addr)
 			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
-		} else if bbBuildMessage.Status == bbv1.StatusCompleted {
+		} else if b.Status == bbv1.StatusCompleted {
 			// TODO(hinoka): This might be better placed in a error butterbar.
 			mb.Components = append(mb.Components, &ui.BuildComponent{
 				Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
@@ -440,7 +449,7 @@ func GetBuild(c context.Context, address string) (*ui.MiloBuild, error) {
 	}
 
 	// Add blame information.  If this fails, just add in a placeholder with an error.
-	if blame, err := getBlame(c, bbBuildMessage); err == nil {
+	if blame, err := getBlame(c, b); err == nil {
 		mb.Blame = blame
 	} else {
 		logging.WithError(err).Warningf(c, "failed to fetch blame information")
@@ -448,5 +457,6 @@ func GetBuild(c context.Context, address string) (*ui.MiloBuild, error) {
 			Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
 		}}
 	}
+
 	return mb, nil
 }
