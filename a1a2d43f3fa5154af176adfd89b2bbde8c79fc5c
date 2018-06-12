@@ -22,6 +22,30 @@
       "revId": "a1a2d43f3fa5154af176adfd89b2bbde8c79fc5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a12c6b7f_6021a053",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-12T00:48:45Z",
+      "side": 1,
+      "message": "Fine... Wanted to avoid unnecessary structs.",
+      "parentUuid": "86358fc9_a40d11b6",
+      "range": {
+        "startLine": 206,
+        "startChar": 2,
+        "endLine": 207,
+        "endChar": 25
+      },
+      "revId": "a1a2d43f3fa5154af176adfd89b2bbde8c79fc5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
