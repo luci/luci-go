@@ -70,7 +70,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 		return nil, err
 	}
 
-	b, err := buildstore.GetBuild(c, buildstore.BuildID{
+	b, err := buildstore.GetBuild(c, buildbot.BuildID{
 		Master:  req.Master,
 		Builder: req.Builder,
 		Number:  int(req.BuildNum),

@@ -438,7 +438,7 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 }
 
 // GetBuild fetches a buildbot build and translates it into a miloBuild.
-func GetBuild(c context.Context, id buildstore.BuildID) (*ui.MiloBuild, error) {
+func GetBuild(c context.Context, id buildbot.BuildID) (*ui.MiloBuild, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}

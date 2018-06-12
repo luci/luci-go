@@ -65,7 +65,7 @@ func fetchChangesCached(c context.Context, b *buildbot.Build) error {
 		logging.WithError(err).Errorf(c, "build %q change memcaching: %s", b.ID(), msg)
 	}
 
-	cache := memcache.NewItem(c, "buildbot_changes/"+b.ID())
+	cache := memcache.NewItem(c, "buildbot_changes/"+b.ID().String())
 	if err := memcache.Get(c, cache); err == nil {
 		err := json.Unmarshal(cache.Value(), &b.Sourcestamp.Changes)
 		if err == nil {
@@ -214,9 +214,7 @@ func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (st
 	if err != memcache.ErrCacheMiss {
 		logging.WithError(err).Warningf(c, "memcache.get failed for key %q", cache.Key())
 	}
-	var prevId BuildID
-	prevId.From(prev)
-	fetched, err := getBuild(c, prevId, false, false)
+	fetched, err := getBuild(c, prev.ID(), false, false)
 	if err != nil {
 		return "", err
 	}
@@ -244,7 +242,7 @@ func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (st
 // buildRevCache returns a memcache.Item for the build's revision.
 // Initializes the value with current revision.
 func buildRevCache(c context.Context, b *buildbot.Build) memcache.Item {
-	item := memcache.NewItem(c, "buildbot_revision/"+b.ID())
+	item := memcache.NewItem(c, "buildbot_revision/"+b.ID().String())
 	if b.Sourcestamp != nil {
 		item.SetValue([]byte(b.Sourcestamp.Revision))
 	}

@@ -32,7 +32,6 @@ import (
 	memcfg "go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
@@ -111,7 +110,7 @@ func TestBuild(t *testing.T) {
 					Number:      1,
 					Internal:    true,
 				})
-				_, err := GetBuild(c, buildstore.BuildID{Master: "fake", Builder: "fake", Number: 1})
+				_, err := GetBuild(c, buildbot.BuildID{Master: "fake", Builder: "fake", Number: 1})
 				So(common.ErrorCodeIn(err), ShouldEqual, common.CodeUnauthorized)
 			})
 		})

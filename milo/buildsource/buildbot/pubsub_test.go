@@ -138,7 +138,7 @@ func TestPubSub(t *testing.T) {
 
 			So(err, ShouldBeNil)
 			Convey("Load build entry", func() {
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  "Fake buildbotMasterEntry",
 					Builder: "Fake buildername",
 					Number:  1234,
@@ -277,7 +277,7 @@ func TestPubSub(t *testing.T) {
 			})
 
 			Convey("And stores correctly", func() {
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  b.Master,
 					Builder: b.Buildername,
 					Number:  b.Number,
@@ -328,7 +328,7 @@ func TestPubSub(t *testing.T) {
 					Request: r,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  "Fake buildbotMasterEntry",
 					Builder: "Fake buildername",
 					Number:  1234,
@@ -349,7 +349,7 @@ func TestPubSub(t *testing.T) {
 						Request: r,
 					})
 					So(h.Code, ShouldEqual, 200)
-					loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+					loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 						Master:  "Fake buildbotMasterEntry",
 						Builder: "Fake buildername",
 						Number:  1234,
@@ -374,7 +374,7 @@ func TestPubSub(t *testing.T) {
 					Request: r,
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  "Fake buildbotMasterEntry",
 					Builder: "Fake buildername",
 					Number:  1235,
@@ -396,7 +396,7 @@ func TestPubSub(t *testing.T) {
 					},
 				})
 				So(h.Code, ShouldEqual, 200)
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  "Fake buildbotMasterEntry",
 					Builder: "Fake buildername",
 					Number:  1235,
@@ -489,7 +489,7 @@ func TestPubSub(t *testing.T) {
 					Identity:       "user:alicebob@google.com",
 					IdentityGroups: []string{"googlers", "all"},
 				})
-				loadB, err := buildstore.GetBuild(c, buildstore.BuildID{
+				loadB, err := buildstore.GetBuild(c, buildbot.BuildID{
 					Master:  b.Master,
 					Builder: b.Buildername,
 					Number:  b.Number,

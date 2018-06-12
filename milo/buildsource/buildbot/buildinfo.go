@@ -49,7 +49,7 @@ func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
 		req.MasterName, req.BuilderName, req.BuildNumber)
 
 	// Load the BuildBot build from storage.
-	buildID := buildstore.BuildID{
+	buildID := buildbot.BuildID{
 		Master:  req.MasterName,
 		Builder: req.BuilderName,
 		Number:  int(req.BuildNumber),
