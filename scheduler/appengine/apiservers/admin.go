@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 	schedulerpb "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/catalog"
@@ -68,6 +69,27 @@ type adminServer struct {
 
 // GetInternalJobState implements the corresponding RPC method.
 func (s *adminServer) GetInternalJobState(c context.Context, r *schedulerpb.JobRef) (resp *internal.InternalJobState, err error) {
-	// TODO(vadimsh): Implement.
-	return nil, nil
+	switch state, err := s.Engine.GetInternalJobState(c, r.Project+"/"+r.Job); {
+	case err == engine.ErrNoSuchJob:
+		return nil, status.Errorf(codes.NotFound, "no such job")
+	case err != nil:
+		return nil, err
+	default:
+		return &internal.InternalJobState{
+			Enabled:    state.Job.Enabled,
+			Paused:     state.Job.Paused,
+			LastTriage: google.NewTimestamp(state.Job.LastTriage),
+			CronState: &internal.InternalJobState_CronState{
+				Enabled:       state.Job.Cron.Enabled,
+				Generation:    state.Job.Cron.Generation,
+				LastRewind:    google.NewTimestamp(state.Job.Cron.LastRewind),
+				LastTickWhen:  google.NewTimestamp(state.Job.Cron.LastTick.When),
+				LastTickNonce: state.Job.Cron.LastTick.TickNonce,
+			},
+			ActiveInvocations:   state.Job.ActiveInvocations,
+			FinishedInvocations: state.FinishedInvocations,
+			RecentlyFinishedSet: state.RecentlyFinishedSet,
+			PendingTriggersSet:  state.PendingTriggersSet,
+		}, nil
+	}
 }
