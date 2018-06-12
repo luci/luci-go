@@ -167,7 +167,11 @@ func Run(templatePath string) {
 
 		// If this build is emulated, redirect to LUCI.
 		if number, err := strconv.Atoi(id.BuildNumber); err == nil {
-			b, err := buildstore.EmulationOf(c.Context, id.Master, id.BuilderName, number)
+			b, err := buildstore.EmulationOf(c.Context, buildstore.BuildID{
+				Master:  id.Master,
+				Builder: id.BuilderName,
+				Number:  number,
+			})
 			switch {
 			case err != nil:
 				return err
