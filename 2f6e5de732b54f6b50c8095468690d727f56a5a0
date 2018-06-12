@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7aae3f81_5ed00b20",
+        "filename": "cipd/appengine/impl/model/package.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-12T04:15:10Z",
+      "side": 0,
+      "message": "I decided it\u0027s not worth the ugliness after all. Regular QPS to Hide/Unhide is \u003c1 per month.",
+      "range": {
+        "startLine": 152,
+        "startChar": 1,
+        "endLine": 152,
+        "endChar": 35
+      },
+      "revId": "2f6e5de732b54f6b50c8095468690d727f56a5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
