@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "b0ee0e50_dcafd2cc",
+        "filename": "milo/buildsource/buildbucket/build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T22:53:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39bfa23e_15bf0e38",
+      "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "97960924_f7b5f3af",
         "filename": "milo/frontend/routes.go",
         "patchSetId": 2
@@ -56,6 +74,30 @@
       "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b7cd72d_ee9cf1f6",
+        "filename": "milo/frontend/routes.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T22:53:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97960924_f7b5f3af",
+      "range": {
+        "startLine": 131,
+        "startChar": 36,
+        "endLine": 131,
+        "endChar": 47
+      },
+      "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -116,6 +158,30 @@
     },
     {
       "key": {
+        "uuid": "2136e80f_1d71bf04",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T22:53:31Z",
+      "side": 1,
+      "message": "at first I thought it is a great idea and did that. But then realized that it wouldn\u0027t really help. There are error code paths, e.g. in L77. I still need to return an error there. But if we return an error anyway, it does not help NOT returning it in this func.",
+      "parentUuid": "1e14e3d8_57a71426",
+      "range": {
+        "startLine": 101,
+        "startChar": 5,
+        "endLine": 101,
+        "endChar": 16
+      },
+      "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "193a234f_70e6d16f",
         "filename": "milo/frontend/view_logs.go",
         "patchSetId": 2
@@ -136,6 +202,30 @@
       "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e892b218_a46b4907",
+        "filename": "milo/frontend/view_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T22:53:31Z",
+      "side": 1,
+      "message": "thanks, done",
+      "parentUuid": "193a234f_70e6d16f",
+      "range": {
+        "startLine": 18,
+        "startChar": 4,
+        "endLine": 18,
+        "endChar": 10
+      },
+      "revId": "b8691824ff2f8d0b58a520fe1be3f2233bbcd8e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
