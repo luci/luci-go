@@ -13,8 +13,7 @@
             "bucket": "try"
         },
         "status": "SUCCESS",
-        "created_by": "johndoe@example.com",
-        "view_url": "https://example.com"
+        "created_by": "johndoe@example.com"
     },
     {
         "create_time": "2018-03-29T21:46:40.000000000Z",
