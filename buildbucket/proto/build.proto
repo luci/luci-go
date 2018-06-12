@@ -118,10 +118,6 @@ message Build {
   // Verified identity which created this build.
   string created_by = 4;
 
-  // URL of a human-oriented build page.
-  // Always populated.
-  string view_url = 5;
-
   // When the build was created.
   google.protobuf.Timestamp create_time = 6;
   // When the build started.

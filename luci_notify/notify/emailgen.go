@@ -52,7 +52,7 @@ var templateFuncs = map[string]interface{}{
 
 // errorBodyTemplate is used when a user-defined email template fails.
 var errorBodyTemplate = html.Must(html.New("error").Parse(strings.TrimSpace(`
-<p>A <a href="{{ .Build.ViewUrl }}">build</a>
+<p>A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a>
   on builder <code>{{ .Build.Builder.IDString }}</code>
   completed with status <code>{{.Build.Status}}</code>.</p>
 
@@ -98,7 +98,9 @@ at {{ .Build.EndTime | time }}.
   </tr>
 </table>
 
-<a href="{{ .Build.ViewUrl }}">Full details are available here.</a><br/><br/>
+Full details are available
+<a href="https://ci.chromium.org/b/{{.Build.Id}}">here</a>.
+<br/><br/>
 
 You are receiving the default template as no template was provided or a template
 name did not match the one provided.`,
