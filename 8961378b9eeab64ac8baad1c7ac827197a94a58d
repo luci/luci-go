@@ -52,6 +52,24 @@
       "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1935c0a6_6ce16c6f",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T20:55:40Z",
+      "side": 1,
+      "message": "i think it is more likely that build number \u003c0 because it is specified by a user. A context is not specified by a user.",
+      "parentUuid": "52dc6390_a9244c13",
+      "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
