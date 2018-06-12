@@ -16,6 +16,24 @@
       "revId": "77ecc063f26da95ae41db8db855f82bccfd9c784",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1046be72_f2e6f874",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T18:47:11Z",
+      "side": 1,
+      "message": "I\u0027ve made it a method of buildbot.Build",
+      "parentUuid": "78d28855_7e6a7e12",
+      "revId": "77ecc063f26da95ae41db8db855f82bccfd9c784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
