@@ -788,3 +788,27 @@ func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesReque
 	}
 	return resp, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Refs support.
+
+// CreateRef implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// DeleteRef implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// ListRefs implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp *api.ListRefsResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}

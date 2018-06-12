@@ -535,3 +535,27 @@ func (m *mockedRepoClient) ListInstances(ctx context.Context, in *api.ListInstan
 	}
 	return out.(*api.ListInstancesResponse), nil
 }
+
+func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("CreateRef", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) DeleteRef(ctx context.Context, in *api.DeleteRefRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("DeleteRef", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) ListRefs(ctx context.Context, in *api.ListRefsRequest, opts ...grpc.CallOption) (*api.ListRefsResponse, error) {
+	out, err := m.call("ListRefs", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ListRefsResponse), nil
+}
