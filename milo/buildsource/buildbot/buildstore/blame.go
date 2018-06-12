@@ -214,7 +214,9 @@ func getPrevRev(c context.Context, b *buildbot.Build, maxRecursionDepth int) (st
 	if err != memcache.ErrCacheMiss {
 		logging.WithError(err).Warningf(c, "memcache.get failed for key %q", cache.Key())
 	}
-	fetched, err := getBuild(c, prev.Master, prev.Buildername, prev.Number, false, false)
+	var prevId BuildID
+	prevId.From(prev)
+	fetched, err := getBuild(c, prevId, false, false)
 	if err != nil {
 		return "", err
 	}
