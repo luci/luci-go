@@ -16,7 +16,6 @@ package rawpresentation
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -245,21 +244,11 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 	}
 }
 
-// BuildID implements buildsource.ID.
-type BuildID struct {
-	Host    string
-	Project types.ProjectName
-	Path    types.StreamPath
-}
-
-// GetLog implements buildsource.ID.
-func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
-
-// Get implements buildsource.ID.
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
+// GetBuild returns a build from a raw annotation stream.
+func GetBuild(c context.Context, host string, project types.ProjectName, path types.StreamPath) (*ui.MiloBuild, error) {
 	as := AnnotationStream{
-		Project: b.Project,
-		Path:    b.Path,
+		Project: project,
+		Path:    path,
 	}
 	if err := as.Normalize(); err != nil {
 		return nil, err
@@ -267,7 +256,7 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 
 	// Setup our LogDog client.
 	var err error
-	if as.Client, err = NewClient(c, b.Host); err != nil {
+	if as.Client, err = NewClient(c, host); err != nil {
 		return nil, errors.Annotate(err, "generating LogDog Client").Err()
 	}
 
@@ -290,15 +279,6 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 	}
 
 	return as.toMiloBuild(c), nil
-}
-
-// NewBuildID generates a new un-validated BuildID.
-func NewBuildID(host, project, path string) *BuildID {
-	return &BuildID{
-		strings.TrimSpace(host),
-		types.ProjectName(project),
-		types.StreamPath(strings.Trim(path, "/")),
-	}
 }
 
 // ReadAnnotations synchronously reads and decodes the latest Step information

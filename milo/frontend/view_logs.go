@@ -5,18 +5,23 @@
 package frontend
 
 import (
-	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
+
+	"go.chromium.org/luci/milo/buildsource/swarming"
 )
 
-// LogHandler is responsible for taking a universal build ID and rendering the
-// build page (defined in ./appengine/templates/pages/log.html).
-func LogHandler(c *router.Context, buildID buildsource.ID, logname string) error {
-	log, closed, err := buildID.GetLog(c.Context, logname)
+// HandleSwarmingLog renders a step log from a swarming build.
+func HandleSwarmingLog(c *router.Context) error {
+	log, closed, err := swarming.GetLog(
+		c.Context,
+		c.Request.FormValue("server"),
+		c.Params.ByName("id"),
+		c.Params.ByName("logname"))
 	if err != nil {
 		return err
 	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/log.html", templates.Args{
 		"Log":    log,
 		"Closed": closed,

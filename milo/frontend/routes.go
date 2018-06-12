@@ -17,7 +17,6 @@ package frontend
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -37,13 +36,11 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
-	buildbotapi "go.chromium.org/luci/milo/api/buildbot"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/buildsource/buildbucket"
-	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
 	"go.chromium.org/luci/milo/rpc"
 )
@@ -84,21 +81,9 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Builds.
-	r.GET("/p/:project/builds/b:id", projectMW, handleError(func(c *router.Context) error {
-		return BuildHandler(c, &buildbucket.BuildID{
-			Project: c.Params.ByName("project"),
-			Address: c.Params.ByName("id"),
-		})
-	}))
-	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, handleError(func(c *router.Context) error {
-		return BuildHandler(c, &buildbucket.BuildID{
-			Project: c.Params.ByName("project"),
-			Address: fmt.Sprintf("%s/%s/%s",
-				c.Params.ByName("bucket"),
-				c.Params.ByName("builder"),
-				c.Params.ByName("number")),
-		})
-	}))
+	// TODO(nodir): replace the URL path template with "/b/:id". crbug.com/841603
+	r.GET("/p/:project/builds/b:id", projectMW, handleError(handleLUCIBuildByID))
+	r.GET("/p/:project/builders/:bucket/:builder/:number", projectMW, handleError(handleLUCIBuildByNumber))
 
 	// Console
 	r.GET("/p/:project", projectMW, handleError(func(c *router.Context) error {
@@ -119,27 +104,11 @@ func Run(templatePath string) {
 	}))
 
 	// Swarming
-	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, handleError(func(c *router.Context) error {
-		return LogHandler(c, &swarming.BuildID{
-			TaskID: c.Params.ByName("id"),
-			Host:   c.Request.FormValue("server"),
-		}, c.Params.ByName("logname"))
-	}))
-	r.GET(swarming.URLBase+"/:id", htmlMW, handleError(func(c *router.Context) error {
-		return BuildHandler(c, &swarming.BuildID{
-			TaskID: c.Params.ByName("id"),
-			Host:   c.Request.FormValue("server"),
-		})
-	}))
+	r.GET(swarming.URLBase+"/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
+	r.GET(swarming.URLBase+"/:id", htmlMW, handleError(handleSwarmingBuild))
 	// Backward-compatible URLs for Swarming:
-	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, handleError(func(c *router.Context) error {
-		return LogHandler(c, &swarming.BuildID{
-			TaskID: c.Params.ByName("id"),
-		}, c.Params.ByName("logname"))
-	}))
-	r.GET("/swarming/prod/:id", htmlMW, handleError(func(c *router.Context) error {
-		return BuildHandler(c, &swarming.BuildID{TaskID: c.Params.ByName("id")})
-	}))
+	r.GET("/swarming/prod/:id/steps/*logname", htmlMW, handleError(HandleSwarmingLog))
+	r.GET("/swarming/prod/:id", htmlMW, handleError(handleSwarmingBuild))
 
 	// Buildbucket
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
@@ -159,33 +128,7 @@ func Run(templatePath string) {
 
 	// Buildbot
 	// If these routes change, also change links in common/model/builder_summary.go:SelfLink.
-	r.GET("/buildbot/:master/:builder/:build", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
-		id := &buildbot.BuildID{
-			Master:      c.Params.ByName("master"),
-			BuilderName: c.Params.ByName("builder"),
-			BuildNumber: c.Params.ByName("build"),
-		}
-
-		// If this build is emulated, redirect to LUCI.
-		if number, err := strconv.Atoi(id.BuildNumber); err == nil {
-			b, err := buildstore.EmulationOf(c.Context, buildbotapi.BuildID{
-				Master:  id.Master,
-				Builder: id.BuilderName,
-				Number:  number,
-			})
-			switch {
-			case err != nil:
-				return err
-			case b != nil && b.Number != nil:
-				u := *c.Request.URL
-				u.Path = fmt.Sprintf("/p/%s/builders/%s/%s/%d", b.Project, b.Bucket, b.Builder, *b.Number)
-				http.Redirect(c.Writer, c.Request, u.String(), http.StatusFound)
-				return nil
-			}
-		}
-
-		return BuildHandler(c, id)
-	}))
+	r.GET("/buildbot/:master/:builder/:number", htmlMW.Extend(emulationMiddleware), handleError(handleBuildbotBuild))
 	r.GET("/buildbot/:master/:builder/", htmlMW.Extend(emulationMiddleware), handleError(func(c *router.Context) error {
 		return BuilderHandler(c, buildsource.BuilderID(
 			fmt.Sprintf("buildbot/%s/%s", c.Params.ByName("master"), c.Params.ByName("builder"))))
@@ -200,13 +143,7 @@ func Run(templatePath string) {
 	// LogDog Milo Annotation Streams.
 	// This mimicks the `logdog://logdog_host/project/*path` url scheme seen on
 	// swarming tasks.
-	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(func(c *router.Context) error {
-		return BuildHandler(c, rawpresentation.NewBuildID(
-			c.Params.ByName("logdog_host"),
-			c.Params.ByName("project"),
-			c.Params.ByName("path"),
-		))
-	}))
+	r.GET("/raw/build/:logdog_host/:project/*path", htmlMW, handleError(handleRawPresentationBuild))
 
 	// PubSub subscription endpoints.
 	r.POST("/_ah/push-handlers/buildbot", backendMW, buildbot.PubSubHandler)

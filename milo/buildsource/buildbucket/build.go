@@ -45,29 +45,20 @@ import (
 	"go.chromium.org/luci/milo/git"
 )
 
-// BuildID implements buildsource.ID, and is the buildbucket notion of a build.
-// It references a buildbucket build which may reference a swarming build.
-type BuildID struct {
-	// Project is the project which the build ID is supposed to reside in.
-	Project string
-
-	// Address is the Buildbucket's build address (required)
-	Address string
-}
-
 var ErrNotFound = errors.Reason("Build not found").Tag(common.CodeNotFound).Err()
 
-// GetSwarmingID returns the swarming task ID of a buildbucket build.
+// GetSwarmingTaskID returns the swarming task ID of a buildbucket build.
 // TODO(hinoka): BuildInfo and Skia requires this.
 // Remove this when buildbucket v2 is out and Skia is on Kitchen.
-func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *model.BuildSummary, error) {
-	host, err := getHost(c)
+// TODO(nodir): delete this. It is used only in deprecated BuildInfo API.
+func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId string, err error) {
+	host, err = getHost(c)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
 	bs := &model.BuildSummary{BuildKey: MakeBuildKey(c, host, buildAddress)}
-	switch err := datastore.Get(c, bs); err {
+	switch err = datastore.Get(c, bs); err {
 	case nil:
 		for _, ctx := range bs.ContextURI {
 			u, err := url.Parse(ctx)
@@ -77,7 +68,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 			if u.Scheme == "swarming" && len(u.Path) > 1 {
 				toks := strings.Split(u.Path[1:], "/")
 				if toks[0] == "task" {
-					return &swarming.BuildID{Host: u.Host, TaskID: toks[1]}, bs, nil
+					return u.Host, toks[1], nil
 				}
 			}
 		}
@@ -87,7 +78,7 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 		// continue to the fallback code below.
 
 	default:
-		return nil, nil, err
+		return
 	}
 
 	// DEPRECATED(2017-12-01) {{
@@ -100,22 +91,24 @@ func GetSwarmingID(c context.Context, buildAddress string) (*swarming.BuildID, *
 	// be that buildbucket builds before 2017-11-03 will not render.
 	client, err := newBuildbucketClient(c, host)
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 	build, err := buildbucket.GetByAddress(c, client, buildAddress)
 	switch {
 	case err != nil:
-		return nil, nil, errors.Annotate(err, "could not get build at %q", buildAddress).Err()
+		err = errors.Annotate(err, "could not get build at %q", buildAddress).Err()
+		return
 	case build == nil:
-		return nil, nil, errors.Reason("build at %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+		err = errors.Reason("build at %q not found", buildAddress).Tag(common.CodeNotFound).Err()
+		return
 	}
 
-	shost := build.Tags.Get("swarming_hostname")
-	sid := build.Tags.Get("swarming_task_id")
-	if shost == "" || sid == "" {
-		return nil, nil, errors.New("not a valid LUCI build")
+	host = build.Tags.Get("swarming_hostname")
+	taskId = build.Tags.Get("swarming_task_id")
+	if host == "" || taskId == "" {
+		err = errors.New("not a valid LUCI build")
 	}
-	return &swarming.BuildID{Host: shost, TaskID: sid}, nil, nil
+	return
 	// }}
 
 }
@@ -336,32 +329,6 @@ func toMiloBuild(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBu
 	return result, nil
 }
 
-// getUIBuild fetches the full build state from Swarming and LogDog if
-// available, otherwise returns an empty "pending build".
-// TODO(hinoka): Remove this when Skia migrates to Kitchen.
-func getUIBuild(c context.Context, build *model.BuildSummary, sID *swarming.BuildID) (*ui.MiloBuild, error) {
-	ret, err := sID.Get(c)
-	if err != nil {
-		return nil, err
-	}
-
-	if build != nil {
-		switch blame, err := simplisticBlamelist(c, build); {
-		case err != nil:
-			ret.Blame = []*ui.Commit{{
-				Description: fmt.Sprintf("Failed to fetch blame information\n%s", err.Error()),
-			}}
-		default:
-			ret.Blame = blame
-		}
-		if buildName := build.GetBuildName(); buildName != "" {
-			ret.Summary.Label = ui.NewEmptyLink(buildName)
-		}
-	}
-
-	return ret, nil
-}
-
 // GetBuildSummary fetches a build summary where the Context URI matches the
 // given address.
 func GetBuildSummary(c context.Context, id int64) (*model.BuildSummary, error) {
@@ -435,17 +402,17 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 	return simplisticBlamelist(c, bs)
 }
 
-// Get returns a resp.MiloBuild based off of the Buildbucket address.
+// GetBuild returns a ui.MiloBuild based off of the Buildbucket address.
 // It performs the following actions:
 // * Fetch the full Buildbucket build from Buildbucket
 // * Fetch the step information from LogDog
 // * Fetch the blame information from Gitiles
-// This only errors out on failures to reach BuildBucket. LogDog and Gitiles errors
-// are surfaced in the UI.
+// This only errors out on failures to reach BuildBucket. LogDog and Gitiles
+// errors are surfaced in the UI.
 // TODO(hinoka): Some of this can be done concurrently. Investigate if this call
 // takes >500ms on average.
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	bbBuildMessage, err := getBuildbucketBuild(c, b.Address)
+func GetBuild(c context.Context, address string) (*ui.MiloBuild, error) {
+	bbBuildMessage, err := getBuildbucketBuild(c, address)
 	if err != nil {
 		return nil, err
 	}
@@ -482,8 +449,4 @@ func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
 		}}
 	}
 	return mb, nil
-}
-
-func (b *BuildID) GetLog(c context.Context, logname string) (text string, closed bool, err error) {
-	return "", false, errors.New("buildbucket builds do not implement GetLog")
 }

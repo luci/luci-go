@@ -114,13 +114,13 @@ func (svc *BuildInfoService) Get(c context.Context, req *milo.BuildInfoRequest) 
 		}
 
 		// Resolve the swarming host/task from buildbucket.
-		sID, _, err := buildbucket.GetSwarmingID(c, strconv.FormatInt(req.GetBuildbucket().GetId(), 10))
+		host, taskID, err := buildbucket.GetSwarmingTaskID(c, strconv.FormatInt(req.GetBuildbucket().GetId(), 10))
 		if err != nil {
 			return nil, err
 		}
 		sReq := &milo.BuildInfoRequest_Swarming{
-			Host: sID.Host,
-			Task: sID.TaskID,
+			Host: host,
+			Task: taskID,
 		}
 		return svc.Swarming.GetBuildInfo(c, sReq, projectHint)
 
