@@ -21,14 +21,17 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestRegisterInstance(t *testing.T) {
@@ -185,6 +188,67 @@ func TestListInstances(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(cur, ShouldBeNil)
 			So(out, ShouldResemble, []*Instance{inst(0)})
+		})
+	})
+}
+
+func TestCheckInstanceReady(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		put := func(pkg, iid string, failedProcs, pendingProcs []string) {
+			So(datastore.Put(ctx,
+				&Package{Name: pkg},
+				&Instance{
+					InstanceID:        iid,
+					Package:           PackageKey(ctx, pkg),
+					ProcessorsFailure: failedProcs,
+					ProcessorsPending: pendingProcs,
+				}), ShouldBeNil)
+		}
+
+		iid := ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: strings.Repeat("a", 40),
+		})
+		inst := &Instance{
+			InstanceID: iid,
+			Package:    PackageKey(ctx, "pkg"),
+		}
+
+		Convey("Happy path", func() {
+			put("pkg", iid, nil, nil)
+			So(CheckInstanceReady(ctx, inst), ShouldBeNil)
+		})
+
+		Convey("No such instance", func() {
+			put("pkg", "f"+iid[1:], nil, nil)
+			err := CheckInstanceReady(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+
+		Convey("No such package", func() {
+			put("pkg2", iid, nil, nil)
+			err := CheckInstanceReady(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Failed processors", func() {
+			put("pkg", iid, []string{"f1", "f2"}, []string{"p1", "p2"})
+			err := CheckInstanceReady(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.Aborted)
+			So(err, ShouldErrLike, "some processors failed to process this instance: f1, f2")
+		})
+
+		Convey("Pending processors", func() {
+			put("pkg", iid, nil, []string{"p1", "p2"})
+			err := CheckInstanceReady(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: p1, p2")
 		})
 	})
 }
