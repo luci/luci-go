@@ -16,6 +16,24 @@
       "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2020f72_fa800442",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-12T20:27:36Z",
+      "side": 1,
+      "message": "\u003e I feel like if a function takes a struct, the expectation would be that it\u0027s already validated. \n\nwhy would it be already validated? Someone may call it as\n\n  buildbot.GetBuild(c, buildbot.BuildID{\n     Master: \u003csome expression\u003e,\n     Builder: \u003csome expression\u003e,\n     Number: \u003csome expression\u003e,\n  ))\n\n\u003e This doesn\u0027t seem like the right place to call validate, maybe do it in Get(), where the other CodeParameterErrors are returned?\n\nGetBuild already does the validation. The extra validation is done here too because in L445 we use id.Master. If id.Master is not set, the returned error message should say that.",
+      "parentUuid": "f7808073_a2615f90",
+      "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
