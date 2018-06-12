@@ -49,7 +49,12 @@ func GetBuildInfo(c context.Context, req *milo.BuildInfoRequest_BuildBot,
 		req.MasterName, req.BuilderName, req.BuildNumber)
 
 	// Load the BuildBot build from storage.
-	build, err := buildstore.GetBuild(c, req.MasterName, req.BuilderName, int(req.BuildNumber))
+	buildID := buildbot.BuildID{
+		Master:  req.MasterName,
+		Builder: req.BuilderName,
+		Number:  int(req.BuildNumber),
+	}
+	build, err := buildstore.GetBuild(c, buildID)
 	switch code := common.ErrorCodeIn(err); {
 	case code == common.CodeUnauthorized:
 		return nil, grpcutil.Unauthenticated
