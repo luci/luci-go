@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "78d28855_7e6a7e12",
+        "filename": "milo/buildsource/buildbot/buildstore/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-12T18:28:15Z",
+      "side": 1,
+      "message": "This style seems unusual, usually I see\n\nfunc NewBuildID(build *buildbot.Build) *BuildID {...}",
+      "revId": "77ecc063f26da95ae41db8db855f82bccfd9c784",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
