@@ -16,6 +16,7 @@ package model
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -24,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -202,4 +204,37 @@ func ListInstances(c context.Context, pkg string, pageSize int32, cursor datasto
 		return nil, nil, transient.Tag.Apply(err)
 	}
 	return
+}
+
+// CheckInstanceReady fetches the instance and verifies it exists and has zero
+// pending or failed processors.
+//
+// Can be called as part of a transaction. Updates 'inst' in place.
+//
+// Returns gRPC-tagged errors:
+//    NotFound if there's no such instance or package.
+//    FailedPrecondition if some processors are still running.
+//    Aborted if some processors have failed.
+func CheckInstanceReady(c context.Context, inst *Instance) error {
+	switch err := datastore.Get(c, inst); {
+	case err == datastore.ErrNoSuchEntity:
+		// Maybe the package is missing completely?
+		switch exists, err := CheckPackage(c, inst.Package.StringID(), true); {
+		case err != nil:
+			return errors.Annotate(err, "failed to check the package presence").Tag(transient.Tag).Err()
+		case !exists:
+			return errors.Reason("no such package").Tag(grpcutil.NotFoundTag).Err()
+		}
+		return errors.Reason("no such instance").Tag(grpcutil.NotFoundTag).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to check the instance presence").Tag(transient.Tag).Err()
+	case len(inst.ProcessorsFailure) != 0:
+		return errors.Reason("some processors failed to process this instance: %s",
+			strings.Join(inst.ProcessorsFailure, ", ")).Tag(grpcutil.AbortedTag).Err()
+	case len(inst.ProcessorsPending) != 0:
+		return errors.Reason("the instance is not ready yet, pending processors: %s",
+			strings.Join(inst.ProcessorsPending, ", ")).Tag(grpcutil.FailedPreconditionTag).Err()
+	default:
+		return nil
+	}
 }
