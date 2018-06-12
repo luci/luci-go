@@ -34,6 +34,24 @@
       "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "52dc6390_a9244c13",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-12T20:37:49Z",
+      "side": 1,
+      "message": "It\u0027s true, but someone can also pass in a nil context, but we don\u0027t validate context.  At some point we have to decide that if we take in structured input, the caller should be responsible for ensuring the inputs are valid.",
+      "parentUuid": "a2020f72_fa800442",
+      "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
