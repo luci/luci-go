@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f7808073_a2615f90",
+        "filename": "milo/buildsource/buildbot/build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-12T20:18:00Z",
+      "side": 1,
+      "message": "I feel like if a function takes a struct, the expectation would be that it\u0027s already validated.  This doesn\u0027t seem like the right place to call validate, maybe do it in Get(), where the other CodeParameterErrors are returned?",
+      "revId": "8961378b9eeab64ac8baad1c7ac827197a94a58d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
