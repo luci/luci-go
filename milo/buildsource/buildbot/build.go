@@ -437,8 +437,8 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 	return renderBuild(c, b, true), nil
 }
 
-// Build fetches a buildbot build and translates it into a miloBuild.
-func Build(c context.Context, id buildstore.BuildID) (*ui.MiloBuild, error) {
+// GetBuild fetches a buildbot build and translates it into a miloBuild.
+func GetBuild(c context.Context, id buildstore.BuildID) (*ui.MiloBuild, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}
@@ -455,30 +455,4 @@ func Build(c context.Context, id buildstore.BuildID) (*ui.MiloBuild, error) {
 			Err()
 	}
 	return renderBuild(c, b, true), nil
-}
-
-// BuildID is buildbots's notion of a Build. See buildsource.ID.
-// TODO(nodir): remove this struct, reuse buildstore.BuildID.
-type BuildID struct {
-	Master      string
-	BuilderName string
-	BuildNumber string
-}
-
-// GetLog implements buildsource.ID.
-func (b *BuildID) GetLog(context.Context, string) (string, bool, error) { panic("not implemented") }
-
-// Get implements buildsource.ID.
-func (b *BuildID) Get(c context.Context) (*ui.MiloBuild, error) {
-	num, err := strconv.Atoi(b.BuildNumber)
-	if err != nil {
-		return nil, errors.Annotate(err, "BuildNumber is not a number").
-			Tag(common.CodeParameterError).
-			Err()
-	}
-	return Build(c, buildstore.BuildID{
-		Master:  b.Master,
-		Builder: b.BuilderName,
-		Number:  num,
-	})
 }
