@@ -81,7 +81,7 @@ func Run(templatePath string) {
 	r.GET("/internal/cron/update-pools", cronMW, cronHandler(buildbucket.UpdatePools))
 
 	// Builds.
-	r.GET("/b/:id", projectMW, handleError(redirectLUCIBuild))
+	r.GET("/b/:id", htmlMW, handleError(redirectLUCIBuild))
 	r.GET("/p/:project/builds/b:id", baseMW, movedPermanently("/b/:id"))
 	r.GET("/p/:project/builders/:bucket/:builder/:numberOrId", projectMW, handleError(handleLUCIBuild))
 
