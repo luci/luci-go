@@ -1817,7 +1817,7 @@ func (e *engineImpl) execKickTriageTask(c context.Context, tqTask proto.Message)
 //
 // It looks at pending triggers and recently finished invocations and launches
 // new invocations (or schedules timers to do it later).
-func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Message) error {
+func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Message) (err error) {
 	jobID := tqTask.(*internal.TriageJobStateTask).JobId
 
 	c = logging.SetField(c, "JobID", jobID)
@@ -1836,13 +1836,13 @@ func (e *engineImpl) execTriageJobStateTask(c context.Context, tqTask proto.Mess
 	// Store the triage log no matter what (even if 'prepare' fails or the
 	// transaction fails to land). We want to surface these conditions if they
 	// happen consistently.
-	defer func() { op.finalize(c) }()
+	defer func() { op.finalize(c, err == nil) }()
 
-	if err := op.prepare(c); err != nil {
+	if err = op.prepare(c); err != nil {
 		return err
 	}
 
-	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
+	err = e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) error {
 		if isNew {
 			logging.Warningf(c, "The job is unexpectedly gone")
 			return errSkipPut
