@@ -56,7 +56,7 @@ func (m *GetBuildRequest) Reset()         { *m = GetBuildRequest{} }
 func (m *GetBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBuildRequest) ProtoMessage()    {}
 func (*GetBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_58207b2e3128405e, []int{0}
+	return fileDescriptor_rpc_4165a557d322dfaa, []int{0}
 }
 func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetBuildRequest.Unmarshal(m, b)
@@ -127,7 +127,7 @@ func (m *SearchBuildsRequest) Reset()         { *m = SearchBuildsRequest{} }
 func (m *SearchBuildsRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsRequest) ProtoMessage()    {}
 func (*SearchBuildsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_58207b2e3128405e, []int{1}
+	return fileDescriptor_rpc_4165a557d322dfaa, []int{1}
 }
 func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsRequest.Unmarshal(m, b)
@@ -193,7 +193,7 @@ func (m *SearchBuildsResponse) Reset()         { *m = SearchBuildsResponse{} }
 func (m *SearchBuildsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsResponse) ProtoMessage()    {}
 func (*SearchBuildsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_58207b2e3128405e, []int{2}
+	return fileDescriptor_rpc_4165a557d322dfaa, []int{2}
 }
 func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsResponse.Unmarshal(m, b)
@@ -259,7 +259,7 @@ func (m *BuildPredicate) Reset()         { *m = BuildPredicate{} }
 func (m *BuildPredicate) String() string { return proto.CompactTextString(m) }
 func (*BuildPredicate) ProtoMessage()    {}
 func (*BuildPredicate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_58207b2e3128405e, []int{3}
+	return fileDescriptor_rpc_4165a557d322dfaa, []int{3}
 }
 func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildPredicate.Unmarshal(m, b)
@@ -351,8 +351,32 @@ type BuildsClient interface {
 	//
 	// By default the returned build does not include all fields.
 	// See GetBuildRequest.fields.
+	//
+	// Buildbot: if the specified build is a buildbot build, converts it to Build
+	// message with the following rules:
+	// * bucket names are full, e.g. "master.chromium". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "ci".
+	// * if a v2 Build field does not make sense in V1, it is unset/empty.
+	// * step support is not implemented for Buildbot builds.
+	// Note that it does not support getting a buildbot build by build number.
 	GetBuild(ctx context.Context, in *GetBuildRequest, opts ...grpc.CallOption) (*Build, error)
 	// Searches for builds.
+	//
+	// Buildbot: can return Buildbot builds, see GetBuild for conversion rules.
+	// For example, response may include a mix of LUCI and Buildbot builds if the
+	// predicate is a CL.
+	// Cannot search in a buildbot bucket or buildbot builder, e.g.
+	// {
+	//   "predicate": {
+	//     "builder": {
+	//       "project": "chromium",
+	//       "bucket": "master.chromium",
+	//       "builder": "linux-rel"
+	//     }
+	//   }
+	// }
+	// will look for builds in "master.chromium" LUCI bucket which probably does
+	// not exist.
 	SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error)
 }
 type buildsPRPCClient struct {
@@ -413,8 +437,32 @@ type BuildsServer interface {
 	//
 	// By default the returned build does not include all fields.
 	// See GetBuildRequest.fields.
+	//
+	// Buildbot: if the specified build is a buildbot build, converts it to Build
+	// message with the following rules:
+	// * bucket names are full, e.g. "master.chromium". Note that LUCI buckets
+	//   in v2 are shortened, e.g. "ci".
+	// * if a v2 Build field does not make sense in V1, it is unset/empty.
+	// * step support is not implemented for Buildbot builds.
+	// Note that it does not support getting a buildbot build by build number.
 	GetBuild(context.Context, *GetBuildRequest) (*Build, error)
 	// Searches for builds.
+	//
+	// Buildbot: can return Buildbot builds, see GetBuild for conversion rules.
+	// For example, response may include a mix of LUCI and Buildbot builds if the
+	// predicate is a CL.
+	// Cannot search in a buildbot bucket or buildbot builder, e.g.
+	// {
+	//   "predicate": {
+	//     "builder": {
+	//       "project": "chromium",
+	//       "bucket": "master.chromium",
+	//       "builder": "linux-rel"
+	//     }
+	//   }
+	// }
+	// will look for builds in "master.chromium" LUCI bucket which probably does
+	// not exist.
 	SearchBuilds(context.Context, *SearchBuildsRequest) (*SearchBuildsResponse, error)
 }
 
@@ -476,10 +524,10 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_58207b2e3128405e)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_4165a557d322dfaa)
 }
 
-var fileDescriptor_rpc_58207b2e3128405e = []byte{
+var fileDescriptor_rpc_4165a557d322dfaa = []byte{
 	// 581 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x4d, 0x6f, 0xd3, 0x40,
 	0x10, 0xad, 0x13, 0x9a, 0xa6, 0x9b, 0x36, 0x95, 0xb6, 0x05, 0x2d, 0xe6, 0xcb, 0x04, 0x84, 0x7c,
