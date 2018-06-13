@@ -16,6 +16,24 @@
       "revId": "9551edf696037db4e083eb37d11a0173a5587117",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "302a6c5d_1fce2ca2",
+        "filename": "scheduler/appengine/engine/engine.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1780,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-13T17:28:39Z",
+      "side": 1,
+      "message": "Hm, I disagree. Accessing named return values in defer is their raison d\u0027être. If I move it as a regular variable, and later someone adds e.g.\n\nif err :\u003d blah(); err !\u003d nil {\n  return err\n}\n\nThen this \u0027err\u0027 will NOT be caught by the defer, since it is different \u0027err\u0027. Using named return values avoids this problem.",
+      "parentUuid": "bfab6ef1_f8f45d2c",
+      "revId": "9551edf696037db4e083eb37d11a0173a5587117",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
