@@ -22,6 +22,30 @@
       "revId": "e43ce1bfe3ca533958d3396fa6915399f7dced4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ff08e9f_299bdeeb",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 838,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-13T23:15:42Z",
+      "side": 1,
+      "message": "Removed. \n\n\u003e How does this function know that it is transient?\n\nPer CheckPackages documentation.",
+      "parentUuid": "07079adc_fe836147",
+      "range": {
+        "startLine": 838,
+        "startChar": 78,
+        "endLine": 838,
+        "endChar": 97
+      },
+      "revId": "e43ce1bfe3ca533958d3396fa6915399f7dced4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
