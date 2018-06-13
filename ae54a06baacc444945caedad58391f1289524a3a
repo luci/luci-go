@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cde2cd50_6b81720a",
+        "filename": "cipd/appengine/impl/model/ref.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-13T06:06:35Z",
+      "side": 1,
+      "message": "not just modifiedTs, but also modifiedBy (as that\u0027s what test ensures). So, perhaps just remove this part of comment?",
+      "range": {
+        "startLine": 77,
+        "startChar": 25,
+        "endLine": 77,
+        "endChar": 45
+      },
+      "revId": "ae54a06baacc444945caedad58391f1289524a3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
