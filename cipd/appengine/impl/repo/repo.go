@@ -119,6 +119,18 @@ func (impl *repoImpl) packageReader(c context.Context, ref *api.ObjectRef) (*pro
 	return pkg, nil
 }
 
+// checkPackageExists returns NotFound error if the package is missing.
+func (impl *repoImpl) checkPackageExists(c context.Context, pkg string) error {
+	switch yes, err := model.CheckPackage(c, pkg, true); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check package presence").Err()
+	case !yes:
+		return status.Errorf(codes.NotFound, "no such package")
+	default:
+		return nil
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Prefix metadata RPC methods + related helpers including ACL checks.
 
@@ -754,11 +766,8 @@ func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesReque
 	}
 
 	// Check that the package is registered.
-	switch yes, err := model.CheckPackage(c, r.Package, true); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to check package presence").Err()
-	case !yes:
-		return nil, status.Errorf(codes.NotFound, "no such package")
+	if err := impl.checkPackageExists(c, r.Package); err != nil {
+		return nil, err
 	}
 
 	// Do the actual listing.
@@ -833,11 +842,8 @@ func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (res
 	}
 
 	// Verify the package actually exists, per DeleteRef contract.
-	switch yes, err := model.CheckPackage(c, r.Package, true); {
-	case err != nil:
-		return nil, errors.Annotate(err, "failed to check presence of the package").Err()
-	case !yes:
-		return nil, status.Errorf(codes.NotFound, "no such package")
+	if err := impl.checkPackageExists(c, r.Package); err != nil {
+		return nil, err
 	}
 
 	// Actually delete the ref.
@@ -851,5 +857,29 @@ func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (res
 func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp *api.ListRefsResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Verify the package actually exists, per ListRefs contract.
+	if err := impl.checkPackageExists(c, r.Package); err != nil {
+		return nil, err
+	}
+
+	// Actually list refs.
+	refs, err := model.ListRefs(c, r.Package)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to list refs").Err()
+	}
+	resp = &api.ListRefsResponse{Refs: make([]*api.Ref, len(refs))}
+	for i, ref := range refs {
+		resp.Refs[i] = ref.Proto()
+	}
+	return resp, nil
 }
