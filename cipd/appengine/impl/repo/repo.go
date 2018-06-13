@@ -787,14 +787,64 @@ func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesReque
 func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := common.ValidatePackageRef(r.Name); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'name' - %s", err)
+	}
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_WRITER); err != nil {
+		return nil, err
+	}
+
+	// Actually create or move the ref. This will also transactionally check the
+	// instance exists and it has passed the processing successfully.
+	inst := &model.Instance{
+		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.SetRef(c, r.Name, inst, auth.CurrentIdentity(c)); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
 }
 
 // DeleteRef implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) DeleteRef(c context.Context, r *api.DeleteRefRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := common.ValidatePackageRef(r.Name); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'name' - %s", err)
+	}
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_WRITER); err != nil {
+		return nil, err
+	}
+
+	// Verify the package actually exists, per DeleteRef contract.
+	switch yes, err := model.CheckPackage(c, r.Package, true); {
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to check presence of the package").Err()
+	case !yes:
+		return nil, status.Errorf(codes.NotFound, "no such package")
+	}
+
+	// Actually delete the ref.
+	if err := model.DeleteRef(c, r.Package, r.Name); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
 }
 
 // ListRefs implements the corresponding RPC method, see the proto doc.

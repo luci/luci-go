@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -1222,7 +1223,10 @@ func TestRefs(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+
 		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, testTime)
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:writer@example.com",
 		})
@@ -1239,9 +1243,199 @@ func TestRefs(t *testing.T) {
 			},
 		})
 
+		putInst := func(pkg, iid string, pendingProcs, failedProcs []string) {
+			So(datastore.Put(ctx,
+				&model.Package{Name: pkg},
+				&model.Instance{
+					InstanceID:        iid,
+					Package:           model.PackageKey(ctx, pkg),
+					ProcessorsPending: pendingProcs,
+					ProcessorsFailure: failedProcs,
+				}), ShouldBeNil)
+		}
+
+		digest := strings.Repeat("a", 40)
+		putInst("a/b/c", digest, nil, nil)
+
 		impl := repoImpl{meta: &meta}
 
-		// TODO(vadimsh): Implement.
-		_ = impl
+		Convey("CreateRef/DeleteRef happy path", func() {
+			_, err := impl.CreateRef(ctx, &api.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			So(err, ShouldBeNil)
+
+			// Exists now.
+			ref, err := model.GetRef(ctx, "a/b/c", "latest")
+			So(err, ShouldBeNil)
+			So(ref, ShouldResemble, &model.Ref{
+				Name:       "latest",
+				Package:    model.PackageKey(ctx, "a/b/c"),
+				InstanceID: digest,
+				ModifiedBy: "user:writer@example.com",
+				ModifiedTs: testTime,
+			})
+
+			_, err = impl.DeleteRef(ctx, &api.DeleteRefRequest{
+				Name:    "latest",
+				Package: "a/b/c",
+			})
+			So(err, ShouldBeNil)
+
+			// Missing now.
+			_, err = model.GetRef(ctx, "a/b/c", "latest")
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Bad ref", func() {
+			Convey("CreateRef", func() {
+				_, err := impl.CreateRef(ctx, &api.Ref{
+					Name:    "bad:ref:name",
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'name'")
+			})
+			Convey("DeleteRef", func() {
+				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+					Name:    "bad:ref:name",
+					Package: "a/b/c",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'name'")
+			})
+		})
+
+		Convey("Bad package name", func() {
+			Convey("CreateRef", func() {
+				_, err := impl.CreateRef(ctx, &api.Ref{
+					Name:    "latest",
+					Package: "///",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
+			Convey("DeleteRef", func() {
+				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+					Name:    "latest",
+					Package: "///",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
+		})
+
+		Convey("No access", func() {
+			Convey("CreateRef", func() {
+				_, err := impl.CreateRef(ctx, &api.Ref{
+					Name:    "latest",
+					Package: "z",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			})
+			Convey("DeleteRef", func() {
+				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+					Name:    "latest",
+					Package: "z",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			})
+		})
+
+		Convey("Missing package", func() {
+			Convey("CreateRef", func() {
+				_, err := impl.CreateRef(ctx, &api.Ref{
+					Name:    "latest",
+					Package: "a/b/z",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+			Convey("DeleteRef", func() {
+				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
+					Name:    "latest",
+					Package: "a/b/z",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+		})
+
+		Convey("Bad instance", func() {
+			_, err := impl.CreateRef(ctx, &api.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: "123",
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'instance'")
+		})
+
+		Convey("Missing instance", func() {
+			_, err := impl.CreateRef(ctx, &api.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("b", 40),
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+
+		Convey("Instance is not ready yet", func() {
+			putInst("a/b/c", digest, []string{"proc"}, nil)
+			_, err := impl.CreateRef(ctx, &api.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: proc")
+		})
+
+		Convey("Failed processors", func() {
+			putInst("a/b/c", digest, nil, []string{"proc"})
+			_, err := impl.CreateRef(ctx, &api.Ref{
+				Name:    "latest",
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: digest,
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.Aborted)
+			So(err, ShouldErrLike, "some processors failed to process this instance: proc")
+		})
 	})
 }
