@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "07079adc_fe836147",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 838,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-13T23:09:45Z",
+      "side": 1,
+      "message": "this seems unnecessary\n\nCheckPackage already does this. How does this function know that it is transient?",
+      "range": {
+        "startLine": 838,
+        "startChar": 78,
+        "endLine": 838,
+        "endChar": 97
+      },
+      "revId": "e43ce1bfe3ca533958d3396fa6915399f7dced4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
