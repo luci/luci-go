@@ -45,9 +45,9 @@ import (
 // since we represent builder IDs slightly differently in Milo vs. Buildbucket.
 // I.E. Builders can source from either BuildBot or Buildbucket.
 type BuilderID struct {
-	// Builder_ID is the buildbucket v2 representation of the builder ID.  Note
+	// BuilderID is the buildbucket v2 representation of the builder ID.  Note
 	// that the v2 representation uses short bucket names.
-	buildbucketpb.Builder_ID
+	buildbucketpb.BuilderID
 }
 
 // NewBuilderID does what it says.

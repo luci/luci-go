@@ -56,7 +56,7 @@ var (
 func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime time.Time, revision string, notifyEmails ...EmailNotify) *Build {
 	ret := &Build{
 		Build: buildbucketpb.Build{
-			Builder: &buildbucketpb.Builder_ID{
+			Builder: &buildbucketpb.BuilderID{
 				Project: "chromium",
 				Bucket:  "ci",
 				Builder: builder,
@@ -231,7 +231,7 @@ func TestHandleBuild(t *testing.T) {
 		Convey(`no revision`, func() {
 			build := &Build{
 				Build: buildbucketpb.Build{
-					Builder: &buildbucketpb.Builder_ID{
+					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",
 						Builder: "test-builder-1",
@@ -262,7 +262,7 @@ func TestHandleBuild(t *testing.T) {
 
 			newBuild := &Build{
 				Build: buildbucketpb.Build{
-					Builder: &buildbucketpb.Builder_ID{
+					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",
 						Builder: "test-builder-1",

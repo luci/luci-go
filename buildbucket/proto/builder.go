@@ -19,6 +19,6 @@ import (
 )
 
 // IDString returns "{project}/{bucket}/{builder}" string.
-func (id *Builder_ID) IDString() string {
+func (id *BuilderID) IDString() string {
 	return fmt.Sprintf("%s/%s/%s", id.Project, id.Bucket, id.Builder)
 }
