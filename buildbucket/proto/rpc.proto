@@ -32,7 +32,7 @@ message GetBuildRequest {
 
   // Builder of the build.
   // Requires number. Mutually exclusive with id.
-  Builder.ID builder = 2;
+  BuilderID builder = 2;
   // Build number.
   // Requires builder. Mutually exclusive with id.
   int32 build_number = 3;
@@ -86,7 +86,7 @@ message SearchBuildsResponse {
 // If a field value is empty, it is ignored, unless stated otherwise.
 message BuildPredicate {
   // A build must be in this builder.
-  Builder.ID builder = 1;
+  BuilderID builder = 1;
 
   // A build must have this status.
   Status status = 2;

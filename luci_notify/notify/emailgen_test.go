@@ -97,7 +97,7 @@ Reusing templates from another files.
 			input := &EmailTemplateInput{
 				Build: &buildbucketpb.Build{
 					Id: 54,
-					Builder: &buildbucketpb.Builder_ID{
+					Builder: &buildbucketpb.BuilderID{
 						Project: "chromium",
 						Bucket:  "ci",
 						Builder: "linux-rel",

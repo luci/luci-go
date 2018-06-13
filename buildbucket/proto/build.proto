@@ -96,7 +96,7 @@ message Build {
   //
   // Tuple (builder.project, builder.bucket) defines build ACL
   // which may change after build has ended.
-  Builder.ID builder = 2;
+  BuilderID builder = 2;
 
   // Human-oriented identifier of the build with the following properties:
   // - unique within the builder
@@ -260,17 +260,14 @@ message BuildInfra {
   LogDog logdog = 3;
 }
 
-message Builder {
-
-  // Identifies a builder.
-  // Canonical string representation: “{project}/{bucket}/{builder}”.
-  message ID {
-    // Project ID, e.g. "chromium". Unique within a LUCI deployment.
-    string project = 1;
-    // Bucket name, e.g. "try". Unique within the project.
-    // Together with project, defines an ACL.
-    string bucket = 2;
-    // Builder name, e.g. "linux-rel". Unique within the bucket.
-    string builder = 3;
-  }
+// Identifies a builder.
+// Canonical string representation: “{project}/{bucket}/{builder}”.
+message BuilderID {
+  // Project ID, e.g. "chromium". Unique within a LUCI deployment.
+  string project = 1;
+  // Bucket name, e.g. "try". Unique within the project.
+  // Together with project, defines an ACL.
+  string bucket = 2;
+  // Builder name, e.g. "linux-rel". Unique within the bucket.
+  string builder = 3;
 }

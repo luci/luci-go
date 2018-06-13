@@ -259,8 +259,8 @@ func BucketNameToV2(v1Bucket string) (project string, bucket string) {
 
 // builderToV2 attempts to parse as many fields into bucket and project as possible,
 // and do project name validation if the project is available.
-func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *buildbucketpb.Builder_ID, err error) {
-	ret = &buildbucketpb.Builder_ID{Builder: params.Builder}
+func builderToV2(msg *v1.ApiCommonBuildMessage, tags strpair.Map, params *v1Params) (ret *buildbucketpb.BuilderID, err error) {
+	ret = &buildbucketpb.BuilderID{Builder: params.Builder}
 	if ret.Builder == "" {
 		ret.Builder = tags.Get(v1.TagBuilder) // Fallback: Grab builder name from tags.
 	}
