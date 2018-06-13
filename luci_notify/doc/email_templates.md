@@ -56,7 +56,7 @@ The following functions are available to templates in addition to the
 ```html
 A {{.Build.Builder.Builder}} build completed
 
-<a href="{{.Build.ViewUrl}}">Build {{.Build.Number}}</a>
+<a href="https://ci.chromium.org/b/{{.Build.Id}}">Build {{.Build.Number}}</a>
 has completed with status {{.Build.Status}}
 on `{{.Build.EndTime | time}}`
 ```
@@ -72,7 +72,7 @@ luci-notify/email-templates/default.template:
 ```html
 A {{.Build.Builder.Builder}} completed
 
-A <a href="{{.Build.ViewUrl}}">build</a> has completed.
+A <a href="https://ci.chromium.org/b/{{.Build.Id}}">build</a> has completed.
 
 Steps: {{template "steps" .}}
 
