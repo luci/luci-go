@@ -105,26 +105,24 @@ func (s *SchedulerServer) GetInvocations(ctx context.Context, in *scheduler.Invo
 
 	invs := make([]*scheduler.Invocation, len(einvs))
 	for i, einv := range einvs {
-		invs[i] = &scheduler.Invocation{
-			InvocationRef: &scheduler.InvocationRef{
-				JobRef: &scheduler.JobRef{
-					Project: in.GetJobRef().GetProject(),
-					Job:     in.GetJobRef().GetJob(),
-				},
-				InvocationId: einv.ID,
-			},
-			StartedTs:      einv.Started.UnixNano() / 1000,
-			TriggeredBy:    string(einv.TriggeredBy),
-			Status:         string(einv.Status),
-			Final:          einv.Status.Final(),
-			ConfigRevision: einv.Revision,
-			ViewUrl:        einv.ViewURL,
-		}
-		if einv.Status.Final() {
-			invs[i].FinishedTs = einv.Finished.UnixNano() / 1000
-		}
+		invs[i] = invToProto(einv, in.JobRef)
 	}
 	return &scheduler.InvocationsReply{Invocations: invs, NextCursor: cursor}, nil
+}
+
+func (s *SchedulerServer) GetInvocation(ctx context.Context, in *scheduler.InvocationRef) (*scheduler.Invocation, error) {
+	job, err := s.getJob(ctx, in.GetJobRef())
+	if err != nil {
+		return nil, err
+	}
+	switch inv, err := s.Engine.GetInvocation(ctx, job, in.InvocationId); {
+	case err == engine.ErrNoSuchInvocation:
+		return nil, status.Errorf(codes.NotFound, "no such invocation")
+	case err != nil:
+		return nil, status.Errorf(codes.Internal, "internal error: %s", err)
+	default:
+		return invToProto(inv, in.JobRef), nil
+	}
 }
 
 //// Actions.
@@ -291,4 +289,23 @@ func internalTrigger(t *scheduler.Trigger, now time.Time, who identity.Identity,
 		}
 	}
 	return out, nil
+}
+
+func invToProto(inv *engine.Invocation, jobRef *scheduler.JobRef) *scheduler.Invocation {
+	out := &scheduler.Invocation{
+		InvocationRef: &scheduler.InvocationRef{
+			JobRef:       jobRef,
+			InvocationId: inv.ID,
+		},
+		StartedTs:      inv.Started.UnixNano() / 1000,
+		TriggeredBy:    string(inv.TriggeredBy),
+		Status:         string(inv.Status),
+		Final:          inv.Status.Final(),
+		ConfigRevision: inv.Revision,
+		ViewUrl:        inv.ViewURL,
+	}
+	if inv.Status.Final() {
+		out.FinishedTs = inv.Finished.UnixNano() / 1000
+	}
+	return out
 }

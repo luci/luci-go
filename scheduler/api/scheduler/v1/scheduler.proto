@@ -30,6 +30,9 @@ service Scheduler {
   // GetInvocations fetches invocations of a given job, most recent first.
   rpc GetInvocations(InvocationsRequest) returns (InvocationsReply);
 
+  // GetInvocation fetches a single invocation.
+  rpc GetInvocation(InvocationRef) returns (Invocation);
+
   // PauseJob will prevent automatic triggering of a job. Manual triggering such
   // as through this API is still allowed. Any pending or running invocations
   // are still executed. PauseJob does nothing if job is already paused.
