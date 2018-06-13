@@ -256,6 +256,70 @@ func TestGetInvocationsApi(t *testing.T) {
 	})
 }
 
+func TestGetInvocationApi(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ctx := gaetesting.TestingContext()
+		fakeEng, catalog := newTestEngine()
+		ss := SchedulerServer{fakeEng, catalog}
+
+		Convey("OK", func() {
+			fakeEng.mockJob("proj/job")
+			fakeEng.getInvocation = func(jobID string, invID int64) (*engine.Invocation, error) {
+				So(jobID, ShouldEqual, "proj/job")
+				So(invID, ShouldEqual, 12)
+				return &engine.Invocation{
+					JobID:    jobID,
+					ID:       12,
+					Revision: "deadbeef",
+					Status:   task.StatusRunning,
+					Started:  time.Unix(123123123, 0).UTC(),
+				}, nil
+			}
+			inv, err := ss.GetInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			So(err, ShouldBeNil)
+			So(inv, ShouldResemble, &scheduler.Invocation{
+				InvocationRef: &scheduler.InvocationRef{
+					JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+					InvocationId: 12,
+				},
+				ConfigRevision: "deadbeef",
+				Status:         "RUNNING",
+				StartedTs:      123123123000000,
+			})
+		})
+
+		Convey("No job", func() {
+			fakeEng.mockNoJob()
+			_, err := ss.GetInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("No invocation", func() {
+			fakeEng.mockJob("proj/job")
+			fakeEng.getInvocation = func(jobID string, invID int64) (*engine.Invocation, error) {
+				return nil, engine.ErrNoSuchInvocation
+			}
+			_, err := ss.GetInvocation(ctx, &scheduler.InvocationRef{
+				JobRef:       &scheduler.JobRef{Project: "proj", Job: "job"},
+				InvocationId: 12,
+			})
+			s, ok := status.FromError(err)
+			So(ok, ShouldBeTrue)
+			So(s.Code(), ShouldEqual, codes.NotFound)
+		})
+	})
+}
+
 func TestJobActionsApi(t *testing.T) {
 	t.Parallel()
 
@@ -384,6 +448,7 @@ type fakeEngine struct {
 	getVisibleProjectJobs func(projectID string) ([]*engine.Job, error)
 	getVisibleJob         func(jobID string) (*engine.Job, error)
 	listInvocations       func(opts engine.ListInvocationsOpts) ([]*engine.Invocation, string, error)
+	getInvocation         func(jobID string, invID int64) (*engine.Invocation, error)
 
 	pauseJob        func(jobID string) error
 	resumeJob       func(jobID string) error
@@ -466,7 +531,7 @@ func (f *fakeEngine) ListTriggers(c context.Context, job *engine.Job) ([]*intern
 }
 
 func (f *fakeEngine) GetInvocation(c context.Context, job *engine.Job, invID int64) (*engine.Invocation, error) {
-	panic("not implemented")
+	return f.getInvocation(job.JobID, invID)
 }
 
 func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (*engine.Invocation, error) {
