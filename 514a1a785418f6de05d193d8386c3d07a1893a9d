@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a4b9550_dc1dc1f5",
+        "filename": "scheduler/appengine/internal/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-13T01:15:15Z",
+      "side": 1,
+      "message": "8, hey tricium!",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "514a1a785418f6de05d193d8386c3d07a1893a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "731c863e_9f232cd7",
+        "filename": "scheduler/appengine/internal/admin.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-13T01:15:15Z",
+      "side": 1,
+      "message": "Useful",
+      "range": {
+        "startLine": 32,
+        "startChar": 5,
+        "endLine": 32,
+        "endChar": 11
+      },
+      "revId": "514a1a785418f6de05d193d8386c3d07a1893a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
