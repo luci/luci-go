@@ -22,6 +22,30 @@
       "revId": "b628cc7d2cee3d3f5afe0c204f89b8defd83fd24",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3951618f_62fb4a5b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-13T18:08:00Z",
+      "side": 1,
+      "message": "yes, BuilderProto is ugly.\n\nBuilderConfig is something different. It is a configuration of a builder. A config does not have builds, for example. From this perspective, BuilderProto is at least neutral. This is not thoroughly designed yet anyway.",
+      "parentUuid": "7a667b0b_cff9f23d",
+      "range": {
+        "startLine": 10,
+        "startChar": 25,
+        "endLine": 10,
+        "endChar": 37
+      },
+      "revId": "b628cc7d2cee3d3f5afe0c204f89b8defd83fd24",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
