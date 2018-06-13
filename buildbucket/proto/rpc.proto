@@ -13,14 +13,45 @@ import "go.chromium.org/luci/buildbucket/proto/common.proto";
 import "go.chromium.org/luci/buildbucket/proto/build.proto";
 
 // Manages builds.
+//
+// V1 compatibility.
+//
+// To simplify V1->V2 API transition, buildbucket.v2.Builds service has some
+// support for non-LUCI builds. Most of such builds are Buildbot builds and
+// this documentation refers to them as such, but they also include non-Buildbot
+// non-LUCI builds (e.g. Skia builds).
+// See "Buildbot" paragraph in each RPC comment.
 service Builds {
   // Gets a build.
   //
   // By default the returned build does not include all fields.
   // See GetBuildRequest.fields.
+  //
+  // Buildbot: if the specified build is a buildbot build, converts it to Build
+  // message with the following rules:
+  // * bucket names are full, without stripping the "luci.<project>." prefix,
+  //   for example, "master.chromium".
+  // * if a v2 Build field does not make sense in V1, it is unset/empty.
+  // * step support is not implemented for non-LUCI builds.
+  // Note that it does not support getting a buildbot build by number.
   rpc GetBuild(GetBuildRequest) returns (Build) {};
 
   // Searches for builds.
+  //
+  // Buildbot: can return Buildbot builds, see GetBuild for conversion rules.
+  // For example, response may include a mix of LUCI and Buildbot builds if the
+  // predicate is by a CL.
+  // Cannot search in a buildbot bucket or buildbot builder, e.g.
+  // {
+  //   "predicate": {
+  //     "builder": {
+  //       "project": "chromium",
+  //       "bucket": "master.chromium",
+  //       "builder": "linux-rel"
+  //     }
+  //   }
+  // }
+  // will look for builds in "master.chromium" LUCI bucket.
   rpc SearchBuilds(SearchBuildsRequest) returns (SearchBuildsResponse) {};
 }
 
