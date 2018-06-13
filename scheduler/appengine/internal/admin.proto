@@ -27,17 +27,17 @@ import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
 
 // Admin exposes administrative API usable only by the service owners.
 service Admin {
-  // GetInternalJobState returns detailed report about the job state.
+  // GetDebugJobState returns detailed report about the job state.
   //
   // Useful when debugging internal issues.
-  rpc GetInternalJobState(scheduler.JobRef) returns (InternalJobState);
+  rpc GetDebugJobState(scheduler.JobRef) returns (DebugJobState);
 }
 
 
-// InternalJobState loosely matches Job entity and associated data structures.
+// DebugJobState loosely matches Job entity and associated data structures.
 //
 // See the engine implementation for details.
-message InternalJobState {
+message DebugJobState {
   message CronState {
     bool enabled = 1;
     int64 generation = 2;
