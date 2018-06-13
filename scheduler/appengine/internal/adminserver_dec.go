@@ -24,17 +24,17 @@ type DecoratedAdmin struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) GetInternalJobState(c context.Context, req *v1.JobRef) (rsp *InternalJobState, err error) {
+func (s *DecoratedAdmin) GetDebugJobState(c context.Context, req *v1.JobRef) (rsp *DebugJobState, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "GetInternalJobState", req)
+		newCtx, err = s.Prelude(c, "GetDebugJobState", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.GetInternalJobState(c, req)
+		rsp, err = s.Service.GetDebugJobState(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "GetInternalJobState", rsp, err)
+		err = s.Postlude(c, "GetDebugJobState", rsp, err)
 	}
 	return
 }

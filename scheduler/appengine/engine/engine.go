@@ -210,6 +210,23 @@ type EngineInternal interface {
 	// It is needed to be able to manually tests PubSub related workflows on dev
 	// server, since dev server can't accept PubSub push messages.
 	PullPubSubOnDevServer(c context.Context, taskManagerName, publisher string) error
+
+	// GetDebugJobState is used by Admin RPC interface for debugging jobs.
+	//
+	// It fetches Job entity, pending triggers and pending completion
+	// notifications.
+	GetDebugJobState(c context.Context, jobID string) (*DebugJobState, error)
+}
+
+// DebugJobState contains detailed information about a job.
+//
+// The state is not a transactional snapshot. Shouldn't be used for anything
+// other than just displaying it to humans.
+type DebugJobState struct {
+	Job                 *Job
+	FinishedInvocations []*internal.FinishedInvocation // unmarshalled Job.FinishedInvocationsRaw
+	RecentlyFinishedSet []int64                        // in-flight notifications from recentlyFinishedSet()
+	PendingTriggersSet  []*internal.Trigger            // triggers from pendingTriggersSet()
 }
 
 // ListInvocationsOpts are passed to ListInvocations method.
@@ -709,6 +726,47 @@ func (e *engineImpl) PullPubSubOnDevServer(c context.Context, taskManagerName, p
 		ack() // ack only on success of fatal errors (to stop redelivery)
 	}
 	return err
+}
+
+// GetDebugJobState is used by Admin RPC interface for debugging jobs.
+//
+// Part of the internal interface, doesn't check ACLs.
+func (e *engineImpl) GetDebugJobState(c context.Context, jobID string) (*DebugJobState, error) {
+	job, err := e.getJob(c, jobID)
+	switch {
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch Job entity").Err()
+	case job == nil:
+		return nil, ErrNoSuchJob
+	}
+
+	state := &DebugJobState{Job: job}
+
+	// Fill in FinishedInvocations.
+	state.FinishedInvocations, err = unmarshalFinishedInvs(job.FinishedInvocationsRaw)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to unmarshal FinishedInvocationsRaw").Err()
+	}
+
+	// Fill in RecentlyFinishedSet.
+	finishedSet := recentlyFinishedSet(c, jobID)
+	listing, err := finishedSet.List(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch recentlyFinishedSet").Err()
+	}
+	state.RecentlyFinishedSet = make([]int64, len(listing.Items))
+	for i, itm := range listing.Items {
+		state.RecentlyFinishedSet[i] = finishedSet.ItemToInvID(&itm)
+	}
+
+	// Fill in PendingTriggersSet.
+	triggersSet := pendingTriggersSet(c, jobID)
+	_, state.PendingTriggersSet, err = triggersSet.Triggers(c)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch pendingTriggersSet").Err()
+	}
+
+	return state, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

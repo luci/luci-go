@@ -27,104 +27,104 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-// InternalJobState loosely matches Job entity and associated data structures.
+// DebugJobState loosely matches Job entity and associated data structures.
 //
 // See the engine implementation for details.
-type InternalJobState struct {
-	Enabled              bool                        `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	Paused               bool                        `protobuf:"varint,2,opt,name=paused" json:"paused,omitempty"`
-	LastTriage           *timestamp.Timestamp        `protobuf:"bytes,3,opt,name=last_triage,json=lastTriage" json:"last_triage,omitempty"`
-	CronState            *InternalJobState_CronState `protobuf:"bytes,4,opt,name=cron_state,json=cronState" json:"cron_state,omitempty"`
-	ActiveInvocations    []int64                     `protobuf:"varint,5,rep,packed,name=active_invocations,json=activeInvocations" json:"active_invocations,omitempty"`
-	FinishedInvocations  []*FinishedInvocation       `protobuf:"bytes,6,rep,name=finished_invocations,json=finishedInvocations" json:"finished_invocations,omitempty"`
-	RecentlyFinishedSet  []int64                     `protobuf:"varint,7,rep,packed,name=recently_finished_set,json=recentlyFinishedSet" json:"recently_finished_set,omitempty"`
-	PendingTriggersSet   []*Trigger                  `protobuf:"bytes,8,rep,name=pending_triggers_set,json=pendingTriggersSet" json:"pending_triggers_set,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
-	XXX_unrecognized     []byte                      `json:"-"`
-	XXX_sizecache        int32                       `json:"-"`
+type DebugJobState struct {
+	Enabled              bool                     `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
+	Paused               bool                     `protobuf:"varint,2,opt,name=paused" json:"paused,omitempty"`
+	LastTriage           *timestamp.Timestamp     `protobuf:"bytes,3,opt,name=last_triage,json=lastTriage" json:"last_triage,omitempty"`
+	CronState            *DebugJobState_CronState `protobuf:"bytes,4,opt,name=cron_state,json=cronState" json:"cron_state,omitempty"`
+	ActiveInvocations    []int64                  `protobuf:"varint,5,rep,packed,name=active_invocations,json=activeInvocations" json:"active_invocations,omitempty"`
+	FinishedInvocations  []*FinishedInvocation    `protobuf:"bytes,6,rep,name=finished_invocations,json=finishedInvocations" json:"finished_invocations,omitempty"`
+	RecentlyFinishedSet  []int64                  `protobuf:"varint,7,rep,packed,name=recently_finished_set,json=recentlyFinishedSet" json:"recently_finished_set,omitempty"`
+	PendingTriggersSet   []*Trigger               `protobuf:"bytes,8,rep,name=pending_triggers_set,json=pendingTriggersSet" json:"pending_triggers_set,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
+	XXX_unrecognized     []byte                   `json:"-"`
+	XXX_sizecache        int32                    `json:"-"`
 }
 
-func (m *InternalJobState) Reset()         { *m = InternalJobState{} }
-func (m *InternalJobState) String() string { return proto.CompactTextString(m) }
-func (*InternalJobState) ProtoMessage()    {}
-func (*InternalJobState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_846c2659cbe1f322, []int{0}
+func (m *DebugJobState) Reset()         { *m = DebugJobState{} }
+func (m *DebugJobState) String() string { return proto.CompactTextString(m) }
+func (*DebugJobState) ProtoMessage()    {}
+func (*DebugJobState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0}
 }
-func (m *InternalJobState) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_InternalJobState.Unmarshal(m, b)
+func (m *DebugJobState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DebugJobState.Unmarshal(m, b)
 }
-func (m *InternalJobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_InternalJobState.Marshal(b, m, deterministic)
+func (m *DebugJobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DebugJobState.Marshal(b, m, deterministic)
 }
-func (dst *InternalJobState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InternalJobState.Merge(dst, src)
+func (dst *DebugJobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState.Merge(dst, src)
 }
-func (m *InternalJobState) XXX_Size() int {
-	return xxx_messageInfo_InternalJobState.Size(m)
+func (m *DebugJobState) XXX_Size() int {
+	return xxx_messageInfo_DebugJobState.Size(m)
 }
-func (m *InternalJobState) XXX_DiscardUnknown() {
-	xxx_messageInfo_InternalJobState.DiscardUnknown(m)
+func (m *DebugJobState) XXX_DiscardUnknown() {
+	xxx_messageInfo_DebugJobState.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_InternalJobState proto.InternalMessageInfo
+var xxx_messageInfo_DebugJobState proto.InternalMessageInfo
 
-func (m *InternalJobState) GetEnabled() bool {
+func (m *DebugJobState) GetEnabled() bool {
 	if m != nil {
 		return m.Enabled
 	}
 	return false
 }
 
-func (m *InternalJobState) GetPaused() bool {
+func (m *DebugJobState) GetPaused() bool {
 	if m != nil {
 		return m.Paused
 	}
 	return false
 }
 
-func (m *InternalJobState) GetLastTriage() *timestamp.Timestamp {
+func (m *DebugJobState) GetLastTriage() *timestamp.Timestamp {
 	if m != nil {
 		return m.LastTriage
 	}
 	return nil
 }
 
-func (m *InternalJobState) GetCronState() *InternalJobState_CronState {
+func (m *DebugJobState) GetCronState() *DebugJobState_CronState {
 	if m != nil {
 		return m.CronState
 	}
 	return nil
 }
 
-func (m *InternalJobState) GetActiveInvocations() []int64 {
+func (m *DebugJobState) GetActiveInvocations() []int64 {
 	if m != nil {
 		return m.ActiveInvocations
 	}
 	return nil
 }
 
-func (m *InternalJobState) GetFinishedInvocations() []*FinishedInvocation {
+func (m *DebugJobState) GetFinishedInvocations() []*FinishedInvocation {
 	if m != nil {
 		return m.FinishedInvocations
 	}
 	return nil
 }
 
-func (m *InternalJobState) GetRecentlyFinishedSet() []int64 {
+func (m *DebugJobState) GetRecentlyFinishedSet() []int64 {
 	if m != nil {
 		return m.RecentlyFinishedSet
 	}
 	return nil
 }
 
-func (m *InternalJobState) GetPendingTriggersSet() []*Trigger {
+func (m *DebugJobState) GetPendingTriggersSet() []*Trigger {
 	if m != nil {
 		return m.PendingTriggersSet
 	}
 	return nil
 }
 
-type InternalJobState_CronState struct {
+type DebugJobState_CronState struct {
 	Enabled              bool                 `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
 	Generation           int64                `protobuf:"varint,2,opt,name=generation" json:"generation,omitempty"`
 	LastRewind           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=last_rewind,json=lastRewind" json:"last_rewind,omitempty"`
@@ -135,59 +135,59 @@ type InternalJobState_CronState struct {
 	XXX_sizecache        int32                `json:"-"`
 }
 
-func (m *InternalJobState_CronState) Reset()         { *m = InternalJobState_CronState{} }
-func (m *InternalJobState_CronState) String() string { return proto.CompactTextString(m) }
-func (*InternalJobState_CronState) ProtoMessage()    {}
-func (*InternalJobState_CronState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_846c2659cbe1f322, []int{0, 0}
+func (m *DebugJobState_CronState) Reset()         { *m = DebugJobState_CronState{} }
+func (m *DebugJobState_CronState) String() string { return proto.CompactTextString(m) }
+func (*DebugJobState_CronState) ProtoMessage()    {}
+func (*DebugJobState_CronState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0, 0}
 }
-func (m *InternalJobState_CronState) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_InternalJobState_CronState.Unmarshal(m, b)
+func (m *DebugJobState_CronState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DebugJobState_CronState.Unmarshal(m, b)
 }
-func (m *InternalJobState_CronState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_InternalJobState_CronState.Marshal(b, m, deterministic)
+func (m *DebugJobState_CronState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DebugJobState_CronState.Marshal(b, m, deterministic)
 }
-func (dst *InternalJobState_CronState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InternalJobState_CronState.Merge(dst, src)
+func (dst *DebugJobState_CronState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState_CronState.Merge(dst, src)
 }
-func (m *InternalJobState_CronState) XXX_Size() int {
-	return xxx_messageInfo_InternalJobState_CronState.Size(m)
+func (m *DebugJobState_CronState) XXX_Size() int {
+	return xxx_messageInfo_DebugJobState_CronState.Size(m)
 }
-func (m *InternalJobState_CronState) XXX_DiscardUnknown() {
-	xxx_messageInfo_InternalJobState_CronState.DiscardUnknown(m)
+func (m *DebugJobState_CronState) XXX_DiscardUnknown() {
+	xxx_messageInfo_DebugJobState_CronState.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_InternalJobState_CronState proto.InternalMessageInfo
+var xxx_messageInfo_DebugJobState_CronState proto.InternalMessageInfo
 
-func (m *InternalJobState_CronState) GetEnabled() bool {
+func (m *DebugJobState_CronState) GetEnabled() bool {
 	if m != nil {
 		return m.Enabled
 	}
 	return false
 }
 
-func (m *InternalJobState_CronState) GetGeneration() int64 {
+func (m *DebugJobState_CronState) GetGeneration() int64 {
 	if m != nil {
 		return m.Generation
 	}
 	return 0
 }
 
-func (m *InternalJobState_CronState) GetLastRewind() *timestamp.Timestamp {
+func (m *DebugJobState_CronState) GetLastRewind() *timestamp.Timestamp {
 	if m != nil {
 		return m.LastRewind
 	}
 	return nil
 }
 
-func (m *InternalJobState_CronState) GetLastTickWhen() *timestamp.Timestamp {
+func (m *DebugJobState_CronState) GetLastTickWhen() *timestamp.Timestamp {
 	if m != nil {
 		return m.LastTickWhen
 	}
 	return nil
 }
 
-func (m *InternalJobState_CronState) GetLastTickNonce() int64 {
+func (m *DebugJobState_CronState) GetLastTickNonce() int64 {
 	if m != nil {
 		return m.LastTickNonce
 	}
@@ -195,8 +195,8 @@ func (m *InternalJobState_CronState) GetLastTickNonce() int64 {
 }
 
 func init() {
-	proto.RegisterType((*InternalJobState)(nil), "internal.admin.InternalJobState")
-	proto.RegisterType((*InternalJobState_CronState)(nil), "internal.admin.InternalJobState.CronState")
+	proto.RegisterType((*DebugJobState)(nil), "internal.admin.DebugJobState")
+	proto.RegisterType((*DebugJobState_CronState)(nil), "internal.admin.DebugJobState.CronState")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -211,10 +211,10 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AdminClient interface {
-	// GetInternalJobState returns detailed report about the job state.
+	// GetDebugJobState returns detailed report about the job state.
 	//
 	// Useful when debugging internal issues.
-	GetInternalJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*InternalJobState, error)
+	GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error)
 }
 type adminPRPCClient struct {
 	client *prpc.Client
@@ -224,9 +224,9 @@ func NewAdminPRPCClient(client *prpc.Client) AdminClient {
 	return &adminPRPCClient{client}
 }
 
-func (c *adminPRPCClient) GetInternalJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*InternalJobState, error) {
-	out := new(InternalJobState)
-	err := c.client.Call(ctx, "internal.admin.Admin", "GetInternalJobState", in, out, opts...)
+func (c *adminPRPCClient) GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error) {
+	out := new(DebugJobState)
+	err := c.client.Call(ctx, "internal.admin.Admin", "GetDebugJobState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -241,9 +241,9 @@ func NewAdminClient(cc *grpc.ClientConn) AdminClient {
 	return &adminClient{cc}
 }
 
-func (c *adminClient) GetInternalJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*InternalJobState, error) {
-	out := new(InternalJobState)
-	err := c.cc.Invoke(ctx, "/internal.admin.Admin/GetInternalJobState", in, out, opts...)
+func (c *adminClient) GetDebugJobState(ctx context.Context, in *v1.JobRef, opts ...grpc.CallOption) (*DebugJobState, error) {
+	out := new(DebugJobState)
+	err := c.cc.Invoke(ctx, "/internal.admin.Admin/GetDebugJobState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -252,30 +252,30 @@ func (c *adminClient) GetInternalJobState(ctx context.Context, in *v1.JobRef, op
 
 // AdminServer is the server API for Admin service.
 type AdminServer interface {
-	// GetInternalJobState returns detailed report about the job state.
+	// GetDebugJobState returns detailed report about the job state.
 	//
 	// Useful when debugging internal issues.
-	GetInternalJobState(context.Context, *v1.JobRef) (*InternalJobState, error)
+	GetDebugJobState(context.Context, *v1.JobRef) (*DebugJobState, error)
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {
 	s.RegisterService(&_Admin_serviceDesc, srv)
 }
 
-func _Admin_GetInternalJobState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admin_GetDebugJobState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.JobRef)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServer).GetInternalJobState(ctx, in)
+		return srv.(AdminServer).GetDebugJobState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/internal.admin.Admin/GetInternalJobState",
+		FullMethod: "/internal.admin.Admin/GetDebugJobState",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServer).GetInternalJobState(ctx, req.(*v1.JobRef))
+		return srv.(AdminServer).GetDebugJobState(ctx, req.(*v1.JobRef))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -285,8 +285,8 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetInternalJobState",
-			Handler:    _Admin_GetInternalJobState_Handler,
+			MethodName: "GetDebugJobState",
+			Handler:    _Admin_GetDebugJobState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -294,41 +294,41 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_admin_846c2659cbe1f322)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_admin_60def8e8ab45c2a0)
 }
 
-var fileDescriptor_admin_846c2659cbe1f322 = []byte{
-	// 504 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0xd1, 0x8a, 0xd3, 0x40,
-	0x14, 0xa5, 0xd6, 0x76, 0xbb, 0x53, 0x5d, 0xdd, 0xe9, 0x2a, 0x21, 0x0f, 0x6e, 0xf1, 0x41, 0x8a,
-	0xe0, 0x04, 0xeb, 0x9b, 0x22, 0xae, 0x0a, 0x4a, 0x8b, 0xf8, 0x90, 0x16, 0x04, 0x5f, 0xc2, 0x64,
-	0x72, 0x9b, 0x0e, 0x9b, 0xde, 0x09, 0x33, 0x93, 0x2e, 0xfe, 0x9d, 0x1f, 0xe4, 0x47, 0x48, 0x27,
-	0x99, 0x66, 0xd7, 0x85, 0x5d, 0xf7, 0x6d, 0xee, 0x3d, 0xe7, 0xdc, 0x1c, 0xee, 0xb9, 0x21, 0xef,
-	0x73, 0xc5, 0xc4, 0x5a, 0xab, 0x8d, 0xac, 0x36, 0x4c, 0xe9, 0x3c, 0x2a, 0x2a, 0x21, 0x23, 0x23,
-	0xd6, 0x90, 0x55, 0x05, 0xe8, 0x88, 0x97, 0x25, 0x60, 0x2e, 0x11, 0x22, 0x89, 0x16, 0x34, 0xf2,
-	0x22, 0xe2, 0xd9, 0x46, 0x22, 0x2b, 0xb5, 0xb2, 0x8a, 0x1e, 0xf9, 0x2e, 0x73, 0xdd, 0xf0, 0x34,
-	0x57, 0x2a, 0x2f, 0x20, 0x72, 0x68, 0x5a, 0xad, 0x22, 0x2b, 0x37, 0x60, 0x2c, 0xdf, 0x94, 0xb5,
-	0x20, 0xfc, 0x70, 0xeb, 0xf7, 0x2e, 0x57, 0xdb, 0xd7, 0x6d, 0xd1, 0x0c, 0x78, 0x7b, 0x77, 0xc3,
-	0x59, 0xda, 0x68, 0xcf, 0xee, 0xae, 0xb5, 0x5a, 0xe6, 0x39, 0x68, 0x53, 0x4f, 0x78, 0xfe, 0xbb,
-	0x47, 0x1e, 0xcf, 0x1a, 0x6c, 0xae, 0xd2, 0x85, 0xe5, 0x16, 0x68, 0x40, 0x0e, 0x00, 0x79, 0x5a,
-	0x40, 0x16, 0x74, 0xc6, 0x9d, 0xc9, 0x20, 0xf6, 0x25, 0x7d, 0x4a, 0xfa, 0x25, 0xaf, 0x0c, 0x64,
-	0xc1, 0x3d, 0x07, 0x34, 0x15, 0x7d, 0x47, 0x86, 0x05, 0x37, 0x36, 0xb1, 0x5a, 0xf2, 0x1c, 0x82,
-	0xee, 0xb8, 0x33, 0x19, 0x4e, 0x43, 0x56, 0x2f, 0x8f, 0xf9, 0xe5, 0xb1, 0xa5, 0x5f, 0x5e, 0x4c,
-	0x76, 0xf4, 0xa5, 0x63, 0xd3, 0x19, 0x21, 0x42, 0x2b, 0x4c, 0xcc, 0xee, 0xe3, 0xc1, 0x7d, 0xa7,
-	0x7d, 0xc9, 0xae, 0x06, 0xc1, 0xfe, 0x35, 0xc9, 0x3e, 0x6b, 0x85, 0xee, 0x15, 0x1f, 0x0a, 0xff,
-	0xa4, 0xaf, 0x08, 0xe5, 0xc2, 0xca, 0x2d, 0x24, 0x12, 0xb7, 0x4a, 0x70, 0x2b, 0x15, 0x9a, 0xa0,
-	0x37, 0xee, 0x4e, 0xba, 0xf1, 0x71, 0x8d, 0xcc, 0x5a, 0x80, 0xc6, 0xe4, 0x64, 0x25, 0x51, 0x9a,
-	0x35, 0x64, 0x57, 0x04, 0xfd, 0x71, 0x77, 0x32, 0x9c, 0x9e, 0xb6, 0x1e, 0xb2, 0x94, 0x7d, 0x69,
-	0x88, 0xad, 0x3e, 0x1e, 0xad, 0xae, 0xf5, 0x0c, 0x9d, 0x92, 0x27, 0x1a, 0x04, 0xa0, 0x2d, 0x7e,
-	0x25, 0xfb, 0xe1, 0x06, 0x6c, 0x70, 0xe0, 0x5c, 0x8c, 0x3c, 0xe8, 0xe7, 0x2d, 0xc0, 0xd2, 0x6f,
-	0xe4, 0xa4, 0x04, 0xcc, 0x24, 0xe6, 0x89, 0xcf, 0xc7, 0x49, 0x06, 0xce, 0x47, 0xd8, 0xfa, 0xd8,
-	0xa7, 0xb7, 0xac, 0x1f, 0x31, 0x6d, 0x74, 0x4d, 0x6d, 0x16, 0x60, 0xc3, 0x3f, 0x1d, 0x72, 0xb8,
-	0xdf, 0xce, 0x0d, 0x61, 0x3e, 0x23, 0x24, 0x07, 0x04, 0xed, 0x8c, 0xbb, 0x40, 0xbb, 0xf1, 0xa5,
-	0xce, 0x3e, 0x54, 0x0d, 0x17, 0x12, 0xb3, 0xff, 0x0d, 0x35, 0x76, 0x6c, 0x7a, 0x46, 0x8e, 0xea,
-	0x8b, 0x90, 0xe2, 0x3c, 0xb9, 0x58, 0x03, 0x36, 0xc1, 0xde, 0xa4, 0x7f, 0xe0, 0x8e, 0x42, 0x8a,
-	0xf3, 0x1f, 0x6b, 0x40, 0xfa, 0x82, 0x3c, 0x6a, 0x27, 0xa0, 0x42, 0x01, 0x41, 0xcf, 0x79, 0x7c,
-	0xe8, 0x69, 0xdf, 0x77, 0xcd, 0xe9, 0x82, 0xf4, 0x3e, 0xee, 0x4e, 0x84, 0xce, 0xc9, 0xe8, 0x2b,
-	0xd8, 0x6b, 0xd7, 0x7c, 0xcc, 0xda, 0x5f, 0x6e, 0xae, 0xd2, 0x18, 0x56, 0xe1, 0xf8, 0xb6, 0xeb,
-	0xfa, 0x44, 0x7e, 0x0e, 0x3c, 0x25, 0xed, 0x3b, 0xab, 0x6f, 0xfe, 0x06, 0x00, 0x00, 0xff, 0xff,
-	0x1f, 0x01, 0xbb, 0x18, 0x5b, 0x04, 0x00, 0x00,
+var fileDescriptor_admin_60def8e8ab45c2a0 = []byte{
+	// 505 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x51, 0x6f, 0xd3, 0x30,
+	0x10, 0x56, 0x29, 0xed, 0x3a, 0x97, 0x0d, 0xe6, 0x0d, 0x14, 0x45, 0x82, 0x55, 0x3c, 0x40, 0x5f,
+	0x70, 0x44, 0x79, 0x03, 0x21, 0x06, 0x4c, 0x43, 0x4c, 0xc0, 0x43, 0x5a, 0x09, 0x89, 0x97, 0xc8,
+	0x71, 0xae, 0xae, 0xb5, 0xf4, 0x1c, 0xd9, 0x4e, 0x27, 0xfe, 0x1a, 0xbf, 0x89, 0x1f, 0x81, 0xea,
+	0x24, 0xcd, 0x2a, 0xa4, 0xc2, 0xde, 0xee, 0xee, 0xbb, 0xef, 0xfc, 0xe9, 0xbe, 0x33, 0x79, 0x2b,
+	0x35, 0x13, 0x0b, 0xa3, 0x97, 0xaa, 0x5c, 0x32, 0x6d, 0x64, 0x94, 0x97, 0x42, 0x45, 0x56, 0x2c,
+	0x20, 0x2b, 0x73, 0x30, 0x11, 0x2f, 0x0a, 0x40, 0xa9, 0x10, 0x22, 0x85, 0x0e, 0x0c, 0xf2, 0x3c,
+	0xe2, 0xd9, 0x52, 0x21, 0x2b, 0x8c, 0x76, 0x9a, 0x1e, 0x36, 0x55, 0xe6, 0xab, 0xe1, 0xa9, 0xd4,
+	0x5a, 0xe6, 0x10, 0x79, 0x34, 0x2d, 0xe7, 0x91, 0x53, 0x4b, 0xb0, 0x8e, 0x2f, 0x8b, 0x8a, 0x10,
+	0xbe, 0xfb, 0xe7, 0x7b, 0x37, 0xb3, 0xd5, 0xcb, 0x36, 0xa9, 0x07, 0xbc, 0xbe, 0xbd, 0xe0, 0x2c,
+	0xad, 0xb9, 0x67, 0xb7, 0xe7, 0x3a, 0xa3, 0xa4, 0x04, 0x63, 0xab, 0x09, 0x4f, 0x7f, 0xf5, 0xc8,
+	0xc1, 0x39, 0xa4, 0xa5, 0xbc, 0xd4, 0xe9, 0xd4, 0x71, 0x07, 0x34, 0x20, 0x7b, 0x80, 0x3c, 0xcd,
+	0x21, 0x0b, 0x3a, 0xa3, 0xce, 0x78, 0x10, 0x37, 0x29, 0x7d, 0x44, 0xfa, 0x05, 0x2f, 0x2d, 0x64,
+	0xc1, 0x1d, 0x0f, 0xd4, 0x19, 0x7d, 0x43, 0x86, 0x39, 0xb7, 0x2e, 0x71, 0x46, 0x71, 0x09, 0x41,
+	0x77, 0xd4, 0x19, 0x0f, 0x27, 0x21, 0xab, 0x36, 0xc7, 0x9a, 0xcd, 0xb1, 0x59, 0xb3, 0xb9, 0x98,
+	0xac, 0xdb, 0x67, 0xbe, 0x9b, 0x5e, 0x10, 0x22, 0x8c, 0xc6, 0xc4, 0xae, 0x1f, 0x0f, 0xee, 0x7a,
+	0xee, 0x73, 0xb6, 0xed, 0x02, 0xdb, 0x52, 0xc8, 0x3e, 0x1a, 0x8d, 0x3e, 0x8a, 0xf7, 0x45, 0x13,
+	0xd2, 0x17, 0x84, 0x72, 0xe1, 0xd4, 0x0a, 0x12, 0x85, 0x2b, 0x2d, 0xb8, 0x53, 0x1a, 0x6d, 0xd0,
+	0x1b, 0x75, 0xc7, 0xdd, 0xf8, 0xa8, 0x42, 0x3e, 0xb7, 0x00, 0x8d, 0xc9, 0xc9, 0x5c, 0xa1, 0xb2,
+	0x0b, 0xc8, 0xb6, 0x08, 0xfd, 0x51, 0x77, 0x3c, 0x9c, 0x9c, 0xb6, 0x02, 0xb2, 0x94, 0x5d, 0xd4,
+	0x8d, 0x2d, 0x3f, 0x3e, 0x9e, 0xff, 0x55, 0xb3, 0x74, 0x42, 0x1e, 0x1a, 0x10, 0x80, 0x2e, 0xff,
+	0x99, 0x6c, 0x86, 0x5b, 0x70, 0xc1, 0x9e, 0x57, 0x71, 0xdc, 0x80, 0xcd, 0xbc, 0x29, 0x38, 0xfa,
+	0x85, 0x9c, 0x14, 0x80, 0x99, 0x42, 0x99, 0x34, 0xce, 0x78, 0xca, 0xc0, 0xeb, 0x08, 0x5b, 0x1d,
+	0x1b, 0xdf, 0x66, 0x55, 0x10, 0xd3, 0x9a, 0x57, 0xe7, 0x76, 0x0a, 0x2e, 0xfc, 0xdd, 0x21, 0xfb,
+	0x9b, 0xed, 0xec, 0x70, 0xf2, 0x09, 0x21, 0x12, 0x10, 0x8c, 0x17, 0xee, 0xdd, 0xec, 0xc6, 0x37,
+	0x2a, 0x1b, 0x47, 0x0d, 0x5c, 0x2b, 0xcc, 0xfe, 0xd7, 0xd1, 0xd8, 0x77, 0xd3, 0x33, 0x72, 0x58,
+	0x9d, 0x83, 0x12, 0x57, 0xc9, 0xf5, 0x02, 0xb0, 0x76, 0x75, 0x17, 0xff, 0x9e, 0xbf, 0x08, 0x25,
+	0xae, 0xbe, 0x2f, 0x00, 0xe9, 0x33, 0x72, 0xbf, 0x9d, 0x80, 0x1a, 0x05, 0x04, 0x3d, 0xaf, 0xf1,
+	0xa0, 0x69, 0xfb, 0xb6, 0x2e, 0x4e, 0xbe, 0x92, 0xde, 0xfb, 0xf5, 0x7d, 0xd0, 0x73, 0xf2, 0xe0,
+	0x13, 0xb8, 0xed, 0x3b, 0x3e, 0x62, 0xed, 0x4f, 0xbb, 0xd4, 0x69, 0x0c, 0xf3, 0xf0, 0xf1, 0xce,
+	0xbb, 0xfa, 0x40, 0x7e, 0x0c, 0x1a, 0x3c, 0xed, 0x7b, 0x91, 0xaf, 0xfe, 0x04, 0x00, 0x00, 0xff,
+	0xff, 0xfc, 0xfd, 0x57, 0xb2, 0x4f, 0x04, 0x00, 0x00,
 }
