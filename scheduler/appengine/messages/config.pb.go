@@ -50,7 +50,7 @@ func (x Acl_Role) String() string {
 	return proto.EnumName(Acl_Role_name, int32(x))
 }
 func (Acl_Role) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{1, 0}
+	return fileDescriptor_config_51531dfbd482858e, []int{1, 0}
 }
 
 type TriggeringPolicy_Kind int32
@@ -86,7 +86,7 @@ func (x TriggeringPolicy_Kind) String() string {
 	return proto.EnumName(TriggeringPolicy_Kind_name, int32(x))
 }
 func (TriggeringPolicy_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{3, 0}
+	return fileDescriptor_config_51531dfbd482858e, []int{3, 0}
 }
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
@@ -107,7 +107,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{0}
+	return fileDescriptor_config_51531dfbd482858e, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -163,7 +163,7 @@ func (m *Acl) Reset()         { *m = Acl{} }
 func (m *Acl) String() string { return proto.CompactTextString(m) }
 func (*Acl) ProtoMessage()    {}
 func (*Acl) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{1}
+	return fileDescriptor_config_51531dfbd482858e, []int{1}
 }
 func (m *Acl) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acl.Unmarshal(m, b)
@@ -214,7 +214,7 @@ func (m *AclSet) Reset()         { *m = AclSet{} }
 func (m *AclSet) String() string { return proto.CompactTextString(m) }
 func (*AclSet) ProtoMessage()    {}
 func (*AclSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{2}
+	return fileDescriptor_config_51531dfbd482858e, []int{2}
 }
 func (m *AclSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclSet.Unmarshal(m, b)
@@ -290,7 +290,7 @@ func (m *TriggeringPolicy) Reset()         { *m = TriggeringPolicy{} }
 func (m *TriggeringPolicy) String() string { return proto.CompactTextString(m) }
 func (*TriggeringPolicy) ProtoMessage()    {}
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{3}
+	return fileDescriptor_config_51531dfbd482858e, []int{3}
 }
 func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggeringPolicy.Unmarshal(m, b)
@@ -410,7 +410,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{4}
+	return fileDescriptor_config_51531dfbd482858e, []int{4}
 }
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
@@ -534,7 +534,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{5}
+	return fileDescriptor_config_51531dfbd482858e, []int{5}
 }
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
@@ -631,7 +631,7 @@ func (m *NoopTask) Reset()         { *m = NoopTask{} }
 func (m *NoopTask) String() string { return proto.CompactTextString(m) }
 func (*NoopTask) ProtoMessage()    {}
 func (*NoopTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{6}
+	return fileDescriptor_config_51531dfbd482858e, []int{6}
 }
 func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTask.Unmarshal(m, b)
@@ -695,7 +695,7 @@ func (m *GitilesTask) Reset()         { *m = GitilesTask{} }
 func (m *GitilesTask) String() string { return proto.CompactTextString(m) }
 func (*GitilesTask) ProtoMessage()    {}
 func (*GitilesTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{7}
+	return fileDescriptor_config_51531dfbd482858e, []int{7}
 }
 func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTask.Unmarshal(m, b)
@@ -746,7 +746,7 @@ func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()    {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{8}
+	return fileDescriptor_config_51531dfbd482858e, []int{8}
 }
 func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UrlFetchTask.Unmarshal(m, b)
@@ -810,7 +810,7 @@ func (m *BuildbucketTask) Reset()         { *m = BuildbucketTask{} }
 func (m *BuildbucketTask) String() string { return proto.CompactTextString(m) }
 func (*BuildbucketTask) ProtoMessage()    {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{9}
+	return fileDescriptor_config_51531dfbd482858e, []int{9}
 }
 func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTask.Unmarshal(m, b)
@@ -882,7 +882,7 @@ func (m *TaskDefWrapper) Reset()         { *m = TaskDefWrapper{} }
 func (m *TaskDefWrapper) String() string { return proto.CompactTextString(m) }
 func (*TaskDefWrapper) ProtoMessage()    {}
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_03eb66cb57691626, []int{10}
+	return fileDescriptor_config_51531dfbd482858e, []int{10}
 }
 func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TaskDefWrapper.Unmarshal(m, b)
@@ -947,10 +947,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_config_03eb66cb57691626)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_config_51531dfbd482858e)
 }
 
-var fileDescriptor_config_03eb66cb57691626 = []byte{
+var fileDescriptor_config_51531dfbd482858e = []byte{
 	// 924 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x6e, 0xdb, 0x36,
 	0x14, 0xae, 0x7e, 0x6c, 0xcb, 0x27, 0x4d, 0xaa, 0x71, 0xeb, 0xa0, 0x66, 0x68, 0xe7, 0x09, 0x1b,

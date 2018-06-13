@@ -1,0 +1,58 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package internal.admin;
+
+option go_package = "internal";
+
+import "google/protobuf/timestamp.proto";
+
+import "go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto";
+import "go.chromium.org/luci/scheduler/appengine/internal/db.proto";
+import "go.chromium.org/luci/scheduler/appengine/internal/triggers.proto";
+
+
+// Admin exposes administrative API usable only by the service owners.
+service Admin {
+  // GetInternalJobState returns detailed report about the job state.
+  //
+  // Useful when debugging internal issues.
+  rpc GetInternalJobState(scheduler.JobRef) returns (InternalJobState);
+}
+
+
+// InternalJobState loosely matches Job entity and associated data structures.
+//
+// See the engine implementation for details.
+message InternalJobState {
+  message CronState {
+    bool enabled = 1;
+    int64 generation = 2;
+    google.protobuf.Timestamp last_rewind = 3;
+    google.protobuf.Timestamp last_tick_when = 4;
+    int64 last_tick_nonce = 5;
+  }
+
+  bool enabled = 1;
+  bool paused = 2;
+  google.protobuf.Timestamp last_triage = 3;
+  CronState cron_state = 4;
+
+  repeated int64 active_invocations = 5;
+  repeated internal.db.FinishedInvocation finished_invocations = 6;
+  repeated int64 recently_finished_set = 7;
+  repeated internal.triggers.Trigger pending_triggers_set = 8;
+}
