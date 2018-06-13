@@ -249,6 +249,30 @@
     },
     {
       "key": {
+        "uuid": "f35a6871_fe8f7e3e",
+        "filename": "luci_notify/notify/commits.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-13T20:02:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd5dabd0_4fa55432",
+      "range": {
+        "startLine": 123,
+        "startChar": 12,
+        "endLine": 123,
+        "endChar": 15
+      },
+      "revId": "4cdc25f425bcf38ae6cb2096d0d53234948e7900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "51a494c7_72ca0ba8",
         "filename": "luci_notify/notify/commits.go",
         "patchSetId": 25
