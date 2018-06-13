@@ -225,13 +225,18 @@ func (op *triageOp) transaction(c context.Context, job *Job) error {
 	return nil
 }
 
-// finalize is called after successfully submitted transaction to delete any
-// produced garbage, submit the triage log, update monitoring counters, etc.
+// finalize is called after the transaction (successfully submitted or not) to
+// delete any produced garbage, submit the triage log, update monitoring
+// counters, etc.
+//
+// 'success' is true if the transaction successfully landed.
 //
 // It is best effort. We can't do anything meaningful if it fails: the
 // transaction has already landed, there's no way to unland it.
-func (op *triageOp) finalize(c context.Context) {
-	if len(op.garbage) != 0 {
+func (op *triageOp) finalize(c context.Context, success bool) {
+	// Cleanup the garbage accumulated in the transaction only if the transaction
+	// really landed. If it didn't this it not really a garbage!
+	if success && len(op.garbage) != 0 {
 		op.debugInfoLog(c, "Cleaning up storage of %d dsset items", len(op.garbage))
 		if err := dsset.CleanupGarbage(c, op.garbage); err != nil {
 			op.debugErrLog(c, err, "Best effort cleanup failed")

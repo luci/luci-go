@@ -21,6 +21,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock"
@@ -233,6 +234,35 @@ func TestTriageOp(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(listing.Items, ShouldHaveLength, 0)
 		})
+
+		Convey("doesn't touch ds sets if txn fails to land", func() {
+			triggers := []*internal.Trigger{
+				{
+					Id:      "t0",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+				{
+					Id:      "t1",
+					Created: google.NewTimestamp(epoch.Add(20 * time.Second)),
+				},
+			}
+			pendingTriggersSet(c, "job").Add(c, triggers)
+
+			brokenC, fb := featureBreaker.FilterRDS(c, nil)
+			fb.BreakFeatures(nil, "CommitTransaction")
+
+			after, err := tb.runTestTriage(brokenC, &Job{
+				JobID:   "job",
+				Enabled: true,
+			})
+			So(err, ShouldNotBeNil)
+			So(after.ActiveInvocations, ShouldHaveLength, 0)
+
+			// Triggers are still there.
+			listing, err := pendingTriggersSet(c, "job").List(c)
+			So(err, ShouldBeNil)
+			So(listing.Items, ShouldHaveLength, 2)
+		})
 	})
 }
 
@@ -245,8 +275,11 @@ type triageTestBed struct {
 	requests  []task.Request
 }
 
+// runTestTriage runs the triage operation and refetches the job after it.
+//
+// On triage errors, both 'after' and 'err' are returned.
 func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Job, err error) {
-	if err := datastore.Put(c, before); err != nil {
+	if err = datastore.Put(c, before); err != nil {
 		return nil, err
 	}
 
@@ -273,28 +306,23 @@ func (t *triageTestBed) runTestTriage(c context.Context, before *Job) (after *Jo
 		maxAllowedTriggers: t.maxAllowedTriggers,
 	}
 
-	defer op.finalize(c)
-	if err := op.prepare(c); err != nil {
-		return nil, err
+	if err = op.prepare(c); err == nil {
+		err = runTxn(c, func(c context.Context) error {
+			job := Job{JobID: op.jobID}
+			if err := datastore.Get(c, &job); err != nil {
+				return err
+			}
+			if err := op.transaction(c, &job); err != nil {
+				return err
+			}
+			return datastore.Put(c, &job)
+		})
 	}
-
-	err = runTxn(c, func(c context.Context) error {
-		job := Job{JobID: op.jobID}
-		if err := datastore.Get(c, &job); err != nil {
-			return err
-		}
-		if err := op.transaction(c, &job); err != nil {
-			return err
-		}
-		return datastore.Put(c, &job)
-	})
-	if err != nil {
-		return nil, err
-	}
+	op.finalize(c, err == nil)
 
 	after = &Job{JobID: before.JobID}
-	if err := datastore.Get(c, after); err != nil {
-		return nil, err
+	if getErr := datastore.Get(c, after); getErr != nil {
+		panic("must not happen")
 	}
-	return after, nil
+	return after, err
 }
