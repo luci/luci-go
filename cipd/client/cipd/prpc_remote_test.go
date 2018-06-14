@@ -559,3 +559,19 @@ func (m *mockedRepoClient) ListRefs(ctx context.Context, in *api.ListRefsRequest
 	}
 	return out.(*api.ListRefsResponse), nil
 }
+
+func (m *mockedRepoClient) AttachTags(ctx context.Context, in *api.AttachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("AttachTags", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
+func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("DetachTags", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}

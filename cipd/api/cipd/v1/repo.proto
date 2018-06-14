@@ -194,7 +194,7 @@ service Repository {
   //
   // Returns:
   //   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-  //   INVALID_ARGUMENT if the ref or package name or instance ID is invalid.
+  //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package or the instance the ref points to doesn't exist.
   //   FAILED_PRECONDITION if the instance is still being processed.
   //   ABORTED if the instance has some failed processors associated with it,
@@ -207,7 +207,7 @@ service Repository {
   //
   // Returns:
   //   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
-  //   INVALID_ARGUMENT if the ref or package name is invalid.
+  //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package doesn't exist.
   rpc DeleteRef(DeleteRefRequest) returns (google.protobuf.Empty);
 
@@ -215,9 +215,57 @@ service Repository {
   //
   // Returns:
   //   PERMISSION_DENIED if the caller is not a READER for the prefix.
-  //   INVALID_ARGUMENT if the package name is invalid.
+  //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package doesn't exist.
   rpc ListRefs(ListRefsRequest) returns (ListRefsResponse);
+
+  // Attaches one or more tags to an instance.
+  //
+  // Silently skips already attached tags.
+  //
+  // Tags are "key:value" pairs associated with a concrete package instance.
+  // They can be used for querying registered instances and for version
+  // resolution: if a tag is attached to one and only one instance of a package,
+  // the tag uniquely identifies this instance and such tag can be used as an
+  // alias of the instance ID.
+  //
+  // Tags generally should be assumed globally namespaced (e.g. it makes sense
+  // to query for all registered instances with a given tag, across all
+  // packages), and they don't have to be unique: same tag may be attached to
+  // multiple instances (of the same or different packages).
+  //
+  // Additionally, tags (unlike refs) are intended to be mostly static, since
+  // they usually relate to some properties of package instances, which are
+  // static entities. This is particularity important for tags used for version
+  // resolution.
+  //
+  // Attaching a tag to an instance generally makes the instance "discoverable".
+  // For that reason tags can be attached only to instances that successfully
+  // passed all post-registration processing.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a WRITER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package or the instance doesn't exist.
+  //   FAILED_PRECONDITION if the instance is still being processed.
+  //   ABORTED if the instance has some failed processors associated with it,
+  //       such instance is effectively broken and should not be used.
+  rpc AttachTags(AttachTagsRequest) returns (google.protobuf.Empty);
+
+  // Detaches one or more tags if they were attached.
+  //
+  // This call should not be used routinely, since tags are assumed to be
+  // static (and thus not detachable).
+  //
+  // It is occasionally useful for fixing screw ups though. For that reason,
+  // DetachTags is allowed only by OWNERS of a prefix (not WRITERS, like
+  // AttachTags).
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package doesn't exist.
+  rpc DetachTags(DetachTagsRequest) returns (google.protobuf.Empty);
 }
 
 
@@ -449,4 +497,27 @@ message ListRefsRequest {
 message ListRefsResponse {
   // Package refs, sorted by modification time, most recently touched first.
   repeated Ref refs = 1;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message AttachTagsRequest {
+  // The package that holds the instance we attach tags to.
+  string package = 1;
+  // The instance we attach tags to.
+  ObjectRef instance = 2;
+  // One or more tags to attach (order doesn't matter).
+  repeated string tags = 3;
+}
+
+
+message DetachTagsRequest {
+  // The package that holds the instance we detach tags from.
+  string package = 1;
+  // The instance we detach tags from.
+  ObjectRef instance = 2;
+  // One or more tags to detach (order doesn't matter).
+  repeated string tags = 3;
 }
