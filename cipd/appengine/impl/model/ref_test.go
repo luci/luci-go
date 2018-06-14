@@ -40,7 +40,8 @@ func TestRefs(t *testing.T) {
 		digest := strings.Repeat("a", 40)
 
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx, _ := testclock.UseTime(gaetesting.TestingContext(), testTime)
+		ctx, tc := testclock.UseTime(gaetesting.TestingContext(), testTime)
+		datastore.GetTestable(ctx).AutoIndex(true)
 
 		putInst := func(pkg, iid string, pendingProcs []string) {
 			So(datastore.Put(ctx,
@@ -116,6 +117,42 @@ func TestRefs(t *testing.T) {
 			ref, err := GetRef(ctx, "pkg", "latest")
 			So(err, ShouldBeNil)
 			So(ref.ModifiedBy, ShouldEqual, "user:abc@example.com") // the initial one
+		})
+
+		Convey("ListRefs works", func() {
+			putInst("pkg", digest, nil)
+			pkgKey := PackageKey(ctx, "pkg")
+
+			So(SetRef(ctx, "ref-0", &Instance{
+				InstanceID: digest,
+				Package:    pkgKey,
+			}, "user:abc@example.com"), ShouldBeNil)
+
+			tc.Add(time.Minute)
+
+			So(SetRef(ctx, "ref-1", &Instance{
+				InstanceID: digest,
+				Package:    pkgKey,
+			}, "user:abc@example.com"), ShouldBeNil)
+
+			refs, err := ListRefs(ctx, "pkg")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, []*Ref{
+				{
+					Name:       "ref-1",
+					Package:    pkgKey,
+					InstanceID: digest,
+					ModifiedBy: "user:abc@example.com",
+					ModifiedTs: testTime.Add(time.Minute),
+				},
+				{
+					Name:       "ref-0",
+					Package:    pkgKey,
+					InstanceID: digest,
+					ModifiedBy: "user:abc@example.com",
+					ModifiedTs: testTime,
+				},
+			})
 		})
 	})
 }

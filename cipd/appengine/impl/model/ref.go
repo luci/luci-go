@@ -119,3 +119,16 @@ func DeleteRef(c context.Context, pkg, ref string) error {
 		Package: PackageKey(c, pkg),
 	}))
 }
+
+// ListRefs returns all refs in a package, most recently modified first.
+//
+// Returns an empty list if there's no such package at all.
+func ListRefs(c context.Context, pkg string) (out []*Ref, err error) {
+	q := datastore.NewQuery("PackageRef").
+		Ancestor(PackageKey(c, pkg)).
+		Order("-modified_ts")
+	if err := datastore.GetAll(c, q, &out); err != nil {
+		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+	}
+	return
+}

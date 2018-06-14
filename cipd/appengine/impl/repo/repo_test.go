@@ -33,7 +33,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
 
@@ -1259,7 +1258,7 @@ func TestRefs(t *testing.T) {
 
 		impl := repoImpl{meta: &meta}
 
-		Convey("CreateRef/DeleteRef happy path", func() {
+		Convey("CreateRef/ListRefs/DeleteRef happy path", func() {
 			_, err := impl.CreateRef(ctx, &api.Ref{
 				Name:    "latest",
 				Package: "a/b/c",
@@ -1270,15 +1269,20 @@ func TestRefs(t *testing.T) {
 			})
 			So(err, ShouldBeNil)
 
-			// Exists now.
-			ref, err := model.GetRef(ctx, "a/b/c", "latest")
+			// Can be listed now.
+			refs, err := impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
 			So(err, ShouldBeNil)
-			So(ref, ShouldResemble, &model.Ref{
-				Name:       "latest",
-				Package:    model.PackageKey(ctx, "a/b/c"),
-				InstanceID: digest,
-				ModifiedBy: "user:writer@example.com",
-				ModifiedTs: testTime,
+			So(refs.Refs, ShouldResembleProto, []*api.Ref{
+				{
+					Name:    "latest",
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: digest,
+					},
+					ModifiedBy: "user:writer@example.com",
+					ModifiedTs: google.NewTimestamp(testTime),
+				},
 			})
 
 			_, err = impl.DeleteRef(ctx, &api.DeleteRefRequest{
@@ -1288,8 +1292,9 @@ func TestRefs(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Missing now.
-			_, err = model.GetRef(ctx, "a/b/c", "latest")
-			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			refs, err = impl.ListRefs(ctx, &api.ListRefsRequest{Package: "a/b/c"})
+			So(err, ShouldBeNil)
+			So(refs.Refs, ShouldHaveLength, 0)
 		})
 
 		Convey("Bad ref", func() {
@@ -1336,6 +1341,13 @@ func TestRefs(t *testing.T) {
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "bad 'package'")
 			})
+			Convey("ListRefs", func() {
+				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
+					Package: "///",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
 		})
 
 		Convey("No access", func() {
@@ -1359,6 +1371,13 @@ func TestRefs(t *testing.T) {
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
 			})
+			Convey("ListRefs", func() {
+				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
+					Package: "z",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			})
 		})
 
 		Convey("Missing package", func() {
@@ -1377,6 +1396,13 @@ func TestRefs(t *testing.T) {
 			Convey("DeleteRef", func() {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
 					Name:    "latest",
+					Package: "a/b/z",
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+			Convey("ListRefs", func() {
+				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "a/b/z",
 				})
 				So(grpc.Code(err), ShouldEqual, codes.NotFound)
