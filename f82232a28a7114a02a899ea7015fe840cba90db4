@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "84859f39_3fbc367a",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 513,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T22:08:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1d79d131_559ddcbf",
+      "range": {
+        "startLine": 512,
+        "startChar": 1,
+        "endLine": 513,
+        "endChar": 19
+      },
+      "revId": "f82232a28a7114a02a899ea7015fe840cba90db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "983232b2_321ad40f",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "5c9a420a_fdef63f5",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T22:08:53Z",
+      "side": 1,
+      "message": "Attaching stuff to protoc-generated structs is frowned upon, since it may break unexpectedly if protoc changes.",
+      "parentUuid": "983232b2_321ad40f",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 33
+      },
+      "revId": "f82232a28a7114a02a899ea7015fe840cba90db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54892e2a_b33789e2",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "f82232a28a7114a02a899ea7015fe840cba90db4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30099166_98b5374c",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T22:08:53Z",
+      "side": 1,
+      "message": "Hm, this is wrong. The value can actually be any arbitrary string. The key must be lowercase with no special symbols of any kind.\n\nI moved these functions to \u0027common\u0027 where there rules are defined and added tests.",
+      "parentUuid": "54892e2a_b33789e2",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 90,
+        "endChar": 22
+      },
+      "revId": "f82232a28a7114a02a899ea7015fe840cba90db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
