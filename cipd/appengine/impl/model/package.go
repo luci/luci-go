@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	"go.chromium.org/luci/cipd/common"
 )
@@ -136,12 +137,18 @@ func CheckPackages(c context.Context, names []string, includeHidden bool) ([]str
 	return out, nil
 }
 
-// CheckPackage returns true if the given package exists.
+// CheckPackageExists verifies the package exists.
 //
-// If 'includeHidden' is false, will consider hidden packages as missing.
-func CheckPackage(c context.Context, pkg string, includeHidden bool) (bool, error) {
-	res, err := CheckPackages(c, []string{pkg}, includeHidden)
-	return len(res) == 1, err
+// Returns gRPC-tagged NotFound error if there's no such package.
+func CheckPackageExists(c context.Context, pkg string) error {
+	switch res, err := CheckPackages(c, []string{pkg}, true); {
+	case err != nil:
+		return errors.Annotate(err, "failed to check the package presence").Err()
+	case len(res) == 0:
+		return errors.Reason("no such package").Tag(grpcutil.NotFoundTag).Err()
+	default:
+		return nil
+	}
 }
 
 // SetPackageHidden updates Hidden field of the package.

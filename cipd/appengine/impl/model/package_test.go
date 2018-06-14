@@ -17,10 +17,14 @@ package model
 import (
 	"testing"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/grpc/grpcutil"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestListPackages(t *testing.T) {
@@ -136,24 +140,17 @@ func TestCheckPackages(t *testing.T) {
 			So(check([]string{"a", "b", "c"}, false), ShouldResemble, []string{"a", "c"})
 		})
 
-		Convey("CheckPackage also works", func() {
+		Convey("CheckPackageExists also works", func() {
 			Convey("Visible pkg", func() {
-				yes, err := CheckPackage(ctx, "a", true)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeTrue)
-			})
-			Convey("Missing pkg", func() {
-				yes, err := CheckPackage(ctx, "zzz", true)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeFalse)
+				So(CheckPackageExists(ctx, "a"), ShouldBeNil)
 			})
 			Convey("Hidden pkg", func() {
-				yes, err := CheckPackage(ctx, "b", true)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeTrue)
-				yes, err = CheckPackage(ctx, "b", false)
-				So(err, ShouldBeNil)
-				So(yes, ShouldBeFalse)
+				So(CheckPackageExists(ctx, "b"), ShouldBeNil)
+			})
+			Convey("Missing pkg", func() {
+				err := CheckPackageExists(ctx, "zzz")
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
 			})
 		})
 	})
