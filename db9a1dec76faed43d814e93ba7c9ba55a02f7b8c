@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "18df2dc8_50a4716c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T18:29:49Z",
+      "side": 1,
+      "message": "No, this part will likely continue using SHA1 because it\u0027s not a big deal (see comments for Tag struct), and switching to something else will require non-trivial migration of data.\n\nSHA2 will be used as instance IDs. This will be done after the rewrite is finished.",
+      "parentUuid": "f5713c8c_d2db890e",
+      "range": {
+        "startLine": 10,
+        "startChar": 6,
+        "endLine": 11,
+        "endChar": 12
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59c6a43e_02e30684",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "46db8cb9_5efa20d9",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T18:29:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59c6a43e_02e30684",
+      "range": {
+        "startLine": 37,
+        "startChar": 39,
+        "endLine": 37,
+        "endChar": 47
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "83564950_2129dc5a",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 3
@@ -68,6 +116,30 @@
       "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6d4ce01_d42598ef",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T18:29:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83564950_2129dc5a",
+      "range": {
+        "startLine": 129,
+        "startChar": 79,
+        "endLine": 129,
+        "endChar": 86
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
