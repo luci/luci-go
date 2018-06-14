@@ -42,6 +42,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/repo/processing"
 	"go.chromium.org/luci/cipd/appengine/impl/repo/tasks"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -1462,6 +1463,260 @@ func TestRefs(t *testing.T) {
 			})
 			So(grpc.Code(err), ShouldEqual, codes.Aborted)
 			So(err, ShouldErrLike, "some processors failed to process this instance: proc")
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Tags support.
+
+func TestTags(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+
+		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, testTime)
+
+		as := func(email string) context.Context {
+			return auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:" + email),
+			})
+		}
+
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+				{
+					Role:       api.Role_WRITER,
+					Principals: []string{"user:writer@example.com"},
+				},
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:owner@example.com"},
+				},
+			},
+		})
+
+		putInst := func(pkg, iid string, pendingProcs, failedProcs []string) *model.Instance {
+			inst := &model.Instance{
+				InstanceID:        iid,
+				Package:           model.PackageKey(ctx, pkg),
+				ProcessorsPending: pendingProcs,
+				ProcessorsFailure: failedProcs,
+			}
+			So(datastore.Put(ctx, &model.Package{Name: pkg}, inst), ShouldBeNil)
+			return inst
+		}
+
+		getTag := func(inst *model.Instance, tag string) *model.Tag {
+			t := &model.Tag{
+				ID:       model.TagID(common.MustParseInstanceTag(tag)),
+				Instance: datastore.KeyForObj(ctx, inst),
+			}
+			err := datastore.Get(ctx, t)
+			if err == datastore.ErrNoSuchEntity {
+				return nil
+			}
+			So(err, ShouldBeNil)
+			return t
+		}
+
+		tags := func(t ...string) []*api.Tag {
+			out := make([]*api.Tag, len(t))
+			for i, s := range t {
+				out[i] = common.MustParseInstanceTag(s)
+			}
+			return out
+		}
+
+		digest := strings.Repeat("a", 40)
+		inst := putInst("a/b/c", digest, nil, nil)
+		objRef := &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: digest,
+		}
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("AttachTags/DetachTags happy path", func() {
+			_, err := impl.AttachTags(as("writer@example.com"), &api.AttachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0", "a:1"),
+			})
+			So(err, ShouldBeNil)
+
+			// Attached both.
+			So(getTag(inst, "a:0").RegisteredBy, ShouldEqual, "user:writer@example.com")
+			So(getTag(inst, "a:1").RegisteredBy, ShouldEqual, "user:writer@example.com")
+
+			// Detaching requires OWNER.
+			_, err = impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+				Package:  "a/b/c",
+				Instance: objRef,
+				Tags:     tags("a:0", "a:1", "a:missing"),
+			})
+			So(err, ShouldBeNil)
+
+			// Missing now.
+			So(getTag(inst, "a:0"), ShouldBeNil)
+			So(getTag(inst, "a:1"), ShouldBeNil)
+		})
+
+		Convey("Bad package", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b///",
+					Instance: objRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b///",
+					Instance: objRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
+		})
+
+		Convey("Bad ObjectRef", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package: "a/b/c",
+					Tags:    tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'instance'")
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package: "a/b/c",
+					Tags:    tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'instance'")
+			})
+		})
+
+		Convey("Empty tag list", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "cannot be empty")
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "cannot be empty")
+			})
+		})
+
+		Convey("Bad tag", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Tags:     []*api.Tag{{Key: ":"}},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `invalid tag key`)
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Tags:     []*api.Tag{{Key: ":"}},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, `invalid tag key`)
+			})
+		})
+
+		Convey("No access", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("reader@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Tags:     tags("good:tag"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "caller has no required WRITER role")
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("writer@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b/c",
+					Instance: objRef,
+					Tags:     tags("good:tag"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "caller has no required OWNER role")
+			})
+		})
+
+		Convey("Missing package", func() {
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b/zzz",
+					Instance: objRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+			Convey("DetachTags", func() {
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b/zzz",
+					Instance: objRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+		})
+
+		Convey("Missing instance", func() {
+			missingRef := &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("b", 40),
+			}
+			Convey("AttachTags", func() {
+				_, err := impl.AttachTags(as("owner@example.com"), &api.AttachTagsRequest{
+					Package:  "a/b/c",
+					Instance: missingRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
+			})
+			Convey("DetachTags", func() {
+				// DetachTags doesn't care.
+				_, err := impl.DetachTags(as("owner@example.com"), &api.DetachTagsRequest{
+					Package:  "a/b/c",
+					Instance: missingRef,
+					Tags:     tags("a:0"),
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
+			})
 		})
 	})
 }

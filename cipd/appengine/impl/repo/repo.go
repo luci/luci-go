@@ -875,16 +875,77 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 ////////////////////////////////////////////////////////////////////////////////
 // Tags support.
 
+func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error {
+	if err := common.ValidatePackageName(pkg); err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(inst); err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+	if len(tags) == 0 {
+		return status.Errorf(codes.InvalidArgument, "bad 'tags' - cannot be empty")
+	}
+	for _, t := range tags {
+		kv := common.JoinInstanceTag(t)
+		if err := common.ValidateInstanceTag(kv); err != nil {
+			return status.Errorf(codes.InvalidArgument, "bad tag in 'tags' - %s", err)
+		}
+	}
+	return nil
+}
+
 // AttachTags implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := validateMultiTagReq(r.Package, r.Instance, r.Tags); err != nil {
+		return nil, err
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_WRITER); err != nil {
+		return nil, err
+	}
+
+	// Actually attach the tags. This will also transactionally check the instance
+	// exists and it has passed the processing successfully.
+	inst := &model.Instance{
+		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.AttachTags(c, inst, r.Tags, auth.CurrentIdentity(c)); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
 }
 
 // DetachTags implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (resp *empty.Empty, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := validateMultiTagReq(r.Package, r.Instance, r.Tags); err != nil {
+		return nil, err
+	}
+
+	// Check ACLs. Note this is scoped to OWNERS, see the proto doc.
+	if _, err := impl.checkRole(c, r.Package, api.Role_OWNER); err != nil {
+		return nil, err
+	}
+
+	// Verify the instance exists, per DetachTags contract.
+	inst := &model.Instance{
+		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		Package:    model.PackageKey(c, r.Package),
+	}
+	if err := model.CheckInstanceExists(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Actually detach the tags.
+	if err := model.DetachTags(c, inst, r.Tags); err != nil {
+		return nil, err
+	}
+	return &empty.Empty{}, nil
 }
