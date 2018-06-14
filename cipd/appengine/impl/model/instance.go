@@ -206,6 +206,26 @@ func ListInstances(c context.Context, pkg string, pageSize int32, cursor datasto
 	return
 }
 
+// CheckInstanceExists fetches the instance and verifies it exists.
+//
+// Can be called as part of a transaction. Updates 'inst' in place.
+//
+// Returns gRPC-tagged NotFound error if there's no such instance or package.
+func CheckInstanceExists(c context.Context, inst *Instance) error {
+	switch err := datastore.Get(c, inst); {
+	case err == datastore.ErrNoSuchEntity:
+		// Maybe the package is missing completely?
+		if err := CheckPackageExists(c, inst.Package.StringID()); err != nil {
+			return err
+		}
+		return errors.Reason("no such instance").Tag(grpcutil.NotFoundTag).Err()
+	case err != nil:
+		return errors.Annotate(err, "failed to check the instance presence").Tag(transient.Tag).Err()
+	default:
+		return nil
+	}
+}
+
 // CheckInstanceReady fetches the instance and verifies it exists and has zero
 // pending or failed processors.
 //
@@ -216,18 +236,9 @@ func ListInstances(c context.Context, pkg string, pageSize int32, cursor datasto
 //    FailedPrecondition if some processors are still running.
 //    Aborted if some processors have failed.
 func CheckInstanceReady(c context.Context, inst *Instance) error {
-	switch err := datastore.Get(c, inst); {
-	case err == datastore.ErrNoSuchEntity:
-		// Maybe the package is missing completely?
-		switch exists, err := CheckPackage(c, inst.Package.StringID(), true); {
-		case err != nil:
-			return errors.Annotate(err, "failed to check the package presence").Tag(transient.Tag).Err()
-		case !exists:
-			return errors.Reason("no such package").Tag(grpcutil.NotFoundTag).Err()
-		}
-		return errors.Reason("no such instance").Tag(grpcutil.NotFoundTag).Err()
+	switch err := CheckInstanceExists(c, inst); {
 	case err != nil:
-		return errors.Annotate(err, "failed to check the instance presence").Tag(transient.Tag).Err()
+		return err
 	case len(inst.ProcessorsFailure) != 0:
 		return errors.Reason("some processors failed to process this instance: %s",
 			strings.Join(inst.ProcessorsFailure, ", ")).Tag(grpcutil.AbortedTag).Err()

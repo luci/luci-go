@@ -192,7 +192,7 @@ func TestListInstances(t *testing.T) {
 	})
 }
 
-func TestCheckInstanceReady(t *testing.T) {
+func TestCheckInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
@@ -220,19 +220,30 @@ func TestCheckInstanceReady(t *testing.T) {
 
 		Convey("Happy path", func() {
 			put("pkg", iid, nil, nil)
+			So(CheckInstanceExists(ctx, inst), ShouldBeNil)
 			So(CheckInstanceReady(ctx, inst), ShouldBeNil)
 		})
 
 		Convey("No such instance", func() {
 			put("pkg", "f"+iid[1:], nil, nil)
-			err := CheckInstanceReady(ctx, inst)
+
+			err := CheckInstanceExists(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+
+			err = CheckInstanceReady(ctx, inst)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
 		})
 
 		Convey("No such package", func() {
 			put("pkg2", iid, nil, nil)
-			err := CheckInstanceReady(ctx, inst)
+
+			err := CheckInstanceExists(ctx, inst)
+			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+
+			err = CheckInstanceReady(ctx, inst)
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such package")
 		})
@@ -242,6 +253,8 @@ func TestCheckInstanceReady(t *testing.T) {
 			err := CheckInstanceReady(ctx, inst)
 			So(grpcutil.Code(err), ShouldEqual, codes.Aborted)
 			So(err, ShouldErrLike, "some processors failed to process this instance: f1, f2")
+
+			So(CheckInstanceExists(ctx, inst), ShouldBeNil) // doesn't care
 		})
 
 		Convey("Pending processors", func() {
@@ -249,6 +262,8 @@ func TestCheckInstanceReady(t *testing.T) {
 			err := CheckInstanceReady(ctx, inst)
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: p1, p2")
+
+			So(CheckInstanceExists(ctx, inst), ShouldBeNil) // doesn't care
 		})
 	})
 }
