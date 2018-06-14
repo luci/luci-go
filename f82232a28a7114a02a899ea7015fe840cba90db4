@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "d4933ccf_ab8bf6b8",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T22:14:35Z",
+      "side": 1,
+      "message": "Here\u0027s from C++ doc, but the same philosophy applies to Go too:\n\n\"\"\"\nProtocol Buffers and O-O Design Protocol buffer classes are basically dumb data holders (like structs in C++); they don\u0027t make good first class citizens in an object model. If you want to add richer behaviour to a generated class, the best way to do this is to wrap the generated protocol buffer class in an application-specific class. ... You should never add behaviour to the generated classes by inheriting from them. This will break internal mechanisms and is not good object-oriented practice anyway.\n\"\"\"\n\nBeside, I just don\u0027t want to start adding non-generated code to the completely generated package. Adding methods to a struct is allowed only in the same package where the struct is defined.",
+      "parentUuid": "53a01429_6de6bf38",
+      "range": {
+        "startLine": 80,
+        "startChar": 0,
+        "endLine": 81,
+        "endChar": 33
+      },
+      "revId": "f82232a28a7114a02a899ea7015fe840cba90db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "54892e2a_b33789e2",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 2
