@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f5713c8c_d2db890e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-14T17:00:20Z",
+      "side": 1,
+      "message": "estaab thinks that go-rewrite of CIPD was justified by switching to SHA256. Do you plan to switch after rewrite?",
+      "range": {
+        "startLine": 10,
+        "startChar": 6,
+        "endLine": 11,
+        "endChar": 12
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59c6a43e_02e30684",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-14T17:00:20Z",
+      "side": 1,
+      "message": "opposed",
+      "range": {
+        "startLine": 37,
+        "startChar": 39,
+        "endLine": 37,
+        "endChar": 47
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "83564950_2129dc5a",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-14T17:00:20Z",
+      "side": 1,
+      "message": "nit: unnecessary",
+      "range": {
+        "startLine": 129,
+        "startChar": 79,
+        "endLine": 129,
+        "endChar": 86
+      },
+      "revId": "db9a1dec76faed43d814e93ba7c9ba55a02f7b8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
