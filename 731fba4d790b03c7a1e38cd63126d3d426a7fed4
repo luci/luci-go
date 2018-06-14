@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "a1fcb383_12f1c330",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T01:20:11Z",
+      "side": 1,
+      "message": "it is actually \"the instance\"",
+      "parentUuid": "633dfef5_884d1e94",
+      "range": {
+        "startLine": 229,
+        "startChar": 28,
+        "endLine": 229,
+        "endChar": 30
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a6c421a_aa8f122c",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T01:20:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c058ed1_1924a7e0",
+      "range": {
+        "startLine": 229,
+        "startChar": 5,
+        "endLine": 229,
+        "endChar": 7
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e55a6c1a_5ec71f7c",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 2
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "971d73d5_84e618d9",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T01:20:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e55a6c1a_5ec71f7c",
+      "range": {
+        "startLine": 235,
+        "startChar": 25,
+        "endLine": 235,
+        "endChar": 27
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bc5cfdfe_942c92b8",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 2
@@ -91,6 +163,30 @@
       "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae10fd88_50b3496e",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-14T01:20:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc5cfdfe_942c92b8",
+      "range": {
+        "startLine": 248,
+        "startChar": 24,
+        "endLine": 248,
+        "endChar": 65
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
