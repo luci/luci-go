@@ -883,3 +883,20 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 	}
 	return resp, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Tags support.
+
+// AttachTags implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+// DetachTags implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
