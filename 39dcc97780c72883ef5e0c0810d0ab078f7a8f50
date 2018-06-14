@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a20c9ab6_dfea71a5",
+        "filename": "luci_notify/api/config/notify.proto",
+        "patchSetId": 33
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-14T01:50:20Z",
+      "side": 1,
+      "message": "defunct",
+      "parentUuid": "6ed20015_2868043d",
+      "range": {
+        "startLine": 160,
+        "startChar": 4,
+        "endLine": 160,
+        "endChar": 5
+      },
+      "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b68932d7_9251b85c",
         "filename": "luci_notify/notify/commits_test.go",
         "patchSetId": 33
@@ -45,6 +69,30 @@
       "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75b5af08_6f84d703",
+        "filename": "luci_notify/notify/commits_test.go",
+        "patchSetId": 33
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-14T01:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b68932d7_9251b85c",
+      "range": {
+        "startLine": 73,
+        "startChar": 2,
+        "endLine": 73,
+        "endChar": 35
+      },
+      "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "956fdb50_0cb7ecfb",
+        "filename": "luci_notify/notify/commits_test.go",
+        "patchSetId": 33
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-14T01:50:20Z",
+      "side": 1,
+      "message": "fixed everywhere (I hope)",
+      "parentUuid": "f7c8e512_866ceb8a",
+      "range": {
+        "startLine": 83,
+        "startChar": 34,
+        "endLine": 83,
+        "endChar": 48
+      },
+      "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f55591ce_571deeb4",
         "filename": "luci_notify/notify/commits_test.go",
         "patchSetId": 33
@@ -82,6 +154,30 @@
       "writtenOn": "2018-06-13T22:11:28Z",
       "side": 1,
       "message": "perhaps making the parameter ...string might be nicer",
+      "range": {
+        "startLine": 89,
+        "startChar": 38,
+        "endLine": 89,
+        "endChar": 55
+      },
+      "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2582ab09_7dfe7af6",
+        "filename": "luci_notify/notify/commits_test.go",
+        "patchSetId": 33
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-14T01:50:20Z",
+      "side": 1,
+      "message": "its now a stringset.Set so it\u0027s even less nice...",
+      "parentUuid": "f55591ce_571deeb4",
       "range": {
         "startLine": 89,
         "startChar": 38,
@@ -114,6 +210,30 @@
       "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ab57faf4_a8fea7c1",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 33
+      },
+      "lineNbr": 287,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-14T01:50:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1e3002a7_0e8e7833",
+      "range": {
+        "startLine": 285,
+        "startChar": 3,
+        "endLine": 287,
+        "endChar": 4
+      },
+      "revId": "39dcc97780c72883ef5e0c0810d0ab078f7a8f50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
