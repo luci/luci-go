@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "09a02ba6_956a0750",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T01:25:12Z",
+      "side": 1,
+      "message": "right, see, confusing :P",
+      "parentUuid": "a1fcb383_12f1c330",
+      "range": {
+        "startLine": 229,
+        "startChar": 28,
+        "endLine": 229,
+        "endChar": 30
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e55a6c1a_5ec71f7c",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 2
