@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "633dfef5_884d1e94",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T01:11:56Z",
+      "side": 1,
+      "message": "the package",
+      "range": {
+        "startLine": 229,
+        "startChar": 28,
+        "endLine": 229,
+        "endChar": 30
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c058ed1_1924a7e0",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 229,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T01:11:56Z",
+      "side": 1,
+      "message": "the tag",
+      "range": {
+        "startLine": 229,
+        "startChar": 5,
+        "endLine": 229,
+        "endChar": 7
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e55a6c1a_5ec71f7c",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 235,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T01:11:56Z",
+      "side": 1,
+      "message": "of the",
+      "range": {
+        "startLine": 235,
+        "startChar": 25,
+        "endLine": 235,
+        "endChar": 27
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc5cfdfe_942c92b8",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T01:11:56Z",
+      "side": 1,
+      "message": "why enumerate fields?",
+      "range": {
+        "startLine": 248,
+        "startChar": 24,
+        "endLine": 248,
+        "endChar": 65
+      },
+      "revId": "731fba4d790b03c7a1e38cd63126d3d426a7fed4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
