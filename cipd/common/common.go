@@ -135,17 +135,43 @@ func ValidatePackageRef(r string) error {
 
 // ValidateInstanceTag returns error if a string doesn't look like a valid tag.
 func ValidateInstanceTag(t string) error {
+	_, err := ParseInstanceTag(t)
+	return err
+}
+
+// ParseInstanceTag takes "k:v" string and returns its proto representation.
+func ParseInstanceTag(t string) (*api.Tag, error) {
 	chunks := strings.SplitN(t, ":", 2)
 	if len(chunks) != 2 {
-		return fmt.Errorf("%q doesn't look like a tag (a key:value pair)", t)
+		return nil, fmt.Errorf("%q doesn't look like a tag (a key:value pair)", t)
 	}
 	if len(t) > 400 {
-		return fmt.Errorf("the tag is too long: %q", t)
+		return nil, fmt.Errorf("the tag is too long: %q", t)
 	}
 	if !instanceTagKeyRe.MatchString(chunks[0]) {
-		return fmt.Errorf("invalid tag key in %q (should be a lowercase word)", t)
+		return nil, fmt.Errorf("invalid tag key in %q (should be a lowercase word)", t)
 	}
-	return nil
+	return &api.Tag{
+		Key:   chunks[0],
+		Value: chunks[1],
+	}, nil
+}
+
+// MustParseInstanceTag takes "k:v" string returns its proto representation or
+// panics if the tag is invalid.
+func MustParseInstanceTag(t string) *api.Tag {
+	tag, err := ParseInstanceTag(t)
+	if err != nil {
+		panic(err)
+	}
+	return tag
+}
+
+// JoinInstanceTag returns "k:v" representation of the tag.
+//
+// Doesn't validate it.
+func JoinInstanceTag(t *api.Tag) string {
+	return t.Key + ":" + t.Value
 }
 
 // ValidateInstanceVersion return error if a string can't be used as version.

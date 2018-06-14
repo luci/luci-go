@@ -264,7 +264,7 @@ service Repository {
   // Returns:
   //   PERMISSION_DENIED if the caller is not an OWNER for the prefix.
   //   INVALID_ARGUMENT if the request is malformed.
-  //   NOT_FOUND if the package doesn't exist.
+  //   NOT_FOUND if the package or the instance doesn't exist.
   rpc DetachTags(DetachTagsRequest) returns (google.protobuf.Empty);
 }
 
@@ -503,13 +503,29 @@ message ListRefsResponse {
 ////////////////////////////////////////////////////////////////////////////////
 
 
+// Tag is a key:value pair attached to some instance.
+//
+// Keys don't have to be unique, only the full pair should. For example,
+// it is fine to have "version:1" and "version:2" tags attached to the same
+// instance.
+//
+// The total length of the tag (as "key:value" pair) should be less that 400
+// bytes.
+message Tag {
+  // Key should be a lowercase identifier-like string ([a-z0-9_\-]+).
+  string key = 1;
+  // Value can be an arbitrary string.
+  string value = 2;
+}
+
+
 message AttachTagsRequest {
   // The package that holds the instance we attach tags to.
   string package = 1;
   // The instance we attach tags to.
   ObjectRef instance = 2;
   // One or more tags to attach (order doesn't matter).
-  repeated string tags = 3;
+  repeated Tag tags = 3;
 }
 
 
@@ -519,5 +535,5 @@ message DetachTagsRequest {
   // The instance we detach tags from.
   ObjectRef instance = 2;
   // One or more tags to detach (order doesn't matter).
-  repeated string tags = 3;
+  repeated Tag tags = 3;
 }
