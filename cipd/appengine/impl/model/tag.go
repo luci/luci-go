@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -62,10 +63,11 @@ type Tag struct {
 	RegisteredTs time.Time `gae:"registered_ts"` // when it was added
 }
 
-// TagID calculates Tag entity ID from the given tag string.
+// TagID calculates Tag entity ID (SHA1 digest) from the given tag.
 //
 // Panics if the tag is invalid.
-func TagID(tag string) string {
+func TagID(t *api.Tag) string {
+	tag := common.JoinInstanceTag(t)
 	if err := common.ValidateInstanceTag(tag); err != nil {
 		panic(err)
 	}
@@ -84,7 +86,7 @@ func TagID(tag string) string {
 //    FailedPrecondition if some processors are still running.
 //    Aborted if some processors have failed.
 //    Internal on tag ID collision.
-func AttachTags(c context.Context, inst *Instance, tags []string, who identity.Identity) error {
+func AttachTags(c context.Context, inst *Instance, tags []*api.Tag, who identity.Identity) error {
 	return Txn(c, "AttachTags", func(c context.Context) error {
 		if err := CheckInstanceReady(c, inst); err != nil {
 			return err
@@ -108,7 +110,7 @@ func AttachTags(c context.Context, inst *Instance, tags []string, who identity.I
 // can't be a part of a transaction itself).
 //
 // 'inst' is used only for its key.
-func DetachTags(c context.Context, inst *Instance, tags []string) error {
+func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 	return Txn(c, "DetachTags", func(c context.Context) error {
 		existing, _, err := checkExistingTags(c, inst, tags)
 		if err != nil {
@@ -126,7 +128,7 @@ func DetachTags(c context.Context, inst *Instance, tags []string) error {
 //
 // Tags in 'miss' list have only their key and 'Tag' fields set and nothing
 // more.
-func checkExistingTags(c context.Context, inst *Instance, tags []string) (exist, miss []*Tag, err error) {
+func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exist, miss []*Tag, err error) {
 	instKey := datastore.KeyForObj(c, inst)
 	tagEnts := make([]*Tag, len(tags))
 	for i, tag := range tags {
@@ -166,14 +168,14 @@ func checkExistingTags(c context.Context, inst *Instance, tags []string) (exist,
 	}
 
 	for i, ent := range tagEnts {
-		switch {
-		case ent.Tag == tags[i]:
+		switch kv := common.JoinInstanceTag(tags[i]); {
+		case ent.Tag == kv:
 			exist = append(exist, ent)
 		case ent.Tag == "":
-			ent.Tag = tags[i] // so the caller knows what tag this is
+			ent.Tag = kv // so the caller knows what tag this is
 			miss = append(miss, ent)
-		default: // ent.Tag != tags[i]
-			return nil, nil, errors.Reason("tag %q collides with tag %q, refusing to touch it", tags[i], ent.Tag).
+		default: // ent.Tag != kv
+			return nil, nil, errors.Reason("tag %q collides with tag %q, refusing to touch it", kv, ent.Tag).
 				Tag(grpcutil.InternalTag).Err()
 		}
 	}

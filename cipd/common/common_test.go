@@ -111,6 +111,36 @@ func TestValidateInstanceTag(t *testing.T) {
 	})
 }
 
+func TestSplitInstanceTag(t *testing.T) {
+	t.Parallel()
+
+	Convey("SplitInstanceTag works", t, func() {
+		So(SplitInstanceTag("good:tag"), ShouldResemble, &api.Tag{
+			Key:   "good",
+			Value: "tag",
+		})
+		So(SplitInstanceTag("good_tag:"), ShouldResemble, &api.Tag{
+			Key:   "good_tag",
+			Value: "",
+		})
+		So(SplitInstanceTag("good:tag:blah"), ShouldResemble, &api.Tag{
+			Key:   "good",
+			Value: "tag:blah",
+		})
+		So(SplitInstanceTag("good_tag:asdad/asdad/adad/a\\asdasdad"), ShouldResemble, &api.Tag{
+			Key:   "good_tag",
+			Value: "asdad/asdad/adad/a\\asdasdad",
+		})
+	})
+
+	Convey("SplitInstanceTag panics on bad tag", t, func() {
+		So(func() { SplitInstanceTag("") }, ShouldPanic)
+		So(func() { SplitInstanceTag("notapair") }, ShouldPanic)
+		So(func() { SplitInstanceTag(strings.Repeat("long", 200) + ":abc") }, ShouldPanic)
+		So(func() { SplitInstanceTag("BADKEY:value") }, ShouldPanic)
+	})
+}
+
 func TestValidatePin(t *testing.T) {
 	t.Parallel()
 

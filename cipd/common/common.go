@@ -148,6 +148,33 @@ func ValidateInstanceTag(t string) error {
 	return nil
 }
 
+// SplitInstanceTag takes "k:v" string and returns its proto representation.
+//
+// Panics if the tag is invalid. Check it with ValidateInstanceTag if concerned.
+func SplitInstanceTag(t string) *api.Tag {
+	chunks := strings.SplitN(t, ":", 2)
+	if len(chunks) != 2 {
+		panic(fmt.Errorf("%q doesn't look like a tag (a key:value pair)", t))
+	}
+	if len(t) > 400 {
+		panic(fmt.Errorf("the tag is too long: %q", t))
+	}
+	if !instanceTagKeyRe.MatchString(chunks[0]) {
+		panic(fmt.Errorf("invalid tag key in %q (should be a lowercase word)", t))
+	}
+	return &api.Tag{
+		Key:   chunks[0],
+		Value: chunks[1],
+	}
+}
+
+// JoinInstanceTag returns "k:v" representation of the tag.
+//
+// Doesn't validate it.
+func JoinInstanceTag(t *api.Tag) string {
+	return t.Key + ":" + t.Value
+}
+
 // ValidateInstanceVersion return error if a string can't be used as version.
 //
 // A version can be specified as:
