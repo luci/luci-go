@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4471dca4_00290f4f",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-14T22:14:38Z",
+      "side": 1,
+      "message": "lol",
+      "range": {
+        "startLine": 153,
+        "startChar": 67,
+        "endLine": 153,
+        "endChar": 80
+      },
+      "revId": "d1adbbae419caee2fc39cc67c04ef5049a20b966",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
