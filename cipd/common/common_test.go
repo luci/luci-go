@@ -111,6 +111,56 @@ func TestValidateInstanceTag(t *testing.T) {
 	})
 }
 
+func TestParseInstanceTag(t *testing.T) {
+	t.Parallel()
+
+	Convey("ParseInstanceTag works", t, func() {
+		t, err := ParseInstanceTag("good:tag")
+		So(err, ShouldBeNil)
+		So(t, ShouldResemble, &api.Tag{
+			Key:   "good",
+			Value: "tag",
+		})
+
+		t, err = ParseInstanceTag("good_tag:")
+		So(err, ShouldBeNil)
+		So(t, ShouldResemble, &api.Tag{
+			Key:   "good_tag",
+			Value: "",
+		})
+
+		t, err = ParseInstanceTag("good:tag:blah")
+		So(err, ShouldBeNil)
+		So(t, ShouldResemble, &api.Tag{
+			Key:   "good",
+			Value: "tag:blah",
+		})
+
+		t, err = ParseInstanceTag("good_tag:asdad/asdad/adad/a\\asdasdad")
+		So(err, ShouldBeNil)
+		So(t, ShouldResemble, &api.Tag{
+			Key:   "good_tag",
+			Value: "asdad/asdad/adad/a\\asdasdad",
+		})
+
+		t, err = ParseInstanceTag("")
+		So(err, ShouldNotBeNil)
+
+		t, err = ParseInstanceTag("notapair")
+		So(err, ShouldNotBeNil)
+
+		t, err = ParseInstanceTag(strings.Repeat("long", 200) + ":abc")
+		So(err, ShouldNotBeNil)
+
+		t, err = ParseInstanceTag("BADKEY:value")
+		So(err, ShouldNotBeNil)
+	})
+
+	Convey("MustParseInstanceTag panics on bad tag", t, func() {
+		So(func() { MustParseInstanceTag("") }, ShouldPanic)
+	})
+}
+
 func TestValidatePin(t *testing.T) {
 	t.Parallel()
 
