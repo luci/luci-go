@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a3f3b25_76526cf6",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T00:59:45Z",
+      "side": 1,
+      "message": "This is identical to how python backend works, so we have no caching there either currently. (We do have cache on clients though, so the QPS isn\u0027t that big).",
+      "range": {
+        "startLine": 137,
+        "startChar": 1,
+        "endLine": 141,
+        "endChar": 10
+      },
+      "revId": "3ad8ea5333ffc9f503f969fbf6e723ebed185835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cd1c376e_56d24e9b",
+        "filename": "cipd/appengine/impl/model/version.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T00:59:45Z",
+      "side": 1,
+      "message": "This does one more (cached) datastore Get compared to python version, since I decided to return the full instance body in the RPC response (instead of just its key). I think it should be fine, considering dscache and client-side caches.",
+      "range": {
+        "startLine": 70,
+        "startChar": 11,
+        "endLine": 70,
+        "endChar": 30
+      },
+      "revId": "3ad8ea5333ffc9f503f969fbf6e723ebed185835",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
