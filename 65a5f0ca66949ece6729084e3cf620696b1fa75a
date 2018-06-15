@@ -94,6 +94,30 @@
     },
     {
       "key": {
+        "uuid": "4a02250e_7ce077ba",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-15T22:45:06Z",
+      "side": 1,
+      "message": "You\u0027re right. Did you have a chance to refactor them to be shared between Milo and Scheduler?",
+      "parentUuid": "f51a58a9_721bdcd2",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dcc89456_546575ee",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 5
