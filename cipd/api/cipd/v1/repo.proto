@@ -19,6 +19,7 @@ package cipd;
 option go_package = "api";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
@@ -288,6 +289,17 @@ service Repository {
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if there's no such instance.
   rpc GetInstanceURL(Instance) returns (ObjectURL);
+
+  // Returns information about a package instance.
+  //
+  // Details such as when it was registered and by whom, refs pointing to it,
+  // tags attached to it, state of all processors that handled it (if any).
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the instance tdoesn't exist.
+  rpc DescribeInstance(DescribeInstanceRequest) returns (DescribeInstanceResponse);
 }
 
 
@@ -569,4 +581,67 @@ message ResolveVersionRequest {
   string package = 1;
   // The version string to resolve, see ResolveVersion for details.
   string version = 2;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Processor describes a state of some post-registration processing step
+// performed on an instance.
+message Processor {
+  enum State {
+    STATE_UNDEFINED = 0;
+    PENDING         = 1;
+    SUCCEEDED       = 2;
+    FAILED          = 3;
+  }
+
+  // Internal identifier of the processor, e.g. "cipd_client_binary:v1"
+  string id = 1;
+  // The state of this processor, see the enum.
+  State state = 2;
+  // When the processor finished running (successfully or not).
+  google.protobuf.Timestamp finished_ts = 3;
+  // For SUCCEEDED state, result of the processing.
+  google.protobuf.Struct result = 4;
+  // For FAILED state, the error message.
+  string error = 5;
+}
+
+
+message DescribeInstanceRequest {
+  // An instance to describe.
+  Instance instance = 1;
+
+  // Whether the response should include "refs" field.
+  bool describe_refs = 2;
+  // Whether the response should include "tags" field.
+  bool describe_tags = 3;
+  // Whether the response should include "processors" field.
+  bool describe_processors = 4;
+}
+
+
+message DescribeInstanceResponse {
+  // The instance with all output fields filled in.
+  Instance instance = 1;
+
+  // Refs pointing to the instance, sorted by modification time, most recent
+  // first.
+  //
+  // Present only if the request has describe_refs == true.
+  repeated Ref refs = 2;
+
+  // Tags attached to the instance, sorted them by the tag key first, and then
+  // by the timestamp (most recent first).
+  //
+  // Present only if the request has describe_tags == true.
+  repeated Tag tags = 3;
+
+  // State of the processors that handled the instance (if any), sorted by their
+  // ID.
+  //
+  // Present only if the request has describe_processors == true.
+  repeated Processor processors = 4;
 }
