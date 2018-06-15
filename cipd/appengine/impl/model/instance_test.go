@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
@@ -264,6 +265,92 @@ func TestCheckInstance(t *testing.T) {
 			So(err, ShouldErrLike, "the instance is not ready yet, pending processors: p1, p2")
 
 			So(CheckInstanceExists(ctx, inst), ShouldBeNil) // doesn't care
+		})
+	})
+}
+
+func TestFetchProcessors(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+		ts := time.Unix(1525136124, 0).UTC()
+
+		inst := &Instance{
+			InstanceID:        strings.Repeat("a", 40),
+			Package:           PackageKey(ctx, "a/b"),
+			ProcessorsPending: []string{"p2", "p1"},
+			ProcessorsFailure: []string{"f2", "f1"},
+			ProcessorsSuccess: []string{"s2", "s1"},
+		}
+
+		proc := func(id string, res, err string) *ProcessingResult {
+			p := &ProcessingResult{
+				ProcID:    id,
+				Instance:  datastore.KeyForObj(ctx, inst),
+				CreatedTs: ts,
+			}
+			if res != "" {
+				p.Success = true
+				So(p.WriteResult(map[string]string{"result": res}), ShouldBeNil)
+			} else {
+				p.Error = err
+			}
+			return p
+		}
+
+		So(datastore.Put(ctx,
+			proc("f1", "", "fail 1"),
+			proc("f2", "", "fail 2"),
+			proc("s1", "success 1", ""),
+			proc("s2", "success 2", ""),
+		), ShouldBeNil)
+
+		Convey("Works", func() {
+			procs, err := FetchProcessors(ctx, inst)
+			So(err, ShouldBeNil)
+			So(procs, ShouldResembleProto, []*api.Processor{
+				{
+					Id:         "f1",
+					State:      api.Processor_FAILED,
+					FinishedTs: google.NewTimestamp(ts),
+					Error:      "fail 1",
+				},
+				{
+					Id:         "f2",
+					State:      api.Processor_FAILED,
+					FinishedTs: google.NewTimestamp(ts),
+					Error:      "fail 2",
+				},
+				{
+					Id:    "p1",
+					State: api.Processor_PENDING,
+				},
+				{
+					Id:    "p2",
+					State: api.Processor_PENDING,
+				},
+				{
+					Id:         "s1",
+					State:      api.Processor_SUCCEEDED,
+					FinishedTs: google.NewTimestamp(ts),
+					Result: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"result": {Kind: &structpb.Value_StringValue{StringValue: "success 1"}},
+						},
+					},
+				},
+				{
+					Id:         "s2",
+					State:      api.Processor_SUCCEEDED,
+					FinishedTs: google.NewTimestamp(ts),
+					Result: &structpb.Struct{
+						Fields: map[string]*structpb.Value{
+							"result": {Kind: &structpb.Value_StringValue{StringValue: "success 2"}},
+						},
+					},
+				},
+			})
 		})
 	})
 }
