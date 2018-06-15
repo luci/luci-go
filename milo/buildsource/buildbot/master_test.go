@@ -30,10 +30,8 @@ import (
 func TestMaster(t *testing.T) {
 	c := gaetesting.TestingContextWithAppID("dev~luci-milo")
 	c, _ = testclock.UseTime(c, testclock.TestTimeUTC)
-	moreThanAnHourAgo := testclock.TestTimeUTC.Add(-61 * time.Minute)
-	lessThanAnHourAgo := testclock.TestTimeUTC.Add(-59 * time.Minute)
-	cExpired, _ := testclock.UseTime(c, moreThanAnHourAgo)
-	cNotExpired, _ := testclock.UseTime(c, lessThanAnHourAgo)
+	cExpired, _ := testclock.UseTime(c, testclock.TestTimeUTC.Add(-buildstore.MasterExpiry))
+	cNotExpired, _ := testclock.UseTime(c, testclock.TestTimeUTC.Add(-buildstore.MasterExpiry+time.Second))
 	datastore.GetTestable(c).Consistent(true)
 	datastore.GetTestable(c).AutoIndex(true)
 	datastore.GetTestable(c).CatchupIndexes()
@@ -59,11 +57,11 @@ func TestMaster(t *testing.T) {
 			cs, err := CIService(c)
 			So(err, ShouldBeNil)
 			So(len(cs.BuilderGroups), ShouldEqual, 2)
-			Convey(`Expired builder should have no builders`, func() {
+			Convey(`Expired master should have no builders`, func() {
 				So(cs.BuilderGroups[0].Name, ShouldEqual, "fake expired")
 				So(len(cs.BuilderGroups[0].Builders), ShouldEqual, 0)
 			})
-			Convey(`Non-expired builder should have builders`, func() {
+			Convey(`Non-expired master should have builders`, func() {
 				So(cs.BuilderGroups[1].Name, ShouldEqual, "fake not expired")
 				So(len(cs.BuilderGroups[1].Builders), ShouldEqual, 1)
 				So(cs.BuilderGroups[1].Builders[0].Label, ShouldEqual, "fake recent builder")

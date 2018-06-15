@@ -33,8 +33,8 @@ import (
 	"go.chromium.org/luci/server/auth"
 )
 
-// masterExpiry is how long a master entity can be stale before we consider it to be expired.
-const masterExpiry = time.Hour
+// MasterExpiry is how long a master entity can be stale before we consider it to be expired.
+const MasterExpiry = 4 * time.Hour
 
 // Master is buildbot.Master plus extra storage-level information.
 type Master struct {
@@ -447,7 +447,7 @@ type masterEntity struct {
 }
 
 func (m *masterEntity) decode(c context.Context) (*Master, error) {
-	deadline := m.Modified.Add(masterExpiry)
+	deadline := m.Modified.Add(MasterExpiry)
 	res := Master{
 		Internal: m.Internal,
 		Modified: m.Modified,
