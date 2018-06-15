@@ -17,6 +17,8 @@ package model
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"sort"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -151,6 +153,47 @@ func ResolveTag(c context.Context, pkg string, tag *api.Tag) (string, error) {
 	default:
 		return tags[0].Instance.StringID(), nil
 	}
+}
+
+// ListInstanceTags returns all tags attached to an instance, sorting them by
+// the tag key first, and then by the timestamp (most recent first).
+//
+// Returns an empty list if there's no such instance at all.
+func ListInstanceTags(c context.Context, inst *Instance) (out []*Tag, err error) {
+	// TODO(vadimsh): Sorting by tag key requires adding the key as a field in the
+	// entity and setting up a composite index (key, -registered_ts). This change
+	// requires a migration of existing entities. We punt on this for now and sort
+	// in memory instead (just like we did on the client before). The most heavily
+	// tagged instances in our datastore have few hundred tags at most, so this is
+	// bearable.
+	q := datastore.NewQuery("InstanceTag").Ancestor(datastore.KeyForObj(c, inst))
+	if datastore.GetAll(c, q, &out); err != nil {
+		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if k1, k2 := tagKey(out[i].Tag), tagKey(out[j].Tag); k1 != k2 {
+			return k1 < k2
+		}
+		if !out[i].RegisteredTs.Equal(out[j].RegisteredTs) {
+			return out[i].RegisteredTs.After(out[j].RegisteredTs)
+		}
+		return out[i].Tag < out[j].Tag
+	})
+	return
+}
+
+// tagKey takes "key:<stuff>" and returns "key".
+//
+// It is a faster version of common.ParseInstanceTags that skips validation
+// (since stored entities are already validated).
+//
+// We micro-optimized this part because comparator in ListInstanceTags is a hot
+// spot when sorting a lot of entities.
+func tagKey(kv string) string {
+	if idx := strings.IndexRune(kv, ':'); idx != -1 {
+		return kv[:idx]
+	}
+	return kv
 }
 
 // checkExistingTags takes a list of tags and returns the ones that exist

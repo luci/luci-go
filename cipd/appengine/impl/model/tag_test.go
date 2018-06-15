@@ -40,7 +40,8 @@ func TestTags(t *testing.T) {
 		digest := strings.Repeat("a", 40)
 
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx, _ := testclock.UseTime(gaetesting.TestingContext(), testTime)
+		ctx, tc := testclock.UseTime(gaetesting.TestingContext(), testTime)
+		datastore.GetTestable(ctx).AutoIndex(true)
 
 		putInst := func(pkg, iid string, pendingProcs []string) *Instance {
 			inst := &Instance{
@@ -178,8 +179,6 @@ func TestTags(t *testing.T) {
 		})
 
 		Convey("ResolveTag works", func() {
-			datastore.GetTestable(ctx).AutoIndex(true)
-
 			inst1 := putInst("pkg", strings.Repeat("1", 40), nil)
 			inst2 := putInst("pkg", strings.Repeat("2", 40), nil)
 
@@ -202,6 +201,39 @@ func TestTags(t *testing.T) {
 				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:ambiguous"))
 				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 				So(err, ShouldErrLike, "ambiguity when resolving the tag")
+			})
+		})
+
+		Convey("ListInstanceTags works", func() {
+			asStr := func(tags []*Tag) []string {
+				out := make([]string, len(tags))
+				for i, t := range tags {
+					out[i] = t.Tag
+				}
+				return out
+			}
+
+			inst := putInst("pkg", strings.Repeat("1", 40), nil)
+
+			// Tags registered at the same time are sorted alphabetically.
+			AttachTags(ctx, inst, tags("z:1", "b:2", "b:1"), "user:abc@example.com")
+			t, err := ListInstanceTags(ctx, inst)
+			So(err, ShouldBeNil)
+			So(asStr(t), ShouldResemble, []string{"b:1", "b:2", "z:1"})
+
+			tc.Add(time.Minute)
+
+			// Tags are sorted by key first, and then by timestamp within the key.
+			AttachTags(ctx, inst, tags("y:1", "a:1", "b:3"), "user:abc@example.com")
+			t, err = ListInstanceTags(ctx, inst)
+			So(err, ShouldBeNil)
+			So(asStr(t), ShouldResemble, []string{
+				"a:1",
+				"b:3",
+				"b:1",
+				"b:2",
+				"y:1",
+				"z:1",
 			})
 		})
 	})
