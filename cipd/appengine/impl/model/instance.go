@@ -16,6 +16,7 @@ package model
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -248,4 +249,55 @@ func CheckInstanceReady(c context.Context, inst *Instance) error {
 	default:
 		return nil
 	}
+}
+
+// FetchProcessors fetches results of all processors assigned to the instance
+// and returns them as cipd.Processor proto messages (sorted by processor ID).
+func FetchProcessors(c context.Context, inst *Instance) ([]*api.Processor, error) {
+	count := len(inst.ProcessorsPending) +
+		len(inst.ProcessorsSuccess) +
+		len(inst.ProcessorsFailure)
+	if count == 0 {
+		return nil, nil
+	}
+
+	key := datastore.KeyForObj(c, inst)
+
+	// Fetch results of all finished processors. All entities should exist, since
+	// ProcessorsSuccess/ProcessorsFailure is updated transactionally when
+	// entities are created.
+	finished := make([]*ProcessingResult, 0, len(inst.ProcessorsSuccess)+len(inst.ProcessorsFailure))
+	for _, p := range inst.ProcessorsSuccess {
+		finished = append(finished, &ProcessingResult{ProcID: p, Instance: key})
+	}
+	for _, p := range inst.ProcessorsFailure {
+		finished = append(finished, &ProcessingResult{ProcID: p, Instance: key})
+	}
+	if err := datastore.Get(c, finished); err != nil {
+		return nil, errors.Annotate(err, "failed to fetch finished processors").Tag(transient.Tag).Err()
+	}
+
+	// Convert all them to proto.
+	out := make([]*api.Processor, 0, count)
+	for _, p := range finished {
+		proc, err := p.Proto()
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to read results of processor %q", p.ProcID).Err()
+		}
+		out = append(out, proc)
+	}
+
+	// Add pending processors to the output too. They don't have entities in the
+	// datastore, so we haven't fetched anything for them.
+	for _, p := range inst.ProcessorsPending {
+		proc, err := (&ProcessingResult{ProcID: p, Instance: key}).Proto()
+		if err != nil {
+			panic(err) // impossible for empty ProcessingResult{}
+		}
+		out = append(out, proc)
+	}
+
+	// Sort by processor ID, as promised by the API.
+	sort.Slice(out, func(i, j int) bool { return out[i].Id < out[j].Id })
+	return out, nil
 }
