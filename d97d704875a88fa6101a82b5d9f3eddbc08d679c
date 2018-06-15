@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "1bfc7704_e00e52c3",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T17:40:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b2ec0981_53b1c437",
+      "range": {
+        "startLine": 164,
+        "startChar": 51,
+        "endLine": 164,
+        "endChar": 62
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "658d1d43_710b3a21",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 2
