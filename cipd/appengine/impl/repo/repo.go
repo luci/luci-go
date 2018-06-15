@@ -855,13 +855,13 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 		return nil, err
 	}
 
-	// Verify the package actually exists, per ListRefs contract.
+	// Verify the package actually exists, per ListPackageRefs contract.
 	if err := model.CheckPackageExists(c, r.Package); err != nil {
 		return nil, err
 	}
 
 	// Actually list refs.
-	refs, err := model.ListRefs(c, r.Package)
+	refs, err := model.ListPackageRefs(c, r.Package)
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to list refs").Err()
 	}

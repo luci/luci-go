@@ -120,12 +120,35 @@ func DeleteRef(c context.Context, pkg, ref string) error {
 	}))
 }
 
-// ListRefs returns all refs in a package, most recently modified first.
+// ListPackageRefs returns all refs in a package, most recently modified first.
 //
 // Returns an empty list if there's no such package at all.
-func ListRefs(c context.Context, pkg string) (out []*Ref, err error) {
+func ListPackageRefs(c context.Context, pkg string) (out []*Ref, err error) {
 	q := datastore.NewQuery("PackageRef").
 		Ancestor(PackageKey(c, pkg)).
+		Order("-modified_ts")
+	if err := datastore.GetAll(c, q, &out); err != nil {
+		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()
+	}
+	return
+}
+
+// ListInstanceRefs returns all refs that point to a particular instance, most
+// recently modified first.
+//
+// This is a subset of the output of ListPackageRefs for the corresponding
+// package.
+//
+// Assumes 'inst' is a valid Instance, panics otherwise.
+//
+// Returns an empty list if there's no such instance at all.
+func ListInstanceRefs(c context.Context, inst *Instance) (out []*Ref, err error) {
+	if inst.Package == nil {
+		panic("bad Instance")
+	}
+	q := datastore.NewQuery("PackageRef").
+		Ancestor(inst.Package).
+		Eq("instance_id", inst.InstanceID).
 		Order("-modified_ts")
 	if err := datastore.GetAll(c, q, &out); err != nil {
 		return nil, errors.Annotate(err, "datastore query failed").Tag(transient.Tag).Err()

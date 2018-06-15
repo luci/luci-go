@@ -119,7 +119,7 @@ func TestRefs(t *testing.T) {
 			So(ref.ModifiedBy, ShouldEqual, "user:abc@example.com") // the initial one
 		})
 
-		Convey("ListRefs works", func() {
+		Convey("ListPackageRefs works", func() {
 			putInst("pkg", digest, nil)
 			pkgKey := PackageKey(ctx, "pkg")
 
@@ -135,7 +135,7 @@ func TestRefs(t *testing.T) {
 				Package:    pkgKey,
 			}, "user:abc@example.com"), ShouldBeNil)
 
-			refs, err := ListRefs(ctx, "pkg")
+			refs, err := ListPackageRefs(ctx, "pkg")
 			So(err, ShouldBeNil)
 			So(refs, ShouldResemble, []*Ref{
 				{
@@ -149,6 +149,46 @@ func TestRefs(t *testing.T) {
 					Name:       "ref-0",
 					Package:    pkgKey,
 					InstanceID: digest,
+					ModifiedBy: "user:abc@example.com",
+					ModifiedTs: testTime,
+				},
+			})
+		})
+
+		Convey("ListInstanceRefs works", func() {
+			pkgKey := PackageKey(ctx, "pkg")
+
+			inst1 := &Instance{
+				InstanceID: strings.Repeat("a", 40),
+				Package:    pkgKey,
+			}
+			putInst("pkg", inst1.InstanceID, nil)
+
+			inst2 := &Instance{
+				InstanceID: strings.Repeat("b", 40),
+				Package:    pkgKey,
+			}
+			putInst("pkg", inst2.InstanceID, nil)
+
+			So(SetRef(ctx, "ref-0", inst1, "user:abc@example.com"), ShouldBeNil)
+			tc.Add(time.Minute)
+			So(SetRef(ctx, "ref-1", inst1, "user:abc@example.com"), ShouldBeNil)
+			So(SetRef(ctx, "another-ref", inst2, "user:abc@example.com"), ShouldBeNil)
+
+			refs, err := ListInstanceRefs(ctx, inst1)
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, []*Ref{
+				{
+					Name:       "ref-1",
+					Package:    pkgKey,
+					InstanceID: inst1.InstanceID,
+					ModifiedBy: "user:abc@example.com",
+					ModifiedTs: testTime.Add(time.Minute),
+				},
+				{
+					Name:       "ref-0",
+					Package:    pkgKey,
+					InstanceID: inst1.InstanceID,
 					ModifiedBy: "user:abc@example.com",
 					ModifiedTs: testTime,
 				},
