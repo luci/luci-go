@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abc9cb8c_7f8a55f0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-15T23:49:18Z",
+      "side": 0,
+      "message": "i meant just move this to next line. Anyways, thanks!",
+      "range": {
+        "startLine": 392,
+        "startChar": 74,
+        "endLine": 392,
+        "endChar": 98
+      },
+      "revId": "b17df14d9320e9c4819d1e7de2d83b190cd03baf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
