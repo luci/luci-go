@@ -55,7 +55,6 @@ var (
 			"builder",
 			"number",
 			"created_by",
-			"view_url",
 			"create_time",
 			"start_time",
 			"end_time",
