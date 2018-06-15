@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2ec0981_53b1c437",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:28:42Z",
+      "side": 1,
+      "message": "there is no modified_ts. there is registered_ts though",
+      "range": {
+        "startLine": 164,
+        "startChar": 51,
+        "endLine": 164,
+        "endChar": 62
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "618ec21b_0cb874c6",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:28:42Z",
+      "side": 1,
+      "message": "nit: it is already there",
+      "range": {
+        "startLine": 163,
+        "startChar": 47,
+        "endLine": 164,
+        "endChar": 11
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "658d1d43_710b3a21",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:28:42Z",
+      "side": 1,
+      "message": "I don\u0027t see why current schema is not ok. We just need to add \n\n- kind: InstanceTag\n  ancestor: yes\n  properties:\n  - name: tag\n  - name: registered_ts\n    direction: desc",
+      "range": {
+        "startLine": 165,
+        "startChar": 4,
+        "endLine": 165,
+        "endChar": 34
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
