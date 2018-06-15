@@ -575,3 +575,11 @@ func (m *mockedRepoClient) DetachTags(ctx context.Context, in *api.DetachTagsReq
 	}
 	return out.(*empty.Empty), nil
 }
+
+func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *api.ResolveVersionRequest, opts ...grpc.CallOption) (*api.Instance, error) {
+	out, err := m.call("ResolveVersion", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.Instance), nil
+}

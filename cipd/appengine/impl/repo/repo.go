@@ -949,3 +949,32 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 	}
 	return &empty.Empty{}, nil
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Version resolution and instance fetching.
+
+// ResolveVersion implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionRequest) (resp *api.Instance, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := common.ValidateInstanceVersion(r.Version); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'version' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Actually resolve the version. This will return an appropriately grpc-tagged
+	// error.
+	inst, err := model.ResolveVersion(c, r.Package, r.Version)
+	if err != nil {
+		return nil, err
+	}
+	return inst.Proto(), nil
+}

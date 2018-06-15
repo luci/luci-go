@@ -1720,3 +1720,134 @@ func TestTags(t *testing.T) {
 		})
 	})
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Version resolution and instance fetching.
+
+func TestResolveVersion(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+		impl := repoImpl{meta: &meta}
+
+		pkg := &model.Package{Name: "a/pkg"}
+		inst1 := &model.Instance{
+			InstanceID:   strings.Repeat("1", 40),
+			Package:      model.PackageKey(ctx, "a/pkg"),
+			RegisteredBy: "user:1@example.com",
+		}
+		inst2 := &model.Instance{
+			InstanceID:   strings.Repeat("2", 40),
+			Package:      model.PackageKey(ctx, "a/pkg"),
+			RegisteredBy: "user:2@example.com",
+		}
+
+		So(datastore.Put(ctx, pkg, inst1, inst2), ShouldBeNil)
+		So(model.SetRef(ctx, "latest", inst2, "user:someone@example.com"), ShouldBeNil)
+		So(model.AttachTags(ctx, inst1, []*api.Tag{
+			{Key: "ver", Value: "1"},
+			{Key: "ver", Value: "ambiguous"},
+		}, "user:someone@example.com"), ShouldBeNil)
+		So(model.AttachTags(ctx, inst2, []*api.Tag{
+			{Key: "ver", Value: "2"},
+			{Key: "ver", Value: "ambiguous"},
+		}, "user:someone@example.com"), ShouldBeNil)
+
+		Convey("Happy path", func() {
+			inst, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "latest",
+			})
+			So(err, ShouldBeNil)
+			So(inst, ShouldResembleProto, inst2.Proto())
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "///",
+				Version: "latest",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'package'")
+		})
+
+		Convey("Bad version name", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "::",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'version'")
+		})
+
+		Convey("No access", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "b",
+				Version: "latest",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+		})
+
+		Convey("Missing package", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/b",
+				Version: "latest",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Missing instance", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: strings.Repeat("f", 40),
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+
+		Convey("Missing ref", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "missing",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such ref")
+		})
+
+		Convey("Missing tag", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "ver:missing",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such tag")
+		})
+
+		Convey("Ambiguous tag", func() {
+			_, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
+				Package: "a/pkg",
+				Version: "ver:ambiguous",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+			So(err, ShouldErrLike, "ambiguity when resolving the tag")
+		})
+	})
+}
