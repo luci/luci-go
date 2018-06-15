@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8bc06c6_0dfe9848",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T19:35:05Z",
+      "side": 1,
+      "message": "why should it cause a status update?\nimagine we had 1000 green builds and one red. The blamelist would be computed since first green build.\n(we can test semantics by comparing it to go/buildbucket-blame)\n\nalso this makes me think that \"Status\" prefix in the field name shouldn\u0027t be there. It does not have a lot in common with \"Status\" field. Other fields have Status prefix because they are strongly connected to Status field.",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d8546b3_c4436ae0",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T19:35:05Z",
+      "side": 1,
+      "message": "nice",
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88ab13cc_502eeee9",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T19:35:05Z",
+      "side": 1,
+      "message": "this is correct, but docs disagrees with this (doc is wrong), see another comment\n\nthinking about this more, i\u0027ve noticed also that StatusBuildTime doc is wrong too.",
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78389c8a_ce1a687a",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T19:35:05Z",
+      "side": 1,
+      "message": "looks like this and StatusRevision docs disagree with each other too (this build didn\u0027t necessarily change status)\n\ni believe this code is correct",
+      "range": {
+        "startLine": 269,
+        "startChar": 17,
+        "endLine": 269,
+        "endChar": 31
+      },
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
