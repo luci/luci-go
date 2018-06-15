@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "01694e27_1a374033",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:19:24Z",
+      "side": 1,
+      "message": "nit: UNSPECIFIED? http://go/api-style/naming_convention#enum_names\nsee also L432",
+      "range": {
+        "startLine": 594,
+        "startChar": 10,
+        "endLine": 594,
+        "endChar": 19
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a533729f_d95bfe7f",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 605,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:19:24Z",
+      "side": 1,
+      "message": "nit: end_time http://go/api-style/standard_fields\n\nbut perhaps it is too late now. I\u0027ve missed registered_ts in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1058840/5/cipd/api/cipd/v1/repo.proto#227 :(",
+      "range": {
+        "startLine": 605,
+        "startChar": 28,
+        "endLine": 605,
+        "endChar": 39
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2435dcd3_1316b834",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 615,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:19:24Z",
+      "side": 1,
+      "message": "inconsistent with L556-570",
+      "range": {
+        "startLine": 615,
+        "startChar": 2,
+        "endLine": 615,
+        "endChar": 10
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3c1a7ae7_56fefbbc",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 1
@@ -22,6 +91,53 @@
       "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3b101770_b8925479",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 622,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:19:24Z",
+      "side": 1,
+      "message": "that\u0027s ok. field masks aren\u0027t trivial.\nbuildbucket in go will need them anyway, though.",
+      "parentUuid": "3c1a7ae7_56fefbbc",
+      "range": {
+        "startLine": 617,
+        "startChar": 0,
+        "endLine": 622,
+        "endChar": 31
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b1ee6858_53ddfa10",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 636,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:19:24Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 636,
+        "startChar": 43,
+        "endLine": 636,
+        "endChar": 47
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
