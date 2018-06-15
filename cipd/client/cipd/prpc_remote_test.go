@@ -583,3 +583,11 @@ func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *api.ResolveVe
 	}
 	return out.(*api.Instance), nil
 }
+
+func (m *mockedRepoClient) GetInstanceURL(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.ObjectURL, error) {
+	out, err := m.call("GetInstanceURL", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.ObjectURL), nil
+}
