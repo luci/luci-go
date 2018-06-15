@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84580410_7d485b3c",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T20:37:54Z",
+      "side": 1,
+      "message": "this changes datastore property name. datastore lib will return an error on trying to deserialize a datastore entity into this struct because it wouldn\u0027t find \"StatusBuildTime\" field here. Either mark it as `gae:\"StatusBuildTime\"` or add\n\n  _ PropertyMap `gae:\"-,extra\"\n\n(see https://godoc.org/go.chromium.org/gae/service/datastore#GetPLS)\nthis would reset BuildTime and Revision values. (I didn\u0027t think too much about consequences)",
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bae14b1b_22508c79",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T20:37:54Z",
+      "side": 1,
+      "message": "Revision or rename field to BuildRevision",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43d0f5b8_03869b8a",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T20:37:54Z",
+      "side": 1,
+      "message": "this is tricky. this code assumes that the list of \"other\" fields in Builder entity and has to be updated each time we add another field. This is more fragile than doing the opposite: load all oldBuilders before L66 loop. Then, when making new builders, oldBuilders as template. Essentially there will be only one set of builders. It would be less fragile because this code would know only about the fields that it actually sets (Repository, Notifications).\n\nit belongs to another CL",
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
