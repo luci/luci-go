@@ -890,14 +890,16 @@ func TestProcessors(t *testing.T) {
 			return p
 		}
 
-		// Note: assumes Result is a string.
+		goodResult := map[string]string{"result": "OK"}
+
+		// Note: assumes Result is a map[string]string.
 		fetchProcSuccess := func(id string) string {
 			res := fetchProcRes(id)
 			So(res, ShouldNotBeNil)
 			So(res.Success, ShouldBeTrue)
-			var r string
+			var r map[string]string
 			So(res.ReadResult(&r), ShouldBeNil)
-			return r
+			return r["result"]
 		}
 
 		fetchProcFail := func(id string) string {
@@ -919,7 +921,7 @@ func TestProcessors(t *testing.T) {
 			storeInstance([]string{"ok", "fail", "pending"})
 
 			So(impl.updateProcessors(ctx, inst, map[string]processing.Result{
-				"ok":   {Result: "OK"},
+				"ok":   {Result: goodResult},
 				"fail": {Err: fmt.Errorf("failed")},
 			}), ShouldBeNil)
 
@@ -953,7 +955,7 @@ func TestProcessors(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(string(blob), ShouldEqual, "blah")
 
-				return processing.Result{Result: "OK"}, nil
+				return processing.Result{Result: goodResult}, nil
 			}
 
 			impl.registerProcessor(&mockedProcessor{ProcID: "proc1", RunCB: runCB})
@@ -1016,7 +1018,7 @@ func TestProcessors(t *testing.T) {
 		Convey("runProcessorsTask propagates transient proc errors", func() {
 			impl.registerProcessor(&mockedProcessor{
 				ProcID: "good-proc",
-				Result: processing.Result{Result: "OK"},
+				Result: processing.Result{Result: goodResult},
 			})
 			impl.registerProcessor(&mockedProcessor{
 				ProcID: "bad-proc",

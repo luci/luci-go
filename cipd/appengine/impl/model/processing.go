@@ -18,10 +18,17 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/json"
+	"io"
 	"time"
+
+	"github.com/golang/protobuf/jsonpb"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 // ProcessingResult holds information extracted from the package instance file.
@@ -45,12 +52,21 @@ type ProcessingResult struct {
 }
 
 // WriteResult overwrites ResultRaw field with compressed JSON-serialized 'r'.
+//
+// 'r' should serialize into a JSON object, e.g '{...}'.
 func (p *ProcessingResult) WriteResult(r interface{}) error {
+	blob, err := json.Marshal(r)
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "failed to serialize the result").Err()
+	case len(blob) == 0 || blob[0] != '{':
+		return errors.Reason("the result is not a JSON object").Err()
+	}
 	out := bytes.Buffer{}
 	z := zlib.NewWriter(&out)
-	if err := json.NewEncoder(z).Encode(r); err != nil {
+	if _, err := io.Copy(z, bytes.NewReader(blob)); err != nil {
 		z.Close()
-		return errors.Annotate(err, "failed to serialize or compress the result").Err()
+		return errors.Annotate(err, "failed to compress the result").Err()
 	}
 	if err := z.Close(); err != nil {
 		return errors.Annotate(err, "failed to close zlib writer").Err()
@@ -59,7 +75,7 @@ func (p *ProcessingResult) WriteResult(r interface{}) error {
 	return nil
 }
 
-// ReadResult reads result from the entity (decompressing and deserializing it).
+// ReadResult deserializes the result into the given variable.
 //
 // Does nothing if there's no results stored.
 func (p *ProcessingResult) ReadResult(r interface{}) error {
@@ -78,4 +94,49 @@ func (p *ProcessingResult) ReadResult(r interface{}) error {
 		return errors.Annotate(err, "failed to close zlib reader").Err()
 	}
 	return nil
+}
+
+// ReadResultIntoStruct deserializes the result into the protobuf.Struct.
+//
+// Does nothing if there's no results stored.
+func (p *ProcessingResult) ReadResultIntoStruct(s *structpb.Struct) error {
+	if len(p.ResultRaw) == 0 {
+		return nil
+	}
+	z, err := zlib.NewReader(bytes.NewReader(p.ResultRaw))
+	if err != nil {
+		return errors.Annotate(err, "failed to open the blob for zlib decompression").Err()
+	}
+	if err := (&jsonpb.Unmarshaler{}).Unmarshal(z, s); err != nil {
+		z.Close()
+		return errors.Annotate(err, "failed to decompress or deserialize the result").Err()
+	}
+	if err := z.Close(); err != nil {
+		return errors.Annotate(err, "failed to close zlib reader").Err()
+	}
+	return nil
+}
+
+// Proto returns cipd.Processor proto with information from this entity.
+func (p *ProcessingResult) Proto() (*api.Processor, error) {
+	out := &api.Processor{Id: p.ProcID}
+
+	if p.CreatedTs.IsZero() {
+		out.State = api.Processor_PENDING // no result yet
+		return out, nil
+	}
+	out.FinishedTs = google.NewTimestamp(p.CreatedTs)
+
+	if p.Success {
+		out.State = api.Processor_SUCCEEDED
+		out.Result = &structpb.Struct{}
+		if err := p.ReadResultIntoStruct(out.Result); err != nil {
+			return nil, err
+		}
+	} else {
+		out.State = api.Processor_FAILED
+		out.Error = p.Error
+	}
+
+	return out, nil
 }

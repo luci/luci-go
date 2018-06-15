@@ -16,12 +16,23 @@ package model
 
 import (
 	"testing"
+	"time"
+
+	structpb "github.com/golang/protobuf/ptypes/struct"
+
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/google"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestProcessingResult(t *testing.T) {
 	t.Parallel()
+
+	testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 	res := map[string]string{
 		"a": "b",
@@ -36,5 +47,62 @@ func TestProcessingResult(t *testing.T) {
 		out := map[string]string{}
 		So(p.ReadResult(&out), ShouldBeNil)
 		So(out, ShouldResemble, res)
+
+		st := &structpb.Struct{}
+		So(p.ReadResultIntoStruct(st), ShouldBeNil)
+		So(st, ShouldResembleProto, &structpb.Struct{
+			Fields: map[string]*structpb.Value{
+				"a": {Kind: &structpb.Value_StringValue{StringValue: "b"}},
+				"c": {Kind: &structpb.Value_StringValue{StringValue: "d"}},
+			},
+		})
+	})
+
+	Convey("Conversion to proto", t, func() {
+		Convey("Pending", func() {
+			p, err := (&ProcessingResult{ProcID: "zzz"}).Proto()
+			So(err, ShouldBeNil)
+			So(p, ShouldResembleProto, &api.Processor{
+				Id:    "zzz",
+				State: api.Processor_PENDING,
+			})
+		})
+
+		Convey("Success", func() {
+			proc := &ProcessingResult{
+				ProcID:    "zzz",
+				CreatedTs: testTime,
+				Success:   true,
+			}
+			proc.WriteResult(map[string]int{"a": 1})
+
+			p, err := proc.Proto()
+			So(err, ShouldBeNil)
+			So(p, ShouldResembleProto, &api.Processor{
+				Id:         "zzz",
+				State:      api.Processor_SUCCEEDED,
+				FinishedTs: google.NewTimestamp(testTime),
+				Result: &structpb.Struct{
+					Fields: map[string]*structpb.Value{
+						"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
+					},
+				},
+			})
+		})
+
+		Convey("Failure", func() {
+			p, err := (&ProcessingResult{
+				ProcID:    "zzz",
+				CreatedTs: testTime,
+				Error:     "blah",
+			}).Proto()
+			So(err, ShouldBeNil)
+			So(p, ShouldResembleProto, &api.Processor{
+				Id:         "zzz",
+				State:      api.Processor_FAILED,
+				FinishedTs: google.NewTimestamp(testTime),
+				Error:      "blah",
+			})
+		})
 	})
 }
