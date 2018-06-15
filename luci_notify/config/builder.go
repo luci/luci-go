@@ -34,7 +34,7 @@ type Builder struct {
 	ID string `gae:"$id"`
 
 	// Repository is the repository this builder is tracking and the repository that
-	// StatusRevision is valid for.
+	// Revision is valid for.
 	Repository string
 
 	// Notifications is Notifications proto message, containing Notification messages
@@ -53,7 +53,7 @@ type Builder struct {
 	// It can be used to decide whether Status and this Builder should be updated.
 	BuildTime time.Time
 
-	// BuildRevision is the revision of the codebase that's associated with the most
+	// Revision is the revision of the codebase that's associated with the most
 	// recent build encountered. It can be used to decide whether Status should be
 	// updated.
 	Revision string
@@ -62,4 +62,7 @@ type Builder struct {
 	// encountered that had a non-empty checkout. It can also be used to compute a
 	// blamelist.
 	GitilesCommits notifypb.GitilesCommits
+
+	// Extra and unrecognized fields will be loaded without issue but not saved.
+	_ datastore.PropertyMap `gae:"-,extra"`
 }

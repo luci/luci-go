@@ -60,44 +60,34 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 		toSave := make([]interface{}, 0, 1+len(cs.ProjectConfig.Notifiers)+len(cs.EmailTemplates))
 		toSave = append(toSave, project)
 
+		// Collect the list of builders we want to update or create.
 		liveBuilders := stringset.New(len(cs.ProjectConfig.Notifiers))
-		oldBuilders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
-		newBuilders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
+		builders := make([]*Builder, 0, len(cs.ProjectConfig.Notifiers))
 		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
 			for _, cfgBuilder := range cfgNotifier.Builders {
 				id := fmt.Sprintf("%s/%s", cfgBuilder.Bucket, cfgBuilder.Name)
-				liveBuilders.Add(id)
-				oldBuilders = append(oldBuilders, &Builder{
+				builders = append(builders, &Builder{
 					ProjectKey: parentKey,
 					ID:         id,
 				})
-				newBuilder := &Builder{
-					ProjectKey: parentKey,
-					ID:         id,
-					Repository: cfgBuilder.Repository,
-					Notifications: notifypb.Notifications{
-						Notifications: cfgNotifier.Notifications,
-					},
-				}
-				newBuilders = append(newBuilders, newBuilder)
-				toSave = append(toSave, newBuilder)
+				liveBuilders.Add(id)
 			}
 		}
 
-		// Populate the new builders with information from the old builders,
-		// if possible and if applicable. Note that if there are transient datastore
-		// errors here, that the worst that can happen is a single on_change notification
-		// will be missed.
-		datastore.Get(c, oldBuilders)
-		for i := range oldBuilders {
-			oldBuilder := oldBuilders[i]
-			newBuilder := newBuilders[i]
-			if oldBuilder.Repository == newBuilder.Repository {
-				newBuilder.Revision = oldBuilder.Revision
+		// Lookup the builders in the datastore, if they're not found that's OK since
+		// there could be new builders being initialized.
+		datastore.Get(c, builders)
+
+		i := 0
+		for _, cfgNotifier := range cs.ProjectConfig.Notifiers {
+			for _, cfgBuilder := range cfgNotifier.Builders {
+				builders[i].Repository = cfgBuilder.Repository
+				builders[i].Notifications = notifypb.Notifications{
+					Notifications: cfgNotifier.Notifications,
+				}
+				toSave = append(toSave, builders[i])
+				i++
 			}
-			newBuilder.Status = oldBuilder.Status
-			newBuilder.BuildTime = oldBuilder.BuildTime
-			newBuilder.GitilesCommits = oldBuilder.GitilesCommits
 		}
 
 		for _, et := range cs.EmailTemplates {
