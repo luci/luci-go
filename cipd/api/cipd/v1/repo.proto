@@ -266,6 +266,20 @@ service Repository {
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the package or the instance doesn't exist.
   rpc DetachTags(DetachTagsRequest) returns (google.protobuf.Empty);
+
+  // Takes a version string and resolves it into a concrete package instance.
+  //
+  // A version string can be any of:
+  //   * A string-encoded instance ID, e.g. "abcdef....".
+  //   * A ref name, e.g. "latest".
+  //   * A tag, e.g. "version:1.10.3".
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if there's no such package or version.
+  //   FAILED_PRECONDITION if the tag resolves to multiple instances.
+  rpc ResolveVersion(ResolveVersionRequest) returns (Instance);
 }
 
 
@@ -536,4 +550,15 @@ message DetachTagsRequest {
   ObjectRef instance = 2;
   // One or more tags to detach (order doesn't matter).
   repeated Tag tags = 3;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message ResolveVersionRequest {
+  // The package that contains the instance we are resolving version of.
+  string package = 1;
+  // The version string to resolve, see ResolveVersion for details.
+  string version = 2;
 }
