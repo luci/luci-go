@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dbee2de8_1fe3b468",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T04:44:07Z",
+      "side": 1,
+      "message": "This sorting is currently done on the client, and this is wrong since we won\u0027t be able to add pagination later (if needed). So I moved it to the server, to at least cleanup the API.\n\nNote that sorting by key first, and the by timestamp is important. Here\u0027s a sample output: https://paste.googleplex.com/4522075674902528. Notice how it nicely groups tags, and how the most recent git_revision tags are on top. Sorting just by full tag or just by timestamp leads to a messier less useful output.",
+      "range": {
+        "startLine": 173,
+        "startChar": 1,
+        "endLine": 173,
+        "endChar": 11
+      },
+      "revId": "80d872a659dff2b8df498148048e6d25eda0634f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
