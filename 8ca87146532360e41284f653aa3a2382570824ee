@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "285347a3_5af5d1bb",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T20:04:18Z",
+      "side": 1,
+      "message": "you\u0027re right, it\u0027s not status update anymore, it\u0027s literally just the last-seen build. all the code is updated to do this now. fixed the docs and updated the field names to no longer be prefixed with \"Status\".",
+      "parentUuid": "b8bc06c6_0dfe9848",
+      "range": {
+        "startLine": 62,
+        "startChar": 8,
+        "endLine": 62,
+        "endChar": 24
+      },
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3d8546b3_c4436ae0",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 38
@@ -59,6 +83,24 @@
     },
     {
       "key": {
+        "uuid": "7d76af90_0dfcfda3",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T20:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88ab13cc_502eeee9",
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "78389c8a_ce1a687a",
         "filename": "luci_notify/notify/pubsub.go",
         "patchSetId": 38
@@ -79,6 +121,30 @@
       "revId": "8ca87146532360e41284f653aa3a2382570824ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca38f7c7_e2cddfcc",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 38
+      },
+      "lineNbr": 269,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T20:04:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78389c8a_ce1a687a",
+      "range": {
+        "startLine": 269,
+        "startChar": 17,
+        "endLine": 269,
+        "endChar": 31
+      },
+      "revId": "8ca87146532360e41284f653aa3a2382570824ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
