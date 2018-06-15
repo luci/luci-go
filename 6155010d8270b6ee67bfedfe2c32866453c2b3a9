@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c1a7ae7_56fefbbc",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 622,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T05:55:31Z",
+      "side": 1,
+      "message": "I don\u0027t want to implement field masks in Go just for this. This RPC is used very infrequently, only when humans use \"cipd describe ...\" CLI. No services call it.",
+      "range": {
+        "startLine": 617,
+        "startChar": 0,
+        "endLine": 622,
+        "endChar": 31
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
