@@ -34,7 +34,7 @@ import (
 )
 
 // masterExpiry is how long a master entity can be stale before we consider it to be expired.
-const masterExpiry = time.Hour
+const masterExpiry = 4 * time.Hour
 
 // Master is buildbot.Master plus extra storage-level information.
 type Master struct {
