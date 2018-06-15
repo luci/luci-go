@@ -584,10 +584,18 @@ func (m *mockedRepoClient) ResolveVersion(ctx context.Context, in *api.ResolveVe
 	return out.(*api.Instance), nil
 }
 
-func (m *mockedRepoClient) GetInstanceURL(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.ObjectURL, error) {
+func (m *mockedRepoClient) GetInstanceURL(ctx context.Context, in *api.GetInstanceURLRequest, opts ...grpc.CallOption) (*api.ObjectURL, error) {
 	out, err := m.call("GetInstanceURL", in, opts)
 	if err != nil {
 		return nil, err
 	}
 	return out.(*api.ObjectURL), nil
+}
+
+func (m *mockedRepoClient) DescribeInstance(ctx context.Context, in *api.DescribeInstanceRequest, opts ...grpc.CallOption) (*api.DescribeInstanceResponse, error) {
+	out, err := m.call("DescribeInstance", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.DescribeInstanceResponse), nil
 }

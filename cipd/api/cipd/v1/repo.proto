@@ -19,6 +19,7 @@ package cipd;
 option go_package = "api";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 
@@ -287,7 +288,23 @@ service Repository {
   //   PERMISSION_DENIED if the caller is not a READER for the prefix.
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if there's no such instance.
-  rpc GetInstanceURL(Instance) returns (ObjectURL);
+  rpc GetInstanceURL(GetInstanceURLRequest) returns (ObjectURL);
+
+  // Returns information about a package instance.
+  //
+  // Depending on fields set in the request, returns details such as when the
+  // instance was registered and by whom, refs pointing to it, tags attached to
+  // it, state of all processors that handled it (if any).
+  //
+  // May also be used as a simple instance presence check, if all describe_*
+  // fields in the request are false. If the request succeeds, then the
+  // instance exists.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the instance doesn't exist.
+  rpc DescribeInstance(DescribeInstanceRequest) returns (DescribeInstanceResponse);
 }
 
 
@@ -569,4 +586,80 @@ message ResolveVersionRequest {
   string package = 1;
   // The version string to resolve, see ResolveVersion for details.
   string version = 2;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message GetInstanceURLRequest {
+  // The package that holds the instance we want to get URL of.
+  string package = 1;
+  // The instance we want to get URL of.
+  ObjectRef instance = 2;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+// Processor describes a state of some post-registration processing step
+// performed on an instance.
+message Processor {
+  enum State {
+    STATE_UNSPECIFIED = 0;
+    PENDING           = 1;
+    SUCCEEDED         = 2;
+    FAILED            = 3;
+  }
+
+  // Internal identifier of the processor, e.g. "cipd_client_binary:v1"
+  string id = 1;
+  // The state of this processor, see the enum.
+  State state = 2;
+  // When the processor finished running (successfully or not).
+  google.protobuf.Timestamp finished_ts = 3;
+  // For SUCCEEDED state, result of the processing.
+  google.protobuf.Struct result = 4;
+  // For FAILED state, the error message.
+  string error = 5;
+}
+
+
+message DescribeInstanceRequest {
+  // The package that holds the instance we want to get the info for.
+  string package = 1;
+  // The instance we want to get the info for.
+  ObjectRef instance = 2;
+
+  // Whether the response should include "refs" field.
+  bool describe_refs = 3;
+  // Whether the response should include "tags" field.
+  bool describe_tags = 4;
+  // Whether the response should include "processors" field.
+  bool describe_processors = 5;
+}
+
+
+message DescribeInstanceResponse {
+  // The instance with all output fields filled in.
+  Instance instance = 1;
+
+  // Refs pointing to the instance, sorted by modification time, most recent
+  // first.
+  //
+  // Present only if the request has describe_refs == true.
+  repeated Ref refs = 2;
+
+  // Tags attached to the instance, sorted by the tag key first, and then
+  // by the timestamp (most recent first).
+  //
+  // Present only if the request has describe_tags == true.
+  repeated Tag tags = 3;
+
+  // State of the processors that handled the instance (if any), sorted by their
+  // ID.
+  //
+  // Present only if the request has describe_processors == true.
+  repeated Processor processors = 4;
 }

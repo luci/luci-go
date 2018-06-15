@@ -951,7 +951,7 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Version resolution and instance fetching.
+// Version resolution and instance info fetching.
 
 // ResolveVersion implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionRequest) (resp *api.Instance, err error) {
@@ -980,7 +980,7 @@ func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionReq
 }
 
 // GetInstanceURL implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.Instance) (resp *api.ObjectURL, err error) {
+func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.GetInstanceURLRequest) (resp *api.ObjectURL, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	// Validate the request.
@@ -998,7 +998,10 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.Instance) (resp *
 
 	// Make sure this instance actually exists (without this check the caller
 	// would be able to "probe" CAS namespace unrestricted).
-	inst := (&model.Instance{}).FromProto(c, r)
+	inst := (&model.Instance{}).FromProto(c, &api.Instance{
+		Package:  r.Package,
+		Instance: r.Instance,
+	})
 	if err := model.CheckInstanceExists(c, inst); err != nil {
 		return nil, err
 	}
@@ -1007,4 +1010,11 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.Instance) (resp *
 	return impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
 		Object: r.Instance,
 	})
+}
+
+// DescribeInstance implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanceRequest) (resp *api.DescribeInstanceResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
