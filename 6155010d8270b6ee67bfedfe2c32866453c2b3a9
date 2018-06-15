@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "14cff749_c863586c",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 594,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T17:10:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01694e27_1a374033",
+      "range": {
+        "startLine": 594,
+        "startChar": 10,
+        "endLine": 594,
+        "endChar": 19
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a533729f_d95bfe7f",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a02cc815_30bd1432",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 615,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T17:10:02Z",
+      "side": 1,
+      "message": "Done. Also made similar change in GetInstanceURL.",
+      "parentUuid": "2435dcd3_1316b834",
+      "range": {
+        "startLine": 615,
+        "startChar": 2,
+        "endLine": 615,
+        "endChar": 10
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -138,6 +186,30 @@
       "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0322cd9_ee7f1c19",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 636,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-15T17:10:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1ee6858_53ddfa10",
+      "range": {
+        "startLine": 636,
+        "startChar": 43,
+        "endLine": 636,
+        "endChar": 47
+      },
+      "revId": "6155010d8270b6ee67bfedfe2c32866453c2b3a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
