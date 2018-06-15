@@ -27,8 +27,10 @@ import (
 	"go.chromium.org/gae/service/mail"
 	"go.chromium.org/luci/appengine/tq"
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	gitpb "go.chromium.org/luci/common/proto/git"
 
 	notifypb "go.chromium.org/luci/luci_notify/api/config"
 	"go.chromium.org/luci/luci_notify/internal"
@@ -80,18 +82,6 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailT
 	return tasks, nil
 }
 
-// shouldNotify is the predicate function for whether a trigger's conditions have been met.
-func shouldNotify(n *notifypb.Notification, oldStatus, newStatus buildbucketpb.Status) bool {
-	switch {
-	case n.OnSuccess && newStatus == buildbucketpb.Status_SUCCESS:
-	case n.OnFailure && newStatus == buildbucketpb.Status_FAILURE:
-	case n.OnChange && oldStatus != buildbucketpb.Status_STATUS_UNSPECIFIED && newStatus != oldStatus:
-	default:
-		return false
-	}
-	return true
-}
-
 // isRecipientAllowed returns true if the given recipient is allowed to be notified about the given build.
 func isRecipientAllowed(c context.Context, recipient string, build *buildbucketpb.Build) bool {
 	// TODO(mknyszek): Do a real ACL check here.
@@ -102,22 +92,50 @@ func isRecipientAllowed(c context.Context, recipient string, build *buildbucketp
 	return false
 }
 
-// ExtractRecipients extracts email recipients from a Notifications depending on
-// whether they should be notified. oldStatus and newStatus are used to determine whether a given
-// set of recipients inside of a notification should be notified.
-func ExtractRecipients(notifications notifypb.Notifications, oldStatus, newStatus buildbucketpb.Status) []EmailNotify {
-	n := notifications.GetNotifications()
-	recipients := make([]EmailNotify, 0, len(n))
-	for _, notification := range n {
-		if !shouldNotify(notification, oldStatus, newStatus) {
-			continue
+// BlamelistRepoWhiteset computes the aggregate repository whitelist for all
+// blamelist notification configurations in a given set of notifications.
+func BlamelistRepoWhiteset(notifications notifypb.Notifications) stringset.Set {
+	whiteset := stringset.New(0)
+	for _, notification := range notifications.GetNotifications() {
+		blamelistInfo := notification.GetNotifyBlamelist()
+		for _, repo := range blamelistInfo.GetRepositoryWhitelist() {
+			whiteset.Add(repo)
 		}
+	}
+	return whiteset
+}
+
+// ComputeRecipients computes the set of recipients given a set of
+// notifications, and potentially "input" and "output" blamelists.
+//
+// An "input" blamelist is computed from the input commit to a build, while an
+// "output" blamelist is derived from output commits.
+func ComputeRecipients(notifications notifypb.Notifications, inputBlame []*gitpb.Commit, outputBlame Logs) []EmailNotify {
+	recipients := make([]EmailNotify, 0)
+	for _, notification := range notifications.GetNotifications() {
+		// Aggregate the static list of recipients from the Notifications.
 		for _, recipient := range notification.GetEmail().GetRecipients() {
 			recipients = append(recipients, EmailNotify{
 				Email:    recipient,
 				Template: notification.Template,
 			})
 		}
+
+		// Don't bother dealing with anything blamelist related if there's no config for it.
+		if notification.NotifyBlamelist == nil {
+			continue
+		}
+
+		// If the whitelist is empty, use the static blamelist.
+		whitelist := notification.NotifyBlamelist.GetRepositoryWhitelist()
+		if len(whitelist) == 0 {
+			recipients = append(recipients, commitsBlamelist(inputBlame, notification.Template)...)
+			continue
+		}
+
+		// If the whitelist is non-empty, use the dynamic blamelist.
+		whiteset := stringset.NewFromSlice(whitelist...)
+		recipients = append(recipients, outputBlame.Filter(whiteset).Blamelist(notification.Template)...)
 	}
 	return recipients
 }

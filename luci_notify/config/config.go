@@ -93,10 +93,11 @@ func updateProject(c context.Context, cs *parsedProjectConfigSet) error {
 			oldBuilder := oldBuilders[i]
 			newBuilder := newBuilders[i]
 			if oldBuilder.Repository == newBuilder.Repository {
-				newBuilder.StatusRevision = oldBuilder.StatusRevision
+				newBuilder.Revision = oldBuilder.Revision
 			}
 			newBuilder.Status = oldBuilder.Status
-			newBuilder.StatusBuildTime = oldBuilder.StatusBuildTime
+			newBuilder.BuildTime = oldBuilder.BuildTime
+			newBuilder.GitilesCommits = oldBuilder.GitilesCommits
 		}
 
 		for _, et := range cs.EmailTemplates {

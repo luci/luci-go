@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 )
 
@@ -62,7 +63,7 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 	res, err := gitiles.PagingLog(c, client, req, 0)
 	switch {
 	case err != nil:
-		return nil, errors.Annotate(err, "fetching commit from Gitiles").Err()
+		return nil, grpcutil.WrapIfTransient(errors.Annotate(err, "fetching commit from Gitiles").Err())
 	case len(res) > 0 && res[0].Id != newRevision: // Sanity check.
 		return nil, errors.Reason("gitiles returned inconsistent results").Err()
 	default:
