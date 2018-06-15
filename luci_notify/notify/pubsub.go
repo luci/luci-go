@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
@@ -390,7 +391,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		logging.Warningf(c, "no access to build %d", message.Build.Id)
 		return nil, nil
 	case err != nil:
-		return nil, errors.Annotate(err, "could not fetch buildbucket build %d", message.Build.Id).Err()
+		return nil, errors.Annotate(grpcutil.WrapIfTransient(err), "could not fetch buildbucket build %d", message.Build.Id).Err()
 	}
 
 	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
