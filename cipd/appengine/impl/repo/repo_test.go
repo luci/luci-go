@@ -1894,13 +1894,16 @@ func TestGetInstanceURL(t *testing.T) {
 				return mockedObjURL, nil
 			}
 
-			resp, err := impl.GetInstanceURL(ctx, inst.Proto())
+			resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				Package:  inst.Package.StringID(),
+				Instance: inst.Proto().Instance,
+			})
 			So(err, ShouldBeNil)
 			So(resp, ShouldResembleProto, mockedObjURL)
 		})
 
 		Convey("Bad package name", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 				Package:  "///",
 				Instance: inst.Proto().Instance,
 			})
@@ -1909,7 +1912,7 @@ func TestGetInstanceURL(t *testing.T) {
 		})
 
 		Convey("Bad instance", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 				Package: "a/pkg",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,
@@ -1921,7 +1924,7 @@ func TestGetInstanceURL(t *testing.T) {
 		})
 
 		Convey("No access", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 				Package:  "b",
 				Instance: inst.Proto().Instance,
 			})
@@ -1930,7 +1933,7 @@ func TestGetInstanceURL(t *testing.T) {
 		})
 
 		Convey("Missing package", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 				Package:  "a/missing",
 				Instance: inst.Proto().Instance,
 			})
@@ -1939,7 +1942,7 @@ func TestGetInstanceURL(t *testing.T) {
 		})
 
 		Convey("Missing instance", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 				Package: "a/pkg",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,
