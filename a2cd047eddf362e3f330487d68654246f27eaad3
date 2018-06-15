@@ -1,0 +1,205 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2149efdd_e1f26cad",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "should we panic if newStatus is unspecified?",
+      "range": {
+        "startLine": 26,
+        "startChar": 76,
+        "endLine": 26,
+        "endChar": 85
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "531dd784_f1e59f2b",
+        "filename": "luci_notify/api/config/notify.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "nit: reversing this would result in less code",
+      "range": {
+        "startLine": 39,
+        "startChar": 5,
+        "endLine": 39,
+        "endChar": 6
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b624e5c9_3dca565a",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "the difference between static and dynamic blamelists is something else, see go/dynamic-blamelists\n\nit is not about whether it was computed based on input or output commit. it is about whether it is computed only once build creation/startup, or each time someone is interested in knowing who to blame.",
+      "range": {
+        "startLine": 111,
+        "startChar": 3,
+        "endLine": 112,
+        "endChar": 23
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67d550f7_a91cf6b8",
+        "filename": "luci_notify/notify/notify.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "there is only one usage? please inline",
+      "range": {
+        "startLine": 114,
+        "startChar": 1,
+        "endLine": 114,
+        "endChar": 2
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a399a8e6_970bd4bf",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "checkout\n\nhere we don\u0027t know that it is source manifest",
+      "range": {
+        "startLine": 136,
+        "startChar": 50,
+        "endLine": 136,
+        "endChar": 64
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8434064d_c85bcae7",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "nit: other ComputeRecipients calls do not extract n. inconsistency\n\nstepping back, there are 5 pairs of builder.Notifications.Filter and ComputeRecipients calls with oldStatus\u003d0. Consider making a helper function somewhere in L152 that has L175-176 and use it in these 5 places",
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82395f88_3b9d103d",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "ignored. compiler doesn\u0027t complain?",
+      "range": {
+        "startLine": 222,
+        "startChar": 10,
+        "endLine": 222,
+        "endChar": 13
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b23a84b6_a993f74e",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "\"load logs\" or \"compute logs\"\n\nhere we don\u0027t know about manifests",
+      "range": {
+        "startLine": 236,
+        "startChar": 42,
+        "endLine": 236,
+        "endChar": 67
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf33955e_9c57b41d",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 36
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:42:45Z",
+      "side": 1,
+      "message": "we don\u0027t know that it is necessarily transient. history inside ComputeLogs should take care of this",
+      "range": {
+        "startLine": 236,
+        "startChar": 74,
+        "endLine": 236,
+        "endChar": 87
+      },
+      "revId": "a2cd047eddf362e3f330487d68654246f27eaad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
