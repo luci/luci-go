@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "2fe72a09_05a1cf7f",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:34:27Z",
+      "side": 1,
+      "message": "never mind",
+      "parentUuid": "618ec21b_0cb874c6",
+      "range": {
+        "startLine": 163,
+        "startChar": 47,
+        "endLine": 164,
+        "endChar": 11
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "658d1d43_710b3a21",
         "filename": "cipd/appengine/impl/model/tag.go",
         "patchSetId": 2
@@ -68,6 +92,30 @@
       "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd762722_4a68a3f4",
+        "filename": "cipd/appengine/impl/model/tag.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-15T06:34:27Z",
+      "side": 1,
+      "message": "never mind",
+      "parentUuid": "658d1d43_710b3a21",
+      "range": {
+        "startLine": 165,
+        "startChar": 4,
+        "endLine": 165,
+        "endChar": 34
+      },
+      "revId": "d97d704875a88fa6101a82b5d9f3eddbc08d679c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
