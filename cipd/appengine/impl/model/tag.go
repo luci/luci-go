@@ -120,6 +120,39 @@ func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 	})
 }
 
+// ResolveTag searches for a given tag among all instances of the package and
+// returns an ID of the instance the tag is attached to.
+//
+// Assumes inputs are already validated. Doesn't double check the instance
+// exists.
+//
+// Returns gRPC-tagged errors:
+//   NotFound if there's no such tag at all.
+//   FailedPrecondition if the tag resolves to multiple instances.
+func ResolveTag(c context.Context, pkg string, tag *api.Tag) (string, error) {
+	// TODO(vadimsh): Cache the result of the resolution. This is generally not
+	// trivial to do right without race conditions, preserving the consistency
+	// guarantees of the API. This will become simpler once we have a notion of
+	// unique tags.
+	q := datastore.NewQuery("InstanceTag").
+		Ancestor(PackageKey(c, pkg)).
+		Eq("tag", common.JoinInstanceTag(tag)).
+		KeysOnly(true).
+		Limit(2)
+
+	var tags []*Tag
+	switch err := datastore.GetAll(c, q, &tags); {
+	case err != nil:
+		return "", errors.Annotate(err, "failed to query tags").Tag(transient.Tag).Err()
+	case len(tags) == 0:
+		return "", errors.Reason("no such tag").Tag(grpcutil.NotFoundTag).Err()
+	case len(tags) > 1:
+		return "", errors.Reason("ambiguity when resolving the tag, more than one instance has it").Tag(grpcutil.FailedPreconditionTag).Err()
+	default:
+		return tags[0].Instance.StringID(), nil
+	}
+}
+
 // checkExistingTags takes a list of tags and returns the ones that exist
 // in the datastore and ones that don't.
 //

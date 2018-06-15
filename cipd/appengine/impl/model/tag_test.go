@@ -176,5 +176,33 @@ func TestTags(t *testing.T) {
 				So(err, ShouldErrLike, `tag "some:tag" collides with tag "another:tag", refusing to touch it`)
 			})
 		})
+
+		Convey("ResolveTag works", func() {
+			datastore.GetTestable(ctx).AutoIndex(true)
+
+			inst1 := putInst("pkg", strings.Repeat("1", 40), nil)
+			inst2 := putInst("pkg", strings.Repeat("2", 40), nil)
+
+			AttachTags(ctx, inst1, tags("ver:1", "ver:ambiguous"), "user:abc@example.com")
+			AttachTags(ctx, inst2, tags("ver:2", "ver:ambiguous"), "user:abc@example.com")
+
+			Convey("Happy path", func() {
+				iid, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:1"))
+				So(err, ShouldBeNil)
+				So(iid, ShouldEqual, inst1.InstanceID)
+			})
+
+			Convey("No such tag", func() {
+				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:???"))
+				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such tag")
+			})
+
+			Convey("Ambiguous tag", func() {
+				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:ambiguous"))
+				So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
+				So(err, ShouldErrLike, "ambiguity when resolving the tag")
+			})
+		})
 	})
 }
