@@ -951,7 +951,7 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Version resolution and instance fetching.
+// Version resolution and instance info fetching.
 
 // ResolveVersion implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionRequest) (resp *api.Instance, err error) {
@@ -1007,4 +1007,11 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.Instance) (resp *
 	return impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
 		Object: r.Instance,
 	})
+}
+
+// DescribeInstance implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanceRequest) (resp *api.DescribeInstanceResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
 }
