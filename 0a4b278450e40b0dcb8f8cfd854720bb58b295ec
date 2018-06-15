@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "06636ba0_6af5be8d",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T21:14:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84580410_7d485b3c",
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bae14b1b_22508c79",
         "filename": "luci_notify/config/builder.go",
         "patchSetId": 39
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "40d39ae9_c1ead43c",
+        "filename": "luci_notify/config/builder.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T21:14:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bae14b1b_22508c79",
+      "range": {
+        "startLine": 56,
+        "startChar": 4,
+        "endLine": 56,
+        "endChar": 17
+      },
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43d0f5b8_03869b8a",
         "filename": "luci_notify/config/config.go",
         "patchSetId": 39
@@ -56,6 +98,24 @@
       "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51341bbf_59f157cc",
+        "filename": "luci_notify/config/config.go",
+        "patchSetId": 39
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-06-15T21:14:17Z",
+      "side": 1,
+      "message": "yeah, I put up another CL fixing this.",
+      "parentUuid": "43d0f5b8_03869b8a",
+      "revId": "0a4b278450e40b0dcb8f8cfd854720bb58b295ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
