@@ -1851,3 +1851,103 @@ func TestResolveVersion(t *testing.T) {
 		})
 	})
 }
+
+func TestGetInstanceURL(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		cas := testutil.MockCAS{}
+		impl := repoImpl{meta: &meta, cas: &cas}
+
+		inst := &model.Instance{
+			InstanceID:   strings.Repeat("1", 40),
+			Package:      model.PackageKey(ctx, "a/pkg"),
+			RegisteredBy: "user:1@example.com",
+		}
+		So(datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), ShouldBeNil)
+
+		Convey("Happy path", func() {
+			mockedObjURL := &api.ObjectURL{SignedUrl: "http://example.com"}
+
+			cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+				So(r, ShouldResembleProto, &api.GetObjectURLRequest{
+					Object: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: inst.InstanceID,
+					},
+				})
+				return mockedObjURL, nil
+			}
+
+			resp, err := impl.GetInstanceURL(ctx, inst.Proto())
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, mockedObjURL)
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+				Package:  "///",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'package'")
+		})
+
+		Convey("Bad instance", func() {
+			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+				Package: "a/pkg",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: "huh",
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'instance'")
+		})
+
+		Convey("No access", func() {
+			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+				Package:  "b",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+		})
+
+		Convey("Missing package", func() {
+			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+				Package:  "a/missing",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Missing instance", func() {
+			_, err := impl.GetInstanceURL(ctx, &api.Instance{
+				Package: "a/pkg",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("f", 40),
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+	})
+}

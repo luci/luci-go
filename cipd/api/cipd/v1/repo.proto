@@ -280,6 +280,14 @@ service Repository {
   //   NOT_FOUND if there's no such package or version.
   //   FAILED_PRECONDITION if the tag resolves to multiple instances.
   rpc ResolveVersion(ResolveVersionRequest) returns (Instance);
+
+  // Produces a signed URL that can be used to fetch the package instance file.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a READER for the prefix.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if there's no such instance.
+  rpc GetInstanceURL(Instance) returns (ObjectURL);
 }
 
 

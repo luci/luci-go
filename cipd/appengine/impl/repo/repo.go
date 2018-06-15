@@ -978,3 +978,33 @@ func (impl *repoImpl) ResolveVersion(c context.Context, r *api.ResolveVersionReq
 	}
 	return inst.Proto(), nil
 }
+
+// GetInstanceURL implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.Instance) (resp *api.ObjectURL, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Make sure this instance actually exists (without this check the caller
+	// would be able to "probe" CAS namespace unrestricted).
+	inst := (&model.Instance{}).FromProto(c, r)
+	if err := model.CheckInstanceExists(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Ask CAS generate an URL for us. Note that CAS does caching internally.
+	return impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object: r.Instance,
+	})
+}
