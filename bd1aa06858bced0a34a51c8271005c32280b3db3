@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8eb9749d_fd356915",
+        "filename": "luci_notify/notify/pubsub.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 394,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-15T23:25:51Z",
+      "side": 1,
+      "message": "mind splitting the line? barely fits even on my 27\u0027 wide monitor",
+      "range": {
+        "startLine": 394,
+        "startChar": 61,
+        "endLine": 394,
+        "endChar": 62
+      },
+      "revId": "bd1aa06858bced0a34a51c8271005c32280b3db3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
