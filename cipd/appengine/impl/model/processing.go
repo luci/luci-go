@@ -129,9 +129,12 @@ func (p *ProcessingResult) Proto() (*api.Processor, error) {
 
 	if p.Success {
 		out.State = api.Processor_SUCCEEDED
-		out.Result = &structpb.Struct{}
-		if err := p.ReadResultIntoStruct(out.Result); err != nil {
+		res := &structpb.Struct{}
+		if err := p.ReadResultIntoStruct(res); err != nil {
 			return nil, err
+		}
+		if len(res.Fields) != 0 {
+			out.Result = res
 		}
 	} else {
 		out.State = api.Processor_FAILED

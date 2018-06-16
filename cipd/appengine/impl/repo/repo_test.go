@@ -1724,7 +1724,7 @@ func TestTags(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Version resolution and instance fetching.
+// Version resolution and instance info fetching.
 
 func TestResolveVersion(t *testing.T) {
 	t.Parallel()
@@ -1945,6 +1945,166 @@ func TestGetInstanceURL(t *testing.T) {
 
 		Convey("Missing instance", func() {
 			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+				Package: "a/pkg",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("f", 40),
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such instance")
+		})
+	})
+}
+
+func TestDescribeInstance(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
+
+		ctx := gaetesting.TestingContext()
+		ctx, _ = testclock.UseTime(ctx, testTime)
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		inst := &model.Instance{
+			InstanceID:   strings.Repeat("1", 40),
+			Package:      model.PackageKey(ctx, "a/pkg"),
+			RegisteredBy: "user:1@example.com",
+		}
+		So(datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), ShouldBeNil)
+
+		Convey("Happy path, basic info", func() {
+			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package:  "a/pkg",
+				Instance: inst.Proto().Instance,
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.DescribeInstanceResponse{
+				Instance: inst.Proto(),
+			})
+		})
+
+		Convey("Happy path, full info", func() {
+			model.AttachTags(ctx, inst, []*api.Tag{
+				{Key: "a", Value: "0"},
+				{Key: "a", Value: "1"},
+			}, "user:tag@example.com")
+
+			model.SetRef(ctx, "ref_a", inst, "user:ref@example.com")
+			model.SetRef(ctx, "ref_b", inst, "user:ref@example.com")
+
+			inst.ProcessorsSuccess = []string{"proc"}
+			datastore.Put(ctx, inst, &model.ProcessingResult{
+				ProcID:    "proc",
+				Instance:  datastore.KeyForObj(ctx, inst),
+				Success:   true,
+				CreatedTs: testTime,
+			})
+
+			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package:            "a/pkg",
+				Instance:           inst.Proto().Instance,
+				DescribeTags:       true,
+				DescribeRefs:       true,
+				DescribeProcessors: true,
+			})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResembleProto, &api.DescribeInstanceResponse{
+				Instance: inst.Proto(),
+				Tags: []*api.Tag{
+					{
+						Key:        "a",
+						Value:      "0",
+						AttachedBy: "user:tag@example.com",
+						AttachedTs: google.NewTimestamp(testTime),
+					},
+					{
+						Key:        "a",
+						Value:      "1",
+						AttachedBy: "user:tag@example.com",
+						AttachedTs: google.NewTimestamp(testTime),
+					},
+				},
+				Refs: []*api.Ref{
+					{
+						Name:       "ref_a",
+						ModifiedBy: "user:ref@example.com",
+						ModifiedTs: google.NewTimestamp(testTime),
+					},
+					{
+						Name:       "ref_b",
+						ModifiedBy: "user:ref@example.com",
+						ModifiedTs: google.NewTimestamp(testTime),
+					},
+				},
+				Processors: []*api.Processor{
+					{
+						Id:         "proc",
+						State:      api.Processor_SUCCEEDED,
+						FinishedTs: google.NewTimestamp(testTime),
+					},
+				},
+			})
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package:  "///",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'package'")
+		})
+
+		Convey("Bad instance", func() {
+			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package: "a/pkg",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: "huh",
+				},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'instance'")
+		})
+
+		Convey("No access", func() {
+			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package:  "b",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+		})
+
+		Convey("Missing package", func() {
+			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+				Package:  "a/missing",
+				Instance: inst.Proto().Instance,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Missing instance", func() {
+			_, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
 				Package: "a/pkg",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,
