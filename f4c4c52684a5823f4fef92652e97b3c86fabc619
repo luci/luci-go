@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "796817eb_5e3b2f69",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 893,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-16T03:17:27Z",
+      "side": 0,
+      "message": "this was extracted into validateTagList(), but Gerrit misunderstood",
+      "range": {
+        "startLine": 885,
+        "startChar": 0,
+        "endLine": 893,
+        "endChar": 2
+      },
+      "revId": "f4c4c52684a5823f4fef92652e97b3c86fabc619",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
