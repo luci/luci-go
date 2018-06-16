@@ -536,6 +536,14 @@ func (m *mockedRepoClient) ListInstances(ctx context.Context, in *api.ListInstan
 	return out.(*api.ListInstancesResponse), nil
 }
 
+func (m *mockedRepoClient) QueryInstances(ctx context.Context, in *api.QueryInstancesRequest, opts ...grpc.CallOption) (*api.QueryInstancesResponse, error) {
+	out, err := m.call("QueryInstances", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.QueryInstancesResponse), nil
+}
+
 func (m *mockedRepoClient) CreateRef(ctx context.Context, in *api.Ref, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out, err := m.call("CreateRef", in, opts)
 	if err != nil {
