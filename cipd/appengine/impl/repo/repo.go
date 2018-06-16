@@ -1016,5 +1016,71 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.GetInstanceURLReq
 func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanceRequest) (resp *api.DescribeInstanceResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Make sure this instance exists and fetch basic details about it.
+	inst := (&model.Instance{}).FromProto(c, &api.Instance{
+		Package:  r.Package,
+		Instance: r.Instance,
+	})
+	if err := model.CheckInstanceExists(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Fetch the rest based on what the client wants.
+	var refs []*model.Ref
+	var tags []*model.Tag
+	var proc []*api.Processor
+	err = parallel.FanOutIn(func(tasks chan<- func() error) {
+		if r.DescribeRefs {
+			tasks <- func() error {
+				var err error
+				refs, err = model.ListInstanceRefs(c, inst)
+				return errors.Annotate(err, "failed to fetch refs").Err()
+			}
+		}
+		if r.DescribeTags {
+			tasks <- func() error {
+				var err error
+				tags, err = model.ListInstanceTags(c, inst)
+				return errors.Annotate(err, "failed to fetch tags").Err()
+			}
+		}
+		if r.DescribeProcessors {
+			tasks <- func() error {
+				var err error
+				proc, err = model.FetchProcessors(c, inst)
+				return errors.Annotate(err, "failed to fetch processors").Err()
+			}
+		}
+	})
+	if err != nil {
+		return nil, err // note: this is always Internal error
+	}
+
+	// Assemble the resulting proto.
+	resp = &api.DescribeInstanceResponse{
+		Instance:   inst.Proto(),
+		Refs:       make([]*api.Ref, len(refs)),
+		Tags:       make([]*api.Tag, len(tags)),
+		Processors: proc,
+	}
+	for i, r := range refs {
+		resp.Refs[i] = r.Proto()
+	}
+	for i, t := range tags {
+		resp.Tags[i] = t.Proto()
+	}
+	return resp, nil
 }
