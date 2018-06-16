@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -83,6 +84,17 @@ func TestTags(t *testing.T) {
 				RegisteredTs: testTime,
 			}
 		}
+
+		Convey("Proto() works", func() {
+			inst := putInst("pkg", digest, nil)
+			t := expectedTag(inst, "k:v", "user:abc@example.com")
+			So(t.Proto(), ShouldResembleProto, &api.Tag{
+				Key:        "k",
+				Value:      "v",
+				AttachedBy: "user:abc@example.com",
+				AttachedTs: google.NewTimestamp(testTime),
+			})
+		})
 
 		Convey("AttachTags happy paths", func() {
 			inst := putInst("pkg", digest, nil)
