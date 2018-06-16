@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d4bf4c3a_81c8acc6",
+        "filename": "cipd/appengine/impl/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-16T16:36:21Z",
+      "side": 1,
+      "message": "consider: add a variable, say `fetched`, which is a sum of len(items returned by queryByTag).\neach time you need more, compute p\u003dP(an item returned by queryByTag will end up in out)\u003dlen(out)/fetched. Initially, start with p\u003d1. Then divide `want` by p, here.\n\nmaybe log the final p after the loop",
+      "parentUuid": "62d890d7_ff257ba3",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "2cb3f2ff4cfa9b6821013387d5469179eed63ac6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f27fe393_b55c407d",
         "filename": "cipd/appengine/impl/model/query.go",
         "patchSetId": 3
