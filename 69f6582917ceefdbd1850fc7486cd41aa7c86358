@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b44d0df1_c747d7e5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-16T04:21:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa5c75f1_cb3ae751",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 23,
+        "endChar": 0
+      },
+      "revId": "69f6582917ceefdbd1850fc7486cd41aa7c86358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8d513abd_a61bd381",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 1
