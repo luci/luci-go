@@ -17,6 +17,7 @@ package model
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
@@ -63,6 +65,22 @@ type Tag struct {
 	Tag          string    `gae:"tag"`           // the tag itself, as "k:v" pair
 	RegisteredBy string    `gae:"registered_by"` // who added this tag
 	RegisteredTs time.Time `gae:"registered_ts"` // when it was added
+}
+
+// Proto returns cipd.Tag proto with information from this entity.
+//
+// Assumes the tag is valid.
+func (t *Tag) Proto() *api.Tag {
+	kv := strings.SplitN(t.Tag, ":", 2)
+	if len(kv) != 2 {
+		panic(fmt.Sprintf("bad tag %q", t.Tag))
+	}
+	return &api.Tag{
+		Key:        kv[0],
+		Value:      kv[1],
+		AttachedBy: t.RegisteredBy,
+		AttachedTs: google.NewTimestamp(t.RegisteredTs),
+	}
 }
 
 // TagID calculates Tag entity ID (SHA1 digest) from the given tag.

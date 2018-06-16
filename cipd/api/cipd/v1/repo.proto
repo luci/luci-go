@@ -555,6 +555,11 @@ message Tag {
   string key = 1;
   // Value can be an arbitrary string.
   string value = 2;
+
+  // User that attached this tag (output only).
+  string attached_by = 3;
+  // When the tag was attached (output only).
+  google.protobuf.Timestamp attached_ts = 4;
 }
 
 
