@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "159f651d_1df608bf",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-17T19:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3ce74ab_001075b7",
+      "range": {
+        "startLine": 188,
+        "startChar": 5,
+        "endLine": 191,
+        "endChar": 71
+      },
+      "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dac04891_ccc96d2a",
         "filename": "cipd/api/cipd/v1/repo.proto",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3dfaf479_8b4fa858",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-17T19:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dac04891_ccc96d2a",
+      "range": {
+        "startLine": 197,
+        "startChar": 6,
+        "endLine": 197,
+        "endChar": 11
+      },
+      "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "4d54bdf5_fcea3104",
+        "filename": "cipd/appengine/impl/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-17T19:04:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c42bf85e_e028a2ff",
+      "range": {
+        "startLine": 31,
+        "startChar": 61,
+        "endLine": 31,
+        "endChar": 64
+      },
+      "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "28f8a550_df3ad66b",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "f55db6ed_f300bd4e",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 748,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-17T19:04:10Z",
+      "side": 1,
+      "message": "Yes. I do not want to force pagination on clients until it becomes necessary (i.e. until we detect that search queries time out or OOM).",
+      "parentUuid": "28f8a550_df3ad66b",
+      "range": {
+        "startLine": 748,
+        "startChar": 1,
+        "endLine": 748,
+        "endChar": 2
+      },
+      "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8f91781c_d76248d9",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3
@@ -108,6 +204,24 @@
       "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f37ae119_52345aca",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 820,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-17T19:04:10Z",
+      "side": 1,
+      "message": "Yes, it is important for consistent error messages across all calls. If all calls fail on bad package name first, and SearchInstances suddenly \"accepts\" it and fails on bad tag instead, it looks bad.",
+      "parentUuid": "8f91781c_d76248d9",
+      "revId": "670b165a7ea610d1a815b3d88e2e5d4e08ee004f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
