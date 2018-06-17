@@ -723,58 +723,113 @@ func (impl *repoImpl) updateProcessors(c context.Context, inst *api.Instance, re
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Instance listing.
+// Instance listing and querying.
+
+type paginatedQueryOpts struct {
+	Package   string
+	PageToken string
+	PageSize  int32
+	Validator func() error // validates callback-specific fields in the request
+	Handler   func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error)
+}
+
+// paginatedQuery is a common part of ListInstances and SearchInstances.
+func (impl *repoImpl) paginatedQuery(c context.Context, opts paginatedQueryOpts) (out []*api.Instance, nextTok string, err error) {
+	// Validate the request, decode the cursor.
+	if err := common.ValidatePackageName(opts.Package); err != nil {
+		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+
+	switch {
+	case opts.PageSize < 0:
+		return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_size' %d - it should be non-negative", opts.PageSize)
+	case opts.PageSize == 0:
+		opts.PageSize = 100
+	}
+
+	var cursor datastore.Cursor
+	if opts.PageToken != "" {
+		if cursor, err = datastore.DecodeCursor(c, opts.PageToken); err != nil {
+			return nil, "", status.Errorf(codes.InvalidArgument, "bad 'page_token' - %s", err)
+		}
+	}
+
+	if opts.Validator != nil {
+		if err := opts.Validator(); err != nil {
+			return nil, "", err
+		}
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, opts.Package, api.Role_READER); err != nil {
+		return nil, "", err
+	}
+
+	// Check that the package is registered.
+	if err := model.CheckPackageExists(c, opts.Package); err != nil {
+		return nil, "", err
+	}
+
+	// Do the actual listing.
+	inst, cursor, err := opts.Handler(cursor, opts.PageSize)
+	if err != nil {
+		return nil, "", errors.Annotate(err, "failed to query instances").Err()
+	}
+
+	// Convert results to proto.
+	out = make([]*api.Instance, len(inst))
+	for i, ent := range inst {
+		out[i] = ent.Proto()
+	}
+	if cursor != nil {
+		nextTok = cursor.String()
+	}
+	return
+}
 
 // ListInstances implements the corresponding RPC method, see the proto doc.
 func (impl *repoImpl) ListInstances(c context.Context, r *api.ListInstancesRequest) (resp *api.ListInstancesResponse, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	// Validate the request, decode the cursor.
-	if err := common.ValidatePackageName(r.Package); err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
-	}
-
-	switch {
-	case r.PageSize < 0:
-		return nil, status.Errorf(codes.InvalidArgument, "bad 'page_size' %d - it should be non-negative", r.PageSize)
-	case r.PageSize == 0:
-		r.PageSize = 100
-	}
-
-	var cursor datastore.Cursor
-	if r.PageToken != "" {
-		if cursor, err = datastore.DecodeCursor(c, r.PageToken); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, "bad 'page_token' - %s", err)
-		}
-	}
-
-	// Check ACLs.
-	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
-		return nil, err
-	}
-
-	// Check that the package is registered.
-	if err := model.CheckPackageExists(c, r.Package); err != nil {
-		return nil, err
-	}
-
-	// Do the actual listing.
-	inst, cursor, err := model.ListInstances(c, r.Package, r.PageSize, cursor)
+	result, nextPage, err := impl.paginatedQuery(c, paginatedQueryOpts{
+		Package:   r.Package,
+		PageSize:  r.PageSize,
+		PageToken: r.PageToken,
+		Handler: func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error) {
+			return model.ListInstances(c, r.Package, pageSize, cur)
+		},
+	})
 	if err != nil {
-		return nil, errors.Annotate(err, "failed to list instances").Err()
+		return nil, err
 	}
 
-	// Convert results to proto.
-	resp = &api.ListInstancesResponse{
-		Instances: make([]*api.Instance, len(inst)),
+	return &api.ListInstancesResponse{
+		Instances:     result,
+		NextPageToken: nextPage,
+	}, nil
+}
+
+// SearchInstances implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) SearchInstances(c context.Context, r *api.SearchInstancesRequest) (resp *api.SearchInstancesResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	result, nextPage, err := impl.paginatedQuery(c, paginatedQueryOpts{
+		Package:   r.Package,
+		PageSize:  r.PageSize,
+		PageToken: r.PageToken,
+		Validator: func() error { return validateTagList(r.Tags) },
+		Handler: func(cur datastore.Cursor, pageSize int32) ([]*model.Instance, datastore.Cursor, error) {
+			return model.SearchInstances(c, r.Package, r.Tags, pageSize, cur)
+		},
+	})
+	if err != nil {
+		return nil, err
 	}
-	for i, ent := range inst {
-		resp.Instances[i] = ent.Proto()
-	}
-	if cursor != nil {
-		resp.NextPageToken = cursor.String()
-	}
-	return resp, nil
+
+	return &api.SearchInstancesResponse{
+		Instances:     result,
+		NextPageToken: nextPage,
+	}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -875,13 +930,7 @@ func (impl *repoImpl) ListRefs(c context.Context, r *api.ListRefsRequest) (resp 
 ////////////////////////////////////////////////////////////////////////////////
 // Tags support.
 
-func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error {
-	if err := common.ValidatePackageName(pkg); err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
-	}
-	if err := cas.ValidateObjectRef(inst); err != nil {
-		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
-	}
+func validateTagList(tags []*api.Tag) error {
 	if len(tags) == 0 {
 		return status.Errorf(codes.InvalidArgument, "bad 'tags' - cannot be empty")
 	}
@@ -892,6 +941,16 @@ func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error
 		}
 	}
 	return nil
+}
+
+func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error {
+	if err := common.ValidatePackageName(pkg); err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if err := cas.ValidateObjectRef(inst); err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+	return validateTagList(tags)
 }
 
 // AttachTags implements the corresponding RPC method, see the proto doc.
