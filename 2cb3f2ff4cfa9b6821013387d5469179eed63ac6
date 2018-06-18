@@ -193,6 +193,30 @@
     },
     {
       "key": {
+        "uuid": "30e789f0_bc78e150",
+        "filename": "cipd/appengine/impl/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-18T17:01:40Z",
+      "side": 1,
+      "message": "ok, we can optimize this later. The protocol is fine.",
+      "parentUuid": "80525139_0dcd9c8f",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "2cb3f2ff4cfa9b6821013387d5469179eed63ac6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f27fe393_b55c407d",
         "filename": "cipd/appengine/impl/model/query.go",
         "patchSetId": 3
