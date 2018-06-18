@@ -169,6 +169,30 @@
     },
     {
       "key": {
+        "uuid": "80525139_0dcd9c8f",
+        "filename": "cipd/appengine/impl/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-18T16:46:19Z",
+      "side": 1,
+      "message": "It is slow only in degenerate cases. Docs for SearchInstances warn that most of the filtering should be done based on the first tag. \n\nAlso even if we switch to registered_ts, it won\u0027t change much. Yes, we could fetch 200 instead of 100, assuming half will be filtered out. But all 200 could be filtered out too, and we are back to where we\u0027ve started. \n\nThe real solution would be some kind of a restructure of the datastore schema, so filtering is done by datastore for us. I\u0027m punting on this for now. In practice \u0027cipd search\u0027 is used extremely infrequently.",
+      "parentUuid": "c3a74ced_393f1841",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "2cb3f2ff4cfa9b6821013387d5469179eed63ac6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f27fe393_b55c407d",
         "filename": "cipd/appengine/impl/model/query.go",
         "patchSetId": 3
