@@ -173,7 +173,7 @@ func TestListInstances(t *testing.T) {
 		}
 
 		Convey("Full listing", func() {
-			out, cur, err := ListInstances(ctx, "a/b", 0, nil)
+			out, cur, err := ListInstances(ctx, "a/b", 100, nil)
 			So(err, ShouldBeNil)
 			So(cur, ShouldBeNil)
 			So(out, ShouldResemble, []*Instance{inst(3), inst(2), inst(1), inst(0)})
