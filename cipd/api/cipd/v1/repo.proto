@@ -180,6 +180,17 @@ service Repository {
   // If the package doesn't exist, returns NOT_FOUND.
   rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
 
+  // Returns package instances that have all given tags attached.
+  //
+  // Queries only instances of some particular package (i.e. this is not a
+  // global query).
+  //
+  // Callers must have roles READER (or above) for the package prefix. Returns
+  // PERMISSION_DENIED otherwise.
+  //
+  // If the package doesn't exist, returns NOT_FOUND.
+  rpc SearchInstances(SearchInstancesRequest) returns (SearchInstancesResponse);
+
   // Creates a new ref or moves an existing one.
   //
   // A ref is a mutable named pointer to some existing package instance that
@@ -495,6 +506,41 @@ message ListInstancesResponse {
 
   // Value to pass as 'page_token' in ListInstancesRequest to resume fetching or
   // empty string if there's no more results.
+  string next_page_token = 20;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message SearchInstancesRequest {
+  // Name of a package to query instances of (required).
+  string package = 1;
+
+  // Tags to look for (the found instances have ALL these tags attached).
+  //
+  // Due to internal limitations, the query is most efficient only when it
+  // specifies one tag to filter by. All additional tags are checked in a
+  // separate step after the initial query. For that reason when searching for
+  // multiple tags it is better to specify the most limiting tags first.
+  repeated Tag tags = 2;
+
+  // Number of instances to return on one page, default is 100.
+  int32 page_size = 20;
+
+  // Value of 'next_page_token' from the previous response.
+  //
+  // Can be used to resume fetching.
+  string page_token = 21;
+}
+
+
+message SearchInstancesResponse {
+  // Package instances, sorted by registration time, most recent first.
+  repeated Instance instances = 1;
+
+  // Value to pass as 'page_token' in SearchInstancesRequest to resume fetching
+  // or empty string if there's no more results.
   string next_page_token = 20;
 }
 

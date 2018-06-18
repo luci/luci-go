@@ -1086,7 +1086,7 @@ func (m *mockedProcessor) Run(_ context.Context, i *model.Instance, r *processin
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Instance listing.
+// Instance listing and querying.
 
 func TestListInstances(t *testing.T) {
 	t.Parallel()
@@ -1214,6 +1214,104 @@ func TestListInstances(t *testing.T) {
 			So(res, ShouldResembleProto, &api.ListInstancesResponse{
 				Instances: []*api.Instance{inst(0)},
 			})
+		})
+	})
+}
+
+func TestSearchInstances(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		datastore.GetTestable(ctx).AutoIndex(true)
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("Bad package name", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "///",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid package name")
+		})
+
+		Convey("Bad page size", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package:  "a/b",
+				PageSize: -1,
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "it should be non-negative")
+		})
+
+		Convey("Bad page token", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package:   "a/b",
+				PageToken: "zzzz",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid cursor")
+		})
+
+		Convey("No tags specified", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "a/b",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "bad 'tags' - cannot be empty")
+		})
+
+		Convey("Bad tag given", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "a/b",
+				Tags:    []*api.Tag{{Key: "", Value: "zz"}},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, `bad tag in 'tags' - invalid tag key in ":zz"`)
+		})
+
+		Convey("No access", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "z",
+				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+		})
+
+		Convey("No package", func() {
+			_, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "a/missing",
+				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+		})
+
+		Convey("Empty results", func() {
+			// TODO
+		})
+
+		Convey("Full listing (no pagination)", func() {
+			// TODO
+		})
+
+		Convey("Listing with pagination", func() {
+			// TODO
 		})
 	})
 }
