@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "49f2bb0e_cdc77489",
+        "filename": "cipd/appengine/impl/model/query.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-18T15:38:40Z",
+      "side": 1,
+      "message": "i confused k and T. I meant, if T\u003e1 (and k\u003c1). L71 fetches exactly the number of items it needs to add to out, hoping that those items will not be filtered out in L101-109. This is naive. Imagine that you need to fetch 100 items, you have 99. You fetch one. It doesn\u0027t have the aux tags. Next time you fetch one again, etc. This is a version of https://en.wikipedia.org/wiki/Achilles%20and%20the%20tortoise\n\nplease upload new patchset",
+      "parentUuid": "cb10c286_5154a946",
+      "range": {
+        "startLine": 71,
+        "startChar": 58,
+        "endLine": 71,
+        "endChar": 62
+      },
+      "revId": "2cb3f2ff4cfa9b6821013387d5469179eed63ac6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f27fe393_b55c407d",
         "filename": "cipd/appengine/impl/model/query.go",
         "patchSetId": 3
