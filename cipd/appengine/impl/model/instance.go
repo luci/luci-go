@@ -181,19 +181,23 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 //
 // Only does a query over Instances entities. Doesn't check whether the Package
 // entity exists. Returns up to pageSize entities, plus non-nil cursor (if
-// there are more results). If pageSize is <= 0, will fetch all entities.
+// there are more results). pageSize must be positive.
 func ListInstances(c context.Context, pkg string, pageSize int32, cursor datastore.Cursor) (out []*Instance, nextCur datastore.Cursor, err error) {
-	q := datastore.NewQuery("PackageInstance").Ancestor(PackageKey(c, pkg))
-	q = q.Order("-registered_ts")
-	if pageSize > 0 {
-		q = q.Limit(pageSize)
+	if pageSize <= 0 {
+		panic("pageSize must be positive")
 	}
+
+	q := datastore.NewQuery("PackageInstance").
+		Ancestor(PackageKey(c, pkg)).
+		Order("-registered_ts").
+		Limit(pageSize)
 	if cursor != nil {
 		q = q.Start(cursor)
 	}
+
 	err = datastore.Run(c, q, func(ent *Instance, cb datastore.CursorCB) error {
 		out = append(out, ent)
-		if pageSize != 0 && len(out) >= int(pageSize) {
+		if len(out) >= int(pageSize) {
 			if nextCur, err = cb(); err != nil {
 				return err
 			}
