@@ -1222,6 +1222,7 @@ func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx := gaetesting.TestingContext()
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:reader@example.com",
@@ -1240,6 +1241,43 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+
+		put := func(when int, iid string, tags ...string) {
+			inst := &model.Instance{
+				InstanceID:   iid,
+				Package:      model.PackageKey(ctx, "a/b"),
+				RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+			}
+			ents := make([]*model.Tag, len(tags))
+			for i, t := range tags {
+				ents[i] = &model.Tag{
+					ID:           model.TagID(common.MustParseInstanceTag(t)),
+					Instance:     datastore.KeyForObj(ctx, inst),
+					Tag:          t,
+					RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+				}
+			}
+			So(datastore.Put(ctx, inst, ents), ShouldBeNil)
+		}
+
+		iid := func(i int) string {
+			ch := string([]byte{'0' + byte(i)})
+			return strings.Repeat(ch, 40)
+		}
+
+		ids := func(inst []*api.Instance) []string {
+			out := make([]string, len(inst))
+			for i, obj := range inst {
+				out[i] = model.ObjectRefToInstanceID(obj.Instance)
+			}
+			return out
+		}
+
+		expectedIIDs := make([]string, 10)
+		for i := 0; i < 10; i++ {
+			put(i, iid(i), "a:b")
+			expectedIIDs[9-i] = iid(i) // sorted by creation time, most recent first
+		}
 
 		impl := repoImpl{meta: &meta}
 
@@ -1303,15 +1341,44 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		Convey("Empty results", func() {
-			// TODO
+			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "a/b",
+				Tags:    []*api.Tag{{Key: "a", Value: "missing"}},
+			})
+			So(err, ShouldBeNil)
+			So(ids(out.Instances), ShouldHaveLength, 0)
+			So(out.NextPageToken, ShouldEqual, "")
 		})
 
 		Convey("Full listing (no pagination)", func() {
-			// TODO
+			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package: "a/b",
+				Tags:    []*api.Tag{{Key: "a", Value: "b"}},
+			})
+			So(err, ShouldBeNil)
+			So(ids(out.Instances), ShouldResemble, expectedIIDs)
+			So(out.NextPageToken, ShouldEqual, "")
 		})
 
 		Convey("Listing with pagination", func() {
-			// TODO
+			out, err := impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package:  "a/b",
+				Tags:     []*api.Tag{{Key: "a", Value: "b"}},
+				PageSize: 6,
+			})
+			So(err, ShouldBeNil)
+			So(ids(out.Instances), ShouldResemble, expectedIIDs[:6])
+			So(out.NextPageToken, ShouldNotEqual, "")
+
+			out, err = impl.SearchInstances(ctx, &api.SearchInstancesRequest{
+				Package:   "a/b",
+				Tags:      []*api.Tag{{Key: "a", Value: "b"}},
+				PageSize:  6,
+				PageToken: out.NextPageToken,
+			})
+			So(err, ShouldBeNil)
+			So(ids(out.Instances), ShouldResemble, expectedIIDs[6:])
+			So(out.NextPageToken, ShouldEqual, "")
 		})
 	})
 }
