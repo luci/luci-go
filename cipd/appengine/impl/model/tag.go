@@ -231,7 +231,18 @@ func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exis
 			Instance: instKey,
 		}
 	}
+	return fetchTags(c, tagEnts, func(i int) *api.Tag { return tags[i] })
+}
 
+// fetchTags fetches given tag entities and categorized them into existing and
+// missing ones.
+//
+// The entities doesn't have to be in same entity group.
+//
+// Checks 'Tag' field on existing tags (by comparing it to what 'expectedTag'
+// callback returns for the corresponding index), thus safeguarding against
+// malicious SHA1 collisions in TagID().
+func fetchTags(c context.Context, tagEnts []*Tag, expectedTag func(idx int) *api.Tag) (exist, miss []*Tag, err error) {
 	// Try to grab all entities and bail on unexpected errors.
 	existCount := 0
 	missCount := 0
@@ -247,11 +258,11 @@ func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exis
 			case datastore.ErrNoSuchEntity:
 				missCount++
 			default:
-				return nil, nil, errors.Annotate(err, "failed to fetch tag %q", tags[i]).Tag(transient.Tag).Err()
+				return nil, nil, errors.Annotate(err, "failed to fetch tag with ID", tagEnts[i].ID).Tag(transient.Tag).Err()
 			}
 		}
 	} else {
-		existCount = len(tags)
+		existCount = len(tagEnts)
 	}
 
 	if existCount != 0 {
@@ -262,7 +273,7 @@ func checkExistingTags(c context.Context, inst *Instance, tags []*api.Tag) (exis
 	}
 
 	for i, ent := range tagEnts {
-		switch kv := common.JoinInstanceTag(tags[i]); {
+		switch kv := common.JoinInstanceTag(expectedTag(i)); {
 		case ent.Tag == kv:
 			exist = append(exist, ent)
 		case ent.Tag == "":
