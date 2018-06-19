@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "db32230e_cc3899cc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T07:30:35Z",
+      "side": 1,
+      "message": "is this C/C++ linux utility? Are you sure this will have the same result with Go implementation?",
+      "range": {
+        "startLine": 17,
+        "startChar": 35,
+        "endLine": 17,
+        "endChar": 38
+      },
+      "revId": "ff4fc663f02737fdad9cceb3a2c4bb6fd5619be4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5339c8c_ac434caf",
+        "filename": "common/isolated/klauspost.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T07:30:35Z",
+      "side": 1,
+      "message": "maruel@ oh wow, it\u0027s still here. Isn\u0027t it time to switch to stdlib?",
+      "revId": "ff4fc663f02737fdad9cceb3a2c4bb6fd5619be4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
