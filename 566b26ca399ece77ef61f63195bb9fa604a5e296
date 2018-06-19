@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73451ec3_6b5a45ed",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T06:40:46Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 9,
+        "startChar": 10,
+        "endLine": 9,
+        "endChar": 11
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5eaac765_a2d033cd",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T06:40:46Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 44,
+        "startChar": 28,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "308a9073_24c9868d",
+        "filename": "cipd/appengine/impl/repo/repo_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 2394,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T06:40:46Z",
+      "side": 1,
+      "message": "if these are stupid, why are you writing them? :)\nI mean 100% coverage is nice feeling, but it\u0027s just that (i\u0027m quite guilty of falling such a trap) -- there isn\u0027t that much value in testing response code here.",
+      "range": {
+        "startLine": 2372,
+        "startChar": 2,
+        "endLine": 2394,
+        "endChar": 4
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
