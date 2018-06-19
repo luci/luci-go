@@ -16,6 +16,24 @@
       "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8807381_49f8e4c6",
+        "filename": "grpc/proto/google/rpc/error_details.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:23:31Z",
+      "side": 1,
+      "message": "this is not Cloud-specific. this is RPC-level standard of including details of an error\nhttps://chromium-review.googlesource.com/c/infra/luci/luci-go/+/833993 essentially requires it\nsee also https://godoc.org/google.golang.org/grpc/status#Status.WithDetails",
+      "parentUuid": "d0ee582b_385b4cad",
+      "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
