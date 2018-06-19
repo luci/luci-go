@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9b523b99_9d1018c7",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T00:46:19Z",
+      "side": 1,
+      "message": "Again, this will not cause a retry. \n\nstatus.Code is part of grpc package that has no idea about our transient tags. So we have two choices here:\n1. \u0027err\u0027 is recognized as grpc error. In this case status.Code(err) will return some status (e.g. NotFound). It also means \u0027err\u0027 is NOT a fancy tagged LUCI error.\n2. \u0027err\u0027 is not recognized as grpc error. In this case status.Code(err) will return either OK (err \u003d\u003d nil) or Unknown (err !\u003d nil). \u0027err\u0027 may be our fancy tagged error.\n\n(1) and (2) are mutually exclusive. Since we rely on detection of NotFound, we probably realize variant (1) here, so errors here are NOT tagged as transient.\n\nDouble check with gitiles package doc what sort of errors does it return.",
+      "range": {
+        "startLine": 428,
+        "startChar": 24,
+        "endLine": 428,
+        "endChar": 60
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77b8a43e_297cee40",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T00:46:19Z",
+      "side": 1,
+      "message": "It would be more readable just to construct the full request from scratch. Otherwise the reader must follow the chain of mutations of \u0027req\u0027.",
+      "range": {
+        "startLine": 448,
+        "startChar": 44,
+        "endLine": 448,
+        "endChar": 47
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
