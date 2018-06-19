@@ -29,5 +29,5 @@ func newZlibReader(r io.Reader) (io.ReadCloser, error) {
 }
 
 func newZlibWriterLevel(w io.Writer, level int) (*zlib.Writer, error) {
-	return zlib.NewWriterLevel(w, level)
+	return zlib.NewWriterLevel(w, zlib.BestSpeed)
 }
