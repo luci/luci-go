@@ -9,6 +9,7 @@ prpc "go.chromium.org/luci/grpc/prpc"
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import status "google.golang.org/genproto/googleapis/rpc/status"
 import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 import (
@@ -56,7 +57,7 @@ func (m *GetBuildRequest) Reset()         { *m = GetBuildRequest{} }
 func (m *GetBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBuildRequest) ProtoMessage()    {}
 func (*GetBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_ac71252ffd11db90, []int{0}
+	return fileDescriptor_rpc_b9a327622b91c283, []int{0}
 }
 func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetBuildRequest.Unmarshal(m, b)
@@ -127,7 +128,7 @@ func (m *SearchBuildsRequest) Reset()         { *m = SearchBuildsRequest{} }
 func (m *SearchBuildsRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsRequest) ProtoMessage()    {}
 func (*SearchBuildsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_ac71252ffd11db90, []int{1}
+	return fileDescriptor_rpc_b9a327622b91c283, []int{1}
 }
 func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsRequest.Unmarshal(m, b)
@@ -193,7 +194,7 @@ func (m *SearchBuildsResponse) Reset()         { *m = SearchBuildsResponse{} }
 func (m *SearchBuildsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsResponse) ProtoMessage()    {}
 func (*SearchBuildsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_ac71252ffd11db90, []int{2}
+	return fileDescriptor_rpc_b9a327622b91c283, []int{2}
 }
 func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsResponse.Unmarshal(m, b)
@@ -225,6 +226,408 @@ func (m *SearchBuildsResponse) GetNextPageToken() string {
 		return m.NextPageToken
 	}
 	return ""
+}
+
+// A request message for Batch rpc.
+type BatchRequest struct {
+	// Requests process in a single batch.
+	//
+	// Requests related to same build are coupled.
+	// Mutation requests are executed transactionally, before read-only requests.
+	Requests             []*BatchRequest_Request `protobuf:"bytes,1,rep,name=requests" json:"requests,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
+}
+
+func (m *BatchRequest) Reset()         { *m = BatchRequest{} }
+func (m *BatchRequest) String() string { return proto.CompactTextString(m) }
+func (*BatchRequest) ProtoMessage()    {}
+func (*BatchRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_b9a327622b91c283, []int{3}
+}
+func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchRequest.Unmarshal(m, b)
+}
+func (m *BatchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchRequest.Marshal(b, m, deterministic)
+}
+func (dst *BatchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest.Merge(dst, src)
+}
+func (m *BatchRequest) XXX_Size() int {
+	return xxx_messageInfo_BatchRequest.Size(m)
+}
+func (m *BatchRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchRequest proto.InternalMessageInfo
+
+func (m *BatchRequest) GetRequests() []*BatchRequest_Request {
+	if m != nil {
+		return m.Requests
+	}
+	return nil
+}
+
+// One request in a batch.
+type BatchRequest_Request struct {
+	// Types that are valid to be assigned to Request:
+	//	*BatchRequest_Request_GetBuild
+	//	*BatchRequest_Request_SearchBuilds
+	Request              isBatchRequest_Request_Request `protobuf_oneof:"request"`
+	XXX_NoUnkeyedLiteral struct{}                       `json:"-"`
+	XXX_unrecognized     []byte                         `json:"-"`
+	XXX_sizecache        int32                          `json:"-"`
+}
+
+func (m *BatchRequest_Request) Reset()         { *m = BatchRequest_Request{} }
+func (m *BatchRequest_Request) String() string { return proto.CompactTextString(m) }
+func (*BatchRequest_Request) ProtoMessage()    {}
+func (*BatchRequest_Request) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_b9a327622b91c283, []int{3, 0}
+}
+func (m *BatchRequest_Request) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchRequest_Request.Unmarshal(m, b)
+}
+func (m *BatchRequest_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchRequest_Request.Marshal(b, m, deterministic)
+}
+func (dst *BatchRequest_Request) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest_Request.Merge(dst, src)
+}
+func (m *BatchRequest_Request) XXX_Size() int {
+	return xxx_messageInfo_BatchRequest_Request.Size(m)
+}
+func (m *BatchRequest_Request) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchRequest_Request.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchRequest_Request proto.InternalMessageInfo
+
+type isBatchRequest_Request_Request interface {
+	isBatchRequest_Request_Request()
+}
+
+type BatchRequest_Request_GetBuild struct {
+	GetBuild *GetBuildRequest `protobuf:"bytes,1,opt,name=get_build,json=getBuild,oneof"`
+}
+type BatchRequest_Request_SearchBuilds struct {
+	SearchBuilds *SearchBuildsRequest `protobuf:"bytes,2,opt,name=search_builds,json=searchBuilds,oneof"`
+}
+
+func (*BatchRequest_Request_GetBuild) isBatchRequest_Request_Request()     {}
+func (*BatchRequest_Request_SearchBuilds) isBatchRequest_Request_Request() {}
+
+func (m *BatchRequest_Request) GetRequest() isBatchRequest_Request_Request {
+	if m != nil {
+		return m.Request
+	}
+	return nil
+}
+
+func (m *BatchRequest_Request) GetGetBuild() *GetBuildRequest {
+	if x, ok := m.GetRequest().(*BatchRequest_Request_GetBuild); ok {
+		return x.GetBuild
+	}
+	return nil
+}
+
+func (m *BatchRequest_Request) GetSearchBuilds() *SearchBuildsRequest {
+	if x, ok := m.GetRequest().(*BatchRequest_Request_SearchBuilds); ok {
+		return x.SearchBuilds
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*BatchRequest_Request) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _BatchRequest_Request_OneofMarshaler, _BatchRequest_Request_OneofUnmarshaler, _BatchRequest_Request_OneofSizer, []interface{}{
+		(*BatchRequest_Request_GetBuild)(nil),
+		(*BatchRequest_Request_SearchBuilds)(nil),
+	}
+}
+
+func _BatchRequest_Request_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*BatchRequest_Request)
+	// request
+	switch x := m.Request.(type) {
+	case *BatchRequest_Request_GetBuild:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.GetBuild); err != nil {
+			return err
+		}
+	case *BatchRequest_Request_SearchBuilds:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.SearchBuilds); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("BatchRequest_Request.Request has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _BatchRequest_Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*BatchRequest_Request)
+	switch tag {
+	case 1: // request.get_build
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(GetBuildRequest)
+		err := b.DecodeMessage(msg)
+		m.Request = &BatchRequest_Request_GetBuild{msg}
+		return true, err
+	case 2: // request.search_builds
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(SearchBuildsRequest)
+		err := b.DecodeMessage(msg)
+		m.Request = &BatchRequest_Request_SearchBuilds{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _BatchRequest_Request_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*BatchRequest_Request)
+	// request
+	switch x := m.Request.(type) {
+	case *BatchRequest_Request_GetBuild:
+		s := proto.Size(x.GetBuild)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchRequest_Request_SearchBuilds:
+		s := proto.Size(x.SearchBuilds)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+// A response message for Batch rpc.
+type BatchResponse struct {
+	// Responses in the same order as BatchRequest.requests.
+	Responses            []*BatchResponse_Response `protobuf:"bytes,1,rep,name=responses" json:"responses,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
+	XXX_unrecognized     []byte                    `json:"-"`
+	XXX_sizecache        int32                     `json:"-"`
+}
+
+func (m *BatchResponse) Reset()         { *m = BatchResponse{} }
+func (m *BatchResponse) String() string { return proto.CompactTextString(m) }
+func (*BatchResponse) ProtoMessage()    {}
+func (*BatchResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_b9a327622b91c283, []int{4}
+}
+func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchResponse.Unmarshal(m, b)
+}
+func (m *BatchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchResponse.Marshal(b, m, deterministic)
+}
+func (dst *BatchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse.Merge(dst, src)
+}
+func (m *BatchResponse) XXX_Size() int {
+	return xxx_messageInfo_BatchResponse.Size(m)
+}
+func (m *BatchResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchResponse proto.InternalMessageInfo
+
+func (m *BatchResponse) GetResponses() []*BatchResponse_Response {
+	if m != nil {
+		return m.Responses
+	}
+	return nil
+}
+
+// Response a BatchRequest.Response.
+type BatchResponse_Response struct {
+	// Types that are valid to be assigned to Response:
+	//	*BatchResponse_Response_GetBuild
+	//	*BatchResponse_Response_SearchBuilds
+	//	*BatchResponse_Response_Error
+	Response             isBatchResponse_Response_Response `protobuf_oneof:"response"`
+	XXX_NoUnkeyedLiteral struct{}                          `json:"-"`
+	XXX_unrecognized     []byte                            `json:"-"`
+	XXX_sizecache        int32                             `json:"-"`
+}
+
+func (m *BatchResponse_Response) Reset()         { *m = BatchResponse_Response{} }
+func (m *BatchResponse_Response) String() string { return proto.CompactTextString(m) }
+func (*BatchResponse_Response) ProtoMessage()    {}
+func (*BatchResponse_Response) Descriptor() ([]byte, []int) {
+	return fileDescriptor_rpc_b9a327622b91c283, []int{4, 0}
+}
+func (m *BatchResponse_Response) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_BatchResponse_Response.Unmarshal(m, b)
+}
+func (m *BatchResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_BatchResponse_Response.Marshal(b, m, deterministic)
+}
+func (dst *BatchResponse_Response) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse_Response.Merge(dst, src)
+}
+func (m *BatchResponse_Response) XXX_Size() int {
+	return xxx_messageInfo_BatchResponse_Response.Size(m)
+}
+func (m *BatchResponse_Response) XXX_DiscardUnknown() {
+	xxx_messageInfo_BatchResponse_Response.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_BatchResponse_Response proto.InternalMessageInfo
+
+type isBatchResponse_Response_Response interface {
+	isBatchResponse_Response_Response()
+}
+
+type BatchResponse_Response_GetBuild struct {
+	GetBuild *Build `protobuf:"bytes,1,opt,name=get_build,json=getBuild,oneof"`
+}
+type BatchResponse_Response_SearchBuilds struct {
+	SearchBuilds *SearchBuildsResponse `protobuf:"bytes,2,opt,name=search_builds,json=searchBuilds,oneof"`
+}
+type BatchResponse_Response_Error struct {
+	Error *status.Status `protobuf:"bytes,100,opt,name=error,oneof"`
+}
+
+func (*BatchResponse_Response_GetBuild) isBatchResponse_Response_Response()     {}
+func (*BatchResponse_Response_SearchBuilds) isBatchResponse_Response_Response() {}
+func (*BatchResponse_Response_Error) isBatchResponse_Response_Response()        {}
+
+func (m *BatchResponse_Response) GetResponse() isBatchResponse_Response_Response {
+	if m != nil {
+		return m.Response
+	}
+	return nil
+}
+
+func (m *BatchResponse_Response) GetGetBuild() *Build {
+	if x, ok := m.GetResponse().(*BatchResponse_Response_GetBuild); ok {
+		return x.GetBuild
+	}
+	return nil
+}
+
+func (m *BatchResponse_Response) GetSearchBuilds() *SearchBuildsResponse {
+	if x, ok := m.GetResponse().(*BatchResponse_Response_SearchBuilds); ok {
+		return x.SearchBuilds
+	}
+	return nil
+}
+
+func (m *BatchResponse_Response) GetError() *status.Status {
+	if x, ok := m.GetResponse().(*BatchResponse_Response_Error); ok {
+		return x.Error
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*BatchResponse_Response) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _BatchResponse_Response_OneofMarshaler, _BatchResponse_Response_OneofUnmarshaler, _BatchResponse_Response_OneofSizer, []interface{}{
+		(*BatchResponse_Response_GetBuild)(nil),
+		(*BatchResponse_Response_SearchBuilds)(nil),
+		(*BatchResponse_Response_Error)(nil),
+	}
+}
+
+func _BatchResponse_Response_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*BatchResponse_Response)
+	// response
+	switch x := m.Response.(type) {
+	case *BatchResponse_Response_GetBuild:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.GetBuild); err != nil {
+			return err
+		}
+	case *BatchResponse_Response_SearchBuilds:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.SearchBuilds); err != nil {
+			return err
+		}
+	case *BatchResponse_Response_Error:
+		b.EncodeVarint(100<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Error); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("BatchResponse_Response.Response has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _BatchResponse_Response_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*BatchResponse_Response)
+	switch tag {
+	case 1: // response.get_build
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Build)
+		err := b.DecodeMessage(msg)
+		m.Response = &BatchResponse_Response_GetBuild{msg}
+		return true, err
+	case 2: // response.search_builds
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(SearchBuildsResponse)
+		err := b.DecodeMessage(msg)
+		m.Response = &BatchResponse_Response_SearchBuilds{msg}
+		return true, err
+	case 100: // response.error
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(status.Status)
+		err := b.DecodeMessage(msg)
+		m.Response = &BatchResponse_Response_Error{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _BatchResponse_Response_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*BatchResponse_Response)
+	// response
+	switch x := m.Response.(type) {
+	case *BatchResponse_Response_GetBuild:
+		s := proto.Size(x.GetBuild)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchResponse_Response_SearchBuilds:
+		s := proto.Size(x.SearchBuilds)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *BatchResponse_Response_Error:
+		s := proto.Size(x.Error)
+		n += 2 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 // A build predicate.
@@ -259,7 +662,7 @@ func (m *BuildPredicate) Reset()         { *m = BuildPredicate{} }
 func (m *BuildPredicate) String() string { return proto.CompactTextString(m) }
 func (*BuildPredicate) ProtoMessage()    {}
 func (*BuildPredicate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_ac71252ffd11db90, []int{3}
+	return fileDescriptor_rpc_b9a327622b91c283, []int{5}
 }
 func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildPredicate.Unmarshal(m, b)
@@ -332,6 +735,10 @@ func init() {
 	proto.RegisterType((*GetBuildRequest)(nil), "buildbucket.v2.GetBuildRequest")
 	proto.RegisterType((*SearchBuildsRequest)(nil), "buildbucket.v2.SearchBuildsRequest")
 	proto.RegisterType((*SearchBuildsResponse)(nil), "buildbucket.v2.SearchBuildsResponse")
+	proto.RegisterType((*BatchRequest)(nil), "buildbucket.v2.BatchRequest")
+	proto.RegisterType((*BatchRequest_Request)(nil), "buildbucket.v2.BatchRequest.Request")
+	proto.RegisterType((*BatchResponse)(nil), "buildbucket.v2.BatchResponse")
+	proto.RegisterType((*BatchResponse_Response)(nil), "buildbucket.v2.BatchResponse.Response")
 	proto.RegisterType((*BuildPredicate)(nil), "buildbucket.v2.BuildPredicate")
 }
 
@@ -378,6 +785,8 @@ type BuildsClient interface {
 	// will look for builds in "master.chromium" LUCI bucket which probably does
 	// not exist.
 	SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error)
+	// Executes multiple requests in a batch.
+	Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error)
 }
 type buildsPRPCClient struct {
 	client *prpc.Client
@@ -405,6 +814,15 @@ func (c *buildsPRPCClient) SearchBuilds(ctx context.Context, in *SearchBuildsReq
 	return out, nil
 }
 
+func (c *buildsPRPCClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
+	out := new(BatchResponse)
+	err := c.client.Call(ctx, "buildbucket.v2.Builds", "Batch", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 type buildsClient struct {
 	cc *grpc.ClientConn
 }
@@ -425,6 +843,15 @@ func (c *buildsClient) GetBuild(ctx context.Context, in *GetBuildRequest, opts .
 func (c *buildsClient) SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error) {
 	out := new(SearchBuildsResponse)
 	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/SearchBuilds", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *buildsClient) Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error) {
+	out := new(BatchResponse)
+	err := c.cc.Invoke(ctx, "/buildbucket.v2.Builds/Batch", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -464,6 +891,8 @@ type BuildsServer interface {
 	// will look for builds in "master.chromium" LUCI bucket which probably does
 	// not exist.
 	SearchBuilds(context.Context, *SearchBuildsRequest) (*SearchBuildsResponse, error)
+	// Executes multiple requests in a batch.
+	Batch(context.Context, *BatchRequest) (*BatchResponse, error)
 }
 
 func RegisterBuildsServer(s prpc.Registrar, srv BuildsServer) {
@@ -506,6 +935,24 @@ func _Builds_SearchBuilds_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Builds_Batch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BuildsServer).Batch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buildbucket.v2.Builds/Batch",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BuildsServer).Batch(ctx, req.(*BatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Builds_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "buildbucket.v2.Builds",
 	HandlerType: (*BuildsServer)(nil),
@@ -518,52 +965,67 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 			MethodName: "SearchBuilds",
 			Handler:    _Builds_SearchBuilds_Handler,
 		},
+		{
+			MethodName: "Batch",
+			Handler:    _Builds_Batch_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "go.chromium.org/luci/buildbucket/proto/rpc.proto",
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_ac71252ffd11db90)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_b9a327622b91c283)
 }
 
-var fileDescriptor_rpc_ac71252ffd11db90 = []byte{
-	// 580 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0xad, 0x93, 0xaf, 0x69, 0x3a, 0x69, 0x53, 0x69, 0xda, 0x0f, 0x0d, 0xe6, 0xcf, 0x04, 0x84,
-	0xbc, 0xc1, 0x01, 0x17, 0xb1, 0x00, 0x56, 0x69, 0xa1, 0x62, 0x01, 0xaa, 0xa6, 0x5d, 0xc1, 0xc2,
-	0xf2, 0xcf, 0xad, 0x33, 0x8a, 0xff, 0x98, 0x19, 0xa3, 0xb6, 0xaf, 0x84, 0x78, 0x0a, 0x5e, 0x8a,
-	0x25, 0xf2, 0xb5, 0x03, 0x4e, 0x13, 0xa1, 0x88, 0x9d, 0x73, 0xee, 0x39, 0x73, 0xcf, 0xb9, 0x77,
-	0x26, 0xe4, 0x59, 0x9c, 0x3b, 0xe1, 0x54, 0xe6, 0xa9, 0x28, 0x53, 0x27, 0x97, 0xf1, 0x38, 0x29,
-	0x43, 0x31, 0x0e, 0x4a, 0x91, 0x44, 0x41, 0x19, 0xce, 0x40, 0x8f, 0x0b, 0x99, 0xeb, 0x7c, 0x2c,
-	0x8b, 0xd0, 0xc1, 0x2f, 0x3a, 0x6c, 0x15, 0x9d, 0xaf, 0xae, 0x69, 0xc5, 0x79, 0x1e, 0x27, 0x50,
-	0xf3, 0x82, 0xf2, 0x62, 0x7c, 0x21, 0x20, 0x89, 0xbc, 0xd4, 0x57, 0xb3, 0x5a, 0x61, 0x1e, 0xae,
-	0xd9, 0x23, 0xcc, 0xd3, 0x34, 0xcf, 0x1a, 0x91, 0xbb, 0xa6, 0x08, 0x91, 0x5a, 0x33, 0xfa, 0x6e,
-	0x90, 0xbd, 0x13, 0xd0, 0x93, 0x0a, 0xe2, 0xf0, 0xa5, 0x04, 0xa5, 0xe9, 0x90, 0x74, 0x44, 0xc4,
-	0x0c, 0xcb, 0xb0, 0xbb, 0xbc, 0x23, 0x22, 0x7a, 0x48, 0xb6, 0x50, 0x02, 0x92, 0x75, 0x2c, 0xc3,
-	0x1e, 0xb8, 0xb7, 0x9d, 0xc5, 0x40, 0xce, 0xa4, 0x2e, 0xbf, 0x3f, 0xe6, 0x73, 0x26, 0x7d, 0x48,
-	0x76, 0xf0, 0xd3, 0xcb, 0xca, 0x34, 0x00, 0xc9, 0xba, 0x96, 0x61, 0x6f, 0xf2, 0x01, 0x62, 0x1f,
-	0x11, 0xa2, 0x2e, 0xe9, 0x61, 0x70, 0xc5, 0x22, 0x3c, 0xd6, 0x74, 0xea, 0xb9, 0x38, 0xf3, 0xb9,
-	0x38, 0xef, 0xaa, 0xf2, 0x07, 0x5f, 0xcd, 0x78, 0xc3, 0x1c, 0xfd, 0x30, 0xc8, 0xfe, 0x19, 0xf8,
-	0x32, 0x9c, 0x62, 0x4f, 0x35, 0xf7, 0xfc, 0x86, 0x6c, 0x17, 0x12, 0x22, 0x11, 0xfa, 0x1a, 0xd0,
-	0xfa, 0xc0, 0xbd, 0xbf, 0xd2, 0xe5, 0xe9, 0x9c, 0xc5, 0xff, 0x08, 0xfe, 0xc5, 0x09, 0xbd, 0x43,
-	0xb6, 0x0b, 0x3f, 0x06, 0x4f, 0x89, 0x6b, 0x60, 0x80, 0xe9, 0xfa, 0x15, 0x70, 0x26, 0xae, 0x81,
-	0xde, 0x23, 0x04, 0x8b, 0x3a, 0x9f, 0x41, 0xc6, 0x2e, 0x2c, 0xc3, 0xde, 0xe6, 0x48, 0x3f, 0xaf,
-	0x80, 0x51, 0x4a, 0x0e, 0x16, 0x43, 0xa8, 0x22, 0xcf, 0x14, 0xd0, 0xa7, 0xa4, 0x87, 0x9e, 0x15,
-	0x33, 0xac, 0xae, 0x3d, 0x70, 0xff, 0x5f, 0x19, 0x81, 0x37, 0x24, 0xfa, 0x84, 0xec, 0x65, 0x70,
-	0xa9, 0xbd, 0x56, 0xab, 0x08, 0x5b, 0xed, 0x56, 0xf0, 0xe9, 0xef, 0x76, 0x3f, 0x3b, 0x64, 0xb8,
-	0x18, 0xbe, 0xbd, 0x53, 0x63, 0xed, 0x9d, 0x3a, 0xa4, 0xa7, 0xb4, 0xaf, 0x4b, 0x85, 0xf7, 0x60,
-	0xe8, 0xde, 0xba, 0xa9, 0x39, 0xc3, 0x2a, 0x6f, 0x58, 0xf4, 0x88, 0x0c, 0x63, 0x90, 0x52, 0x68,
-	0x2f, 0x9c, 0xfa, 0x59, 0x0c, 0x8a, 0x75, 0x31, 0xd6, 0xdd, 0x9b, 0xba, 0x13, 0x64, 0x1d, 0x21,
-	0x89, 0xef, 0xc6, 0xad, 0x5f, 0xaa, 0x1a, 0x65, 0x28, 0xc1, 0xd7, 0x10, 0x79, 0xc1, 0x15, 0xdb,
-	0xac, 0x47, 0xd9, 0x20, 0x93, 0x2b, 0xea, 0x90, 0xff, 0xb4, 0x1f, 0x2b, 0xd6, 0xc3, 0x93, 0xcd,
-	0x65, 0x47, 0x52, 0x64, 0xf1, 0xa9, 0x2f, 0x24, 0x47, 0x1e, 0x7d, 0x45, 0x06, 0xb5, 0xd8, 0xd3,
-	0x22, 0x05, 0xb6, 0xb5, 0x3a, 0xfc, 0xb9, 0x48, 0x81, 0xa3, 0x9b, 0xa6, 0x79, 0x05, 0xd0, 0xe7,
-	0xe4, 0x40, 0x64, 0x61, 0x52, 0x46, 0xe0, 0xc1, 0x65, 0x01, 0x52, 0xa4, 0x90, 0x69, 0x3f, 0x61,
-	0x7d, 0xcb, 0xb0, 0xfb, 0x7c, 0xbf, 0xa9, 0xbd, 0x6d, 0x95, 0xdc, 0x6f, 0x06, 0xe9, 0xd5, 0x4b,
-	0xa6, 0xc7, 0xa4, 0x3f, 0x7f, 0x69, 0xf4, 0xc1, 0xf2, 0x04, 0x16, 0xde, 0xa0, 0xb9, 0x7a, 0xf3,
-	0xa3, 0x0d, 0xfa, 0x99, 0xec, 0xb4, 0xaf, 0x0e, 0x7d, 0xb4, 0x94, 0x78, 0xf9, 0x75, 0x98, 0x8f,
-	0xff, 0x4e, 0xaa, 0x6f, 0xdf, 0x68, 0x63, 0xf2, 0xf2, 0xd3, 0x8b, 0xf5, 0xfe, 0x43, 0x5e, 0xb7,
-	0x90, 0x22, 0x08, 0x7a, 0x08, 0x1e, 0xfe, 0x0a, 0x00, 0x00, 0xff, 0xff, 0xb3, 0xef, 0x64, 0xd0,
-	0x1b, 0x05, 0x00, 0x00,
+var fileDescriptor_rpc_b9a327622b91c283 = []byte{
+	// 768 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xcb, 0x6e, 0xdb, 0x46,
+	0x14, 0x15, 0xa5, 0xea, 0x75, 0xf5, 0x30, 0x30, 0x76, 0x5b, 0x96, 0xb5, 0x5b, 0x95, 0x35, 0x0c,
+	0xa1, 0x40, 0xa9, 0x96, 0x36, 0xba, 0x68, 0x8b, 0xa2, 0x90, 0x5d, 0xd7, 0x6d, 0xd1, 0xc0, 0x18,
+	0x7b, 0x95, 0x2c, 0x08, 0x8a, 0x1c, 0x53, 0x03, 0x89, 0x8f, 0xcc, 0x0c, 0x03, 0xdb, 0xff, 0x12,
+	0x20, 0x3f, 0x90, 0xaf, 0x08, 0xf2, 0x45, 0xde, 0x64, 0x19, 0x70, 0x38, 0xb4, 0xa9, 0x47, 0x1c,
+	0x21, 0x2b, 0x8d, 0xce, 0x3d, 0xf7, 0x71, 0xee, 0xdc, 0x3b, 0x84, 0x9f, 0x82, 0xd8, 0xf2, 0xa6,
+	0x2c, 0x0e, 0x69, 0x1a, 0x5a, 0x31, 0x0b, 0x46, 0xf3, 0xd4, 0xa3, 0xa3, 0x49, 0x4a, 0xe7, 0xfe,
+	0x24, 0xf5, 0x66, 0x44, 0x8c, 0x12, 0x16, 0x8b, 0x78, 0xc4, 0x12, 0xcf, 0x92, 0x27, 0xd4, 0x2f,
+	0x19, 0xad, 0x17, 0xb6, 0x31, 0x08, 0xe2, 0x38, 0x98, 0x93, 0x9c, 0x37, 0x49, 0xaf, 0x46, 0x57,
+	0x94, 0xcc, 0x7d, 0x27, 0x74, 0xf9, 0x2c, 0xf7, 0x30, 0xbe, 0x54, 0x0c, 0x96, 0x78, 0x23, 0x2e,
+	0x5c, 0x91, 0x72, 0x65, 0x38, 0xdc, 0x30, 0xb9, 0x17, 0x87, 0x61, 0x1c, 0x29, 0x27, 0x7b, 0x43,
+	0x27, 0x89, 0xe4, 0x3e, 0xe6, 0x6b, 0x0d, 0xb6, 0xfe, 0x26, 0x62, 0x9c, 0x41, 0x98, 0x3c, 0x4f,
+	0x09, 0x17, 0xa8, 0x0f, 0x55, 0xea, 0xeb, 0xda, 0x40, 0x1b, 0xd6, 0x70, 0x95, 0xfa, 0xe8, 0x10,
+	0x9a, 0xd2, 0x85, 0x30, 0xbd, 0x3a, 0xd0, 0x86, 0x1d, 0xfb, 0x2b, 0x6b, 0x51, 0xa9, 0x35, 0xce,
+	0xcd, 0xff, 0x9c, 0xe0, 0x82, 0x89, 0xbe, 0x83, 0xae, 0x3c, 0x3a, 0x51, 0x1a, 0x4e, 0x08, 0xd3,
+	0x6b, 0x03, 0x6d, 0x58, 0xc7, 0x1d, 0x89, 0x3d, 0x91, 0x10, 0xb2, 0xa1, 0x21, 0x3b, 0xc2, 0x75,
+	0x5f, 0x86, 0x35, 0xac, 0xbc, 0x1d, 0x56, 0xd1, 0x30, 0xeb, 0x34, 0x33, 0xff, 0xef, 0xf2, 0x19,
+	0x56, 0x4c, 0xf3, 0x8d, 0x06, 0xdb, 0x17, 0xc4, 0x65, 0xde, 0x54, 0xe6, 0xe4, 0x45, 0xcd, 0xbf,
+	0x43, 0x3b, 0x61, 0xc4, 0xa7, 0x9e, 0x2b, 0x88, 0x2c, 0xbd, 0x63, 0x7f, 0xb3, 0xb6, 0xca, 0xf3,
+	0x82, 0x85, 0x1f, 0x1c, 0x3e, 0xa5, 0x12, 0xf4, 0x35, 0xb4, 0x13, 0x37, 0x20, 0x0e, 0xa7, 0xb7,
+	0x44, 0x27, 0x52, 0x5d, 0x2b, 0x03, 0x2e, 0xe8, 0x2d, 0x41, 0x7b, 0x00, 0xd2, 0x28, 0xe2, 0x19,
+	0x89, 0xf4, 0xab, 0x81, 0x36, 0x6c, 0x63, 0x49, 0xbf, 0xcc, 0x00, 0x33, 0x84, 0x9d, 0x45, 0x11,
+	0x3c, 0x89, 0x23, 0x4e, 0xd0, 0x8f, 0xd0, 0x90, 0x35, 0x73, 0x5d, 0x1b, 0xd4, 0x86, 0x1d, 0xfb,
+	0xf3, 0xb5, 0x12, 0xb0, 0x22, 0xa1, 0x03, 0xd8, 0x8a, 0xc8, 0xb5, 0x70, 0x4a, 0xa9, 0x7c, 0x99,
+	0xaa, 0x97, 0xc1, 0xe7, 0xf7, 0xe9, 0xee, 0x34, 0xe8, 0x8e, 0x5d, 0xe1, 0x4d, 0x8b, 0x6e, 0xfd,
+	0x09, 0x2d, 0x96, 0x1f, 0x8b, 0x4c, 0xfb, 0x2b, 0x99, 0x4a, 0x7c, 0x4b, 0xfd, 0xe2, 0x7b, 0x2f,
+	0xe3, 0x95, 0x06, 0xcd, 0x22, 0xda, 0x1f, 0xd0, 0x0e, 0x88, 0x70, 0x64, 0x00, 0xd5, 0xfb, 0x6f,
+	0x97, 0xc3, 0x2d, 0xcd, 0xd8, 0x59, 0x05, 0xb7, 0x02, 0x05, 0xa1, 0x7f, 0xa1, 0xc7, 0x65, 0x37,
+	0x1c, 0x25, 0x3e, 0x9f, 0xb2, 0xef, 0x97, 0x63, 0xac, 0xb9, 0xf7, 0xb3, 0x0a, 0xee, 0xf2, 0x12,
+	0x3c, 0x6e, 0x43, 0x53, 0xd5, 0x68, 0xbe, 0xac, 0x42, 0x4f, 0xa9, 0x50, 0xed, 0x3d, 0x81, 0x36,
+	0x53, 0xe7, 0x42, 0xf7, 0xc1, 0x07, 0x74, 0xe7, 0x2c, 0xab, 0x38, 0xe0, 0x07, 0x47, 0xe3, 0xad,
+	0x06, 0xad, 0xfb, 0x90, 0x47, 0xab, 0xda, 0xd7, 0x5f, 0xda, 0x82, 0xe2, 0xff, 0xd6, 0x2b, 0xde,
+	0x7f, 0x5c, 0x71, 0x9e, 0x72, 0x59, 0x32, 0xfa, 0x01, 0xea, 0x84, 0xb1, 0x98, 0xa9, 0xd9, 0x45,
+	0xc5, 0xec, 0x66, 0x0f, 0xd3, 0x85, 0x7c, 0x54, 0xce, 0x2a, 0x38, 0xa7, 0x8c, 0x21, 0xbb, 0xf8,
+	0x3c, 0x8e, 0xf9, 0xae, 0x0a, 0xfd, 0xc5, 0x95, 0x28, 0x6f, 0xba, 0xb6, 0xf1, 0xa6, 0x5b, 0xd0,
+	0xc8, 0xdf, 0x2e, 0xa9, 0xa2, 0x6f, 0x7f, 0xb1, 0xa2, 0x42, 0x5a, 0xb1, 0x62, 0xa1, 0x63, 0xe8,
+	0x07, 0x84, 0x31, 0x2a, 0x1c, 0x6f, 0xea, 0x46, 0x01, 0xe1, 0x7a, 0x4d, 0x5e, 0xc5, 0xee, 0xea,
+	0xcc, 0x64, 0xac, 0x63, 0x49, 0xc2, 0xbd, 0xa0, 0xf4, 0x8f, 0x67, 0x0b, 0xe6, 0x31, 0xe2, 0x0a,
+	0xe2, 0x3b, 0x93, 0x1b, 0xbd, 0x9e, 0x2f, 0x98, 0x42, 0xc6, 0x37, 0xc8, 0x82, 0xcf, 0x84, 0x1b,
+	0x70, 0xbd, 0x21, 0x23, 0x1b, 0xab, 0x15, 0x31, 0x1a, 0x05, 0xe7, 0x2e, 0x65, 0x58, 0xf2, 0xd0,
+	0xaf, 0xd0, 0xc9, 0x9d, 0x1d, 0x41, 0x43, 0xa2, 0x37, 0xd7, 0x8b, 0xbf, 0xa4, 0x21, 0xc1, 0xb2,
+	0x1a, 0x95, 0x3c, 0x03, 0xd0, 0xcf, 0xb0, 0x43, 0x23, 0x6f, 0x9e, 0xfa, 0xc4, 0x21, 0xd7, 0x09,
+	0x61, 0x34, 0x24, 0x91, 0x70, 0xe7, 0x7a, 0x6b, 0xa0, 0x0d, 0x5b, 0x78, 0x5b, 0xd9, 0xfe, 0x2a,
+	0x99, 0xec, 0x3b, 0x0d, 0x1a, 0xea, 0xf6, 0x4e, 0xa0, 0x55, 0xec, 0x06, 0xfa, 0xd8, 0xd6, 0x18,
+	0xeb, 0x47, 0xcb, 0xac, 0xa0, 0x67, 0xd0, 0x2d, 0xcf, 0x0a, 0xda, 0x64, 0x77, 0x8c, 0x8d, 0xc6,
+	0xcd, 0xac, 0xa0, 0x53, 0xa8, 0xcb, 0xad, 0x40, 0xbb, 0x8f, 0x3d, 0x12, 0xc6, 0xde, 0xa3, 0xab,
+	0x64, 0x56, 0xc6, 0xbf, 0x3c, 0x3d, 0xda, 0xec, 0x0b, 0xf5, 0x5b, 0x09, 0x49, 0x26, 0x93, 0x86,
+	0x04, 0x0f, 0xdf, 0x07, 0x00, 0x00, 0xff, 0xff, 0x5e, 0x64, 0x3b, 0x09, 0x92, 0x07, 0x00, 0x00,
 }
