@@ -15,6 +15,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sort"
@@ -1182,9 +1183,28 @@ func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 	}
 }
 
+// replyWithJSON sends StatusOK with JSON body.
+func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(obj)
+}
+
+// replyWithError sends StatusOK with JSON body containing an error.
+//
+// Due to Cloud Endpoints limitations, legacy API used StatusOK for some not-OK
+// responses and communicated the actual error through 'status' response field.
+func replyWithError(w http.ResponseWriter, status, message string) error {
+	return replyWithJSON(w, map[string]string{
+		"status":        status,
+		"error_message": message,
+	})
+}
+
 // InstallHandlers installs non-pRPC HTTP handlers into the router.
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
+	r.GET("/_ah/api/repo/v1/instance/resolve", base, adaptGrpcErr(impl.handleLegacyResolve))
 }
 
 // handleClientBootstrap redirects to a CIPD client binary in Google Storage.
@@ -1249,4 +1269,41 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
 	}
 	return err
+}
+
+// handleLegacyResolve is a legacy handler for ResolveVersion RPC.
+//
+// GET /_ah/api/repo/v1/instance/resolve?package_name=...&version=...
+//
+// Where:
+//    package_name: full name of a package.
+//    version: a package version identifier (instance ID, a ref or a tag).
+//
+// Returns:
+//    {
+//      "status": "...",
+//      "error_message": "...",
+//      "instance_id": "..."
+//    }
+func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	resp, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+		Package: r.FormValue("package_name"),
+		Version: r.FormValue("version"),
+	})
+
+	switch grpc.Code(err) {
+	case codes.OK:
+		return replyWithJSON(w, map[string]string{
+			"status":      "SUCCESS",
+			"instance_id": model.ObjectRefToInstanceID(resp.Instance),
+		})
+	case codes.NotFound:
+		return replyWithError(w, "INSTANCE_NOT_FOUND", grpc.ErrorDesc(err))
+	case codes.FailedPrecondition:
+		return replyWithError(w, "AMBIGUOUS_VERSION", grpc.ErrorDesc(err))
+	default:
+		return err // the legacy client recognizes other codes just fine
+	}
 }
