@@ -52,6 +52,9 @@ service Builds {
   // will look for builds in "master.chromium" LUCI bucket which probably does
   // not exist.
   rpc SearchBuilds(SearchBuildsRequest) returns (SearchBuildsResponse) {};
+
+  // Executes multiple requests in a batch.
+  rpc Batch(BatchRequest) returns (BatchResponse) {};
 }
 
 // A request message for GetBuild rpc.
@@ -107,6 +110,42 @@ message SearchBuildsResponse {
 
   // Value for SearchBuildsRequest.page_token to continue searching.
   string next_page_token = 100;
+}
+
+// A request message for Batch rpc.
+message BatchRequest {
+
+  // One request in a batch.
+  message Request {
+    oneof request {
+      GetBuildRequest get_build = 1;
+      SearchBuildsRequest search_builds = 2;
+    }
+  }
+
+  // Requests to be processed in a single batch.
+  //
+  // Requests related to same build are coupled.
+  // Mutation requests are executed transactionally, before read-only requests.
+  repeated Request requests = 1;
+}
+
+// A response message for Batch rpc.
+message BatchResponse {
+
+  // Response to one of the requests in a batch.
+  message Response {
+    oneof response {
+      GetBuildResponse get_build = 1;
+      SearchBuildsResponse search_builds = 2;
+
+      // Error code and details of the unsuccessful RPC.
+      google.protobuf.Status error = 100;
+    }
+  }
+
+  // Responses in the same order as BatchRequest.requests.
+  repeated Response responses = 1;
 }
 
 // A build predicate.
