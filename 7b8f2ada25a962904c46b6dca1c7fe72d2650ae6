@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "99c43e0c_75cf1463",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1189,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:21:20Z",
+      "side": 1,
+      "message": "consider\n\nl.RegisteredTs :\u003d fmt.Sprintf(\"%d\", inst.RegisteredTs.Seconds * 1e6 + inst.RegisteredTs.Nanos/1e3)",
+      "range": {
+        "startLine": 1185,
+        "startChar": 1,
+        "endLine": 1189,
+        "endChar": 2
+      },
+      "revId": "7b8f2ada25a962904c46b6dca1c7fe72d2650ae6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6580a98f_d578bbbf",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1352,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:21:20Z",
+      "side": 1,
+      "message": "consider \n\nreturn replyWithJSON(w, map[string]interface{} {\n\t\"status\": SUCCESS\",\n\t\"fetch_url\": signedURL.SignedUrl,\n\t\"instance\": (\u0026legacyInstance{}).FromInstance(inst.Instance),\n})",
+      "range": {
+        "startLine": 1344,
+        "startChar": 2,
+        "endLine": 1352,
+        "endChar": 4
+      },
+      "revId": "7b8f2ada25a962904c46b6dca1c7fe72d2650ae6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
