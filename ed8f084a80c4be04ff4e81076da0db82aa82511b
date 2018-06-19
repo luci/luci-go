@@ -63,6 +63,24 @@
       "revId": "ed8f084a80c4be04ff4e81076da0db82aa82511b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9dde8dce_eb996129",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1304,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T19:04:06Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3d080ab2_2d713176",
+      "revId": "ed8f084a80c4be04ff4e81076da0db82aa82511b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
