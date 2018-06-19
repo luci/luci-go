@@ -90,7 +90,6 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 		wellKnownProtoDir := filepath.Join(path, "go.chromium.org", "luci", "grpc", "proto")
 		if info, err := os.Stat(wellKnownProtoDir); err == nil && info.IsDir() {
 			args = append(args, "--proto_path="+wellKnownProtoDir)
-			logging.Infof(c, "found %q", wellKnownProtoDir)
 		}
 	}
 
