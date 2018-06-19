@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a035294f_1d52380d",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T19:27:32Z",
+      "side": 1,
+      "message": "Please define what\u0027s the overall status of the response is. It is always OK even if some subrequests fail?",
+      "range": {
+        "startLine": 57,
+        "startChar": 4,
+        "endLine": 57,
+        "endChar": 43
+      },
+      "revId": "bff196550228bd59061110252e5111afc311a273",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecf33b99_215d31c1",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T19:27:32Z",
+      "side": 1,
+      "message": "nit: I think there\u0027s a typo here",
+      "range": {
+        "startLine": 129,
+        "startChar": 5,
+        "endLine": 129,
+        "endChar": 21
+      },
+      "revId": "bff196550228bd59061110252e5111afc311a273",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
