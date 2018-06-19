@@ -1225,6 +1225,7 @@ func replyWithError(w http.ResponseWriter, status, message string) error {
 // InstallHandlers installs non-pRPC HTTP handlers into the router.
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
+	r.GET("/_ah/api/repo/v1/client", base, adaptGrpcErr(impl.handleLegacyClientInfo))
 	r.GET("/_ah/api/repo/v1/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
 	r.GET("/_ah/api/repo/v1/instance/resolve", base, adaptGrpcErr(impl.handleLegacyResolve))
 }
@@ -1291,6 +1292,117 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
 	}
 	return err
+}
+
+// handleLegacyClientInfo is a legacy handler for an RPC replaced by /client
+// endpoint.
+//
+// It returns information about a CIPD client package and a signed URL to fetch
+// the client binary.
+//
+// GET /_ah/api/repo/v1/client?package_name=...&instance_id=...
+//
+// Where:
+//    package_name: full name of a CIPD client package.
+//    instance_id: a hex digest with instance ID.
+//
+// Returns:
+//    {
+//      "status": "...",
+//      "error_message": "...",
+//      "client_binary": {
+//        "file_name": "cipd",
+//        "sha1": "...",
+//        "fetch_url": "...",
+//        "size": "..."
+//      },
+//      "instance": {
+//        "package_name": "...",
+//        "instance_id": "...",
+//        "registered_by": "...",
+//        "registered_ts": "<int64 timestamp in microseconds>"
+//      }
+//    }
+func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	// Only CIPD client package can be fetching using this method.
+	pkg := r.FormValue("package_name")
+	if !processing.IsClientPackage(pkg) {
+		return status.Errorf(codes.InvalidArgument, "not a CIPD client package - %s", pkg)
+	}
+
+	// This checks the request format, ACLs, verifies the instance exists and
+	// returns info about it.
+	desc, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
+		Package: pkg,
+		Instance: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1, // legacy API supported only SHA1
+			HexDigest: r.FormValue("instance_id"),
+		},
+	})
+	switch grpc.Code(err) {
+	case codes.OK:
+		break // handled below
+	case codes.NotFound:
+		return replyWithError(w, "INSTANCE_NOT_FOUND", grpc.ErrorDesc(err))
+	default:
+		return err // the legacy client recognizes other codes just fine
+	}
+
+	// Grab the location of the extracted CIPD client from the post-processor.
+	proc, err := processing.GetClientExtractorResult(c, desc.Instance)
+	switch {
+	case transient.Tag.In(err):
+		return err
+	case err == datastore.ErrNoSuchEntity:
+		return replyWithError(w, "NOT_EXTRACTED_YET", "the client binary is not extracted yet, try later")
+	case err != nil: // fatal
+		return replyWithError(w, "ERROR", fmt.Sprintf("the client binary is not available - %s", err))
+	}
+
+	// Legacy API wanted SHA1 as a checksum of the client binary.
+	ref, err := proc.ToObjectRef()
+	switch {
+	case err != nil:
+		return replyWithError(w, "ERROR", fmt.Sprintf("malformed ref to the client binary - %s", err))
+	case ref.HashAlgo != api.HashAlgo_SHA1:
+		return replyWithError(w, "ERROR", "the client binary is missing SHA1 checksum")
+	}
+
+	// Grab signed URL of the client binary.
+	signedURL, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object:           ref,
+		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
+	})
+
+	switch grpc.Code(err) {
+	case codes.OK:
+		clientBin := struct {
+			FileName string `json:"file_name"`
+			SHA1     string `json:"sha1"`
+			FetchURL string `json:"fetch_url"`
+			Size     string `json:"size"`
+		}{
+			processing.GetClientBinaryName(pkg),
+			proc.ClientBinary.HashDigest,
+			signedURL.SignedUrl,
+			fmt.Sprintf("%d", proc.ClientBinary.Size),
+		}
+		return replyWithJSON(w, struct {
+			Status       string          `json:"status"`
+			Instance     *legacyInstance `json:"instance"`
+			ClientBinary interface{}     `json:"client_binary"`
+		}{
+			"SUCCESS",
+			(&legacyInstance{}).FromInstance(desc.Instance),
+			clientBin,
+		})
+	case codes.NotFound:
+		return replyWithError(w, "ERROR", "the client binary is unexpectedly gone from the storage")
+	default:
+		return err // the legacy client recognizes other codes just fine
+	}
 }
 
 // handleLegacyInstance is a legacy handler for an RPC replaced by
