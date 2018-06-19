@@ -40,7 +40,9 @@ import (
 
 type EmailTemplateInput struct {
 	*buildbucketpb.Build
-	OldStatus buildbucketpb.Status
+	OldStatus     buildbucketpb.Status
+	Parameters    interface{}
+	ResultDetails interface{}
 }
 
 var templateFuncs = map[string]interface{}{

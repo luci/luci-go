@@ -143,8 +143,21 @@ func handleBuild(c context.Context, d *tq.Dispatcher, build *Build, getCheckout 
 		ProjectKey: datastore.KeyForObj(c, project),
 		ID:         builderID,
 	}
+
+	var parameters interface{}
+	var resultDetails interface{}
+
+	if err := json.NewDecoder(strings.NewReader(build.Input.String())).Decode(&parameters); err != nil {
+		parameters = nil
+	}
+	if err := json.NewDecoder(strings.NewReader(build.Output.String())).Decode(&resultDetails); err != nil {
+		resultDetails = nil
+	}
+
 	templateParams := &EmailTemplateInput{
-		Build: &build.Build,
+		Build:         &build.Build,
+		Parameters:    parameters,
+		ResultDetails: resultDetails,
 	}
 
 	// Set up the initial list of recipients, derived from the build.
