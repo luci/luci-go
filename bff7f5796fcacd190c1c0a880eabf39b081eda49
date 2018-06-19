@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8b728b75_aa1a1a13",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1329,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T21:55:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be8bea58_c64b9cba",
+      "range": {
+        "startLine": 1329,
+        "startChar": 36,
+        "endLine": 1329,
+        "endChar": 44
+      },
+      "revId": "bff7f5796fcacd190c1c0a880eabf39b081eda49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f8be1b51_7d20613f",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "bff7f5796fcacd190c1c0a880eabf39b081eda49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba7e9230_3d2392db",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1361,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T21:55:21Z",
+      "side": 1,
+      "message": "Done, though it is not exactly backward compatible.",
+      "parentUuid": "f8be1b51_7d20613f",
+      "range": {
+        "startLine": 1361,
+        "startChar": 36,
+        "endLine": 1361,
+        "endChar": 48
+      },
+      "revId": "bff7f5796fcacd190c1c0a880eabf39b081eda49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
