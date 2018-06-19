@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "f12b013c_518e2994",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T01:29:34Z",
+      "side": 1,
+      "message": "Ah, ok. Usually it is better to mark errors as transient closer to the source, so that it is simpler to propagate fatal errors if they appear. In this case, HTTP 500 and HTTP 404 (sans caveats) from gitiles can be thought of as transient, but HTTP 403 is probably pretty fatal.",
+      "parentUuid": "22553536_3a38b624",
+      "range": {
+        "startLine": 428,
+        "startChar": 24,
+        "endLine": 428,
+        "endChar": 60
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77b8a43e_297cee40",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 2
