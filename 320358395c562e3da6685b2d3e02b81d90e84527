@@ -34,6 +34,24 @@
       "revId": "320358395c562e3da6685b2d3e02b81d90e84527",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e193f75_b74a3304",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-06-19T14:06:59Z",
+      "side": 1,
+      "message": "You are right, also I\u0027m not sure if there\u0027s any way to skip (or at least reduce) compression on http2. Oh well. That said, there\u0027s probably still value when downloading, so I think there\u0027s maybe still value. Not sure but you are right that\u0027s it\u0027s not an obvious gain.",
+      "parentUuid": "962abdfc_266d3cc5",
+      "revId": "320358395c562e3da6685b2d3e02b81d90e84527",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
