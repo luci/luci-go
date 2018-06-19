@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -47,6 +48,21 @@ func instance(ctx context.Context, pkg string) *model.Instance {
 		InstanceID: strings.Repeat("a", 40),
 		Package:    model.PackageKey(ctx, pkg),
 	}
+}
+
+func TestGetClientPackage(t *testing.T) {
+	t.Parallel()
+
+	Convey("works", t, func() {
+		pkg, err := GetClientPackage("linux-amd64")
+		So(err, ShouldBeNil)
+		So(pkg, ShouldEqual, "infra/tools/cipd/linux-amd64")
+	})
+
+	Convey("fails", t, func() {
+		_, err := GetClientPackage("../sneaky")
+		So(err, ShouldErrLike, "invalid package name")
+	})
 }
 
 func TestClientExtractor(t *testing.T) {
@@ -148,6 +164,79 @@ func TestClientExtractor(t *testing.T) {
 		ce := ClientExtractor{}
 		So(ce.Applicable(instance(ctx, "infra/tools/cipd/linux")), ShouldBeTrue)
 		So(ce.Applicable(instance(ctx, "infra/tools/stuff/linux")), ShouldBeFalse)
+	})
+}
+
+func TestGetResult(t *testing.T) {
+	t.Parallel()
+
+	Convey("With datastore", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		write := func(res *ClientExtractorResult, err string) {
+			r := model.ProcessingResult{
+				ProcID: ClientExtractorProcID,
+				Instance: datastore.KeyForObj(ctx, &model.Instance{
+					InstanceID: strings.Repeat("a", 40),
+					Package:    model.PackageKey(ctx, "a/b/c"),
+				}),
+			}
+			if res != nil {
+				r.Success = true
+				So(r.WriteResult(&res), ShouldBeNil)
+			} else {
+				r.Error = err
+			}
+			So(datastore.Put(ctx, &r), ShouldBeNil)
+		}
+
+		Convey("Happy path", func() {
+			res := ClientExtractorResult{}
+			res.ClientBinary.HashAlgo = "SHA1"
+			res.ClientBinary.HashDigest = strings.Repeat("b", 40)
+			write(&res, "")
+
+			out, err := GetClientExtractorResult(ctx, &api.Instance{
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("a", 40),
+				},
+			})
+			So(err, ShouldBeNil)
+			So(out, ShouldResemble, &res)
+
+			ref, err := out.ToObjectRef()
+			So(err, ShouldBeNil)
+			So(ref, ShouldResemble, &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("b", 40),
+			})
+		})
+
+		Convey("Failed processor", func() {
+			write(nil, "boom")
+
+			_, err := GetClientExtractorResult(ctx, &api.Instance{
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("a", 40),
+				},
+			})
+			So(err, ShouldErrLike, "boom")
+		})
+
+		Convey("No result", func() {
+			_, err := GetClientExtractorResult(ctx, &api.Instance{
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("a", 40),
+				},
+			})
+			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+		})
 	})
 }
 

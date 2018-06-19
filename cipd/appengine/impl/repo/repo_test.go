@@ -17,6 +17,9 @@ package repo
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -35,6 +38,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
+	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
@@ -2278,6 +2282,152 @@ func TestDescribeInstance(t *testing.T) {
 			})
 			So(grpc.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such instance")
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Non-pRPC handlers for the client bootstrap and legacy API.
+
+func TestClientBootstrap(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+
+		cas := testutil.MockCAS{
+			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+				return &api.ObjectURL{
+					SignedUrl: fmt.Sprintf("http://fake/%s?d=%s", model.ObjectRefToInstanceID(r.Object), r.DownloadFilename),
+				}, nil
+			},
+		}
+
+		impl := repoImpl{meta: &meta, cas: &cas}
+		handler := adaptGrpcErr(impl.handleClientBootstrap)
+
+		goodPlat := "linux-amd64"
+		goodVer := strings.Repeat("a", 40)
+
+		setup := func(res *processing.ClientExtractorResult, fail string) *model.ProcessingResult {
+			pkgName, err := processing.GetClientPackage(goodPlat)
+			So(err, ShouldBeNil)
+			pkg := &model.Package{Name: pkgName}
+			inst := &model.Instance{
+				InstanceID: goodVer,
+				Package:    datastore.KeyForObj(ctx, pkg),
+			}
+			proc := &model.ProcessingResult{
+				ProcID:   processing.ClientExtractorProcID,
+				Instance: datastore.KeyForObj(ctx, inst),
+			}
+			if res != nil {
+				proc.Success = true
+				proc.WriteResult(res)
+			} else {
+				proc.Error = fail
+			}
+			So(datastore.Put(ctx, pkg, inst, proc), ShouldBeNil)
+			return proc
+		}
+
+		call := func(plat, ver string) *httptest.ResponseRecorder {
+			form := url.Values{}
+			form.Add("platform", plat)
+			form.Add("version", ver)
+			rr := httptest.NewRecorder()
+			handler(&router.Context{
+				Context: ctx,
+				Request: &http.Request{Form: form},
+				Writer:  rr,
+			})
+			return rr
+		}
+
+		res := processing.ClientExtractorResult{}
+		res.ClientBinary.HashAlgo = "SHA1"
+		res.ClientBinary.HashDigest = strings.Repeat("b", 40)
+		proc := setup(&res, "")
+
+		Convey("Happy path", func() {
+			rr := call(goodPlat, goodVer)
+			So(rr.Code, ShouldEqual, http.StatusFound)
+			So(rr.Header().Get("Location"), ShouldEqual, "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd")
+		})
+
+		Convey("No plat", func() {
+			rr := call("", goodVer)
+			So(rr.Code, ShouldEqual, http.StatusBadRequest)
+			So(rr.Body.String(), ShouldContainSubstring, "no 'platform' specified")
+		})
+
+		Convey("Bad plat", func() {
+			rr := call("...", goodVer)
+			So(rr.Code, ShouldEqual, http.StatusBadRequest)
+			So(rr.Body.String(), ShouldContainSubstring, "bad platform name")
+		})
+
+		Convey("No ver", func() {
+			rr := call(goodPlat, "")
+			So(rr.Code, ShouldEqual, http.StatusBadRequest)
+			So(rr.Body.String(), ShouldContainSubstring, "no 'version' specified")
+		})
+
+		Convey("Bad ver", func() {
+			rr := call(goodPlat, "!!!!")
+			So(rr.Code, ShouldEqual, http.StatusBadRequest)
+			So(rr.Body.String(), ShouldContainSubstring, "bad version")
+		})
+
+		Convey("No access", func() {
+			ctx = auth.WithState(ctx, &authtest.FakeState{
+				Identity: "user:someone@example.com",
+			})
+			rr := call(goodPlat, goodVer)
+			So(rr.Code, ShouldEqual, http.StatusForbidden)
+			So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
+		})
+
+		Convey("Missing ver", func() {
+			rr := call(goodPlat, "missing")
+			So(rr.Code, ShouldEqual, http.StatusNotFound)
+			So(rr.Body.String(), ShouldContainSubstring, "no such ref")
+		})
+
+		Convey("Missing instance ID", func() {
+			rr := call(goodPlat, strings.Repeat("b", 40))
+			So(rr.Code, ShouldEqual, http.StatusNotFound)
+			So(rr.Body.String(), ShouldContainSubstring, "no such instance")
+		})
+
+		Convey("Not extracted yet", func() {
+			datastore.Delete(ctx, proc)
+
+			rr := call(goodPlat, goodVer)
+			So(rr.Code, ShouldEqual, http.StatusNotFound)
+			So(rr.Body.String(), ShouldContainSubstring, "is not extracted yet")
+		})
+
+		Convey("Fatal error during extraction", func() {
+			setup(nil, "BOOM")
+
+			rr := call(goodPlat, goodVer)
+			So(rr.Code, ShouldEqual, http.StatusNotFound)
+			So(rr.Body.String(), ShouldContainSubstring, "BOOM")
 		})
 	})
 }

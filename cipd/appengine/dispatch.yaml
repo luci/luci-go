@@ -9,3 +9,8 @@ dispatch:
     module: default-go
   - url: "*/internal/tq/*"
     module: backend-go
+
+  # TODO(vadimsh): Remove "v2" when Go backend becomes the default. See also
+  # frontend/main.go where "v2" is also mentioned.
+  - url: "*/v2/*"
+    module: default-go
