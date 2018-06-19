@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9f84c9e3_4a8e8e66",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T00:24:31Z",
+      "side": 1,
+      "message": "with",
+      "range": {
+        "startLine": 416,
+        "startChar": 62,
+        "endLine": 416,
+        "endChar": 66
+      },
+      "revId": "f2c7cf14fa9fc928bd670c6c559a5d7d7200dca3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48877bb1_0bceadbb",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 421,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T00:24:31Z",
+      "side": 1,
+      "message": "nit: I prefer lower nesting:\n\nswitch status.Code(err) {\n  case codes.OK:\n    return ...\n  cases codes.NotFound:\n    break // handled below\n  default:\n    return ...\n}\n\nBy the time reader reads \u0027default\u0027 on line 461, they forgot what it was about already.",
+      "range": {
+        "startLine": 421,
+        "startChar": 1,
+        "endLine": 421,
+        "endChar": 21
+      },
+      "revId": "f2c7cf14fa9fc928bd670c6c559a5d7d7200dca3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c6b9e19_c870c36d",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T00:24:31Z",
+      "side": 1,
+      "message": "What exactly do you mean by that? Returning an \u0027err\u0027 here marks the invocation as failed. If you want a retry sooner, it should be tagged with transient.Tag.",
+      "range": {
+        "startLine": 430,
+        "startChar": 51,
+        "endLine": 430,
+        "endChar": 62
+      },
+      "revId": "f2c7cf14fa9fc928bd670c6c559a5d7d7200dca3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
