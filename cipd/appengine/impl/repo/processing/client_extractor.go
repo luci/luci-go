@@ -100,6 +100,18 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 	return ref, nil
 }
 
+// SHA1 returns client's SHA1 hash or "" if not known.
+//
+// This methods exists in anticipation that ObjectRef will become SHA256-based
+// soon, but we still need to return SHA1 to older clients and bootstrap scripts
+// that don't understand SHA256.
+func (r *ClientExtractorResult) SHA1() string {
+	if strings.ToLower(r.ClientBinary.HashAlgo) == "sha1" {
+		return r.ClientBinary.HashDigest
+	}
+	return ""
+}
+
 // ClientExtractor is a processor that extracts CIPD client binary from CIPD
 // client packages (infra/tools/cipd/...) and stores it in the CAS, so it can be
 // fetched directly.

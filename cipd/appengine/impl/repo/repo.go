@@ -1166,6 +1166,73 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 	return resp, nil
 }
 
+// DescribeClient implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientRequest) (resp *api.DescribeClientResponse, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	// Validate the request.
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+	if !processing.IsClientPackage(r.Package) {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - not a CIPD client package")
+	}
+	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
+	}
+
+	// Check ACLs.
+	if _, err := impl.checkRole(c, r.Package, api.Role_READER); err != nil {
+		return nil, err
+	}
+
+	// Make sure this instance exists, has all processors finished and fetch
+	// basic details about it.
+	inst := (&model.Instance{}).FromProto(c, &api.Instance{
+		Package:  r.Package,
+		Instance: r.Instance,
+	})
+	if err := model.CheckInstanceReady(c, inst); err != nil {
+		return nil, err
+	}
+
+	// Grab the location of the extracted CIPD client from the post-processor.
+	// This must succeed, since CheckInstanceReady above verified processors have
+	// finished. Thus treat any error here as internal, as it will require an
+	// investigation.
+	proc, err := processing.GetClientExtractorResult(c, inst.Proto())
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get client extractor results").Tag(grpcutil.InternalTag).Err()
+	}
+	ref, err := proc.ToObjectRef()
+	if err != nil {
+		return nil, errors.Annotate(err, "malformed ref in the client extractor results").Tag(grpcutil.InternalTag).Err()
+	}
+
+	// SHA1 is required to allow older clients to self-update to a newer client
+	// that supports more than SHA1.
+	if proc.SHA1() == "" {
+		return nil, errors.Reason("malformed client extracto results, missing SHA1 digest").Tag(grpcutil.InternalTag).Err()
+	}
+
+	// Grab the signed URL of the client binary.
+	signedURL, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object:           ref,
+		DownloadFilename: processing.GetClientBinaryName(r.Package), // e.g. 'cipd.exe'
+	})
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to get signed URL to the client binary").Tag(grpcutil.InternalTag).Err()
+	}
+
+	return &api.DescribeClientResponse{
+		Instance:     inst.Proto(),
+		ClientRef:    ref,
+		ClientBinary: signedURL,
+		ClientSize:   proc.ClientBinary.Size,
+		LegacySha1:   proc.SHA1(),
+	}, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Non-pRPC handlers for the client bootstrap and legacy API.
 
@@ -1326,54 +1393,12 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
-	// Only CIPD client package can be fetched using this method.
-	pkg := r.FormValue("package_name")
-	if !processing.IsClientPackage(pkg) {
-		return status.Errorf(codes.InvalidArgument, "not a CIPD client package - %s", pkg)
-	}
-
-	// This checks the request format, ACLs, verifies the instance exists and
-	// returns info about it.
-	desc, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
-		Package: pkg,
+	desc, err := impl.DescribeClient(c, &api.DescribeClientRequest{
+		Package: r.FormValue("package_name"),
 		Instance: &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1, // legacy API supported only SHA1
 			HexDigest: r.FormValue("instance_id"),
 		},
-	})
-	switch grpc.Code(err) {
-	case codes.OK:
-		break // handled below
-	case codes.NotFound:
-		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))
-	default:
-		return err // the legacy client recognizes other codes just fine
-	}
-
-	// Grab the location of the extracted CIPD client from the post-processor.
-	proc, err := processing.GetClientExtractorResult(c, desc.Instance)
-	switch {
-	case transient.Tag.In(err):
-		return err
-	case err == datastore.ErrNoSuchEntity:
-		return replyWithError(w, "NOT_EXTRACTED_YET", "the client binary is not extracted yet, try later")
-	case err != nil: // fatal
-		return replyWithError(w, "ERROR", "the client binary is not available - %s", err)
-	}
-
-	// Legacy API wanted SHA1 as a checksum of the client binary.
-	ref, err := proc.ToObjectRef()
-	switch {
-	case err != nil:
-		return replyWithError(w, "ERROR", "malformed ref to the client binary - %s", err)
-	case ref.HashAlgo != api.HashAlgo_SHA1:
-		return replyWithError(w, "ERROR", "the client binary is missing SHA1 checksum")
-	}
-
-	// Grab signed URL of the client binary.
-	signedURL, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
-		Object:           ref,
-		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
 	})
 
 	switch grpc.Code(err) {
@@ -1382,14 +1407,18 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 			"status":   "SUCCESS",
 			"instance": (&legacyInstance{}).FromInstance(desc.Instance),
 			"client_binary": map[string]string{
-				"file_name": processing.GetClientBinaryName(pkg),
-				"sha1":      proc.ClientBinary.HashDigest,
-				"fetch_url": signedURL.SignedUrl,
-				"size":      fmt.Sprintf("%d", proc.ClientBinary.Size),
+				"file_name": processing.GetClientBinaryName(desc.Instance.Package),
+				"sha1":      desc.LegacySha1,
+				"fetch_url": desc.ClientBinary.SignedUrl,
+				"size":      fmt.Sprintf("%d", desc.ClientSize),
 			},
 		})
 	case codes.NotFound:
-		return replyWithError(w, "ERROR", "the client binary is unexpectedly gone from the storage")
+		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))
+	case codes.FailedPrecondition:
+		return replyWithError(w, "NOT_EXTRACTED_YET", "the client binary is not extracted yet, try later")
+	case codes.Aborted:
+		return replyWithError(w, "ERROR", "the client binary is not available - %s", grpc.ErrorDesc(err))
 	default:
 		return err // the legacy client recognizes other codes just fine
 	}

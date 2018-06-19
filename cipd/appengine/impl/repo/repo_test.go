@@ -2324,7 +2324,7 @@ func TestClientBootstrap(t *testing.T) {
 		goodPkg, err := processing.GetClientPackage(goodPlat)
 		So(err, ShouldBeNil)
 
-		setup := func(res *processing.ClientExtractorResult, fail string) *model.ProcessingResult {
+		setup := func(res *processing.ClientExtractorResult, fail string) (*model.Instance, *model.ProcessingResult) {
 			pkgName, err := processing.GetClientPackage(goodPlat)
 			So(err, ShouldBeNil)
 			pkg := &model.Package{Name: pkgName}
@@ -2339,11 +2339,13 @@ func TestClientBootstrap(t *testing.T) {
 			if res != nil {
 				proc.Success = true
 				proc.WriteResult(res)
+				inst.ProcessorsSuccess = []string{proc.ProcID}
 			} else {
 				proc.Error = fail
+				inst.ProcessorsFailure = []string{proc.ProcID}
 			}
 			So(datastore.Put(ctx, pkg, inst, proc), ShouldBeNil)
-			return proc
+			return inst, proc
 		}
 
 		call := func(plat, ver string) *httptest.ResponseRecorder {
@@ -2383,7 +2385,7 @@ func TestClientBootstrap(t *testing.T) {
 		res.ClientBinary.HashAlgo = "SHA1"
 		res.ClientBinary.HashDigest = strings.Repeat("b", 40)
 		res.ClientBinary.Size = 123456789101112
-		proc := setup(&res, "")
+		inst, proc := setup(&res, "")
 
 		Convey("Non legacy", func() {
 			Convey("Happy path", func() {
@@ -2438,7 +2440,9 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("Not extracted yet", func() {
+				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
+				datastore.Put(ctx, inst)
 
 				rr := call(goodPlat, goodVer)
 				So(rr.Code, ShouldEqual, http.StatusNotFound)
@@ -2495,7 +2499,9 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("Not extracted yet", func() {
+				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
+				datastore.Put(ctx, inst)
 
 				code, body := callLegacy(goodPkg, goodVer, "json")
 				So(code, ShouldEqual, http.StatusOK)
@@ -2509,7 +2515,8 @@ func TestClientBootstrap(t *testing.T) {
 				code, body := callLegacy(goodPkg, goodVer, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
-					`{"error_message":"the client binary is not available - client extraction failed - BOOM","status":"ERROR"}`)
+					`{"error_message":"the client binary is not available - some processors failed`+
+						` to process this instance: cipd_client_binary:v1","status":"ERROR"}`)
 			})
 		})
 	})
