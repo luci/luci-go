@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5dc3b538_b1828e1c",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1201,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:15:05Z",
+      "side": 1,
+      "message": "nit, optional: this is as type safe, as map[string]string, but more complicated",
+      "range": {
+        "startLine": 1198,
+        "startChar": 25,
+        "endLine": 1201,
+        "endChar": 19
+      },
+      "revId": "ed8f084a80c4be04ff4e81076da0db82aa82511b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d080ab2_2d713176",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1304,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:15:05Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "ed8f084a80c4be04ff4e81076da0db82aa82511b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
