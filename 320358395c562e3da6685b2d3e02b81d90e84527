@@ -16,6 +16,24 @@
       "revId": "320358395c562e3da6685b2d3e02b81d90e84527",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "962abdfc_266d3cc5",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-06-19T13:49:42Z",
+      "side": 1,
+      "message": "Is this really disabling compression in http request?\nhttps://github.com/golang/go/blob/c99300229de4e69220790c71da14785dc52c3d68/src/net/http/transport.go#L157\n\nFrom the docs, it seems letting server reply non-compressed response.",
+      "parentUuid": "074f5f7d_6fbce264",
+      "revId": "320358395c562e3da6685b2d3e02b81d90e84527",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
