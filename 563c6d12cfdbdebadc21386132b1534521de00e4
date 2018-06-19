@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0ee582b_385b4cad",
+        "filename": "grpc/proto/google/rpc/error_details.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:15:20Z",
+      "side": 1,
+      "message": "Is this file really needed? It references Cloud concepts not applicable to us.",
+      "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
