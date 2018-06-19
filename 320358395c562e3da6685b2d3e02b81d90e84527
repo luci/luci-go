@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "074f5f7d_6fbce264",
+        "filename": "client/cmd/isolate/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-06-19T11:55:12Z",
+      "side": 1,
+      "message": "I think it\u0027s fine, but not 100% confident. Pulling Vadim here in case he knows better.",
+      "revId": "320358395c562e3da6685b2d3e02b81d90e84527",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
