@@ -52,6 +52,24 @@
       "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3874736_29bd7fe2",
+        "filename": "grpc/proto/google/rpc/error_details.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:36:46Z",
+      "side": 1,
+      "message": "QuotaFailure message fields does not hardcode cloud concepts. We can use something like \"swarming/pools/x\" as a subject.\n\nI think BadRequest is most useful here. It expands INVALID_ARGUMENT error code.\n\ngoogle.rpc.Status is the motivation of this CL.",
+      "parentUuid": "0d177939_f6220494",
+      "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
