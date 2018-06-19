@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "be8bea58_c64b9cba",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1329,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T21:37:34Z",
+      "side": 1,
+      "message": "fetched",
+      "range": {
+        "startLine": 1329,
+        "startChar": 36,
+        "endLine": 1329,
+        "endChar": 44
+      },
+      "revId": "bff7f5796fcacd190c1c0a880eabf39b081eda49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f8be1b51_7d20613f",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1361,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T21:37:34Z",
+      "side": 1,
+      "message": "could make replyWithError accept a format string and args. It is backward compatible",
+      "range": {
+        "startLine": 1361,
+        "startChar": 36,
+        "endLine": 1361,
+        "endChar": 48
+      },
+      "revId": "bff7f5796fcacd190c1c0a880eabf39b081eda49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
