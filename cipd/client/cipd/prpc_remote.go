@@ -358,10 +358,6 @@ func (r *prpcRemoteImpl) listInstances(ctx context.Context, packageName string, 
 	return nil, errNoV2Impl
 }
 
-func (r *prpcRemoteImpl) deletePackage(ctx context.Context, packageName string) error {
-	return errNoV2Impl
-}
-
 func (r *prpcRemoteImpl) incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
 	return errNoV2Impl
 }
