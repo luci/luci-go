@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "87e9d491_e636a43a",
+        "filename": "cipd/api/cipd/v1/repo.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 762,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T23:36:36Z",
+      "side": 1,
+      "message": "This is in preparation for supporting SHA256. Older bootstrap scripts and older clients will not understand SHA256 (which will be part of client_ref field). So we\u0027ll have to maintain SHA1 digests for client packages in parallel with SHA256s, so older client can update themselves.",
+      "range": {
+        "startLine": 762,
+        "startChar": 9,
+        "endLine": 762,
+        "endChar": 20
+      },
+      "revId": "e70280cef2ef757884f132d032dc84c6cf7c7f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
