@@ -135,7 +135,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.8.3"
+	UserAgent = "cipd 1.8.4"
 )
 
 func init() {
@@ -247,18 +247,6 @@ type RefInfo struct {
 	ModifiedBy string `json:"modified_by"`
 	// ModifiedTs is when the ref was modified last time.
 	ModifiedTs UnixTime `json:"modified_ts"`
-}
-
-// Counter is returned by ReadCounter.
-type Counter struct {
-	// Name is the counter's name.
-	Name string `json:"name"`
-	// Value is the counter's value.
-	Value int64 `json:"value"`
-	// CreatedTS is the first time the counter was written.
-	CreatedTS UnixTime `json:"created_ts"`
-	// UpdatedTS is the most recent time the counter was written.
-	UpdatedTS UnixTime `json:"updated_ts"`
 }
 
 // ActionMap is a map of subdir to the Actions which will occur within it.
@@ -490,15 +478,6 @@ type Client interface {
 	//
 	// If the update was only partially applied, returns both Actions and error.
 	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (ActionMap, error)
-
-	// IncrementCounter adds delta to the counter's value and updates its last
-	// updated timestamp.
-	//
-	// delta must be 0 or 1.
-	IncrementCounter(ctx context.Context, pin common.Pin, counterName string, delta int) error
-
-	// ReadCounter returns the current value of the counter.
-	ReadCounter(ctx context.Context, pin common.Pin, counterName string) (Counter, error)
 }
 
 // InstanceEnumerator produces a list of instances, fetching them in batches.
@@ -1051,14 +1030,6 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 	return nil
 }
 
-func (client *clientImpl) IncrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
-	return client.remote.incrementCounter(ctx, pin, counter, delta)
-}
-
-func (client *clientImpl) ReadCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error) {
-	return client.remote.readCounter(ctx, pin, counter)
-}
-
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
@@ -1523,9 +1494,6 @@ type remote interface {
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
 	listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error)
-
-	incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error
-	readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error)
 }
 
 type storage interface {
