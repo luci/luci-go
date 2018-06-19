@@ -369,31 +369,6 @@ func (r *remoteImpl) fetchPackage(ctx context.Context, packageName string, withR
 	return nil, fmt.Errorf("unexpected fetchPackage status: %s", reply.Status)
 }
 
-func (r *remoteImpl) deletePackage(ctx context.Context, packageName string) error {
-	endpoint, err := packageEndpoint(packageName, false)
-	if err != nil {
-		return err
-	}
-
-	var reply struct {
-		Status       string `json:"status"`
-		ErrorMessage string `json:"error_message"`
-	}
-	if err := r.makeRequest(ctx, endpoint, "DELETE", nil, &reply); err != nil {
-		return err
-	}
-
-	switch reply.Status {
-	case "SUCCESS":
-		return nil
-	case "PACKAGE_NOT_FOUND":
-		return ErrPackageNotFound
-	case "ERROR":
-		return errors.New(reply.ErrorMessage)
-	}
-	return fmt.Errorf("unexpected reply status: %s", reply.Status)
-}
-
 func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
 	endpoint, err := instanceEndpoint(pin)
 	if err != nil {
