@@ -48,6 +48,29 @@
     },
     {
       "key": {
+        "uuid": "fc392994_19024cf5",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-19T18:12:30Z",
+      "side": 1,
+      "message": "is there a const for this?",
+      "range": {
+        "startLine": 90,
+        "startChar": 31,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "308a9073_24c9868d",
         "filename": "cipd/appengine/impl/repo/repo_test.go",
         "patchSetId": 4
