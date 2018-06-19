@@ -23,12 +23,15 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
 	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/messages"
@@ -88,11 +91,11 @@ func TestTriggerBuild(t *testing.T) {
 		// log is for readability of expectLog calls.
 		log := func(ids ...string) []string { return ids }
 		var epoch = time.Unix(1442270520, 0).UTC()
-		expectLog := func(from, to string, pageSize int, ids []string, errs ...error) *gomock.Call {
+		expectLog := func(new, old string, pageSize int, ids []string, errs ...error) *gomock.Call {
 			req := &gitilespb.LogRequest{
 				Project:  "b",
-				Treeish:  from,
-				Ancestor: to,
+				Treeish:  new,
+				Ancestor: old,
 				PageSize: int32(pageSize),
 			}
 			if len(errs) > 0 {
@@ -310,6 +313,55 @@ func TestTriggerBuild(t *testing.T) {
 				"refs/branch-heads/1": "cafee1",
 				"refs/branch-heads/2": "cafee2",
 				"refs/branch-heads/3": "cafee3",
+			})
+		})
+
+		Convey("distinguish force push from transient weirdness", func() {
+			So(saveState(c, jobID, parsedURL, strmap{
+				"refs/heads/master": "001d", // old.
+			}), ShouldBeNil)
+			expectRefs("refs/branch-heads", strmap{})
+			expectRefs("refs/heads", strmap{"refs/heads/master": "1111"})
+
+			Convey("force push going backwards", func() {
+				expectLog("1111", "001d", 50, log())
+				So(m.LaunchTask(c, ctl), ShouldBeNil)
+				// Changes state
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "1111",
+				})
+				// .. but no triggers, since there are no new commits.
+				So(ctl.Triggers, ShouldHaveLength, 0)
+			})
+
+			Convey("force push wiping out prior HEAD", func() {
+				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "", 1, log("1111"))
+				expectLog("001d", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				So(m.LaunchTask(c, ctl), ShouldBeNil)
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "1111",
+				})
+				So(ctl.Triggers, ShouldHaveLength, 1)
+			})
+
+			Convey("race 1", func() {
+				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				So(transient.Tag.In(m.LaunchTask(c, ctl)), ShouldBeTrue)
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "001d", // no change.
+				})
+			})
+
+			Convey("race or fluke", func() {
+				expectLog("1111", "001d", 50, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("1111", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				expectLog("001d", "", 1, nil, grpc.Errorf(codes.NotFound, "not found"))
+				So(transient.Tag.In(m.LaunchTask(c, ctl)), ShouldBeTrue)
+				So(loadNoError(), ShouldResemble, strmap{
+					"refs/heads/master": "001d",
+				})
 			})
 		})
 	})
