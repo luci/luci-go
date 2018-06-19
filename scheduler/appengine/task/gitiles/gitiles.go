@@ -26,6 +26,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/api/pubsub/v1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
@@ -33,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/server/auth"
@@ -405,14 +408,67 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		Ancestor: oldHead, // empty if ref is new, but then maxCommits is 1.
 		PageSize: int32(maxCommits),
 	}, maxCommits)
-	if err != nil {
-		ctl.DebugLog("Failed to fetch log of new rev %q", newHead)
-		return nil, err
+	switch status.Code(err) {
+	case codes.OK:
+		// Happy fast path.
+		// len(commits) may be 0 if this ref had a force push reverting to some
+		// older revision. TODO(tAndrii): consider emitting trigger with just
+		// newHead commit if there is a compelling use case.
+		s.known[ref] = newHead
+		s.changed++
+		return commits, nil
+	case codes.NotFound:
+		// handled below.
+		break
+	default:
+		// Any other error is presumably transient, so we'll retry.
+		ctl.DebugLog("Ref %s: failed to fetch log between old %s and new %s revs", ref, oldHead, newHead)
+		return nil, transient.Tag.Apply(err)
 	}
+	// Either:
+	//  (1) oldHead is no longer known in gitiles (force push),
+	//  (2) newHead is no longer known in gitiles (eventual consistency,
+	//     or concurrent force push executed just now, or ACLs change)
+	//  (3) gitiles accidental 404, aka fluke.
+	// In cases (2) and (3), retries should clear the problem, while (1) we
+	// should handle now.
+	if !existed {
+		// There was no oldHead, so definitely not (1). Retry later.
+		ctl.DebugLog("Ref %s: log of first rev %s not found", ref, newHead)
+		return nil, transient.Tag.Apply(err)
+	}
+	ctl.DebugLog("Ref %s: log old..new is not found, investigating futher...", ref)
 
-	s.known[ref] = newHead
-	s.changed++
-	return commits, nil
+	// Fetch log of newHead only.
+	commits, newErr := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+		Project: g.project,
+		Treeish: newHead,
+	}, 1)
+	if newErr != nil {
+		ctl.DebugLog("Ref %s: failed to fetch even log of just new rev %s %s", ref, newHead, err)
+		return nil, transient.Tag.Apply(newErr)
+	}
+	// Fetch log of oldHead only.
+	_, errOld := gitiles.PagingLog(c, g, gitilespb.LogRequest{
+		Project: g.project,
+		Treeish: oldHead,
+	}, 1)
+	switch status.Code(errOld) {
+	case codes.NotFound:
+		// This is case (1). Since we've already fetched just 1 commit from
+		// newHead, we are done.
+		s.known[ref] = newHead
+		s.changed++
+		return commits, nil
+	case codes.OK:
+		ctl.DebugLog("Ref %s: weirdly, log(%s) and log(%s) work, but not log(%s..%s)",
+			ref, oldHead, newHead, oldHead, newHead)
+		return nil, transient.Tag.Apply(err)
+	default:
+		// Any other error is presumably transient, so we'll retry.
+		ctl.DebugLog("Ref %s: failed to fetch log of just old rev %s: %s", ref, oldHead, errOld)
+		return nil, transient.Tag.Apply(err)
+	}
 }
 
 type watchedRefNamespace struct {
