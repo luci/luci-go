@@ -1169,6 +1169,27 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 ////////////////////////////////////////////////////////////////////////////////
 // Non-pRPC handlers for the client bootstrap and legacy API.
 
+// legacyInstance is JSON representation of Instance in the legacy API.
+type legacyInstance struct {
+	PackageName  string `json:"package_name,omitempty"`
+	InstanceID   string `json:"instance_id,omitempty"`
+	RegisteredBy string `json:"registered_by,omitempty"`
+	RegisteredTs string `json:"registered_ts,omitempty"` // timestamp in microsec
+}
+
+// FromInstance fills in legacyInstance based on data from Instance proto.
+func (l *legacyInstance) FromInstance(inst *api.Instance) *legacyInstance {
+	l.PackageName = inst.Package
+	l.InstanceID = model.ObjectRefToInstanceID(inst.Instance)
+	l.RegisteredBy = inst.RegisteredBy
+	if ts := inst.RegisteredTs; ts != nil {
+		l.RegisteredTs = fmt.Sprintf("%d", ts.Seconds*1e6+int64(ts.Nanos/1e3))
+	} else {
+		l.RegisteredTs = ""
+	}
+	return l
+}
+
 // adaptGrpcErr knows how to convert gRPC-style errors to ugly looking HTTP
 // error pages with appropriate HTTP status codes.
 //
@@ -1204,6 +1225,7 @@ func replyWithError(w http.ResponseWriter, status, message string) error {
 // InstallHandlers installs non-pRPC HTTP handlers into the router.
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
+	r.GET("/_ah/api/repo/v1/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
 	r.GET("/_ah/api/repo/v1/instance/resolve", base, adaptGrpcErr(impl.handleLegacyResolve))
 }
 
@@ -1269,6 +1291,66 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
 	}
 	return err
+}
+
+// handleLegacyInstance is a legacy handler for an RPC replaced by
+// DescribeInstance and GetInstanceURL.
+//
+// It returns information about an instance and a signed URL to fetch it.
+//
+// GET /_ah/api/repo/v1/instance?package_name=...&instance_id=...
+//
+// Where:
+//    package_name: full name of a package.
+//    instance_id: a hex digest with instance ID.
+//
+// Returns:
+//    {
+//      "status": "...",
+//      "error_message": "...",
+//      "fetch_url": "...",
+//      "instance": {
+//        "package_name": "...",
+//        "instance_id": "...",
+//        "registered_by": "...",
+//        "registered_ts": "<int64 timestamp in microseconds>"
+//      }
+//    }
+func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	// This checks the request format, ACLs, verifies the instance exists and
+	// returns info about it.
+	inst, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
+		Package: r.FormValue("package_name"),
+		Instance: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1, // legacy API supported only SHA1
+			HexDigest: r.FormValue("instance_id"),
+		},
+	})
+
+	var signedURL *api.ObjectURL
+	if err == nil {
+		// Here we know the instance exists and the caller has access to it, so just
+		// ask the CAS for an URL directly instead of using impl.GetInstanceURL,
+		// which will needlessly recheck ACLs and instance presence.
+		signedURL, err = impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+			Object: inst.Instance.Instance,
+		})
+	}
+
+	switch grpc.Code(err) {
+	case codes.OK:
+		return replyWithJSON(w, map[string]interface{}{
+			"status":    "SUCCESS",
+			"fetch_url": signedURL.SignedUrl,
+			"instance":  (&legacyInstance{}).FromInstance(inst.Instance),
+		})
+	case codes.NotFound:
+		return replyWithError(w, "INSTANCE_NOT_FOUND", grpc.ErrorDesc(err))
+	default:
+		return err // the legacy client recognizes other codes just fine
+	}
 }
 
 // handleLegacyResolve is a legacy handler for ResolveVersion RPC.

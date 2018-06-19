@@ -2436,6 +2436,7 @@ func TestLegacyHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx := gaetesting.TestingContext()
 		ctx = auth.WithState(ctx, &authtest.FakeState{
 			Identity: "user:reader@example.com",
@@ -2450,11 +2451,21 @@ func TestLegacyHandlers(t *testing.T) {
 				},
 			},
 		})
-		impl := repoImpl{meta: &meta}
+
+		cas := testutil.MockCAS{
+			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+				return &api.ObjectURL{
+					SignedUrl: "http://fake/" + model.ObjectRefToInstanceID(r.Object),
+				}, nil
+			},
+		}
+		impl := repoImpl{meta: &meta, cas: &cas}
 
 		inst1 := &model.Instance{
-			InstanceID: strings.Repeat("a", 40),
-			Package:    model.PackageKey(ctx, "a/b"),
+			InstanceID:   strings.Repeat("a", 40),
+			Package:      model.PackageKey(ctx, "a/b"),
+			RegisteredBy: "user:reg@example.com",
+			RegisteredTs: testTime,
 		}
 		inst2 := &model.Instance{
 			InstanceID: strings.Repeat("b", 40),
@@ -2482,6 +2493,49 @@ func TestLegacyHandlers(t *testing.T) {
 			body = strings.TrimSpace(rr.Body.String())
 			return
 		}
+
+		Convey("handleLegacyInstance works", func() {
+			callInstance := func(pkg, iid, ct string) (code int, body string) {
+				return callHandler(adaptGrpcErr(impl.handleLegacyInstance), url.Values{
+					"package_name": {pkg},
+					"instance_id":  {iid},
+				}, ct)
+			}
+
+			Convey("Happy path", func() {
+				code, body := callInstance("a/b", strings.Repeat("a", 40), "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"fetch_url":"http://fake/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",`+
+						`"instance":{"package_name":"a/b","instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",`+
+						`"registered_by":"user:reg@example.com","registered_ts":"1454472306000000"},"status":"SUCCESS"}`)
+			})
+
+			Convey("Bad package", func() {
+				code, body := callInstance("///", strings.Repeat("a", 40), "plain")
+				So(code, ShouldEqual, http.StatusBadRequest)
+				So(body, ShouldContainSubstring, "invalid package name")
+			})
+
+			Convey("Bad instance ID", func() {
+				code, body := callInstance("a/b", strings.Repeat("a", 99), "plain")
+				So(code, ShouldEqual, http.StatusBadRequest)
+				So(body, ShouldContainSubstring, "invalid SHA1 digest")
+			})
+
+			Convey("No access", func() {
+				code, body := callInstance("z/z/z", strings.Repeat("a", 40), "plain")
+				So(code, ShouldEqual, http.StatusForbidden)
+				So(body, ShouldContainSubstring, "not allowed to see")
+			})
+
+			Convey("Missing pkg", func() {
+				code, body := callInstance("a/z/z", strings.Repeat("a", 40), "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"no such package","status":"INSTANCE_NOT_FOUND"}`)
+			})
+		})
 
 		Convey("handleLegacyResolve works", func() {
 			callResolve := func(pkg, ver, ct string) (code int, body string) {
