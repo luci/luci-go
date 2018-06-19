@@ -52,6 +52,10 @@ var googlePackages = map[string]string{
 	"google/protobuf/struct.proto":     "github.com/golang/protobuf/ptypes/struct",
 	"google/protobuf/timestamp.proto":  "github.com/golang/protobuf/ptypes/timestamp",
 	"google/protobuf/wrappers.proto":   "github.com/golang/protobuf/ptypes/wrappers",
+
+	"google/rpc/code.proto":          "google.golang.org/genproto/googleapis/rpc/code",
+	"google/rpc/error_details.proto": "google.golang.org/genproto/googleapis/rpc/errdetails",
+	"google/rpc/status.proto":        "google.golang.org/genproto/googleapis/rpc/status",
 }
 
 // compile runs protoc on protoFiles. protoFiles must be relative to dir.
@@ -80,6 +84,12 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 		args = append(args, "--proto_path="+path)
 		if strings.HasPrefix(dir, path) {
 			currentGoPath = path
+		}
+
+		// Include well-known protobuf types.
+		wellKnownProtoDir := filepath.Join(path, "go.chromium.org", "luci", "grpc", "proto")
+		if info, err := os.Stat(wellKnownProtoDir); err == nil && info.IsDir() {
+			args = append(args, "--proto_path="+wellKnownProtoDir)
 		}
 	}
 
