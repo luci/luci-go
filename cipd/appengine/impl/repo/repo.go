@@ -16,6 +16,7 @@ package repo
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 	"sync"
@@ -40,6 +41,7 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
@@ -53,7 +55,7 @@ import (
 // Public returns publicly exposed implementation of cipd.Repository service.
 //
 // It checks ACLs.
-func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) api.RepositoryServer {
+func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) Server {
 	impl := &repoImpl{
 		tq:   d,
 		meta: metadata.GetStorage(),
@@ -62,6 +64,16 @@ func Public(internalCAS cas.StorageServer, d *tq.Dispatcher) api.RepositoryServe
 	impl.registerTasks()
 	impl.registerProcessor(&processing.ClientExtractor{CAS: internalCAS})
 	return impl
+}
+
+// Server is api.RepositoryServer that can also expose some non-pRPC routes.
+type Server interface {
+	api.RepositoryServer
+
+	// InstallHandlers installs non-pRPC HTTP handlers into the router.
+	//
+	// Assumes 'base' middleware chain does OAuth2 authentication already.
+	InstallHandlers(r *router.Router, base router.MiddlewareChain)
 }
 
 // repoImpl implements api.RepositoryServer.
@@ -1151,4 +1163,90 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 		resp.Processors = proc
 	}
 	return resp, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Non-pRPC handlers for the client bootstrap and legacy API.
+
+// adaptGrpcErr knows how to convert gRPC-style errors to ugly looking HTTP
+// error pages with appropriate HTTP status codes.
+//
+// Recognizes either real gRPC errors (produced with status.Errorf) or
+// grpc-tagged errors produced via grpcutil.
+func adaptGrpcErr(h func(*router.Context) error) router.Handler {
+	return func(ctx *router.Context) {
+		err := grpcutil.GRPCifyAndLogErr(ctx.Context, h(ctx))
+		if code := grpc.Code(err); code != codes.OK {
+			http.Error(ctx.Writer, grpc.ErrorDesc(err), grpcutil.CodeStatus(code))
+		}
+	}
+}
+
+// InstallHandlers installs non-pRPC HTTP handlers into the router.
+func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
+	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
+}
+
+// handleClientBootstrap redirects to a CIPD client binary in Google Storage.
+//
+// GET /client?platform=...&version=...
+//
+// Where:
+//    platform: linux-amd64, windows-386, etc.
+//    version: a package version identifier (instance ID, a ref or a tag).
+//
+// On success issues HTTP 302 redirect to the signed Google Storage URL.
+// On errors returns HTTP 4** with an error message.
+func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	// Do light validation (the rest is in ResolveVersion), and get a full client
+	// package name.
+	platform := r.FormValue("platform")
+	version := r.FormValue("version")
+	switch {
+	case platform == "":
+		return status.Errorf(codes.InvalidArgument, "no 'platform' specified")
+	case version == "":
+		return status.Errorf(codes.InvalidArgument, "no 'version' specified")
+	}
+	pkg, err := processing.GetClientPackage(platform)
+	if err != nil {
+		return status.Errorf(codes.InvalidArgument, "bad platform name")
+	}
+
+	// Resolve the version into a concrete instance. This also does rigorous
+	// argument validation, ACL checks and verifies the resulting instance exists.
+	inst, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+		Package: pkg,
+		Version: version,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Grab the location of the extracted CIPD client from the post-processor.
+	res, err := processing.GetClientExtractorResult(c, inst)
+	switch {
+	case transient.Tag.In(err):
+		return err
+	case err == datastore.ErrNoSuchEntity:
+		return status.Errorf(codes.NotFound, "the client binary is not extracted yet, try later")
+	case err != nil: // fatal
+		return status.Errorf(codes.NotFound, "the client binary is not available - %s", err)
+	}
+	ref, err := res.ToObjectRef()
+	if err != nil {
+		return status.Errorf(codes.NotFound, "malformed ref to the client binary - %s", err)
+	}
+
+	// Ask CAS for a signed URL to the client binary and redirect there.
+	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object:           ref,
+		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
+	})
+	if err == nil {
+		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
+	}
+	return err
 }

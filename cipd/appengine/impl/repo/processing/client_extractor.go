@@ -23,6 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -32,12 +33,25 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // ClientExtractorProcID is identifier of ClientExtractor processor.
 const ClientExtractorProcID = "cipd_client_binary:v1"
 
 const clientPkgPrefix = "infra/tools/cipd/"
+
+// GetClientPackage returns the name of the client package for CIPD client for
+// the given platform.
+//
+// Returns an error if the platform name is invalid.
+func GetClientPackage(platform string) (string, error) {
+	pkg := clientPkgPrefix + platform
+	if err := common.ValidatePackageName(pkg); err != nil {
+		return "", err
+	}
+	return pkg, nil
+}
 
 // IsClientPackage returns true if the given package stores a CIPD client.
 func IsClientPackage(pkg string) bool {
@@ -67,6 +81,23 @@ type ClientExtractorResult struct {
 		HashAlgo   string `json:"hash_algo"`
 		HashDigest string `json:"hash_digest"`
 	} `json:"client_binary"`
+}
+
+// ToObjectRef returns a reference to the extracted client binary in CAS.
+//
+// The returned ObjectRef is validated to be syntactically correct already.
+func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
+	if r.ClientBinary.HashAlgo != "SHA1" {
+		return nil, fmt.Errorf("expecting SHA1 hash, got %q", r.ClientBinary.HashAlgo)
+	}
+	ref := &api.ObjectRef{
+		HashAlgo:  api.HashAlgo_SHA1,
+		HexDigest: r.ClientBinary.HashDigest,
+	}
+	if err := cas.ValidateObjectRef(ref); err != nil {
+		return nil, err
+	}
+	return ref, nil
 }
 
 // ClientExtractor is a processor that extracts CIPD client binary from CIPD
@@ -206,6 +237,36 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 
 	res.Result = r
 	return
+}
+
+// GetClientExtractorResult returns results of client extractor processor.
+//
+// They contain a reference to the unpacked CIPD binary object in the Google
+// Storage.
+//
+// Returns:
+//   (result, nil) on success.
+//   (nil, datastore.ErrNoSuchEntity) if results are not available.
+//   (nil, transient-tagged error) on retrieval errors.
+//   (nil, non-transient-tagged error) if the client extractor failed.
+func GetClientExtractorResult(c context.Context, inst *api.Instance) (*ClientExtractorResult, error) {
+	r := &model.ProcessingResult{
+		ProcID:   ClientExtractorProcID,
+		Instance: datastore.KeyForObj(c, (&model.Instance{}).FromProto(c, inst)),
+	}
+	switch err := datastore.Get(c, r); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, err
+	case err != nil:
+		return nil, transient.Tag.Apply(err)
+	case !r.Success:
+		return nil, errors.Reason("client extraction failed - %s", r.Error).Err()
+	}
+	out := &ClientExtractorResult{}
+	if err := r.ReadResult(out); err != nil {
+		return nil, errors.Annotate(err, "failed to parse the client extractor status").Err()
+	}
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
