@@ -19,11 +19,13 @@ package frontend
 import (
 	"net/http"
 
+	"go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/grpc/discovery"
 	"go.chromium.org/luci/grpc/grpcmon"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -35,6 +37,17 @@ func init() {
 
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
+
+	// Register non-pRPC routes, such as the client bootstrap handler and routes
+	// to support minimal subset of legacy API required to let old CIPD clients
+	// fetch packages and self-update.
+	//
+	// TODO(vadimsh): Remove 'v2' prefix once Go backend becomes the default.
+	impl.PublicRepo.InstallHandlers(r.Subrouter("/v2"), standard.Base().Extend(
+		auth.Authenticate(&server.OAuth2Method{
+			Scopes: []string{server.EmailScope},
+		}),
+	))
 
 	// Install all RPC servers. Catch panics, report metrics to tsmon (including
 	// panics themselves, as Internal errors).
