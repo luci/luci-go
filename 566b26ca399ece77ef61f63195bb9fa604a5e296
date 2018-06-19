@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b0d8356a_bc3d07b4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73451ec3_6b5a45ed",
+      "range": {
+        "startLine": 9,
+        "startChar": 10,
+        "endLine": 9,
+        "endChar": 11
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5eaac765_a2d033cd",
         "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd2448ec_b48f070c",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:49:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5eaac765_a2d033cd",
+      "range": {
+        "startLine": 44,
+        "startChar": 28,
+        "endLine": 44,
+        "endChar": 29
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "37397b13_86c15b4b",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:49:10Z",
+      "side": 1,
+      "message": "I don\u0027t think it is necessary. It is hard to misspell SHA1, and tests caught it anyway. Adding `const SHA1 \u003d \"SHA1\"` seems odd.",
+      "parentUuid": "fc392994_19024cf5",
+      "range": {
+        "startLine": 90,
+        "startChar": 31,
+        "endLine": 90,
+        "endChar": 37
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "308a9073_24c9868d",
         "filename": "cipd/appengine/impl/repo/repo_test.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7658d441_05ef28b6",
+        "filename": "cipd/appengine/impl/repo/repo_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 2394,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:49:10Z",
+      "side": 1,
+      "message": "They are stupid now, but they are valuable when someone else (or me later) changes code.\n\nFor example, someone might want to \"optimize\" ResolveVersion RPC by removing instance presence check in case the version is given as hex digest already (assuming this check will be done in GetInstanceURL anyway). This will introduce a security bug in /client which these stupid tests would catch. Except I forgot to add this particular test here \u003e_\u003c (I\u0027ve added it to CL 1105622 that implements legacy variant of this check).\n\nAdded it now.",
+      "parentUuid": "308a9073_24c9868d",
+      "range": {
+        "startLine": 2372,
+        "startChar": 2,
+        "endLine": 2394,
+        "endChar": 4
+      },
+      "revId": "566b26ca399ece77ef61f63195bb9fa604a5e296",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
