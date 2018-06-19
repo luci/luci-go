@@ -75,6 +75,11 @@ func (c *commonServerFlags) createAuthClient() (*http.Client, error) {
 	// Don't enforce authentication by using OptionalLogin mode. This is needed
 	// for IP whitelisted bots: they have NO credentials to send.
 	ctx := gologger.StdConfig.Use(context.Background())
+
+	// Isolate uploads compressed binary, so do not re-compress in http request.
+	if c.parsedAuthOpts.Transport == nil {
+		c.parsedAuthOpts.Transport = &http.Transport{DisableCompression: true}
+	}
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
