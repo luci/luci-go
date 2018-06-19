@@ -97,6 +97,30 @@
     },
     {
       "key": {
+        "uuid": "4b0afe57_6f2ded12",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T18:19:41Z",
+      "side": 1,
+      "message": "Wrapped with transient errors in here.\n\nAs for 403, I don\u0027t think 403 here is fatal. IF it\u0027s really due to change of ACLs, next fetch of ref\u0027s HEAD will fail permanently due to 403, and we\u0027d be done.",
+      "parentUuid": "f12b013c_518e2994",
+      "range": {
+        "startLine": 428,
+        "startChar": 24,
+        "endLine": 428,
+        "endChar": 60
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77b8a43e_297cee40",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 2
@@ -117,6 +141,30 @@
       "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81477a6e_9224cce0",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 448,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T18:19:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77b8a43e_297cee40",
+      "range": {
+        "startLine": 448,
+        "startChar": 44,
+        "endLine": 448,
+        "endChar": 47
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
