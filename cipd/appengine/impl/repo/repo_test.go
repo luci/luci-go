@@ -2431,3 +2431,98 @@ func TestClientBootstrap(t *testing.T) {
 		})
 	})
 }
+
+func TestLegacyHandlers(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+		ctx = auth.WithState(ctx, &authtest.FakeState{
+			Identity: "user:reader@example.com",
+		})
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"user:reader@example.com"},
+				},
+			},
+		})
+		impl := repoImpl{meta: &meta}
+
+		inst1 := &model.Instance{
+			InstanceID: strings.Repeat("a", 40),
+			Package:    model.PackageKey(ctx, "a/b"),
+		}
+		inst2 := &model.Instance{
+			InstanceID: strings.Repeat("b", 40),
+			Package:    model.PackageKey(ctx, "a/b"),
+		}
+		So(datastore.Put(ctx, &model.Package{Name: "a/b"}, inst1, inst2), ShouldBeNil)
+
+		// Make an ambiguous tag.
+		model.AttachTags(ctx, inst1, []*api.Tag{{Key: "k", Value: "v"}}, "")
+		model.AttachTags(ctx, inst2, []*api.Tag{{Key: "k", Value: "v"}}, "")
+
+		callHandler := func(h router.Handler, f url.Values, ct string) (code int, body string) {
+			rr := httptest.NewRecorder()
+			h(&router.Context{
+				Context: ctx,
+				Request: &http.Request{Form: f},
+				Writer:  rr,
+			})
+			expCT := "text/plain; charset=utf-8"
+			if ct == "json" {
+				expCT = "application/json; charset=utf-8"
+			}
+			So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
+			code = rr.Code
+			body = strings.TrimSpace(rr.Body.String())
+			return
+		}
+
+		Convey("handleLegacyResolve works", func() {
+			callResolve := func(pkg, ver, ct string) (code int, body string) {
+				return callHandler(adaptGrpcErr(impl.handleLegacyResolve), url.Values{
+					"package_name": {pkg},
+					"version":      {ver},
+				}, ct)
+			}
+
+			Convey("Happy path", func() {
+				code, body := callResolve("a/b", strings.Repeat("a", 40), "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","status":"SUCCESS"}`)
+			})
+
+			Convey("Bad request", func() {
+				code, body := callResolve("///", strings.Repeat("a", 40), "plain")
+				So(code, ShouldEqual, http.StatusBadRequest)
+				So(body, ShouldContainSubstring, "invalid package name")
+			})
+
+			Convey("No access", func() {
+				code, body := callResolve("z/z/z", strings.Repeat("a", 40), "plain")
+				So(code, ShouldEqual, http.StatusForbidden)
+				So(body, ShouldContainSubstring, "not allowed to see")
+			})
+
+			Convey("Missing pkg", func() {
+				code, body := callResolve("a/z/z", strings.Repeat("a", 40), "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"no such package","status":"INSTANCE_NOT_FOUND"}`)
+			})
+
+			Convey("Ambiguous version", func() {
+				code, body := callResolve("a/b", "k:v", "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"ambiguity when resolving the tag, more than one instance has it","status":"AMBIGUOUS_VERSION"}`)
+			})
+		})
+	})
+}
