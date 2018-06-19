@@ -2318,10 +2318,11 @@ func TestClientBootstrap(t *testing.T) {
 		}
 
 		impl := repoImpl{meta: &meta, cas: &cas}
-		handler := adaptGrpcErr(impl.handleClientBootstrap)
 
 		goodPlat := "linux-amd64"
 		goodVer := strings.Repeat("a", 40)
+		goodPkg, err := processing.GetClientPackage(goodPlat)
+		So(err, ShouldBeNil)
 
 		setup := func(res *processing.ClientExtractorResult, fail string) *model.ProcessingResult {
 			pkgName, err := processing.GetClientPackage(goodPlat)
@@ -2350,7 +2351,7 @@ func TestClientBootstrap(t *testing.T) {
 			form.Add("platform", plat)
 			form.Add("version", ver)
 			rr := httptest.NewRecorder()
-			handler(&router.Context{
+			adaptGrpcErr(impl.handleClientBootstrap)(&router.Context{
 				Context: ctx,
 				Request: &http.Request{Form: form},
 				Writer:  rr,
@@ -2358,76 +2359,158 @@ func TestClientBootstrap(t *testing.T) {
 			return rr
 		}
 
+		callLegacy := func(pkg, iid, ct string) (code int, body string) {
+			rr := httptest.NewRecorder()
+			adaptGrpcErr(impl.handleLegacyClientInfo)(&router.Context{
+				Context: ctx,
+				Request: &http.Request{Form: url.Values{
+					"package_name": {pkg},
+					"instance_id":  {iid},
+				}},
+				Writer: rr,
+			})
+			expCT := "text/plain; charset=utf-8"
+			if ct == "json" {
+				expCT = "application/json; charset=utf-8"
+			}
+			So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
+			code = rr.Code
+			body = strings.TrimSpace(rr.Body.String())
+			return
+		}
+
 		res := processing.ClientExtractorResult{}
 		res.ClientBinary.HashAlgo = "SHA1"
 		res.ClientBinary.HashDigest = strings.Repeat("b", 40)
+		res.ClientBinary.Size = 123456789101112
 		proc := setup(&res, "")
 
-		Convey("Happy path", func() {
-			rr := call(goodPlat, goodVer)
-			So(rr.Code, ShouldEqual, http.StatusFound)
-			So(rr.Header().Get("Location"), ShouldEqual, "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd")
-		})
-
-		Convey("No plat", func() {
-			rr := call("", goodVer)
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldContainSubstring, "no 'platform' specified")
-		})
-
-		Convey("Bad plat", func() {
-			rr := call("...", goodVer)
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldContainSubstring, "bad platform name")
-		})
-
-		Convey("No ver", func() {
-			rr := call(goodPlat, "")
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldContainSubstring, "no 'version' specified")
-		})
-
-		Convey("Bad ver", func() {
-			rr := call(goodPlat, "!!!!")
-			So(rr.Code, ShouldEqual, http.StatusBadRequest)
-			So(rr.Body.String(), ShouldContainSubstring, "bad version")
-		})
-
-		Convey("No access", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:someone@example.com",
+		Convey("Non legacy", func() {
+			Convey("Happy path", func() {
+				rr := call(goodPlat, goodVer)
+				So(rr.Code, ShouldEqual, http.StatusFound)
+				So(rr.Header().Get("Location"), ShouldEqual, "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd")
 			})
-			rr := call(goodPlat, goodVer)
-			So(rr.Code, ShouldEqual, http.StatusForbidden)
-			So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
+
+			Convey("No plat", func() {
+				rr := call("", goodVer)
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "no 'platform' specified")
+			})
+
+			Convey("Bad plat", func() {
+				rr := call("...", goodVer)
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "bad platform name")
+			})
+
+			Convey("No ver", func() {
+				rr := call(goodPlat, "")
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "no 'version' specified")
+			})
+
+			Convey("Bad ver", func() {
+				rr := call(goodPlat, "!!!!")
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "bad version")
+			})
+
+			Convey("No access", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				rr := call(goodPlat, goodVer)
+				So(rr.Code, ShouldEqual, http.StatusForbidden)
+				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
+			})
+
+			Convey("Missing ver", func() {
+				rr := call(goodPlat, "missing")
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "no such ref")
+			})
+
+			Convey("Missing instance ID", func() {
+				rr := call(goodPlat, strings.Repeat("b", 40))
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "no such instance")
+			})
+
+			Convey("Not extracted yet", func() {
+				datastore.Delete(ctx, proc)
+
+				rr := call(goodPlat, goodVer)
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "is not extracted yet")
+			})
+
+			Convey("Fatal error during extraction", func() {
+				setup(nil, "BOOM")
+
+				rr := call(goodPlat, goodVer)
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "BOOM")
+			})
 		})
 
-		Convey("Missing ver", func() {
-			rr := call(goodPlat, "missing")
-			So(rr.Code, ShouldEqual, http.StatusNotFound)
-			So(rr.Body.String(), ShouldContainSubstring, "no such ref")
-		})
+		Convey("Legacy", func() {
+			Convey("Happy path", func() {
+				code, body := callLegacy(goodPkg, goodVer, "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"client_binary":{"fetch_url":"http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd",`+
+						`"file_name":"cipd","sha1":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",`+
+						`"size":"123456789101112"},`+
+						`"instance":{"package_name":"infra/tools/cipd/linux-amd64",`+
+						`"instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"status":"SUCCESS"}`)
+			})
 
-		Convey("Missing instance ID", func() {
-			rr := call(goodPlat, strings.Repeat("b", 40))
-			So(rr.Code, ShouldEqual, http.StatusNotFound)
-			So(rr.Body.String(), ShouldContainSubstring, "no such instance")
-		})
+			Convey("Bad package name", func() {
+				code, body := callLegacy("not/a/client", goodVer, "text")
+				So(code, ShouldEqual, http.StatusBadRequest)
+				So(body, ShouldContainSubstring, "not a CIPD client package")
+			})
 
-		Convey("Not extracted yet", func() {
-			datastore.Delete(ctx, proc)
+			Convey("Bad instance ID", func() {
+				code, body := callLegacy(goodPkg, "not-an-id", "text")
+				So(code, ShouldEqual, http.StatusBadRequest)
+				So(body, ShouldContainSubstring, "invalid SHA1 digest")
+			})
 
-			rr := call(goodPlat, goodVer)
-			So(rr.Code, ShouldEqual, http.StatusNotFound)
-			So(rr.Body.String(), ShouldContainSubstring, "is not extracted yet")
-		})
+			Convey("Missing instance", func() {
+				code, body := callLegacy(goodPkg, strings.Repeat("c", 40), "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"no such instance","status":"INSTANCE_NOT_FOUND"}`)
+			})
 
-		Convey("Fatal error during extraction", func() {
-			setup(nil, "BOOM")
+			Convey("No access", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				code, body := callLegacy(goodPkg, strings.Repeat("c", 40), "text")
+				So(code, ShouldEqual, http.StatusForbidden)
+				So(body, ShouldContainSubstring, "not allowed to see it")
+			})
 
-			rr := call(goodPlat, goodVer)
-			So(rr.Code, ShouldEqual, http.StatusNotFound)
-			So(rr.Body.String(), ShouldContainSubstring, "BOOM")
+			Convey("Not extracted yet", func() {
+				datastore.Delete(ctx, proc)
+
+				code, body := callLegacy(goodPkg, goodVer, "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"the client binary is not extracted yet, try later","status":"NOT_EXTRACTED_YET"}`)
+			})
+
+			Convey("Fatal error during extraction", func() {
+				setup(nil, "BOOM")
+
+				code, body := callLegacy(goodPkg, goodVer, "json")
+				So(code, ShouldEqual, http.StatusOK)
+				So(body, ShouldEqual,
+					`{"error_message":"the client binary is not available - client extraction failed - BOOM","status":"ERROR"}`)
+			})
 		})
 	})
 }
