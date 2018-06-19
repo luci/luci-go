@@ -34,6 +34,24 @@
       "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0d177939_f6220494",
+        "filename": "grpc/proto/google/rpc/error_details.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-19T18:33:42Z",
+      "side": 1,
+      "message": "This specific file is 80% cloud. QuotaFailure references cloud projects, ResourceInfo references cloud resources. I don\u0027t think we should be cargo-culting these concepts into LUCI. \n\nLGTM, if you want to include it for completness, but we shouldn\u0027t be using anything that references cloud because we are not a Cloud API.\n\nI don\u0027t mind google.rpc.Status proto though, which is generic enough.",
+      "parentUuid": "f8807381_49f8e4c6",
+      "revId": "563c6d12cfdbdebadc21386132b1534521de00e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
