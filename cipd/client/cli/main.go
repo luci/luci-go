@@ -2284,59 +2284,6 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// 'pkg-delete' subcommand.
-
-func cmdDelete(params Parameters) *subcommands.Command {
-	return &subcommands.Command{
-		Advanced:  true,
-		UsageLine: "pkg-delete <package name>",
-		ShortDesc: "removes the package from the package repository on the backend",
-		LongDesc: "Removes all instances of the package, all its tags and refs.\n" +
-			"There's no confirmation and no undo. Be careful.",
-		CommandRun: func() subcommands.CommandRun {
-			c := &deleteRun{}
-			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
-			return c
-		},
-	}
-}
-
-type deleteRun struct {
-	cipdSubcommand
-	clientOptions
-}
-
-func (c *deleteRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !c.checkArgs(args, 1, 1) {
-		return 1
-	}
-	pkg, err := expandTemplate(args[0])
-	if err != nil {
-		return c.done(nil, err)
-	}
-
-	ctx := cli.GetContext(a, c, env)
-	return c.done(nil, deletePackage(ctx, pkg, &c.clientOptions))
-}
-
-func deletePackage(ctx context.Context, packageName string, opts *clientOptions) error {
-	client, err := opts.makeCipdClient(ctx)
-	if err != nil {
-		return err
-	}
-	switch err = client.DeletePackage(ctx, packageName); {
-	case err == nil:
-		return nil
-	case err == cipd.ErrPackageNotFound:
-		fmt.Printf("Package %q doesn't exist. Already deleted?\n", packageName)
-		return nil // not a failure, to make "cipd pkg-delete ..." idempotent
-	default:
-		return err
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // 'counter-write' subcommand.
 
 func cmdCounterWrite(params Parameters) *subcommands.Command {
@@ -2702,7 +2649,6 @@ func GetApplication(params Parameters) *cli.Application {
 			cmdFetch(params),
 			cmdInspect(),
 			cmdRegister(params),
-			cmdDelete(params),
 
 			// Low level misc commands.
 			{Advanced: true},
