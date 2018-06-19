@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "8fcd5e46_d4267dca",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-19T01:10:47Z",
+      "side": 1,
+      "message": "What matters is whether `newCommits` function returns any error at all, not what kind of error. Any error can be treated as transient by the `newCommits` callee because before calling `newCommits` we\u0027ve successfully fetched latest HEADs from gitiles. Hence, I explicitly wrap err as transient at the call site in line 276.\n\nDo you agree with this logical flow? If so, looking forward to suggestions for improvements in comments or code.",
+      "parentUuid": "9b523b99_9d1018c7",
+      "range": {
+        "startLine": 428,
+        "startChar": 24,
+        "endLine": 428,
+        "endChar": 60
+      },
+      "revId": "71a9369a3e986fae6b693a559817fe6fd23155e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "77b8a43e_297cee40",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 2
