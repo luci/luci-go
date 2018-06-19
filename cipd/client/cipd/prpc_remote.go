@@ -357,11 +357,3 @@ func (r *prpcRemoteImpl) searchInstances(ctx context.Context, tag, packageName s
 func (r *prpcRemoteImpl) listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error) {
 	return nil, errNoV2Impl
 }
-
-func (r *prpcRemoteImpl) incrementCounter(ctx context.Context, pin common.Pin, counter string, delta int) error {
-	return errNoV2Impl
-}
-
-func (r *prpcRemoteImpl) readCounter(ctx context.Context, pin common.Pin, counter string) (Counter, error) {
-	return Counter{}, errNoV2Impl
-}
