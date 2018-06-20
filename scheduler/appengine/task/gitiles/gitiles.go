@@ -437,7 +437,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		ctl.DebugLog("Ref %s: log of first rev %s not found", ref, newHead)
 		return nil, transient.Tag.Apply(err)
 	}
-	ctl.DebugLog("Ref %s: log old..new is not found, investigating futher...", ref)
+	ctl.DebugLog("Ref %s: log old..new is not found, investigating further...", ref)
 
 	// Fetch log of newHead only.
 	commits, newErr := gitiles.PagingLog(c, g, gitilespb.LogRequest{
@@ -457,6 +457,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	case codes.NotFound:
 		// This is case (1). Since we've already fetched just 1 commit from
 		// newHead, we are done.
+		ctl.DebugLog("Ref %s: force push detected; emitting trigger for new head", ref)
 		s.known[ref] = newHead
 		s.changed++
 		return commits, nil
