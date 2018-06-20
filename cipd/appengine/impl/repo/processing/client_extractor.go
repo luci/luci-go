@@ -94,7 +94,7 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 		HashAlgo:  api.HashAlgo_SHA1,
 		HexDigest: r.ClientBinary.HashDigest,
 	}
-	if err := cas.ValidateObjectRef(ref); err != nil {
+	if err := common.ValidateObjectRef(ref); err != nil {
 		return nil, err
 	}
 	return ref, nil
@@ -192,7 +192,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// chunks from the underlying file reader. We basically read 512 Kb buffer
 	// from GS, then unzip it in memory via small 32 Kb chunks into 2 Mb output
 	// buffer, and then flush it to GS.
-	hash, _ := cas.NewHash(api.HashAlgo_SHA1)
+	hash, _ := common.NewHash(api.HashAlgo_SHA1)
 	copied, err := io.CopyBuffer(
 		io.MultiWriter(uploader, hash),
 		fullReader{reader},

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // Ref represents a named pointer to some package instance.
@@ -42,7 +43,7 @@ type Ref struct {
 	Name    string         `gae:"$id"`     // e.g. "latest"
 	Package *datastore.Key `gae:"$parent"` // see PackageKey()
 
-	InstanceID string    `gae:"instance_id"` // see ObjectRefToInstanceID()
+	InstanceID string    `gae:"instance_id"` // see common.ObjectRefToInstanceID()
 	ModifiedBy string    `gae:"modified_by"` // who moved it the last time
 	ModifiedTs time.Time `gae:"modified_ts"` // when it was moved the last time
 }
@@ -52,7 +53,7 @@ func (e *Ref) Proto() *api.Ref {
 	return &api.Ref{
 		Name:       e.Name,
 		Package:    e.Package.StringID(),
-		Instance:   InstanceIDToObjectRef(e.InstanceID),
+		Instance:   common.InstanceIDToObjectRef(e.InstanceID),
 		ModifiedBy: e.ModifiedBy,
 		ModifiedTs: google.NewTimestamp(e.ModifiedTs),
 	}

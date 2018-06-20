@@ -500,7 +500,7 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -859,7 +859,7 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empt
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -871,7 +871,7 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empt
 	// Actually create or move the ref. This will also transactionally check the
 	// instance exists and it has passed the processing successfully.
 	inst := &model.Instance{
-		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(c, r.Package),
 	}
 	if err := model.SetRef(c, r.Name, inst, auth.CurrentIdentity(c)); err != nil {
@@ -960,7 +960,7 @@ func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error
 	if err := common.ValidatePackageName(pkg); err != nil {
 		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := cas.ValidateObjectRef(inst); err != nil {
+	if err := common.ValidateObjectRef(inst); err != nil {
 		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 	return validateTagList(tags)
@@ -983,7 +983,7 @@ func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (r
 	// Actually attach the tags. This will also transactionally check the instance
 	// exists and it has passed the processing successfully.
 	inst := &model.Instance{
-		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(c, r.Package),
 	}
 	if err := model.AttachTags(c, inst, r.Tags, auth.CurrentIdentity(c)); err != nil {
@@ -1008,7 +1008,7 @@ func (impl *repoImpl) DetachTags(c context.Context, r *api.DetachTagsRequest) (r
 
 	// Verify the instance exists, per DetachTags contract.
 	inst := &model.Instance{
-		InstanceID: model.ObjectRefToInstanceID(r.Instance),
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(c, r.Package),
 	}
 	if err := model.CheckInstanceExists(c, inst); err != nil {
@@ -1059,7 +1059,7 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.GetInstanceURLReq
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1092,7 +1092,7 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1177,7 +1177,7 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	if !processing.IsClientPackage(r.Package) {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - not a CIPD client package")
 	}
-	if err := cas.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1247,7 +1247,7 @@ type legacyInstance struct {
 // FromInstance fills in legacyInstance based on data from Instance proto.
 func (l *legacyInstance) FromInstance(inst *api.Instance) *legacyInstance {
 	l.PackageName = inst.Package
-	l.InstanceID = model.ObjectRefToInstanceID(inst.Instance)
+	l.InstanceID = common.ObjectRefToInstanceID(inst.Instance)
 	l.RegisteredBy = inst.RegisteredBy
 	if ts := inst.RegisteredTs; ts != nil {
 		l.RegisteredTs = fmt.Sprintf("%d", ts.Seconds*1e6+int64(ts.Nanos/1e3))
@@ -1510,7 +1510,7 @@ func (impl *repoImpl) handleLegacyResolve(ctx *router.Context) error {
 	case codes.OK:
 		return replyWithJSON(w, map[string]string{
 			"status":      "SUCCESS",
-			"instance_id": model.ObjectRefToInstanceID(resp.Instance),
+			"instance_id": common.ObjectRefToInstanceID(resp.Instance),
 		})
 	case codes.NotFound:
 		return replyWithError(w, "INSTANCE_NOT_FOUND", "%s", grpc.ErrorDesc(err))

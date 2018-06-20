@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -135,24 +136,6 @@ func TestRegisterInstance(t *testing.T) {
 	})
 }
 
-func TesRefIIDConversion(t *testing.T) {
-	t.Parallel()
-
-	Convey("SHA1 works", t, func() {
-		sha1 := strings.Repeat("a", 40)
-
-		So(ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
-		}), ShouldEqual, sha1)
-
-		So(InstanceIDToObjectRef(sha1), ShouldResemble, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
-		})
-	})
-}
-
 func TestListInstances(t *testing.T) {
 	t.Parallel()
 
@@ -210,7 +193,7 @@ func TestCheckInstance(t *testing.T) {
 				}), ShouldBeNil)
 		}
 
-		iid := ObjectRefToInstanceID(&api.ObjectRef{
+		iid := common.ObjectRefToInstanceID(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("a", 40),
 		})
