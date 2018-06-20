@@ -221,6 +221,25 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("fetchRoles works", func() {
+			repo.expect(rpcCall{
+				method: "GetRolesInPrefix",
+				in:     &api.PrefixRequest{Prefix: "a"},
+				out: &api.RolesInPrefixResponse{
+					Roles: []*api.RolesInPrefixResponse_RoleInPrefix{
+						{Role: api.Role_READER},
+						{Role: api.Role_WRITER},
+					},
+				},
+			})
+
+			res, err := r.fetchRoles(ctx, "a")
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, []string{"READER", "WRITER"})
+
+			repo.assertAllCalled()
+		})
+
 		sha1 := strings.Repeat("a", 40)
 
 		Convey("initiateUpload works", func() {
