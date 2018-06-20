@@ -15,7 +15,6 @@
 package model
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -29,7 +28,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/appengine/impl/cas"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // Instance represents a package instance as it is stored in the datastore.
@@ -38,14 +37,14 @@ import (
 // scanned the instance (see below).
 //
 // The parent entity is the corresponding package entity. ID is derived from
-// package instance file digest, see ObjectRefToInstanceID().
+// package instance file digest, see common.ObjectRefToInstanceID().
 //
 // Compatible with the python version of the backend.
 type Instance struct {
 	_kind  string                `gae:"$kind,PackageInstance"`
 	_extra datastore.PropertyMap `gae:"-,extra"`
 
-	InstanceID string         `gae:"$id"`     // see ObjectRefToInstanceID()
+	InstanceID string         `gae:"$id"`     // see common.ObjectRefToInstanceID()
 	Package    *datastore.Key `gae:"$parent"` // see PackageKey()
 
 	RegisteredBy string    `gae:"registered_by"` // who registered it
@@ -63,7 +62,7 @@ type Instance struct {
 func (e *Instance) Proto() *api.Instance {
 	return &api.Instance{
 		Package:      e.Package.StringID(),
-		Instance:     InstanceIDToObjectRef(e.InstanceID),
+		Instance:     common.InstanceIDToObjectRef(e.InstanceID),
 		RegisteredBy: e.RegisteredBy,
 		RegisteredTs: google.NewTimestamp(e.RegisteredTs),
 	}
@@ -75,40 +74,9 @@ func (e *Instance) Proto() *api.Instance {
 //
 // Doesn't touch output-only fields at all.
 func (e *Instance) FromProto(c context.Context, p *api.Instance) *Instance {
-	e.InstanceID = ObjectRefToInstanceID(p.Instance)
+	e.InstanceID = common.ObjectRefToInstanceID(p.Instance)
 	e.Package = PackageKey(c, p.Package)
 	return e
-}
-
-// ObjectRefToInstanceID returns an Instance ID that matches the given CAS
-// object ref.
-//
-// The ref is not checked for correctness. Use cas.ValidateObjectRef if this is
-// a concern. Panics if something is not right.
-//
-// For compatibility with existing data, Instance IDs of packages that use SHA1
-// refs are just hex encoded SHA1 digest.
-func ObjectRefToInstanceID(ref *api.ObjectRef) string {
-	switch ref.HashAlgo {
-	case api.HashAlgo_SHA1:
-		return ref.HexDigest
-	default:
-		panic(fmt.Sprintf("unrecognized hash algo %d", ref.HashAlgo))
-	}
-}
-
-// InstanceIDToObjectRef is a reverse of ObjectRefToInstanceID.
-//
-// It doesn't check the instance ID for correctness. Panics if it's wrong.
-func InstanceIDToObjectRef(iid string) *api.ObjectRef {
-	ref := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA1, // TODO(vadimsh): Recognize more.
-		HexDigest: iid,
-	}
-	if err := cas.ValidateObjectRef(ref); err != nil {
-		panic(fmt.Sprintf("bad instance ID %q, the resulting ref is broken - %s", iid, err))
-	}
-	return ref
 }
 
 // RegisterInstance transactionally registers an instance (and the corresponding

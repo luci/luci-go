@@ -1272,7 +1272,7 @@ func TestSearchInstances(t *testing.T) {
 		ids := func(inst []*api.Instance) []string {
 			out := make([]string, len(inst))
 			for i, obj := range inst {
-				out[i] = model.ObjectRefToInstanceID(obj.Instance)
+				out[i] = common.ObjectRefToInstanceID(obj.Instance)
 			}
 			return out
 		}
@@ -2312,7 +2312,7 @@ func TestClientBootstrap(t *testing.T) {
 		cas := testutil.MockCAS{
 			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
 				return &api.ObjectURL{
-					SignedUrl: fmt.Sprintf("http://fake/%s?d=%s", model.ObjectRefToInstanceID(r.Object), r.DownloadFilename),
+					SignedUrl: fmt.Sprintf("http://fake/%s?d=%s", common.ObjectRefToInstanceID(r.Object), r.DownloadFilename),
 				}, nil
 			},
 		}
@@ -2625,7 +2625,7 @@ func TestLegacyHandlers(t *testing.T) {
 		cas := testutil.MockCAS{
 			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
 				return &api.ObjectURL{
-					SignedUrl: "http://fake/" + model.ObjectRefToInstanceID(r.Object),
+					SignedUrl: "http://fake/" + common.ObjectRefToInstanceID(r.Object),
 				}, nil
 			},
 		}
