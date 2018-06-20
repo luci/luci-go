@@ -1748,7 +1748,6 @@ func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) 
 	listRoleACL("Owners", byRole["OWNER"])
 	listRoleACL("Writers", byRole["WRITER"])
 	listRoleACL("Readers", byRole["READER"])
-	listRoleACL("Counter Writers", byRole["COUNTER_WRITER"])
 
 	return byRole, nil
 }
@@ -1786,7 +1785,6 @@ func cmdEditACL(params Parameters) *subcommands.Command {
 			c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
 			c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
 			c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
-			c.Flags.Var(&c.counterWriter, "counter-writer", "Users or groups to grant COUNTER_WRITER role.")
 			c.Flags.Var(&c.revoke, "revoke", "Users or groups to remove from all roles.")
 			return c
 		},
@@ -1797,11 +1795,10 @@ type editACLRun struct {
 	cipdSubcommand
 	clientOptions
 
-	owner         principalsList
-	writer        principalsList
-	reader        principalsList
-	counterWriter principalsList
-	revoke        principalsList
+	owner  principalsList
+	writer principalsList
+	reader principalsList
+	revoke principalsList
 }
 
 func (c *editACLRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -1814,10 +1811,10 @@ func (c *editACLRun) Run(a subcommands.Application, args []string, env subcomman
 	}
 
 	ctx := cli.GetContext(a, c, env)
-	return c.done(nil, editACL(ctx, pkg, c.owner, c.writer, c.reader, c.counterWriter, c.revoke, c.clientOptions))
+	return c.done(nil, editACL(ctx, pkg, c.owner, c.writer, c.reader, c.revoke, c.clientOptions))
 }
 
-func editACL(ctx context.Context, packagePath string, owners, writers, readers, counterWriters, revoke principalsList, clientOpts clientOptions) error {
+func editACL(ctx context.Context, packagePath string, owners, writers, readers, revoke principalsList, clientOpts clientOptions) error {
 	changes := []cipd.PackageACLChange{}
 
 	makeChanges := func(action cipd.PackageACLChangeAction, role string, list principalsList) {
@@ -1833,12 +1830,10 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 	makeChanges(cipd.GrantRole, "OWNER", owners)
 	makeChanges(cipd.GrantRole, "WRITER", writers)
 	makeChanges(cipd.GrantRole, "READER", readers)
-	makeChanges(cipd.GrantRole, "COUNTER_WRITER", counterWriters)
 
 	makeChanges(cipd.RevokeRole, "OWNER", revoke)
 	makeChanges(cipd.RevokeRole, "WRITER", revoke)
 	makeChanges(cipd.RevokeRole, "READER", revoke)
-	makeChanges(cipd.RevokeRole, "COUNTER_WRITER", revoke)
 
 	if len(changes) == 0 {
 		return nil
@@ -1872,7 +1867,6 @@ func cmdCheckACL(params Parameters) *subcommands.Command {
 			c.Flags.BoolVar(&c.owner, "owner", false, "Check for OWNER role.")
 			c.Flags.BoolVar(&c.writer, "writer", false, "Check for WRITER role.")
 			c.Flags.BoolVar(&c.reader, "reader", false, "Check for READER role.")
-			c.Flags.BoolVar(&c.counterWriter, "counter-writer", false, "Check for COUNTER_WRITER role.")
 			return c
 		},
 	}
@@ -1882,10 +1876,9 @@ type checkACLRun struct {
 	cipdSubcommand
 	clientOptions
 
-	owner         bool
-	writer        bool
-	reader        bool
-	counterWriter bool
+	owner  bool
+	writer bool
+	reader bool
 }
 
 func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -1902,9 +1895,6 @@ func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 	if c.reader {
 		roles = append(roles, "READER")
-	}
-	if c.counterWriter {
-		roles = append(roles, "COUNTER_WRITER")
 	}
 
 	// By default, check for READER access.
