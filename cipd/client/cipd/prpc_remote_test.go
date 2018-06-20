@@ -607,3 +607,11 @@ func (m *mockedRepoClient) DescribeInstance(ctx context.Context, in *api.Describ
 	}
 	return out.(*api.DescribeInstanceResponse), nil
 }
+
+func (m *mockedRepoClient) DescribeClient(ctx context.Context, in *api.DescribeClientRequest, opts ...grpc.CallOption) (*api.DescribeClientResponse, error) {
+	out, err := m.call("DescribeClient", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*api.DescribeClientResponse), nil
+}

@@ -316,6 +316,17 @@ service Repository {
   //   INVALID_ARGUMENT if the request is malformed.
   //   NOT_FOUND if the instance doesn't exist.
   rpc DescribeInstance(DescribeInstanceRequest) returns (DescribeInstanceResponse);
+
+  // Returns information about a CIPD client package.
+  //
+  // Used by the client self-update procedure.
+  //
+  // Returns:
+  //   NOT_FOUND if the package or the instance doesn't exist.
+  //   FAILED_PRECONDITION if the instance is still being processed.
+  //   ABORTED if the instance has some failed processors associated with it,
+  //       such instance is effectively broken and should not be used.
+  rpc DescribeClient(DescribeClientRequest) returns (DescribeClientResponse);
 }
 
 
@@ -713,4 +724,40 @@ message DescribeInstanceResponse {
   //
   // Present only if the request has describe_processors == true.
   repeated Processor processors = 4;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+message DescribeClientRequest {
+  // The CIPD client package we want to get info about.
+  //
+  // For example 'infra/tools/cipd/linux-amd64'.
+  string package = 1;
+
+  // The client instance we want to get the info about.
+  ObjectRef instance = 2;
+}
+
+
+message DescribeClientResponse {
+  // The instance with all output fields filled in.
+  Instance instance = 1;
+
+  // Reference to the extracted client binary in the storage.
+  //
+  // Can be used by the caller to verify the integrity of the binary.
+  ObjectRef client_ref = 2;
+
+  // Signed URL pointing to the extracted client binary in the storage.
+  ObjectURL client_binary = 3;
+
+  // Size of the client binary in bytes.
+  int64 client_size = 4;
+
+  // SHA1 digest of the client binary (as hex string).
+  //
+  // Used only by legacy clients. Newer clients must verify client_ref instead.
+  string legacy_sha1 = 5;
 }

@@ -2287,7 +2287,7 @@ func TestDescribeInstance(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Non-pRPC handlers for the client bootstrap and legacy API.
+// Client bootstrap and legacy API.
 
 func TestClientBootstrap(t *testing.T) {
 	t.Parallel()
@@ -2324,7 +2324,7 @@ func TestClientBootstrap(t *testing.T) {
 		goodPkg, err := processing.GetClientPackage(goodPlat)
 		So(err, ShouldBeNil)
 
-		setup := func(res *processing.ClientExtractorResult, fail string) *model.ProcessingResult {
+		setup := func(res *processing.ClientExtractorResult, fail string) (*model.Instance, *model.ProcessingResult) {
 			pkgName, err := processing.GetClientPackage(goodPlat)
 			So(err, ShouldBeNil)
 			pkg := &model.Package{Name: pkgName}
@@ -2339,53 +2339,35 @@ func TestClientBootstrap(t *testing.T) {
 			if res != nil {
 				proc.Success = true
 				proc.WriteResult(res)
+				inst.ProcessorsSuccess = []string{proc.ProcID}
 			} else {
 				proc.Error = fail
+				inst.ProcessorsFailure = []string{proc.ProcID}
 			}
 			So(datastore.Put(ctx, pkg, inst, proc), ShouldBeNil)
-			return proc
-		}
-
-		call := func(plat, ver string) *httptest.ResponseRecorder {
-			form := url.Values{}
-			form.Add("platform", plat)
-			form.Add("version", ver)
-			rr := httptest.NewRecorder()
-			adaptGrpcErr(impl.handleClientBootstrap)(&router.Context{
-				Context: ctx,
-				Request: &http.Request{Form: form},
-				Writer:  rr,
-			})
-			return rr
-		}
-
-		callLegacy := func(pkg, iid, ct string) (code int, body string) {
-			rr := httptest.NewRecorder()
-			adaptGrpcErr(impl.handleLegacyClientInfo)(&router.Context{
-				Context: ctx,
-				Request: &http.Request{Form: url.Values{
-					"package_name": {pkg},
-					"instance_id":  {iid},
-				}},
-				Writer: rr,
-			})
-			expCT := "text/plain; charset=utf-8"
-			if ct == "json" {
-				expCT = "application/json; charset=utf-8"
-			}
-			So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
-			code = rr.Code
-			body = strings.TrimSpace(rr.Body.String())
-			return
+			return inst, proc
 		}
 
 		res := processing.ClientExtractorResult{}
 		res.ClientBinary.HashAlgo = "SHA1"
 		res.ClientBinary.HashDigest = strings.Repeat("b", 40)
 		res.ClientBinary.Size = 123456789101112
-		proc := setup(&res, "")
+		inst, proc := setup(&res, "")
 
-		Convey("Non legacy", func() {
+		Convey("Bootstrap endpoint", func() {
+			call := func(plat, ver string) *httptest.ResponseRecorder {
+				form := url.Values{}
+				form.Add("platform", plat)
+				form.Add("version", ver)
+				rr := httptest.NewRecorder()
+				adaptGrpcErr(impl.handleClientBootstrap)(&router.Context{
+					Context: ctx,
+					Request: &http.Request{Form: form},
+					Writer:  rr,
+				})
+				return rr
+			}
+
 			Convey("Happy path", func() {
 				rr := call(goodPlat, goodVer)
 				So(rr.Code, ShouldEqual, http.StatusFound)
@@ -2438,7 +2420,9 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("Not extracted yet", func() {
+				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
+				datastore.Put(ctx, inst)
 
 				rr := call(goodPlat, goodVer)
 				So(rr.Code, ShouldEqual, http.StatusNotFound)
@@ -2454,9 +2438,109 @@ func TestClientBootstrap(t *testing.T) {
 			})
 		})
 
-		Convey("Legacy", func() {
+		Convey("DescribeClient RPC", func() {
+			call := func(pkg, iid string) (*api.DescribeClientResponse, error) {
+				return impl.DescribeClient(ctx, &api.DescribeClientRequest{
+					Package: pkg,
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: iid,
+					},
+				})
+			}
+
 			Convey("Happy path", func() {
-				code, body := callLegacy(goodPkg, goodVer, "json")
+				resp, err := call(goodPkg, goodVer)
+				So(err, ShouldBeNil)
+				So(resp, ShouldResemble, &api.DescribeClientResponse{
+					Instance: &api.Instance{
+						Package: goodPkg,
+						Instance: &api.ObjectRef{
+							HashAlgo:  api.HashAlgo_SHA1,
+							HexDigest: goodVer,
+						},
+					},
+					ClientRef: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("b", 40),
+					},
+					ClientBinary: &api.ObjectURL{
+						SignedUrl: "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd",
+					},
+					ClientSize: 123456789101112,
+					LegacySha1: strings.Repeat("b", 40),
+				})
+			})
+
+			Convey("Bad package name", func() {
+				_, err := call("not/a/client", goodVer)
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "not a CIPD client package")
+			})
+
+			Convey("Bad instance ID", func() {
+				_, err := call(goodPkg, "not-an-id")
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "invalid SHA1 digest")
+			})
+
+			Convey("Missing instance", func() {
+				_, err := call(goodPkg, strings.Repeat("c", 40))
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
+			})
+
+			Convey("No access", func() {
+				ctx = auth.WithState(ctx, &authtest.FakeState{
+					Identity: "user:someone@example.com",
+				})
+				_, err := call(goodPkg, strings.Repeat("c", 40))
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "not allowed to see it")
+			})
+
+			Convey("Not extracted yet", func() {
+				inst.ProcessorsPending = []string{proc.ProcID}
+				datastore.Delete(ctx, proc)
+				datastore.Put(ctx, inst)
+
+				_, err := call(goodPkg, goodVer)
+				So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
+				So(err, ShouldErrLike, "the instance is not ready yet")
+			})
+
+			Convey("Fatal error during extraction", func() {
+				setup(nil, "BOOM")
+
+				_, err := call(goodPkg, goodVer)
+				So(grpc.Code(err), ShouldEqual, codes.Aborted)
+				So(err, ShouldErrLike, "some processors failed to process this instance")
+			})
+		})
+
+		Convey("Legacy API", func() {
+			call := func(pkg, iid, ct string) (code int, body string) {
+				rr := httptest.NewRecorder()
+				adaptGrpcErr(impl.handleLegacyClientInfo)(&router.Context{
+					Context: ctx,
+					Request: &http.Request{Form: url.Values{
+						"package_name": {pkg},
+						"instance_id":  {iid},
+					}},
+					Writer: rr,
+				})
+				expCT := "text/plain; charset=utf-8"
+				if ct == "json" {
+					expCT = "application/json; charset=utf-8"
+				}
+				So(rr.Header().Get("Content-Type"), ShouldEqual, expCT)
+				code = rr.Code
+				body = strings.TrimSpace(rr.Body.String())
+				return
+			}
+
+			Convey("Happy path", func() {
+				code, body := call(goodPkg, goodVer, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"client_binary":{"fetch_url":"http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd",`+
@@ -2467,19 +2551,19 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("Bad package name", func() {
-				code, body := callLegacy("not/a/client", goodVer, "text")
+				code, body := call("not/a/client", goodVer, "text")
 				So(code, ShouldEqual, http.StatusBadRequest)
 				So(body, ShouldContainSubstring, "not a CIPD client package")
 			})
 
 			Convey("Bad instance ID", func() {
-				code, body := callLegacy(goodPkg, "not-an-id", "text")
+				code, body := call(goodPkg, "not-an-id", "text")
 				So(code, ShouldEqual, http.StatusBadRequest)
 				So(body, ShouldContainSubstring, "invalid SHA1 digest")
 			})
 
 			Convey("Missing instance", func() {
-				code, body := callLegacy(goodPkg, strings.Repeat("c", 40), "json")
+				code, body := call(goodPkg, strings.Repeat("c", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"error_message":"no such instance","status":"INSTANCE_NOT_FOUND"}`)
@@ -2489,15 +2573,17 @@ func TestClientBootstrap(t *testing.T) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
-				code, body := callLegacy(goodPkg, strings.Repeat("c", 40), "text")
+				code, body := call(goodPkg, strings.Repeat("c", 40), "text")
 				So(code, ShouldEqual, http.StatusForbidden)
 				So(body, ShouldContainSubstring, "not allowed to see it")
 			})
 
 			Convey("Not extracted yet", func() {
+				inst.ProcessorsPending = []string{proc.ProcID}
 				datastore.Delete(ctx, proc)
+				datastore.Put(ctx, inst)
 
-				code, body := callLegacy(goodPkg, goodVer, "json")
+				code, body := call(goodPkg, goodVer, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"error_message":"the client binary is not extracted yet, try later","status":"NOT_EXTRACTED_YET"}`)
@@ -2506,10 +2592,11 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Fatal error during extraction", func() {
 				setup(nil, "BOOM")
 
-				code, body := callLegacy(goodPkg, goodVer, "json")
+				code, body := call(goodPkg, goodVer, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
-					`{"error_message":"the client binary is not available - client extraction failed - BOOM","status":"ERROR"}`)
+					`{"error_message":"the client binary is not available - some processors failed`+
+						` to process this instance: cipd_client_binary:v1","status":"ERROR"}`)
 			})
 		})
 	})
