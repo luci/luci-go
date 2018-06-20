@@ -400,6 +400,28 @@ func TestPrpcRemoteImpl(t *testing.T) {
 				uploadSession: &UploadSession{"op_id", "http://upload.example.com"},
 			})
 		})
+
+		Convey("listPackages works", func() {
+			repo.expect(rpcCall{
+				method: "ListPrefix",
+				in: &api.ListPrefixRequest{
+					Prefix:        "a",
+					Recursive:     true,
+					IncludeHidden: true,
+				},
+				out: &api.ListPrefixResponse{
+					Packages: []string{"a/b", "a/c"},
+					Prefixes: []string{"a/d", "a/d/e"},
+				},
+			})
+
+			pkgs, prefixes, err := r.listPackages(ctx, "a", true, true)
+			So(err, ShouldBeNil)
+			So(pkgs, ShouldResemble, []string{"a/b", "a/c"})
+			So(prefixes, ShouldResemble, []string{"a/d", "a/d/e"})
+
+			repo.assertAllCalled()
+		})
 	})
 }
 

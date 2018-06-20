@@ -356,8 +356,16 @@ func (r *prpcRemoteImpl) fetchRefs(ctx context.Context, pin common.Pin, refs []s
 ////////////////////////////////////////////////////////////////////////////////
 // Misc.
 
-func (r *prpcRemoteImpl) listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error) {
-	return nil, nil, errNoV2Impl
+func (r *prpcRemoteImpl) listPackages(ctx context.Context, path string, recursive, includeHidden bool) ([]string, []string, error) {
+	resp, err := r.repo.ListPrefix(ctx, &api.ListPrefixRequest{
+		Prefix:        path,
+		Recursive:     recursive,
+		IncludeHidden: includeHidden,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return resp.Packages, resp.Prefixes, nil
 }
 
 func (r *prpcRemoteImpl) searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
