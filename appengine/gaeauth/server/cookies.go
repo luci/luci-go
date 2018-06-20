@@ -50,7 +50,7 @@ func (m UsersAPIAuthMethod) Authenticate(c context.Context, r *http.Request) (*a
 
 const (
 	// serviceLoginURL is expected URL prefix for LoginURLs returned by prod GAE.
-	serviceLoginURL = "https://www.google.com/accounts/ServiceLogin?"
+	serviceLoginURL = "https://accounts.google.com/ServiceLogin?"
 	// accountChooserURL is what we use instead.
 	accountChooserURL = "https://www.google.com/accounts/AccountChooser?"
 )
