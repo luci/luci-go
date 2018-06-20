@@ -236,7 +236,17 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 }
 
 func (r *prpcRemoteImpl) fetchRoles(ctx context.Context, packagePath string) ([]string, error) {
-	return nil, errNoV2Impl
+	resp, err := r.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
+		Prefix: packagePath,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, len(resp.Roles))
+	for i, r := range resp.Roles {
+		out[i] = r.Role.String()
+	}
+	return out, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
