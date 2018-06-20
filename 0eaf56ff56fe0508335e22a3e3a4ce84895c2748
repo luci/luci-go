@@ -70,6 +70,30 @@
       "revId": "0eaf56ff56fe0508335e22a3e3a4ce84895c2748",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46a2d1e5_7550d92d",
+        "filename": "appengine/gaeauth/server/cookies.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-20T22:56:38Z",
+      "side": 1,
+      "message": "i mean the login URL, when clicked, still works. And yes, i deployed this CL @ PS#1.\nNow deployed #PS2 and it still works with new new accountChooserURL.",
+      "parentUuid": "9491bd27_9fb322a3",
+      "range": {
+        "startLine": 55,
+        "startChar": 22,
+        "endLine": 55,
+        "endChar": 68
+      },
+      "revId": "0eaf56ff56fe0508335e22a3e3a4ce84895c2748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
