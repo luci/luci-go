@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "66d10244_75bf3b5c",
+        "filename": "appengine/gaeauth/server/cookies.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-20T02:18:29Z",
+      "side": 1,
+      "message": "I have a feeling we should change this too then:\n\n\"https://accounts.google.com/AccountChooser?\"\n\nplease check it works",
+      "range": {
+        "startLine": 55,
+        "startChar": 22,
+        "endLine": 55,
+        "endChar": 68
+      },
+      "revId": "0eaf56ff56fe0508335e22a3e3a4ce84895c2748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
