@@ -22,6 +22,30 @@
       "revId": "0eaf56ff56fe0508335e22a3e3a4ce84895c2748",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c63e7dce_c0f38ecc",
+        "filename": "appengine/gaeauth/server/cookies.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-20T22:35:23Z",
+      "side": 1,
+      "message": "I presume deploying this CL and testing it is the way to go, right?\nif so, https://3271-f745148-tainted-tandrii-dot-luci-scheduler-dev.appspot.com/ seems to work.",
+      "parentUuid": "66d10244_75bf3b5c",
+      "range": {
+        "startLine": 55,
+        "startChar": 22,
+        "endLine": 55,
+        "endChar": 68
+      },
+      "revId": "0eaf56ff56fe0508335e22a3e3a4ce84895c2748",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
