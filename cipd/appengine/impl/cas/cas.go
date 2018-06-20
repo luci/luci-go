@@ -40,6 +40,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/cas/upload"
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/settings"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // readBufferSize is size of a buffer used to read Google Storage files.
@@ -104,7 +105,7 @@ func (s *storageImpl) registerTasks() {
 func (s *storageImpl) GetReader(c context.Context, ref *api.ObjectRef) (r gs.Reader, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	if err = ValidateObjectRef(ref); err != nil {
+	if err = common.ValidateObjectRef(ref); err != nil {
 		return nil, errors.Annotate(err, "bad ref").Err()
 	}
 
@@ -128,7 +129,7 @@ func (s *storageImpl) GetReader(c context.Context, ref *api.ObjectRef) (r gs.Rea
 func (s *storageImpl) GetObjectURL(c context.Context, r *api.GetObjectURLRequest) (resp *api.ObjectURL, err error) {
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
-	if err := ValidateObjectRef(r.Object); err != nil {
+	if err := common.ValidateObjectRef(r.Object); err != nil {
 		return nil, errors.Annotate(err, "bad 'object' field").Err()
 	}
 
@@ -166,7 +167,7 @@ func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) 
 	var hashAlgo api.HashAlgo
 	var hexDigest string
 	if r.Object != nil {
-		if err := ValidateObjectRef(r.Object); err != nil {
+		if err := common.ValidateObjectRef(r.Object); err != nil {
 			return nil, errors.Annotate(err, "bad 'object'").Err()
 		}
 		if r.HashAlgo != 0 && r.HashAlgo != r.Object.HashAlgo {
@@ -175,7 +176,7 @@ func (s *storageImpl) BeginUpload(c context.Context, r *api.BeginUploadRequest) 
 		}
 		hashAlgo = r.Object.HashAlgo
 		hexDigest = r.Object.HexDigest
-	} else if err := ValidateHashAlgo(r.HashAlgo); err != nil {
+	} else if err := common.ValidateHashAlgo(r.HashAlgo); err != nil {
 		return nil, errors.Annotate(err, "bad 'hash_algo'").Err()
 	} else {
 		hashAlgo = r.HashAlgo
@@ -259,7 +260,7 @@ func (s *storageImpl) FinishUpload(c context.Context, r *api.FinishUploadRequest
 	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
 
 	if r.ForceHash != nil {
-		if err := ValidateObjectRef(r.ForceHash); err != nil {
+		if err := common.ValidateObjectRef(r.ForceHash); err != nil {
 			return nil, errors.Annotate(err, "bad 'force_hash' field").Err()
 		}
 	}
@@ -498,7 +499,7 @@ func (s *storageImpl) verifyUploadTask(c context.Context, task *tasks.VerifyUplo
 		}
 	}()
 
-	hash, err := NewHash(op.HashAlgo)
+	hash, err := common.NewHash(op.HashAlgo)
 	if err != nil {
 		return err
 	}
