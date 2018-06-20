@@ -318,8 +318,22 @@ func (r *prpcRemoteImpl) registerInstance(ctx context.Context, pin common.Pin) (
 ////////////////////////////////////////////////////////////////////////////////
 // Fetching.
 
-func (r *prpcRemoteImpl) resolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
-	return common.Pin{}, errNoV2Impl
+func (r *prpcRemoteImpl) resolveVersion(ctx context.Context, packageName, version string) (pin common.Pin, err error) {
+	resp, err := r.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
+		Package: packageName,
+		Version: version,
+	}, prpc.ExpectedCode(codes.NotFound, codes.FailedPrecondition))
+	switch grpc.Code(err) {
+	case codes.OK:
+		pin = common.Pin{
+			PackageName: packageName,
+			InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
+		}
+	case codes.NotFound, codes.FailedPrecondition:
+		// Return a friendlier looking error message without gRPC framing.
+		err = errors.New(grpc.ErrorDesc(err))
+	}
+	return
 }
 
 func (r *prpcRemoteImpl) fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error) {
