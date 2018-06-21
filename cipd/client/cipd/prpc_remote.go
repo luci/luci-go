@@ -81,6 +81,29 @@ func (r *prpcRemoteImpl) init() error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Type converters, until callers switch to using API types directly.
+
+func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
+	return InstanceInfo{
+		Pin: common.Pin{
+			PackageName: inst.Package,
+			InstanceID:  common.ObjectRefToInstanceID(inst.Instance),
+		},
+		RegisteredBy: inst.RegisteredBy,
+		RegisteredTs: UnixTime(google.TimeFromProto(inst.RegisteredTs)),
+	}
+}
+
+func apiRefToInfo(r *api.Ref) RefInfo {
+	return RefInfo{
+		Ref:        r.Name,
+		InstanceID: common.ObjectRefToInstanceID(r.Instance),
+		ModifiedBy: r.ModifiedBy,
+		ModifiedTs: UnixTime(google.TimeFromProto(r.ModifiedTs)),
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // ACLs.
 
 var legacyRoles = map[string]api.Role{
@@ -336,8 +359,18 @@ func (r *prpcRemoteImpl) resolveVersion(ctx context.Context, packageName, versio
 	return
 }
 
-func (r *prpcRemoteImpl) fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error) {
-	return nil, errNoV2Impl
+func (r *prpcRemoteImpl) fetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
+	resp, err := r.repo.ListRefs(ctx, &api.ListRefsRequest{
+		Package: packageName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	refs := make([]RefInfo, len(resp.Refs))
+	for i, r := range resp.Refs {
+		refs[i] = apiRefToInfo(r)
+	}
+	return refs, nil
 }
 
 func (r *prpcRemoteImpl) fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
@@ -402,5 +435,20 @@ func (r *prpcRemoteImpl) searchInstances(ctx context.Context, tag, packageName s
 }
 
 func (r *prpcRemoteImpl) listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error) {
-	return nil, errNoV2Impl
+	resp, err := r.repo.ListInstances(ctx, &api.ListInstancesRequest{
+		Package:   packageName,
+		PageSize:  int32(limit),
+		PageToken: cursor,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := &listInstancesResponse{
+		instances: make([]InstanceInfo, len(resp.Instances)),
+		cursor:    resp.NextPageToken,
+	}
+	for i, inst := range resp.Instances {
+		out.instances[i] = apiInstanceToInfo(inst)
+	}
+	return out, nil
 }

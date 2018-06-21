@@ -444,6 +444,56 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("fetchPackageRefs works", func() {
+			repo.expect(rpcCall{
+				method: "ListRefs",
+				in:     &api.ListRefsRequest{Package: "a/b/c"},
+				out: &api.ListRefsResponse{
+					Refs: []*api.Ref{
+						{
+							Name:    "ref1",
+							Package: "a/b/c",
+							Instance: &api.ObjectRef{
+								HashAlgo:  api.HashAlgo_SHA1,
+								HexDigest: strings.Repeat("1", 40),
+							},
+							ModifiedBy: "user:m@example.com",
+							ModifiedTs: google.NewTimestamp(epoch.Add(time.Hour)),
+						},
+						{
+							Name:    "ref2",
+							Package: "a/b/c",
+							Instance: &api.ObjectRef{
+								HashAlgo:  api.HashAlgo_SHA1,
+								HexDigest: strings.Repeat("2", 40),
+							},
+							ModifiedBy: "user:m@example.com",
+							ModifiedTs: google.NewTimestamp(epoch),
+						},
+					},
+				},
+			})
+
+			refs, err := r.fetchPackageRefs(ctx, "a/b/c")
+			So(err, ShouldBeNil)
+			So(refs, ShouldResemble, []RefInfo{
+				{
+					Ref:        "ref1",
+					InstanceID: strings.Repeat("1", 40),
+					ModifiedBy: "user:m@example.com",
+					ModifiedTs: UnixTime(epoch.Add(time.Hour)),
+				},
+				{
+					Ref:        "ref2",
+					InstanceID: strings.Repeat("2", 40),
+					ModifiedBy: "user:m@example.com",
+					ModifiedTs: UnixTime(epoch),
+				},
+			})
+
+			repo.assertAllCalled()
+		})
+
 		Convey("fetchInstanceURL OK", func() {
 			repo.expect(rpcCall{
 				method: "GetInstanceURL",
@@ -509,6 +559,66 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pkgs, ShouldResemble, []string{"a/b", "a/c"})
 			So(prefixes, ShouldResemble, []string{"a/d", "a/d/e"})
+
+			repo.assertAllCalled()
+		})
+
+		Convey("listInstances works", func() {
+			repo.expect(rpcCall{
+				method: "ListInstances",
+				in: &api.ListInstancesRequest{
+					Package:   "a/b/c",
+					PageSize:  123,
+					PageToken: "zzz",
+				},
+				out: &api.ListInstancesResponse{
+					Instances: []*api.Instance{
+						{
+							Package: "a/b/c",
+							Instance: &api.ObjectRef{
+								HashAlgo:  api.HashAlgo_SHA1,
+								HexDigest: strings.Repeat("1", 40),
+							},
+							RegisteredBy: "user:r@example.com",
+							RegisteredTs: google.NewTimestamp(epoch.Add(time.Hour)),
+						},
+						{
+							Package: "a/b/c",
+							Instance: &api.ObjectRef{
+								HashAlgo:  api.HashAlgo_SHA1,
+								HexDigest: strings.Repeat("2", 40),
+							},
+							RegisteredBy: "user:r@example.com",
+							RegisteredTs: google.NewTimestamp(epoch),
+						},
+					},
+					NextPageToken: "xxx",
+				},
+			})
+
+			resp, err := r.listInstances(ctx, "a/b/c", 123, "zzz")
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, &listInstancesResponse{
+				instances: []InstanceInfo{
+					{
+						Pin: common.Pin{
+							PackageName: "a/b/c",
+							InstanceID:  strings.Repeat("1", 40),
+						},
+						RegisteredBy: "user:r@example.com",
+						RegisteredTs: UnixTime(epoch.Add(time.Hour)),
+					},
+					{
+						Pin: common.Pin{
+							PackageName: "a/b/c",
+							InstanceID:  strings.Repeat("2", 40),
+						},
+						RegisteredBy: "user:r@example.com",
+						RegisteredTs: UnixTime(epoch),
+					},
+				},
+				cursor: "xxx",
+			})
 
 			repo.assertAllCalled()
 		})
