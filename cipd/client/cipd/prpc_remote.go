@@ -430,8 +430,33 @@ func (r *prpcRemoteImpl) listPackages(ctx context.Context, path string, recursiv
 	return resp.Packages, resp.Prefixes, nil
 }
 
-func (r *prpcRemoteImpl) searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
-	return nil, errNoV2Impl
+func (r *prpcRemoteImpl) searchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
+	apiTags := make([]*api.Tag, len(tags))
+	for i, t := range tags {
+		var err error
+		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
+			return nil, err
+		}
+	}
+
+	resp, err := r.repo.SearchInstances(ctx, &api.SearchInstancesRequest{
+		Package:  packageName,
+		Tags:     apiTags,
+		PageSize: 1000, // TODO(vadimsh): Support pagination on the client.
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(common.PinSlice, len(resp.Instances))
+	for i, inst := range resp.Instances {
+		out[i] = apiInstanceToInfo(inst).Pin
+	}
+
+	if resp.NextPageToken != "" {
+		logging.Warningf(ctx, "Truncating the result only to first %d instances", len(resp.Instances))
+	}
+	return out, nil
 }
 
 func (r *prpcRemoteImpl) listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error) {
