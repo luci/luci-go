@@ -563,6 +563,58 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		cannedApiInsts := []*api.Instance{
+			{
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("1", 40),
+				},
+				RegisteredBy: "user:r@example.com",
+				RegisteredTs: google.NewTimestamp(epoch.Add(time.Hour)),
+			},
+			{
+				Package: "a/b/c",
+				Instance: &api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA1,
+					HexDigest: strings.Repeat("2", 40),
+				},
+				RegisteredBy: "user:r@example.com",
+				RegisteredTs: google.NewTimestamp(epoch),
+			},
+		}
+		cannedPins := common.PinSlice{
+			{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("1", 40),
+			},
+			{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("2", 40),
+			},
+		}
+
+		Convey("searchInstances works", func() {
+			repo.expect(rpcCall{
+				method: "SearchInstances",
+				in: &api.SearchInstancesRequest{
+					Package: "a/b/c",
+					Tags: []*api.Tag{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+					PageSize: 1000,
+				},
+				out: &api.SearchInstancesResponse{Instances: cannedApiInsts},
+			})
+
+			resp, err := r.searchInstances(ctx, "a/b/c", []string{"k1:v1", "k2:v2"})
+			So(err, ShouldBeNil)
+			So(resp, ShouldResemble, cannedPins)
+
+			repo.assertAllCalled()
+		})
+
 		Convey("listInstances works", func() {
 			repo.expect(rpcCall{
 				method: "ListInstances",
@@ -572,26 +624,7 @@ func TestPrpcRemoteImpl(t *testing.T) {
 					PageToken: "zzz",
 				},
 				out: &api.ListInstancesResponse{
-					Instances: []*api.Instance{
-						{
-							Package: "a/b/c",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("1", 40),
-							},
-							RegisteredBy: "user:r@example.com",
-							RegisteredTs: google.NewTimestamp(epoch.Add(time.Hour)),
-						},
-						{
-							Package: "a/b/c",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("2", 40),
-							},
-							RegisteredBy: "user:r@example.com",
-							RegisteredTs: google.NewTimestamp(epoch),
-						},
-					},
+					Instances:     cannedApiInsts,
 					NextPageToken: "xxx",
 				},
 			})
@@ -601,18 +634,12 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			So(resp, ShouldResemble, &listInstancesResponse{
 				instances: []InstanceInfo{
 					{
-						Pin: common.Pin{
-							PackageName: "a/b/c",
-							InstanceID:  strings.Repeat("1", 40),
-						},
+						Pin:          cannedPins[0],
 						RegisteredBy: "user:r@example.com",
 						RegisteredTs: UnixTime(epoch.Add(time.Hour)),
 					},
 					{
-						Pin: common.Pin{
-							PackageName: "a/b/c",
-							InstanceID:  strings.Repeat("2", 40),
-						},
+						Pin:          cannedPins[1],
 						RegisteredBy: "user:r@example.com",
 						RegisteredTs: UnixTime(epoch),
 					},
