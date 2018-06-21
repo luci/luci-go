@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -399,6 +400,48 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			So(resp, ShouldResemble, &registerInstanceResponse{
 				uploadSession: &UploadSession{"op_id", "http://upload.example.com"},
 			})
+		})
+
+		Convey("resolveVersion OK", func() {
+			repo.expect(rpcCall{
+				method: "ResolveVersion",
+				in: &api.ResolveVersionRequest{
+					Package: "a/b/c",
+					Version: "latest",
+				},
+				out: &api.Instance{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+			})
+
+			pin, err := r.resolveVersion(ctx, "a/b/c", "latest")
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  sha1,
+			})
+
+			repo.assertAllCalled()
+		})
+
+		Convey("resolveVersion NotFound", func() {
+			repo.expect(rpcCall{
+				method: "ResolveVersion",
+				in: &api.ResolveVersionRequest{
+					Package: "a/b/c",
+					Version: "latest",
+				},
+				err: status.Errorf(codes.NotFound, "no such ref"),
+			})
+
+			_, err := r.resolveVersion(ctx, "a/b/c", "latest")
+			So(err.Error(), ShouldEqual, "no such ref")
+
+			repo.assertAllCalled()
 		})
 
 		Convey("listPackages works", func() {
