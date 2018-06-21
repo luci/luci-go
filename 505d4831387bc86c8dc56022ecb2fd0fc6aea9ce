@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d5bc7b2_85b4a03a",
+        "filename": "cipd/client/cipd/prpc_remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 356,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-21T00:07:05Z",
+      "side": 1,
+      "message": "note: I\u0027ll likely refactor error handling once all calls are implemented.",
+      "range": {
+        "startLine": 356,
+        "startChar": 2,
+        "endLine": 356,
+        "endChar": 44
+      },
+      "revId": "505d4831387bc86c8dc56022ecb2fd0fc6aea9ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c3b0343f_18a9cbf0",
+        "filename": "cipd/client/cipd/remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-21T00:07:05Z",
+      "side": 1,
+      "message": "Just a reminded that \u0027remote\u0027 abstraction will go away once we get rid of v1 API, since pRPC client interface is good enough unwrapped (which wasn\u0027t the case with Cloud Endpoints).",
+      "range": {
+        "startLine": 372,
+        "startChar": 0,
+        "endLine": 377,
+        "endChar": 31
+      },
+      "revId": "505d4831387bc86c8dc56022ecb2fd0fc6aea9ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
