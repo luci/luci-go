@@ -22,6 +22,30 @@
       "revId": "b0bad971f438dc432283336c17f559d9b4a4fddb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa0f213c_61dd92a0",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1386,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-21T20:17:04Z",
+      "side": 1,
+      "message": "No, it wasn\u0027t a bug. remote.go converted time from UTC() to Local() inside. prpc_remote.go doesn\u0027t, I decided to do it closer to the presentation.",
+      "parentUuid": "06e272ea_1d1df5e4",
+      "range": {
+        "startLine": 1386,
+        "startChar": 33,
+        "endLine": 1386,
+        "endChar": 38
+      },
+      "revId": "b0bad971f438dc432283336c17f559d9b4a4fddb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
