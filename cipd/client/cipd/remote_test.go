@@ -64,7 +64,7 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.registerInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
-	mockFetchPackage := func(c C, reply string) (*fetchPackageResponse, error) {
+	mockFetchPackageRefs := func(c C, reply string) ([]RefInfo, error) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
 				Method: "GET",
@@ -76,7 +76,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.fetchPackage(ctx, "pkgname", true)
+		return remote.fetchPackageRefs(ctx, "pkgname")
 	}
 
 	mockFetchInstanceImpl := func(c C, reply string) (*fetchInstanceResponse, string, error) {
@@ -489,14 +489,9 @@ func TestRemoteImpl(t *testing.T) {
 		So(result, ShouldBeNil)
 	})
 
-	Convey("fetchPackage SUCCESS", t, func(c C) {
-		result, err := mockFetchPackage(c, `{
+	Convey("fetchPackageRefs SUCCESS", t, func(c C) {
+		refs, err := mockFetchPackageRefs(c, `{
 				"status": "SUCCESS",
-				"package": {
-					"registered_by": "user:abc@example.com",
-					"registered_ts": "1420244414571500",
-					"hidden": true
-				},
 				"refs": [
 					{
 						"ref": "ref1",
@@ -511,32 +506,27 @@ func TestRemoteImpl(t *testing.T) {
 				]
 			}`)
 		So(err, ShouldBeNil)
-		So(result, ShouldResemble, &fetchPackageResponse{
-			registeredBy: "user:abc@example.com",
-			registeredTs: time.Unix(0, 1420244414571500000),
-			hidden:       true,
-			refs: []RefInfo{
-				{
-					Ref:        "ref1",
-					ModifiedBy: "user:a@example.com",
-					ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
-				},
-				{
-					Ref:        "ref2",
-					ModifiedBy: "user:a@example.com",
-					ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
-				},
+		So(refs, ShouldResemble, []RefInfo{
+			{
+				Ref:        "ref1",
+				ModifiedBy: "user:a@example.com",
+				ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+			{
+				Ref:        "ref2",
+				ModifiedBy: "user:a@example.com",
+				ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
 			},
 		})
 	})
 
-	Convey("fetchPackage PACKAGE_NOT_FOUND", t, func(c C) {
-		_, err := mockFetchPackage(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+	Convey("fetchPackageRefs PACKAGE_NOT_FOUND", t, func(c C) {
+		_, err := mockFetchPackageRefs(c, `{"status": "PACKAGE_NOT_FOUND"}`)
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("fetchPackage ERROR", t, func(c C) {
-		_, err := mockFetchPackage(c, `{
+	Convey("fetchPackageRefs ERROR", t, func(c C) {
+		_, err := mockFetchPackageRefs(c, `{
 				"status": "ERROR",
 				"error_message": "Some error message"
 			}`)

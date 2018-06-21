@@ -1180,11 +1180,11 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
-	out, err := client.remote.fetchPackage(ctx, packageName, true)
+	refs, err := client.remote.fetchPackageRefs(ctx, packageName)
 	if err != nil {
 		return nil, err
 	}
-	return out.refs, nil
+	return refs, nil
 }
 
 func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
@@ -1482,7 +1482,7 @@ type remote interface {
 	finalizeUpload(ctx context.Context, sessionID string) (bool, error)
 	registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error)
 
-	fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error)
+	fetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error)
 
 	setRef(ctx context.Context, ref string, pin common.Pin) error
 	attachTags(ctx context.Context, pin common.Pin, tags []string) error
@@ -1500,14 +1500,6 @@ type remote interface {
 type storage interface {
 	upload(ctx context.Context, url string, data io.ReadSeeker) error
 	download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error
-}
-
-type fetchPackageResponse struct {
-	registeredBy string
-	registeredTs time.Time
-	hidden       bool
-
-	refs []RefInfo
 }
 
 type registerInstanceResponse struct {

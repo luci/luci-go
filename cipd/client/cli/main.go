@@ -1383,7 +1383,7 @@ func listInstances(ctx context.Context, pkg string, limit int, clientOpts client
 			})
 			fmt.Println(formatRow(
 				info.Pin.InstanceID,
-				time.Time(info.RegisteredTs).Format("Jan 02 15:04 MST 2006"),
+				time.Time(info.RegisteredTs).Local().Format("Jan 02 15:04 MST 2006"),
 				strings.TrimPrefix(info.RegisteredBy, "user:"),
 				strings.Join(instanceRefs, " ")))
 		}
