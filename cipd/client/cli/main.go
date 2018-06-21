@@ -1619,9 +1619,9 @@ func listPackages(ctx context.Context, path string, recursive, showHidden bool, 
 
 func cmdSearch(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "search [package] -tag key:value [options]",
+		UsageLine: "search <package> -tag key:value [options]",
 		ShortDesc: "searches for package instances by tag",
-		LongDesc:  "Searches for package instances by tag, optionally constrained by package name.",
+		LongDesc:  "Searches for instances of some package with all given tags.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &searchRun{}
 			c.registerBaseFlags()
@@ -1639,37 +1639,33 @@ type searchRun struct {
 }
 
 func (c *searchRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !c.checkArgs(args, 0, 1) {
+	if !c.checkArgs(args, 1, 1) {
 		return 1
 	}
-	if len(c.tags) != 1 {
-		return c.done(nil, makeCLIError("exactly one -tag must be provided"))
+	if len(c.tags) == 0 {
+		return c.done(nil, makeCLIError("at least one -tag must be provided"))
 	}
-	packageName := ""
-	if len(args) == 1 {
-		var err error
-		packageName, err = expandTemplate(args[0])
-		if err != nil {
-			return c.done(nil, err)
-		}
+	packageName, err := expandTemplate(args[0])
+	if err != nil {
+		return c.done(nil, err)
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(searchInstances(ctx, packageName, c.tags[0], c.clientOptions))
+	return c.done(searchInstances(ctx, packageName, c.tags, c.clientOptions))
 }
 
-func searchInstances(ctx context.Context, packageName, tag string, clientOpts clientOptions) ([]common.Pin, error) {
+func searchInstances(ctx context.Context, packageName string, tags []string, clientOpts clientOptions) ([]common.Pin, error) {
 	client, err := clientOpts.makeCipdClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-	pins, err := client.SearchInstances(ctx, tag, packageName)
+	pins, err := client.SearchInstances(ctx, packageName, tags)
 	if err != nil {
 		return nil, err
 	}
 	if len(pins) == 0 {
-		fmt.Println("No matching packages.")
+		fmt.Println("No matching instances.")
 	} else {
-		fmt.Println("Packages:")
+		fmt.Println("Instances:")
 		for _, pin := range pins {
 			fmt.Printf("  %s\n", pin)
 		}

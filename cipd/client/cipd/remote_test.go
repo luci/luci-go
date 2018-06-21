@@ -217,7 +217,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.searchInstances(ctx, "tag:v", "pkgname")
+		return remote.searchInstances(ctx, "pkgname", []string{"tag:v"})
 	}
 
 	mockListInstances := func(c C, reply string) (*listInstancesResponse, error) {

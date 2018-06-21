@@ -766,7 +766,8 @@ func TestSearchInstances(t *testing.T) {
 				Method: "GET",
 				Path:   "/_ah/api/repo/v1/instance/search",
 				Query: url.Values{
-					"tag": []string{"k:v"},
+					"package_name": {"a/b"},
+					"tag":          {"k:v"},
 				},
 				Reply: `{
 					"status": "SUCCESS",
@@ -783,7 +784,7 @@ func TestSearchInstances(t *testing.T) {
 				}`,
 			},
 		})
-		pins, err := client.SearchInstances(ctx, "k:v", "")
+		pins, err := client.SearchInstances(ctx, "a/b", []string{"k:v"})
 		So(err, ShouldBeNil)
 		So(pins, ShouldResemble, PinSlice{
 			{"pkg1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},

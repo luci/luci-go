@@ -135,7 +135,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.8.5"
+	UserAgent = "cipd 1.8.6"
 )
 
 func init() {
@@ -457,10 +457,10 @@ type Client interface {
 	// ListPackages returns a list of strings of package names.
 	ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error)
 
-	// SearchInstances finds all instances with given tag and optionally name.
+	// SearchInstances finds instances of some package with all given tags.
 	//
 	// Returns their concrete Pins.
-	SearchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
+	SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error)
 
 	// ListInstances enumerates instances of a package, most recent first.
 	//
@@ -1092,14 +1092,20 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 	return ErrAttachTagsTimeout
 }
 
-func (client *clientImpl) SearchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
-	if packageName != "" {
-		// Don't bother searching if packageName is invalid.
-		if err := common.ValidatePackageName(packageName); err != nil {
-			return common.PinSlice{}, err
+func (client *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (ps common.PinSlice, err error) {
+	if err = common.ValidatePackageName(packageName); err != nil {
+		return
+	}
+	if len(tags) == 0 {
+		err = errors.New("at least one tag is required")
+		return
+	}
+	for _, t := range tags {
+		if err = common.ValidateInstanceTag(t); err != nil {
+			return
 		}
 	}
-	return client.remote.searchInstances(ctx, tag, packageName)
+	return client.remote.searchInstances(ctx, packageName, tags)
 }
 
 func (client *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
@@ -1493,7 +1499,7 @@ type remote interface {
 	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
-	searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error)
+	searchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error)
 	listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error)
 }
 
