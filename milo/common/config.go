@@ -633,8 +633,8 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			if console.RepoUrl == "" {
 				ctx.Errorf("ci console missing repo url")
 			}
-			if console.Ref == "" {
-				ctx.Errorf("ci console missing ref")
+			if console.Ref == "" && len(console.Refs) == 0 {
+				ctx.Errorf("ci console missing refs")
 			}
 		} else {
 			if console.IncludeExperimentalBuilds {

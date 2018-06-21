@@ -56,6 +56,10 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		return
 	}
 
+	return p.log(c, host, project, commitish, "", inputOptions)
+}
+
+func (p *implementation) log(c context.Context, host, project, commitish, ancestor string, inputOptions *LogOptions) (commits []*gitpb.Commit, err error) {
 	var opts LogOptions
 	if inputOptions != nil {
 		opts = *inputOptions
@@ -172,6 +176,7 @@ type logReq struct {
 	host      string
 	project   string
 	commitish string
+	ancestor  string
 	withFiles bool
 	min       int // must be in [1..100]
 
@@ -228,6 +233,9 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		Treeish:  l.commitish,
 		PageSize: 100,
 		TreeDiff: l.withFiles,
+	}
+	if l.ancestor != "" {
+		req.Ancestor = l.ancestor
 	}
 	logging.Infof(c, "gitiles(%q).Log(%#v)", l.host, req)
 	client, err := l.factory.gitilesClient(c, l.host)
