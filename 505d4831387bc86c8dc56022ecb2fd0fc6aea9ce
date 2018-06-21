@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f6fa3c1d_693074e7",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1485,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-21T00:58:24Z",
+      "side": 0,
+      "message": "it wasn\u0027t actually used for anything else, only to fetch refs",
+      "range": {
+        "startLine": 1485,
+        "startChar": 1,
+        "endLine": 1485,
+        "endChar": 13
+      },
+      "revId": "505d4831387bc86c8dc56022ecb2fd0fc6aea9ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
