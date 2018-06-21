@@ -323,21 +323,16 @@ func (r *remoteImpl) registerInstance(ctx context.Context, pin common.Pin) (*reg
 	return nil, fmt.Errorf("unexpected register package status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchPackage(ctx context.Context, packageName string, withRefs bool) (*fetchPackageResponse, error) {
-	endpoint, err := packageEndpoint(packageName, withRefs)
+func (r *remoteImpl) fetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
+	endpoint, err := packageEndpoint(packageName, true)
 	if err != nil {
 		return nil, err
 	}
 
 	var reply struct {
-		Status       string `json:"status"`
-		ErrorMessage string `json:"error_message"`
-		Package      struct {
-			RegisteredBy string `json:"registered_by"`
-			RegisteredTs string `json:"registered_ts"`
-			Hidden       bool   `json:"hidden"`
-		} `json:"package"`
-		Refs []refMsg `json:"refs"`
+		Status       string   `json:"status"`
+		ErrorMessage string   `json:"error_message"`
+		Refs         []refMsg `json:"refs"`
 	}
 	if err := r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
 		return nil, err
@@ -345,28 +340,19 @@ func (r *remoteImpl) fetchPackage(ctx context.Context, packageName string, withR
 
 	switch reply.Status {
 	case "SUCCESS":
-		var registeredTs time.Time
-		if registeredTs, err = convertTimestamp(reply.Package.RegisteredTs); err != nil {
-			return nil, err
-		}
-		out := &fetchPackageResponse{
-			registeredBy: reply.Package.RegisteredBy,
-			registeredTs: registeredTs,
-			hidden:       reply.Package.Hidden,
-			refs:         make([]RefInfo, len(reply.Refs)),
-		}
+		refs := make([]RefInfo, len(reply.Refs))
 		for i, ref := range reply.Refs {
-			if out.refs[i], err = ref.toRefInfo(); err != nil {
+			if refs[i], err = ref.toRefInfo(); err != nil {
 				return nil, err
 			}
 		}
-		return out, nil
+		return refs, nil
 	case "PACKAGE_NOT_FOUND":
 		return nil, fmt.Errorf("package %q is not registered", packageName)
 	case "ERROR":
 		return nil, errors.New(reply.ErrorMessage)
 	}
-	return nil, fmt.Errorf("unexpected fetchPackage status: %s", reply.Status)
+	return nil, fmt.Errorf("unexpected fetchPackageRefs status: %s", reply.Status)
 }
 
 // fetchInstanceImpl is common implementation of fetchInstanceInfo and
