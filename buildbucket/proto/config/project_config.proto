@@ -24,6 +24,13 @@ import "google/protobuf/wrappers.proto";
 
 // A single access control rule.
 message Acl {
+
+  // A buiildbucket user role.
+  // Defines what a user can do.
+  //
+  // The order of enum member tags is important.
+  // A role with a higher tag number can perform any action that a role with a
+  // lower tag number can perform.
   enum Role {
     // Can do read-only operations, such as search for builds.
     READER = 0;

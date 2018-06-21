@@ -57,7 +57,7 @@ func (m *GetBuildRequest) Reset()         { *m = GetBuildRequest{} }
 func (m *GetBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBuildRequest) ProtoMessage()    {}
 func (*GetBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{0}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{0}
 }
 func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetBuildRequest.Unmarshal(m, b)
@@ -128,7 +128,7 @@ func (m *SearchBuildsRequest) Reset()         { *m = SearchBuildsRequest{} }
 func (m *SearchBuildsRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsRequest) ProtoMessage()    {}
 func (*SearchBuildsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{1}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{1}
 }
 func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsRequest.Unmarshal(m, b)
@@ -194,7 +194,7 @@ func (m *SearchBuildsResponse) Reset()         { *m = SearchBuildsResponse{} }
 func (m *SearchBuildsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsResponse) ProtoMessage()    {}
 func (*SearchBuildsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{2}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{2}
 }
 func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsResponse.Unmarshal(m, b)
@@ -230,7 +230,7 @@ func (m *SearchBuildsResponse) GetNextPageToken() string {
 
 // A request message for Batch rpc.
 type BatchRequest struct {
-	// Requests process in a single batch.
+	// Requests to execute in a single batch.
 	//
 	// Requests related to same build are coupled.
 	// Mutation requests are executed transactionally, before read-only requests.
@@ -244,7 +244,7 @@ func (m *BatchRequest) Reset()         { *m = BatchRequest{} }
 func (m *BatchRequest) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest) ProtoMessage()    {}
 func (*BatchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{3}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{3}
 }
 func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest.Unmarshal(m, b)
@@ -286,7 +286,7 @@ func (m *BatchRequest_Request) Reset()         { *m = BatchRequest_Request{} }
 func (m *BatchRequest_Request) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest_Request) ProtoMessage()    {}
 func (*BatchRequest_Request) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{3, 0}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{3, 0}
 }
 func (m *BatchRequest_Request) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest_Request.Unmarshal(m, b)
@@ -428,7 +428,7 @@ func (m *BatchResponse) Reset()         { *m = BatchResponse{} }
 func (m *BatchResponse) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse) ProtoMessage()    {}
 func (*BatchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{4}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{4}
 }
 func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse.Unmarshal(m, b)
@@ -471,7 +471,7 @@ func (m *BatchResponse_Response) Reset()         { *m = BatchResponse_Response{}
 func (m *BatchResponse_Response) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse_Response) ProtoMessage()    {}
 func (*BatchResponse_Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{4, 0}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{4, 0}
 }
 func (m *BatchResponse_Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse_Response.Unmarshal(m, b)
@@ -662,7 +662,7 @@ func (m *BuildPredicate) Reset()         { *m = BuildPredicate{} }
 func (m *BuildPredicate) String() string { return proto.CompactTextString(m) }
 func (*BuildPredicate) ProtoMessage()    {}
 func (*BuildPredicate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_b9a327622b91c283, []int{5}
+	return fileDescriptor_rpc_ed8cc71e9cf76a07, []int{5}
 }
 func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildPredicate.Unmarshal(m, b)
@@ -786,6 +786,7 @@ type BuildsClient interface {
 	// not exist.
 	SearchBuilds(ctx context.Context, in *SearchBuildsRequest, opts ...grpc.CallOption) (*SearchBuildsResponse, error)
 	// Executes multiple requests in a batch.
+	// The response code is always OK.
 	Batch(ctx context.Context, in *BatchRequest, opts ...grpc.CallOption) (*BatchResponse, error)
 }
 type buildsPRPCClient struct {
@@ -892,6 +893,7 @@ type BuildsServer interface {
 	// not exist.
 	SearchBuilds(context.Context, *SearchBuildsRequest) (*SearchBuildsResponse, error)
 	// Executes multiple requests in a batch.
+	// The response code is always OK.
 	Batch(context.Context, *BatchRequest) (*BatchResponse, error)
 }
 
@@ -975,10 +977,10 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_b9a327622b91c283)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_ed8cc71e9cf76a07)
 }
 
-var fileDescriptor_rpc_b9a327622b91c283 = []byte{
+var fileDescriptor_rpc_ed8cc71e9cf76a07 = []byte{
 	// 768 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xcb, 0x6e, 0xdb, 0x46,
 	0x14, 0x15, 0xa5, 0xea, 0x75, 0xf5, 0x30, 0x30, 0x76, 0x5b, 0x96, 0xb5, 0x5b, 0x95, 0x35, 0x0c,
