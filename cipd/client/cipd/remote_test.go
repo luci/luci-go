@@ -79,7 +79,7 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.fetchPackage(ctx, "pkgname", true)
 	}
 
-	mockFetchInstance := func(c C, reply string) (*fetchInstanceResponse, error) {
+	mockFetchInstanceImpl := func(c C, reply string) (*fetchInstanceResponse, string, error) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
 				Method: "GET",
@@ -91,7 +91,7 @@ func TestRemoteImpl(t *testing.T) {
 				Reply: reply,
 			},
 		})
-		return remote.fetchInstance(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		return remote.fetchInstanceImpl(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
 	mockFetchClientBinaryInfo := func(c C, reply string) (*fetchClientBinaryInfoResponse, error) {
@@ -543,8 +543,8 @@ func TestRemoteImpl(t *testing.T) {
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("fetchInstance SUCCESS", t, func(c C) {
-		result, err := mockFetchInstance(c, `{
+	Convey("fetchInstanceImpl SUCCESS", t, func(c C) {
+		result, url, err := mockFetchInstanceImpl(c, `{
 				"status": "SUCCESS",
 				"instance": {
 					"registered_by": "user:abc@example.com",
@@ -556,29 +556,32 @@ func TestRemoteImpl(t *testing.T) {
 		So(result, ShouldResemble, &fetchInstanceResponse{
 			registeredBy: "user:abc@example.com",
 			registeredTs: time.Unix(0, 1420244414571500000),
-			fetchURL:     "https://fetch_url",
 		})
+		So(url, ShouldEqual, "https://fetch_url")
 	})
 
-	Convey("fetchInstance PACKAGE_NOT_FOUND", t, func(c C) {
-		result, err := mockFetchInstance(c, `{"status": "PACKAGE_NOT_FOUND"}`)
+	Convey("fetchInstanceImpl PACKAGE_NOT_FOUND", t, func(c C) {
+		result, url, err := mockFetchInstanceImpl(c, `{"status": "PACKAGE_NOT_FOUND"}`)
 		So(err, ShouldNotBeNil)
 		So(result, ShouldBeNil)
+		So(url, ShouldEqual, "")
 	})
 
-	Convey("fetchInstance INSTANCE_NOT_FOUND", t, func(c C) {
-		result, err := mockFetchInstance(c, `{"status": "INSTANCE_NOT_FOUND"}`)
+	Convey("fetchInstanceImpl INSTANCE_NOT_FOUND", t, func(c C) {
+		result, url, err := mockFetchInstanceImpl(c, `{"status": "INSTANCE_NOT_FOUND"}`)
 		So(err, ShouldNotBeNil)
 		So(result, ShouldBeNil)
+		So(url, ShouldEqual, "")
 	})
 
-	Convey("fetchInstance ERROR", t, func(c C) {
-		result, err := mockFetchInstance(c, `{
+	Convey("fetchInstanceImpl ERROR", t, func(c C) {
+		result, url, err := mockFetchInstanceImpl(c, `{
 				"status": "ERROR",
 				"error_message": "Some error message"
 			}`)
 		So(err, ShouldNotBeNil)
 		So(result, ShouldBeNil)
+		So(url, ShouldEqual, "")
 	})
 
 	Convey("fetchClientBinaryInfo SUCCESS", t, func(c C) {
