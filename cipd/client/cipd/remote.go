@@ -731,8 +731,8 @@ func (r *remoteImpl) listPackages(ctx context.Context, path string, recursive, s
 	return nil, nil, fmt.Errorf("unexpected list packages status: %s", reply.Status)
 }
 
-func (r *remoteImpl) searchInstances(ctx context.Context, tag, packageName string) (common.PinSlice, error) {
-	endpoint, err := packageSearchInstancesEndpoint(tag, packageName)
+func (r *remoteImpl) searchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
+	endpoint, err := packageSearchInstancesEndpoint(packageName, tags)
 	if err != nil {
 		return nil, err
 	}
@@ -900,12 +900,13 @@ func packageSearchEndpoint(path string, recursive, showHidden bool) (string, err
 	return "repo/v1/package/search?" + params.Encode(), nil
 }
 
-func packageSearchInstancesEndpoint(tag, packageName string) (string, error) {
-	params := url.Values{}
-	if packageName != "" {
-		params.Add("package_name", packageName)
+func packageSearchInstancesEndpoint(packageName string, tags []string) (string, error) {
+	if len(tags) != 1 {
+		return "", fmt.Errorf("v1 API supports searching by one tag only, got %d", len(tags))
 	}
-	params.Add("tag", tag)
+	params := url.Values{}
+	params.Add("package_name", packageName)
+	params.Add("tag", tags[0])
 	return "repo/v1/instance/search?" + params.Encode(), nil
 }
 
