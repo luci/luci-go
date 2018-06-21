@@ -1122,7 +1122,7 @@ func (client *clientImpl) FetchInstanceInfo(ctx context.Context, pin common.Pin)
 	if err != nil {
 		return InstanceInfo{}, err
 	}
-	info, err := client.remote.fetchInstance(ctx, pin)
+	info, err := client.remote.fetchInstanceInfo(ctx, pin)
 	if err != nil {
 		return InstanceInfo{}, err
 	}
@@ -1320,7 +1320,7 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	}()
 
 	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
-	fetchInfo, err := client.remote.fetchInstance(ctx, pin)
+	url, err := client.remote.fetchInstanceURL(ctx, pin)
 	if err != nil {
 		return
 	}
@@ -1328,7 +1328,7 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	if err != nil {
 		return
 	}
-	if err = client.storage.download(ctx, fetchInfo.fetchURL, output, hash); err != nil {
+	if err = client.storage.download(ctx, url, output, hash); err != nil {
 		return
 	}
 	if local.InstanceIDFromHash(hash) != pin.InstanceID {
@@ -1488,7 +1488,8 @@ type remote interface {
 	attachTags(ctx context.Context, pin common.Pin, tags []string) error
 	fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
 	fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
-	fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
+	fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
+	fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error)
 	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
@@ -1517,7 +1518,6 @@ type registerInstanceResponse struct {
 }
 
 type fetchInstanceResponse struct {
-	fetchURL     string
 	registeredBy string
 	registeredTs time.Time
 }

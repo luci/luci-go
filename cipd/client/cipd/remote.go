@@ -369,10 +369,16 @@ func (r *remoteImpl) fetchPackage(ctx context.Context, packageName string, withR
 	return nil, fmt.Errorf("unexpected fetchPackage status: %s", reply.Status)
 }
 
-func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
+// fetchInstanceImpl is common implementation of fetchInstanceInfo and
+// fetchInstanceURL.
+//
+// In v2 API fetchInstanceInfo and fetchInstanceURL use different RPCs, so
+// 'remote' interface has two methods for them, even though in v1 API they are
+// implemented using same call.
+func (r *remoteImpl) fetchInstanceImpl(ctx context.Context, pin common.Pin) (info *fetchInstanceResponse, url string, err error) {
 	endpoint, err := instanceEndpoint(pin)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var reply struct {
@@ -382,28 +388,37 @@ func (r *remoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchI
 		ErrorMessage string             `json:"error_message"`
 	}
 	if err := r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	switch reply.Status {
 	case "SUCCESS":
 		ts, err := convertTimestamp(reply.Instance.RegisteredTs)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		return &fetchInstanceResponse{
-			fetchURL:     reply.FetchURL,
 			registeredBy: reply.Instance.RegisteredBy,
 			registeredTs: ts,
-		}, nil
+		}, reply.FetchURL, nil
 	case "PACKAGE_NOT_FOUND":
-		return nil, fmt.Errorf("package %q is not registered", pin.PackageName)
+		return nil, "", fmt.Errorf("package %q is not registered", pin.PackageName)
 	case "INSTANCE_NOT_FOUND":
-		return nil, fmt.Errorf("package %q doesn't have instance %q", pin.PackageName, pin.InstanceID)
+		return nil, "", fmt.Errorf("package %q doesn't have instance %q", pin.PackageName, pin.InstanceID)
 	case "ERROR":
-		return nil, errors.New(reply.ErrorMessage)
+		return nil, "", errors.New(reply.ErrorMessage)
 	}
-	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
+	return nil, "", fmt.Errorf("unexpected reply status: %s", reply.Status)
+}
+
+func (r *remoteImpl) fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
+	info, _, err := r.fetchInstanceImpl(ctx, pin)
+	return info, err
+}
+
+func (r *remoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error) {
+	_, url, err := r.fetchInstanceImpl(ctx, pin)
+	return url, err
 }
 
 func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error) {

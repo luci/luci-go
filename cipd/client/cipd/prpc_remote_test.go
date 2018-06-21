@@ -444,6 +444,53 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("fetchInstanceURL OK", func() {
+			repo.expect(rpcCall{
+				method: "GetInstanceURL",
+				in: &api.GetInstanceURLRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				out: &api.ObjectURL{
+					SignedUrl: "https://example.com/signed",
+				},
+			})
+
+			url, err := r.fetchInstanceURL(ctx, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  sha1,
+			})
+			So(err, ShouldBeNil)
+			So(url, ShouldEqual, "https://example.com/signed")
+
+			repo.assertAllCalled()
+		})
+
+		Convey("fetchInstanceURL NotFound", func() {
+			repo.expect(rpcCall{
+				method: "GetInstanceURL",
+				in: &api.GetInstanceURLRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				err: status.Errorf(codes.NotFound, "no such package"),
+			})
+
+			_, err := r.fetchInstanceURL(ctx, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  sha1,
+			})
+			So(err.Error(), ShouldEqual, "no such package")
+
+			repo.assertAllCalled()
+		})
+
 		Convey("listPackages works", func() {
 			repo.expect(rpcCall{
 				method: "ListPrefix",

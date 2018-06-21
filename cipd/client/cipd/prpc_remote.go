@@ -340,8 +340,23 @@ func (r *prpcRemoteImpl) fetchPackage(ctx context.Context, packageName string, w
 	return nil, errNoV2Impl
 }
 
-func (r *prpcRemoteImpl) fetchInstance(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
+func (r *prpcRemoteImpl) fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
 	return nil, errNoV2Impl
+}
+
+func (r *prpcRemoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error) {
+	resp, err := r.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, prpc.ExpectedCode(codes.NotFound))
+	switch grpc.Code(err) {
+	case codes.OK:
+		return resp.SignedUrl, nil
+	case codes.NotFound:
+		return "", errors.New(grpc.ErrorDesc(err))
+	default:
+		return "", err
+	}
 }
 
 func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error) {
