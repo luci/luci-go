@@ -431,11 +431,34 @@ func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, o
 // Refs and tags.
 
 func (r *prpcRemoteImpl) setRef(ctx context.Context, ref string, pin common.Pin) error {
-	return errNoV2Impl
+	_, err := r.repo.CreateRef(ctx, &api.Ref{
+		Name:     ref,
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, prpc.ExpectedCode(codes.FailedPrecondition))
+	if grpc.Code(err) == codes.FailedPrecondition {
+		return &pendingProcessingError{grpc.ErrorDesc(err)}
+	}
+	return err
 }
 
 func (r *prpcRemoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []string) error {
-	return errNoV2Impl
+	apiTags := make([]*api.Tag, len(tags))
+	for i, t := range tags {
+		var err error
+		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
+			return err
+		}
+	}
+	_, err := r.repo.AttachTags(ctx, &api.AttachTagsRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		Tags:     apiTags,
+	})
+	if grpc.Code(err) == codes.FailedPrecondition {
+		return &pendingProcessingError{grpc.ErrorDesc(err)}
+	}
+	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
