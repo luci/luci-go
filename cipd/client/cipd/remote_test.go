@@ -634,26 +634,36 @@ func TestRemoteImpl(t *testing.T) {
 				"status": "SUCCESS",
 				"tags": [
 					{
-						"tag": "a:b1",
+						"tag": "z:earlier",
 						"registered_by": "user:a@example.com",
 						"registered_ts": "1420244414571500"
 					},
 					{
-						"tag": "a:b2",
+						"tag": "z:later",
 						"registered_by": "user:a@example.com",
-						"registered_ts": "1420244414571500"
+						"registered_ts": "1420244414572500"
+					},
+					{
+						"tag": "a:later",
+						"registered_by": "user:a@example.com",
+						"registered_ts": "1420244414572500"
 					}
 				]
 			}`, nil)
 		So(err, ShouldBeNil)
 		So(result, ShouldResemble, []TagInfo{
 			{
-				Tag:          "a:b1",
+				Tag:          "a:later",
 				RegisteredBy: "user:a@example.com",
-				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414572500000)),
 			},
 			{
-				Tag:          "a:b2",
+				Tag:          "z:later",
+				RegisteredBy: "user:a@example.com",
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414572500000)),
+			},
+			{
+				Tag:          "z:earlier",
 				RegisteredBy: "user:a@example.com",
 				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
 			},
@@ -731,6 +741,86 @@ func TestRemoteImpl(t *testing.T) {
 			}`, nil)
 		So(err, ShouldNotBeNil)
 		So(result, ShouldBeNil)
+	})
+
+	Convey("describeInstance works", t, func(c C) {
+		iid := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		q := url.Values{
+			"package_name": {"pkgname"},
+			"instance_id":  {iid},
+		}
+
+		remote := mockRemoteImpl(c, []expectedHTTPCall{
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/instance",
+				Query:  q,
+				Reply: `{
+					"status": "SUCCESS",
+					"instance": {
+						"registered_by": "user:abc@example.com",
+						"registered_ts": "1420244414571500"
+					},
+					"fetch_url": "https://fetch_url"
+				}`,
+			},
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/ref",
+				Query:  q,
+				Reply: `{
+					"status": "SUCCESS",
+					"refs": [
+						{
+							"ref": "ref1",
+							"modified_by": "user:a@example.com",
+							"modified_ts": "1420244414571500"
+						}
+					]
+				}`,
+			},
+			{
+				Method: "GET",
+				Path:   "/_ah/api/repo/v1/tags",
+				Query:  q,
+				Reply: `{
+					"status": "SUCCESS",
+					"tags": [
+						{
+							"tag": "z:earlier",
+							"registered_by": "user:a@example.com",
+							"registered_ts": "1420244414571500"
+						}
+					]
+				}`,
+			},
+		})
+		desc, err := remote.describeInstance(ctx, Pin{"pkgname", iid}, &DescribeInstanceOpts{
+			DescribeRefs: true,
+			DescribeTags: true,
+		})
+		So(err, ShouldBeNil)
+		So(desc, ShouldResemble, &InstanceDescription{
+			InstanceInfo: InstanceInfo{
+				Pin:          Pin{"pkgname", iid},
+				RegisteredBy: "user:abc@example.com",
+				RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+			},
+			Refs: []RefInfo{
+				{
+					Ref:        "ref1",
+					ModifiedBy: "user:a@example.com",
+					ModifiedTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+			},
+			Tags: []TagInfo{
+				{
+					Tag:          "z:earlier",
+					RegisteredBy: "user:a@example.com",
+					RegisteredTs: UnixTime(time.Unix(0, 1420244414571500000)),
+				},
+			},
+		})
 	})
 
 	Convey("fetchACL SUCCESS", t, func(c C) {
@@ -1031,8 +1121,9 @@ func TestRemoteImpl(t *testing.T) {
 func mockRemoteImpl(c C, expectations []expectedHTTPCall) *remoteImpl {
 	client := mockClient(c, "", expectations)
 	return &remoteImpl{
-		serviceURL: client.ServiceURL,
-		userAgent:  client.UserAgent,
-		client:     client.AnonymousClient,
+		serviceURL:        client.ServiceURL,
+		userAgent:         client.UserAgent,
+		client:            client.AnonymousClient,
+		sequentialForTest: true,
 	}
 }

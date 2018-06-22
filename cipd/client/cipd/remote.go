@@ -23,7 +23,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -32,6 +34,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cipd/common"
 )
@@ -88,6 +91,8 @@ type remoteImpl struct {
 	serviceURL string
 	userAgent  string
 	client     *http.Client
+
+	sequentialForTest bool // if true, parallel calls are sequential
 }
 
 func isTemporaryNetError(err error) bool {
@@ -116,6 +121,13 @@ func isTemporaryHTTPError(statusCode int) bool {
 
 func (r *remoteImpl) init() error {
 	return nil
+}
+
+func (r *remoteImpl) workers() int {
+	if r.sequentialForTest {
+		return 1
+	}
+	return 32
 }
 
 // makeRequest sends POST or GET REST JSON requests with retries.
@@ -444,6 +456,57 @@ func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) 
 	return nil, fmt.Errorf("unexpected reply status: %s", reply.Status)
 }
 
+func (r *remoteImpl) describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
+	// In v1 API we use 3 separate calls.
+	var info *fetchInstanceResponse
+	var refs []RefInfo
+	var tags []TagInfo
+	err := parallel.WorkPool(r.workers(), func(tasks chan<- func() error) {
+		tasks <- func() error {
+			var err error
+			info, err = r.fetchInstanceInfo(ctx, pin)
+			return err
+		}
+
+		if opts != nil && opts.DescribeRefs {
+			tasks <- func() error {
+				var err error
+				refs, err = r.fetchRefs(ctx, pin, nil)
+				return err
+			}
+		}
+
+		if opts != nil && opts.DescribeTags {
+			tasks <- func() error {
+				var err error
+				tags, err = r.fetchTags(ctx, pin, nil)
+				return err
+			}
+		}
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &InstanceDescription{
+		InstanceInfo: InstanceInfo{
+			Pin:          pin,
+			RegisteredBy: info.registeredBy,
+			RegisteredTs: UnixTime(info.registeredTs),
+		},
+		Refs: refs,
+		Tags: tags,
+	}, nil
+}
+
+// instanceTagKey returns key portion of the instance tag or empty string.
+func instanceTagKey(t string) string {
+	chunks := strings.SplitN(t, ":", 2)
+	if len(chunks) != 2 {
+		return ""
+	}
+	return chunks[0]
+}
+
 func (r *remoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
 	endpoint, err := tagsEndpoint(pin, tags)
 	if err != nil {
@@ -477,6 +540,16 @@ func (r *remoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []strin
 				RegisteredTs: UnixTime(ts),
 			}
 		}
+		// v1 API doesn't sort tags, so we do it here.
+		sort.Slice(out, func(i, j int) bool {
+			k1 := instanceTagKey(out[i].Tag)
+			k2 := instanceTagKey(out[j].Tag)
+			if k1 == k2 {
+				// Newest first.
+				return out[j].RegisteredTs.Before(out[i].RegisteredTs)
+			}
+			return k1 < k2
+		})
 		return out, nil
 	case "PACKAGE_NOT_FOUND":
 		return nil, fmt.Errorf("package %q is not registered", pin.PackageName)

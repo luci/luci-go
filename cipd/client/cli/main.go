@@ -28,7 +28,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -89,13 +88,6 @@ type pinInfo struct {
 	Tracking string `json:"tracking,omitempty"`
 	// Err is not empty if pin related operation failed. Pin is nil in that case.
 	Err string `json:"error,omitempty"`
-}
-
-// describeOutput defines JSON format for 'cipd describe' output.
-type describeOutput struct {
-	cipd.InstanceInfo
-	Refs []cipd.RefInfo `json:"refs"`
-	Tags []cipd.TagInfo `json:"tags"`
 }
 
 type instanceInfoWithRefs struct {
@@ -1168,7 +1160,7 @@ func (c *describeRun) Run(a subcommands.Application, args []string, env subcomma
 	return c.done(describeInstance(ctx, args[0], c.version, c.clientOptions))
 }
 
-func describeInstance(ctx context.Context, pkg, version string, clientOpts clientOptions) (*describeOutput, error) {
+func describeInstance(ctx context.Context, pkg, version string, clientOpts clientOptions) (*cipd.InstanceDescription, error) {
 	pkg, err := expandTemplate(pkg)
 	if err != nil {
 		return nil, err
@@ -1179,75 +1171,41 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 		return nil, err
 	}
 
-	// Grab instance ID.
 	pin, err := client.ResolveVersion(ctx, pkg, version)
 	if err != nil {
 		return nil, err
 	}
 
-	wg := sync.WaitGroup{}
-
-	// Fetch who and when registered it.
-	var info cipd.InstanceInfo
-	var infoErr error
-	wg.Add(1)
-	go func() {
-		info, infoErr = client.FetchInstanceInfo(ctx, pin)
-		wg.Done()
-	}()
-
-	// Fetch the list of refs pointing to the instance.
-	var refs []cipd.RefInfo
-	var refsErr error
-	wg.Add(1)
-	go func() {
-		refs, refsErr = client.FetchInstanceRefs(ctx, pin, nil)
-		wg.Done()
-	}()
-
-	// Fetch the list of attached tags.
-	var tags []cipd.TagInfo
-	var tagsErr error
-	wg.Add(1)
-	go func() {
-		tags, tagsErr = client.FetchInstanceTags(ctx, pin, nil)
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	if infoErr != nil {
-		return nil, infoErr
-	}
-	if refsErr != nil {
-		return nil, refsErr
-	}
-	if tagsErr != nil {
-		return nil, tagsErr
+	desc, err := client.DescribeInstance(ctx, pin, &cipd.DescribeInstanceOpts{
+		DescribeRefs: true,
+		DescribeTags: true,
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	fmt.Printf("Package:       %s\n", info.Pin.PackageName)
-	fmt.Printf("Instance ID:   %s\n", info.Pin.InstanceID)
-	fmt.Printf("Registered by: %s\n", info.RegisteredBy)
-	fmt.Printf("Registered at: %s\n", info.RegisteredTs)
-	if len(refs) != 0 {
+	fmt.Printf("Package:       %s\n", desc.Pin.PackageName)
+	fmt.Printf("Instance ID:   %s\n", desc.Pin.InstanceID)
+	fmt.Printf("Registered by: %s\n", desc.RegisteredBy)
+	fmt.Printf("Registered at: %s\n", time.Time(desc.RegisteredTs).Local())
+	if len(desc.Refs) != 0 {
 		fmt.Printf("Refs:\n")
-		for _, t := range refs {
+		for _, t := range desc.Refs {
 			fmt.Printf("  %s\n", t.Ref)
 		}
 	} else {
 		fmt.Printf("Refs:          none\n")
 	}
-	if len(tags) != 0 {
+	if len(desc.Tags) != 0 {
 		fmt.Printf("Tags:\n")
-		for _, t := range tags {
+		for _, t := range desc.Tags {
 			fmt.Printf("  %s\n", t.Tag)
 		}
 	} else {
 		fmt.Printf("Tags:          none\n")
 	}
 
-	return &describeOutput{info, refs, tags}, nil
+	return desc, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
