@@ -625,6 +625,102 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("setRef OK", func() {
+			repo.expect(rpcCall{
+				method: "CreateRef",
+				in: &api.Ref{
+					Name:    "zzz",
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("1", 40),
+					},
+				},
+				out: &empty.Empty{},
+			})
+
+			So(r.setRef(ctx, "zzz", common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("1", 40),
+			}), ShouldBeNil)
+
+			repo.assertAllCalled()
+		})
+
+		Convey("setRef failed precondition", func() {
+			repo.expect(rpcCall{
+				method: "CreateRef",
+				in: &api.Ref{
+					Name:    "zzz",
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("1", 40),
+					},
+				},
+				err: status.Errorf(codes.FailedPrecondition, "not ready"),
+			})
+
+			err := r.setRef(ctx, "zzz", common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("1", 40),
+			})
+			So(err, ShouldResemble, &pendingProcessingError{"not ready"})
+
+			repo.assertAllCalled()
+		})
+
+		Convey("attachTags OK", func() {
+			repo.expect(rpcCall{
+				method: "AttachTags",
+				in: &api.AttachTagsRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("1", 40),
+					},
+					Tags: []*api.Tag{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+				},
+				out: &empty.Empty{},
+			})
+
+			So(r.attachTags(ctx, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("1", 40),
+			}, []string{"k1:v1", "k2:v2"}), ShouldBeNil)
+
+			repo.assertAllCalled()
+		})
+
+		Convey("attachTags failed precondition", func() {
+			repo.expect(rpcCall{
+				method: "AttachTags",
+				in: &api.AttachTagsRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("1", 40),
+					},
+					Tags: []*api.Tag{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+				},
+				err: status.Errorf(codes.FailedPrecondition, "not ready"),
+			})
+
+			err := r.attachTags(ctx, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  strings.Repeat("1", 40),
+			}, []string{"k1:v1", "k2:v2"})
+			So(err, ShouldResemble, &pendingProcessingError{"not ready"})
+
+			repo.assertAllCalled()
+		})
+
 		Convey("listPackages works", func() {
 			repo.expect(rpcCall{
 				method: "ListPrefix",

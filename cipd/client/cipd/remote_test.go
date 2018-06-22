@@ -929,7 +929,7 @@ func TestRemoteImpl(t *testing.T) {
 
 	Convey("setRef PROCESSING_NOT_FINISHED_YET", t, func(c C) {
 		err := mockSetRef(c, `{"status":"PROCESSING_NOT_FINISHED_YET", "error_message":"Blah"}`)
-		So(err, ShouldResemble, &pendingProcessingError{message: "Blah"})
+		So(err, ShouldResemble, &pendingProcessingError{message: "the instance is not ready yet - Blah"})
 	})
 
 	Convey("setRef ERROR", t, func(c C) {
@@ -1062,7 +1062,7 @@ func TestRemoteImpl(t *testing.T) {
 			c, []string{"tag1:value1", "tag2:value2"},
 			`{"tags":["tag1:value1","tag2:value2"]}`,
 			`{"status":"PROCESSING_NOT_FINISHED_YET", "error_message":"Blah"}`)
-		So(err, ShouldResemble, &pendingProcessingError{message: "Blah"})
+		So(err, ShouldResemble, &pendingProcessingError{message: "the instance is not ready yet - Blah"})
 	})
 
 	Convey("attachTags ERROR", t, func(c C) {
