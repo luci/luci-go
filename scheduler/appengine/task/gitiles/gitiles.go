@@ -25,7 +25,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
-	"google.golang.org/api/pubsub/v1"
+	pubsub "google.golang.org/api/pubsub/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -112,6 +112,24 @@ func validateRegexpRef(c *validation.Context, ref string) {
 	}
 }
 
+func ValidateRefConfigs(c *validation.Context, refConfigs []string) {
+	for _, ref := range refConfigs {
+		if strings.HasPrefix(ref, "regexp:") {
+			validateRegexpRef(c, ref)
+			continue
+		}
+
+		if !strings.HasPrefix(ref, "refs/") {
+			c.Errorf("ref must start with 'refs/' not %q", ref)
+		}
+		cnt := strings.Count(ref, "*")
+		if cnt > 0 {
+			regexpRef := "regexp:" + strings.Replace(regexp.QuoteMeta(ref), `\*`, `[^/]+`, -1)
+			c.Errorf("globs are not supported anymore, please use regexp instead: %q", regexpRef)
+		}
+	}
+}
+
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	cfg, ok := msg.(*messages.GitilesTask)
@@ -135,21 +153,7 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 	c.Exit()
 
 	c.Enter("refs")
-	for _, ref := range cfg.Refs {
-		if strings.HasPrefix(ref, "regexp:") {
-			validateRegexpRef(c, ref)
-			continue
-		}
-
-		if !strings.HasPrefix(ref, "refs/") {
-			c.Errorf("ref must start with 'refs/' not %q", ref)
-		}
-		cnt := strings.Count(ref, "*")
-		if cnt > 0 {
-			regexpRef := "regexp:" + strings.Replace(regexp.QuoteMeta(ref), `\*`, `[^/]+`, -1)
-			c.Errorf("globs are not supported anymore, please use regexp instead: %q", regexpRef)
-		}
-	}
+	ValidateRefConfigs(c, cfg.Refs)
 	c.Exit()
 }
 
@@ -234,19 +238,18 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 
 func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
 	refs := &refsState{}
-	refs.watched.init(c, cfg.GetRefs())
+	refs.watched = NewWatchedRefs(cfg.GetRefs())
 	return refs, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (loadErr error) {
 			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
 			return
 		}
 		// Group all refs by their namespace to reduce # of RPCs to gitiles.
-		for _, wrs := range refs.watched.namespaces {
-			wrs := wrs
+		refs.watched.ForEachNamespace(func(refsName string) {
 			work <- func() error {
-				return refs.fetchCurrentTips(c, wrs.namespace, g)
+				return refs.fetchCurrentTips(c, refsName, g)
 			}
-		}
+		})
 	})
 }
 
@@ -333,38 +336,44 @@ type gitilesClient struct {
 }
 
 type refsState struct {
-	watched     watchedRefs
+	watched     WatchedRefs
 	known       map[string]string // HEADs we saw before
 	current     map[string]string // HEADs available now
 	changed     int
 	currentLock sync.Mutex // Used because fetching current is in parallel
 }
 
-func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *gitilesClient) error {
-	resp, err := g.Refs(c, &gitilespb.RefsRequest{
-		Project:  g.project,
-		RefsPath: refsPath,
-	})
+func FetchCurrentTips(c context.Context, fetcher func() (*gitilespb.RefsResponse, error), lock sync.Mutex, refTips map[string]string, wr WatchedRefs) error {
+	resp, err := fetcher()
 	if err != nil {
 		return err
 	}
-	s.currentLock.Lock()
-	defer s.currentLock.Unlock()
-	if s.current == nil {
-		s.current = map[string]string{}
-	}
+	lock.Lock()
+	defer lock.Unlock()
 	for ref, tip := range resp.Revisions {
-		if s.watched.hasRef(ref) {
-			s.current[ref] = tip
+		if wr.HasRef(ref) {
+			refTips[ref] = tip
 		}
 	}
 	return nil
 }
 
+func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *gitilesClient) error {
+	if s.current == nil {
+		s.current = map[string]string{}
+	}
+	return FetchCurrentTips(c, func() (*gitilespb.RefsResponse, error) {
+		return g.Refs(c, &gitilespb.RefsRequest{
+			Project:  g.project,
+			RefsPath: refsPath,
+		})
+	}, s.currentLock, s.current, s.watched)
+}
+
 func (s *refsState) pruneKnown(ctl task.Controller) {
 	for ref := range s.known {
 		switch {
-		case !s.watched.hasRef(ref):
+		case !s.watched.HasRef(ref):
 			ctl.DebugLog("Ref %s is no longer watched", ref)
 			delete(s.known, ref)
 			s.changed++
@@ -493,11 +502,16 @@ func (w watchedRefNamespace) hasSuffix(suffix string) bool {
 	}
 }
 
-func (w *watchedRefNamespace) addSuffix(c context.Context, suffix string) {
+func (w *watchedRefNamespace) addSuffix(suffix string) {
 	if w.exactChildren == nil {
 		w.exactChildren = stringset.New(1)
 	}
 	w.exactChildren.Add(suffix)
+}
+
+type WatchedRefs interface {
+	HasRef(ref string) bool
+	ForEachNamespace(action func(refsPath string))
 }
 
 type watchedRefs struct {
@@ -521,10 +535,10 @@ func parseRefFromConfig(ref string) (ns, literalSuffix, regexpSuffix string) {
 	return
 }
 
-func (w *watchedRefs) init(c context.Context, refsConfig []string) {
-	w.namespaces = map[string]*watchedRefNamespace{}
+func NewWatchedRefs(refConfigs []string) WatchedRefs {
+	w := watchedRefs{namespaces: map[string]*watchedRefNamespace{}}
 	nsRegexps := map[string][]string{}
-	for _, ref := range refsConfig {
+	for _, ref := range refConfigs {
 		ns, suffix, regexp := parseRefFromConfig(ref)
 		if _, exists := w.namespaces[ns]; !exists {
 			w.namespaces[ns] = &watchedRefNamespace{namespace: ns}
@@ -536,7 +550,7 @@ func (w *watchedRefs) init(c context.Context, refsConfig []string) {
 		case regexp != "":
 			nsRegexps[ns] = append(nsRegexps[ns], regexp)
 		case suffix != "":
-			w.namespaces[ns].addSuffix(c, suffix)
+			w.namespaces[ns].addSuffix(suffix)
 		}
 	}
 
@@ -548,9 +562,11 @@ func (w *watchedRefs) init(c context.Context, refsConfig []string) {
 			panic(err)
 		}
 	}
+
+	return &w
 }
 
-func (w *watchedRefs) hasRef(ref string) bool {
+func (w *watchedRefs) HasRef(ref string) bool {
 	for ns, wrn := range w.namespaces {
 		nsPrefix := ns + "/"
 		if strings.HasPrefix(ref, nsPrefix) && wrn.hasSuffix(ref[len(nsPrefix):]) {
@@ -559,6 +575,12 @@ func (w *watchedRefs) hasRef(ref string) bool {
 	}
 
 	return false
+}
+
+func (w *watchedRefs) ForEachNamespace(action func(refsPath string)) {
+	for refsPath := range w.namespaces {
+		action(refsPath)
+	}
 }
 
 func splitRef(s string) (string, string) {
