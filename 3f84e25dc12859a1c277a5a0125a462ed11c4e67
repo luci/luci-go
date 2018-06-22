@@ -456,6 +456,24 @@
     },
     {
       "key": {
+        "uuid": "9d1d3d3c_651a9194",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T22:40:13Z",
+      "side": 1,
+      "message": "i believe what you call basic functionality is provided by the client interface, https://godoc.org/go.chromium.org/luci/common/proto/gitiles#GitilesClient\nwhile helpers are inside the common/api/gitiles. Note that there is PagingLog which is not exactly \"basic functionality\"",
+      "parentUuid": "553090d9_a92ebd29",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "19014659_9dd956fd",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
