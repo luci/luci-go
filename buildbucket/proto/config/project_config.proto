@@ -300,7 +300,7 @@ message Builder {
   // Specifies that a recipe to run.
   Recipe recipe = 4;
   // Swarming task priority.
-  uint32 priority = 5;
+  byte priority = 5;
   // Maximum build execution time. Not to be confused with pending time.
   uint32 execution_timeout_secs = 7;
   // Maximum build pending time.
