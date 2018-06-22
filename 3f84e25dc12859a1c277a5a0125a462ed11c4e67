@@ -403,6 +403,30 @@
     },
     {
       "key": {
+        "uuid": "af64a0ad_e7684069",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:46:50Z",
+      "side": 1,
+      "message": "In general case, we\u0027ll have a lot more commits than the limit. Sorting slice that contains all commits will therefore be also sorting many commits that we do not need. Also sorting is O(nk*log(nk)), where n is the limit and k is the number of fetched refs, whereas max-heap merging is O(nk*log(k)).",
+      "parentUuid": "d4b13e93_794ec404",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 142,
+        "endChar": 2
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f3db0a51_c6692a31",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
@@ -468,6 +492,24 @@
       "side": 1,
       "message": "i believe what you call basic functionality is provided by the client interface, https://godoc.org/go.chromium.org/luci/common/proto/gitiles#GitilesClient\nwhile helpers are inside the common/api/gitiles. Note that there is PagingLog which is not exactly \"basic functionality\"",
       "parentUuid": "553090d9_a92ebd29",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "368c7eeb_c4215053",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:46:50Z",
+      "side": 1,
+      "message": "Good point. But we\u0027ll need to update the description for the luci/common/api/gitiles package as it currently says that it \"implements GitilesClient in go.chromium.org/common/proto/gitiles package\". Most of the package-level exported functions have nothing to do with GitilesClient :-).",
+      "parentUuid": "9d1d3d3c_651a9194",
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
