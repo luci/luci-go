@@ -179,7 +179,7 @@ func (v *Verifier) VerifyPin(ctx context.Context, pin common.Pin) {
 			defer v.resolveWG.Done()
 
 			logging.Debugf(ctx, "Validating pin instance: %s", pin)
-			_, err := v.Client.FetchInstanceInfo(ctx, pin)
+			_, err := v.Client.DescribeInstance(ctx, pin, nil)
 			if err != nil {
 				logging.Errorf(ctx, "Failed to resolve instance info for %s@%s: %s",
 					pin.PackageName, pin.InstanceID, err)
