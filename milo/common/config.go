@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
+	schedulerGitiles "go.chromium.org/luci/scheduler/appengine/task/gitiles"
 	"go.chromium.org/luci/server/caching"
 
 	"go.chromium.org/luci/milo/api/config"
@@ -591,6 +592,19 @@ func init() {
 	validation.Rules.Add("services/${appid}", globalConfigFilename, validateServiceCfg)
 }
 
+func AddDeprecatedRef(refs *[]string, deprecatedRef string) {
+	if deprecatedRef != "" {
+		// ref field was allowed to just contain branch name, whereas refs field is
+		// only allowed to contain fully-qualified ref names (i.e. those starting
+		// with "refs/"), therefore we need to prefend "refs/heads/" prefix before
+		// adding it to refs list unless it already starts with "refs/".
+		if !strings.HasPrefix("refs/", deprecatedRef) {
+			deprecatedRef = "refs/heads/" + deprecatedRef
+		}
+		*refs = append(*refs, deprecatedRef)
+	}
+}
+
 // validateProjectCfg implements validation.Func by taking a potential Milo
 // config at path, validating it, and writing the result into ctx.
 //
@@ -633,8 +647,11 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			if console.RepoUrl == "" {
 				ctx.Errorf("ci console missing repo url")
 			}
-			if console.Ref == "" {
-				ctx.Errorf("ci console missing ref")
+			if console.Ref == "" && len(console.Refs) == 0 {
+				ctx.Errorf("ci console missing refs")
+			} else {
+				AddDeprecatedRef(&console.Refs, console.Ref)
+				schedulerGitiles.ValidateRefConfigs(ctx, console.Refs)
 			}
 		} else {
 			if console.IncludeExperimentalBuilds {
