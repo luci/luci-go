@@ -1066,10 +1066,11 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 		}
 		err := client.remote.setRef(ctx, ref, pin)
 		if err == nil {
+			logging.Infof(ctx, "cipd: ref %q is set", ref)
 			return nil
 		}
 		if _, ok := err.(*pendingProcessingError); ok {
-			logging.Warningf(ctx, "cipd: package instance is not ready yet - %s", err)
+			logging.Warningf(ctx, "cipd: %s", err)
 			clock.Sleep(ctx, 5*time.Second)
 		} else {
 			logging.Errorf(ctx, "cipd: failed to set ref - %s", err)
@@ -1102,7 +1103,7 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 			return nil
 		}
 		if _, ok := err.(*pendingProcessingError); ok {
-			logging.Warningf(ctx, "cipd: package instance is not ready yet - %s", err)
+			logging.Warningf(ctx, "cipd: %s", err)
 			clock.Sleep(ctx, 5*time.Second)
 		} else {
 			logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)

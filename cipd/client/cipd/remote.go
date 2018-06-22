@@ -733,7 +733,7 @@ func (r *remoteImpl) setRef(ctx context.Context, ref string, pin common.Pin) err
 	case "SUCCESS":
 		return nil
 	case "PROCESSING_NOT_FINISHED_YET":
-		return &pendingProcessingError{reply.ErrorMessage}
+		return &pendingProcessingError{fmt.Sprintf("the instance is not ready yet - %s", reply.ErrorMessage)}
 	case "ERROR", "PROCESSING_FAILED":
 		return errors.New(reply.ErrorMessage)
 	}
@@ -770,7 +770,7 @@ func (r *remoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []stri
 	case "SUCCESS":
 		return nil
 	case "PROCESSING_NOT_FINISHED_YET":
-		return &pendingProcessingError{reply.ErrorMessage}
+		return &pendingProcessingError{fmt.Sprintf("the instance is not ready yet - %s", reply.ErrorMessage)}
 	case "ERROR", "PROCESSING_FAILED":
 		return errors.New(reply.ErrorMessage)
 	}
