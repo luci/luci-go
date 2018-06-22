@@ -53,7 +53,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -227,7 +226,7 @@ type InstanceInfo struct {
 	RegisteredTs UnixTime `json:"registered_ts"`
 }
 
-// TagInfo is returned by FetchInstanceTags.
+// TagInfo is returned by DescribeInstance.
 type TagInfo struct {
 	// Tag is actual tag name ("key:value" pair).
 	Tag string `json:"tag"`
@@ -237,7 +236,7 @@ type TagInfo struct {
 	RegisteredTs UnixTime `json:"registered_ts"`
 }
 
-// RefInfo is returned by FetchInstanceRefs and FetchPackageRefs.
+// RefInfo is returned by DescribeInstance and FetchPackageRefs.
 type RefInfo struct {
 	// Ref is the ref name.
 	Ref string `json:"ref"`
@@ -247,6 +246,30 @@ type RefInfo struct {
 	ModifiedBy string `json:"modified_by"`
 	// ModifiedTs is when the ref was modified last time.
 	ModifiedTs UnixTime `json:"modified_ts"`
+}
+
+// DescribeInstanceOpts is passed to DescribeInstance.
+type DescribeInstanceOpts struct {
+	DescribeRefs bool // if true, will fetch all refs pointing to the instance
+	DescribeTags bool // if true, will fetch all tags attached to the instance
+}
+
+// InstanceDescription contains extended information about an instance as
+// returned by DescribeInstance.
+type InstanceDescription struct {
+	InstanceInfo
+
+	// Refs is a list of refs pointing to the instance, sorted by modification
+	// timestamp (newest first)
+	//
+	// Present only if DescribeRefs in DescribeInstanceOpts is true.
+	Refs []RefInfo `json:"refs,omitempty"`
+
+	// Tags is a list of tags attached to the instance, sorted by tag key and
+	// creation timestamp (newest first).
+	//
+	// Present only if DescribeTags in DescribeInstanceOpts is true.
+	Tags []TagInfo `json:"tags,omitempty"`
 }
 
 // ActionMap is a map of subdir to the Actions which will occur within it.
@@ -402,27 +425,18 @@ type Client interface {
 	// repository.
 	RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error
 
+	// DescribeInstance returns information about a package instance.
+	//
+	// May also be used as a simple instance presence check, if all describe_*
+	// fields in the request are false. If the request succeeds, then the
+	// instance exists.
+	DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
+
 	// SetRefWhenReady moves a ref to point to a package instance.
 	SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error
 
 	// AttachTagsWhenReady attaches tags to an instance.
 	AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error
-
-	// FetchInstanceInfo returns general information about the instance.
-	FetchInstanceInfo(ctx context.Context, pin common.Pin) (InstanceInfo, error)
-
-	// FetchInstanceTags returns information about tags attached to the instance.
-	//
-	// The returned list is sorted by tag key and creation timestamp (newest
-	// first). If 'tags' is empty, fetches all attached tags, otherwise only
-	// ones specified.
-	FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
-
-	// FetchInstanceRefs returns information about refs pointing to the instance.
-	//
-	// The returned list is sorted by modification timestamp (newest first). If
-	// 'refs' is empty, fetches all refs, otherwise only ones specified.
-	FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
 
 	// FetchPackageRefs returns information about all refs defined for a package.
 	//
@@ -1030,6 +1044,13 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 	return nil
 }
 
+func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
+	if err := common.ValidatePin(pin); err != nil {
+		return nil, err
+	}
+	return client.remote.describeInstance(ctx, pin, opts)
+}
+
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
@@ -1121,65 +1142,6 @@ func (client *clientImpl) ListInstances(ctx context.Context, packageName string)
 			return resp.instances, resp.cursor, nil
 		},
 	}, nil
-}
-
-func (client *clientImpl) FetchInstanceInfo(ctx context.Context, pin common.Pin) (InstanceInfo, error) {
-	err := common.ValidatePin(pin)
-	if err != nil {
-		return InstanceInfo{}, err
-	}
-	info, err := client.remote.fetchInstanceInfo(ctx, pin)
-	if err != nil {
-		return InstanceInfo{}, err
-	}
-	return InstanceInfo{
-		Pin:          pin,
-		RegisteredBy: info.registeredBy,
-		RegisteredTs: UnixTime(info.registeredTs),
-	}, nil
-}
-
-type sortByTagKey []TagInfo
-
-func (s sortByTagKey) Len() int      { return len(s) }
-func (s sortByTagKey) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-
-func (s sortByTagKey) Less(i, j int) bool {
-	k1 := instanceTagKey(s[i].Tag)
-	k2 := instanceTagKey(s[j].Tag)
-	if k1 == k2 {
-		// Newest first.
-		return s[j].RegisteredTs.Before(s[i].RegisteredTs)
-	}
-	return k1 < k2
-}
-
-// instanceTagKey returns key portion of the instance tag or empty string.
-func instanceTagKey(t string) string {
-	chunks := strings.SplitN(t, ":", 2)
-	if len(chunks) != 2 {
-		return ""
-	}
-	return chunks[0]
-}
-
-func (client *clientImpl) FetchInstanceTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
-	if err := common.ValidatePin(pin); err != nil {
-		return nil, err
-	}
-	fetched, err := client.remote.fetchTags(ctx, pin, tags)
-	if err != nil {
-		return nil, err
-	}
-	sort.Sort(sortByTagKey(fetched))
-	return fetched, nil
-}
-
-func (client *clientImpl) FetchInstanceRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error) {
-	if err := common.ValidatePin(pin); err != nil {
-		return nil, err
-	}
-	return client.remote.fetchRefs(ctx, pin, refs)
 }
 
 func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
@@ -1492,11 +1454,9 @@ type remote interface {
 
 	setRef(ctx context.Context, ref string, pin common.Pin) error
 	attachTags(ctx context.Context, pin common.Pin, tags []string) error
-	fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error)
-	fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error)
-	fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error)
 	fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error)
 	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
+	describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
 	searchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error)
