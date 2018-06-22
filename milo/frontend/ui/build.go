@@ -146,8 +146,6 @@ type Commit struct {
 	CommitTime time.Time
 	// Full URL of the main source repository.
 	Repo string
-	// Branch of the repo.
-	Branch string
 	// Requested revision of the commit or base commit.
 	RequestRevision *Link
 	// Revision of the commit or base commit.
