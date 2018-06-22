@@ -373,10 +373,6 @@ func (r *prpcRemoteImpl) fetchPackageRefs(ctx context.Context, packageName strin
 	return refs, nil
 }
 
-func (r *prpcRemoteImpl) fetchInstanceInfo(ctx context.Context, pin common.Pin) (*fetchInstanceResponse, error) {
-	return nil, errNoV2Impl
-}
-
 func (r *prpcRemoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error) {
 	resp, err := r.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 		Package:  pin.PackageName,
@@ -396,6 +392,10 @@ func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.P
 	return nil, errNoV2Impl
 }
 
+func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
+	return nil, errNoV2Impl
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Refs and tags.
 
@@ -405,14 +405,6 @@ func (r *prpcRemoteImpl) setRef(ctx context.Context, ref string, pin common.Pin)
 
 func (r *prpcRemoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []string) error {
 	return errNoV2Impl
-}
-
-func (r *prpcRemoteImpl) fetchTags(ctx context.Context, pin common.Pin, tags []string) ([]TagInfo, error) {
-	return nil, errNoV2Impl
-}
-
-func (r *prpcRemoteImpl) fetchRefs(ctx context.Context, pin common.Pin, refs []string) ([]RefInfo, error) {
-	return nil, errNoV2Impl
 }
 
 ////////////////////////////////////////////////////////////////////////////////
