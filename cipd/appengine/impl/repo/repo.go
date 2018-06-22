@@ -1147,11 +1147,7 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 	if len(refs) != 0 {
 		resp.Refs = make([]*api.Ref, len(refs))
 		for i, r := range refs {
-			// Clear redundant fields, they always match what's in the request.
-			ref := r.Proto()
-			ref.Package = ""
-			ref.Instance = nil
-			resp.Refs[i] = ref
+			resp.Refs[i] = r.Proto()
 		}
 	}
 	if len(tags) != 0 {
