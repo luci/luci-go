@@ -427,6 +427,30 @@
     },
     {
       "key": {
+        "uuid": "82e61e5f_67b070dc",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:49:46Z",
+      "side": 1,
+      "message": "Actually max-heap\u0027s complexity here is even better: O(n*log(k)). We only need to merge n commits and each operation (either fixing or removing) requires O(log(k)) operations.",
+      "parentUuid": "af64a0ad_e7684069",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 142,
+        "endChar": 2
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f3db0a51_c6692a31",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
