@@ -2214,11 +2214,15 @@ func TestDescribeInstance(t *testing.T) {
 				Refs: []*api.Ref{
 					{
 						Name:       "ref_a",
+						Package:    "a/pkg",
+						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
 						ModifiedTs: google.NewTimestamp(testTime),
 					},
 					{
 						Name:       "ref_b",
+						Package:    "a/pkg",
+						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
 						ModifiedTs: google.NewTimestamp(testTime),
 					},
