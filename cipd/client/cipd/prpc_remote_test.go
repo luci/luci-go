@@ -541,6 +541,90 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("describeInstance works", func() {
+			repo.expect(rpcCall{
+				method: "DescribeInstance",
+				in: &api.DescribeInstanceRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+					DescribeRefs: true,
+					DescribeTags: true,
+				},
+				out: &api.DescribeInstanceResponse{
+					Instance: &api.Instance{
+						Package: "a/b/c",
+						Instance: &api.ObjectRef{
+							HashAlgo:  api.HashAlgo_SHA1,
+							HexDigest: sha1,
+						},
+						RegisteredBy: "user:r@example.com",
+						RegisteredTs: google.NewTimestamp(epoch),
+					},
+					Refs: []*api.Ref{
+						{
+							Name:    "ref1",
+							Package: "a/b/c",
+							Instance: &api.ObjectRef{
+								HashAlgo:  api.HashAlgo_SHA1,
+								HexDigest: sha1,
+							},
+							ModifiedBy: "user:m@example.com",
+							ModifiedTs: google.NewTimestamp(epoch),
+						},
+					},
+					Tags: []*api.Tag{
+						{
+							Key:        "k",
+							Value:      "v",
+							AttachedBy: "user:a@example.com",
+							AttachedTs: google.NewTimestamp(epoch),
+						},
+					},
+				},
+			})
+
+			desc, err := r.describeInstance(ctx,
+				common.Pin{
+					PackageName: "a/b/c",
+					InstanceID:  sha1,
+				},
+				&DescribeInstanceOpts{
+					DescribeRefs: true,
+					DescribeTags: true,
+				})
+			So(err, ShouldBeNil)
+			So(desc, ShouldResemble, &InstanceDescription{
+				InstanceInfo: InstanceInfo{
+					Pin: common.Pin{
+						PackageName: "a/b/c",
+						InstanceID:  sha1,
+					},
+					RegisteredBy: "user:r@example.com",
+					RegisteredTs: UnixTime(epoch),
+				},
+				Refs: []RefInfo{
+					{
+						Ref:        "ref1",
+						InstanceID: sha1,
+						ModifiedBy: "user:m@example.com",
+						ModifiedTs: UnixTime(epoch),
+					},
+				},
+				Tags: []TagInfo{
+					{
+						Tag:          "k:v",
+						RegisteredBy: "user:a@example.com",
+						RegisteredTs: UnixTime(epoch),
+					},
+				},
+			})
+
+			repo.assertAllCalled()
+		})
+
 		Convey("listPackages works", func() {
 			repo.expect(rpcCall{
 				method: "ListPrefix",

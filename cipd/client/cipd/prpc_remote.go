@@ -103,6 +103,14 @@ func apiRefToInfo(r *api.Ref) RefInfo {
 	}
 }
 
+func apiTagToInfo(t *api.Tag) TagInfo {
+	return TagInfo{
+		Tag:          common.JoinInstanceTag(t),
+		RegisteredBy: t.AttachedBy,
+		RegisteredTs: UnixTime(google.TimeFromProto(t.AttachedTs)),
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ACLs.
 
@@ -393,7 +401,30 @@ func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.P
 }
 
 func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
-	return nil, errNoV2Impl
+	if opts == nil {
+		opts = &DescribeInstanceOpts{}
+	}
+	resp, err := r.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+		Package:      pin.PackageName,
+		Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
+		DescribeRefs: opts.DescribeRefs,
+		DescribeTags: opts.DescribeTags,
+	})
+	if err != nil {
+		return nil, err
+	}
+	desc := &InstanceDescription{
+		InstanceInfo: apiInstanceToInfo(resp.Instance),
+		Refs:         make([]RefInfo, len(resp.Refs)),
+		Tags:         make([]TagInfo, len(resp.Tags)),
+	}
+	for i, r := range resp.Refs {
+		desc.Refs[i] = apiRefToInfo(r)
+	}
+	for i, t := range resp.Tags {
+		desc.Tags[i] = apiTagToInfo(t)
+	}
+	return desc, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
