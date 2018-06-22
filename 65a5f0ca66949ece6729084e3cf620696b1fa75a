@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "41459236_b8209c99",
+        "filename": "milo/git/client.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e832b4d1_e171175a",
+      "range": {
+        "startLine": 74,
+        "startChar": 30,
+        "endLine": 75,
+        "endChar": 40
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0374a951_b6a25371",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 5
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "756ab730_2db2f6bf",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Ack. This code is gone after refactoring.",
+      "parentUuid": "0374a951_b6a25371",
+      "range": {
+        "startLine": 36,
+        "startChar": 2,
+        "endLine": 36,
+        "endChar": 52
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0c945934_a6c27bb5",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "098d1417_3e598018",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "I couldn\u0027t find errNotFound anywhere in LUCI code: https://cs.chromium.org/search/?q\u003d%5CberrNotFound%5Cb+file:infra/go/src/go.chromium.org/luci",
+      "parentUuid": "0c945934_a6c27bb5",
+      "range": {
+        "startLine": 45,
+        "startChar": 8,
+        "endLine": 45,
+        "endChar": 50
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +190,30 @@
     },
     {
       "key": {
+        "uuid": "10c9bf15_46699c6d",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a02250e_7ce077ba",
+      "range": {
+        "startLine": 61,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dcc89456_546575ee",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 5
@@ -141,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "06d8903c_3338d797",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Ah, excellent!",
+      "parentUuid": "dcc89456_546575ee",
+      "range": {
+        "startLine": 72,
+        "startChar": 19,
+        "endLine": 73,
+        "endChar": 65
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "11d3db1e_a258a8cf",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 5
@@ -161,6 +281,30 @@
       "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20d16930_273611ed",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11d3db1e_a258a8cf",
+      "range": {
+        "startLine": 95,
+        "startChar": 1,
+        "endLine": 103,
+        "endChar": 0
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -207,6 +351,30 @@
       "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea5ac3fd_14874af1",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "Good catch. Thanks, done!",
+      "parentUuid": "bce48eb2_874fcd25",
+      "range": {
+        "startLine": 197,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

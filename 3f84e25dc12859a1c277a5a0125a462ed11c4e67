@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f3db0a51_c6692a31",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "I\u0027d be happy to move exported functions to some common directory, but not sure what\u0027s the best place for them.",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "19014659_9dd956fd",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 349,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "This was created to remove some code duplication between Milo and Scheduler. However, it has added some complexity since I could not marry Gitiles clients between the apps and had to use a fetcher func. I\u0027ve decided to keep it as is, but please let me know if you think it\u0027s better to duplicate this code between fetchCurrentTips below and FetchRefs function in milo/git/fetch_refs.go to make it easier to read the code.",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f4352951_559fc053",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 589,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:25:31Z",
+      "side": 1,
+      "message": "An alternative would be to return a list of namespaces and have this loop in the callers for better readability, but that requires allocating an additional slice and copying keys into it.",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
