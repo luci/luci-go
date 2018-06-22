@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d3759023_a7e339ac",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 13
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19b83b11_3c976664",
+      "range": {
+        "startLine": 142,
+        "startChar": 71,
+        "endLine": 142,
+        "endChar": 72
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47f4c30b_d6268a81",
         "filename": "milo/common/config.go",
         "patchSetId": 13
@@ -39,6 +63,24 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2f4b413a_e381367f",
+        "filename": "milo/common/config.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47f4c30b_d6268a81",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -180,6 +222,30 @@
     },
     {
       "key": {
+        "uuid": "3ba731f4_6d0d8e4b",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5796bcb_e839284d",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 57,
+        "endChar": 6
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1055a93_392dc236",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 13
@@ -214,6 +280,24 @@
     },
     {
       "key": {
+        "uuid": "abc21a39_860fad86",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9720b7d_b83d3032",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a109420_c168ff47",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 13
@@ -228,6 +312,24 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fc9f192_e855a0e8",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a109420_c168ff47",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -251,6 +353,30 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b96b24e2_dd29f0a6",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48b429b1_88d71527",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 39
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -312,6 +438,24 @@
     },
     {
       "key": {
+        "uuid": "553090d9_a92ebd29",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "It\u0027s a good idea, but IMHO this package should only provide basic functionality from Gitiles server itself. The shared code here is more high-level: validation/parsing of the config and efficient discovery/fetching of many refs based on a regexp.",
+      "parentUuid": "9e3619c0_39c0da8d",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "19014659_9dd956fd",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
@@ -349,6 +493,30 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9c9a2d8_81ae83e9",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T22:33:26Z",
+      "side": 1,
+      "message": "Ack. Removed this function and duplicated the code.",
+      "parentUuid": "73cb0f9a_21d56a38",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 360,
+        "endChar": 2
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
