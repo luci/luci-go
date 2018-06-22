@@ -34,8 +34,6 @@ import (
 	"go.chromium.org/luci/cipd/common"
 )
 
-var errNoV2Impl = errors.New("this call is not yet implemented in v2 protocol")
-
 // prpcRemoteImpl implements v1 'remote' interface using v2 protocol.
 //
 // It exists temporarily during the transition from v1 to v2 protocol. Once
@@ -396,8 +394,18 @@ func (r *prpcRemoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (
 	}
 }
 
-func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error) {
-	return nil, errNoV2Impl
+func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*clientBinary, error) {
+	resp, err := r.repo.DescribeClient(ctx, &api.DescribeClientRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &clientBinary{
+		SHA1:     resp.LegacySha1,
+		FetchURL: resp.ClientBinary.SignedUrl,
+	}, nil
 }
 
 func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {

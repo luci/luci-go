@@ -987,18 +987,18 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return
 	}
 	if cache != nil {
-		if err = cache.AddFile(ctx, pin, clientFileName, info.clientBinary.SHA1); err != nil {
+		if err = cache.AddFile(ctx, pin, clientFileName, info.SHA1); err != nil {
 			return
 		}
 	}
 	client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
-	if info.clientBinary.SHA1 == currentHash {
+	if info.SHA1 == currentHash {
 		// already up-to-date, but the cache didn't know that. Make sure version
 		// file is update.
 		return
 	}
 
-	err = client.installClient(ctx, fs, sha1.New(), info.clientBinary.FetchURL, destination, info.clientBinary.SHA1)
+	err = client.installClient(ctx, fs, sha1.New(), info.FetchURL, destination, info.SHA1)
 	if err != nil {
 		return
 	}
@@ -1456,7 +1456,7 @@ type remote interface {
 	setRef(ctx context.Context, ref string, pin common.Pin) error
 	attachTags(ctx context.Context, pin common.Pin, tags []string) error
 	fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error)
-	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error)
+	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*clientBinary, error)
 	describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
 
 	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
@@ -1482,15 +1482,8 @@ type fetchInstanceResponse struct {
 }
 
 type clientBinary struct {
-	FileName string `json:"file_name"`
 	SHA1     string `json:"sha1"`
 	FetchURL string `json:"fetch_url"`
-	Size     int64  `json:"size,string"`
-}
-
-type fetchClientBinaryInfoResponse struct {
-	instance     *InstanceInfo
-	clientBinary *clientBinary
 }
 
 type listInstancesResponse struct {
