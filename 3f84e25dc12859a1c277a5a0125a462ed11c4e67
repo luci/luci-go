@@ -2,6 +2,281 @@
   "comments": [
     {
       "key": {
+        "uuid": "19b83b11_3c976664",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 13
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "i think you meant \\. or [.], like in L152",
+      "range": {
+        "startLine": 142,
+        "startChar": 71,
+        "endLine": 142,
+        "endChar": 72
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47f4c30b_d6268a81",
+        "filename": "milo/common/config.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "please add a TODO to remove this func and ref field too",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8aaae0a1_07f8becc",
+        "filename": "milo/git/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "what is a \"descendant ref\"?",
+      "range": {
+        "startLine": 65,
+        "startChar": 46,
+        "endLine": 65,
+        "endChar": 61
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62c09a89_9eeb4c97",
+        "filename": "milo/git/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "imo this file is too low level to refer to the config proto. Can we accept only []*regexp.Regexp here? the caller can convert a non-regex to a regex easily.",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 67,
+        "endChar": 50
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20735b23_35a8a27f",
+        "filename": "milo/git/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "i am confused by this. What does it mean to merge commits based on a timestamp? Do you meant that the order of returned commits is by timestamp? why is it a job of FetchRefs? a caller can do this. If we have another impl of FetchRefs, it will have to reimplement this.",
+      "range": {
+        "startLine": 69,
+        "startChar": 27,
+        "endLine": 69,
+        "endChar": 69
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3e5cd5d_d3e5b8cf",
+        "filename": "milo/git/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "if we fetch commits anyway, the hard work is already done, so there is not much value in doing timestamp-limiting inside FetchRefs, as opposed to the callsite or a helper function that is used together with a FetchRefs impl",
+      "range": {
+        "startLine": 70,
+        "startChar": 4,
+        "endLine": 70,
+        "endChar": 30
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd22a0f_69f8c8be",
+        "filename": "milo/git/client.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "why is this a job of FetchRefs? we would need to reimplement this if we have another impl of FetchRefs. Can we have a single func that accepts an error and returns an error with milo codes, if necessary?\n\nanother reason not to do this is that this code is not really milo-specific and we may want to move out of milo later",
+      "range": {
+        "startLine": 72,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 75
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5796bcb_e839284d",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "FetchRefs",
+      "range": {
+        "startLine": 57,
+        "startChar": 3,
+        "endLine": 57,
+        "endChar": 6
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1055a93_392dc236",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "i am not sure about milo-\u003escheduler dep. WDYT tandrii? imo it is ok for one app A to depend on app\u0027s B code only if A code deals with B directly (e.g. milo app talks to buildbucket app), but B\u0027s code is generic, it should be moved somewhere.",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9720b7d_b83d3032",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "please move this below, closer to usage",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a109420_c168ff47",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "for len(commits) !\u003d limit \u0026\u0026 len(ch) !\u003d 0",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "48b429b1_88d71527",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "nit: ch[0].commit \u003d logs[ref][0]\n\ncause ref is same",
+      "range": {
+        "startLine": 136,
+        "startChar": 3,
+        "endLine": 136,
+        "endChar": 39
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4b13e93_794ec404",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "we don\u0027t call log inside this loop, so how is this different from just putting all commits into one large slice, sorting by time and returning top limit items?\n\nalso see my another comment. Since we do\u0027t dynamically fetch logs, i think we can just return all commits bundled together. Sorting is not fetching (this is a specific implementation of FetchRefs)",
+      "range": {
+        "startLine": 125,
+        "startChar": 0,
+        "endLine": 142,
+        "endChar": 2
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f3db0a51_c6692a31",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
@@ -19,6 +294,24 @@
     },
     {
       "key": {
+        "uuid": "9e3619c0_39c0da8d",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "https://godoc.org/go.chromium.org/luci/common/api/gitiles ?",
+      "parentUuid": "f3db0a51_c6692a31",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "19014659_9dd956fd",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 13
@@ -33,6 +326,29 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "73cb0f9a_21d56a38",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 360,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-22T21:45:19Z",
+      "side": 1,
+      "message": "is this the duplicated code? i think it is too small to add inter-app deps",
+      "range": {
+        "startLine": 356,
+        "startChar": 1,
+        "endLine": 360,
+        "endChar": 2
+      },
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
