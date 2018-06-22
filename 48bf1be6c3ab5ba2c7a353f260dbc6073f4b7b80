@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "635d6746_dd56e24a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-22T00:54:51Z",
+      "side": 1,
+      "message": "ve",
+      "range": {
+        "startLine": 10,
+        "startChar": 15,
+        "endLine": 10,
+        "endChar": 17
+      },
+      "revId": "48bf1be6c3ab5ba2c7a353f260dbc6073f4b7b80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "96c20536_fa4c3f4c",
+        "filename": "cipd/client/cipd/prpc_remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 378,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-22T00:54:51Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be deleted to?",
+      "range": {
+        "startLine": 376,
+        "startChar": 0,
+        "endLine": 378,
+        "endChar": 1
+      },
+      "revId": "48bf1be6c3ab5ba2c7a353f260dbc6073f4b7b80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
