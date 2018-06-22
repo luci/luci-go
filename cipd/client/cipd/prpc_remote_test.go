@@ -541,6 +541,37 @@ func TestPrpcRemoteImpl(t *testing.T) {
 			repo.assertAllCalled()
 		})
 
+		Convey("fetchClientBinaryInfo works", func() {
+			repo.expect(rpcCall{
+				method: "DescribeClient",
+				in: &api.DescribeClientRequest{
+					Package: "a/b/c",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: sha1,
+					},
+				},
+				out: &api.DescribeClientResponse{
+					ClientBinary: &api.ObjectURL{
+						SignedUrl: "http://example.com/binary",
+					},
+					LegacySha1: strings.Repeat("b", 40),
+				},
+			})
+
+			res, err := r.fetchClientBinaryInfo(ctx, common.Pin{
+				PackageName: "a/b/c",
+				InstanceID:  sha1,
+			})
+			So(err, ShouldBeNil)
+			So(res, ShouldResemble, &clientBinary{
+				SHA1:     strings.Repeat("b", 40),
+				FetchURL: "http://example.com/binary",
+			})
+
+			repo.assertAllCalled()
+		})
+
 		Convey("describeInstance works", func() {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",

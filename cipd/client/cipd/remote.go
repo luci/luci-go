@@ -419,7 +419,7 @@ func (r *remoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (stri
 	return url, err
 }
 
-func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*fetchClientBinaryInfoResponse, error) {
+func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*clientBinary, error) {
 	params, err := instanceParams(pin)
 	if err != nil {
 		return nil, err
@@ -427,10 +427,9 @@ func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) 
 	endpoint := "repo/v1/client?" + params
 
 	var reply struct {
-		Status       string             `json:"status"`
-		ErrorMessage string             `json:"error_message"`
-		Instance     packageInstanceMsg `json:"instance"`
-		ClientBinary clientBinary       `json:"client_binary"`
+		Status       string       `json:"status"`
+		ErrorMessage string       `json:"error_message"`
+		ClientBinary clientBinary `json:"client_binary"`
 	}
 	if err := r.makeRequest(ctx, endpoint, "GET", nil, &reply); err != nil {
 		return nil, err
@@ -438,14 +437,7 @@ func (r *remoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) 
 
 	switch reply.Status {
 	case "SUCCESS":
-		ts, err := convertTimestamp(reply.Instance.RegisteredTs)
-		if err != nil {
-			return nil, err
-		}
-		return &fetchClientBinaryInfoResponse{
-			&InstanceInfo{pin, reply.Instance.RegisteredBy, UnixTime(ts)},
-			&reply.ClientBinary,
-		}, nil
+		return &reply.ClientBinary, nil
 	case "PACKAGE_NOT_FOUND":
 		return nil, fmt.Errorf("package %q is not registered", pin.PackageName)
 	case "INSTANCE_NOT_FOUND":
