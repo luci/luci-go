@@ -94,7 +94,7 @@ func TestRemoteImpl(t *testing.T) {
 		return remote.fetchInstanceImpl(ctx, Pin{"pkgname", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
 	}
 
-	mockFetchClientBinaryInfo := func(c C, reply string) (*fetchClientBinaryInfoResponse, error) {
+	mockFetchClientBinaryInfo := func(c C, reply string) (*clientBinary, error) {
 		remote := mockRemoteImpl(c, []expectedHTTPCall{
 			{
 				Method: "GET",
@@ -577,34 +577,15 @@ func TestRemoteImpl(t *testing.T) {
 	Convey("fetchClientBinaryInfo SUCCESS", t, func(c C) {
 		result, err := mockFetchClientBinaryInfo(c, `{
 				"status": "SUCCESS",
-				"instance": {
-					"instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-					"registered_by": "user:a@example.com",
-					"registered_ts": "1420244414571500",
-					"package_name": "infra/tools/cipd/mac-amd64"
-				},
 				"client_binary": {
-					"file_name": "cipd",
 					"sha1": "c52a8ffe7522302e5658fd7f1eb9e2dfd93c0b80",
-					"fetch_url": "https://storage.googleapis.com/example?params=yes",
-					"size": "10120188"
-				},
-				"kind": "repo#resourcesItem",
-				"etag": "\"klmD7St9j1caKhEua58kkAgnm0A/GCbN4lyfRwANQtP3NW9-SWMggwY\""
+					"fetch_url": "https://storage.googleapis.com/example?params=yes"
+				}
 			}`)
 		So(err, ShouldBeNil)
-		So(result, ShouldResemble, &fetchClientBinaryInfoResponse{
-			instance: &InstanceInfo{
-				Pin{"infra/tools/cipd/mac-amd64", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
-				"user:a@example.com",
-				UnixTime(time.Unix(0, 1420244414571500000)),
-			},
-			clientBinary: &clientBinary{
-				"cipd",
-				"c52a8ffe7522302e5658fd7f1eb9e2dfd93c0b80",
-				"https://storage.googleapis.com/example?params=yes",
-				10120188,
-			},
+		So(result, ShouldResemble, &clientBinary{
+			"c52a8ffe7522302e5658fd7f1eb9e2dfd93c0b80",
+			"https://storage.googleapis.com/example?params=yes",
 		})
 	})
 
