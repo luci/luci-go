@@ -184,8 +184,8 @@
             {{ end }}
           {{ end }}
 
-          {{ range .Build.Components  }}
-          <li class="verbosity-{{.Verbosity.String}}">
+          {{ range $index, $component := .Build.Components  }}
+          <li id="buildComponent-{{$index}}" class="verbosity-{{.Verbosity.String}}">
             <div class="status-{{.Status}} result">
                 {{ template "interval" .ExecutionTime }}
               <b>{{.Label.HTML}}</b>
