@@ -331,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "7c0ba2d3_526ab221",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:28:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ed27a90_457eff42",
+      "range": {
+        "startLine": 106,
+        "startChar": 2,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bce48eb2_874fcd25",
         "filename": "milo/git/log.go",
         "patchSetId": 5
@@ -366,6 +390,30 @@
       "side": 1,
       "message": "Good catch. Thanks, done!",
       "parentUuid": "bce48eb2_874fcd25",
+      "range": {
+        "startLine": 197,
+        "startChar": 1,
+        "endLine": 200,
+        "endChar": 2
+      },
+      "revId": "65a5f0ca66949ece6729084e3cf620696b1fa75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21773594_bce9b9ca",
+        "filename": "milo/git/log.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-22T19:28:41Z",
+      "side": 1,
+      "message": "I actually append the ancestor to the key below. Not sure if namespacing is a better option or not.",
+      "parentUuid": "ea5ac3fd_14874af1",
       "range": {
         "startLine": 197,
         "startChar": 1,
