@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f52584f1_98fe0c2c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-23T00:38:54Z",
+      "side": 1,
+      "message": "this is exclusively for -help output:\n\n$ ./cipd pkg-build --help\nBuilds a package instance producing *.cipd file.\n\nusage:  cipd pkg-build [options]\n  ...\n  -pkg-var value\n    \tVariables accessible from package definition file. (default arch:amd64, os:mac, platform:mac-amd64)\n  ...",
+      "range": {
+        "startLine": 352,
+        "startChar": 1,
+        "endLine": 361,
+        "endChar": 34
+      },
+      "revId": "f89ad3dd189f014bffcea9b9cbbd44470d9c2b39",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
