@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8cc30f36_ff9643f9",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "Bullet points are good here\n\nRefs are git refs to pull commits from when displaying the console.\nAccepted formats include:\n* An explicit ref: e.g. \"refs/heads/master\"\n* A regular expression.  e.g. \"regexp:refs/branch-heads/\\d+\\.\\d+\"\nThe regular expression must:\n  * Start with \"regexp:\"\n  * Contain two forward slashes\n  * Not start with ^ or end with $\n\nAlso add limitations:\nA maximum of 100 total refs are supported.  \nIf after expanding the ref regexs, there are more than 100 refs, the console may fail to load.",
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d930f812_c5fc03ae",
+        "filename": "milo/git/client.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "Interface unclear.  \n\nEg. How do you use this? What is a startRef? What is a refConfigs?\nWhy is it called FetchRefs when it returns commits?",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 10
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4dffab2_cb05d035",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "does p stand for something?",
+      "range": {
+        "startLine": 58,
+        "startChar": 6,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94bcd72c_0ad43d12",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "What is a WatchedRef? What is a Namespace?  These words don\u0027t make a whole lot of sense in the context of Milo.",
+      "range": {
+        "startLine": 82,
+        "startChar": 5,
+        "endLine": 82,
+        "endChar": 21
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53f22743_61621003",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "As an interface, Watched seems redundant.  Watch implies a purpose, which makes sense when you look at it from the perspective of the scheduler.  These are the refs I\u0027m watching.\nBut the moment you export them, they stop making sense.  IE Milo doesn\u0027t watch any refs, it just has a set of refs that its interested in at the moment.\n\nI think \"Refs\" or \"RefSet\" is a better name of this interface.\nIn which case\nHasRef(ref string) bool\ncan just be\nIn(ref string) bool or Has(ref string)\n\n(At this point Refs is redundant the name of the interface would already imply they\u0027re refs).",
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f69d266_66cc76c9",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 512,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-23T02:23:56Z",
+      "side": 1,
+      "message": "I don\u0027t know if this idea of Namespaces exports very well.  Refs don\u0027t really have namespaces.",
+      "range": {
+        "startLine": 512,
+        "startChar": 1,
+        "endLine": 512,
+        "endChar": 17
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
