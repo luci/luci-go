@@ -24,6 +24,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
@@ -33,6 +34,29 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
+
+// gRPC errors that may be returned by api.RepositoryClient that we recognize
+// and handle ourselves. They will not be logged by the pRPC library.
+var expectedCodes = prpc.ExpectedCode(
+	codes.Aborted,
+	codes.AlreadyExists,
+	codes.FailedPrecondition,
+	codes.NotFound,
+	codes.PermissionDenied,
+)
+
+// humanErr takes gRPC errors and returns a human readable error that can be
+// presented in the CLI.
+//
+// It basically strips scary looking gRPC framing around the error message.
+func humanErr(err error) error {
+	if err != nil {
+		if status, ok := status.FromError(err); ok {
+			return errors.New(status.Message())
+		}
+	}
+	return err
+}
 
 // prpcRemoteImpl implements v1 'remote' interface using v2 protocol.
 //
@@ -66,7 +90,7 @@ func (r *prpcRemoteImpl) init() error {
 				return &retry.ExponentialBackoff{
 					Limited: retry.Limited{
 						Delay:   time.Second,
-						Retries: 5,
+						Retries: 10,
 					},
 				}
 			},
@@ -186,9 +210,9 @@ func revokeRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
 func (r *prpcRemoteImpl) fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
 	resp, err := r.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: packagePath,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	var out []PackageACL
 	for _, p := range resp.PerPrefixMetadata {
@@ -222,9 +246,9 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 	// Fetch existing metadata, if any.
 	meta, err := r.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
 		Prefix: packagePath,
-	}, prpc.ExpectedCode(codes.NotFound))
+	}, expectedCodes)
 	if code := grpc.Code(err); code != codes.OK && code != codes.NotFound {
-		return err
+		return humanErr(err)
 	}
 
 	// Construct new empty metadata for codes.NotFound.
@@ -260,16 +284,16 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 	}
 
 	// Store the new metadata. This call will check meta.Fingerprint.
-	_, err = r.repo.UpdatePrefixMetadata(ctx, meta)
-	return err
+	_, err = r.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
+	return humanErr(err)
 }
 
 func (r *prpcRemoteImpl) fetchRoles(ctx context.Context, packagePath string) ([]string, error) {
 	resp, err := r.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
 		Prefix: packagePath,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	out := make([]string, len(resp.Roles))
 	for i, r := range resp.Roles {
@@ -324,9 +348,9 @@ func (r *prpcRemoteImpl) registerInstance(ctx context.Context, pin common.Pin) (
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: pin.InstanceID,
 		},
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	switch resp.Status {
 	case api.RegistrationStatus_REGISTERED, api.RegistrationStatus_ALREADY_REGISTERED:
@@ -347,30 +371,26 @@ func (r *prpcRemoteImpl) registerInstance(ctx context.Context, pin common.Pin) (
 ////////////////////////////////////////////////////////////////////////////////
 // Fetching.
 
-func (r *prpcRemoteImpl) resolveVersion(ctx context.Context, packageName, version string) (pin common.Pin, err error) {
+func (r *prpcRemoteImpl) resolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
 	resp, err := r.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
 		Package: packageName,
 		Version: version,
-	}, prpc.ExpectedCode(codes.NotFound, codes.FailedPrecondition))
-	switch grpc.Code(err) {
-	case codes.OK:
-		pin = common.Pin{
-			PackageName: packageName,
-			InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
-		}
-	case codes.NotFound, codes.FailedPrecondition:
-		// Return a friendlier looking error message without gRPC framing.
-		err = errors.New(grpc.ErrorDesc(err))
+	}, expectedCodes)
+	if err != nil {
+		return common.Pin{}, humanErr(err)
 	}
-	return
+	return common.Pin{
+		PackageName: packageName,
+		InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
+	}, nil
 }
 
 func (r *prpcRemoteImpl) fetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error) {
 	resp, err := r.repo.ListRefs(ctx, &api.ListRefsRequest{
 		Package: packageName,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	refs := make([]RefInfo, len(resp.Refs))
 	for i, r := range resp.Refs {
@@ -383,24 +403,20 @@ func (r *prpcRemoteImpl) fetchInstanceURL(ctx context.Context, pin common.Pin) (
 	resp, err := r.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-	}, prpc.ExpectedCode(codes.NotFound))
-	switch grpc.Code(err) {
-	case codes.OK:
-		return resp.SignedUrl, nil
-	case codes.NotFound:
-		return "", errors.New(grpc.ErrorDesc(err))
-	default:
-		return "", err
+	}, expectedCodes)
+	if err != nil {
+		return "", humanErr(err)
 	}
+	return resp.SignedUrl, nil
 }
 
 func (r *prpcRemoteImpl) fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*clientBinary, error) {
 	resp, err := r.repo.DescribeClient(ctx, &api.DescribeClientRequest{
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	return &clientBinary{
 		SHA1:     resp.LegacySha1,
@@ -417,9 +433,9 @@ func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, o
 		Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
 		DescribeRefs: opts.DescribeRefs,
 		DescribeTags: opts.DescribeTags,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	desc := &InstanceDescription{
 		InstanceInfo: apiInstanceToInfo(resp.Instance),
@@ -443,11 +459,11 @@ func (r *prpcRemoteImpl) setRef(ctx context.Context, ref string, pin common.Pin)
 		Name:     ref,
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-	}, prpc.ExpectedCode(codes.FailedPrecondition))
+	}, expectedCodes)
 	if grpc.Code(err) == codes.FailedPrecondition {
 		return &pendingProcessingError{grpc.ErrorDesc(err)}
 	}
-	return err
+	return humanErr(err)
 }
 
 func (r *prpcRemoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []string) error {
@@ -462,11 +478,11 @@ func (r *prpcRemoteImpl) attachTags(ctx context.Context, pin common.Pin, tags []
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
 		Tags:     apiTags,
-	})
+	}, expectedCodes)
 	if grpc.Code(err) == codes.FailedPrecondition {
 		return &pendingProcessingError{grpc.ErrorDesc(err)}
 	}
-	return err
+	return humanErr(err)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -477,9 +493,9 @@ func (r *prpcRemoteImpl) listPackages(ctx context.Context, path string, recursiv
 		Prefix:        path,
 		Recursive:     recursive,
 		IncludeHidden: includeHidden,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, humanErr(err)
 	}
 	return resp.Packages, resp.Prefixes, nil
 }
@@ -497,9 +513,9 @@ func (r *prpcRemoteImpl) searchInstances(ctx context.Context, packageName string
 		Package:  packageName,
 		Tags:     apiTags,
 		PageSize: 1000, // TODO(vadimsh): Support pagination on the client.
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 
 	out := make(common.PinSlice, len(resp.Instances))
@@ -518,9 +534,9 @@ func (r *prpcRemoteImpl) listInstances(ctx context.Context, packageName string, 
 		Package:   packageName,
 		PageSize:  int32(limit),
 		PageToken: cursor,
-	})
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
 	}
 	out := &listInstancesResponse{
 		instances: make([]InstanceInfo, len(resp.Instances)),
