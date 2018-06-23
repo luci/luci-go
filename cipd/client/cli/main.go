@@ -357,13 +357,14 @@ func (vars *packageVars) String() string {
 	for k, v := range *vars {
 		chunks = append(chunks, fmt.Sprintf("%s:%s", k, v))
 	}
-	return strings.Join(chunks, " ")
+	sort.Strings(chunks)
+	return strings.Join(chunks, ", ")
 }
 
 // Set is called by 'flag' package when parsing command line options.
 func (vars *packageVars) Set(value string) error {
 	// <key>:<value> pair.
-	chunks := strings.Split(value, ":")
+	chunks := strings.SplitN(value, ":", 2)
 	if len(chunks) != 2 {
 		return makeCLIError("expecting <key>:<value> pair, got %q", value)
 	}
@@ -394,7 +395,12 @@ type inputOptions struct {
 }
 
 func (opts *inputOptions) registerFlags(f *flag.FlagSet) {
-	opts.vars = packageVars{}
+	// Set default vars (e.g. ${platform}). They may be overridden through flags.
+	defVars := template.DefaultExpander()
+	opts.vars = make(packageVars, len(defVars))
+	for k, v := range defVars {
+		opts.vars[k] = v
+	}
 
 	// Interface to accept package definition file.
 	f.StringVar(&opts.packageDef, "pkg-def", "", "*.yaml file that defines what to put into the package.")
