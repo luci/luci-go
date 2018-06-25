@@ -49,6 +49,19 @@ func (mr *MockClientMockRecorder) Log(c, host, project, commitish, inputOptions 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockClient)(nil).Log), c, host, project, commitish, inputOptions)
 }
 
+// FetchRefs mocks base method
+func (m *MockClient) FetchRefs(c context.Context, host, project, excludeRef string, refConfigs []string, limit int) ([]*git.Commit, error) {
+	ret := m.ctrl.Call(m, "FetchRefs", c, host, project, excludeRef, refConfigs, limit)
+	ret0, _ := ret[0].([]*git.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchRefs indicates an expected call of FetchRefs
+func (mr *MockClientMockRecorder) FetchRefs(c, host, project, excludeRef, refConfigs, limit interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchRefs", reflect.TypeOf((*MockClient)(nil).FetchRefs), c, host, project, excludeRef, refConfigs, limit)
+}
+
 // CLEmail mocks base method
 func (m *MockClient) CLEmail(c context.Context, host string, changeNumber int64) (string, error) {
 	ret := m.ctrl.Call(m, "CLEmail", c, host, changeNumber)

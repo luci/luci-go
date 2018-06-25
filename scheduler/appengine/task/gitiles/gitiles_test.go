@@ -435,16 +435,3 @@ func TestValidateConfig(t *testing.T) {
 		})
 	})
 }
-
-func TestRefNamespace(t *testing.T) {
-	t.Parallel()
-
-	Convey("splitRef works", t, func() {
-		p, s := splitRef("refs/heads/master")
-		So(p, ShouldEqual, "refs/heads")
-		So(s, ShouldEqual, "master")
-		p, s = splitRef("refs/weird/")
-		So(p, ShouldEqual, "refs/weird")
-		So(s, ShouldEqual, "")
-	})
-}
