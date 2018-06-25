@@ -251,6 +251,7 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 	// e.g. "go.chromium.org/luci/logdog/api/logpb/log.proto"
 	var goSources []string
 	inGopath := false
+	grpcProtoPath := ""
 	for _, p := range goPaths() {
 		src := filepath.Join(p, "src")
 		switch info, err := os.Stat(src); {
@@ -265,6 +266,11 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 			goSources = append(goSources, src)
 			// note: does not respect case insensitive file systems (e.g. on windows)
 			inGopath = inGopath || strings.HasPrefix(dir, src)
+
+			grpcPath := filepath.Join(src, "go.chromium.org", "luci", "grpc", "proto")
+			if info, err := os.Stat(grpcPath); err == nil && info.IsDir() {
+				grpcProtoPath = grpcPath
+			}
 		}
 	}
 
@@ -284,7 +290,13 @@ func protoImportPaths(dir string, userDefinedImportPaths []string) ([]string, er
 				"Use go-style absolute paths to imported .proto files, "+
 				"e.g. github.com/user/repo/path/to/file.proto", dir)
 	default:
-		return goSources, nil
+		importPaths := goSources
+
+		// Include gRPC protos.
+		if grpcProtoPath != "" {
+			importPaths = append(importPaths, grpcProtoPath)
+		}
+		return importPaths, nil
 	}
 }
 
