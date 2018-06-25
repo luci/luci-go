@@ -259,6 +259,30 @@
       "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a9e06fb_62d751fc",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T22:42:11Z",
+      "side": 1,
+      "message": "chatted. I didn\u0027t realize that with my suggestion is lossy: we loose info that a segment of chunks belong to a same line and must be processed in a certain way if the whole line matches a prefix.\n\ni guess a generic implementation could split description by lines and determine a list of linkifiers for each line (e.g. no match -\u003e just URL linkfier. A bug line -\u003e URL linkified and bug linkifier) and process each line individually. But this is probably an overkill for what we have today, so this code LGTM",
+      "parentUuid": "6f8e43c5_509f9f76",
+      "range": {
+        "startLine": 197,
+        "startChar": 3,
+        "endLine": 198,
+        "endChar": 35
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
