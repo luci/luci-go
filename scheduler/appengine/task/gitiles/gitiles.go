@@ -319,6 +319,7 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cf
 	if err != nil {
 		return nil, err
 	}
+	logging.Debugf(c, "ANDRII timeout is %s", httpClient.Timeout)
 	if r.GitilesClient, err = gitiles.NewRESTClient(httpClient, host, true); err != nil {
 		return nil, err
 	}
