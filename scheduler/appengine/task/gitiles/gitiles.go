@@ -302,6 +302,7 @@ func (m TaskManager) emitTriggersRefAtATime(c context.Context, ctl task.Controll
 }
 
 func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cfg *messages.GitilesTask) (*gitilesClient, error) {
+	logging.Debugf(c, "Context is %v", c)
 	host, project, err := gitiles.ParseRepoURL(cfg.Repo)
 	if err != nil {
 		return nil, errors.Annotate(err, "invalid repo URL %q", cfg.Repo).Err()
