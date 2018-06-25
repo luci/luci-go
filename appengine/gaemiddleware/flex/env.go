@@ -104,17 +104,29 @@ func init() {
 	}
 }
 
-// ReadOnlyFlex is an Environment designed for cooperative Flex support
+// ReadOnlyFlexWithCookies is an Environment designed for cooperative Flex support
 // environments.
-var ReadOnlyFlex = gaemiddleware.Environment{
+// If the ReadOnlyFlexWithCookies environment is used on flex in a project,
+// no other classic app modules in the same project can use cookieauth.
+var ReadOnlyFlexWithCookies = gaemiddleware.Environment{
 	MemcacheAvailable: false,
 	DSReadOnly:        true,
 	DSReadOnlyPredicate: func(k *datastore.Key) (isRO bool) {
-		// HACK(vadimsh): This is needed to allow tsmon middleware to bypass
-		// read-only filter on the datastore. It needs writable access to the
-		// datastore for DatastoreTaskNumAllocator to work. It doesn't rely on
-		// dscache, and thus it is safe to mutate datastore from Flex side.
-		return k.Namespace() != gaetsmon.DatastoreNamespace
+		switch {
+		case k.Namespace() == gaetsmon.DatastoreNamespace:
+			// HACK(vadimsh): This is needed to allow tsmon middleware to bypass
+			// read-only filter on the datastore. It needs writable access to the
+			// datastore for DatastoreTaskNumAllocator to work. It doesn't rely on
+			// dscache, and thus it is safe to mutate datastore from Flex side.
+			return false
+		case k.Kind() == "gaeauth.User" || k.Kind() == "gaeauth.Session":
+			// HACK(hinoka): This is needed to allow cookie auth to bypass the
+			// read-only filter on the datastore.  As long as the flex endpoint is the
+			// only endpoint that uses cookie auth in the same project, this is fine.
+			return false
+		default:
+			return true
+		}
 	},
 	Prepare: func(c context.Context) {
 		globalFlex = &cloud.Flex{
@@ -164,5 +176,5 @@ func flexFoundationMiddleware(c *router.Context, next router.Handler) {
 
 // WithGlobal returns a Context that is not attached to a specific request.
 func WithGlobal(c context.Context) context.Context {
-	return ReadOnlyFlex.With(c, &http.Request{})
+	return ReadOnlyFlexWithCookies.With(c, &http.Request{})
 }

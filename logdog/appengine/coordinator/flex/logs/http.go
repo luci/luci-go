@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/flex"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 )
 
@@ -102,6 +103,8 @@ func startFetch(c context.Context, pathStr string) (*logData, error) {
 
 	// Perform the ACL checks, this also installs the project name into the namespace.
 	// All datastore queries must use this context.
+	// Of note, if the request project is not found, this returns codes.PermissionDenied.
+	// If the user is not logged in and the ACL checks fail, this returns codes.Unauthenticated.
 	var ls *coordinator.LogStream
 	c, ls, err = coordinator.WithStream(c, project, path, coordinator.NamespaceAccessREAD)
 	if err != nil {
@@ -261,16 +264,26 @@ func writeOKHeaders(w http.ResponseWriter, ls coordinator.LogStream) {
 }
 
 // writeErrHeaders writes the correct headers based on the error type.
-func writeErrHeaders(w http.ResponseWriter, err error) {
+func writeErrHeaders(ctx *router.Context, err error) {
 	code := grpcutil.Code(err)
-	if code == codes.Internal {
+	switch code {
+	case codes.Unauthenticated:
+		// Redirect to login screen.
+		u, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+		if err == nil {
+			http.Redirect(ctx.Writer, ctx.Request, u, http.StatusFound)
+			return
+		}
+		logging.WithError(err).Errorf(ctx.Context, "Error getting Login URL")
+		fallthrough
+	case codes.Internal:
 		// Hide internal errors, expose all other errors.
-		http.Error(w, "LogDog encountered an internal error", http.StatusInternalServerError)
+		http.Error(ctx.Writer, "LogDog encountered an internal error", http.StatusInternalServerError)
 		return
 	}
 	// All errors tagged with a grpc code is meant for user consumption, so we
 	// print it out to the user here.
-	http.Error(w, "Error: "+err.Error(), grpcutil.CodeStatus(code))
+	http.Error(ctx.Writer, "Error: "+err.Error(), grpcutil.CodeStatus(code))
 }
 
 // serve reads log entries from ch and writes into w.
@@ -311,7 +324,7 @@ func GetHandler(ctx *router.Context) {
 	data, err := startFetch(ctx.Context, ctx.Params.ByName("path"))
 	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to start fetch")
-		writeErrHeaders(ctx.Writer, err)
+		writeErrHeaders(ctx, err)
 		return
 	}
 	writeOKHeaders(ctx.Writer, data.logStream)
