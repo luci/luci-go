@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3c7e955c_2eb75274",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1001604
+      },
+      "writtenOn": "2018-06-25T19:41:52Z",
+      "side": 1,
+      "message": "Done. (Huh. Somehow I\u0027d gotten the impression sticking \u0027a/an\u0027 in front was the convention for types, but you\u0027re right.)",
+      "parentUuid": "b3ee4a33_3f1935ea",
+      "range": {
+        "startLine": 95,
+        "startChar": 3,
+        "endLine": 95,
+        "endChar": 5
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8157265e_44b320b4",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ecc0368_369d7e48",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001604
+      },
+      "writtenOn": "2018-06-25T19:41:52Z",
+      "side": 1,
+      "message": "Removed isHTML. Really what this code wants is a sum type, but Go doesn\u0027t have sum types. :-)\n\nI think keeping template.HTML is still valuable because that means the type checker will help enforce that escaping only happens once. It also helps document that the repl functions are supposed to produce trusted HTML.\n\nYou\u0027re right that, in practice, this just sticks casts everywhere, since most functions in html/template that should return template.HTML don\u0027t. But I would argue it still provides value. The casts are the places to pay close attention to in review.\n\nThoughts?",
+      "parentUuid": "8157265e_44b320b4",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 12
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "42b84fb5_f8876eb0",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001604
+      },
+      "writtenOn": "2018-06-25T19:41:52Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76f8d508_d9f31f40",
+      "range": {
+        "startLine": 105,
+        "startChar": 5,
+        "endLine": 105,
+        "endChar": 19
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cd2349c6_a27f6bb0",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2018-06-25T18:30:38Z",
       "side": 1,
       "message": "can\u0027t we just call replaceLinkChunks before L195 call?",
+      "range": {
+        "startLine": 197,
+        "startChar": 3,
+        "endLine": 198,
+        "endChar": 35
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e30d9fc_be7215d8",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1001604
+      },
+      "writtenOn": "2018-06-25T19:41:52Z",
+      "side": 1,
+      "message": "That doesn\u0027t quite work because chunks can\u0027t be processed twice, and regexes can\u0027t span chunks. That results in:\n\n* \"Bug: \"\n* HTML(\"\u003ca ...\u003ehttps://crbug.com/1234\u003c/a\u003e\")\n* \", 5678\"\n\nAs a result, the BUG regex no longer captures the whole line, just the \"empty\" first chunk.\n\nTBH, no one would write it this way anyway, but, as I was writing unit tests, it seemed weird to have \"Bug: 123, https://crbug.com/456\" work but not \"Bug: https://crbug.com/456, 123\". So I went ahead and made it fully work.",
+      "parentUuid": "cd2349c6_a27f6bb0",
       "range": {
         "startLine": 197,
         "startChar": 3,
