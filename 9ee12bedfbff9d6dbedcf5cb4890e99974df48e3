@@ -211,6 +211,30 @@
       "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c01f70f5_69fcd9d3",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1001604
+      },
+      "writtenOn": "2018-06-25T21:51:18Z",
+      "side": 1,
+      "message": "I\u0027m not sure I follow how this would work. What\u0027s the matching algorithm?\n\nIf you match something that\u0027s already been processed, there aren\u0027t really any safe operations to be done on the HTML. Also what you actually want for this BUG\u003d line is to match series of chunks, and then we\u0027ve got to do something like... match on the original string and index that range of locations back into the chunks array to get back out \"index 5 of chunk 7, through index 3 of chunk 10\". And then the repl function needs to... somehow... do something useful with this? (Suppose chunk 7 were already a link. How would you know what to \"index 5\"?)\n\nOr am I misunderstanding your suggestion?\n\nYou also don\u0027t usually want linkify rules to compose. Once you\u0027ve gotten \u003ca\u003ehttps://crbug.com/1234\u003c/a\u003e, you don\u0027t want to further nest \u003ca\u003ehttps://\u003ca\u003ecrbug.com/1234\u003c/a\u003e\u003c/a\u003e. The BUG\u003d rule is different because it\u0027s really more context in your overall grammar.\n\nAt some extreme, what you actually want to do is build an AST for a custom grammar consisting of text, links, and BUG lines. And then you take that AST and turn it into an HTML tree, and then serialize that.... that seems overkill. \"Each chunk is only processed once\" is simple to implement and captures basically all of the current language, save for this weird case, which is captured here without too much effort.\n\nI mean, you\u0027re not trying to invent a new markdown. You\u0027re just adding links. :-)",
+      "parentUuid": "14ac9af4_cc3f1386",
+      "range": {
+        "startLine": 197,
+        "startChar": 3,
+        "endLine": 198,
+        "endChar": 35
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
