@@ -36,7 +36,10 @@ func TestGetSignedURL(t *testing.T) {
 
 	Convey("with context", t, func() {
 		ctx := caching.WithEmptyProcessCache(context.Background())
-		ctx, cl := testclock.UseTime(ctx, testclock.TestRecentTimeLocal)
+		// Use TestRecentTimeUTC, not TestRecentTimeLocal, so the
+		// timestamps in the following tests do not depend on the
+		// local timezone.
+		ctx, cl := testclock.UseTime(ctx, testclock.TestRecentTimeUTC.Local())
 
 		var signed []byte
 		var signature string
@@ -56,10 +59,10 @@ func TestGetSignedURL(t *testing.T) {
 			url1, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldBeNil)
 			So(url1, ShouldEqual, "https://storage.googleapis.com"+
-				"/bucket/path?Expires=1454508306&"+
+				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+
 				"Signature=c2lnMQ%3D%3D")
-			So(string(signed), ShouldEqual, "GET\n\n\n1454508306\n/bucket/path")
+			So(string(signed), ShouldEqual, "GET\n\n\n1454479506\n/bucket/path")
 
 			// 1h later returns same cached URL.
 			cl.Add(time.Hour)
@@ -76,7 +79,7 @@ func TestGetSignedURL(t *testing.T) {
 			url3, err := getSignedURL(ctx, "/bucket/path", "", signer, &mockedSignerGS{exists: true})
 			So(err, ShouldBeNil)
 			So(url3, ShouldEqual, "https://storage.googleapis.com"+
-				"/bucket/path?Expires=1454513766&"+
+				"/bucket/path?Expires=1454484966&"+
 				"GoogleAccessId=test%40example.com&"+
 				"Signature=c2lnMw%3D%3D")
 		})
@@ -112,7 +115,7 @@ func TestGetSignedURL(t *testing.T) {
 			signature = "sig1"
 			url, _ := getSignedURL(ctx, "/bucket/path", "name.txt", signer, &mockedSignerGS{exists: true})
 			So(url, ShouldEqual, "https://storage.googleapis.com"+
-				"/bucket/path?Expires=1454508306&"+
+				"/bucket/path?Expires=1454479506&"+
 				"GoogleAccessId=test%40example.com&"+
 				"Signature=c2lnMQ%3D%3D&"+
 				"response-content-disposition=attachment%3B+filename%3D%22name.txt%22")
