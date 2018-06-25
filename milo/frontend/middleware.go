@@ -96,8 +96,7 @@ var rURL = regexp.MustCompile(`\bhttps://\S*\b`)
 
 // rBUGLINE matches a bug line in a commit, including if it is quoted.
 // Expected formats: "BUG: 1234,1234", "bugs=1234", "  >  >  BUG: 123"
-// We use &gt; for > because this needs to deal with HTML escaped text.
-var rBUGLINE = regexp.MustCompile(`(?m)^(&gt;| )*(?i:bugs?)[:=].+$`)
+var rBUGLINE = regexp.MustCompile(`(?m)^(>| )*(?i:bugs?)[:=].+$`)
 
 // rBUG matches expected items in a bug line.  Expected format: 12345, project:12345, #12345
 var rBUG = regexp.MustCompile(`\b(\w+:)?#?\d+\b`)
@@ -108,34 +107,79 @@ var rBUGLINK = regexp.MustCompile(`\b(b|crbug(\.com)?([:/]\w+)?)[:/]\d+\b`)
 // tURL is a URL template.
 var tURL = template.Must(template.New("tURL").Parse("<a href=\"{{.URL}}\">{{.Label}}</a>"))
 
+// formatChunk is either an already-processed trusted template.HTML, produced
+// by some previous regexp, or an untrusted string that still needs escaping or
+// further processing by regexps. We keep track of the distinction to avoid
+// escaping twice and rewrite rules applying inside HTML tags.
+//
+// At most one of str or html will be non-empty. That one is the field in use.
+type formatChunk struct {
+	str  string
+	html template.HTML
+}
+
+// replaceAllInChunks behaves like Regexp.ReplaceAllStringFunc, but it only
+// acts on unprocessed elements of chunks. Already-processed elements are left
+// as-is. repl returns trusted HTML, performing any necessary escaping.
+func replaceAllInChunks(chunks []formatChunk, re *regexp.Regexp, repl func(string) template.HTML) []formatChunk {
+	var ret []formatChunk
+	for _, chunk := range chunks {
+		if len(chunk.html) != 0 {
+			ret = append(ret, chunk)
+			continue
+		}
+		s := chunk.str
+		for len(s) != 0 {
+			loc := re.FindStringIndex(s)
+			if loc == nil {
+				ret = append(ret, formatChunk{str: s})
+				break
+			}
+			if loc[0] > 0 {
+				ret = append(ret, formatChunk{str: s[:loc[0]]})
+			}
+			html := repl(s[loc[0]:loc[1]])
+			ret = append(ret, formatChunk{html: html})
+			s = s[loc[1]:]
+		}
+	}
+	return ret
+}
+
+// chunksToHTML concatenates chunks together, escaping as needed, to return a
+// final completed HTML string.
+func chunksToHTML(chunks []formatChunk) template.HTML {
+	buf := bytes.Buffer{}
+	for _, chunk := range chunks {
+		if len(chunk.html) != 0 {
+			buf.WriteString(string(chunk.html))
+		} else {
+			buf.WriteString(template.HTMLEscapeString(chunk.str))
+		}
+	}
+	return template.HTML(buf.String())
+}
+
 type link struct {
 	Label string
 	URL   string
 }
 
-func makeLink(label, href string) string {
+func makeLink(label, href string) template.HTML {
 	buf := bytes.Buffer{}
 	if err := tURL.Execute(&buf, link{label, href}); err != nil {
-		return label
+		return template.HTML(template.HTMLEscapeString(label))
 	}
-	return buf.String()
+	return template.HTML(buf.String())
 }
 
-// formatCommitDesc takes a commit message and adds embellishments such as:
-// * Linkify https:// URLs
-// * Linkify bug numbers using https://crbug.com/
-// * Linkify b/ bug links
-// * Linkify crbug/ bug links
-func formatCommitDesc(desc string) template.HTML {
-	// Since we take in a string and return a trusted raw HTML string, escape
-	// everything first.
-	desc = template.HTMLEscapeString(desc)
+func replaceLinkChunks(chunks []formatChunk) []formatChunk {
 	// Replace https:// URLs
-	result := rURL.ReplaceAllStringFunc(desc, func(s string) string {
+	chunks = replaceAllInChunks(chunks, rURL, func(s string) template.HTML {
 		return makeLink(s, s)
 	})
 	// Replace b/ and crbug/ URLs
-	result = rBUGLINK.ReplaceAllStringFunc(result, func(s string) string {
+	chunks = replaceAllInChunks(chunks, rBUGLINK, func(s string) template.HTML {
 		// Normalize separator.
 		u := strings.Replace(s, ":", "/", -1)
 		u = strings.Replace(u, "crbug/", "crbug.com/", 1)
@@ -145,13 +189,34 @@ func formatCommitDesc(desc string) template.HTML {
 		}
 		return makeLink(s, scheme+u)
 	})
-	// Replace BUG: lines with URLs by rewriting all bug numbers with links.
-	return template.HTML(rBUGLINE.ReplaceAllStringFunc(result, func(s string) string {
-		return rBUG.ReplaceAllStringFunc(s, func(sBug string) string {
+	return chunks
+}
+
+// formatCommitDesc takes a commit message and adds embellishments such as:
+// * Linkify https:// URLs
+// * Linkify bug numbers using https://crbug.com/
+// * Linkify b/ bug links
+// * Linkify crbug/ bug links
+func formatCommitDesc(desc string) template.HTML {
+	chunks := []formatChunk{{str: desc}}
+	// Replace BUG: lines with URLs by rewriting all bug numbers with
+	// links. Run this first so later rules do not interfere with it. This
+	// allows a line like the following to work:
+	//
+	// Bug: https://crbug.com/1234, 5678
+	chunks = replaceAllInChunks(chunks, rBUGLINE, func(s string) template.HTML {
+		sChunks := []formatChunk{{str: s}}
+		// The call later in the parent function will not reach into
+		// sChunks, so run it separately.
+		sChunks = replaceLinkChunks(sChunks)
+		sChunks = replaceAllInChunks(sChunks, rBUG, func(sBug string) template.HTML {
 			path := strings.Replace(strings.Replace(sBug, "#", "", 1), ":", "/", 1)
 			return makeLink(sBug, "https://crbug.com/"+path)
 		})
-	}))
+		return chunksToHTML(sChunks)
+	})
+	chunks = replaceLinkChunks(chunks)
+	return chunksToHTML(chunks)
 }
 
 // humanDuration translates d into a human readable string of x units y units,

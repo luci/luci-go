@@ -70,6 +70,33 @@ func TestFuncs(t *testing.T) {
 					" &gt; &gt; BugS=  <a href=\"https://crbug.com/12345\">12345</a>, "+
 						"<a href=\"https://crbug.com/butter/12345\">butter:12345</a>")
 			})
+			Convey("linkify rules should not collide", func() {
+				So(
+					formatCommitDesc("I \"fixed\" https://crbug.com/123456 <today>"),
+					ShouldEqual,
+					"I &#34;fixed&#34; <a href=\"https://crbug.com/123456\">https://crbug.com/123456</a> &lt;today&gt;")
+				So(
+					formatCommitDesc("Bug: 12, crbug/34, https://crbug.com/56, 78"),
+					ShouldEqual,
+					"Bug: <a href=\"https://crbug.com/12\">12</a>, <a href=\"https://crbug.com/34\">crbug/34</a>, <a href=\"https://crbug.com/56\">https://crbug.com/56</a>, <a href=\"https://crbug.com/78\">78</a>")
+			})
+			Convey("linkify rules interact correctly with escaping", func() {
+				So(
+					formatCommitDesc("\"https://example.com\""),
+					ShouldEqual,
+					"&#34;<a href=\"https://example.com\">https://example.com</a>&#34;")
+				So(
+					formatCommitDesc("Bug: <not a bug number, sorry>"),
+					ShouldEqual,
+					"Bug: &lt;not a bug number, sorry&gt;")
+				// This is not remotely valid of a URL, but exists to test that
+				// the linking template correctly escapes the URL, both as an
+				// attribute and as a value.
+				So(
+					formatCommitDesc("https://foo&bar<baz\"aaa>bbb"),
+					ShouldEqual,
+					"<a href=\"https://foo&amp;bar%3cbaz%22aaa%3ebbb\">https://foo&amp;bar&lt;baz&#34;aaa&gt;bbb</a>")
+			})
 		})
 
 		Convey("Redirect unauthorized users to login page for projects with access restrictions", func() {
