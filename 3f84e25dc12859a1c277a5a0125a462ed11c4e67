@@ -263,6 +263,24 @@
     },
     {
       "key": {
+        "uuid": "fcd9fbbf_e70d4f6d",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1055a93_392dc236",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9720b7d_b83d3032",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 13
@@ -537,6 +555,24 @@
       "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7cf34c92_b837934c",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "368c7eeb_c4215053",
+      "revId": "3f84e25dc12859a1c277a5a0125a462ed11c4e67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

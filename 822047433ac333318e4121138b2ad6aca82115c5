@@ -42,6 +42,30 @@
     },
     {
       "key": {
+        "uuid": "b1572068_3a0c54f3",
+        "filename": "milo/git/client.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Documentation/naming needs some love indeed, but it\u0027s also not clear whether this method should be defined here or elsewhere. This is where I think Andrii and Nodir disagree:\n - https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1072931/5/milo/git/client.go#75\n - https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1072931/13/milo/git/client.go#67\n\nThis is a high-level function (parses config, makes multiple calls to Log above, merges commits) and specific to Milo functionality (merging logs is not needed by scheduler). Should I keep it here or move it somewhere else? Where?",
+      "parentUuid": "d930f812_c5fc03ae",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 10
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e4dffab2_cb05d035",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 14
@@ -62,6 +86,30 @@
       "revId": "822047433ac333318e4121138b2ad6aca82115c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0218cca0_dff118fb",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Not sure. I copied it from here: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/git/log.go?l\u003d46\u0026rcl\u003d1a9d1f74b2dcba546cdf2fda46b0861b520c5958. Changed it to \"i\" to make more sense.",
+      "parentUuid": "e4dffab2_cb05d035",
+      "range": {
+        "startLine": 58,
+        "startChar": 6,
+        "endLine": 58,
+        "endChar": 7
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -88,6 +136,30 @@
     },
     {
       "key": {
+        "uuid": "d9673946_4d9f8916",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94bcd72c_0ad43d12",
+      "range": {
+        "startLine": 82,
+        "startChar": 5,
+        "endLine": 82,
+        "endChar": 21
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53f22743_61621003",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 14
@@ -102,6 +174,24 @@
       "revId": "822047433ac333318e4121138b2ad6aca82115c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1eac7ddc_0cc81951",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 508,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "53f22743_61621003",
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -125,6 +215,30 @@
       "revId": "822047433ac333318e4121138b2ad6aca82115c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f379eccd_208370ff",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 512,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-25T15:15:02Z",
+      "side": 1,
+      "message": "The namespace here is a parent ref directory, which can be used to optimize listing of refs from Gitiles. I\u0027ve renamed them to \"prefixes\", but please let me know if you\u0027d prefer a different name.",
+      "parentUuid": "8f69d266_66cc76c9",
+      "range": {
+        "startLine": 512,
+        "startChar": 1,
+        "endLine": 512,
+        "endChar": 17
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
