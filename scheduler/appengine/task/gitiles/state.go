@@ -25,6 +25,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
@@ -135,7 +136,7 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 		if err != nil {
 			return err
 		}
-		ns, suffix := splitRef(ref)
+		ns, suffix := gitiles.SplitRef(ref)
 		child := &Child{Sha1: sha1bytes, Suffix: suffix}
 		if namespace, exists := byNamespace[ns]; exists {
 			namespace.Children = append(namespace.Children, child)
