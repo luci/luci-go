@@ -235,6 +235,30 @@
       "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f8e43c5_509f9f76",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T22:07:46Z",
+      "side": 1,
+      "message": "sorry, by compossible i didn\u0027t mean that the same chunk can be processed multiple times. Once a chunk is processed, it cannot be processed again.\n\nRight now repl func is required to process entire chunk because it must return an template.HTML. My point is that to lift this requirement: allow repl to process only parts that it can actually process. For example, the repl in L195 is required to process entire given chunk and return a single template.HTML. If repl signature was to return a slice of chunks, some of which can be unprocessed, then we lift that requirement and replaceLinkChunks in L206 would still apply to links in \"BUG:\" lines. More generally, it wouldn\u0027t matter to call replaceLinkChunks before or after \"BUG: \" processing.\n\nYou are right that regex cannot span multiple chunks. I think we\u0027d have to merge contiguous unprocessed chunks by concatenating strs. If that sounds inefficient, str can be replaced with indexes of chunk beginning/end.\n\nWDYT?",
+      "parentUuid": "c01f70f5_69fcd9d3",
+      "range": {
+        "startLine": 197,
+        "startChar": 3,
+        "endLine": 198,
+        "endChar": 35
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
