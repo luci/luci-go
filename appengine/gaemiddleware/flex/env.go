@@ -104,11 +104,11 @@ func init() {
 	}
 }
 
-// ReadOnlyFlex is an Environment designed for cooperative Flex support
+// ReadWriteFlex is an Environment designed for cooperative Flex support
 // environments.
-var ReadOnlyFlex = gaemiddleware.Environment{
+var ReadWriteFlex = gaemiddleware.Environment{
 	MemcacheAvailable: false,
-	DSReadOnly:        true,
+	DSReadOnly:        false,
 	DSReadOnlyPredicate: func(k *datastore.Key) (isRO bool) {
 		// HACK(vadimsh): This is needed to allow tsmon middleware to bypass
 		// read-only filter on the datastore. It needs writable access to the
@@ -164,5 +164,5 @@ func flexFoundationMiddleware(c *router.Context, next router.Handler) {
 
 // WithGlobal returns a Context that is not attached to a specific request.
 func WithGlobal(c context.Context) context.Context {
-	return ReadOnlyFlex.With(c, &http.Request{})
+	return ReadWriteFlex.With(c, &http.Request{})
 }
