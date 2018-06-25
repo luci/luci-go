@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b3ee4a33_3f1935ea",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T18:30:38Z",
+      "side": 1,
+      "message": "nit: remove. Go comments start with symbol name",
+      "range": {
+        "startLine": 95,
+        "startChar": 3,
+        "endLine": 95,
+        "endChar": 5
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8157265e_44b320b4",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T18:30:38Z",
+      "side": 1,
+      "message": "I am not sure this adds value. We have 3 valid cases:\n1) str is not empty -\u003e untrusted\n2) str is empty -\u003e trusted\n3) both str and html are empty -\u003e it does not matter which one is used. empty string is safe HTML.\n\nso I think this can be simplified by removing isHTML\n\nstepping back, a simpler simplification could be just fields \"s string\" and \"trusted bool\". If trusted, then it is HTML. We\u0027d have less possible states this way. See also L143 which indicates that don\u0027t actually take advantage from html field being template.HTML, as opposed to simpler str.",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 12
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76f8d508_d9f31f40",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T18:30:38Z",
+      "side": 1,
+      "message": "nit: i am not sure this function provides enough value to justify its existence. Please consider inlining.",
+      "range": {
+        "startLine": 105,
+        "startChar": 5,
+        "endLine": 105,
+        "endChar": 19
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cd2349c6_a27f6bb0",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-25T18:30:38Z",
+      "side": 1,
+      "message": "can\u0027t we just call replaceLinkChunks before L195 call?",
+      "range": {
+        "startLine": 197,
+        "startChar": 3,
+        "endLine": 198,
+        "endChar": 35
+      },
+      "revId": "9ee12bedfbff9d6dbedcf5cb4890e99974df48e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
