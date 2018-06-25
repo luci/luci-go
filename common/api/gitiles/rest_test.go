@@ -62,7 +62,7 @@ func TestLog(t *testing.T) {
 	})
 }
 
-func TestRefs(t *testing.T) {
+func TestRefsRequest(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 

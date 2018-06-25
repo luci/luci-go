@@ -61,6 +61,19 @@ type Client interface {
 	// May return gRPC errors returned by the underlying Gitiles service.
 	Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error)
 
+	// FetchRefs returns merged list of ancestor commits of the given repository
+	// host, project, startRef and any number of descendant refs specified by
+	// refConfigs as described in the proto config (see description for refs field
+	// in Console message in api/config/project.proto)
+	//
+	// It will list each ref, merge the commits based on their timestamp and
+	// return up to limit commits. When <=0, limit of 50 is used.
+	//
+	// May return gRPC errors returned by the underlying Gitiles service. Where
+	// possible, they are tagged with Milo error codes (see common/errors.go).
+	FetchRefs(c context.Context, host, project, startRef string,
+		refConfigs []string, limit int) (commits []*gitpb.Commit, err error)
+
 	// CLEmail fetches the CL owner email.
 	//
 	// Returns empty string if either:
