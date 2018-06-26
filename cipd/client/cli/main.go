@@ -189,9 +189,18 @@ func (c *cipdSubcommand) printError(err error) {
 	if _, ok := err.(commandLineError); ok {
 		fmt.Fprintf(os.Stderr, "Bad command line: %s.\n\n", err)
 		c.Flags.Usage()
-	} else {
-		fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
+		return
 	}
+
+	if merr, _ := err.(errors.MultiError); len(merr) != 0 {
+		fmt.Fprintln(os.Stderr, "Errors:")
+		for _, err := range merr {
+			fmt.Fprintf(os.Stderr, "  %s\n", err)
+		}
+		return
+	}
+
+	fmt.Fprintf(os.Stderr, "Error: %s.\n", err)
 }
 
 // writeJSONOutput writes result to JSON output file. It returns original error
@@ -258,7 +267,9 @@ func (c *cipdSubcommand) doneWithPins(pins []pinInfo, err error) int {
 // deduces process exit code based on presence of errors there.
 func (c *cipdSubcommand) doneWithPinMap(pins map[string][]pinInfo, err error) int {
 	if len(pins) == 0 {
-		fmt.Println("No packages.")
+		if err == nil { // this error will be printed in c.done(...)
+			fmt.Println("No packages.")
+		}
 	} else {
 		printPinsAndError(pins)
 	}
@@ -944,7 +955,7 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 		Client: client,
 	}
 	results := make(chan *ensure.ResolvedFile, len(parsedFile.VerifyPlatforms))
-	_ = parallel.FanOutIn(func(workC chan<- func() error) {
+	ensureErr := parallel.FanOutIn(func(workC chan<- func() error) {
 		for _, plat := range parsedFile.VerifyPlatforms {
 			plat := plat
 
@@ -957,27 +968,28 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 			}
 		}
 	})
+	close(results)
 
 	result := verify.Result()
 	if result.HasErrors() {
 		logging.Errorf(ctx, "Failed to resolve %d package(s) and %d pin(s):", len(result.InvalidPackages), len(result.InvalidPins))
-
 		for _, pkg := range result.InvalidPackages {
 			logging.Errorf(ctx, "Failed to resolve package %v.", pkg)
 		}
-
 		for _, pin := range result.InvalidPins {
 			logging.Errorf(ctx, "Failed to verify pin %s.", pin)
 		}
-
 		return nil, errors.New("failed verification")
 	}
 
-	logging.Infof(ctx, "Successfully verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
+	logging.Infof(ctx, "Verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
+	if ensureErr != nil {
+		logging.Errorf(ctx, "But the ensure file had other problems and it is unusable")
+		return nil, ensureErr
+	}
 
 	pinMap := map[string][]pinInfo{}
-	for range parsedFile.VerifyPlatforms {
-		res := <-results
+	for res := range results {
 		for subdir, pkgs := range res.PackagesBySubdir {
 			pins := pinMap[subdir]
 			for _, pkg := range pkgs {
