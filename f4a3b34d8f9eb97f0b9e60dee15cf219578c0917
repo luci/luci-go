@@ -46,6 +46,30 @@
       "revId": "f4a3b34d8f9eb97f0b9e60dee15cf219578c0917",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6aa73c18_ef802c8c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 947,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-26T01:12:34Z",
+      "side": 0,
+      "message": "Removed word \"successfully\" to be less misleading.",
+      "parentUuid": "cf3c76e8_fd6cfc8e",
+      "range": {
+        "startLine": 947,
+        "startChar": 1,
+        "endLine": 947,
+        "endChar": 5
+      },
+      "revId": "f4a3b34d8f9eb97f0b9e60dee15cf219578c0917",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
