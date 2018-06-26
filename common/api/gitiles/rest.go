@@ -80,8 +80,8 @@ func (c *client) Log(ctx context.Context, req *gitiles.LogRequest, opts ...grpc.
 	}
 
 	ref := req.Treeish
-	if req.Ancestor != "" {
-		ref = fmt.Sprintf("%s..%s", req.Ancestor, req.Treeish)
+	if req.ExcludeAncestorsOf != "" {
+		ref = fmt.Sprintf("%s..%s", req.ExcludeAncestorsOf, req.Treeish)
 	}
 	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	path := fmt.Sprintf("/%s/+log/%s", url.QueryEscape(req.Project), url.QueryEscape(ref))

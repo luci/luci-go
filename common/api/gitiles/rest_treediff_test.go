@@ -166,11 +166,11 @@ func TestLogWithTreeDiff(t *testing.T) {
 		defer srv.Close()
 
 		res, err := c.Log(ctx, &gitiles.LogRequest{
-			Project:  "repo",
-			Treeish:  "8de6836858c99e48f3c58164ab717bda728e95dd",
-			Ancestor: "master",
-			PageSize: 10,
-			TreeDiff: true,
+			Project:            "repo",
+			Treeish:            "8de6836858c99e48f3c58164ab717bda728e95dd",
+			ExcludeAncestorsOf: "master",
+			PageSize:           10,
+			TreeDiff:           true,
 		})
 		So(err, ShouldBeNil)
 		So(len(res.Log), ShouldEqual, 2)
