@@ -990,10 +990,13 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 
 	pinMap := map[string][]pinInfo{}
 	for res := range results {
-		for subdir, pkgs := range res.PackagesBySubdir {
+		for subdir, resolvedPins := range res.PackagesBySubdir {
 			pins := pinMap[subdir]
-			for _, pkg := range pkgs {
-				pins = append(pins, pinInfo{pkg.PackageName, &pkg, "", ""})
+			for _, pin := range resolvedPins {
+				// Put a copy into 'pins', otherwise they all end up pointing to the
+				// same variable living in the outer scope.
+				pin := pin
+				pins = append(pins, pinInfo{pin.PackageName, &pin, "", ""})
 			}
 			pinMap[subdir] = pins
 		}
