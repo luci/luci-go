@@ -445,16 +445,15 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		return empty, makeCLIError("invalid -compression-level: must be in [0-9] set")
 	}
 
-	// Handle -name and -in if defined. Do not allow -pkg-def and -pkg-var in that case.
+	// Handle -name and -in if defined. Do not allow -pkg-def in that case, since
+	// it provides same information as -name and -in. Note that -pkg-var are
+	// ignored, even if defined. There's nothing to apply them to.
 	if opts.inputDir != "" {
 		if opts.packageName == "" {
 			return empty, makeCLIError("missing required flag: -name")
 		}
 		if opts.packageDef != "" {
 			return empty, makeCLIError("-pkg-def and -in can not be used together")
-		}
-		if len(opts.vars) != 0 {
-			return empty, makeCLIError("-pkg-var and -in can not be used together")
 		}
 
 		packageName, err := expandTemplate(opts.packageName)
