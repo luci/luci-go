@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -84,6 +85,8 @@ type pinInfo struct {
 	Pkg string `json:"package"`
 	// Pin is not nil if pin related operation succeeded. It contains instanceID.
 	Pin *common.Pin `json:"pin,omitempty"`
+	// Platform is set by 'ensure-file-verify' to a platform for this pin.
+	Platform string `json:"platform,omitempty"`
 	// Tracking is what ref is being tracked by that package in the site root.
 	Tracking string `json:"tracking,omitempty"`
 	// Err is not empty if pin related operation failed. Pin is nil in that case.
@@ -655,9 +658,9 @@ func performBatchOperation(ctx context.Context, op batchOperation) ([]pinInfo, e
 	return callConcurrently(pkgs, func(pkg string) pinInfo {
 		pin, err := op.callback(pkg)
 		if err != nil {
-			return pinInfo{pkg, nil, "", err.Error()}
+			return pinInfo{Pkg: pkg, Err: err.Error()}
 		}
-		return pinInfo{pkg, &pin, "", ""}
+		return pinInfo{Pkg: pkg, Pin: &pin}
 	}), nil
 }
 
@@ -706,11 +709,15 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 				if p.Err != "" || p.Pin == nil {
 					continue
 				}
-				if p.Tracking == "" {
-					fmt.Printf("  %s\n", p.Pin)
-				} else {
-					fmt.Printf("  %s (tracking %q)\n", p.Pin, p.Tracking)
+				plat := ""
+				if p.Platform != "" {
+					plat = fmt.Sprintf(" (for %s)", p.Platform)
 				}
+				tracking := ""
+				if p.Tracking != "" {
+					tracking = fmt.Sprintf(" (tracking %q)", p.Tracking)
+				}
+				fmt.Printf("  %s%s%s\n", p.Pin, plat, tracking)
 			}
 		}
 		if hasErrors {
@@ -951,27 +958,36 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(parsedFile.VerifyPlatforms))
 
 	// Verify all of our platforms in parallel.
-	verify := cipd.Verifier{
-		Client: client,
+	verify := cipd.Verifier{Client: client}
+
+	// Platform as string => result of the verification (success or failure).
+	type resolvedOrErr struct {
+		resolved *ensure.ResolvedFile
+		err      error
 	}
-	results := make(chan *ensure.ResolvedFile, len(parsedFile.VerifyPlatforms))
-	ensureErr := parallel.FanOutIn(func(workC chan<- func() error) {
+	results := make(map[string]resolvedOrErr, len(parsedFile.VerifyPlatforms))
+
+	// Note: errors are reported through 'results'.
+	parallel.FanOutIn(func(workC chan<- func() error) {
+		mu := sync.Mutex{}
+
 		for _, plat := range parsedFile.VerifyPlatforms {
 			plat := plat
 
 			workC <- func() error {
 				ret, err := verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
-				if err == nil {
-					results <- ret
-				}
-				return err
+				mu.Lock()
+				results[plat.String()] = resolvedOrErr{ret, err}
+				mu.Unlock()
+				return nil
 			}
 		}
 	})
-	close(results)
 
-	result := verify.Result()
-	if result.HasErrors() {
+	var merr errors.MultiError
+
+	// Report all pins we tried to resolve, but couldn't.
+	if result := verify.Result(); result.HasErrors() {
 		logging.Errorf(ctx, "Failed to resolve %d package(s) and %d pin(s):", len(result.InvalidPackages), len(result.InvalidPins))
 		for _, pkg := range result.InvalidPackages {
 			logging.Errorf(ctx, "Failed to resolve package %v.", pkg)
@@ -979,27 +995,46 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 		for _, pin := range result.InvalidPins {
 			logging.Errorf(ctx, "Failed to verify pin %s.", pin)
 		}
-		return nil, errors.New("failed verification")
+		merr = append(merr, errors.New("failed verification"))
+	} else {
+		logging.Infof(ctx, "Verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
 	}
 
-	logging.Infof(ctx, "Verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
-	if ensureErr != nil {
-		logging.Errorf(ctx, "But the ensure file had other problems and it is unusable")
-		return nil, ensureErr
+	// Maybe the ensure file has other errors, report them per platform.
+	for _, plat := range parsedFile.VerifyPlatforms {
+		if err := results[plat.String()].err; err != nil {
+			merr = append(merr, fmt.Errorf("when verifying %s - %s", plat, err))
+		}
+	}
+	if len(merr) != 0 {
+		return nil, merr
 	}
 
+	// All platforms verified successfully. Collect pins for the output.
 	pinMap := map[string][]pinInfo{}
-	for res := range results {
-		for subdir, pkgs := range res.PackagesBySubdir {
+	for plat, res := range results {
+		for subdir, resolvedPins := range res.resolved.PackagesBySubdir {
 			pins := pinMap[subdir]
-			for _, pkg := range pkgs {
-				pins = append(pins, pinInfo{pkg.PackageName, &pkg, "", ""})
+			for _, pin := range resolvedPins {
+				// Put a copy into 'pins', otherwise they all end up pointing to the
+				// same variable living in the outer scope.
+				pin := pin
+				pins = append(pins, pinInfo{
+					Pkg:      pin.PackageName,
+					Pin:      &pin,
+					Platform: plat,
+				})
 			}
 			pinMap[subdir] = pins
 		}
 	}
+
+	// Sort pins by (package name, platform) for deterministic output.
 	for _, v := range pinMap {
 		sort.Slice(v, func(i, j int) bool {
+			if v[i].Pkg == v[j].Pkg {
+				return v[i].Platform < v[j].Platform
+			}
 			return v[i].Pkg < v[j].Pkg
 		})
 	}
