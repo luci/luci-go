@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ea970198_22a98b00",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 968,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-26T03:04:35Z",
+      "side": 1,
+      "message": "This is to be able to get deterministic order of errors *shrug* I have dislike for non-deterministic outputs.",
+      "range": {
+        "startLine": 968,
+        "startChar": 1,
+        "endLine": 968,
+        "endChar": 41
+      },
+      "revId": "a177ea23ecdae794b697726ff6e75ec00014998b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
