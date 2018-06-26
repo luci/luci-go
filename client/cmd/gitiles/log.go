@@ -93,7 +93,7 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 	case 1:
 		req.Treeish = commits[0]
 	case 2:
-		req.Ancestor = commits[0]
+		req.ExcludeAncestorsOf = commits[0]
 		req.Treeish = commits[1]
 	default:
 		panic("impossible")
