@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "72d53572_b0a40f75",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-26T23:58:57Z",
+      "side": 1,
+      "message": "looks like git docs use \"r1..r2\"\nhttps://git-scm.com/docs/gitrevisions#gitrevisions-Theememtwo-dotRangeNotation\n\nthis link may be useful here too",
+      "range": {
+        "startLine": 45,
+        "startChar": 51,
+        "endLine": 45,
+        "endChar": 68
+      },
+      "revId": "3673fad99289a03a00239583a5bcb1fd8a6e7f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b8ef6407_a17fac4c",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-06-26T23:58:57Z",
+      "side": 1,
+      "message": "\"this\"?",
+      "range": {
+        "startLine": 45,
+        "startChar": 30,
+        "endLine": 45,
+        "endChar": 33
+      },
+      "revId": "3673fad99289a03a00239583a5bcb1fd8a6e7f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
