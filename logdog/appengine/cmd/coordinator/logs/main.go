@@ -58,6 +58,11 @@ func main() {
 
 	// Standard HTTP endpoints using flex LogDog services singleton.
 	r := router.NewWithRootContext(c)
+	// Due to DSCache, generally only one of AppEngine (classic | flex) can
+	// use the datastore for write at a time.  But the flex endpoint requires
+	// DS write access in order to cache OpenID tokens.  Fortunately the flex endpoints
+	// are the only endpoints that access the OpenID tokens, and as long as this
+	// invariant holds true, it's fine to use Read/Write.
 	mw := flexMW.ReadOnlyFlex
 	mw.InstallHandlers(r)
 
