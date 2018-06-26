@@ -22,6 +22,30 @@
       "revId": "f4a3b34d8f9eb97f0b9e60dee15cf219578c0917",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cf3c76e8_fd6cfc8e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 947,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-06-26T01:05:35Z",
+      "side": 0,
+      "message": "\u003e I cannot say whether ignoring errors here was a feature or not.\n\u003e \n\u003e Because ./cipd_package_test.py in tools/build.git relies on this, by essentially feeding an invalid manifest to verify-ensure-file \u003e_\u003c What\u0027s broke in the new release is that \u0027ensure-file-verify\u0027 now hangs forever (on \"res :\u003d \u003c-results\" below) in this case.\n\u003e \n\u003e I think we should not treat malformed manifests as successfully passing verification.\n\u003e \n\u003e Here\u0027s what happens to the manifest produced by cipd_package_test.py after this patch is applied:\n\u003e \n\u003e [P84151 17:45:33.240 main.go:985 I] Successfully verified 26 package(s) and 26 pin(s)\n\nI think it\u0027s little strange to say that you\u0027ve successfully verified packages and immediately follow by saying that there were other errors.\n\n\u003e [P84151 17:45:33.240 main.go:987 W] But the ensure file had other problems and it is unusable\n\u003e Errors:\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/linux-mips64\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/mac-amd64\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/linux-amd64\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/windows-amd64\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/windows-386\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/linux-armv6l\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/linux-arm64\": defined on line 11 and 12.\n\u003e duplicate package in subdir \"\": \"infra/tools/cloudtail/linux-386\": defined on line 11 and 12.",
+      "parentUuid": "93b1e149_cf3e2d1a",
+      "range": {
+        "startLine": 947,
+        "startChar": 1,
+        "endLine": 947,
+        "endChar": 5
+      },
+      "revId": "f4a3b34d8f9eb97f0b9e60dee15cf219578c0917",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
