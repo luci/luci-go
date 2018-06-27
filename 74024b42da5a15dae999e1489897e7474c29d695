@@ -1,0 +1,727 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "808c0b75_8af02036",
+        "filename": "common/api/gitiles/doc.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "nit: empty line.",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "693750ae_8ce0964d",
+        "filename": "common/api/gitiles/doc.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "No need for but :)",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 17,
+        "endChar": 8
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a5856993_0144a5fe",
+        "filename": "common/api/gitiles/refs_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "TestRefsSet\nand you don\u0027t need to rename existing test.",
+      "range": {
+        "startLine": 23,
+        "startChar": 13,
+        "endLine": 23,
+        "endChar": 14
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4178109_f4137be9",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "Remove this and expose publicly struct itself, and move its public methods up-here at the top (for easier scanning).\n\nThere\u0027ll only be one implementation, at least for now :)",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c3c4690_beee2030",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "doc about how RefSet works is in order here:\n\n// RefsSet efficiently resolves many refs, supporting regexps.\n// \n// Refs can be speciifed by regexp with the following restrictions:\n//   ...\n//\n// See also ValidateRefsSet function.\n//\n// RefsSet groups refs by prefix and issues 1 refs RPC per prefix.\n// This is more efficient that a single refs RPC for \"refs/\" prefix,\n// because it would return all refs of the repo, incl. potentially huge\n// number of refs in refs/changes/.",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f8c95e4_a8f35854",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "RefsSet\n(one set of many refs + public (see note about interface above))",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6a22d2c8_a8b7482d",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "wdyt s/prefixes/byPrefix (to indicate it\u0027s a map)",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 9
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cd051df_b6a2a122",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "this shouldn\u0027t be public in gitiles package. IMO, it\u0027s better to re-implement it in scheduler if it needs (and I think it shouldn\u0027t need it)",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 13
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ea51fe7_f23313a6",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "after more thinking, I think we keep plain refs to the same standard, ie require 2 slashes.",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 54
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15e48907_2c414d77",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "wdyt about \"ValidateRefsSet\"? since refConfigs specify a set, either correctly or not :)",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "66fca8dd_77ce01c3",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "no need. We can totally remove now.",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 3
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7d418810_8a951f48",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "i think this place should be source of truth, and I\u0027d keep it as a comment for RefsSet",
+      "range": {
+        "startLine": 126,
+        "startChar": 41,
+        "endLine": 127,
+        "endChar": 57
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f822d8f_ab3b144f",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "NewRefsSet",
+      "range": {
+        "startLine": 128,
+        "startChar": 5,
+        "endLine": 128,
+        "endChar": 14
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fa722ce_dcfaca92",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "this is not useful -- users of gitiles package shouldn\u0027t need to think about prefix at all.\ninstead:\n\n// Resolve returns map from watched ref to its resolved tip.\n//\n// Refs which don\u0027t exist or are not visible to requester, won\u0027t be included the in the map.\nfunc (w *refsSet) Resolve(context, client) (map[string]string, error)",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 1
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0dcd781f_bff44c91",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "there is no \"config\" for gitiles package, let\u0027s name it just parseRef",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7deda42_442e63c6",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "plz, make empty line for readability",
+      "range": {
+        "startLine": 136,
+        "startChar": 72,
+        "endLine": 136,
+        "endChar": 73
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "862b62ff_b80328a3",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "//\n// For best results, ensure each ref\u0027s has commit\u0027s **committer** timestamp \n// monotonically non-decreasing. Gerrit will take care of this if you require\n// each commmit to go through Gerrit by prohibiting \"git push\" on these refs.",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "600260c9_ba6734bb",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "plz add:\n\n// \n// Note: force pushes to this ref are not supported. Milo uses caching assuming\n// set of commits reachable from this ref may only grow, never lose some commits.",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57cdda3f_d9cbf05e",
+        "filename": "milo/common/config.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 654,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "maybe also warn here?",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b4d62ab_7f1eb70b",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "1. wdyt about LatestCommits? If not, maybe CombinedLogs?\n\n2. How about this doc:\n\n// LatestCommits returns latest commits reachable from several refs.\n//\n// Returns up a slice of up to a limit (50 by default) of commits such that:\n//  * for reach source ref, subsequence of returned slice formed by \n//    its corresponding commits will be topological.\n//  * across refs, commits will be ordered timestamp.\n// \n// For example, for two refs with commits (C_5 means C was committed at time 5)\n// and limit 5, the function will first resolve each ref to sequence of commits:\n//\n//    ref1: A_1 -\u003e B_5 -\u003e C_9   \n//    ref2: X_2 -\u003e Y_7 -\u003e Z_4    (note timestamp inversion)\n// \n// and then return combined list of [C_9, B_5, Z_4, Y_7, X_2].\n// \n// refs must be a list of valid ref or regexp as defined in ...proto.\n// startRef ...\n// ...",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18bb92d1_4f5e7f96",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "plz keep it \"excludeRef\" like in console.Def and in proto.",
+      "range": {
+        "startLine": 74,
+        "startChar": 45,
+        "endLine": 74,
+        "endChar": 53
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5db393a_4d780559",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "I think just refs is fine.",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30fac93d_1c3e6030",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "i think for determinism, we should check first for equality and disambiguate compare refs if necessary.",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 51
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ef0d90b_3c01cf25",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "tips, err :\u003d gitilesapi.NewRefsSet(refCOnfigs).Resolve(c, client)\n\nsince scheduler does exactly the same.",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1dc933ad_13c60324",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "move after RPC call, else parallelism is vanished.",
+      "range": {
+        "startLine": 109,
+        "startChar": 4,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f84ded5_6752035a",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "algo below doesn\u0027t actually assume this, which is great.",
+      "range": {
+        "startLine": 121,
+        "startChar": 51,
+        "endLine": 122,
+        "endChar": 43
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b8d4094_78552a64",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "nit: i\u0027d call it just \u0027h\u0027 since \u0027ch\u0027 isn\u0027t providing much clarity either.",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 3
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29da6d90_2e04ff19",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "consider moving this check to line 111 -- don\u0027t insert empty lists into logs.",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a305c5fd_3dc1fedc",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "only ref is used more than once. s/commit/ch[0].commit in next line.",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 40
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "689fc53e_445dc0eb",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "to avoid re-computing hash of each ref here, consider not having logs map at all but keeping right inside refCommit:\n\n0. s/RefCommit/RefCommits and add []*commits to it.\n1. in line 111, just append RefCommit{ref, log} directly to heap (and you get rid of lines 125...131)\n2. Add RefsCommits.pop which removes and returns log[0], len(log)\u003e0\n3. Here code gets simpler:\n  commit, empty \u003d\u003d ch[0].pop()\n  commits \u003d append(commits, commit)\n  if empty {...\n\nI think this will be more readable overall as well as faster.",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 144,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f76f6356_46ff4ba3",
+        "filename": "milo/git/log.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "after more thinking, i think adding it directly to cache key is better than what I did here.\nCan you please add this to cache key alongside ancestor for consistency? THanks.",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 203,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "296d9ffb_6b00652e",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "this should be refs.watched.Resolve\nie RefsSet.Resolve() -\u003e map[string]string",
+      "range": {
+        "startLine": 195,
+        "startChar": 2,
+        "endLine": 200,
+        "endChar": 4
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49571a86_f4440115",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T02:32:32Z",
+      "side": 1,
+      "message": "ah, that\u0027s where you need it. just duplicate code here.",
+      "range": {
+        "startLine": 139,
+        "startChar": 16,
+        "endLine": 139,
+        "endChar": 37
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
