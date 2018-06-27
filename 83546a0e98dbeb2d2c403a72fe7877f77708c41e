@@ -22,6 +22,52 @@
       "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ff46721_e14166eb",
+        "filename": "cipd/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T03:30:16Z",
+      "side": 1,
+      "message": "isn\u0027t it better to use const of identity.Anonymous?",
+      "range": {
+        "startLine": 88,
+        "startChar": 46,
+        "endLine": 88,
+        "endChar": 67
+      },
+      "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd1f7f8c_85fd30a2",
+        "filename": "cipd/appengine/ui/errors.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T03:30:16Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 38,
+        "startChar": 3,
+        "endLine": 38,
+        "endChar": 43
+      },
+      "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
