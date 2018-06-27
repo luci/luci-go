@@ -13,7 +13,9 @@
       </a>
     </h3>
     <p> <b>Repo</b>: {{ .RepoURL }} </p>
-    <p> <b>Ref</b>: {{ .Ref }} </p>
+    {{ range .Refs }}
+      <p> <b>Refs</b>: {{ . }} </p>
+    {{ end }}
     <p> <b>Manifest Name</b>: {{ .ManifestName }} </p>
     <p> <b>URL</b>: {{ .URL }} </p>
     <p> <b>Revision</b>: {{ .Revision }} </p>
