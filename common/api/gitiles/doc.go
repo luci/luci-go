@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package gitiles implements GitilesClient in
-// "go.chromium.org/common/proto/gitiles" package
-// on top of Gitiles's REST API.
-// It allows querying Git repositories hosted on *.googlesource.com.
+// "go.chromium.org/common/proto/gitiles" package on top of Gitiles's REST API,
+// but additionally provides some useful functionality on top of that API. It
+// allows querying Git repositories hosted on *.googlesource.com.
 package gitiles
