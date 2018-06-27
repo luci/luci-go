@@ -22,6 +22,30 @@
       "revId": "83386ee94431d242d577236eab529896aeb3fea0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dfb4570f_ac80f2a8",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T17:14:19Z",
+      "side": 1,
+      "message": "\"please sweep my garbage\" state?",
+      "parentUuid": "97a308a4_a3d0d00c",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 13
+      },
+      "revId": "83386ee94431d242d577236eab529896aeb3fea0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
