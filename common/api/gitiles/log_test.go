@@ -47,9 +47,9 @@ func TestPagingLog(t *testing.T) {
 
 		Convey("Page till no cursor", func() {
 			req := gitiles.LogRequest{
-				Project:  "repo",
-				Ancestor: "master",
-				Treeish:  "8de6836858c99e48f3c58164ab717bda728e95dd",
+				Project:            "repo",
+				ExcludeAncestorsOf: "master",
+				Treeish:            "8de6836858c99e48f3c58164ab717bda728e95dd",
 			}
 			commits, err := PagingLog(ctx, c, req, 10)
 			So(err, ShouldBeNil)

@@ -56,8 +56,8 @@ func gitilesHistory(c context.Context, host, project, oldRevision, newRevision s
 		// we'll get one commit,
 		// otherwise we will get 0 commits which is indistinguishable from
 		// oldRevision not being reachable from newRevision.
-		Ancestor: oldRevision + "~1",
-		Treeish:  newRevision,
+		ExcludeAncestorsOf: oldRevision + "~1",
+		Treeish:            newRevision,
 	}
 	logging.Infof(c, "Gitiles request to host %q: %q", host, &req)
 	res, err := gitiles.PagingLog(c, client, req, 0)

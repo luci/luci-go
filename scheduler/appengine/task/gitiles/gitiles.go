@@ -415,10 +415,10 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	defer cancel()
 
 	commits, err := gitiles.PagingLog(c, g, gitilespb.LogRequest{
-		Project:  g.project,
-		Treeish:  newHead,
-		Ancestor: oldHead, // empty if ref is new, but then maxCommits is 1.
-		PageSize: int32(maxCommits),
+		Project:            g.project,
+		Treeish:            newHead,
+		ExcludeAncestorsOf: oldHead, // empty if ref is new, but then maxCommits is 1.
+		PageSize:           int32(maxCommits),
 	}, maxCommits)
 	switch status.Code(err) {
 	case codes.OK:

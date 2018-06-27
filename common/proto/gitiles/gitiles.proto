@@ -39,9 +39,25 @@ message LogRequest {
     //     For example, "master~2" or "deadbeef~1".
     // Required.
     string treeish = 3;
-    // The commit where to stop listing at. Together with treeish,
-    // the represent git's "ancestor..treeish" notation.
-    string ancestor = 2;
+    // If specified, only commits not reachable from this commit (inclusive)
+    // will be returned.
+    //
+    // In git's notation, this is
+    //   $ git log ^exclude_ancestors_of treeish
+    //  OR
+    //   $ git log exclude_ancestors_of..treeish
+    // https://git-scm.com/docs/gitrevisions#gitrevisions-Theememtwo-dotRangeNotation
+    //
+    // For example, given this repo
+    //
+    //     base -> A -> B -> C == refs/heads/master
+    //        \
+    //         X -> Y -> Z  == refs/heads/release
+    //
+    // calling Log(treeish='refs/heads/release',
+    //             exclude_ancestors_of='refs/heads/master')
+    // will return ['Z', Y', 'X'].
+    string exclude_ancestors_of = 2;
     // If true, include tree diff in commits.
     bool tree_diff = 4;
 

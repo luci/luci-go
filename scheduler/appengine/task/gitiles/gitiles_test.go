@@ -93,10 +93,10 @@ func TestTriggerBuild(t *testing.T) {
 		var epoch = time.Unix(1442270520, 0).UTC()
 		expectLog := func(new, old string, pageSize int, ids []string, errs ...error) *gomock.Call {
 			req := &gitilespb.LogRequest{
-				Project:  "b",
-				Treeish:  new,
-				Ancestor: old,
-				PageSize: int32(pageSize),
+				Project:            "b",
+				Treeish:            new,
+				ExcludeAncestorsOf: old,
+				PageSize:           int32(pageSize),
 			}
 			if len(errs) > 0 {
 				return gitilesMock.EXPECT().Log(gomock.Any(), req).Return(nil, errs[0])
