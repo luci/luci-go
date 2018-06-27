@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "4495c2f9_ddbe6691",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T01:48:47Z",
+      "side": 0,
+      "message": "\u003e  E.g. urlfetch task implementation has its own configurable timeout which is allowed to exceed 60 sec.\nACK.\n\n\u003e And setting lax timeout by default seems incorrect (we won\u0027t notice if something becomes very slow).\n\nWell, we\u0027ll get 500s, so I think we should notice.\n\nNow I\u0027m wondering, we have implicit timeout for task queue jobs anyway, right? So, even though our context doesn\u0027t have deadline, it might as well have it.",
+      "parentUuid": "7bfdeb1d_d4e27fac",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f269542e_adebf3c6",
         "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
         "patchSetId": 1
@@ -69,6 +87,24 @@
       "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6606c0be_472ff838",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T01:48:47Z",
+      "side": 0,
+      "message": "oh, right! Man, how I really miss RAII :(",
+      "parentUuid": "be90b312_c4716c26",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
