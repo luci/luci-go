@@ -28,3 +28,17 @@ deploy_staging:
 		--version dev \
 		--no-promote \
 		--no-stop-previous-version
+
+deploy_prod:
+	gcloud app deploy \
+		${APP_DIR}/dispatch.yaml \
+		${APP_DIR}/frontend/index.yaml \
+		${APP_DIR}/frontend/cron.yaml \
+		${APP_DIR}/frontend/queue.yaml \
+		${APP_DIR}/frontend/module-frontend.yaml \
+		${APP_DIR}/backend/module-backend.yaml \
+		${APP_DIR}/static/module-static.yaml \
+		--project chrome-infra-packages \
+		--version dev \
+		--no-promote \
+		--no-stop-previous-version
