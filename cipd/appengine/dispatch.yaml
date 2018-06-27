@@ -1,6 +1,10 @@
 dispatch:
   - url: "*/rpcexplorer/*"
     module: static
+  - url: "*/static/bootstrap/*"
+    module: static
+  - url: "*/static/jquery/*"
+    module: static
 
   # TODO(vadimsh): Delete these routes once Python code is gone.
   - url: "*/prpc/*"
@@ -13,4 +17,6 @@ dispatch:
   # TODO(vadimsh): Remove "v2" when Go backend becomes the default. See also
   # frontend/main.go where "v2" is also mentioned.
   - url: "*/v2/*"
+    module: default-go
+  - url: "*/ui/*"
     module: default-go

@@ -1,0 +1,93 @@
+{{define "base"}}
+<!DOCTYPE html>
+<html lang="en">
+<!-- Copyright 2018 The LUCI Authors. All rights reserved.
+Use of this source code is governed under the Apache License, Version 2.0
+that can be found in the LICENSE file. -->
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <title>{{block "title" .}}CIPD Packages{{end}}</title>
+  <style type="text/css">
+    body {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .navbar {
+      margin-bottom: 20px;
+    }
+    #account-picture-nav {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+    #account-picture-nav img {
+      border-radius: 6px;
+    }
+    #account-text-nav {
+      margin-left: 8px;
+      margin-right: 0px;
+    }
+    footer hr {
+      margin: 10px 0px;
+    }
+  </style>
+  {{block "head" .}}{{end}}
+</head>
+
+<body>
+  <div class="container">
+    <div class="navbar navbar-default" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle"
+                data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <span class="navbar-brand">
+          <span id="progress-spinner" class="not-spinning">
+            <a href="/">CIPD Packages</a>
+          </span>
+        </span>
+      </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav"></ul>
+        <p class="nav navbar-text navbar-right" id="account-text-nav">
+          {{if .IsAnonymous}}
+            <a href="{{.LoginURL}}" class="navbar-link">Login</a>
+          {{else}}
+            <span>{{.User.Email}}</span>
+            <span> |</span>
+            <a href="{{.LogoutURL}}" class="navbar-link">Logout</a>
+          {{end}}
+          {{if .User.Picture}}
+          <p class="nav navbar-right" id="account-picture-nav">
+            <img src="{{.User.Picture}}" width="30" height="30">
+          </p>
+          {{end}}
+        </p>
+      </div>
+    </div>
+
+    <div id="content-box">
+      {{block "content" .}}{{end}}
+    </div>
+
+    <footer>
+      <hr>
+      <p class="text-right" style="color: #cccccc">
+        <small>Handled in <span>{{call .HandlerDuration}}</span></small>
+        <small style="margin-left: 20px">Version: <span>{{.AppVersion}}</span></small>
+      </p>
+    </footer>
+  </div>
+
+  <script src="/static/jquery/jquery.min.js"></script>
+  <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+</body>
+
+</html>
+{{end}}
