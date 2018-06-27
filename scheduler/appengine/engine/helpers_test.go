@@ -136,6 +136,7 @@ func newTestEngine() (*engineImpl, *fakeTaskManager) {
 // fakeTaskManager implement task.Manager interface.
 type fakeTaskManager struct {
 	launchTask         func(ctx context.Context, ctl task.Controller) error
+	abortTask          func(ctx context.Context, ctl task.Controller) error
 	handleNotification func(ctx context.Context, msg *pubsub.PubsubMessage) error
 	handleTimer        func(ctx context.Context, ctl task.Controller, name string, payload []byte) error
 }
@@ -159,6 +160,9 @@ func (m *fakeTaskManager) LaunchTask(c context.Context, ctl task.Controller) err
 }
 
 func (m *fakeTaskManager) AbortTask(c context.Context, ctl task.Controller) error {
+	if m.abortTask != nil {
+		return m.abortTask(c, ctl)
+	}
 	return nil
 }
 
