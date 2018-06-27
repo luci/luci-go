@@ -117,7 +117,7 @@ func (c *TestController) PrepareTopic(ctx context.Context, publisher string) (to
 }
 
 // GetClient is part of Controller interface.
-func (c *TestController) GetClient(ctx context.Context, timeout time.Duration, opts ...auth.RPCOption) (*http.Client, error) {
+func (c *TestController) GetClient(ctx context.Context, opts ...auth.RPCOption) (*http.Client, error) {
 	if c.Client != nil {
 		return c.Client, nil
 	}

@@ -251,10 +251,7 @@ type Controller interface {
 
 	// GetClient returns http.Client that is configured to use job's service
 	// account credentials to talk to other services.
-	//
-	// All requests made by the client must finish before given deadline time
-	// (or they will be forcefully aborted).
-	GetClient(c context.Context, timeout time.Duration, opts ...auth.RPCOption) (*http.Client, error)
+	GetClient(c context.Context, opts ...auth.RPCOption) (*http.Client, error)
 
 	// EmitTrigger delivers a given trigger to all jobs which are triggered by
 	// current one.

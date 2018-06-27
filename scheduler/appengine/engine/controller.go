@@ -200,10 +200,9 @@ func (ctl *taskController) PrepareTopic(ctx context.Context, publisher string) (
 }
 
 // GetClient is part of task.Controller interface
-func (ctl *taskController) GetClient(ctx context.Context, timeout time.Duration, opts ...auth.RPCOption) (*http.Client, error) {
+func (ctl *taskController) GetClient(ctx context.Context, opts ...auth.RPCOption) (*http.Client, error) {
 	// TODO(vadimsh): Use per-project service accounts, not a global service
 	// account.
-	ctx, _ = clock.WithTimeout(ctx, timeout)
 	t, err := auth.GetRPCTransport(ctx, auth.AsSelf, opts...)
 	if err != nil {
 		return nil, err

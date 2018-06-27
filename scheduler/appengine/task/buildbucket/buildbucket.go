@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/gae/service/info"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/config/validation"
@@ -223,11 +224,11 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	ctl.Save(c)
 
 	// Send the request.
-	service, err := m.createBuildbucketService(c, ctl)
-	if err != nil {
-		return err
-	}
-	resp, err := service.Put(&request).Do()
+	var resp *bbv1.ApiBuildResponseMessage
+	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
+		resp, err = bb.Put(&request).Context(c).Do()
+		return
+	})
 	if err != nil {
 		ctl.DebugLog("Failed to add buildbucket build - %s", err)
 		return utils.WrapAPIError(err)
@@ -307,19 +308,27 @@ func makeServerUrl(s string) string {
 	return "https://" + s
 }
 
-// createBuildbucketService makes a configured Buildbucket API client.
-func (m TaskManager) createBuildbucketService(c context.Context, ctl task.Controller) (*bbv1.Service, error) {
-	client, err := ctl.GetClient(c, time.Minute)
+// withBuildbucket makes a Buildbucket API client and calls the callback.
+//
+// The callback runs under a new context with 1 min deadline. Make sure to pass
+// it to call RPCs by using call.Context(c).
+func (m TaskManager) withBuildbucket(c context.Context, ctl task.Controller, cb func(context.Context, *bbv1.Service) error) error {
+	c, cancel := clock.WithTimeout(c, time.Minute)
+	defer cancel()
+
+	client, err := ctl.GetClient(c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	service, err := bbv1.New(client)
 	if err != nil {
-		return nil, err
+		return err
 	}
+
 	cfg := ctl.Task().(*messages.BuildbucketTask)
 	service.BasePath = makeServerUrl(cfg.Server) + "/_ah/api/buildbucket/v1/"
-	return service, nil
+
+	return cb(c, service)
 }
 
 // checkBuildStatusLater schedules a delayed call to checkBuildStatus if the
@@ -354,11 +363,11 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	}
 
 	// Fetch build result from buildbucket.
-	service, err := m.createBuildbucketService(c, ctl)
-	if err != nil {
-		return err
-	}
-	resp, err := service.Get(taskData.BuildID).Do()
+	var resp *bbv1.ApiBuildResponseMessage
+	err := m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
+		resp, err = bb.Get(taskData.BuildID).Context(c).Do()
+		return
+	})
 	if err != nil {
 		ctl.DebugLog("Failed to fetch buildbucket build - %s", err)
 		err = utils.WrapAPIError(err)
