@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "97a308a4_a3d0d00c",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-27T04:06:21Z",
+      "side": 1,
+      "message": "So there\u0027s this edge case... We\u0027ll need to figure out how to handle it better...",
+      "range": {
+        "startLine": 294,
+        "startChar": 0,
+        "endLine": 306,
+        "endChar": 13
+      },
+      "revId": "83386ee94431d242d577236eab529896aeb3fea0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
