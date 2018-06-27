@@ -1181,10 +1181,17 @@ func (e *engineImpl) initInvocation(c context.Context, jobID string, inv *Invoca
 func (e *engineImpl) abortInvocation(c context.Context, jobID string, invID int64) error {
 	return e.withController(c, jobID, invID, "manual abort", func(c context.Context, ctl *taskController) error {
 		ctl.DebugLog("Invocation is manually aborted by %s", auth.CurrentIdentity(c))
-		if err := ctl.manager.AbortTask(c, ctl); err != nil {
-			logging.WithError(err).Errorf(c, "Failed to abort the task")
-			return err
+
+		switch err := ctl.manager.AbortTask(c, ctl); {
+		case transient.Tag.In(err):
+			return err // ask for retry on transient errors, don't touch Invocation
+		case err != nil:
+			ctl.DebugLog("Fatal error when aborting the invocation - %s", err)
+			ctl.DebugLog("Marking the invocation as aborted anyway")
 		}
+
+		// On success or on fatal error mark the task as aborted. We can't do
+		// anything with failed abort call anyway.
 		ctl.State().Status = task.StatusAborted
 		return nil
 	})
