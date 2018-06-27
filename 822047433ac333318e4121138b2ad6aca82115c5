@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "da3cc523_05980d50",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 14
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8cc30f36_ff9643f9",
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d930f812_c5fc03ae",
         "filename": "milo/git/client.go",
         "patchSetId": 14
@@ -63,6 +81,30 @@
       "revId": "822047433ac333318e4121138b2ad6aca82115c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0f301bc_db9855ae",
+        "filename": "milo/git/client.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Renamed the function and updated docs.",
+      "parentUuid": "b1572068_3a0c54f3",
+      "range": {
+        "startLine": 74,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 10
+      },
+      "revId": "822047433ac333318e4121138b2ad6aca82115c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {

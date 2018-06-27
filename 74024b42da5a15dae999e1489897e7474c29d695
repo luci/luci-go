@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c1161bba_f0a6647a",
+        "filename": "common/api/gitiles/doc.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "808c0b75_8af02036",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "693750ae_8ce0964d",
         "filename": "common/api/gitiles/doc.go",
         "patchSetId": 17
@@ -39,6 +57,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b02c81f2_d736fbb3",
+        "filename": "common/api/gitiles/doc.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "693750ae_8ce0964d",
+      "range": {
+        "startLine": 17,
+        "startChar": 3,
+        "endLine": 17,
+        "endChar": 8
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "c178c4e8_238a8de5",
+        "filename": "common/api/gitiles/refs_test.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a5856993_0144a5fe",
+      "range": {
+        "startLine": 23,
+        "startChar": 13,
+        "endLine": 23,
+        "endChar": 14
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4178109_f4137be9",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "078a98e5_46287328",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "This would allow to create an uninitialized struct, which would represent an empty ref set. I\u0027d rather have users call NewRefSet and explicitly pass empty list there if this is actually needed.",
+      "parentUuid": "d4178109_f4137be9",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c3c4690_beee2030",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -102,6 +192,24 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3cc58656_74857097",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c3c4690_beee2030",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -128,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "931bf88e_48257a67",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Renamed to \"refSet\":\n - left \"s\" out to be consistent with names like stringset [1]\n - replied to your comment about making struct public\n\n\n[1]: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/data/stringset/stringset.go?l\u003d15\u0026rcl\u003de3878266592d2a8957838c9235d0f235e4d114ec",
+      "parentUuid": "5f8c95e4_a8f35854",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6a22d2c8_a8b7482d",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -148,6 +280,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47fee21c_8c432d98",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6a22d2c8_a8b7482d",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 9
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -174,6 +330,30 @@
     },
     {
       "key": {
+        "uuid": "d79551ad_2e51fabe",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cd051df_b6a2a122",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 13
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ea51fe7_f23313a6",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -194,6 +374,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fc90d4f_94867cd7",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ea51fe7_f23313a6",
+      "range": {
+        "startLine": 97,
+        "startChar": 2,
+        "endLine": 99,
+        "endChar": 54
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -220,6 +424,30 @@
     },
     {
       "key": {
+        "uuid": "c483177b_282ae093",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Renamed to ValidRefSpecs, since what we validate here is a collection of strings that represent a set of refs. I call these strings as \"specs\" to avoid using the word \"config\".",
+      "parentUuid": "15e48907_2c414d77",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66fca8dd_77ce01c3",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -231,6 +459,30 @@
       "writtenOn": "2018-06-27T02:32:32Z",
       "side": 1,
       "message": "no need. We can totally remove now.",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 121,
+        "endChar": 3
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03b1b312_c9cd462c",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66fca8dd_77ce01c3",
       "range": {
         "startLine": 117,
         "startChar": 2,
@@ -266,6 +518,30 @@
     },
     {
       "key": {
+        "uuid": "ecc2f0bf_13265a1f",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d418810_8a951f48",
+      "range": {
+        "startLine": 126,
+        "startChar": 41,
+        "endLine": 127,
+        "endChar": 57
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1f822d8f_ab3b144f",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -286,6 +562,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bb08b36_46655f1f",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f822d8f_ab3b144f",
+      "range": {
+        "startLine": 128,
+        "startChar": 5,
+        "endLine": 128,
+        "endChar": 14
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -312,6 +612,30 @@
     },
     {
       "key": {
+        "uuid": "efd190db_3f39c0cc",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fa722ce_dcfaca92",
+      "range": {
+        "startLine": 170,
+        "startChar": 0,
+        "endLine": 174,
+        "endChar": 1
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0dcd781f_bff44c91",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -332,6 +656,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b33c2d31_e89e8d50",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "There is no config, but what this function does is to parse a string-encoded representation of a RefSet. I\u0027ve renamed it to parseRefSpec.",
+      "parentUuid": "0dcd781f_bff44c91",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -358,6 +706,30 @@
     },
     {
       "key": {
+        "uuid": "acbf7fa8_8f235bae",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c7deda42_442e63c6",
+      "range": {
+        "startLine": 136,
+        "startChar": 72,
+        "endLine": 136,
+        "endChar": 73
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "862b62ff_b80328a3",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 17
@@ -372,6 +744,24 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8d218dd_30ad05ba",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "862b62ff_b80328a3",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -392,6 +782,24 @@
     },
     {
       "key": {
+        "uuid": "e5e69e50_89a07bed",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 17
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "600260c9_ba6734bb",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "57cdda3f_d9cbf05e",
         "filename": "milo/common/config.go",
         "patchSetId": 17
@@ -409,6 +817,24 @@
     },
     {
       "key": {
+        "uuid": "ec4a3134_37f4b2ee",
+        "filename": "milo/common/config.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 654,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57cdda3f_d9cbf05e",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3b4d62ab_7f1eb70b",
         "filename": "milo/git/client.go",
         "patchSetId": 17
@@ -423,6 +849,24 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6da198b8_34557104",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b4d62ab_7f1eb70b",
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -449,6 +893,30 @@
     },
     {
       "key": {
+        "uuid": "99aa686e_06cdc417",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18bb92d1_4f5e7f96",
+      "range": {
+        "startLine": 74,
+        "startChar": 45,
+        "endLine": 74,
+        "endChar": 53
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e5db393a_4d780559",
         "filename": "milo/git/client.go",
         "patchSetId": 17
@@ -469,6 +937,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f84d4d1_df0e7aa0",
+        "filename": "milo/git/client.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e5db393a_4d780559",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 75,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -495,6 +987,30 @@
     },
     {
       "key": {
+        "uuid": "addb183e_373cee7a",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30fac93d_1c3e6030",
+      "range": {
+        "startLine": 45,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 51
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ef0d90b_3c01cf25",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 17
@@ -515,6 +1031,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbe4dc49_0798703a",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ef0d90b_3c01cf25",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -541,6 +1081,30 @@
     },
     {
       "key": {
+        "uuid": "67e04b47_3cb6a57c",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1dc933ad_13c60324",
+      "range": {
+        "startLine": 109,
+        "startChar": 4,
+        "endLine": 109,
+        "endChar": 15
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f84ded5_6752035a",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 17
@@ -561,6 +1125,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3c53f77_76247d98",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "It does in the sense, that we won\u0027t get single list of commits sorted by time, but will get list of commits merged from refs while preserving order from each ref. But removed this sentence anyway.",
+      "parentUuid": "9f84ded5_6752035a",
+      "range": {
+        "startLine": 121,
+        "startChar": 51,
+        "endLine": 122,
+        "endChar": 43
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -587,6 +1175,30 @@
     },
     {
       "key": {
+        "uuid": "23b59a80_c36f43d1",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Renamed to heap for better clarity.",
+      "parentUuid": "0b8d4094_78552a64",
+      "range": {
+        "startLine": 125,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 3
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29da6d90_2e04ff19",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 17
@@ -607,6 +1219,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "062cc4da_3966c360",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29da6d90_2e04ff19",
+      "range": {
+        "startLine": 127,
+        "startChar": 2,
+        "endLine": 127,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -633,6 +1269,30 @@
     },
     {
       "key": {
+        "uuid": "f0c46f25_b97a331a",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a305c5fd_3dc1fedc",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 40
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "689fc53e_445dc0eb",
         "filename": "milo/git/fetch_refs.go",
         "patchSetId": 17
@@ -653,6 +1313,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52115853_9c540c57",
+        "filename": "milo/git/fetch_refs.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Nice. Interestingly, I can then get rid of ref name completely and just work with a list of commit logs.",
+      "parentUuid": "689fc53e_445dc0eb",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 144,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -679,6 +1363,30 @@
     },
     {
       "key": {
+        "uuid": "954fb7a0_8a5b0fcc",
+        "filename": "milo/git/log.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f76f6356_46ff4ba3",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 203,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "296d9ffb_6b00652e",
         "filename": "scheduler/appengine/task/gitiles/gitiles.go",
         "patchSetId": 17
@@ -702,6 +1410,30 @@
     },
     {
       "key": {
+        "uuid": "3dd254a5_fbe7488a",
+        "filename": "scheduler/appengine/task/gitiles/gitiles.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 200,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "296d9ffb_6b00652e",
+      "range": {
+        "startLine": 195,
+        "startChar": 2,
+        "endLine": 200,
+        "endChar": 4
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49571a86_f4440115",
         "filename": "scheduler/appengine/task/gitiles/state.go",
         "patchSetId": 17
@@ -722,6 +1454,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "956e3223_0d176579",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-27T18:19:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49571a86_f4440115",
+      "range": {
+        "startLine": 139,
+        "startChar": 16,
+        "endLine": 139,
+        "endChar": 37
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
