@@ -392,14 +392,6 @@ func TestValidateConfig(t *testing.T) {
 			})
 		})
 
-		Convey("refGlobs are rejected", func() {
-			cfg := &messages.GitilesTask{
-				Repo: "https://a.googlesource.com/b.git",
-				Refs: []string{"refs/*"},
-			}
-			So(validate(cfg), ShouldNotBeNil)
-		})
-
 		Convey("refRegexp works", func() {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
@@ -433,18 +425,5 @@ func TestValidateConfig(t *testing.T) {
 				So(validate(cfg), ShouldNotBeNil)
 			})
 		})
-	})
-}
-
-func TestRefNamespace(t *testing.T) {
-	t.Parallel()
-
-	Convey("splitRef works", t, func() {
-		p, s := splitRef("refs/heads/master")
-		So(p, ShouldEqual, "refs/heads")
-		So(s, ShouldEqual, "master")
-		p, s = splitRef("refs/weird/")
-		So(p, ShouldEqual, "refs/weird")
-		So(s, ShouldEqual, "")
 	})
 }
