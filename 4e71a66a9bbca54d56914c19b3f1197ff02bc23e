@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2a752000_ffed312e",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T00:39:09Z",
+      "side": 0,
+      "message": "wdyt about passing context with timeout to all task\u0027s implementations? We don\u0027t want any of them to run more than a few minutes anyway, or have I missed smth?",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f269542e_adebf3c6",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T00:39:09Z",
+      "side": 0,
+      "message": "have you considered returning a new context alongside the service? seems more convenient to use to me than a callback:\n service, sctx, err :\u003d ...\n if err !\u003d nil {\n   return err\n }\n resp, err :\u003d  service.Put(...).Context(c).Do()",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
