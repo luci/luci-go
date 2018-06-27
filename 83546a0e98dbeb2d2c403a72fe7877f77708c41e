@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "4baaa215_c1a3321e",
+        "filename": "cipd/appengine/static/bootstrap/css/bootstrap.min.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T03:56:13Z",
+      "side": 1,
+      "message": "for this and other copy-pasted files, how often do we have to update them if at all? Maybe we can share them across apps?",
+      "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ff46721_e14166eb",
         "filename": "cipd/appengine/ui/common.go",
         "patchSetId": 1
