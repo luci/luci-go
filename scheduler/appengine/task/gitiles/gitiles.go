@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/api/gitiles"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -45,6 +46,9 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/scheduler/appengine/task"
 )
+
+// gitilesRPCTimeout limits how long Gitiles RPCs are allowed to last.
+const gitilesRPCTimeout = time.Minute
 
 // defaultMaxTriggersPerInvocation limits number of triggers emitted per one
 // invocation.
@@ -315,7 +319,7 @@ func (m TaskManager) getGitilesClient(c context.Context, ctl task.Controller, cf
 		return r, nil
 	}
 
-	httpClient, err := ctl.GetClient(c, time.Minute, auth.WithScopes(gitiles.OAuthScope))
+	httpClient, err := ctl.GetClient(c, auth.WithScopes(gitiles.OAuthScope))
 	if err != nil {
 		return nil, err
 	}
@@ -341,6 +345,9 @@ type refsState struct {
 }
 
 func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *gitilesClient) error {
+	c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
+	defer cancel()
+
 	resp, err := g.Refs(c, &gitilespb.RefsRequest{
 		Project:  g.project,
 		RefsPath: refsPath,
@@ -348,8 +355,10 @@ func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *giti
 	if err != nil {
 		return err
 	}
+
 	s.currentLock.Lock()
 	defer s.currentLock.Unlock()
+
 	if s.current == nil {
 		s.current = map[string]string{}
 	}
@@ -401,6 +410,9 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	default:
 		return nil, nil // no change
 	}
+
+	c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
+	defer cancel()
 
 	commits, err := gitiles.PagingLog(c, g, gitilespb.LogRequest{
 		Project:  g.project,
