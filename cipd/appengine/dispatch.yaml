@@ -14,3 +14,5 @@ dispatch:
   # frontend/main.go where "v2" is also mentioned.
   - url: "*/v2/*"
     module: default-go
+  - url: "*/auth/pubsub/authdb:push"
+    module: default-go
