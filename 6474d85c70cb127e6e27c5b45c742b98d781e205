@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "aa86e586_20d3d99a",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "I think MustCompile fits here.",
+      "range": {
+        "startLine": 77,
+        "startChar": 45,
+        "endLine": 77,
+        "endChar": 60
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "22ba8f1a_12d3471b",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 23
@@ -191,6 +214,167 @@
       "writtenOn": "2018-06-27T20:03:40Z",
       "side": 1,
       "message": "consider\n\n# Time goes higher to the right\n ... -\u003e A -\u003e B -\u003e C  \u003d excludeRef\n      \\\n       M -\u003e N -\u003e O   \u003d ref1\n             \\\n              P -\u003e R -\u003e S  \u003d ref2\n\nCurrent algo will return this:\n  [S, R, O, P, N, N, M, M]\nbut perhaps we don\u0027t want dups at the end. So, maybe check before appending that has of prev. commit isn\u0027t the same.",
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71b30e97_3ff68377",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "you don\u0027t actually use all 255, just 30 perhaps?",
+      "range": {
+        "startLine": 58,
+        "startChar": 39,
+        "endLine": 58,
+        "endChar": 42
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8af4d195_4a2d8c09",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "nit: we typically use \"epoch\" for this, which is shorter :)",
+      "range": {
+        "startLine": 61,
+        "startChar": 2,
+        "endLine": 61,
+        "endChar": 15
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cdcc5504_12fdf016",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "this isn\u0027t necessary for your algo (but it it was, it should be i % 10 \u003d\u003d9, and I suspect this doesn\u0027t logically fit with \"excludeRef\")",
+      "range": {
+        "startLine": 71,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 0
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d991828_2e20a2b3",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 75,
+        "startChar": 3,
+        "endLine": 75,
+        "endChar": 16
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2d30baf5_e39d93e3",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "consider adding another test with fakeCommits[0:10] and fakeCOmmits[0:15] and see what happens :)",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 118,
+        "endChar": 73
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d5141309_efdc46d0",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "this copy-pasta obscures tests somewhat, wdyt\n\ntypedef refTips map[string]string\nmockRefsCall :\u003d func(prefix string, tips refTips){\n  gitilesMock.EXPECT().Refs(gomock.Any(), \u0026gitilespb.RefsRequest{\n    Project: \"project\", RefsPath: \"refs/branch-heads\",\n  }).Return(\u0026gitilespb.RefsResponse{Revisions: tips}, nil)\n}\n\nand use it as:\nmockRefsCall(\"refs/heads\", refTips{\"refs/heads/x\": \"...\"})",
+      "range": {
+        "startLine": 119,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 10
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e99f7b27_27173075",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:43:15Z",
+      "side": 1,
+      "message": "ditto for creating a helper:\nmockLog(\"refs/heads/master\", fakeCommits[0:4])\nis the only important thing here.",
+      "range": {
+        "startLine": 149,
+        "startChar": 3,
+        "endLine": 154,
+        "endChar": 10
+      },
       "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
