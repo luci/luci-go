@@ -1,0 +1,222 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22ba8f1a_12d3471b",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "nit: if comma here, then also add comma before \"which\"",
+      "range": {
+        "startLine": 154,
+        "startChar": 57,
+        "endLine": 154,
+        "endChar": 58
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2b84b09_7f35ae2a",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "nit/up to you: if you don\u0027t name return vars, this line can be just\nreturn refTips, parallel.FanOut(...",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 159,
+        "endChar": 6
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d21cbd3f_977da606",
+        "filename": "milo/git/client.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "CombinedCommits then :)",
+      "range": {
+        "startLine": 64,
+        "startChar": 4,
+        "endLine": 64,
+        "endChar": 17
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a20d1c98_8a423fff",
+        "filename": "milo/git/client.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "pedantic nit: negative or 0",
+      "range": {
+        "startLine": 66,
+        "startChar": 61,
+        "endLine": 66,
+        "endChar": 69
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6890c2ad_cb60da8d",
+        "filename": "milo/git/client.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 66,
+        "startChar": 12,
+        "endLine": 66,
+        "endChar": 14
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "040829d5_a1a92382",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 46,
+        "startChar": 34,
+        "endLine": 46,
+        "endChar": 36
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b46d3c73_a6ed4a2f",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "pedantic nit: empty lines here but not between the functions is weird.",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 1
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6008a2d_1c529067",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "CombinedLogs (i\u0027d have expected :GoRename to take care of this)",
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a393b2c_4b3adfc3",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "consider\n\n# Time goes higher to the right\n ... -\u003e A -\u003e B -\u003e C  \u003d excludeRef\n      \\\n       M -\u003e N -\u003e O   \u003d ref1\n             \\\n              P -\u003e R -\u003e S  \u003d ref2\n\nCurrent algo will return this:\n  [S, R, O, P, N, N, M, M]\nbut perhaps we don\u0027t want dups at the end. So, maybe check before appending that has of prev. commit isn\u0027t the same.",
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e5be9a2_595236ac",
+        "filename": "milo/git/log.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "nah, just add it with |%t directly in line above.",
+      "range": {
+        "startLine": 382,
+        "startChar": 1,
+        "endLine": 384,
+        "endChar": 2
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

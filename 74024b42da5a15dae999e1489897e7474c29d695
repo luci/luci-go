@@ -178,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "cf019300_2f10fa1d",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "NewX function is a strong signal to use it instead of initializing X (Yeah, I\u0027d also just make constructor private in a such a case, but Go doesn\u0027t allow that). Interface as a solution to such a problem is actually worse than the problem you are solving.",
+      "parentUuid": "078a98e5_46287328",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8c3c4690_beee2030",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -248,6 +272,30 @@
       "side": 1,
       "message": "Renamed to \"refSet\":\n - left \"s\" out to be consistent with names like stringset [1]\n - replied to your comment about making struct public\n\n\n[1]: https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/data/stringset/stringset.go?l\u003d15\u0026rcl\u003de3878266592d2a8957838c9235d0f235e4d114ec",
       "parentUuid": "5f8c95e4_a8f35854",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "71751fdb_6d038d6e",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "fine, but then remove all occurrences of refsSet :)",
+      "parentUuid": "931bf88e_48257a67",
       "range": {
         "startLine": 62,
         "startChar": 5,
@@ -445,6 +493,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "88bfaf57_b5fdcb16",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "we actually thought about RefSpecs, but they have a meaning in git (https://git-scm.com/book/en/v2/Git-Internals-The-Refspec), so I think \"refsSpec\" in gitiles package would be confusing, hence my proposal for ValidateRefSet",
+      "parentUuid": "c483177b_282ae093",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -680,6 +752,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e7eca08c_b85967b5",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "ditto about refSpec term being confusing :(",
+      "parentUuid": "b33c2d31_e89e8d50",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -1384,6 +1480,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a5eefcf5_d35cee6c",
+        "filename": "milo/git/log.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "Thanks. However, plz keep the namespace + you can remove \"-v2\" part because key scheme changed and prior keys will definitely not be re-used. Also, please use info.MustNamespace to avoid dealing with errors (https://godoc.org/github.com/luci/gae/service/info#MustNamespace)\n(namespace is automatically added to key s.t. cache key need not to worry about uniqueness across memcache keys of other unrelated objects.",
+      "parentUuid": "954fb7a0_8a5b0fcc",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 203,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "398144fe_cab5ad16",
+        "filename": "scheduler/appengine/task/gitiles/state.go",
+        "patchSetId": 22
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-27T20:03:40Z",
+      "side": 1,
+      "message": "this is never true bcz refTips are returned by Resolve(), which means that all refs have at least 1 \u0027/\u0027 in them (since all prefixes do).",
+      "range": {
+        "startLine": 140,
+        "startChar": 2,
+        "endLine": 140,
+        "endChar": 63
+      },
+      "revId": "7cde17ae012f2405727042267e163ddd90d911a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
