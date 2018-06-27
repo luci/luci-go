@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "7bfdeb1d_d4e27fac",
+        "filename": "scheduler/appengine/engine/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-27T00:58:12Z",
+      "side": 0,
+      "message": "\u003e We don\u0027t want any of them to run more than a few minutes anyway\n\nThis is not generally true. E.g. urlfetch task implementation has its own configurable timeout which is allowed to exceed 60 sec.\n\nAnd setting lax timeout by default seems incorrect (we won\u0027t notice if something becomes very slow).",
+      "parentUuid": "2a752000_ffed312e",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f269542e_adebf3c6",
         "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
         "patchSetId": 1
@@ -30,6 +48,24 @@
       "writtenOn": "2018-06-27T00:39:09Z",
       "side": 0,
       "message": "have you considered returning a new context alongside the service? seems more convenient to use to me than a callback:\n service, sctx, err :\u003d ...\n if err !\u003d nil {\n   return err\n }\n resp, err :\u003d  service.Put(...).Context(c).Do()",
+      "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be90b312_c4716c26",
+        "filename": "scheduler/appengine/task/buildbucket/buildbucket.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-27T00:58:12Z",
+      "side": 0,
+      "message": "I want the context to be canceled on exit from the function. IIRC, not canceling contexts right away can lead to mild goroutine leaks.",
+      "parentUuid": "f269542e_adebf3c6",
       "revId": "4e71a66a9bbca54d56914c19b3f1197ff02bc23e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
