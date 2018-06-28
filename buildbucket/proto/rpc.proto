@@ -57,6 +57,11 @@ service Builds {
   // Executes multiple requests in a batch.
   // The response code is always OK.
   rpc Batch(BatchRequest) returns (BatchResponse) {};
+
+  // Updates a build.
+  // Returns updated build. Response includes only the fields
+  // included by default in GetBuild and updated fields.
+  rpc UpdateBuild(UpdateBuildRequest) returns (Build) {};
 }
 
 // A request message for GetBuild rpc.
@@ -152,6 +157,19 @@ message BatchResponse {
 
   // Responses in the same order as BatchRequest.requests.
   repeated Response responses = 1;
+}
+
+// A request message for UpdateBuild rpc.
+message UpdateBuildRequest {
+  // Build to update, with new field values.
+  Build build = 1;
+
+  // Build fields to update.
+  // See also
+  // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf#fieldmask
+  //
+  // Currently only "build.steps" path is supported.
+  google.protobuf.FieldMask update_mask = 2;
 }
 
 // A build predicate.
