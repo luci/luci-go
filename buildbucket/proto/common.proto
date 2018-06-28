@@ -65,7 +65,7 @@ message GitilesCommit {
   string project = 2;
   // Commit HEX SHA1.
   string id = 3;
-  // Optional, associated git ref, e.g. "refs/heads/master".
+  // Commit ref, e.g. "refs/heads/master".
   // NOT a branch name: if specified, must start with "refs/".
   string ref = 4;
 }
