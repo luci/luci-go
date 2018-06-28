@@ -149,6 +149,23 @@ type taskData struct {
 	BuildID int64 `json:"build_id,omitempty,string"`
 }
 
+// writeTaskData puts information about the task into invocation's TaskData.
+func writeTaskData(ctl task.Controller, td *taskData) (err error) {
+	if ctl.State().TaskData, err = json.Marshal(td); err != nil {
+		return errors.Annotate(err, "could not serialize TaskData").Err()
+	}
+	return nil
+}
+
+// readTaskData parses task data blob as prepared by writeTaskData.
+func readTaskData(ctl task.Controller) (*taskData, error) {
+	td := &taskData{}
+	if err := json.Unmarshal(ctl.State().TaskData, td); err != nil {
+		return nil, errors.Annotate(err, "could not parse TaskData").Err()
+	}
+	return td, nil
+}
+
 // LaunchTask is part of Manager interface.
 func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 	cfg := ctl.Task().(*messages.BuildbucketTask) // already validated
@@ -250,10 +267,9 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		return fmt.Errorf("bad buildbucket response, no 'build' field")
 	}
 
-	// Save build id in invocation, will be used later when handling PubSub
-	// notifications
-	ctl.State().TaskData, err = json.Marshal(&taskData{BuildID: resp.Build.Id})
-	if err != nil {
+	// Save build id in the invocation, will be used later to make RPCs to
+	// Buildbucket.
+	if err := writeTaskData(ctl, &taskData{BuildID: resp.Build.Id}); err != nil {
 		return err
 	}
 
@@ -275,8 +291,35 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 
 // AbortTask is part of Manager interface.
 func (m TaskManager) AbortTask(c context.Context, ctl task.Controller) error {
-	// TODO(vadimsh): Send the abort signal to buildbucket.
-	return nil
+	// This can happen if the invocation is aborted before it has even started.
+	// We don't have buildbucket build ID yet to cancel.
+	//
+	// There's a high chance that LaunchTask is executing concurrently somewhere.
+	// We let it finish peacefully, by not touching the invocation state at all
+	// and failing with a transient error instead. This avoids a collision on
+	// State modification. When such collision happens, results of LaunchTask
+	// (including a fresh build ID) are discarded (as the engine is unable to
+	// "merge" conflicting mutations from two different state transitions). This
+	// is really bad, since this process produces orphaned Buildbucket builds.
+	//
+	// So we pick a lesser evil and make AbortTask fail transiently while
+	// invocation is starting.
+	if status := ctl.State().Status; status.Initial() {
+		return errors.Reason("can't abort Buildbucket invocation in state %q", status).Tag(transient.Tag).Err()
+	}
+
+	// Grab build ID from the blob generated in LaunchTask.
+	taskData, err := readTaskData(ctl)
+	if err != nil {
+		ctl.State().Status = task.StatusFailed
+		return err
+	}
+
+	// Ask Buildbucket to kill this build.
+	return utils.WrapAPIError(m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) error {
+		_, err := bb.Cancel(taskData.BuildID, &bbv1.ApiCancelRequestBodyMessage{}).Context(c).Do()
+		return err
+	}))
 }
 
 // HandleNotification is part of Manager interface.
@@ -356,15 +399,15 @@ func (m TaskManager) checkBuildStatus(c context.Context, ctl task.Controller) er
 	}
 
 	// Grab build ID from the blob generated in LaunchTask.
-	taskData := taskData{}
-	if err := json.Unmarshal(ctl.State().TaskData, &taskData); err != nil {
+	taskData, err := readTaskData(ctl)
+	if err != nil {
 		ctl.State().Status = task.StatusFailed
-		return fmt.Errorf("could not parse TaskData - %s", err)
+		return err
 	}
 
 	// Fetch build result from buildbucket.
 	var resp *bbv1.ApiBuildResponseMessage
-	err := m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
+	err = m.withBuildbucket(c, ctl, func(c context.Context, bb *bbv1.Service) (err error) {
 		resp, err = bb.Get(taskData.BuildID).Context(c).Do()
 		return
 	})

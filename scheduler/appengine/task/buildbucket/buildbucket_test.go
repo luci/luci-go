@@ -15,6 +15,7 @@
 package buildbucket
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -135,6 +136,25 @@ func TestValidateProtoMessage(t *testing.T) {
 	})
 }
 
+func fakeController(testSrvURL string) *tasktest.TestController {
+	return &tasktest.TestController{
+		TaskMessage: &messages.BuildbucketTask{
+			Server:  testSrvURL,
+			Bucket:  "test-bucket",
+			Builder: "builder",
+			Tags:    []string{"a:b", "c:d"},
+		},
+		Client:       http.DefaultClient,
+		SaveCallback: func() error { return nil },
+		PrepareTopicCallback: func(publisher string) (string, string, error) {
+			if publisher != testSrvURL {
+				panic(fmt.Sprintf("expecting %q, got %q", testSrvURL, publisher))
+			}
+			return "topic", "auth_token", nil
+		},
+	}
+}
+
 func TestFullFlow(t *testing.T) {
 	t.Parallel()
 
@@ -183,20 +203,7 @@ func TestFullFlow(t *testing.T) {
 
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
-		ctl := &tasktest.TestController{
-			TaskMessage: &messages.BuildbucketTask{
-				Server:  ts.URL,
-				Bucket:  "test-bucket",
-				Builder: "builder",
-				Tags:    []string{"a:b", "c:d"},
-			},
-			Client:       http.DefaultClient,
-			SaveCallback: func() error { return nil },
-			PrepareTopicCallback: func(publisher string) (string, string, error) {
-				So(publisher, ShouldEqual, ts.URL)
-				return "topic", "auth_token", nil
-			},
-		}
+		ctl := fakeController(ts.URL)
 
 		// Launch.
 		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
@@ -228,6 +235,51 @@ func TestFullFlow(t *testing.T) {
 		mockRunning = false
 		So(mgr.HandleNotification(c, ctl, &pubsub.PubsubMessage{}), ShouldBeNil)
 		So(ctl.TaskState.Status, ShouldEqual, task.StatusSucceeded)
+	})
+}
+
+func TestAbort(t *testing.T) {
+	t.Parallel()
+
+	Convey("LaunchTask and AbortTask work", t, func(ctx C) {
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			resp := ""
+			switch {
+			case r.Method == "PUT" && r.URL.Path == "/_ah/api/buildbucket/v1/builds":
+				// There's more stuff in actual response that we don't use.
+				resp = `{
+					"build": {
+						"id": "9025781602559305888",
+						"status": "STARTED",
+						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
+					}
+				}`
+			case r.Method == "POST" && r.URL.Path == "/_ah/api/buildbucket/v1/builds/9025781602559305888/cancel":
+				resp = `{
+					"build": {
+						"id": "9025781602559305888",
+						"status": "CANCELED",
+						"url": "https://chromium-swarm-dev.appspot.com/user/task/2bdfb7404d18ac10"
+					}
+				}`
+			default:
+				ctx.Printf("Unknown URL fetch - %s %s\n", r.Method, r.URL.Path)
+				w.WriteHeader(400)
+				return
+			}
+			w.WriteHeader(200)
+			w.Write([]byte(resp))
+		}))
+		defer ts.Close()
+
+		c := memory.Use(context.Background())
+		mgr := TaskManager{}
+		ctl := fakeController(ts.URL)
+
+		// Launch and kill.
+		So(mgr.LaunchTask(c, ctl), ShouldBeNil)
+		So(mgr.AbortTask(c, ctl), ShouldBeNil)
 	})
 }
 
@@ -269,24 +321,12 @@ func TestTriggeredFlow(t *testing.T) {
 
 		c := memory.Use(context.Background())
 		mgr := TaskManager{}
-		ctl := &tasktest.TestController{
-			TaskMessage: &messages.BuildbucketTask{
-				Server:  ts.URL,
-				Bucket:  "test-bucket",
-				Builder: "builder",
-				Tags:    []string{"a:b", "c:d"},
-			},
-			Req: task.Request{
-				IncomingTriggers: []*internal.Trigger{
-					{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
-					{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
-				},
-			},
-			Client:       http.DefaultClient,
-			SaveCallback: func() error { return nil },
-			PrepareTopicCallback: func(publisher string) (string, string, error) {
-				So(publisher, ShouldEqual, ts.URL)
-				return "topic", "auth_token", nil
+		ctl := fakeController(ts.URL)
+
+		ctl.Req = task.Request{
+			IncomingTriggers: []*internal.Trigger{
+				{Id: "1", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "baadcafe")},
+				{Id: "2", Payload: makePayload("https://r.googlesource.com/repo", "refs/heads/master", "deadbeef")},
 			},
 		}
 

@@ -1140,11 +1140,18 @@ func TestAbortJob(t *testing.T) {
 
 			// At this point the timer tick is scheduled to happen 1 min from now, but
 			// we abort the job.
+			mgr.abortTask = func(ctx context.Context, ctl task.Controller) error {
+				ctl.DebugLog("Really aborted!")
+				return nil
+			}
 			So(e.AbortJob(asOne, job), ShouldBeNil)
 
 			// It is dead right away.
 			inv, err := e.getInvocation(c, jobID, invID)
 			So(inv.Status, ShouldEqual, task.StatusAborted)
+
+			// And AbortTask callback was really called.
+			So(inv.DebugLog, ShouldContainSubstring, "Really aborted!")
 
 			// Run all processes to completion.
 			mgr.handleTimer = func(ctx context.Context, ctl task.Controller, name string, payload []byte) error {
