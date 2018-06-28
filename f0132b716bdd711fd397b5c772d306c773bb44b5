@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7b3d2213_6d723ea0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-28T22:51:17Z",
+      "side": 1,
+      "message": "Intentionally did this instead of enums, since stringer is full of boilerplate, and this is simpler + saves ~100 lines of code.",
+      "revId": "f0132b716bdd711fd397b5c772d306c773bb44b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

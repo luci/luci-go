@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf11cd44_5f68561d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-28T22:51:17Z",
+      "side": 1,
+      "message": "This was User.Picture in Milo, I just felt like flattening it, idk if it\u0027s a good idea but it looks fine this way.",
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "eb3d830a_f13783de",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-28T22:51:17Z",
+      "side": 1,
+      "message": "Inlined instead of separated out into a file since the infrastructure to do named templates from files in go is crazy complicated, and this was \u003c100 lines.",
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
