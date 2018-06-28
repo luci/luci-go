@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "85d8e2e7_77878603",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-28T18:52:56Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 21
+      },
+      "revId": "39ed7b125463b0141bc392d0c08d025931c6ac23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed81de7c_9579f716",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-28T18:52:56Z",
+      "side": 1,
+      "message": "nit: merge two lines, since func header is already \u003e100chars long anyway.",
+      "revId": "39ed7b125463b0141bc392d0c08d025931c6ac23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7831fac7_cdc43cdf",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 25
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-28T18:52:56Z",
+      "side": 1,
+      "message": "regardless of our i%10 discussion, setting .Parents shouldn\u0027t be necessary.",
+      "range": {
+        "startLine": 71,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 0
+      },
+      "revId": "39ed7b125463b0141bc392d0c08d025931c6ac23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

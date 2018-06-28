@@ -589,6 +589,30 @@
     },
     {
       "key": {
+        "uuid": "a56ec5f5_86acec29",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 23
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-28T18:52:56Z",
+      "side": 1,
+      "message": "*i meant (i%10 !\u003d 9). The idea of every 10th commit having no parent is fine. The problem is that if you mock gitiles.Log to return fakes[0:5]:\n since gitiles.Log(xyz) returns commits starting from xyz and going deeper through its ancestors,\n then it follows that fakes[0] is the xyz. But since fakes[0] has no parents, it means gitiles.Log must end its graph traversal here and return just fakes[0:1].\n\u003d\u003e hence, its\u0027 the fakes[9] commit that should have no parents.",
+      "parentUuid": "72823641_800c6975",
+      "range": {
+        "startLine": 71,
+        "startChar": 3,
+        "endLine": 74,
+        "endChar": 0
+      },
+      "revId": "6474d85c70cb127e6e27c5b45c742b98d781e205",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d991828_2e20a2b3",
         "filename": "milo/git/combined_logs_test.go",
         "patchSetId": 23
