@@ -84,6 +84,15 @@ message Build {
     //
     // BigQuery: excluded from rows.
     string summary_markdown = 2;
+
+    // Build checked out and executed on this commit.
+    //
+    // Should correspond to Build.Input.gitiles_commit.
+    // May be present even if Build.Input.gitiles_commit is not set, for example
+    // in cron builders.
+    //
+    // V1 equivalent: this supersedes all got_revision output property.
+    GitilesCommit gitiles_commit = 3;
   }
 
   reserved 5; // view_url
