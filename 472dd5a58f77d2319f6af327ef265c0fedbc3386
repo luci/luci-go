@@ -33,6 +33,93 @@
       "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a98cc0b6_e5872585",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-06-28T23:32:19Z",
+      "side": 1,
+      "message": "What\u0027s a named template, and what does the string \"header\" do above?\n\nI guess something like template.Must(template.ParseFiles(\"./header.html\")) wouldn\u0027t work?",
+      "parentUuid": "eb3d830a_f13783de",
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4b02376e_67bb1799",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-06-28T23:32:19Z",
+      "side": 1,
+      "message": "Nit: period",
+      "range": {
+        "startLine": 151,
+        "startChar": 34,
+        "endLine": 151,
+        "endChar": 35
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "926304c1_3ae11e01",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-06-28T23:32:19Z",
+      "side": 1,
+      "message": "user agents (browser vs CLI).",
+      "range": {
+        "startLine": 191,
+        "startChar": 70,
+        "endLine": 191,
+        "endChar": 100
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3f8e52d_f22e6a4d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-06-28T23:32:19Z",
+      "side": 1,
+      "message": "Nit: this might look better if it\u0027s all wrapped to around 80 columns.",
+      "range": {
+        "startLine": 510,
+        "startChar": 0,
+        "endLine": 515,
+        "endChar": 27
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
