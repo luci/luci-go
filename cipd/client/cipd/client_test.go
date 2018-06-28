@@ -1041,6 +1041,7 @@ func mockClient(c C, root string, expectations []expectedHTTPCall) *clientImpl {
 		Root:                root,
 		AnonymousClient:     &http.Client{Transport: transport},
 		AuthenticatedClient: &http.Client{Transport: transport},
+		Protocol:            ProtocolV1,
 	})
 	c.So(err, ShouldBeNil)
 	return client.(*clientImpl)
