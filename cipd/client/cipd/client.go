@@ -134,7 +134,7 @@ var (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 1.8.7"
+	UserAgent = "cipd 2.0.0"
 )
 
 func init() {
@@ -544,7 +544,7 @@ type ClientOptions struct {
 
 	// Protocol allows picking pRPC-based protocol instead of Cloud Endpoints.
 	//
-	// Default is ProtocolV1.
+	// Default is ProtocolV2.
 	Protocol Protocol
 }
 
@@ -591,7 +591,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		opts.UserAgent = UserAgent
 	}
 	if opts.Protocol == "" {
-		opts.Protocol = ProtocolV1
+		opts.Protocol = ProtocolV2
 	}
 
 	// Validate and normalize service URL.
