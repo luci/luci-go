@@ -202,6 +202,30 @@
     },
     {
       "key": {
+        "uuid": "6a9e9cc6_a5be87b7",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-28T13:29:17Z",
+      "side": 1,
+      "message": "Changed to struct.",
+      "parentUuid": "cf019300_2f10fa1d",
+      "range": {
+        "startLine": 25,
+        "startChar": 0,
+        "endLine": 26,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8c3c4690_beee2030",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 17
@@ -296,6 +320,30 @@
       "side": 1,
       "message": "fine, but then remove all occurrences of refsSet :)",
       "parentUuid": "931bf88e_48257a67",
+      "range": {
+        "startLine": 62,
+        "startChar": 5,
+        "endLine": 62,
+        "endChar": 12
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "81a290a1_e36b4938",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-28T13:29:17Z",
+      "side": 1,
+      "message": "Done, although I only found one in the comment to the interface (now struct) above.",
+      "parentUuid": "71751fdb_6d038d6e",
       "range": {
         "startLine": 62,
         "startChar": 5,
@@ -517,6 +565,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "754de1b8_c167a513",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-28T13:29:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88bfaf57_b5fdcb16",
+      "range": {
+        "startLine": 107,
+        "startChar": 5,
+        "endLine": 107,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -776,6 +848,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f4c6fab_af908e4f",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-28T13:29:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7eca08c_b85967b5",
+      "range": {
+        "startLine": 176,
+        "startChar": 5,
+        "endLine": 176,
+        "endChar": 23
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -1528,6 +1624,30 @@
       "revId": "74024b42da5a15dae999e1489897e7474c29d695",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3aafac55_1888ab28",
+        "filename": "milo/git/log.go",
+        "patchSetId": 17
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-06-28T13:29:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3eeefae6_0e0096ee",
+      "range": {
+        "startLine": 201,
+        "startChar": 1,
+        "endLine": 203,
+        "endChar": 2
+      },
+      "revId": "74024b42da5a15dae999e1489897e7474c29d695",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
