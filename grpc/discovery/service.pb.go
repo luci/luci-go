@@ -61,9 +61,9 @@ var xxx_messageInfo_Void proto.InternalMessageInfo
 type DescribeResponse struct {
 	// Description contains descriptions of all services, their types and all
 	// transitive dependencies.
-	Description *descriptor.FileDescriptorSet `protobuf:"bytes,1,opt,name=description" json:"description,omitempty"`
+	Description *descriptor.FileDescriptorSet `protobuf:"bytes,1,opt,name=description,proto3" json:"description,omitempty"`
 	// Services are service names provided by a server.
-	Services             []string `protobuf:"bytes,2,rep,name=services" json:"services,omitempty"`
+	Services             []string `protobuf:"bytes,2,rep,name=services,proto3" json:"services,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
