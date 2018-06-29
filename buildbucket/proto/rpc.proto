@@ -183,4 +183,20 @@ message BuildPredicate {
   // If false (default), a build must be non-experimental.
   // Otherwise it may be experimental or non-experimental.
   bool include_experimental = 8;
+
+  // A build must be in this build range.
+  // A pair of SearchBuildsRequest.predicate.build.end_build_id and
+  // SearchBuildsRequest.page_size=1 can be used to find the previous build.
+  BuildRange build = 9;
+}
+
+// Half-open build range.
+// The range is defined on the build order in the context.
+// Usually the order is newest-to-oldest, so start_build_id is a newer
+// build and end_build_id is an older build.
+message BuildRange {
+  // Inclusive lower boundary. Optional.
+  int64 start_build_id = 1;
+  // Exclusive upper boundary. Optional.
+  int64 end_build_id = 2;
 }
