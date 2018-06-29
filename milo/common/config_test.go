@@ -161,6 +161,13 @@ func TestConfig(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("AddDeprecatedRef", func() {
+			refs := []string{}
+			AddDeprecatedRef(&refs, "master")
+			AddDeprecatedRef(&refs, "refs/heads/develop")
+			So(refs, ShouldResemble, []string{"refs/heads/master", "refs/heads/develop"})
+		})
 	})
 }
 

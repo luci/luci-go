@@ -599,7 +599,7 @@ func AddDeprecatedRef(refs *[]string, deprecatedRef string) {
 	// field is only allowed to contain fully-qualified ref names (i.e. those
 	// starting with "refs/"), therefore we need to prepend "refs/heads/" prefix
 	// before adding it to refs list unless it already starts with "refs/".
-	if !strings.HasPrefix("refs/", deprecatedRef) {
+	if !strings.HasPrefix(deprecatedRef, "refs/") {
 		deprecatedRef = "refs/heads/" + deprecatedRef
 	}
 	*refs = append(*refs, deprecatedRef)
