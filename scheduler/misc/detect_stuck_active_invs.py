@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """Finds jobs with old entries (>1d) in ActiveInvocations list.
-
+TEST
 Usage:
   prpc login
   ./detect_stuck_active_invs.py luci-scheduler-dev.appspot.com
