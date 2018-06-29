@@ -110,7 +110,9 @@ var defaultConfig = Config{
 	NumShards:           32,
 	TemporalMinDelay:    clockflag.Duration(time.Second),
 	TemporalRoundFactor: clockflag.Duration(4 * time.Second),
-	ProcessLoopDuration: clockflag.Duration(9*time.Minute + 30*time.Second),
+	// The AppEngine timeout for backend instances is 10 minutes.
+	// Set this to less than half of that by default to allow for a large margin.
+	ProcessLoopDuration: clockflag.Duration(4*time.Minute + 30*time.Second),
 	DustSettleTimeout:   clockflag.Duration(2 * time.Second),
 	MaxNoWorkDelay:      clockflag.Duration(2 * time.Second), // == DustSettleTimeout
 	NoWorkDelayGrowth:   3,
