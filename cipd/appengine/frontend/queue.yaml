@@ -1,26 +1,8 @@
 queue:
 
-# [FROM_PYTHON_CIPD]
-# https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/queue.yaml
-
-- name: cas-verify
-  bucket_size: 100
-  rate: 50/s
-  retry_parameters:
-    task_age_limit: 6h
-
-- name: cipd-process
-  bucket_size: 100
-  rate: 50/s
-  retry_parameters:
-    task_age_limit: 6h
-
-# [/FROM_PYTHON_CIPD]
-
-
 # Used for CAS asynchronous operations, see impl/cas/tasks/tasks.proto.
 - name: cas-uploads
-  target: backend-go
+  target: backend
   bucket_size: 500
   rate: 50/s
   retry_parameters:
@@ -29,7 +11,7 @@ queue:
 
 # Used for tasks.RunProcessors tasks, see impl/repo/tasks/tasks.proto.
 - name: run-processors
-  target: backend-go
+  target: backend
   bucket_size: 500
   rate: 50/s
   retry_parameters:
