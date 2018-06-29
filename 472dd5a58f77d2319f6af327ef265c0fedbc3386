@@ -72,6 +72,29 @@
     },
     {
       "key": {
+        "uuid": "df0938a9_c0282d6b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-29T21:46:21Z",
+      "side": 1,
+      "message": "maybe \"Back to build\" or just \"build\"?",
+      "range": {
+        "startLine": 104,
+        "startChar": 41,
+        "endLine": 104,
+        "endChar": 45
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b02376e_67bb1799",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -118,6 +141,52 @@
     },
     {
       "key": {
+        "uuid": "9122244b_7af01469",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-29T21:46:21Z",
+      "side": 1,
+      "message": "consider moving to godoc of resolveFormat.",
+      "range": {
+        "startLine": 204,
+        "startChar": 1,
+        "endLine": 209,
+        "endChar": 32
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d762fff_9ec45bba",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 511,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-29T21:46:21Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 511,
+        "startChar": 56,
+        "endLine": 511,
+        "endChar": 71
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3f8e52d_f22e6a4d",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -134,6 +203,29 @@
         "startChar": 0,
         "endLine": 515,
         "endChar": 27
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed15f2f8_3946bccf",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-06-29T21:46:21Z",
+      "side": 1,
+      "message": "how do I get to see the timestamp? Hovering mouse above the line didn\u0027t cause anything.",
+      "range": {
+        "startLine": 542,
+        "startChar": 45,
+        "endLine": 542,
+        "endChar": 65
       },
       "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
