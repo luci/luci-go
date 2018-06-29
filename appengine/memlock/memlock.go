@@ -26,6 +26,7 @@ import (
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/retry"
 	"golang.org/x/net/context"
 )
 
@@ -102,9 +103,18 @@ func TryWithLock(ctx context.Context, key, clientID string, f func(context.Conte
 	// another lock observing an empty clientID will know that the lock is
 	// obtainable.
 	checkAnd := func(op checkOp) bool {
-		itm, err := mc.GetKey(ctx, key)
-		if err != nil {
-			log.Warningf("error getting: %s", err)
+		limitedRetry := func() retry.Iterator {
+			return &retry.Limited{
+				Delay:   time.Second,
+				Retries: 5,
+			}
+		}
+		var itm mc.Item
+		if err := retry.Retry(ctx, limitedRetry, func() (err error) {
+			itm, err = mc.GetKey(ctx, key)
+			return
+		}, retry.LogCallback(ctx, "getting lock from memcache")); err != nil {
+			log.Warningf("permanent error getting: %s", err)
 			return false
 		}
 
