@@ -49,6 +49,19 @@ func (mr *MockClientMockRecorder) Log(c, host, project, commitish, inputOptions 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockClient)(nil).Log), c, host, project, commitish, inputOptions)
 }
 
+// CombinedLogs mocks base method
+func (m *MockClient) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) ([]*git.Commit, error) {
+	ret := m.ctrl.Call(m, "CombinedLogs", c, host, project, excludeRef, refs, limit)
+	ret0, _ := ret[0].([]*git.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CombinedLogs indicates an expected call of CombinedLogs
+func (mr *MockClientMockRecorder) CombinedLogs(c, host, project, excludeRef, refs, limit interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CombinedLogs", reflect.TypeOf((*MockClient)(nil).CombinedLogs), c, host, project, excludeRef, refs, limit)
+}
+
 // CLEmail mocks base method
 func (m *MockClient) CLEmail(c context.Context, host string, changeNumber int64) (string, error) {
 	ret := m.ctrl.Call(m, "CLEmail", c, host, changeNumber)
