@@ -63,11 +63,11 @@ func (BuildState) EnumDescriptor() ([]byte, []int) {
 // SearchReqeust specifies a search criteria.
 type SearchRequest struct {
 	// Master filters by master name, e.g. "master.XXX".
-	Master string `protobuf:"bytes,1,opt,name=master" json:"master,omitempty"`
+	Master string `protobuf:"bytes,1,opt,name=master,proto3" json:"master,omitempty"`
 	// State filters by build state.
-	State BuildState `protobuf:"varint,2,opt,name=state,enum=buildbot.BuildState" json:"state,omitempty"`
+	State BuildState `protobuf:"varint,2,opt,name=state,proto3,enum=buildbot.BuildState" json:"state,omitempty"`
 	// Builder filters by builder name.
-	Builder              string   `protobuf:"bytes,3,opt,name=builder" json:"builder,omitempty"`
+	Builder              string   `protobuf:"bytes,3,opt,name=builder,proto3" json:"builder,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -119,7 +119,7 @@ func (m *SearchRequest) GetBuilder() string {
 }
 
 type SearchResponse struct {
-	Builds               []*Build `protobuf:"bytes,1,rep,name=builds" json:"builds,omitempty"`
+	Builds               []*Build `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -157,10 +157,10 @@ func (m *SearchResponse) GetBuilds() []*Build {
 }
 
 type Build struct {
-	Master               string     `protobuf:"bytes,1,opt,name=master" json:"master,omitempty"`
-	Builder              string     `protobuf:"bytes,2,opt,name=builder" json:"builder,omitempty"`
-	Number               int32      `protobuf:"varint,3,opt,name=number" json:"number,omitempty"`
-	State                BuildState `protobuf:"varint,4,opt,name=state,enum=buildbot.BuildState" json:"state,omitempty"`
+	Master               string     `protobuf:"bytes,1,opt,name=master,proto3" json:"master,omitempty"`
+	Builder              string     `protobuf:"bytes,2,opt,name=builder,proto3" json:"builder,omitempty"`
+	Number               int32      `protobuf:"varint,3,opt,name=number,proto3" json:"number,omitempty"`
+	State                BuildState `protobuf:"varint,4,opt,name=state,proto3,enum=buildbot.BuildState" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -221,9 +221,9 @@ func (m *Build) GetState() BuildState {
 // ScheduleRequest defines builds to schedule.
 type ScheduleRequest struct {
 	// Master is a "master.XXX" string that defines where to schedule builds.
-	Master string `protobuf:"bytes,1,opt,name=master" json:"master,omitempty"`
+	Master string `protobuf:"bytes,1,opt,name=master,proto3" json:"master,omitempty"`
 	// Builds is a list of builds to schedule.
-	Builds               []*ScheduleRequest_BuildDef `protobuf:"bytes,2,rep,name=builds" json:"builds,omitempty"`
+	Builds               []*ScheduleRequest_BuildDef `protobuf:"bytes,2,rep,name=builds,proto3" json:"builds,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -270,16 +270,16 @@ func (m *ScheduleRequest) GetBuilds() []*ScheduleRequest_BuildDef {
 // Build is a build to schedule.
 type ScheduleRequest_BuildDef struct {
 	// Builder defines the build script.
-	Builder string `protobuf:"bytes,1,opt,name=builder" json:"builder,omitempty"`
+	Builder string `protobuf:"bytes,1,opt,name=builder,proto3" json:"builder,omitempty"`
 	// Branch defines what to fetch.
-	Branch string `protobuf:"bytes,2,opt,name=branch" json:"branch,omitempty"`
+	Branch string `protobuf:"bytes,2,opt,name=branch,proto3" json:"branch,omitempty"`
 	// Revision is a commit hash to checkout
-	Revision string `protobuf:"bytes,3,opt,name=revision" json:"revision,omitempty"`
+	Revision string `protobuf:"bytes,3,opt,name=revision,proto3" json:"revision,omitempty"`
 	// Properties are "key:value" pairs.
-	Properties []string `protobuf:"bytes,4,rep,name=properties" json:"properties,omitempty"`
+	Properties []string `protobuf:"bytes,4,rep,name=properties,proto3" json:"properties,omitempty"`
 	// Blamelist is a list of user email addressed to blame if this build
 	// fails.
-	Blamelist            []string `protobuf:"bytes,5,rep,name=blamelist" json:"blamelist,omitempty"`
+	Blamelist            []string `protobuf:"bytes,5,rep,name=blamelist,proto3" json:"blamelist,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -346,7 +346,7 @@ func (m *ScheduleRequest_BuildDef) GetBlamelist() []string {
 
 // HelloReply contains a greeting.
 type ScheduleResponse struct {
-	Builds               []*Build `protobuf:"bytes,1,rep,name=builds" json:"builds,omitempty"`
+	Builds               []*Build `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

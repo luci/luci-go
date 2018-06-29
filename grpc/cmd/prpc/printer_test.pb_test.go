@@ -82,7 +82,7 @@ func (NestedMessageParent_NestedEnum) EnumDescriptor() ([]byte, []int) {
 type M1 struct {
 	// f1
 	// next line.
-	F1                   string   `protobuf:"bytes,1,opt,name=f1" json:"f1,omitempty"`
+	F1                   string   `protobuf:"bytes,1,opt,name=f1,proto3" json:"f1,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -124,10 +124,10 @@ func (m *M1) GetF1() string {
 type M2 struct {
 	// f1
 	// next line.
-	F1 []*M1 `protobuf:"bytes,1,rep,name=f1" json:"f1,omitempty"`
+	F1 []*M1 `protobuf:"bytes,1,rep,name=f1,proto3" json:"f1,omitempty"`
 	// f2
 	// next line.
-	F2                   E1       `protobuf:"varint,2,opt,name=f2,enum=main.E1" json:"f2,omitempty"`
+	F2                   E1       `protobuf:"varint,2,opt,name=f2,proto3,enum=main.E1" json:"f2,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -186,9 +186,9 @@ type M3 struct {
 	//	*M3_F4
 	O2 isM3_O2 `protobuf_oneof:"O2"`
 	// f5
-	F5 string `protobuf:"bytes,5,opt,name=f5" json:"f5,omitempty"`
+	F5 string `protobuf:"bytes,5,opt,name=f5,proto3" json:"f5,omitempty"`
 	// f6
-	F6                   int32    `protobuf:"varint,6,opt,name=f6" json:"f6,omitempty"`
+	F6                   int32    `protobuf:"varint,6,opt,name=f6,proto3" json:"f6,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -226,16 +226,16 @@ type isM3_O2 interface {
 }
 
 type M3_F1 struct {
-	F1 int32 `protobuf:"varint,1,opt,name=f1,oneof"`
+	F1 int32 `protobuf:"varint,1,opt,name=f1,proto3,oneof"`
 }
 type M3_F2 struct {
-	F2 int32 `protobuf:"varint,2,opt,name=f2,oneof"`
+	F2 int32 `protobuf:"varint,2,opt,name=f2,proto3,oneof"`
 }
 type M3_F3 struct {
-	F3 int32 `protobuf:"varint,3,opt,name=f3,oneof"`
+	F3 int32 `protobuf:"varint,3,opt,name=f3,proto3,oneof"`
 }
 type M3_F4 struct {
-	F4 int32 `protobuf:"varint,4,opt,name=f4,oneof"`
+	F4 int32 `protobuf:"varint,4,opt,name=f4,proto3,oneof"`
 }
 
 func (*M3_F1) isM3_O1() {}
@@ -433,8 +433,8 @@ func (m *NestedMessageParent) XXX_DiscardUnknown() {
 var xxx_messageInfo_NestedMessageParent proto.InternalMessageInfo
 
 type NestedMessageParent_NestedMessage struct {
-	F1                   int32    `protobuf:"varint,1,opt,name=f1" json:"f1,omitempty"`
-	F2                   int32    `protobuf:"varint,2,opt,name=f2" json:"f2,omitempty"`
+	F1                   int32    `protobuf:"varint,1,opt,name=f1,proto3" json:"f1,omitempty"`
+	F2                   int32    `protobuf:"varint,2,opt,name=f2,proto3" json:"f2,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
