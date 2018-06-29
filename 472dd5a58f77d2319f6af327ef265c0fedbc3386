@@ -95,6 +95,29 @@
     },
     {
       "key": {
+        "uuid": "1e923a9a_fb500cb5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-06-29T21:57:51Z",
+      "side": 1,
+      "message": "this probably needs more CSS. Here\u0027s how my picture looks in the demo: https://screenshot.googleplex.com/SLYY1jeNn1X.png",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 74
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4b02376e_67bb1799",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
