@@ -17,6 +17,7 @@ package coordinator
 import (
 	"time"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/gcloud/pubsub"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
@@ -99,14 +100,13 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 			"key":     t.Key,
 		}.Infof(c, "Publishing archival message for stream.")
 
-		_, err := p.Publisher.Publish(c, &msg)
+		// Publishing usually happens immediately.
+		// If it's taken more than 15s, something has already gone horribly wrong,
+		// so just kill it and try again.
+		nc, _ := clock.WithTimeout(c, time.Second*15)
+		_, err := p.Publisher.Publish(nc, &msg)
 		return err
-	}, func(err error, d time.Duration) {
-		log.Fields{
-			log.ErrorKey: err,
-			"delay":      d,
-		}.Warningf(c, "Failed to publish task. Retrying...")
-	})
+	}, retry.LogCallback(c, "publishing task"))
 }
 
 // NewPublishIndex implements ArchivalPublisher.
