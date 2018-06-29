@@ -287,7 +287,7 @@ func shouldHaveLogMessage(actual interface{}, expected ...interface{}) string {
 }
 
 func testHighLevelImpl(t *testing.T, namespaces []string) {
-	FocusConvey("Tumble", t, func() {
+	Convey("Tumble", t, func() {
 
 		Convey("Check registration", func() {
 			So(registry, ShouldContainKey, "*tumble.SendMessage")
@@ -301,7 +301,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 			})
 		})
 
-		FocusConvey("Good", func() {
+		Convey("Good", func() {
 			testing := &Testing{}
 			testing.Service.Namespaces = func(context.Context) ([]string, error) { return namespaces, nil }
 
@@ -382,7 +382,7 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				})
 			})
 
-			FocusConvey("sending to 100 people is no big deal", func() {
+			Convey("sending to 100 people is no big deal", func() {
 				ds.GetTestable(gctx).Consistent(false)
 
 				users := make([]User, 100)
