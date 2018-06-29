@@ -54,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "02cb41f8_12134884",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-06-29T17:57:21Z",
+      "side": 1,
+      "message": "That would work! If the files were in the right place.\n\nThe problem is that main.go and module-logs.yaml is in:\n[1] /logdog/appengine/cmd/coordinator/logs\nwhile this file is in\n[2] /logdog/appengine/coordinator/flex/logs\n\nIf you run template.PraseFiles(\"...\"), it would look for the file in [1], but ideally we want to put the HTML file and the go file next to each other (to keep it lightweight), so it would have to be something like\ntemplate.ParseFiles(\"../../../coordinator/flex/logs/header.html\")\nWhich breaks all sorts of abstraction boundaries.\n\nDoing the above makes sense for projects with many views and many files, but it\u0027s not a very lightweight set of tools.  I wanted to keep this lightweight.",
+      "parentUuid": "a98cc0b6_e5872585",
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4b02376e_67bb1799",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
