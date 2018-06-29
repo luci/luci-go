@@ -17,10 +17,7 @@ package gitiles
 import (
 	"fmt"
 	"net/url"
-	"regexp"
 	"sort"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -31,7 +28,6 @@ import (
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/git"
@@ -85,37 +81,6 @@ func (m TaskManager) Traits() task.Traits {
 	}
 }
 
-func validateRegexpRef(c *validation.Context, ref string) {
-	c.Enter(ref)
-	defer c.Exit()
-	reStr := strings.TrimPrefix(ref, "regexp:")
-	if strings.HasPrefix(reStr, "^") || strings.HasSuffix(reStr, "$") {
-		c.Errorf("regexp ^ and $ qualifiers are added automatically, " +
-			"please remove them from the config")
-		return
-	}
-	r, err := regexp.Compile(reStr)
-	if err != nil {
-		c.Errorf("invalid regexp: %s", err)
-		return
-	}
-	lp, complete := r.LiteralPrefix()
-	if complete {
-		c.Errorf("matches a single ref only, please use %q instead", lp)
-	}
-	if !strings.HasPrefix(reStr, lp) {
-		c.Errorf("does not start with its own literal prefix %q", lp)
-	}
-	if strings.Count(lp, "/") < 2 {
-		c.Errorf(`fewer than 2 slashes in literal prefix %q, e.g., `+
-			`"refs/heads/\d+" is accepted because of "refs/heads/" is the `+
-			`literal prefix, while "refs/.*" is too short`, lp)
-	}
-	if !strings.HasPrefix(lp, "refs/") {
-		c.Errorf(`literal prefix %q must start with "refs/"`, lp)
-	}
-}
-
 // ValidateProtoMessage is part of Manager interface.
 func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Message) {
 	cfg, ok := msg.(*messages.GitilesTask)
@@ -139,21 +104,7 @@ func (m TaskManager) ValidateProtoMessage(c *validation.Context, msg proto.Messa
 	c.Exit()
 
 	c.Enter("refs")
-	for _, ref := range cfg.Refs {
-		if strings.HasPrefix(ref, "regexp:") {
-			validateRegexpRef(c, ref)
-			continue
-		}
-
-		if !strings.HasPrefix(ref, "refs/") {
-			c.Errorf("ref must start with 'refs/' not %q", ref)
-		}
-		cnt := strings.Count(ref, "*")
-		if cnt > 0 {
-			regexpRef := "regexp:" + strings.Replace(regexp.QuoteMeta(ref), `\*`, `[^/]+`, -1)
-			c.Errorf("globs are not supported anymore, please use regexp instead: %q", regexpRef)
-		}
-	}
+	gitiles.ValidateRefSet(c, cfg.Refs)
 	c.Exit()
 }
 
@@ -238,18 +189,17 @@ func (m TaskManager) HandleTimer(c context.Context, ctl task.Controller, name st
 
 func (m TaskManager) fetchRefsState(c context.Context, ctl task.Controller, cfg *messages.GitilesTask, g *gitilesClient, repoURL *url.URL) (*refsState, error) {
 	refs := &refsState{}
-	refs.watched.init(c, cfg.GetRefs())
+	refs.watched = gitiles.NewRefSet(cfg.GetRefs())
 	return refs, parallel.FanOutIn(func(work chan<- func() error) {
 		work <- func() (loadErr error) {
 			refs.known, loadErr = loadState(c, ctl.JobID(), repoURL)
 			return
 		}
-		// Group all refs by their namespace to reduce # of RPCs to gitiles.
-		for _, wrs := range refs.watched.namespaces {
-			wrs := wrs
-			work <- func() error {
-				return refs.fetchCurrentTips(c, wrs.namespace, g)
-			}
+		work <- func() (resolveErr error) {
+			c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
+			defer cancel()
+			refs.current, resolveErr = refs.watched.Resolve(c, g, g.project)
+			return
 		}
 	})
 }
@@ -337,43 +287,16 @@ type gitilesClient struct {
 }
 
 type refsState struct {
-	watched     watchedRefs
-	known       map[string]string // HEADs we saw before
-	current     map[string]string // HEADs available now
-	changed     int
-	currentLock sync.Mutex // Used because fetching current is in parallel
-}
-
-func (s *refsState) fetchCurrentTips(c context.Context, refsPath string, g *gitilesClient) error {
-	c, cancel := clock.WithTimeout(c, gitilesRPCTimeout)
-	defer cancel()
-
-	resp, err := g.Refs(c, &gitilespb.RefsRequest{
-		Project:  g.project,
-		RefsPath: refsPath,
-	})
-	if err != nil {
-		return err
-	}
-
-	s.currentLock.Lock()
-	defer s.currentLock.Unlock()
-
-	if s.current == nil {
-		s.current = map[string]string{}
-	}
-	for ref, tip := range resp.Revisions {
-		if s.watched.hasRef(ref) {
-			s.current[ref] = tip
-		}
-	}
-	return nil
+	watched gitiles.RefSet
+	known   map[string]string // HEADs we saw before
+	current map[string]string // HEADs available now
+	changed int
 }
 
 func (s *refsState) pruneKnown(ctl task.Controller) {
 	for ref := range s.known {
 		switch {
-		case !s.watched.hasRef(ref):
+		case !s.watched.Has(ref):
 			ctl.DebugLog("Ref %s is no longer watched", ref)
 			delete(s.known, ref)
 			s.changed++
@@ -482,101 +405,4 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 		ctl.DebugLog("Ref %s: failed to fetch log of just old rev %s: %s", ref, oldHead, errOld)
 		return nil, transient.Tag.Apply(err)
 	}
-}
-
-type watchedRefNamespace struct {
-	namespace string // no trailing "/".
-	// exactChildren is a set of immediate children, not grandchildren. i.e., may
-	// contain 'child', but not 'grand/child', which would be contained in
-	// refsNamespace of (namespace + "/child").
-	exactChildren stringset.Set
-	// descendantRegexp is a regular expression matching all descendants.
-	descendantRegexp *regexp.Regexp
-}
-
-func (w watchedRefNamespace) hasSuffix(suffix string) bool {
-	switch {
-	case w.descendantRegexp != nil && w.descendantRegexp.MatchString(suffix):
-		return true
-	case w.exactChildren == nil:
-		return false
-	default:
-		return w.exactChildren.Has(suffix)
-	}
-}
-
-func (w *watchedRefNamespace) addSuffix(c context.Context, suffix string) {
-	if w.exactChildren == nil {
-		w.exactChildren = stringset.New(1)
-	}
-	w.exactChildren.Add(suffix)
-}
-
-type watchedRefs struct {
-	namespaces map[string]*watchedRefNamespace
-}
-
-func parseRefFromConfig(ref string) (ns, literalSuffix, regexpSuffix string) {
-	if strings.HasPrefix(ref, "regexp:") {
-		ref = strings.TrimPrefix(ref, "regexp:")
-		descendantRegexp, err := regexp.Compile(ref)
-		if err != nil {
-			panic(err)
-		}
-		literalPrefix, _ := descendantRegexp.LiteralPrefix()
-		ns = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
-		regexpSuffix = ref[len(ns)+1:]
-		return
-	}
-
-	ns, literalSuffix = splitRef(ref)
-	return
-}
-
-func (w *watchedRefs) init(c context.Context, refsConfig []string) {
-	w.namespaces = map[string]*watchedRefNamespace{}
-	nsRegexps := map[string][]string{}
-	for _, ref := range refsConfig {
-		ns, suffix, regexp := parseRefFromConfig(ref)
-		if _, exists := w.namespaces[ns]; !exists {
-			w.namespaces[ns] = &watchedRefNamespace{namespace: ns}
-		}
-
-		switch {
-		case (suffix == "") == (regexp == ""):
-			panic("exactly one must be defined")
-		case regexp != "":
-			nsRegexps[ns] = append(nsRegexps[ns], regexp)
-		case suffix != "":
-			w.namespaces[ns].addSuffix(c, suffix)
-		}
-	}
-
-	for ns, regexps := range nsRegexps {
-		var err error
-		w.namespaces[ns].descendantRegexp, err = regexp.Compile(
-			"^(" + strings.Join(regexps, ")|(") + ")$")
-		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func (w *watchedRefs) hasRef(ref string) bool {
-	for ns, wrn := range w.namespaces {
-		nsPrefix := ns + "/"
-		if strings.HasPrefix(ref, nsPrefix) && wrn.hasSuffix(ref[len(nsPrefix):]) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func splitRef(s string) (string, string) {
-	i := strings.LastIndex(s, "/")
-	if i <= 0 {
-		return s, ""
-	}
-	return s[:i], s[i+1:]
 }

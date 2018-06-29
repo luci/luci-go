@@ -25,7 +25,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -56,6 +55,10 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		return
 	}
 
+	return p.log(c, host, project, commitish, "", inputOptions)
+}
+
+func (p *implementation) log(c context.Context, host, project, commitish, ancestor string, inputOptions *LogOptions) (commits []*gitpb.Commit, err error) {
 	var opts LogOptions
 	if inputOptions != nil {
 		opts = *inputOptions
@@ -90,6 +93,7 @@ func (p *implementation) Log(c context.Context, host, project, commitish string,
 		host:      host,
 		project:   project,
 		commitish: commitish,
+		ancestor:  ancestor,
 		withFiles: opts.WithFiles,
 		min:       100,
 	}
@@ -172,6 +176,7 @@ type logReq struct {
 	host      string
 	project   string
 	commitish string
+	ancestor  string
 	withFiles bool
 	min       int // must be in [1..100]
 
@@ -191,14 +196,6 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		"project":   l.project,
 		"commitish": l.commitish,
 	})
-	namespace := "git-log-v2"
-	if l.withFiles {
-		namespace = "git-log-v2-files"
-	}
-	c, err := info.Namespace(c, namespace)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not set namespace").Err()
-	}
 
 	l.commitishIsHash = gitHash.MatchString(l.commitish)
 	l.commitishEntry = l.mkCache(c, l.commitish)
@@ -228,6 +225,9 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 		Treeish:  l.commitish,
 		PageSize: 100,
 		TreeDiff: l.withFiles,
+	}
+	if l.ancestor != "" {
+		req.ExcludeAncestorsOf = l.ancestor
 	}
 	logging.Infof(c, "gitiles(%q).Log(%#v)", l.host, req)
 	client, err := l.factory.gitilesClient(c, l.host)
@@ -378,7 +378,9 @@ func (l *logReq) writeCache(c context.Context, res *gitilespb.LogResponse) {
 
 func (l *logReq) mkCache(c context.Context, commitish string) memcache.Item {
 	// note: better not to include limit in the cache key.
-	item := memcache.NewItem(c, fmt.Sprintf("%s|%s|%s", l.host, l.project, commitish))
+	key := fmt.Sprintf("git-log-%s|%s|%s|%s|%t", l.host, l.project, commitish,
+		l.ancestor, l.withFiles)
+	item := memcache.NewItem(c, key)
 	// do not pollute memcache with items we probably won't need soon.
 	item.SetExpiration(12 * time.Hour)
 	return item
