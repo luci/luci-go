@@ -130,9 +130,39 @@ message Console {
   // RepoUrl is the URL of the git repository to display as the rows of the console.
   string repo_url = 3;
 
-  // Ref is the ref to pull commits from when displaying the console.
-  // Eg. refs/heads/master
+  // DEPRECATED. Same as refs below.
   string ref = 4;
+
+  // Refs are the refs to pull commits from when displaying the console.
+  //
+  // Users can specify a regular expression to match several refs using
+  // "regexp:" prefix, but the regular expression must have:
+  //   * a literal prefix with at least two slashes present, e.g.
+  //     "refs/release-\d+/foobar" is not allowed, because the literal prefix
+  //     "refs/release-" only contains one slash, and
+  //   * must not start with ^ or end with $ as they are added automatically.
+  //
+  // For best results, ensure each ref's has commit's **committer** timestamp
+  // monotonically non-decreasing. Gerrit will take care of this if you require
+  // each commmit to go through Gerrit by prohibiting "git push" on these refs.
+  //
+  // Eg. refs/heads/master, regexp:refs/branch-heads/\d+\.\d+
+  repeated string refs = 14;
+
+  // ExcludeRef is a ref, commits from which are ignored even when they are
+  // reachable from the ref specified above. This must be specified as a single
+  // fully-qualified ref, i.e. regexp syntax from above is not supported.
+  //
+  // Note: force pushes to this ref are not supported. Milo uses caching
+  // assuming set of commits reachable from this ref may only grow, never lose
+  // some commits.
+  //
+  // E.g. the config below allows to track commits from all release branches,
+  // but ignore the commits from the master branch, from which these release
+  // branches are branched off:
+  //   ref: "regexp:refs/branch-heads/\d+\.\d+"
+  //   exlude_ref: "refs/heads/master"
+  string exclude_ref = 13;
 
   // ManifestName the name of the manifest the waterfall looks at.
   // This should always be "REVISION".

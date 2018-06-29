@@ -22,7 +22,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/auth/identity"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -159,8 +158,6 @@ func TestLog(t *testing.T) {
 					host:    host,
 					project: "project",
 				}).mkCache(c, "refs/heads/master")
-				c, err := info.Namespace(c, "git-log-v2")
-				So(err, ShouldBeNil)
 				err = memcache.Delete(c, refCache.Key())
 				So(err, ShouldBeNil)
 

@@ -167,7 +167,13 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "invalid repo URL %q in the config", def.RepoUrl).Err()
 	}
-	rawCommits, err := git.Get(c).Log(c, repoHost, repoProject, def.Ref, &git.LogOptions{Limit: limit})
+	if def.Ref != "" {
+		common.AddDeprecatedRef(&def.Refs, def.Ref)
+		// TODO(sergiyb): Deprecate ref field when all configs were updated and this
+		// warning is not reported anymore.
+		logging.Warningf(c, "found usage of deprecated ref field in console %s for project %s", def.Id, project)
+	}
+	rawCommits, err := git.Get(c).CombinedLogs(c, repoHost, repoProject, def.ExcludeRef, def.Refs, limit)
 	switch common.ErrorCodeIn(err) {
 	case common.CodeOK:
 		// Do nothing, all is good.
@@ -200,7 +206,6 @@ func consoleRowCommits(c context.Context, project string, def *config.Console, l
 			AuthorEmail: commit.Author.Email,
 			CommitTime:  ct,
 			Repo:        def.RepoUrl,
-			Branch:      def.Ref, // TODO(hinoka): Actually this doesn't match, change branch to ref.
 			Description: commit.Message,
 			Revision: ui.NewLink(
 				commit.Id,

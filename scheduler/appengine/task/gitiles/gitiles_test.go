@@ -392,14 +392,6 @@ func TestValidateConfig(t *testing.T) {
 			})
 		})
 
-		Convey("refGlobs are rejected", func() {
-			cfg := &messages.GitilesTask{
-				Repo: "https://a.googlesource.com/b.git",
-				Refs: []string{"refs/*"},
-			}
-			So(validate(cfg), ShouldNotBeNil)
-		})
-
 		Convey("refRegexp works", func() {
 			cfg := &messages.GitilesTask{
 				Repo: "https://a.googlesource.com/b.git",
@@ -408,43 +400,10 @@ func TestValidateConfig(t *testing.T) {
 			Convey("valid", func() {
 				So(validate(cfg), ShouldBeNil)
 			})
-			Convey("^ and $ are not allowed", func() {
-				cfg.Refs = []string{`regexp:^refs/heads/\d+$`}
-				So(validate(cfg), ShouldNotBeNil)
-			})
 			Convey("invalid regexp", func() {
 				cfg.Refs = []string{`regexp:a++`}
 				So(validate(cfg), ShouldNotBeNil)
 			})
-			Convey("regexp matches single ref only", func() {
-				cfg.Refs = []string{`regexp:refs/heads/master`}
-				So(validate(cfg), ShouldNotBeNil)
-			})
-			Convey("regexp does not start with its own literal prefix", func() {
-				cfg.Refs = []string{`regexp:re()fs/heads/\d+`}
-				So(validate(cfg), ShouldNotBeNil)
-			})
-			Convey("too few slashes in literal prefix", func() {
-				cfg.Refs = []string{`regexp:refs/release-\d+/foo`}
-				So(validate(cfg), ShouldNotBeNil)
-			})
-			Convey("literal prefix does not start with refs/", func() {
-				cfg.Refs = []string{`regexp:/refs/heads/\d+`}
-				So(validate(cfg), ShouldNotBeNil)
-			})
 		})
-	})
-}
-
-func TestRefNamespace(t *testing.T) {
-	t.Parallel()
-
-	Convey("splitRef works", t, func() {
-		p, s := splitRef("refs/heads/master")
-		So(p, ShouldEqual, "refs/heads")
-		So(s, ShouldEqual, "master")
-		p, s = splitRef("refs/weird/")
-		So(p, ShouldEqual, "refs/weird")
-		So(s, ShouldEqual, "")
 	})
 }

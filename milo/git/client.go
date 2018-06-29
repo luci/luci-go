@@ -61,6 +61,33 @@ type Client interface {
 	// May return gRPC errors returned by the underlying Gitiles service.
 	Log(c context.Context, host, project, commitish string, inputOptions *LogOptions) ([]*gitpb.Commit, error)
 
+	// CombinedLogs returns latest commits reachable from several refs.
+	//
+	// Returns a slice of up to a limit (defaults to 50 when <= 0) commits that:
+	//  * for each source ref, subsequence of returned slice formed by
+	//    its corresponding commits will be in the same order,
+	//  * across refs, commits will be ordered by timestamp, and
+	//  * identical commits from multiple commits will be deduped.
+	//
+	// For example, for two refs with commits (C_5 means C was committed at time
+	// 5) and limit 5, the function will first resolve each ref to sequence of
+	// commits:
+	//
+	//    ref1: A_1 -> B_5 -> C_9
+	//    ref2: X_2 -> Y_7 -> Z_4    (note timestamp inversion)
+	//
+	// and then return combined list of [C_9, B_5, Z_4, Y_7, X_2].
+	//
+	// refs must be a list of ref specs as described in the proto config (see
+	// doc for refs field in the Console message in api/config/project.proto)
+	//
+	// exlcudeRef can be set to non-emtpy value to exclude commits from a specific
+	// ref, e.g. this is useful when requsting commits from branches that branch
+	// off a single main branch, commits from which should not be returned even
+	// though they are present in the history of each requested branch
+	CombinedLogs(c context.Context, host, project, excludeRef string,
+		refs []string, limit int) (commits []*gitpb.Commit, err error)
+
 	// CLEmail fetches the CL owner email.
 	//
 	// Returns empty string if either:

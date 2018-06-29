@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/url"
 	"sort"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	ds "go.chromium.org/gae/service/datastore"
@@ -135,7 +136,8 @@ func saveState(c context.Context, jobID string, u *url.URL, refTips map[string]s
 		if err != nil {
 			return err
 		}
-		ns, suffix := splitRef(ref)
+		lastSlash := strings.LastIndex(ref, "/")
+		ns, suffix := ref[:lastSlash], ref[lastSlash+1:]
 		child := &Child{Sha1: sha1bytes, Suffix: suffix}
 		if namespace, exists := byNamespace[ns]; exists {
 			namespace.Children = append(namespace.Children, child)
