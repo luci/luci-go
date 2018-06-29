@@ -106,6 +106,7 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 		endTime = clock.Now(c).Add(time.Duration(cfg.ProcessLoopDuration))
 		logging.Debugf(c, "Process loop is configured to exit after [%s] at %s",
 			cfg.ProcessLoopDuration.String(), endTime)
+		c, _ = clock.WithDeadline(c, endTime)
 	}
 
 	// Lock around the shard that we are trying to modify.
