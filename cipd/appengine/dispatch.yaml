@@ -1,18 +1,5 @@
 dispatch:
   - url: "*/rpcexplorer/*"
     module: static
-
-  # TODO(vadimsh): Delete these routes once Python code is gone.
-  - url: "*/prpc/*"
-    module: default-go
-  - url: "*/admin/*"
-    module: default-go
-  - url: "*/internal/tq/*"
-    module: backend-go
-
-  # TODO(vadimsh): Remove "v2" when Go backend becomes the default. See also
-  # frontend/main.go where "v2" is also mentioned.
-  - url: "*/v2/*"
-    module: default-go
-  - url: "*/auth/pubsub/authdb:push"
-    module: default-go
+  - url: "*/static/*"
+    module: static

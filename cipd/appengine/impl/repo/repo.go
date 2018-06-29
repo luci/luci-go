@@ -1289,17 +1289,22 @@ func replyWithError(w http.ResponseWriter, status, message string, args ...inter
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
 
-	legacy := r.Subrouter("/_ah/api/repo/v1")
-	legacy.GET("/client", base, adaptGrpcErr(impl.handleLegacyClientInfo))
-	legacy.GET("/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
-	legacy.GET("/instance/resolve", base, adaptGrpcErr(impl.handleLegacyResolve))
+	r.GET("/_ah/api/repo/v1/client", base, adaptGrpcErr(impl.handleLegacyClientInfo))
+	r.GET("/_ah/api/repo/v1/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
+	r.GET("/_ah/api/repo/v1/instance/resolve", base, adaptGrpcErr(impl.handleLegacyResolve))
 
 	// All other legacy endpoints (/_ah/api/repo/v1/*) just return an error asking
 	// the client to update.
-	legacy.NotFound(base, func(ctx *router.Context) {
-		ctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		ctx.Writer.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(ctx.Writer, "This version of CIPD client is no longer supported, please upgrade")
+	r.NotFound(base, func(ctx *router.Context) {
+		if strings.HasPrefix(ctx.Request.URL.Path, "/_ah/api/repo/v1/") {
+			// Note: can't use http.Error here because it appends '\n' that renders
+			// ugly by the client.
+			ctx.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			ctx.Writer.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(ctx.Writer, "This version of CIPD client is no longer supported, please upgrade")
+		} else {
+			http.Error(ctx.Writer, "No such page", http.StatusNotFound)
+		}
 	})
 }
 
