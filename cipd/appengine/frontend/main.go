@@ -30,6 +30,7 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl"
+	"go.chromium.org/luci/cipd/appengine/ui"
 )
 
 func init() {
@@ -46,6 +47,9 @@ func init() {
 			Scopes: []string{server.EmailScope},
 		}),
 	))
+
+	// UI pages.
+	ui.InstallHandlers(r, standard.Base(), "templates")
 
 	// Install all RPC servers. Catch panics, report metrics to tsmon (including
 	// panics themselves, as Internal errors).
