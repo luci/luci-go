@@ -41,9 +41,7 @@ func init() {
 	// Register non-pRPC routes, such as the client bootstrap handler and routes
 	// to support minimal subset of legacy API required to let old CIPD clients
 	// fetch packages and self-update.
-	//
-	// TODO(vadimsh): Remove 'v2' prefix once Go backend becomes the default.
-	impl.PublicRepo.InstallHandlers(r.Subrouter("/v2"), standard.Base().Extend(
+	impl.PublicRepo.InstallHandlers(r, standard.Base().Extend(
 		auth.Authenticate(&server.OAuth2Method{
 			Scopes: []string{server.EmailScope},
 		}),

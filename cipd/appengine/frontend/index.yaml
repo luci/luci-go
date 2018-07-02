@@ -1,9 +1,5 @@
 indexes:
 
-# See https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/index.yaml
-# We aren't going to delete them, since we are inheriting the datastore data.
-# TODO(vadimsh): Delete the above comment once Python code is gone.
-
 - kind: PackageInstance
   ancestor: yes
   properties:

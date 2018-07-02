@@ -1,14 +1,28 @@
-# This module exists EXCLUSIVELY to satisfy dev_appserver.py's craving for
-# a default module, since the real default module is in python codebase.
-#
-# See module-frontend.yaml for the future 'default' module.
-
 module: default
-runtime: python27
-api_version: 1
-threadsafe: true
+runtime: go
+api_version: go1
+
+instance_class: F4
 
 handlers:
-- url: /.*
-  script: phony.app
+- url: /_ah/start
+  script: _go_app
   secure: always
+  login: admin
+
+- url: /_ah/warmup
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: /internal.*
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: /.*
+  script: _go_app
+  secure: always
+
+inbound_services:
+- warmup
