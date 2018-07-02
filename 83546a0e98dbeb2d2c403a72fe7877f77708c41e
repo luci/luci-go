@@ -42,6 +42,24 @@
     },
     {
       "key": {
+        "uuid": "6a345741_844362fb",
+        "filename": "cipd/appengine/static/bootstrap/css/bootstrap.min.css",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-02T22:39:49Z",
+      "side": 1,
+      "message": "We have never updated them AFAIK.\n\nI think having a copy is simpler than symlinks. If we update them, we likely update per-app anyway.",
+      "parentUuid": "4baaa215_c1a3321e",
+      "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4ff46721_e14166eb",
         "filename": "cipd/appengine/ui/common.go",
         "patchSetId": 1
@@ -62,6 +80,30 @@
       "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7974050f_02fe1c1c",
+        "filename": "cipd/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-02T22:39:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ff46721_e14166eb",
+      "range": {
+        "startLine": 88,
+        "startChar": 46,
+        "endLine": 88,
+        "endChar": 67
+      },
+      "revId": "83546a0e98dbeb2d2c403a72fe7877f77708c41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
