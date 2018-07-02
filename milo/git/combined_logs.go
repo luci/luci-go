@@ -16,12 +16,15 @@ package git
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/datastore"
 	gitilesapi "go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -32,6 +35,11 @@ import (
 // A structure to keep a list of commits for some ref.
 type refCommits struct {
 	commits []*gitpb.Commit
+}
+
+type logCache struct {
+	Key     string   `gae:"$id"`
+	Commits [][]byte `gae:"commits"`
 }
 
 // The pop method removes and returns first commit. Second return value is true
@@ -116,9 +124,34 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 		for _, commit := range refTips {
 			commit := commit
 			ch <- func() error {
-				log, err := i.log(c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
-				if err != nil {
-					return err
+				lc := logCache{Key: fmt.Sprintf(
+					"%s|%s|%s|%s|%d", host, project, commit, excludeRef, limit)}
+				var log []*gitpb.Commit
+				if err := datastore.Get(c, &lc); err != datastore.ErrNoSuchEntity {
+					// Parse cached result from datastore.
+					log = make([]*gitpb.Commit, 0, len(lc.Commits))
+					for _, commitData := range lc.Commits {
+						var commit gitpb.Commit
+						err = proto.Unmarshal(commitData, &commit)
+						log = append(log, &commit)
+					}
+				} else {
+					log, err = i.log(
+						c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
+					if err != nil {
+						return err
+					}
+
+					// Cache result in datastore.
+					lc.Commits = make([][]byte, 0, len(log))
+					for _, commit := range log {
+						marshalled, err := proto.Marshal(commit)
+						if err != nil {
+							return err
+						}
+						lc.Commits = append(lc.Commits, marshalled)
+					}
+					datastore.Put(c, &lc)
 				}
 
 				lock.Lock()
