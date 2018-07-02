@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -232,6 +233,9 @@ func (s *Service) ProcessShardHandler(ctx *router.Context, loop bool) {
 	cfg := getConfig(c)
 
 	logging.Infof(c, "Processing tasks in namespace %q", info.GetNamespace(c))
+	// AppEngine backend instances run for 10 minute at most,
+	// set the overall context deadline to 9 minutes.
+	c, _ = clock.WithDeadline(c, clock.Now(c).Add(9*time.Minute))
 	err = processShard(c, cfg, time.Unix(tstamp, 0).UTC(), sid, loop)
 	if err != nil {
 		logging.Errorf(c, "failure! %s", err)
