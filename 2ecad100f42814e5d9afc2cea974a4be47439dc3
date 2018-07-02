@@ -16,6 +16,24 @@
       "revId": "2ecad100f42814e5d9afc2cea974a4be47439dc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77ae1b26_44ffcdf8",
+        "filename": "common/isolated/klauspost.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-07-02T02:31:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "243ecb2c_fb29e08e",
+      "revId": "2ecad100f42814e5d9afc2cea974a4be47439dc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
