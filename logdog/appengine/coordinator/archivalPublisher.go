@@ -103,7 +103,7 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 		// Publishing usually happens immediately.
 		// If it's taken more than 15s, something has already gone horribly wrong,
 		// so just kill it and try again.
-		nc, _ := clock.WithTimeout(c, time.Second*15)
+		nc, _ := clock.WithTimeout(aeCtx, time.Second*15)
 		_, err := p.Publisher.Publish(nc, &msg)
 		return err
 	}, retry.LogCallback(c, "publishing task"))
