@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2eee1e0c_f4395ccb",
+        "filename": "cipd/appengine/ui/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-02T22:36:21Z",
+      "side": 1,
+      "message": "httprouter isn\u0027t smart enough to route this itself",
+      "range": {
+        "startLine": 72,
+        "startChar": 5,
+        "endLine": 72,
+        "endChar": 16
+      },
+      "revId": "b7110a22a29b6f56aba77b9a3de9c907499cef91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
