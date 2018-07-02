@@ -106,7 +106,6 @@ func processShard(c context.Context, cfg *Config, timestamp time.Time, shard uin
 		endTime = clock.Now(c).Add(time.Duration(cfg.ProcessLoopDuration))
 		logging.Debugf(c, "Process loop is configured to exit after [%s] at %s",
 			cfg.ProcessLoopDuration.String(), endTime)
-		c, _ = clock.WithDeadline(c, endTime)
 	}
 
 	// Lock around the shard that we are trying to modify.
@@ -402,8 +401,10 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 		for i := 0; i < len(iterMuts); i++ {
 			m := iterMuts[i]
 
+			s := clock.Now(c)
 			logging.Fields{"m": m}.Infof(c, "running RollForward")
 			shards, newMuts, newMutKeys, err := enterTransactionMutation(c, cfg, overrideRoot{m, root}, uint64(i))
+			logging.Fields{"m": m}.Infof(c, "done RollForward, took %s", clock.Now(c).Sub(s))
 			if err != nil {
 				l.Errorf("Executing decoded gob(%T) failed: %q: %+v", m, err, m)
 				continue
