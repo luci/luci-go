@@ -22,7 +22,7 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
-	"go.chromium.org/gae/service/memcache"
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	gitilespb "go.chromium.org/luci/common/proto/gitiles"
@@ -158,7 +158,7 @@ func TestLog(t *testing.T) {
 					host:    host,
 					project: "project",
 				}).mkCache(c, "refs/heads/master")
-				err = memcache.Delete(c, refCache.Key())
+				err = datastore.Delete(c, &refCache)
 				So(err, ShouldBeNil)
 
 				req2 := &gitilespb.LogRequest{
