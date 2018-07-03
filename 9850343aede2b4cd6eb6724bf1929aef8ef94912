@@ -34,6 +34,24 @@
       "revId": "9850343aede2b4cd6eb6724bf1929aef8ef94912",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "480bd569_c7bb3615",
+        "filename": "logdog/client/butlerproto/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T21:22:38Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1125262",
+      "parentUuid": "e78be335_98b738f6",
+      "revId": "9850343aede2b4cd6eb6724bf1929aef8ef94912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
