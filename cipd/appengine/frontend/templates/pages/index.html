@@ -1,5 +1,83 @@
 {{define "content"}}
 
-<img src="https://media.giphy.com/media/IThjAlJnD9WNO/giphy.gif">
+<ol class="breadcrumb">
+  {{range $crumb := .Breadcrumbs }}
+    {{if $crumb.Last}}
+    <li class="breadcrumb-item active">{{$crumb.Title}}</li>
+    {{else}}
+    <li class="breadcrumb-item"><a href="{{$crumb.Href}}">{{$crumb.Title}}</a></li>
+    {{end}}
+  {{end}}
+</ol>
+
+<div class="container">
+  <div class="row">
+
+    <div class="col-sm-6">
+      <h4>Packages</h4>
+      <table class="table table-striped">
+      {{range $item := .Prefixes}}
+        <tr>
+          <td>
+            <a href="{{$item.Href}}">
+            {{if $item.Back}}
+              &#8617;
+            {{else}}
+              {{$item.Title}}/&#8230;
+            {{end}}
+            </a>
+          </td>
+        </tr>
+      {{end}}
+      {{range $item := .Packages}}
+        <tr>
+          <td>
+            {{if $item.Active}}
+              <b>{{$item.Title}}</b>
+            {{else}}
+              <a href="{{$item.Href}}">{{$item.Title}}</a>
+            {{end}}
+          </td>
+        </tr>
+      {{end}}
+      </table>
+    </div>
+
+    {{if .Instances}}
+    <div class="col-sm-6">
+      <h4 class="monospace">{{.Package}}</h4>
+      <table class="table table-striped">
+      {{if .PrevPageURL}}
+        <tr>
+          <td><a href="{{.PrevPageURL}}">...</a></td>
+          <td></td>
+        </tr>
+      {{end}}
+      {{range $item := .Instances}}
+        <tr>
+          <td>
+            {{.Age}}
+          </td>
+          <td>
+            <a class="monospace" href="{{$item.Href}}">{{$item.Title}}</a>
+            {{range $ref := $item.Refs}}
+              <a class="label label-primary" href="{{$ref.Href}}">{{$ref.Title}}</a>
+            {{end}}
+          </td>
+        </tr>
+      {{end}}
+      {{if .NextPageURL}}
+        <tr>
+          <td><a href="{{.NextPageURL}}">...</a></td>
+          <td></td>
+        </tr>
+      {{end}}
+      </table>
+    </div>
+    {{end}}
+
+  </div>
+</div>
+
 
 {{end}}
