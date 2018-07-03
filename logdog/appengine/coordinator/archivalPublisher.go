@@ -93,20 +93,18 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	// we don't want any caller RPC to be forwarded to the backend service.
 	aeCtx = metadata.NewOutgoingContext(aeCtx, nil)
 
-	return retry.Retry(c, retry.Default, func() error {
-		log.Fields{
-			"project": t.Project,
-			"hash":    t.Id,
-			"key":     t.Key,
-		}.Infof(c, "Publishing archival message for stream.")
+	log.Fields{
+		"project": t.Project,
+		"hash":    t.Id,
+		"key":     t.Key,
+	}.Infof(c, "Publishing archival message for stream.")
 
-		// Publishing usually happens immediately.
-		// If it's taken more than 15s, something has already gone horribly wrong,
-		// so just kill it and try again.
-		nc, _ := clock.WithTimeout(c, time.Second*15)
-		_, err := p.Publisher.Publish(nc, &msg)
-		return err
-	}, retry.LogCallback(c, "publishing task"))
+	// Publishing usually happens immediately.
+	// If it's taken more than 15s, something has already gone horribly wrong,
+	// so just kill it and try again.
+	nc, _ := clock.WithTimeout(c, time.Second*15)
+	_, err := p.Publisher.Publish(nc, &msg)
+	return err
 }
 
 // NewPublishIndex implements ArchivalPublisher.
