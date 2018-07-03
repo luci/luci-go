@@ -121,6 +121,30 @@
     },
     {
       "key": {
+        "uuid": "2b2be0b5_6cb0d028",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T20:16:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "add21f69_1e586f70",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 65
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1488b871_deeabcab",
         "filename": "common/api/gitiles/refset.go",
         "patchSetId": 1
@@ -144,6 +168,30 @@
     },
     {
       "key": {
+        "uuid": "7d6d7cf0_31e37f41",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T20:16:58Z",
+      "side": 1,
+      "message": "We want the same as we use as a key in byPrefix map - see lines 209 and 215 below.",
+      "parentUuid": "1488b871_deeabcab",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 47
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46f01e3a_d62e116e",
         "filename": "common/api/gitiles/refset_test.go",
         "patchSetId": 1
@@ -155,6 +203,24 @@
       "writtenOn": "2018-07-03T20:08:07Z",
       "side": 1,
       "message": "can you add two tests:\n * regexp:refs/heads/releases/1\\.\\d+\n * regexp:refs/if.you.need.this/.+",
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "526b3d97_31922d0a",
+        "filename": "common/api/gitiles/refset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T20:16:58Z",
+      "side": 1,
+      "message": "Given your other comment suggesting that we shouldn\u0027t use last prefix and my reply, I am not sure first test is needed. It\u0027s essentially the same as the one I added below.\n\nSecond test seems more like a documentation - should it be rather added as a comment somewhere? I hardly ever read tests as a documentation.",
+      "parentUuid": "46f01e3a_d62e116e",
       "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
