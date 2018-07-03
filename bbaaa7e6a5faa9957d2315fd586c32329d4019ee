@@ -140,6 +140,29 @@
     },
     {
       "key": {
+        "uuid": "1517e679_0ef20931",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:21:47Z",
+      "side": 1,
+      "message": "btw, idea for cron: if we can add here a `LIMIT` on how many ref logs we\u0027d be filling to fetch from gitiles at once. We\u0027ll always fetch up to `LIMIT` refs and cache them (thus ensuring progress!) but return partial_result, errPartialResult.",
+      "range": {
+        "startLine": 124,
+        "startChar": 1,
+        "endLine": 124,
+        "endChar": 58
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a32d619d_bbedbf3a",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 5
