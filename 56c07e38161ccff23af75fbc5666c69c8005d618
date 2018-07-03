@@ -22,6 +22,30 @@
       "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "867a1b71_019ca7b4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T19:35:12Z",
+      "side": 1,
+      "message": "That\u0027s why I provided the link to the example config :-).\n\nBasically `refs/heads/6\\.(8|9)\\.\\d+` has literal prefix `refs/heads/6.`, which is not a prefix of the original regexp. However, the `refs/heads/` is and that\u0027s the only part we require for suffix regexp matching logic to work.",
+      "parentUuid": "554ba72d_ac5c437b",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 65
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
