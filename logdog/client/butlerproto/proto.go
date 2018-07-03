@@ -261,7 +261,7 @@ func (w *Writer) Write(iw io.Writer, b *logpb.ButlerLogBundle) error {
 func (w *Writer) WriteWith(fw recordio.Writer, b *logpb.ButlerLogBundle) error {
 	data, err := proto.Marshal(b)
 	if err != nil {
-		return fmt.Errorf("butlerproto: failed to marshal Bundle: %s", b)
+		return fmt.Errorf("butlerproto: failed to marshal Bundle: %s", err)
 	}
 
 	return w.writeData(fw, logpb.ButlerMetadata_ButlerLogBundle, data)
