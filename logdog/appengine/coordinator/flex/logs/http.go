@@ -16,15 +16,19 @@ package logs
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/golang/protobuf/ptypes"
 
 	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -47,6 +51,91 @@ const (
 	maxBackoff = time.Second * 30
 )
 
+var errRawRedirect = errors.Reason("HTML mode is not supported for binary or datagram").Err()
+
+type header struct {
+	Title       string
+	Link        string
+	IsAnonymous bool
+	LoginURL    string
+	LogoutURL   string
+	UserPicture string
+	UserEmail   string
+}
+
+// The stylesheet is inlined because static_dir isn't supported in flex.
+var headerTemplate = template.Must(template.New("header").Parse(`
+<!DOCTYPE html>
+<head>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="google" value="notranslate">
+<style>
+	body {
+		font-family: Verdana, sans-serif;
+		font-size: 14px;
+		margin-left: 30px;
+		margin-right: 30px;
+		margin-top: 20px;
+		margin-bottom: 50px;
+	}
+	header {
+		display: flex;
+		justify-content: space-between;
+	}
+	.account-picture {
+		border-radius: 6px;
+		width: 25px;
+		height: 25px;
+		vertical-align: middle;
+	}
+	.line {
+		font-family: Courier New, Courier, monospace;
+		font-size: 16px;
+		white-space: pre;
+	}
+	footer {
+		clear: both;
+		font-size: 14px;
+	}
+	.logdog-logo {
+		width: 4em;
+		float: left;
+		margin-right: 10px;
+	}
+</style>
+<link id="favicon" rel="shortcut icon" type="image/png" href="https://storage.googleapis.com/chrome-infra/logdog-small.png">
+<title>{{ .Title }} | LogDog </title></head>
+<header>
+<div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
+<div>
+	{{ if .IsAnonymous }}
+		<a href="{{.LoginURL}}" alt="Login">Login</a>
+	{{ else }}
+		{{ if .UserPicture }}
+			<img class="account-picture" src="{{.UserPicture}}" alt="Account Icon">
+		{{ end }}
+		{{ .UserEmail }} |
+		<a href="{{.LogoutURL}}" alt="Logout">Logout</a>
+	{{ end }}
+</div></header><hr><div class="lines">
+`))
+
+type footer struct {
+	Message  string
+	Duration string
+}
+
+var footerTemplate = template.Must(template.New("footer").Parse(`
+</div>
+<hr><footer>
+<div><img class="logdog-logo" src="https://storage.googleapis.com/chrome-infra/logdog-small.png"></div>
+<div>{{ .Message }}<br>
+This is <a href="https://chromium.googlesource.com/infra/luci/luci-go/+/master/logdog/">LogDog</a><br>
+Rendering took {{ .Duration }}</div>
+</footer>
+`))
+
 // logResp is the response object passed from the fetch routine back to the rendering routine.
 // If both log and err are nil, that is a signal that the fetch routine is sleeping.
 // That would be a good time to flush any output.
@@ -61,6 +150,17 @@ type logData struct {
 	ch             <-chan logResp
 	logStream      coordinator.LogStream
 	logStreamState coordinator.LogStreamState
+	options        userOptions
+}
+
+// viewerURL is a convenience function to extract the logdog.viewer_url tag
+// out of a logStream, if available.
+func (ld *logData) viewerURL() string {
+	desc, err := ld.logStream.DescriptorValue()
+	if err != nil {
+		return ""
+	}
+	return desc.Tags["logdog.viewer_url"]
 }
 
 // nopFlusher is an http.Flusher that does nothing.  It's used as a standin
@@ -69,20 +169,65 @@ type nopFlusher struct{}
 
 func (n *nopFlusher) Flush() {} // Do nothing
 
-// parse parses a log stream path and returns the internal path structs, if valid.
-func parse(pathStr string) (project types.ProjectName, path types.StreamPath, err error) {
+const (
+	formatRAW  = "raw"
+	formatHTML = "html"
+)
+
+// userOptions encapsulate the entirety of input parameters to the log viewer.
+type userOptions struct {
+	// project is the name of the requested logdog project.
+	project types.ProjectName
+	// path is the full path (prefix + name) of the requested log stream.
+	path types.StreamPath
+	// format indicates the format the user wants the data back in.
+	// Valid formats are "raw" and "html".
+	format string
+}
+
+// resolveFormat resolves the output format to serve to the user.  This could be "html" or "raw".
+// Here we try to be smart, and detect if the user is a web browser, or a CLI tool (E.G. cURL).
+// For web browsers, default to HTML mode, unless ?format=raw is specified.
+// For CLI tools, default to raw mode, unless ?format=html is specified.
+// If we can't figure anything out, default to HTML mode.
+// We do this before path parsing to figure out which mode we want
+// to render parsing errors in.
+func resolveFormat(request *http.Request) string {
+	// If a known format is specified, return it.
+	format := request.URL.Query().Get("format")
+	switch f := strings.ToLower(format); f {
+	case formatHTML, formatRAW:
+		return f
+	}
+	// User Agents are basically formatted as "<Type>/<Version> <other stuff>"
+	// We really only care about the very first <Type> string.
+	// from there we can basically differentiate between major classes of user agents. (Browser vs CLI)
+	clientType := strings.SplitN(request.UserAgent(), "/", 2)[0]
+	switch strings.ToLower(clientType) {
+	case "curl", "wget", "python-urllib":
+		return formatRAW
+	default:
+		return formatHTML
+	}
+}
+
+// resolveOptions takes the request path and http request, and returns the
+// full set of requested options.
+func resolveOptions(request *http.Request, pathStr string) (options userOptions, err error) {
+	options.format = resolveFormat(request)
+
 	// The expected format is "/project/path..."
 	parts := strings.SplitN(strings.TrimLeft(pathStr, "/"), "/", 2)
 	if len(parts) != 2 {
 		err = errors.Reason("invalid path %q", pathStr).Err()
 		return
 	}
-	path = types.StreamPath(parts[1])
-	if err = path.Validate(); err != nil {
+	options.path = types.StreamPath(parts[1])
+	if err = options.path.Validate(); err != nil {
 		return
 	}
-	project = types.ProjectName(parts[0])
-	err = project.Validate()
+	options.project = types.ProjectName(parts[0])
+	err = options.project.Validate()
 	return
 }
 
@@ -91,15 +236,18 @@ func parse(pathStr string) (project types.ProjectName, path types.StreamPath, er
 // It returns a logData struct containing:
 // * A channel where logs entries are sent back.
 // * Log Stream metadata and state.
-func startFetch(c context.Context, pathStr string) (*logData, error) {
-	project, path, err := parse(pathStr)
-	if err != nil {
-		return nil, err // TODO(hinoka): Tag this with 400
+func startFetch(c context.Context, request *http.Request, pathStr string) (data logData, err error) {
+	if data.options, err = resolveOptions(request, pathStr); err != nil {
+		err = errors.Annotate(err, "resolving options").Tag(grpcutil.InvalidArgumentTag).Err()
+		return
 	}
+	// Pull out project/path for convenience.
+	project, path := data.options.project, data.options.path
 	logging.Fields{
 		"project": project,
 		"path":    path,
-	}.Debugf(c, "parsed path")
+		"format":  data.options.format,
+	}.Debugf(c, "parsed options")
 
 	// Perform the ACL checks, this also installs the project name into the namespace.
 	// All datastore queries must use this context.
@@ -108,22 +256,33 @@ func startFetch(c context.Context, pathStr string) (*logData, error) {
 	var ls *coordinator.LogStream
 	c, ls, err = coordinator.WithStream(c, project, path, coordinator.NamespaceAccessREAD)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// Get the log state, which we use to fetch the backend storage.
 	lst := ls.State(c)
-	switch err := datastore.Get(c, lst); {
+	switch err = datastore.Get(c, lst); {
 	case datastore.IsErrNoSuchEntity(err):
-		return nil, coordinator.ErrPathNotFound
+		err = coordinator.ErrPathNotFound
+		return
 	case err != nil:
-		return nil, err
+		return
 	}
 
 	// Get the backend storage instance.  This will be closed in fetch.
 	st, err := flex.GetServices(c).StorageForStream(c, lst)
 	if err != nil {
-		return nil, err
+		return
+	}
+
+	// If the user requested HTML format, check to see if the stream is a binary or datagram stream.
+	// If so, then this mode is not supported, and instead just render a link to the supported mode.
+	if data.options.format == formatHTML {
+		switch ls.StreamType {
+		case logpb.StreamType_BINARY, logpb.StreamType_DATAGRAM:
+			err = errRawRedirect
+			return
+		}
 	}
 
 	// Create a channel to transfer log data.  This channel will be closed by
@@ -136,7 +295,12 @@ func startFetch(c context.Context, pathStr string) (*logData, error) {
 	}
 	// Start fetching!
 	go fetch(c, ch, params)
-	return &logData{ch, *ls, *lst}, nil
+	// Return a snapshot of the log stream + state at this time,
+	// since the fetcher is liable to modify it while fetching.
+	data.ch = ch
+	data.logStream = *ls
+	data.logStreamState = *lst
+	return
 }
 
 // fetchParams are the set of parameters required for fetching logs at a path.
@@ -252,21 +416,60 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 	return index, err
 }
 
+func writeHTMLHeader(ctx *router.Context, data logData) {
+	loginURL, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+	if err != nil {
+		logging.WithError(err).Errorf(ctx.Context, "getting login url")
+		loginURL = "#ERROR"
+	}
+	logoutURL, err := auth.LogoutURL(ctx.Context, ctx.Request.URL.RequestURI())
+	if err != nil {
+		logging.WithError(err).Errorf(ctx.Context, "getting logout url")
+		logoutURL = "#ERROR"
+	}
+	user := auth.CurrentUser(ctx.Context) // This will not return nil, so it's safe to access.
+	project := data.options.project.String()
+	path := data.options.path
+	title := "error" // If the data is not filled in, this was probably an error.
+	if project != "" && path != "" {
+		title = fmt.Sprintf("%s | %s", project, path)
+	}
+	if err := headerTemplate.ExecuteTemplate(ctx.Writer, "header", header{
+		Title:       title,
+		Link:        data.viewerURL(),
+		IsAnonymous: auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity,
+		LoginURL:    loginURL,
+		LogoutURL:   logoutURL,
+		UserPicture: user.Picture,
+		UserEmail:   user.Email,
+	}); err != nil {
+		fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
+	}
+}
+
 // writeOKHeaders writes the http response headers in accordence with the
 // log stream type and user options.  The error is passed through.
-func writeOKHeaders(w http.ResponseWriter, ls coordinator.LogStream) {
+func writeOKHeaders(ctx *router.Context, data logData) {
 	// Tell nginx not to buffer anything.
-	w.Header().Set("X-Accel-Buffering", "no")
+	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
 	// Tell the browser to prefer https.
-	w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-	w.Header().Set("Content-Type", ls.ContentType)
-	w.WriteHeader(http.StatusOK)
+	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	// Set the correct content type based off the log stream and format.
+	contentType := data.logStream.ContentType
+	if contentType == "text/plain" && data.options.format == formatHTML {
+		contentType = "text/html"
+	}
+	ctx.Writer.Header().Set("Content-Type", contentType)
+	ctx.Writer.WriteHeader(http.StatusOK)
+	if data.options.format == formatHTML {
+		writeHTMLHeader(ctx, data)
+	}
 }
 
 // writeErrHeaders writes the correct headers based on the error type.
-func writeErrHeaders(ctx *router.Context, err error) {
-	code := grpcutil.Code(err)
-	switch code {
+func writeErrHeaders(ctx *router.Context, err error, data logData) {
+	message := "LogDog encountered an internal error"
+	switch code := grpcutil.Code(err); code {
 	case codes.Unauthenticated:
 		// Redirect to login screen.
 		u, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
@@ -278,16 +481,50 @@ func writeErrHeaders(ctx *router.Context, err error) {
 		fallthrough
 	case codes.Internal:
 		// Hide internal errors, expose all other errors.
-		http.Error(ctx.Writer, "LogDog encountered an internal error", http.StatusInternalServerError)
-		return
+		ctx.Writer.WriteHeader(http.StatusInternalServerError)
+	default:
+		message = "Error: " + err.Error()
+		ctx.Writer.WriteHeader(grpcutil.CodeStatus(code))
 	}
-	// All errors tagged with a grpc code is meant for user consumption, so we
-	// print it out to the user here.
-	http.Error(ctx.Writer, "Error: "+err.Error(), grpcutil.CodeStatus(code))
+	if data.options.format == formatHTML {
+		writeHTMLHeader(ctx, data)
+	}
+	fmt.Fprintf(ctx.Writer, message)
 }
 
-// serve reads log entries from ch and writes into w.
-func serve(c context.Context, ch <-chan logResp, w http.ResponseWriter) error {
+func writeFooter(ctx *router.Context, start time.Time, err error, format string) {
+	var message string
+	switch {
+	case err == nil:
+		// Pass
+	case grpcutil.Code(err) == codes.Internal:
+		message = "LogDog encountered error while serving logs."
+	default:
+		message = fmt.Sprintf("ERROR: %s", err)
+	}
+
+	switch format {
+	case formatHTML:
+		if err := footerTemplate.ExecuteTemplate(ctx.Writer, "footer", footer{
+			Message:  message,
+			Duration: fmt.Sprintf("%.2fs", clock.Now(ctx.Context).Sub(start).Seconds()),
+		}); err != nil {
+			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
+		}
+	default:
+		fmt.Fprintf(ctx.Writer, message)
+	}
+	// TODO(hinoka): If there is an error, we can signal an error
+	// by acquiring the underlying TCP connection using ctx.Writer.(http.Hijacker),
+	// and then sending a TCP RST packet, which would manifest on
+	// the client side as "connection reset by peer".
+	// We'd want this so that if a user tries to curl a long log here, and it
+	// fails, curl would also return a failure.
+	// This way we don't silently serve someone bad data.
+}
+
+// serve reads log entries from data.ch and writes into w.
+func serve(c context.Context, data logData, w http.ResponseWriter) error {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		logging.Errorf(c,
@@ -297,14 +534,24 @@ func serve(c context.Context, ch <-chan logResp, w http.ResponseWriter) error {
 		flusher = &nopFlusher{}
 	}
 	// Serve the logs.
-	for logResp := range ch {
+	for logResp := range data.ch {
 		log, err := logResp.log, logResp.err
 		if err != nil {
 			return err
 		}
 		for _, line := range log.GetText().GetLines() {
-			if _, err := fmt.Fprintln(w, line.GetValue()); err != nil {
-				return errors.Reason("could not write line %q", line.GetValue()).Err()
+			text := line.GetValue()
+			if data.options.format == formatHTML {
+				duration, err := ptypes.Duration(log.GetTimeOffset())
+				if err != nil {
+					text = fmt.Sprintf("<div class=\"line\">%s</div>", text)
+				} else {
+					t := data.logStream.Timestamp.Add(duration)
+					text = fmt.Sprintf("<div class=\"line\" data-timestamp=\"%s\">%s</div>", t.Format(time.RFC3339), text)
+				}
+			}
+			if _, err := fmt.Fprintln(w, text); err != nil {
+				return errors.Reason("could not write line %q", text).Err()
 			}
 		}
 		if log == nil {
@@ -320,24 +567,20 @@ func serve(c context.Context, ch <-chan logResp, w http.ResponseWriter) error {
 
 // GetHandler is an HTTP handler for retrieving logs.
 func GetHandler(ctx *router.Context) {
+	start := clock.Now(ctx.Context)
 	// Start the fetcher and wait for fetched logs to arrive into ch.
-	data, err := startFetch(ctx.Context, ctx.Params.ByName("path"))
+	data, err := startFetch(ctx.Context, ctx.Request, ctx.Params.ByName("path"))
 	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to start fetch")
-		writeErrHeaders(ctx, err)
+		writeErrHeaders(ctx, err, data)
 		return
 	}
-	writeOKHeaders(ctx.Writer, data.logStream)
+	writeOKHeaders(ctx, data)
 
-	// Write the log contents.
-	if err := serve(ctx.Context, data.ch, ctx.Writer); err != nil {
-		http.Error(ctx.Writer, "LogDog encountered error while serving logs.", http.StatusInternalServerError)
+	// Write the log contents and then the footer.
+	err = serve(ctx.Context, data, ctx.Writer)
+	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to serve logs")
-		// TODO(hinoka): We can signal an error by acquiring the underlying TCP connection
-		// using ctx.Writer.(http.Hijacker), and then sending a TCP RST packet, which
-		// would manifest on the client side as "connection reset by peer".
-		// We'd want this so that if a user tries to curl a long log here, and it
-		// fails, curl would also return a failure.  This way we don't silently
-		// serve someone bad data.
 	}
+	writeFooter(ctx, start, err, data.options.format)
 }
