@@ -240,6 +240,30 @@
     },
     {
       "key": {
+        "uuid": "07ab6292_2f43af36",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T21:31:11Z",
+      "side": 1,
+      "message": "so, i didn\u0027t want to reject regexes like \"refs/heads/weird\\.dot/.+\". However, doing it **correctly** (as you say, s.t. we still takes longest common refs/pre/fix) is more difficult, so not worth it until we have use-case.",
+      "parentUuid": "17f5d952_11fe750c",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 47
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "46f01e3a_d62e116e",
         "filename": "common/api/gitiles/refset_test.go",
         "patchSetId": 1
