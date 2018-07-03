@@ -95,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "6055ee85_7d096998",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df0938a9_c0282d6b",
+      "range": {
+        "startLine": 104,
+        "startChar": 41,
+        "endLine": 104,
+        "endChar": 45
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1e923a9a_fb500cb5",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -115,6 +139,30 @@
       "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d275cbf_59834e42",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Oops, fixed.",
+      "parentUuid": "1e923a9a_fb500cb5",
+      "range": {
+        "startLine": 110,
+        "startChar": 3,
+        "endLine": 110,
+        "endChar": 74
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -141,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "fa18f94e_871227fe",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4b02376e_67bb1799",
+      "range": {
+        "startLine": 151,
+        "startChar": 34,
+        "endLine": 151,
+        "endChar": 35
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "926304c1_3ae11e01",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -164,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "6556a62c_24dd0afc",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "926304c1_3ae11e01",
+      "range": {
+        "startLine": 191,
+        "startChar": 70,
+        "endLine": 191,
+        "endChar": 100
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9122244b_7af01469",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -184,6 +280,30 @@
       "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ae5b509_3e5ea79e",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9122244b_7af01469",
+      "range": {
+        "startLine": 204,
+        "startChar": 1,
+        "endLine": 209,
+        "endChar": 32
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -233,6 +353,30 @@
     },
     {
       "key": {
+        "uuid": "9dd75683_a5832a82",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 515,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3f8e52d_f22e6a4d",
+      "range": {
+        "startLine": 510,
+        "startChar": 0,
+        "endLine": 515,
+        "endChar": 27
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ed15f2f8_3946bccf",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 4
@@ -253,6 +397,30 @@
       "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ba6edbb_41ea72f5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-03T20:30:24Z",
+      "side": 1,
+      "message": "Will be a feature in a follow-up CL (done via javascript).",
+      "parentUuid": "ed15f2f8_3946bccf",
+      "range": {
+        "startLine": 542,
+        "startChar": 45,
+        "endLine": 542,
+        "endChar": 65
+      },
+      "revId": "472dd5a58f77d2319f6af327ef265c0fedbc3386",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
