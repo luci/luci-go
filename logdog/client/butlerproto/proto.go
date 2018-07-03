@@ -261,7 +261,14 @@ func (w *Writer) Write(iw io.Writer, b *logpb.ButlerLogBundle) error {
 func (w *Writer) WriteWith(fw recordio.Writer, b *logpb.ButlerLogBundle) error {
 	data, err := proto.Marshal(b)
 	if err != nil {
-		return fmt.Errorf("butlerproto: failed to marshal Bundle: %s", err)
+		entries := b.GetEntries()
+		// TODO(tandrii, hinoka): leave just error after crbug.com/859995 is fixed.
+		if len(entries) > 100 {
+			return fmt.Errorf("butlerproto: failed to marshal Bundle of len %d with first 100 entries %s: %s",
+				len(entries), entries[:100], err)
+		} else {
+			return fmt.Errorf("butlerproto: failed to marshal Bundle %s: %s", entries, err)
+		}
 	}
 
 	return w.writeData(fw, logpb.ButlerMetadata_ButlerLogBundle, data)
