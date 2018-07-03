@@ -16,10 +16,13 @@
 package ui
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/info"
 
@@ -42,8 +45,42 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, templatesPat
 		auth.Authenticate(server.UsersAPIAuthMethod{}),
 	)
 
-	r.GET("/", m, renderErr(prefixListingPage))
-	r.GET("/p/*prefix", m, renderErr(prefixListingPage))
+	r.GET("/", m, renderErr(routeToPage))
+	r.GET("/p/*path", m, renderErr(routeToPage))
+}
+
+func prefixPageURL(pfx string) string {
+	if pfx == "" {
+		return "/"
+	}
+	return "/p/" + pfx
+}
+
+func packagePageURL(pkg, cursor string) string {
+	p := "/p/" + pkg + "/+/"
+	if cursor != "" {
+		p += "?c=" + url.QueryEscape(cursor)
+	}
+	return p
+}
+
+func instancePageURL(pkg, ver string) string {
+	return "/p/" + pkg + "/+/" + ver
+}
+
+// routeToPage routes to an appropriate page depending on the request URL.
+func routeToPage(c *router.Context) error {
+	path := c.Params.ByName("path")
+	switch chunks := strings.Split(path, "/+/"); {
+	case len(chunks) <= 1: // no '/+/' in path => prefix listing page
+		return prefixListingPage(c, path)
+	case len(chunks) == 2 && chunks[1] == "": // ends with '/+/' => package page
+		return packagePage(c, chunks[0])
+	case len(chunks) == 2: // has something after '/+/' => instance page
+		return status.Errorf(codes.Unimplemented, "not implemented yet")
+	default:
+		return status.Errorf(codes.InvalidArgument, "malformed page URL")
+	}
 }
 
 type startTimeContextKey int
