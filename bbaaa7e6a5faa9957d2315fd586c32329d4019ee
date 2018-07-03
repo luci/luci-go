@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c657700_ff177b70",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "that\u0027s predicting future. While yes, it\u0027s unlikely that we\u0027d remove refs normally, but it won\u0027t be unexpected that someone accidentally pushes bad regex to milo config, resulting in temporary explosion of refs stored.\n\n\nThe reason pruning is not needed (as I see it) is that the amount of stored data is so small that we don\u0027t currently care, and once we start caring we can just wipe out the whole entity group and let it be re-created.",
+      "range": {
+        "startLine": 12,
+        "startChar": 40,
+        "endLine": 14,
+        "endChar": 7
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "16994fd7_fabcdb91",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "this deserves a doc.",
+      "range": {
+        "startLine": 40,
+        "startChar": 5,
+        "endLine": 40,
+        "endChar": 13
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e030aa7_5bf8b0fa",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "Perhaps CommitID?",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 7
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f02f2f90_1a1036c1",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "Why not serialize the whole array as one protobuf?",
+      "range": {
+        "startLine": 43,
+        "startChar": 8,
+        "endLine": 43,
+        "endChar": 12
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "118e8639_8af2b56b",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "btw, consider changing to something else, like impl for readability in a long func.",
+      "range": {
+        "startLine": 93,
+        "startChar": 6,
+        "endLine": 93,
+        "endChar": 7
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53338154_a9bd62f3",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "before I comment on smaller things in code, how about this high level structure:\n\nh :\u003d impl.loadLogsOfRefs(ctx, refTips)\nheap.Heapify(h)\n// let reader focus on heap based merging.\n\n\n\nwhile loadLogsOfRefs does the heavy lifting related to ds cache:\n\nfromCache, missingSliceOfRefs, err :\u003d loadFromDS(refTips)\nremaining :\u003d // fetch all missing ones from gitiles\nsaveToDS(remaining)\nreturn append(fromCache, remaining...), nil\n\n\nloadFromDS can then fetch all items from DS at once, then filter out \nall those for which either there is no entry, or stale commit hash, or we can\u0027t unmarshall it.\nThis is better than creating N * DS calls from N goroutines.\n\nDitto for saving new cache entries.",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 122,
+        "endChar": 78
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a32d619d_bbedbf3a",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 1,
+      "message": "btw, I didn\u0027t notice before: this is actually slower (~logN times so) than than just appending to heap slice and then running heapify-ing all at once.",
+      "range": {
+        "startLine": 162,
+        "startChar": 5,
+        "endLine": 162,
+        "endChar": 35
+      },
+      "revId": "bbaaa7e6a5faa9957d2315fd586c32329d4019ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2175bf4f_c553f6b8",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T17:16:51Z",
+      "side": 0,
+      "message": "this was easy to read; new code is a lot harder. Consider creating new func for readability.",
+      "range": {
+        "startLine": 119,
+        "startChar": 4,
+        "endLine": 122,
+        "endChar": 5
+      },
+      "revId": "c714ea1c654b16c510a87d3c011697064fac187f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
