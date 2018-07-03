@@ -216,6 +216,30 @@
     },
     {
       "key": {
+        "uuid": "17f5d952_11fe750c",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T21:16:29Z",
+      "side": 1,
+      "message": "I don\u0027t see how this helps? Currently we extract the longest prefix to reduce amount of refs returned by gitiles. If we just use two slashes, we\u0027ll fetching many unneeded refs, e.g regexp:refs/foo/bar/baz/\\d+ is most optimally fetched by asking gitiles to return refs/foo/bar/baz and then filtering results with \\d+. IIUC what you are proposing is to fetch refs/foo even though it may contain lots of refs that we clearly don\u0027t care about and would filter out anyway.",
+      "parentUuid": "8a375251_f79d8927",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 47
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "46f01e3a_d62e116e",
         "filename": "common/api/gitiles/refset_test.go",
         "patchSetId": 1
