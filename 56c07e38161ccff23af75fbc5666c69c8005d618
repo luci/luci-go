@@ -70,6 +70,30 @@
       "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "179c0fef_5e385003",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-03T19:54:36Z",
+      "side": 1,
+      "message": "\u003e\u003e if regex doesn\u0027t start with its literal prefix,\n\u003e\u003e then regex is more complex than it should be. Agree?\n\nI disagree. Here I need to specify that a ref must start with either refs/heads/6.8. or refs/heads/6.9., but I can\u0027t do so since `.` has a special meaning in regexp, hence I need to escape it. Escaping it causes the regexp encoding not to match its literal prefix, but I still think it\u0027s a valid regexp.",
+      "parentUuid": "716752fe_ae5556e2",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 65
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
