@@ -94,6 +94,70 @@
       "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "add21f69_1e586f70",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T20:08:07Z",
+      "side": 1,
+      "message": "derp. Sorry, i didn\u0027t get this part before. Can you list example regex right in description please?\n\nrefs/heads/release-1\\.\\d+\nwhich has literal prefix of \"refs/heads/release-1.\" but regex requires \\ to escape .",
+      "parentUuid": "179c0fef_5e385003",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 65
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1488b871_deeabcab",
+        "filename": "common/api/gitiles/refset.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 192,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T20:08:07Z",
+      "side": 1,
+      "message": "we don\u0027t want last, we want second:\nrefPrefix :\u003d lp[len(\"refs/\") + strings.Index(lp[len(\"refs/\"):], \"/\"):]",
+      "range": {
+        "startLine": 192,
+        "startChar": 14,
+        "endLine": 192,
+        "endChar": 47
+      },
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46f01e3a_d62e116e",
+        "filename": "common/api/gitiles/refset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T20:08:07Z",
+      "side": 1,
+      "message": "can you add two tests:\n * regexp:refs/heads/releases/1\\.\\d+\n * regexp:refs/if.you.need.this/.+",
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
