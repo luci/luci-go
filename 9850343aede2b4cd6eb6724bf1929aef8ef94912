@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "80a1d385_c40c12e4",
+        "filename": "logdog/client/butlerproto/proto.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-03T19:05:47Z",
+      "side": 1,
+      "message": "i\u0027m not sure if we actually want to %s the whole b record, since it can be pretty big. WDYT?",
+      "revId": "9850343aede2b4cd6eb6724bf1929aef8ef94912",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
