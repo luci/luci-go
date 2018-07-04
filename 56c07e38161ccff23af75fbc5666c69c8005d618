@@ -314,6 +314,24 @@
       "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "39dd75da_fbd651b1",
+        "filename": "common/api/gitiles/refset_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-04T08:39:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "41d874b5_c7e97610",
+      "revId": "56c07e38161ccff23af75fbc5666c69c8005d618",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
