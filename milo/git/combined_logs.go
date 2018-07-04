@@ -16,12 +16,15 @@ package git
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/datastore"
 	gitilesapi "go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -32,6 +35,12 @@ import (
 // A structure to keep a list of commits for some ref.
 type refCommits struct {
 	commits []*gitpb.Commit
+}
+
+type logCache struct {
+	Key    string   `gae:"$id"`
+	Commit string   `gae:"commit"`
+	Log    [][]byte `gae:"commits"`
 }
 
 // The pop method removes and returns first commit. Second return value is true
@@ -113,12 +122,38 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 	// Fetch commits from all matching refs and add lists of commits to the heap.
 	lock := sync.Mutex{} // for concurrent writes to the heap
 	if err = parallel.FanOutIn(func(ch chan<- func() error) {
-		for _, commit := range refTips {
-			commit := commit
+		for ref, commit := range refTips {
+			commit, ref := commit, ref
 			ch <- func() error {
-				log, err := i.log(c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
-				if err != nil {
-					return err
+				lc := logCache{Key: fmt.Sprintf(
+					"%s|%s|%s|%s|%d", host, project, ref, excludeRef, limit)}
+				var log []*gitpb.Commit
+				if err := datastore.Get(c, &lc); err != datastore.ErrNoSuchEntity && lc.Commit == commit {
+					// Parse cached result from datastore.
+					log = make([]*gitpb.Commit, 0, len(lc.Log))
+					for _, commitData := range lc.Log {
+						var commit gitpb.Commit
+						err = proto.Unmarshal(commitData, &commit)
+						log = append(log, &commit)
+					}
+				} else {
+					log, err = i.log(
+						c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
+					if err != nil {
+						return err
+					}
+
+					// Cache result in datastore.
+					lc.Commit = commit
+					lc.Log = make([][]byte, 0, len(log))
+					for _, commit := range log {
+						marshalled, err := proto.Marshal(commit)
+						if err != nil {
+							return err
+						}
+						lc.Log = append(lc.Log, marshalled)
+					}
+					datastore.Put(c, &lc)
 				}
 
 				lock.Lock()
