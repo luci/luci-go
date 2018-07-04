@@ -184,16 +184,17 @@ func validateRegexpRef(c *validation.Context, ref string) {
 	if complete {
 		c.Errorf("matches a single ref only, please use %q instead", lp)
 	}
-	if !strings.HasPrefix(reStr, lp) {
-		c.Errorf("does not start with its own literal prefix %q", lp)
-	}
 	if strings.Count(lp, "/") < 2 {
 		c.Errorf(`fewer than 2 slashes in literal prefix %q, e.g., `+
 			`"refs/heads/\d+" is accepted because of "refs/heads/" is the `+
 			`literal prefix, while "refs/.*" is too short`, lp)
 	}
-	if !strings.HasPrefix(lp, "refs/") {
-		c.Errorf(`literal prefix %q must start with "refs/"`, lp)
+	refPrefix := lp[:strings.LastIndex(lp, "/")+1]
+	if !strings.HasPrefix(reStr, refPrefix) {
+		c.Errorf("does not start with its ref prefix %q", refPrefix)
+	}
+	if !strings.HasPrefix(refPrefix, "refs/") {
+		c.Errorf(`ref prefix %q must start with "refs/"`, refPrefix)
 	}
 }
 
