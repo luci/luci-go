@@ -16,12 +16,15 @@ package git
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/datastore"
 	gitilesapi "go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
 	gitpb "go.chromium.org/luci/common/proto/git"
@@ -32,6 +35,22 @@ import (
 // A structure to keep a list of commits for some ref.
 type refCommits struct {
 	commits []*gitpb.Commit
+}
+
+// logCache stores a cached list of commits (log) for a given ref at a given
+// commit position return by Gerrit. They Key decribes the query that was used
+// to retrieve the log and follows the following format:
+//
+//   host|project|ref|exclude_ref|limit
+//
+// When the ref moves, entity is updated with the new CommitID and updated Log.
+// The Log field is an encoded list of commits, which is a created by encoding a
+// varint for the number of commits in the list followed by the corresponding
+// number of serialized gitpb.Commit messages.
+type logCache struct {
+	Key      string `gae:"$id"`
+	CommitID string `gae:"commit"`
+	Log      []byte `gae:"log"`
 }
 
 // The pop method removes and returns first commit. Second return value is true
@@ -81,11 +100,11 @@ func (h *commitHeap) Pop() interface{} {
 }
 
 // CombinedLogs implements Client interface.
-func (i *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
+func (impl *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
 	defer func() { err = errors.Annotate(tagError(c, err), "gitiles.CombinedLogs").Err() }()
 
 	// Check if the user is allowed to access this project.
-	allowed, err := i.acls.IsAllowed(c, host, project)
+	allowed, err := impl.acls.IsAllowed(c, host, project)
 	switch {
 	case err != nil:
 		return
@@ -95,7 +114,7 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 	}
 
 	// Prepare Gitiles client.
-	client, err := i.gitilesClient(c, host)
+	client, err := impl.gitilesClient(c, host)
 	if err != nil {
 		return
 	}
@@ -113,18 +132,55 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 	// Fetch commits from all matching refs and add lists of commits to the heap.
 	lock := sync.Mutex{} // for concurrent writes to the heap
 	if err = parallel.FanOutIn(func(ch chan<- func() error) {
-		for _, commit := range refTips {
-			commit := commit
+		for ref, commit := range refTips {
+			commit, ref := commit, ref
 			ch <- func() error {
-				log, err := i.log(c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
-				if err != nil {
-					return err
+				lc := logCache{Key: fmt.Sprintf(
+					"%s|%s|%s|%s|%d", host, project, ref, excludeRef, limit)}
+				var log []*gitpb.Commit
+				if err := datastore.Get(c, &lc); err != datastore.ErrNoSuchEntity && lc.CommitID == commit {
+					// Parse cached result from datastore.
+					buf := proto.NewBuffer(lc.Log)
+					numCommits, err := buf.DecodeVarint()
+					if err != nil {
+						return err
+					}
+					log = make([]*gitpb.Commit, 0, numCommits)
+					for i := uint64(0); i < numCommits; i++ {
+						var commit gitpb.Commit
+						if err = buf.DecodeMessage(&commit); err != nil {
+							return err
+						}
+						log = append(log, &commit)
+					}
+				} else {
+					log, err = impl.log(
+						c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
+					if err != nil {
+						return err
+					}
+
+					// Cache result in datastore.
+					lc.CommitID = commit
+					buf := proto.NewBuffer([]byte{})
+					if err := buf.EncodeVarint(uint64(len(log))); err != nil {
+						return err
+					}
+					for _, commit := range log {
+						if err := buf.EncodeMessage(commit); err != nil {
+							return err
+						}
+					}
+					lc.Log = buf.Bytes()
+					if err := datastore.Put(c, &lc); err != nil {
+						return err
+					}
 				}
 
 				lock.Lock()
 				defer lock.Unlock()
 				if len(log) > 0 {
-					heap.Push(&h, refCommits{log})
+					h = append(h, refCommits{log})
 				}
 				return nil
 			}
@@ -135,6 +191,7 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 
 	// Keep adding commits to the merged list until we reach the limit or run out
 	// of commits on all refs.
+	heap.Init(&h)
 	commits = make([]*gitpb.Commit, 0, limit)
 	for len(commits) < limit && len(h) != 0 {
 		commit, empty := h[0].pop()

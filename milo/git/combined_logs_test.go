@@ -36,9 +36,9 @@ import (
 )
 
 func TestCombinedLogs(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
-	Convey("CombinedLogs", t, func() {
+	FocusConvey("CombinedLogs", t, func() {
 		c := memory.Use(context.Background())
 
 		ctl := gomock.NewController(t)
@@ -72,18 +72,35 @@ func TestCombinedLogs(t *testing.T) {
 		}
 
 		type refTips map[string]string
-		mockRefsCall := func(prefix string, tips refTips) {
-			gitilesMock.EXPECT().Refs(gomock.Any(), &gitilespb.RefsRequest{
+		mockRefsCall := func(prefix string, tips refTips) *gomock.Call {
+			return gitilesMock.EXPECT().Refs(gomock.Any(), &gitilespb.RefsRequest{
 				Project:  "project",
 				RefsPath: prefix,
 			}).Return(&gitilespb.RefsResponse{Revisions: tips}, nil)
 		}
 
-		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) {
-			gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
+		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) *gomock.Call {
+			return gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
 				Project: "project", Treeish: reqCommit,
 				PageSize: 100, ExcludeAncestorsOf: "refs/heads/master",
 			}).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
+		}
+
+		compareCommits := func(actual, expected []*gitpb.Commit) {
+			// Looks like when deserializing results from datastore, the values of the
+			// created protobufs are not identical due to some cached size values. To
+			// compare them here, we compare stable fields only.
+			So(len(actual), ShouldEqual, len(expected))
+			for i, expectedCommit := range expected {
+				So(actual[i].Id, ShouldEqual, expectedCommit.Id)
+				So(actual[i].Tree, ShouldEqual, expectedCommit.Tree)
+				So(actual[i].Parents, ShouldResemble, expectedCommit.Parents)
+				So(actual[i].Author, ShouldEqual, expectedCommit.Author) // both nil
+				So(actual[i].Committer.Name, ShouldEqual, expectedCommit.Committer.Name)
+				So(actual[i].Committer.Email, ShouldEqual, expectedCommit.Committer.Email)
+				So(actual[i].Committer.Time.Seconds, ShouldResemble, expectedCommit.Committer.Time.Seconds)
+				So(actual[i].Committer.Time.Nanos, ShouldResemble, expectedCommit.Committer.Time.Nanos)
+			}
 		}
 
 		Convey("ACLs respected", func() {
@@ -168,6 +185,62 @@ func TestCombinedLogs(t *testing.T) {
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[0:10])
+		})
+
+		FocusConvey("use result from cache when available", func() {
+			mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[10].Id,
+			}).Times(2)
+
+			mockLogCall(fakeCommits[0].Id, fakeCommits[0:10]).Times(1)
+			mockLogCall(fakeCommits[10].Id, fakeCommits[10:20]).Times(1)
+
+			commits, err := impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			compareCommits(commits, fakeCommits[0:20])
+
+			// This call should use logs from cache.
+			commits, err = impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			compareCommits(commits, fakeCommits[0:20])
+		})
+
+		Convey("invalidate cache when ref moves", func() {
+			firstRefsCall := mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[11].Id,
+			})
+
+			mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[10].Id,
+			}).After(firstRefsCall)
+
+			mockLogCall(fakeCommits[0].Id, fakeCommits[0:2])
+			mockLogCall(fakeCommits[11].Id, fakeCommits[11:13])
+
+			// This call is required due to moved ref.
+			mockLogCall(fakeCommits[10].Id, fakeCommits[10:13])
+
+			commits, err := impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			compareCommits(commits, []*gitpb.Commit{
+				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]})
+
+			commits, err = impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			compareCommits(commits, []*gitpb.Commit{
+				fakeCommits[0], fakeCommits[1], fakeCommits[10], fakeCommits[11],
+				fakeCommits[12]})
 		})
 	})
 }
