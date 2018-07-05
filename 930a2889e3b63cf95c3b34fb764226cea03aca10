@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "c1ebb988_5338fcad",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93ca1676_c91f1ff3",
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e8d7b1a_7efb4b71",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -39,6 +57,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c4a8a58c_6a613ee4",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e8d7b1a_7efb4b71",
+      "range": {
+        "startLine": 112,
+        "startChar": 5,
+        "endLine": 112,
+        "endChar": 16
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "8b3812a5_198aec70",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9b71791b_872e83fd",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 7
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5c004fcf_d4aa4c5c",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -85,6 +151,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe121e83_bde2ccf8",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Nice! Didn\u0027t know about .(type)",
+      "parentUuid": "5c004fcf_d4aa4c5c",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "737840d5_6df6b3a3",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e34be5c_b1b1ea78",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 35
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "324eb183_a984f8c9",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -131,6 +245,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "31d836d5_0d963bd1",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "324eb183_a984f8c9",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 9
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "1acec3e8_68b510f6",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1a271571_81b7c995",
+      "range": {
+        "startLine": 131,
+        "startChar": 15,
+        "endLine": 131,
+        "endChar": 32
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee3f1f48_331867eb",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -177,6 +339,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22553e74_826e5a44",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ee3f1f48_331867eb",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 19
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -226,6 +412,30 @@
     },
     {
       "key": {
+        "uuid": "f097ae36_43cb6363",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Moved computation of missing outside of this loop.",
+      "parentUuid": "f68ca099_660f2b83",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 3
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e003f75f_3d095494",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -246,6 +456,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e1a327c_c11df228",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e003f75f_3d095494",
+      "range": {
+        "startLine": 206,
+        "startChar": 1,
+        "endLine": 206,
+        "endChar": 17
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -272,6 +506,30 @@
     },
     {
       "key": {
+        "uuid": "607ed426_208b303f",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2633f89f_e681cd57",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 207,
+        "endChar": 8
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "53d8132e_f2159fcd",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 10
@@ -292,6 +550,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81fb24e7_12574e3a",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "53d8132e_f2159fcd",
+      "range": {
+        "startLine": 210,
+        "startChar": 60,
+        "endLine": 210,
+        "endChar": 67
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -318,6 +600,30 @@
     },
     {
       "key": {
+        "uuid": "2e2d165b_cec1e592",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "With new logic to compute missingRefs inside loadFromDSCache, it\u0027s useful to keep it as a map internally there. I can move this loop into that function if this it\u0027s better this way, but IMHO a ref-to-log map is a nicer API even though we don\u0027t take advantage of it here :-)",
+      "parentUuid": "5d5cf37c_30946c34",
+      "range": {
+        "startLine": 216,
+        "startChar": 21,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36aca465_5ad73806",
         "filename": "milo/git/combined_logs_test.go",
         "patchSetId": 10
@@ -338,6 +644,30 @@
       "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "394f859d_e5630251",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-05T16:31:07Z",
+      "side": 1,
+      "message": "Awesome. Updated tests.",
+      "parentUuid": "36aca465_5ad73806",
+      "range": {
+        "startLine": 90,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
