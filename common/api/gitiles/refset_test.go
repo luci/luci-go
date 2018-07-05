@@ -127,11 +127,6 @@ func TestRefSet(t *testing.T) {
 				So(ctx.Finalize().Error(), ShouldContainSubstring,
 					`matches a single ref only, please use "refs/heads/master" instead`)
 			})
-			Convey("does not start with its ref prefix", func() {
-				ValidateRefSet(ctx, []string{`regexp:refs/branch-[h]eads/\d+\/\d+`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`does not start with its ref prefix "refs/branch-heads/"`)
-			})
 			Convey("fewer than 2 slashes in literal prefix", func() {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch[-_]heads/\d+\/\d+`})
 				So(ctx.Finalize().Error(), ShouldContainSubstring,
@@ -140,12 +135,11 @@ func TestRefSet(t *testing.T) {
 			Convey("does not start with refs/", func() {
 				ValidateRefSet(ctx, []string{`regexp:foo/branch-heads/\d+\/\d+`})
 				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`ref prefix "foo/branch-heads/" must start with "refs/"`)
+					`literal prefix "foo/branch-heads/" must start with "refs/"`)
 			})
-			Convey("non-trivial ref prefix is not supported", func() {
+			Convey("non-trivial ref prefix is supported", func() {
 				ValidateRefSet(ctx, []string{`regexp:refs/foo\.bar/\d+`})
-				So(ctx.Finalize().Error(), ShouldContainSubstring,
-					`does not start with its ref prefix "refs/foo.bar/"`)
+				So(ctx.Finalize(), ShouldBeNil)
 			})
 			Convey("not-trivial literal prefix is supported", func() {
 				ValidateRefSet(ctx, []string{`regexp:refs/branch-heads/(6\.8|6\.9)\.\d+`})

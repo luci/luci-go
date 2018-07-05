@@ -54,23 +54,23 @@ func NewRefSet(refs []string) RefSet {
 	w := RefSet{map[string]*refSetPrefix{}}
 	nsRegexps := map[string][]string{}
 	for _, ref := range refs {
-		prefix, suffix, regexp := parseRef(ref)
+		prefix, literalRef, refRegexp := parseRef(ref)
 		if _, exists := w.byPrefix[prefix]; !exists {
 			w.byPrefix[prefix] = &refSetPrefix{prefix: prefix}
 		}
 
 		switch {
-		case (suffix == "") == (regexp == ""):
+		case (literalRef == "") == (refRegexp == ""):
 			panic("exactly one must be defined")
-		case regexp != "":
-			nsRegexps[prefix] = append(nsRegexps[prefix], regexp)
-		case suffix != "":
-			w.byPrefix[prefix].addSuffix(suffix)
+		case refRegexp != "":
+			nsRegexps[prefix] = append(nsRegexps[prefix], refRegexp)
+		case literalRef != "":
+			w.byPrefix[prefix].addLiteralRef(literalRef)
 		}
 	}
 
 	for prefix, regexps := range nsRegexps {
-		w.byPrefix[prefix].descendantRegexp = regexp.MustCompile(
+		w.byPrefix[prefix].refRegexp = regexp.MustCompile(
 			"^(" + strings.Join(regexps, ")|(") + ")$")
 	}
 
@@ -81,7 +81,7 @@ func NewRefSet(refs []string) RefSet {
 func (w RefSet) Has(ref string) bool {
 	for prefix, wrp := range w.byPrefix {
 		nsPrefix := prefix + "/"
-		if strings.HasPrefix(ref, nsPrefix) && wrp.hasSuffix(ref[len(nsPrefix):]) {
+		if strings.HasPrefix(ref, nsPrefix) && wrp.hasRef(ref) {
 			return true
 		}
 	}
@@ -141,30 +141,30 @@ func ValidateRefSet(c *validation.Context, refs []string) {
 
 type refSetPrefix struct {
 	prefix string // no trailing "/".
-	// exactChildren is a set of immediate children, not grandchildren. i.e., may
-	// contain 'child', but not 'grand/child', which would be contained in
-	// refSetPrefix for (prefix + "/child").
-	exactChildren stringset.Set
-	// descendantRegexp is a regular expression matching all descendants.
-	descendantRegexp *regexp.Regexp
+	// literalRefs is a set of immediate children, not grandchildren. i.e., may
+	// contain 'refs/prefix/child', but not 'refs/prefix/grand/child', which would
+	// be contained in refSetPrefix for 'refs/prefix/grand'.
+	literalRefs stringset.Set
+	// refRegexp is a regular expression matching all descendants.
+	refRegexp *regexp.Regexp
 }
 
-func (w refSetPrefix) hasSuffix(suffix string) bool {
+func (w refSetPrefix) hasRef(ref string) bool {
 	switch {
-	case w.descendantRegexp != nil && w.descendantRegexp.MatchString(suffix):
+	case w.refRegexp != nil && w.refRegexp.MatchString(ref):
 		return true
-	case w.exactChildren == nil:
+	case w.literalRefs == nil:
 		return false
 	default:
-		return w.exactChildren.Has(suffix)
+		return w.literalRefs.Has(ref)
 	}
 }
 
-func (w *refSetPrefix) addSuffix(suffix string) {
-	if w.exactChildren == nil {
-		w.exactChildren = stringset.New(1)
+func (w *refSetPrefix) addLiteralRef(literalRef string) {
+	if w.literalRefs == nil {
+		w.literalRefs = stringset.New(1)
 	}
-	w.exactChildren.Add(suffix)
+	w.literalRefs.Add(literalRef)
 }
 
 func validateRegexpRef(c *validation.Context, ref string) {
@@ -189,31 +189,26 @@ func validateRegexpRef(c *validation.Context, ref string) {
 			`"refs/heads/\d+" is accepted because of "refs/heads/" is the `+
 			`literal prefix, while "refs/.*" is too short`, lp)
 	}
-	refPrefix := lp[:strings.LastIndex(lp, "/")+1]
-	if !strings.HasPrefix(reStr, refPrefix) {
-		c.Errorf("does not start with its ref prefix %q", refPrefix)
-	}
-	if !strings.HasPrefix(refPrefix, "refs/") {
-		c.Errorf(`ref prefix %q must start with "refs/"`, refPrefix)
+	if !strings.HasPrefix(lp, "refs/") {
+		c.Errorf(`literal prefix %q must start with "refs/"`, lp)
 	}
 }
 
-func parseRef(ref string) (prefix, literalSuffix, regexpSuffix string) {
+func parseRef(ref string) (prefix, literalRef, refRegexp string) {
 	if strings.HasPrefix(ref, "regexp:") {
-		refRegexp := strings.TrimPrefix(ref, "regexp:")
+		refRegexp = strings.TrimPrefix(ref, "regexp:")
 		descendantRegexp, err := regexp.Compile(refRegexp)
 		if err != nil {
 			panic(err)
 		}
 		literalPrefix, _ := descendantRegexp.LiteralPrefix()
 		prefix = literalPrefix[:strings.LastIndex(literalPrefix, "/")]
-		regexpSuffix = refRegexp[len(prefix)+1:]
 		return
 	}
 
-	// Plain ref name, just split it by the last slash into prefix and suffix.
+	// Plain ref name, just extract the ref prefix from it.
 	lastSlash := strings.LastIndex(ref, "/")
-	prefix, literalSuffix = ref[:lastSlash], ref[lastSlash+1:]
+	prefix, literalRef = ref[:lastSlash], ref
 
 	return
 }
