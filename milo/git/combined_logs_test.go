@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestCombinedLogs(t *testing.T) {
@@ -72,15 +73,15 @@ func TestCombinedLogs(t *testing.T) {
 		}
 
 		type refTips map[string]string
-		mockRefsCall := func(prefix string, tips refTips) {
-			gitilesMock.EXPECT().Refs(gomock.Any(), &gitilespb.RefsRequest{
+		mockRefsCall := func(prefix string, tips refTips) *gomock.Call {
+			return gitilesMock.EXPECT().Refs(gomock.Any(), &gitilespb.RefsRequest{
 				Project:  "project",
 				RefsPath: prefix,
 			}).Return(&gitilespb.RefsResponse{Revisions: tips}, nil)
 		}
 
-		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) {
-			gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
+		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) *gomock.Call {
+			return gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
 				Project: "project", Treeish: reqCommit,
 				PageSize: 100, ExcludeAncestorsOf: "refs/heads/master",
 			}).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
@@ -168,6 +169,62 @@ func TestCombinedLogs(t *testing.T) {
 				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
 			So(err, ShouldBeNil)
 			So(commits, ShouldResemble, fakeCommits[0:10])
+		})
+
+		Convey("use result from cache when available", func() {
+			mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[10].Id,
+			}).Times(2)
+
+			mockLogCall(fakeCommits[0].Id, fakeCommits[0:10]).Times(1)
+			mockLogCall(fakeCommits[10].Id, fakeCommits[10:20]).Times(1)
+
+			commits, err := impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			So(commits, ShouldResembleProto, fakeCommits[0:20])
+
+			// This call should use logs from cache.
+			commits, err = impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			So(commits, ShouldResembleProto, fakeCommits[0:20])
+		})
+
+		Convey("invalidate cache when ref moves", func() {
+			firstRefsCall := mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[11].Id,
+			})
+
+			mockRefsCall("refs/branch-heads", refTips{
+				"refs/branch-heads/1.1": fakeCommits[0].Id,
+				"refs/branch-heads/1.2": fakeCommits[10].Id,
+			}).After(firstRefsCall)
+
+			mockLogCall(fakeCommits[0].Id, fakeCommits[0:2])
+			mockLogCall(fakeCommits[11].Id, fakeCommits[11:13])
+
+			// This call is required due to moved ref.
+			mockLogCall(fakeCommits[10].Id, fakeCommits[10:13])
+
+			commits, err := impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			So(commits, ShouldResembleProto, []*gitpb.Commit{
+				fakeCommits[0], fakeCommits[1], fakeCommits[11], fakeCommits[12]})
+
+			commits, err = impl.CombinedLogs(
+				cAllowed, host, "project", "refs/heads/master",
+				[]string{`regexp:refs/branch-heads/\d+\.\d+`}, 50)
+			So(err, ShouldBeNil)
+			So(commits, ShouldResembleProto, []*gitpb.Commit{
+				fakeCommits[0], fakeCommits[1], fakeCommits[10], fakeCommits[11],
+				fakeCommits[12]})
 		})
 	})
 }
