@@ -624,6 +624,30 @@
     },
     {
       "key": {
+        "uuid": "ceda7e58_35afdcc9",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "yep! And in fact, keeping it a map allows to get rid of []missing.",
+      "parentUuid": "2e2d165b_cec1e592",
+      "range": {
+        "startLine": 216,
+        "startChar": 21,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "36aca465_5ad73806",
         "filename": "milo/git/combined_logs_test.go",
         "patchSetId": 10

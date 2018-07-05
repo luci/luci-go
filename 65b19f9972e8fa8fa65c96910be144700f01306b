@@ -1,0 +1,136 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f0f324fd_7721ba1a",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "this condition is now much harder to follow :(\nBut here is idea: don\u0027t return \"missing\" from this function at all! Return just cachedLogs, s.t. have early exit here.\nAnd then, compute missing on the fly in line 196.",
+      "range": {
+        "startLine": 129,
+        "startChar": 1,
+        "endLine": 129,
+        "endChar": 21
+      },
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9599b055_1dbc68a3",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "map[string][]*gitpb.Commit{}\n\nbasically, use make() only when you intend to set capacity.",
+      "range": {
+        "startLine": 130,
+        "startChar": 15,
+        "endLine": 130,
+        "endChar": 47
+      },
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a93ff4e_832f3fd4",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "now you know exactly how many there will be, but see idea above, perhaps just move this computation into line 196. This is actually a lot better, since we don\u0027t ever need to allocate a slice!",
+      "range": {
+        "startLine": 156,
+        "startChar": 14,
+        "endLine": 156,
+        "endChar": 25
+      },
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f5584eb_6c122d5a",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "as it stands now, you have no benefit from naming return values in this func, consider removing and returning explicitly inside func.",
+      "range": {
+        "startLine": 189,
+        "startChar": 134,
+        "endLine": 189,
+        "endChar": 170
+      },
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c4d30da_7e490f0e",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "maybe log a line about how many fetched from DS and how many remaining?",
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ac5e9d2_e9b9c07e",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T22:44:24Z",
+      "side": 1,
+      "message": "please annotate error here with smth like \nreturn errors.Annotate(err, \"failed to fetch %d logs from gitiles\", len(refTips) - len(cachedLogs) - len(newLogs)).Error()",
+      "range": {
+        "startLine": 218,
+        "startChar": 2,
+        "endLine": 218,
+        "endChar": 8
+      },
+      "revId": "65b19f9972e8fa8fa65c96910be144700f01306b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
