@@ -1,0 +1,343 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "93ca1676_c91f1ff3",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "The",
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e8d7b1a_7efb4b71",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "(i know i wrote this name, but i didn\u0027t give it much thought at the time)\nDSCache has already a meaning as luci-gae dscache package. How about loadCacheFromDS?",
+      "range": {
+        "startLine": 112,
+        "startChar": 5,
+        "endLine": 112,
+        "endChar": 16
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b71791b_872e83fd",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "suggestion: s/caches/items, s/cache/item in for loop below. This will make it easier to read, imho.",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 7
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5c004fcf_d4aa4c5c",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "var merr ...\nswitch err :\u003d datastore.Get(c, caches).(type) {\ncase errors.MultieError:\n  merr \u003d err\ncase nil:\n  merr \u003d make(...)\ndefault:\n  ...\n}",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 27
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e34be5c_b1b1ea78",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "seems like a waste to me.",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 35
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "324eb183_a984f8c9",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "missingRefs will be incorrect then.",
+      "range": {
+        "startLine": 126,
+        "startChar": 3,
+        "endLine": 126,
+        "endChar": 9
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1a271571_81b7c995",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "[]string{}",
+      "range": {
+        "startLine": 131,
+        "startChar": 15,
+        "endLine": 131,
+        "endChar": 32
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee3f1f48_331867eb",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "merr \u003d\u003d nil || merr[i] \u003d\u003d nil\nand you wont\u0027 need to allocate slice in line 122 in happy case.",
+      "range": {
+        "startLine": 133,
+        "startChar": 5,
+        "endLine": 133,
+        "endChar": 19
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4ca7e5a7_9bfebce2",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "ha, neat!",
+      "range": {
+        "startLine": 139,
+        "startChar": 2,
+        "endLine": 139,
+        "endChar": 39
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f68ca099_660f2b83",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "consider making standalone func on logCache \".decode() -\u003e log, error\", and you\u0027d have just two places to append missing.\nthen naturally you\u0027d have \"encode\" right next to each other with no other logic.",
+      "range": {
+        "startLine": 138,
+        "startChar": 2,
+        "endLine": 154,
+        "endChar": 3
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e003f75f_3d095494",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "in this case, please split if condition :)",
+      "range": {
+        "startLine": 206,
+        "startChar": 1,
+        "endLine": 206,
+        "endChar": 17
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2633f89f_e681cd57",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "before returning, cache all newLogs we\u0027ve actually loaded, so perhaps the code should be:\n\nerr :\u003d parallel...\nif derr :\u003d saveDSCache(){ logAndForet }\nif err !\u003d nil{return err}",
+      "range": {
+        "startLine": 207,
+        "startChar": 2,
+        "endLine": 207,
+        "endChar": 8
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53d8132e_f2159fcd",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "the only reason to have newLogs as a map is to bind it with corresponding ref. Ideally, dscache would get (ref, tip, log) tuples, though this requires new type :(",
+      "range": {
+        "startLine": 210,
+        "startChar": 60,
+        "endLine": 210,
+        "endChar": 67
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d5cf37c_30946c34",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "i think this doesn\u0027t even have to be a map.",
+      "range": {
+        "startLine": 216,
+        "startChar": 21,
+        "endLine": 216,
+        "endChar": 31
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36aca465_5ad73806",
+        "filename": "milo/git/combined_logs_test.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-05T00:42:57Z",
+      "side": 1,
+      "message": "yeah, because of some XXX fields. Vadim recently made ShouldResembleProto https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/common/testing/assertions/proto_tests.go?q\u003dShouldResembleProto\u0026sq\u003dpackage:chromium\u0026dr\u003dCSs\u0026l\u003d26",
+      "range": {
+        "startLine": 90,
+        "startChar": 3,
+        "endLine": 92,
+        "endChar": 55
+      },
+      "revId": "930a2889e3b63cf95c3b34fb764226cea03aca10",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
