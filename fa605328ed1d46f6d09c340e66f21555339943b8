@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "270b7f9a_9bb6401f",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T17:19:15Z",
+      "side": 1,
+      "message": "We must store each individual log in a separate call, because otherwise we exceed datastore_v3 request size limit (see my messages below for more details). Strangely, this does not happen when reading all of the cached entries back.",
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
