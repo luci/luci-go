@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a936016_f55c5074",
+        "filename": "cipd/client/cipd/remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-06T22:28:52Z",
+      "side": 1,
+      "message": "err.. forgot to delete this file :)",
+      "range": {
+        "startLine": 1,
+        "startChar": 3,
+        "endLine": 1,
+        "endChar": 35
+      },
+      "revId": "c5a1ae8da3064c9f05b8f6573759a820147110f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
