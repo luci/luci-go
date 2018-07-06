@@ -92,17 +92,6 @@ const (
 const (
 	EnvCacheDir            = "CIPD_CACHE_DIR"
 	EnvHTTPUserAgentPrefix = "CIPD_HTTP_USER_AGENT_PREFIX"
-	EnvProtocol            = "CIPD_PROTOCOL"
-)
-
-// Possible values for ClientOptions.Protocol.
-type Protocol string
-
-const (
-	// ProtocolV1 is a protocol based on Cloud Endpoints.
-	ProtocolV1 Protocol = "v1"
-	// ProtocolV2 is a protocol based on pRPC.
-	ProtocolV2 Protocol = "v2"
 )
 
 var (
@@ -541,11 +530,6 @@ type ClientOptions struct {
 	//
 	// Default is UserAgent const.
 	UserAgent string
-
-	// Protocol allows picking pRPC-based protocol instead of Cloud Endpoints.
-	//
-	// Default is ProtocolV2.
-	Protocol Protocol
 }
 
 // LoadFromEnv loads supplied default values from an environment into opts.
@@ -566,16 +550,6 @@ func (opts *ClientOptions) LoadFromEnv(getEnv func(string) string) error {
 			opts.UserAgent = fmt.Sprintf("%s/%s", v, UserAgent)
 		}
 	}
-	if opts.Protocol == "" {
-		switch p := getEnv(EnvProtocol); {
-		case p == "v1":
-			opts.Protocol = ProtocolV1
-		case p == "v2":
-			opts.Protocol = ProtocolV2
-		case p != "":
-			return fmt.Errorf("unknown CIPD protocol identifier %q, pick either v1 or v2", p)
-		}
-	}
 	return nil
 }
 
@@ -589,9 +563,6 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	if opts.UserAgent == "" {
 		opts.UserAgent = UserAgent
-	}
-	if opts.Protocol == "" {
-		opts.Protocol = ProtocolV2
 	}
 
 	// Validate and normalize service URL.
@@ -607,25 +578,13 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
-	// Pick the protocol implementation.
-	var r remote
-	switch opts.Protocol {
-	case ProtocolV1:
-		r = &remoteImpl{
-			serviceURL: opts.ServiceURL,
-			userAgent:  opts.UserAgent,
-			client:     opts.AuthenticatedClient,
-		}
-	case ProtocolV2:
-		r = &prpcRemoteImpl{
-			serviceURL: opts.ServiceURL,
-			userAgent:  opts.UserAgent,
-			client:     opts.AuthenticatedClient,
-		}
-	default:
-		return nil, fmt.Errorf("unknown protocol %q", opts.Protocol)
+	// TODO(vadimsh): Get rid of prpcRemoteImpl by merging its implementation
+	// directly into cipd.Client.
+	r := &prpcRemoteImpl{
+		serviceURL: opts.ServiceURL,
+		userAgent:  opts.UserAgent,
+		client:     opts.AuthenticatedClient,
 	}
-
 	if err := r.init(); err != nil {
 		return nil, err
 	}
@@ -1437,6 +1396,16 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 
 ////////////////////////////////////////////////////////////////////////////////
 // Private structs and interfaces.
+
+// pendingProcessingError is returned by attachTags if package instance is not
+// yet ready and the call should be retried later.
+type pendingProcessingError struct {
+	message string
+}
+
+func (e *pendingProcessingError) Error() string {
+	return e.message
+}
 
 type remote interface {
 	init() error
