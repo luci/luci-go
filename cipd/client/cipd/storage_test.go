@@ -16,13 +16,21 @@ package cipd
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/logging/gologger"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -126,11 +134,114 @@ func TestDownload(t *testing.T) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
+func makeTestContext() context.Context {
+	ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+	tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+		tc.Add(d)
+	})
+	return gologger.StdConfig.Use(ctx)
+}
+
 func mockStorageImpl(c C, expectations []expectedHTTPCall) *storageImpl {
-	client := mockClient(c, "", expectations)
 	return &storageImpl{
 		chunkSize: 5,
-		userAgent: client.UserAgent,
-		client:    client.AnonymousClient,
+		client:    mockClient(c, expectations),
 	}
+}
+
+type expectedHTTPCall struct {
+	Method          string
+	Path            string
+	Query           url.Values
+	Body            string
+	Headers         http.Header
+	Reply           string
+	Status          int
+	ResponseHeaders http.Header
+}
+
+// mockClient returns http.Client that hits the given mocks.
+func mockClient(c C, expectations []expectedHTTPCall) *http.Client {
+	handler := &expectedHTTPCallHandler{c, expectations, 0}
+	server := httptest.NewServer(handler)
+	Reset(func() {
+		server.Close()
+		// All expected calls should be made.
+		if handler.index != len(handler.calls) {
+			c.Printf("Unfinished calls: %v\n", handler.calls[handler.index:])
+		}
+		c.So(handler.index, ShouldEqual, len(handler.calls))
+	})
+	return &http.Client{
+		Transport: &http.Transport{
+			Proxy: func(req *http.Request) (*url.URL, error) {
+				return url.Parse(server.URL)
+			},
+		},
+	}
+}
+
+// expectedHTTPCallHandler is http.Handler that serves mocked HTTP calls.
+type expectedHTTPCallHandler struct {
+	c     C
+	calls []expectedHTTPCall
+	index int
+}
+
+func (s *expectedHTTPCallHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Unexpected call?
+	if s.index == len(s.calls) {
+		s.c.Printf("Unexpected call: %v\n", r)
+	}
+	s.c.So(s.index, ShouldBeLessThan, len(s.calls))
+
+	// Fill in defaults.
+	exp := s.calls[s.index]
+	if exp.Method == "" {
+		exp.Method = "GET"
+	}
+	if exp.Query == nil {
+		exp.Query = url.Values{}
+	}
+	if exp.Headers == nil {
+		exp.Headers = http.Header{}
+	}
+
+	// Read body and essential headers.
+	body, err := ioutil.ReadAll(r.Body)
+	s.c.So(err, ShouldBeNil)
+	blacklist := map[string]bool{
+		"Accept-Encoding": true,
+		"Content-Length":  true,
+		"Content-Type":    true,
+		"User-Agent":      true,
+	}
+	headers := http.Header{}
+	for k, v := range r.Header {
+		_, isExpected := exp.Headers[k]
+		if isExpected || !blacklist[k] {
+			headers[k] = v
+		}
+	}
+
+	// Check that request is what it is expected to be.
+	s.c.So(r.Method, ShouldEqual, exp.Method)
+	s.c.So(r.URL.Path, ShouldEqual, exp.Path)
+	s.c.So(r.URL.Query(), ShouldResemble, exp.Query)
+	s.c.So(headers, ShouldResemble, exp.Headers)
+	s.c.So(string(body), ShouldEqual, exp.Body)
+
+	// Mocked reply.
+	if exp.Status != 0 {
+		for k, v := range exp.ResponseHeaders {
+			for _, s := range v {
+				w.Header().Add(k, s)
+			}
+		}
+		w.WriteHeader(exp.Status)
+	}
+	if exp.Reply != "" {
+		w.Write([]byte(exp.Reply))
+	}
+	s.index++
 }

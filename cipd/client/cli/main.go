@@ -2393,10 +2393,6 @@ func GetApplication(params Parameters) *cli.Application {
 				Advanced:  true,
 				ShortDesc: "Optional http User-Agent prefix.",
 			},
-			cipd.EnvProtocol: {
-				Advanced:  true,
-				ShortDesc: "Set to v2 to force pRPC-based protocol, or to v1 to force Cloud Endpoints.",
-			},
 			cipd.EnvCacheDir: {
 				ShortDesc: "Directory with shared instance and tags cache " +
 					"(-cache-dir, if given, takes precedence).",
