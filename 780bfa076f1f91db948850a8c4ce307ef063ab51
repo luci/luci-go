@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d0536cf_e79ae2af",
+        "filename": "cipd/client/cipd/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-06T23:05:48Z",
+      "side": 1,
+      "message": "this was extracted from fetchACL",
+      "range": {
+        "startLine": 67,
+        "startChar": 5,
+        "endLine": 67,
+        "endChar": 25
+      },
+      "revId": "780bfa076f1f91db948850a8c4ce307ef063ab51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b335212b_7d43a872",
+        "filename": "cipd/client/cipd/acl.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-06T23:05:48Z",
+      "side": 1,
+      "message": "this was extracted from modifyACL",
+      "range": {
+        "startLine": 98,
+        "startChar": 5,
+        "endLine": 98,
+        "endChar": 15
+      },
+      "revId": "780bfa076f1f91db948850a8c4ce307ef063ab51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e4dd212_07accb74",
+        "filename": "cipd/client/cipd/json_structs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-06T23:05:48Z",
+      "side": 1,
+      "message": "extracted from describeInstance",
+      "range": {
+        "startLine": 153,
+        "startChar": 5,
+        "endLine": 153,
+        "endChar": 18
+      },
+      "revId": "780bfa076f1f91db948850a8c4ce307ef063ab51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "56c52a55_bee0c523",
+        "filename": "cipd/client/cipd/prpc_remote.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-06T23:05:48Z",
+      "side": 1,
+      "message": "oops, not needed any more. Removed in the next Patch Set.",
+      "range": {
+        "startLine": 108,
+        "startChar": 4,
+        "endLine": 108,
+        "endChar": 15
+      },
+      "revId": "780bfa076f1f91db948850a8c4ce307ef063ab51",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
