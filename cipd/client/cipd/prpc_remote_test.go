@@ -168,7 +168,6 @@ func TestPrpcRemoteImpl(t *testing.T) {
 				{Action: GrantRole, Role: "READER", Principal: "group:a"},
 				{Action: GrantRole, Role: "READER", Principal: "group:b"},
 				{Action: RevokeRole, Role: "READER", Principal: "group:a"},
-				{Action: RevokeRole, Role: "UNKNOWN_ROLE", Principal: "group:a"},
 			}), ShouldBeNil)
 
 			repo.assertAllCalled()

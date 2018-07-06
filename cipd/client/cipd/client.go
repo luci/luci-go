@@ -59,7 +59,6 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -71,15 +70,7 @@ import (
 	"go.chromium.org/luci/cipd/version"
 )
 
-// PackageACLChangeAction defines a flavor of PackageACLChange.
-type PackageACLChangeAction string
-
 const (
-	// GrantRole is used in PackageACLChange to request a role to be granted.
-	GrantRole PackageACLChangeAction = "GRANT"
-	// RevokeRole is used in PackageACLChange to request a role to be revoked.
-	RevokeRole PackageACLChangeAction = "REVOKE"
-
 	// CASFinalizationTimeout is how long to wait for CAS service to finalize the upload.
 	CASFinalizationTimeout = 5 * time.Minute
 	// SetRefTimeout is how long to wait for an instance to be processed when setting a ref.
@@ -134,69 +125,6 @@ func init() {
 	UserAgent += fmt.Sprintf(" (%s@%s)", ver.PackageName, ver.InstanceID)
 }
 
-// UnixTime is time.Time that serializes to unix timestamp in JSON (represented
-// as a number of seconds since January 1, 1970 UTC).
-type UnixTime time.Time
-
-// String is needed to be able to print UnixTime.
-func (t UnixTime) String() string {
-	return time.Time(t).String()
-}
-
-// Before is used to compare UnixTime objects.
-func (t UnixTime) Before(t2 UnixTime) bool {
-	return time.Time(t).Before(time.Time(t2))
-}
-
-// IsZero reports whether t represents the zero time instant.
-func (t UnixTime) IsZero() bool {
-	return time.Time(t).IsZero()
-}
-
-// MarshalJSON is used by JSON encoder.
-func (t UnixTime) MarshalJSON() ([]byte, error) {
-	if t.IsZero() {
-		return []byte("0"), nil
-	}
-	return []byte(fmt.Sprintf("%d", time.Time(t).Unix())), nil
-}
-
-// JSONError is wrapper around Error that serializes it as string.
-type JSONError struct {
-	error
-}
-
-// MarshalJSON is used by JSON encoder.
-func (e JSONError) MarshalJSON() ([]byte, error) {
-	return []byte(e.Error()), nil
-}
-
-// PackageACL is per package path per role access control list that is a part of
-// larger overall ACL: ACL for package "a/b/c" is a union of PackageACLs for "a"
-// "a/b" and "a/b/c".
-type PackageACL struct {
-	// PackagePath is a package subpath this ACL is defined for.
-	PackagePath string `json:"package_path"`
-	// Role is a role that listed users have, e.g. 'READER', 'WRITER', ...
-	Role string `json:"role"`
-	// Principals list users and groups granted the role.
-	Principals []string `json:"principals"`
-	// ModifiedBy specifies who modified the list the last time.
-	ModifiedBy string `json:"modified_by"`
-	// ModifiedTs is a timestamp when the list was modified the last time.
-	ModifiedTs UnixTime `json:"modified_ts"`
-}
-
-// PackageACLChange is a mutation to some package ACL.
-type PackageACLChange struct {
-	// Action defines what action to perform: GrantRole or RevokeRole.
-	Action PackageACLChangeAction
-	// Role to grant or revoke to a user or group.
-	Role string
-	// Principal is a user or a group to grant or revoke a role for.
-	Principal string
-}
-
 // UploadSession describes open CAS upload session.
 type UploadSession struct {
 	// ID identifies upload session in the backend.
@@ -205,150 +133,10 @@ type UploadSession struct {
 	URL string
 }
 
-// InstanceInfo is information about single package instance.
-type InstanceInfo struct {
-	// Pin identifies package instance.
-	Pin common.Pin `json:"pin"`
-	// RegisteredBy is identity of whoever uploaded this instance.
-	RegisteredBy string `json:"registered_by"`
-	// RegisteredTs is when the instance was registered.
-	RegisteredTs UnixTime `json:"registered_ts"`
-}
-
-// TagInfo is returned by DescribeInstance.
-type TagInfo struct {
-	// Tag is actual tag name ("key:value" pair).
-	Tag string `json:"tag"`
-	// RegisteredBy is identity of whoever attached this tag.
-	RegisteredBy string `json:"registered_by"`
-	// RegisteredTs is when the tag was registered.
-	RegisteredTs UnixTime `json:"registered_ts"`
-}
-
-// RefInfo is returned by DescribeInstance and FetchPackageRefs.
-type RefInfo struct {
-	// Ref is the ref name.
-	Ref string `json:"ref"`
-	// InstanceID is ID of a package instance the ref points to.
-	InstanceID string `json:"instance_id"`
-	// ModifiedBy is identity of whoever modified this ref last time.
-	ModifiedBy string `json:"modified_by"`
-	// ModifiedTs is when the ref was modified last time.
-	ModifiedTs UnixTime `json:"modified_ts"`
-}
-
 // DescribeInstanceOpts is passed to DescribeInstance.
 type DescribeInstanceOpts struct {
 	DescribeRefs bool // if true, will fetch all refs pointing to the instance
 	DescribeTags bool // if true, will fetch all tags attached to the instance
-}
-
-// InstanceDescription contains extended information about an instance as
-// returned by DescribeInstance.
-type InstanceDescription struct {
-	InstanceInfo
-
-	// Refs is a list of refs pointing to the instance, sorted by modification
-	// timestamp (newest first)
-	//
-	// Present only if DescribeRefs in DescribeInstanceOpts is true.
-	Refs []RefInfo `json:"refs,omitempty"`
-
-	// Tags is a list of tags attached to the instance, sorted by tag key and
-	// creation timestamp (newest first).
-	//
-	// Present only if DescribeTags in DescribeInstanceOpts is true.
-	Tags []TagInfo `json:"tags,omitempty"`
-}
-
-// ActionMap is a map of subdir to the Actions which will occur within it.
-type ActionMap map[string]*Actions
-
-// LoopOrdered loops over the ActionMap in sorted order (by subdir).
-func (am ActionMap) LoopOrdered(cb func(subdir string, actions *Actions)) {
-	subdirs := make(sort.StringSlice, 0, len(am))
-	for subdir := range am {
-		subdirs = append(subdirs, subdir)
-	}
-	subdirs.Sort()
-	for _, subdir := range subdirs {
-		cb(subdir, am[subdir])
-	}
-}
-
-// Log prints the pending action to the logger installed in ctx.
-func (am ActionMap) Log(ctx context.Context) {
-	keys := make([]string, 0, len(am))
-	for key := range am {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	for _, subdir := range keys {
-		actions := am[subdir]
-
-		if subdir == "" {
-			logging.Infof(ctx, "In root:")
-		} else {
-			logging.Infof(ctx, "In subdir %q:", subdir)
-		}
-
-		if len(actions.ToInstall) != 0 {
-			logging.Infof(ctx, "  to install:")
-			for _, pin := range actions.ToInstall {
-				logging.Infof(ctx, "    %s", pin)
-			}
-		}
-		if len(actions.ToUpdate) != 0 {
-			logging.Infof(ctx, "  to update:")
-			for _, pair := range actions.ToUpdate {
-				logging.Infof(ctx, "    %s (%s -> %s)",
-					pair.From.PackageName, pair.From.InstanceID, pair.To.InstanceID)
-			}
-		}
-		if len(actions.ToRemove) != 0 {
-			logging.Infof(ctx, "  to remove:")
-			for _, pin := range actions.ToRemove {
-				logging.Infof(ctx, "    %s", pin)
-			}
-		}
-	}
-}
-
-// Actions is returned by EnsurePackages.
-//
-// It lists pins that were attempted to be installed, updated or removed, as
-// well as all errors.
-type Actions struct {
-	ToInstall common.PinSlice `json:"to_install,omitempty"` // pins to be installed
-	ToUpdate  []UpdatedPin    `json:"to_update,omitempty"`  // pins to be replaced
-	ToRemove  common.PinSlice `json:"to_remove,omitempty"`  // pins to be removed
-	Errors    []ActionError   `json:"errors,omitempty"`     // all individual errors
-}
-
-// Empty is true if there are no actions specified.
-func (a *Actions) Empty() bool {
-	return len(a.ToInstall) == 0 && len(a.ToUpdate) == 0 && len(a.ToRemove) == 0
-}
-
-// UpdatedPin specifies a pair of pins: old and new version of a package.
-type UpdatedPin struct {
-	From common.Pin `json:"from"`
-	To   common.Pin `json:"to"`
-}
-
-// ActionError holds an error that happened when installing or removing the pin.
-type ActionError struct {
-	Action string     `json:"action"`
-	Pin    common.Pin `json:"pin"`
-	Error  JSONError  `json:"error,omitempty"`
-}
-
-// ReadSeekCloser is the interface that groups Reader, Seeker and Closer.
-type ReadSeekCloser interface {
-	io.Reader
-	io.Seeker
-	io.Closer
 }
 
 // Client provides high-level CIPD client interface. Thread safe.
@@ -481,12 +269,6 @@ type Client interface {
 	//
 	// If the update was only partially applied, returns both Actions and error.
 	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (ActionMap, error)
-}
-
-// InstanceEnumerator produces a list of instances, fetching them in batches.
-type InstanceEnumerator interface {
-	// Next returns next up to 'limit' instances or 0 if there's no more.
-	Next(ctx context.Context, limit int) ([]InstanceInfo, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1458,115 +1240,4 @@ type clientBinary struct {
 type listInstancesResponse struct {
 	instances []InstanceInfo
 	cursor    string
-}
-
-// deleteOnClose deletes the file once it is closed.
-type deleteOnClose struct {
-	*os.File
-}
-
-func (d deleteOnClose) Close(ctx context.Context, corrupt bool) (err error) {
-	name := d.File.Name()
-	defer func() {
-		if rmErr := os.Remove(name); err == nil && rmErr != nil && !os.IsNotExist(rmErr) {
-			err = rmErr
-		}
-	}()
-	return d.File.Close()
-}
-
-// UnderlyingFile is only used by tests and shouldn't be used directly.
-func (d deleteOnClose) UnderlyingFile() *os.File {
-	return d.File
-}
-
-// Private stuff.
-
-// buildActionPlan is used by EnsurePackages to figure out what to install or remove.
-func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap) {
-	desiredSubdirs := stringset.New(len(desired))
-	for desiredSubdir := range desired {
-		desiredSubdirs.Add(desiredSubdir)
-	}
-
-	existingSubdirs := stringset.New(len(existing))
-	for existingSubdir := range existing {
-		existingSubdirs.Add(existingSubdir)
-	}
-
-	aMap = ActionMap{}
-
-	// all newly added subdirs
-	desiredSubdirs.Difference(existingSubdirs).Iter(func(subdir string) bool {
-		if want := desired[subdir]; len(want) > 0 {
-			aMap[subdir] = &Actions{ToInstall: want}
-		}
-		return true
-	})
-
-	// all removed subdirs
-	existingSubdirs.Difference(desiredSubdirs).Iter(func(subdir string) bool {
-		if have := existing[subdir]; len(have) > 0 {
-			aMap[subdir] = &Actions{ToRemove: have}
-		}
-		return true
-	})
-
-	// all common subdirs
-	desiredSubdirs.Intersect(existingSubdirs).Iter(func(subdir string) bool {
-		a := Actions{}
-
-		// Figure out what needs to be installed or updated.
-		haveMap := existing[subdir].ToMap()
-		for _, want := range desired[subdir] {
-			if haveID, exists := haveMap[want.PackageName]; !exists {
-				a.ToInstall = append(a.ToInstall, want)
-			} else if haveID != want.InstanceID {
-				a.ToUpdate = append(a.ToUpdate, UpdatedPin{
-					From: common.Pin{PackageName: want.PackageName, InstanceID: haveID},
-					To:   want,
-				})
-			}
-		}
-
-		// Figure out what needs to be removed.
-		wantMap := desired[subdir].ToMap()
-		for _, have := range existing[subdir] {
-			if wantMap[have.PackageName] == "" {
-				a.ToRemove = append(a.ToRemove, have)
-			}
-		}
-
-		if !a.Empty() {
-			aMap[subdir] = &a
-		}
-		return true
-	})
-
-	if len(aMap) == 0 {
-		return nil
-	}
-	return
-}
-
-type instanceEnumeratorImpl struct {
-	// A user-supplied callback that fetches the next page of results.
-	fetch func(ctx context.Context, limit int, cursor string) (out []InstanceInfo, nextCursor string, err error)
-
-	cursor string // last fetched cursor or "" at the start of the fetch
-	done   bool   // true if fetched the last page
-}
-
-// Next returns next up to 'limit' instances or 0 if there's no more.
-func (e *instanceEnumeratorImpl) Next(ctx context.Context, limit int) (out []InstanceInfo, err error) {
-	if e.done {
-		return nil, nil
-	}
-	out, nextCursor, err := e.fetch(ctx, limit, e.cursor)
-	if err != nil {
-		return nil, err
-	}
-	e.cursor = nextCursor
-	e.done = nextCursor == ""
-	return
 }
