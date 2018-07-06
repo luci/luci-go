@@ -48,6 +48,54 @@
     },
     {
       "key": {
+        "uuid": "1a8b8acc_434ed4b1",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T18:18:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eb8ac1ce_5dfa44c3",
+      "range": {
+        "startLine": 177,
+        "startChar": 2,
+        "endLine": 177,
+        "endChar": 27
+      },
+      "revId": "7f5d3f073b4cb99cc7b6e477723b6eac64b52c8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ce689b5_7a267d49",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T18:18:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3b9e76e_3b89d081",
+      "range": {
+        "startLine": 177,
+        "startChar": 32,
+        "endLine": 177,
+        "endChar": 37
+      },
+      "revId": "7f5d3f073b4cb99cc7b6e477723b6eac64b52c8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9814cdc7_8c00ea32",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 5
@@ -68,6 +116,30 @@
       "revId": "7f5d3f073b4cb99cc7b6e477723b6eac64b52c8e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79079b88_6ecea76f",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T18:18:53Z",
+      "side": 1,
+      "message": "Does this really help? Wouldn\u0027t it still re-allocate stuff as soon as I add something to this buffer?",
+      "parentUuid": "9814cdc7_8c00ea32",
+      "range": {
+        "startLine": 182,
+        "startChar": 11,
+        "endLine": 182,
+        "endChar": 23
+      },
+      "revId": "7f5d3f073b4cb99cc7b6e477723b6eac64b52c8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
