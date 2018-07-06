@@ -97,7 +97,7 @@ func (h *commitHeap) Pop() interface{} {
 type logCache struct {
 	Key      string `gae:"$id"`
 	CommitID string `gae:"commit"`
-	Log      []byte `gae:"log"`
+	Log      []byte `gae:"log,noindex"`
 
 	ref string `gae:"-"`
 }
@@ -153,27 +153,22 @@ func loadCacheFromDS(c context.Context, host, project, excludeRef string, limit 
 	return
 }
 
-func saveCacheToDS(c context.Context, host, project, excludeRef string, limit int, refLogs map[string][]*gitpb.Commit, refTips map[string]string) error {
-	items := make([]logCache, 0, len(refLogs))
-	for ref, log := range refLogs {
-		buf := proto.NewBuffer([]byte{})
-		if err := buf.EncodeVarint(uint64(len(log))); err != nil {
-			return err
-		}
-
-		for _, commit := range log {
-			if err := buf.EncodeMessage(commit); err != nil {
-				return err
-			}
-		}
-
-		item := logCacheFor(host, project, ref, excludeRef, limit)
-		item.CommitID = refTips[ref]
-		item.Log = buf.Bytes()
-		items = append(items, item)
+func saveCacheToDS(c context.Context, host, project, ref, excludeRef, commitID string, limit int, log []*gitpb.Commit) error {
+	buf := proto.NewBuffer([]byte{})
+	if err := buf.EncodeVarint(uint64(len(log))); err != nil {
+		return err
 	}
 
-	return datastore.Put(c, items)
+	for _, commit := range log {
+		if err := buf.EncodeMessage(commit); err != nil {
+			return err
+		}
+	}
+
+	item := logCacheFor(host, project, ref, excludeRef, limit)
+	item.CommitID = commitID
+	item.Log = buf.Bytes()
+	return datastore.Put(c, &item)
 }
 
 func (impl *implementation) loadLogsForRefs(c context.Context, host, project, excludeRef string, limit int, refTips map[string]string) ([][]*gitpb.Commit, error) {
@@ -196,6 +191,10 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 					return err
 				}
 
+				if derr := saveCacheToDS(c, host, project, ref, excludeRef, refTips[ref], limit, log); derr != nil {
+					logging.WithError(derr).Warningf(c, "Failed to cache a log fetched from Gitiles")
+				}
+
 				lock.Lock()
 				defer lock.Unlock()
 				newLogs[ref] = log
@@ -203,11 +202,6 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 			}
 		}
 	})
-
-	// Try to cache what we've fetched even if some requests failed.
-	if derr := saveCacheToDS(c, host, project, excludeRef, limit, newLogs, refTips); derr != nil {
-		logging.WithError(derr).Warningf(c, "Failed to cache logs fetched from Gitiles")
-	}
 
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch %d logs from Gitiles", len(refTips)-len(cachedLogs)-len(newLogs)).Err()
