@@ -110,6 +110,48 @@
       "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "49666f23_f9ed364e",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-06T17:22:34Z",
+      "side": 1,
+      "message": "ah, i see. I suggest reverting to how it used to be before and manually batch inside save func by summing len(item.Log) and keeping it withing say 0.5MiB",
+      "parentUuid": "270b7f9a_9bb6401f",
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8c33585_52363285",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-06T17:22:34Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f489e089_ca4a1793",
+      "range": {
+        "startLine": 194,
+        "startChar": 4,
+        "endLine": 197,
+        "endChar": 0
+      },
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
