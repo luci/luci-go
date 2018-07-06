@@ -96,8 +96,8 @@ func (h *commitHeap) Pop() interface{} {
 // number of serialized gitpb.Commit messages.
 type logCache struct {
 	Key      string `gae:"$id"`
-	CommitID string `gae:"commit"`
-	Log      []byte `gae:"log"`
+	CommitID string `gae:"commit,noindex"`
+	Log      []byte `gae:"log,noindex"`
 
 	ref string `gae:"-"`
 }
@@ -154,7 +154,8 @@ func loadCacheFromDS(c context.Context, host, project, excludeRef string, limit 
 }
 
 func saveCacheToDS(c context.Context, host, project, excludeRef string, limit int, refLogs map[string][]*gitpb.Commit, refTips map[string]string) error {
-	items := make([]logCache, 0, len(refLogs))
+	items := []logCache{}
+	totalBytes := 0
 	for ref, log := range refLogs {
 		buf := proto.NewBuffer([]byte{})
 		if err := buf.EncodeVarint(uint64(len(log))); err != nil {
@@ -171,6 +172,15 @@ func saveCacheToDS(c context.Context, host, project, excludeRef string, limit in
 		item.CommitID = refTips[ref]
 		item.Log = buf.Bytes()
 		items = append(items, item)
+
+		totalBytes += len(item.Log)
+		if totalBytes > 512*1024 { // 0.5MB
+			if err := datastore.Put(c, items); err != nil {
+				return err
+			}
+			totalBytes = 0
+			items = []logCache{}
+		}
 	}
 
 	return datastore.Put(c, items)
