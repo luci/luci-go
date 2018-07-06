@@ -154,7 +154,7 @@ func loadCacheFromDS(c context.Context, host, project, excludeRef string, limit 
 }
 
 func saveCacheToDS(c context.Context, host, project, excludeRef string, limit int, refLogs map[string][]*gitpb.Commit, refTips map[string]string) error {
-	items := []logCache{}
+	items := make([]logCache, 0, len(refLogs))
 	totalBytes := 0
 	for ref, log := range refLogs {
 		buf := proto.NewBuffer([]byte{})
@@ -173,13 +173,15 @@ func saveCacheToDS(c context.Context, host, project, excludeRef string, limit in
 		item.Log = buf.Bytes()
 		items = append(items, item)
 
+		// This logic breaks storing caches into datastore into smaller requests to
+		// avoid exceeding 1MB limit on datastore requests set by AppEngine.
 		totalBytes += len(item.Log)
-		if totalBytes > 512*1024 { // 0.5MB
+		if totalBytes > 512*1024 { // 0.5 MiB
 			if err := datastore.Put(c, items); err != nil {
 				return err
 			}
 			totalBytes = 0
-			items = []logCache{}
+			items = items[:0]
 		}
 	}
 
