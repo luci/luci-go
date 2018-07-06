@@ -97,7 +97,7 @@ func (h *commitHeap) Pop() interface{} {
 type logCache struct {
 	Key      string `gae:"$id"`
 	CommitID string `gae:"commit"`
-	Log      []byte `gae:"log"`
+	Log      []byte `gae:"log,noindex"`
 
 	ref string `gae:"-"`
 }
