@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "d8d15fc7_4366eae6",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-06T17:20:22Z",
+      "side": 1,
+      "message": "make this noindex too.",
+      "range": {
+        "startLine": 99,
+        "startChar": 18,
+        "endLine": 99,
+        "endChar": 31
+      },
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "270b7f9a_9bb6401f",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 2
@@ -16,6 +39,29 @@
       "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f489e089_ca4a1793",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-06T17:20:22Z",
+      "side": 1,
+      "message": "why do you move this one?",
+      "range": {
+        "startLine": 194,
+        "startChar": 4,
+        "endLine": 197,
+        "endChar": 0
+      },
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
