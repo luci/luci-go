@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "460c811f_56d7681e",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T17:22:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8d15fc7_4366eae6",
+      "range": {
+        "startLine": 99,
+        "startChar": 18,
+        "endLine": 99,
+        "endChar": 31
+      },
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "270b7f9a_9bb6401f",
         "filename": "milo/git/combined_logs.go",
         "patchSetId": 2
@@ -62,6 +86,30 @@
       "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f53b7c5e_5ea3568b",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T17:22:03Z",
+      "side": 1,
+      "message": "See above comment and messages below.",
+      "parentUuid": "f489e089_ca4a1793",
+      "range": {
+        "startLine": 194,
+        "startChar": 4,
+        "endLine": 197,
+        "endChar": 0
+      },
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
