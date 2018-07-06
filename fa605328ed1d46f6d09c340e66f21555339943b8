@@ -152,6 +152,24 @@
       "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3de76552_49cfb8b9",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-07-06T17:52:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49666f23_f9ed364e",
+      "revId": "fa605328ed1d46f6d09c340e66f21555339943b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
