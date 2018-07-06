@@ -16,14 +16,18 @@ package git
 
 import (
 	"container/heap"
+	"fmt"
 	"sync"
 
+	"github.com/golang/protobuf/proto"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/datastore"
 	gitilesapi "go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	gitpb "go.chromium.org/luci/common/proto/git"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/sync/parallel"
@@ -80,12 +84,153 @@ func (h *commitHeap) Pop() interface{} {
 	return x
 }
 
+// logCache stores a cached list of commits (log) for a given ref at a given
+// commit position return by Gerrit. The Key decribes the query that was used to
+// retrieve the log and follows the following format:
+//
+//   host|project|ref|exclude_ref|limit
+//
+// When the ref moves, entity is updated with the new CommitID and updated Log.
+// The Log field is an encoded list of commits, which is a created by encoding a
+// varint for the number of commits in the list followed by the corresponding
+// number of serialized gitpb.Commit messages.
+type logCache struct {
+	Key      string `gae:"$id"`
+	CommitID string `gae:"commit"`
+	Log      []byte `gae:"log"`
+
+	ref string `gae:"-"`
+}
+
+func logCacheFor(host, project, ref, excludeRef string, limit int) logCache {
+	return logCache{
+		Key: fmt.Sprintf("%s|%s|%s|%s|%d", host, project, ref, excludeRef, limit),
+		ref: ref,
+	}
+}
+
+func loadCacheFromDS(c context.Context, host, project, excludeRef string, limit int, refTips map[string]string) (cachedLogs map[string][]*gitpb.Commit) {
+	items := make([]logCache, 0, len(refTips))
+	for ref := range refTips {
+		items = append(items, logCacheFor(host, project, ref, excludeRef, limit))
+	}
+
+	cachedLogs = map[string][]*gitpb.Commit{}
+	var merr errors.MultiError
+	switch err := datastore.Get(c, items).(type) {
+	case errors.MultiError:
+		merr = err
+	case nil:
+		merr = nil
+	default:
+		return
+	}
+
+	for i, item := range items {
+		if (merr != nil && merr[i] != nil) || item.CommitID != refTips[item.ref] {
+			continue
+		}
+
+		buf := proto.NewBuffer(item.Log)
+		numCommits, err := buf.DecodeVarint()
+		if err != nil {
+			continue
+		}
+
+		log := make([]*gitpb.Commit, 0, numCommits)
+		for j := uint64(0); j < numCommits; j++ {
+			var commit gitpb.Commit
+			if err = buf.DecodeMessage(&commit); err != nil {
+				continue
+			}
+
+			log = append(log, &commit)
+		}
+
+		cachedLogs[item.ref] = log
+	}
+
+	return
+}
+
+func saveCacheToDS(c context.Context, host, project, excludeRef string, limit int, refLogs map[string][]*gitpb.Commit, refTips map[string]string) error {
+	items := make([]logCache, 0, len(refLogs))
+	for ref, log := range refLogs {
+		buf := proto.NewBuffer([]byte{})
+		if err := buf.EncodeVarint(uint64(len(log))); err != nil {
+			return err
+		}
+
+		for _, commit := range log {
+			if err := buf.EncodeMessage(commit); err != nil {
+				return err
+			}
+		}
+
+		item := logCacheFor(host, project, ref, excludeRef, limit)
+		item.CommitID = refTips[ref]
+		item.Log = buf.Bytes()
+		items = append(items, item)
+	}
+
+	return datastore.Put(c, items)
+}
+
+func (impl *implementation) loadLogsForRefs(c context.Context, host, project, excludeRef string, limit int, refTips map[string]string) ([][]*gitpb.Commit, error) {
+	cachedLogs := loadCacheFromDS(c, host, project, excludeRef, limit, refTips)
+	logging.Infof(c, "Fetched %d logs from cache, will fetch remaining %d logs from Gitiles", len(cachedLogs), len(refTips)-len(cachedLogs))
+
+	// Load missing logs from Gitiles.
+	newLogs := make(map[string][]*gitpb.Commit)
+	lock := sync.Mutex{} // for concurrent writes to the map
+	err := parallel.FanOutIn(func(ch chan<- func() error) {
+		for ref := range refTips {
+			if _, ok := cachedLogs[ref]; ok {
+				continue
+			}
+
+			ref := ref
+			ch <- func() error {
+				log, err := impl.log(c, host, project, refTips[ref], excludeRef, &LogOptions{Limit: limit})
+				if err != nil {
+					return err
+				}
+
+				lock.Lock()
+				defer lock.Unlock()
+				newLogs[ref] = log
+				return nil
+			}
+		}
+	})
+
+	// Try to cache what we've fetched even if some requests failed.
+	if derr := saveCacheToDS(c, host, project, excludeRef, limit, newLogs, refTips); derr != nil {
+		logging.WithError(derr).Warningf(c, "Failed to cache logs fetched from Gitiles")
+	}
+
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch %d logs from Gitiles", len(refTips)-len(cachedLogs)-len(newLogs)).Err()
+	}
+
+	// Drop ref names and create a list containing all logs.
+	logs := make([][]*gitpb.Commit, 0, len(cachedLogs)+len(newLogs))
+	for _, log := range cachedLogs {
+		logs = append(logs, log)
+	}
+	for _, log := range newLogs {
+		logs = append(logs, log)
+	}
+
+	return logs, nil
+}
+
 // CombinedLogs implements Client interface.
-func (i *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
+func (impl *implementation) CombinedLogs(c context.Context, host, project, excludeRef string, refs []string, limit int) (commits []*gitpb.Commit, err error) {
 	defer func() { err = errors.Annotate(tagError(c, err), "gitiles.CombinedLogs").Err() }()
 
 	// Check if the user is allowed to access this project.
-	allowed, err := i.acls.IsAllowed(c, host, project)
+	allowed, err := impl.acls.IsAllowed(c, host, project)
 	switch {
 	case err != nil:
 		return
@@ -95,7 +240,7 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 	}
 
 	// Prepare Gitiles client.
-	client, err := i.gitilesClient(c, host)
+	client, err := impl.gitilesClient(c, host)
 	if err != nil {
 		return
 	}
@@ -106,35 +251,23 @@ func (i *implementation) CombinedLogs(c context.Context, host, project, excludeR
 		return
 	}
 
+	var logs [][]*gitpb.Commit
+	if logs, err = impl.loadLogsForRefs(c, host, project, excludeRef, limit, refTips); err != nil {
+		return
+	}
+
 	// We merge commits from all refs sorted by time into a single list up to a
 	// limit. We use max-heap based merging algorithm below.
-	h := make(commitHeap, 0, len(refTips))
-
-	// Fetch commits from all matching refs and add lists of commits to the heap.
-	lock := sync.Mutex{} // for concurrent writes to the heap
-	if err = parallel.FanOutIn(func(ch chan<- func() error) {
-		for _, commit := range refTips {
-			commit := commit
-			ch <- func() error {
-				log, err := i.log(c, host, project, commit, excludeRef, &LogOptions{Limit: limit})
-				if err != nil {
-					return err
-				}
-
-				lock.Lock()
-				defer lock.Unlock()
-				if len(log) > 0 {
-					heap.Push(&h, refCommits{log})
-				}
-				return nil
-			}
+	var h commitHeap
+	for _, log := range logs {
+		if len(log) > 0 {
+			h = append(h, refCommits{log})
 		}
-	}); err != nil {
-		return
 	}
 
 	// Keep adding commits to the merged list until we reach the limit or run out
 	// of commits on all refs.
+	heap.Init(&h)
 	commits = make([]*gitpb.Commit, 0, limit)
 	for len(commits) < limit && len(h) != 0 {
 		commit, empty := h[0].pop()
