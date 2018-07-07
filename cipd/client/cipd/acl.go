@@ -94,12 +94,12 @@ func prefixMetadataToACLs(m *api.InheritedPrefixMetadata) (out []PackageACL) {
 
 // mutateACLs applies changes to ACLs in the prefix metadata.
 //
-// Returns true if made some changes, false if not.
+// Returns true if made some changes (even if ultimately failed), false if not.
 func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty bool, err error) {
 	for _, ch := range changes {
 		role := api.Role(api.Role_value[ch.Role])
 		if role == 0 {
-			return false, fmt.Errorf("unrecognized role %q, not in the API definition", ch.Role)
+			return dirty, fmt.Errorf("unrecognized role %q, not in the API definition", ch.Role)
 		}
 		changed := false
 		switch ch.Action {
@@ -108,7 +108,7 @@ func mutateACLs(meta *api.PrefixMetadata, changes []PackageACLChange) (dirty boo
 		case RevokeRole:
 			changed = revokeRole(meta, role, ch.Principal)
 		default:
-			return false, fmt.Errorf("unrecognized PackageACLChangeAction %q", ch.Action)
+			return dirty, fmt.Errorf("unrecognized PackageACLChangeAction %q", ch.Action)
 		}
 		dirty = dirty || changed
 	}
