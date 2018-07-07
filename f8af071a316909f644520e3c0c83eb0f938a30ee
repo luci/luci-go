@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "576257b9_12fa8927",
+        "filename": "cipd/client/cipd/json_structs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T04:23:48Z",
+      "side": 0,
+      "message": "oops, this were incorrect (and there were no test, which I\u0027ve added now)",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 30
+      },
+      "revId": "f8af071a316909f644520e3c0c83eb0f938a30ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
