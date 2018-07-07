@@ -103,109 +103,7 @@ func (r *prpcRemoteImpl) init() error {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Type converters, until callers switch to using API types directly.
-
-func apiInstanceToInfo(inst *api.Instance) InstanceInfo {
-	return InstanceInfo{
-		Pin: common.Pin{
-			PackageName: inst.Package,
-			InstanceID:  common.ObjectRefToInstanceID(inst.Instance),
-		},
-		RegisteredBy: inst.RegisteredBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(inst.RegisteredTs)),
-	}
-}
-
-func apiRefToInfo(r *api.Ref) RefInfo {
-	return RefInfo{
-		Ref:        r.Name,
-		InstanceID: common.ObjectRefToInstanceID(r.Instance),
-		ModifiedBy: r.ModifiedBy,
-		ModifiedTs: UnixTime(google.TimeFromProto(r.ModifiedTs)),
-	}
-}
-
-func apiTagToInfo(t *api.Tag) TagInfo {
-	return TagInfo{
-		Tag:          common.JoinInstanceTag(t),
-		RegisteredBy: t.AttachedBy,
-		RegisteredTs: UnixTime(google.TimeFromProto(t.AttachedTs)),
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // ACLs.
-
-var legacyRoles = map[string]api.Role{
-	"READER": api.Role_READER,
-	"WRITER": api.Role_WRITER,
-	"OWNER":  api.Role_OWNER,
-}
-
-func grantRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
-	var roleAcl *api.PrefixMetadata_ACL
-	for _, acl := range m.Acls {
-		if acl.Role != role {
-			continue
-		}
-		for _, p := range acl.Principals {
-			if p == principal {
-				return false // already have it
-			}
-		}
-		roleAcl = acl
-	}
-
-	if roleAcl != nil {
-		// Append to the existing ACL.
-		roleAcl.Principals = append(roleAcl.Principals, principal)
-	} else {
-		// Add new ACL for this role, this is the first one.
-		m.Acls = append(m.Acls, &api.PrefixMetadata_ACL{
-			Role:       role,
-			Principals: []string{principal},
-		})
-	}
-
-	return true
-}
-
-func revokeRole(m *api.PrefixMetadata, role api.Role, principal string) bool {
-	dirty := false
-	for _, acl := range m.Acls {
-		if acl.Role != role {
-			continue
-		}
-		filtered := acl.Principals[:0]
-		for _, p := range acl.Principals {
-			if p != principal {
-				filtered = append(filtered, p)
-			}
-		}
-		if len(filtered) != len(acl.Principals) {
-			acl.Principals = filtered
-			dirty = true
-		}
-	}
-
-	if !dirty {
-		return false
-	}
-
-	// Kick out empty ACL entries.
-	acls := m.Acls[:0]
-	for _, acl := range m.Acls {
-		if len(acl.Principals) != 0 {
-			acls = append(acls, acl)
-		}
-	}
-	if len(acls) == 0 {
-		m.Acls = nil
-	} else {
-		m.Acls = acls
-	}
-	return true
-}
 
 func (r *prpcRemoteImpl) fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
 	resp, err := r.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
@@ -214,32 +112,7 @@ func (r *prpcRemoteImpl) fetchACL(ctx context.Context, packagePath string) ([]Pa
 	if err != nil {
 		return nil, humanErr(err)
 	}
-	var out []PackageACL
-	for _, p := range resp.PerPrefixMetadata {
-		var acls []PackageACL
-		for _, acl := range p.Acls {
-			role := acl.Role.String()
-			found := false
-			for i, existing := range acls {
-				if existing.Role == role {
-					acls[i].Principals = append(acls[i].Principals, acl.Principals...)
-					found = true
-					break
-				}
-			}
-			if !found {
-				acls = append(acls, PackageACL{
-					PackagePath: p.Prefix,
-					Role:        role,
-					Principals:  acl.Principals,
-					ModifiedBy:  p.UpdateUser,
-					ModifiedTs:  UnixTime(google.TimeFromProto(p.UpdateTime)),
-				})
-			}
-		}
-		out = append(out, acls...)
-	}
-	return out, nil
+	return prefixMetadataToACLs(resp), nil
 }
 
 func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
@@ -257,30 +130,8 @@ func (r *prpcRemoteImpl) modifyACL(ctx context.Context, packagePath string, chan
 	}
 
 	// Apply mutations.
-	dirty := false
-	for _, ch := range changes {
-		role, ok := legacyRoles[ch.Role]
-		if !ok {
-			// Just log and ignore. Aborting with error here breaks 'acl-edit -revoke'
-			// functionality, since it always tries to revoke all possible roles,
-			// including unsupported COUNTER_WRITER.
-			logging.Warningf(ctx, "Ignoring role %q not supported in v2", ch.Role)
-			continue
-		}
-		changed := false
-		switch ch.Action {
-		case GrantRole:
-			changed = grantRole(meta, role, ch.Principal)
-		case RevokeRole:
-			changed = revokeRole(meta, role, ch.Principal)
-		default:
-			return fmt.Errorf("unrecognized PackageACLChangeAction %q", ch.Action)
-		}
-		dirty = dirty || changed
-	}
-
-	if !dirty {
-		return nil
+	if dirty, err := mutateACLs(meta, changes); !dirty || err != nil {
+		return err
 	}
 
 	// Store the new metadata. This call will check meta.Fingerprint.
@@ -437,18 +288,7 @@ func (r *prpcRemoteImpl) describeInstance(ctx context.Context, pin common.Pin, o
 	if err != nil {
 		return nil, humanErr(err)
 	}
-	desc := &InstanceDescription{
-		InstanceInfo: apiInstanceToInfo(resp.Instance),
-		Refs:         make([]RefInfo, len(resp.Refs)),
-		Tags:         make([]TagInfo, len(resp.Tags)),
-	}
-	for i, r := range resp.Refs {
-		desc.Refs[i] = apiRefToInfo(r)
-	}
-	for i, t := range resp.Tags {
-		desc.Tags[i] = apiTagToInfo(t)
-	}
-	return desc, nil
+	return apiDescToInfo(resp), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
