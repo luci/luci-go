@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "52f561fb_080385f4",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T01:46:49Z",
+      "side": 1,
+      "message": "this (+ RegisterInstance) will be significantly refactored in the following CL",
+      "range": {
+        "startLine": 602,
+        "startChar": 26,
+        "endLine": 602,
+        "endChar": 37
+      },
+      "revId": "77d15e70adfe143a48c751d1f0a9408c78f1bc9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f75e8b93_8de0ffde",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 762,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T01:46:49Z",
+      "side": 1,
+      "message": "this will be slightly refactored in the following CLs",
+      "range": {
+        "startLine": 749,
+        "startChar": 0,
+        "endLine": 762,
+        "endChar": 1
+      },
+      "revId": "77d15e70adfe143a48c751d1f0a9408c78f1bc9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5e1e947e_779fe58f",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 848,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T01:46:49Z",
+      "side": 1,
+      "message": "this is very confusing name :-/ Added comments to clarify what it actually does.",
+      "range": {
+        "startLine": 848,
+        "startChar": 16,
+        "endLine": 848,
+        "endChar": 24
+      },
+      "revId": "77d15e70adfe143a48c751d1f0a9408c78f1bc9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ddcea86b_e2c4d888",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 865,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T01:46:49Z",
+      "side": 1,
+      "message": "this will be significantly refactored in the following CL",
+      "range": {
+        "startLine": 865,
+        "startChar": 26,
+        "endLine": 865,
+        "endChar": 42
+      },
+      "revId": "77d15e70adfe143a48c751d1f0a9408c78f1bc9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "640464c2_806ebcf0",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 951,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-07T01:46:49Z",
+      "side": 1,
+      "message": "this and AttachTagsWhenReady will be refactored in the following CLs",
+      "range": {
+        "startLine": 951,
+        "startChar": 26,
+        "endLine": 951,
+        "endChar": 41
+      },
+      "revId": "77d15e70adfe143a48c751d1f0a9408c78f1bc9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
