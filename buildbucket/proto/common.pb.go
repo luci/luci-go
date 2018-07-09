@@ -71,19 +71,19 @@ func (x Status) String() string {
 	return proto.EnumName(Status_name, int32(x))
 }
 func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_common_1765d8493c72fed6, []int{0}
+	return fileDescriptor_common_10866d3ce07b8e7b, []int{0}
 }
 
 // A Gerrit patchset.
 type GerritChange struct {
 	// Gerrit hostname, e.g. "chromium-review.googlesource.com".
-	Host string `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// Gerrit project, e.g. "chromium/src".
-	Project string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// Change number, e.g. 12345.
-	Change int64 `protobuf:"varint,3,opt,name=change" json:"change,omitempty"`
+	Change int64 `protobuf:"varint,3,opt,name=change,proto3" json:"change,omitempty"`
 	// Patch set number, e.g. 1.
-	Patchset             int64    `protobuf:"varint,4,opt,name=patchset" json:"patchset,omitempty"`
+	Patchset             int64    `protobuf:"varint,4,opt,name=patchset,proto3" json:"patchset,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -93,7 +93,7 @@ func (m *GerritChange) Reset()         { *m = GerritChange{} }
 func (m *GerritChange) String() string { return proto.CompactTextString(m) }
 func (*GerritChange) ProtoMessage()    {}
 func (*GerritChange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_1765d8493c72fed6, []int{0}
+	return fileDescriptor_common_10866d3ce07b8e7b, []int{0}
 }
 func (m *GerritChange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GerritChange.Unmarshal(m, b)
@@ -144,14 +144,14 @@ func (m *GerritChange) GetPatchset() int64 {
 // A landed Git commit hosted on Gitiles.
 type GitilesCommit struct {
 	// Gitiles hostname, e.g. "chromium.googlesource.com".
-	Host string `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// Repository name on the host, e.g. "chromium/src".
-	Project string `protobuf:"bytes,2,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
 	// Commit HEX SHA1.
-	Id string `protobuf:"bytes,3,opt,name=id" json:"id,omitempty"`
-	// Optional, associated git ref, e.g. "refs/heads/master".
+	Id string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	// Commit ref, e.g. "refs/heads/master".
 	// NOT a branch name: if specified, must start with "refs/".
-	Ref                  string   `protobuf:"bytes,4,opt,name=ref" json:"ref,omitempty"`
+	Ref                  string   `protobuf:"bytes,4,opt,name=ref,proto3" json:"ref,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -161,7 +161,7 @@ func (m *GitilesCommit) Reset()         { *m = GitilesCommit{} }
 func (m *GitilesCommit) String() string { return proto.CompactTextString(m) }
 func (*GitilesCommit) ProtoMessage()    {}
 func (*GitilesCommit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_1765d8493c72fed6, []int{1}
+	return fileDescriptor_common_10866d3ce07b8e7b, []int{1}
 }
 func (m *GitilesCommit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesCommit.Unmarshal(m, b)
@@ -211,8 +211,8 @@ func (m *GitilesCommit) GetRef() string {
 
 // A key-value pair of strings.
 type StringPair struct {
-	Key                  string   `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
-	Value                string   `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value                string   `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -222,7 +222,7 @@ func (m *StringPair) Reset()         { *m = StringPair{} }
 func (m *StringPair) String() string { return proto.CompactTextString(m) }
 func (*StringPair) ProtoMessage()    {}
 func (*StringPair) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_1765d8493c72fed6, []int{2}
+	return fileDescriptor_common_10866d3ce07b8e7b, []int{2}
 }
 func (m *StringPair) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StringPair.Unmarshal(m, b)
@@ -259,9 +259,9 @@ func (m *StringPair) GetValue() string {
 // Half-open time range.
 type TimeRange struct {
 	// Inclusive lower boundary. Optional.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime" json:"start_time,omitempty"`
+	StartTime *timestamp.Timestamp `protobuf:"bytes,1,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// Exclusive upper boundary. Optional.
-	EndTime              *timestamp.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime" json:"end_time,omitempty"`
+	EndTime              *timestamp.Timestamp `protobuf:"bytes,2,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -271,7 +271,7 @@ func (m *TimeRange) Reset()         { *m = TimeRange{} }
 func (m *TimeRange) String() string { return proto.CompactTextString(m) }
 func (*TimeRange) ProtoMessage()    {}
 func (*TimeRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_1765d8493c72fed6, []int{3}
+	return fileDescriptor_common_10866d3ce07b8e7b, []int{3}
 }
 func (m *TimeRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimeRange.Unmarshal(m, b)
@@ -314,10 +314,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/common.proto", fileDescriptor_common_1765d8493c72fed6)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/common.proto", fileDescriptor_common_10866d3ce07b8e7b)
 }
 
-var fileDescriptor_common_1765d8493c72fed6 = []byte{
+var fileDescriptor_common_10866d3ce07b8e7b = []byte{
 	// 435 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0x4f, 0x6f, 0x9b, 0x40,
 	0x10, 0xc5, 0x0b, 0x76, 0x6d, 0x33, 0xb1, 0x2d, 0xba, 0x8a, 0x22, 0xe4, 0x4b, 0x23, 0xab, 0x87,
