@@ -59,6 +59,14 @@ type ProdService struct {
 	pubSubClient *vkit.PublisherClient
 }
 
+// resetPubSubClient removes the attached pubsub client so that the next
+// getPubSubClient calls returns a new client.
+func (svc *ProdService) resetPubSubClient() error {
+	svc.pubSubLock.Lock()
+	defer svc.pubSubLock.Unlock()
+	svc.pubSubClient = nil
+}
+
 func (svc *ProdService) getPubSubClient(c context.Context) (*vkit.PublisherClient, error) {
 	svc.pubSubLock.Lock()
 	defer svc.pubSubLock.Unlock()
@@ -143,19 +151,12 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.Arc
 		return nil, errors.New("invalid archival topic")
 	}
 
-	// Create a new Pub/Sub client. Use our AppEngine Context, since we need to
-	// execute a socket API call.
-	client, err := s.getPubSubClient(s.aeCtx)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
-		return nil, err
-	}
-
 	// Create a Topic, and configure it to not bundle messages.
 	return &coordinator.PubsubArchivalPublisher{
 		Publisher: &pubsub.UnbufferedPublisher{
-			Topic:  fullTopic,
-			Client: client,
+			Topic:          fullTopic,
+			Client:         func() (*vkit.PublisherClient, error) { return s.getPubSubClient(s.aeCtx) },
+			RecreateClient: s.resetPubSubClient,
 		},
 		AECtx:            s.aeCtx,
 		PublishIndexFunc: s.nextArchiveIndex,

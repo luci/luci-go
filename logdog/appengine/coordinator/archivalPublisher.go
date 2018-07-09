@@ -103,6 +103,8 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	// so just kill it and try again.
 	nc, _ := clock.WithTimeout(c, time.Second*15)
 	_, err = p.Publisher.Publish(nc, &msg)
+	if err != nil {
+	}
 	return err
 }
 
