@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74276480_45c34121",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-09T23:24:45Z",
+      "side": 1,
+      "message": "A comment here would be great (eg what did this used to be, what was it replaced with?).",
+      "revId": "762668f1d8fc9ed5c179bed5da4922dc92bdbdff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
