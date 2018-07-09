@@ -68,7 +68,12 @@ func isTemporaryHTTPError(statusCode int) bool {
 	return statusCode >= 500 || statusCode == 408 || statusCode == 429
 }
 
-// storageImpl implements storage via Google Storage signed URLs.
+type storage interface {
+	upload(ctx context.Context, url string, data io.ReadSeeker) error
+	download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error
+}
+
+// storageImpl implements 'storage' via Google Storage signed URLs.
 type storageImpl struct {
 	chunkSize int64
 	userAgent string
