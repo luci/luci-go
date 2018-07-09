@@ -45,7 +45,6 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"hash"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -57,12 +56,19 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/grpc/prpc"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
@@ -92,10 +98,6 @@ var (
 	ErrBadUpload = errors.New("package file is uploaded, but servers asks us to upload it again", transient.Tag)
 	// ErrBadUploadSession is returned by UploadToCAS if provided UploadSession is not valid.
 	ErrBadUploadSession = errors.New("uploadURL must be set if UploadSessionID is used")
-	// ErrUploadSessionDied is returned by UploadToCAS if upload session suddenly disappeared.
-	ErrUploadSessionDied = errors.New("upload session is unexpectedly missing", transient.Tag)
-	// ErrNoUploadSessionID is returned by UploadToCAS if server didn't provide upload session ID.
-	ErrNoUploadSessionID = errors.New("server didn't provide upload session ID")
 	// ErrSetRefTimeout is returned when service refuses to move a ref for a long time.
 	ErrSetRefTimeout = errors.New("timeout while moving a ref", transient.Tag)
 	// ErrAttachTagsTimeout is returned when service refuses to accept tags for a long time.
@@ -104,10 +106,6 @@ var (
 	ErrDownloadError = errors.New("failed to download the package file after multiple attempts", transient.Tag)
 	// ErrUploadError is returned by RegisterInstance and UploadToCAS on upload errors.
 	ErrUploadError = errors.New("failed to upload the package file after multiple attempts", transient.Tag)
-	// ErrAccessDenined is returned by calls talking to backend on 401 or 403 HTTP errors.
-	ErrAccessDenined = errors.New("access denied (not authenticated or not enough permissions)")
-	// ErrBackendInaccessible is returned by calls talking to backed if it doesn't response.
-	ErrBackendInaccessible = errors.New("request to the backend failed after multiple attempts", transient.Tag)
 	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not right.
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 )
@@ -163,18 +161,18 @@ type Client interface {
 
 	// FetchACL returns a list of PackageACL objects (parent paths first).
 	//
-	// Together they define the access control list for the given package subpath.
-	FetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
+	// Together they define the access control list for the given package prefix.
+	FetchACL(ctx context.Context, prefix string) ([]PackageACL, error)
 
-	// ModifyACL applies a set of PackageACLChanges to a package path.
-	ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
+	// ModifyACL applies a set of PackageACLChanges to a package prefix ACL.
+	ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) error
 
 	// FetchRoles returns all roles the caller has in the given package prefix.
 	//
 	// Understands roles inheritance, e.g. if the caller is OWNER, the return
 	// value will list all roles implied by being an OWNER (e.g. READER, WRITER,
 	// ...).
-	FetchRoles(ctx context.Context, packagePath string) ([]string, error)
+	FetchRoles(ctx context.Context, prefix string) ([]string, error)
 
 	// UploadToCAS uploads package data blob to Content Addressed Store.
 	//
@@ -204,9 +202,8 @@ type Client interface {
 
 	// DescribeInstance returns information about a package instance.
 	//
-	// May also be used as a simple instance presence check, if all describe_*
-	// fields in the request are false. If the request succeeds, then the
-	// instance exists.
+	// May also be used as a simple instance presence check, if opts is nil. If
+	// the request succeeds, then the instance exists.
 	DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
 
 	// SetRefWhenReady moves a ref to point to a package instance.
@@ -245,8 +242,8 @@ type Client interface {
 	// It doesn't check whether the instance is already deployed.
 	FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error
 
-	// ListPackages returns a list of strings of package names.
-	ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error)
+	// ListPackages returns a list packages and prefixes under the given prefix.
+	ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error)
 
 	// SearchInstances finds instances of some package with all given tags.
 	//
@@ -360,20 +357,27 @@ func NewClient(opts ClientOptions) (Client, error) {
 	}
 	opts.ServiceURL = fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host)
 
-	// TODO(vadimsh): Get rid of prpcRemoteImpl by merging its implementation
-	// directly into cipd.Client.
-	r := &prpcRemoteImpl{
-		serviceURL: opts.ServiceURL,
-		userAgent:  opts.UserAgent,
-		client:     opts.AuthenticatedClient,
-	}
-	if err := r.init(); err != nil {
-		return nil, err
+	prpcC := &prpc.Client{
+		C:    opts.AuthenticatedClient,
+		Host: parsed.Host,
+		Options: &prpc.Options{
+			UserAgent: opts.UserAgent,
+			Insecure:  parsed.Scheme == "http", // for testing with local dev server
+			Retry: func() retry.Iterator {
+				return &retry.ExponentialBackoff{
+					Limited: retry.Limited{
+						Delay:   time.Second,
+						Retries: 10,
+					},
+				}
+			},
+		},
 	}
 
 	return &clientImpl{
 		ClientOptions: opts,
-		remote:        r,
+		cas:           api.NewStoragePRPCClient(prpcC),
+		repo:          api.NewRepositoryPRPCClient(prpcC),
 		storage: &storageImpl{
 			chunkSize: uploadChunkSize,
 			userAgent: opts.UserAgent,
@@ -386,17 +390,17 @@ func NewClient(opts ClientOptions) (Client, error) {
 type clientImpl struct {
 	ClientOptions
 
+	// pRPC API clients.
+	cas  api.StorageClient
+	repo api.RepositoryClient
+
 	// batchLock protects guts of by BeginBatch/EndBatch implementation.
 	batchLock    sync.Mutex
 	batchNesting int
 	batchPending map[batchAwareOp]struct{}
 
-	// remote knows how to call backend REST API.
-	remote remote
-
 	// storage knows how to upload and download raw binaries using signed URLs.
 	storage storage
-
 	// deployer knows how to install packages to local file system. Thread safe.
 	deployer local.Deployer
 
@@ -511,40 +515,97 @@ func (client *clientImpl) doBatchAwareOp(ctx context.Context, op batchAwareOp) {
 	}
 }
 
-func (client *clientImpl) FetchACL(ctx context.Context, packagePath string) ([]PackageACL, error) {
-	return client.remote.fetchACL(ctx, packagePath)
-}
-
-func (client *clientImpl) ModifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error {
-	return client.remote.modifyACL(ctx, packagePath, changes)
-}
-
-func (client *clientImpl) FetchRoles(ctx context.Context, packagePath string) ([]string, error) {
-	return client.remote.fetchRoles(ctx, packagePath)
-}
-
-func (client *clientImpl) ListPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, error) {
-	pkgs, dirs, err := client.remote.listPackages(ctx, path, recursive, showHidden)
-	if err != nil {
+func (client *clientImpl) FetchACL(ctx context.Context, prefix string) ([]PackageACL, error) {
+	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
 		return nil, err
 	}
 
-	// Add trailing slash to directories.
-	for k, d := range dirs {
-		dirs[k] = d + "/"
+	resp, err := client.repo.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{
+		Prefix: prefix,
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
 	}
-	// Merge and sort packages and directories.
-	allPkgs := append(pkgs, dirs...)
-	sort.Strings(allPkgs)
-	return allPkgs, nil
+
+	return prefixMetadataToACLs(resp), nil
 }
 
+func (client *clientImpl) ModifyACL(ctx context.Context, prefix string, changes []PackageACLChange) error {
+	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
+		return err
+	}
+
+	// Fetch existing metadata, if any.
+	meta, err := client.repo.GetPrefixMetadata(ctx, &api.PrefixRequest{
+		Prefix: prefix,
+	}, expectedCodes)
+	if code := grpc.Code(err); code != codes.OK && code != codes.NotFound {
+		return humanErr(err)
+	}
+
+	// Construct new empty metadata for codes.NotFound.
+	if meta == nil {
+		meta = &api.PrefixMetadata{Prefix: prefix}
+	}
+
+	// Apply mutations.
+	if dirty, err := mutateACLs(meta, changes); !dirty || err != nil {
+		return err
+	}
+
+	// Store the new metadata. This call will check meta.Fingerprint.
+	_, err = client.repo.UpdatePrefixMetadata(ctx, meta, expectedCodes)
+	return humanErr(err)
+}
+
+func (client *clientImpl) FetchRoles(ctx context.Context, prefix string) ([]string, error) {
+	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
+		return nil, err
+	}
+
+	resp, err := client.repo.GetRolesInPrefix(ctx, &api.PrefixRequest{
+		Prefix: prefix,
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+
+	out := make([]string, len(resp.Roles))
+	for i, r := range resp.Roles {
+		out[i] = r.Role.String()
+	}
+	return out, nil
+}
+
+func (client *clientImpl) ListPackages(ctx context.Context, prefix string, recursive, includeHidden bool) ([]string, error) {
+	if _, err := common.ValidatePackagePrefix(prefix); err != nil {
+		return nil, err
+	}
+
+	resp, err := client.repo.ListPrefix(ctx, &api.ListPrefixRequest{
+		Prefix:        prefix,
+		Recursive:     recursive,
+		IncludeHidden: includeHidden,
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+
+	listing := resp.Packages
+	for _, pfx := range resp.Prefixes {
+		listing = append(listing, pfx+"/")
+	}
+	sort.Strings(listing)
+	return listing, nil
+}
+
+// TODO(vadimsh): Remove from the public API.
 func (client *clientImpl) UploadToCAS(ctx context.Context, sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error {
 	// Open new upload session if an existing is not provided.
 	var err error
 	if session == nil {
 		logging.Infof(ctx, "cipd: uploading %s: initiating", sha1)
-		session, err = client.remote.initiateUpload(ctx, sha1)
+		session, err = client.initiateUpload(ctx, sha1)
 		if err != nil {
 			logging.Warningf(ctx, "cipd: can't upload %s - %s", sha1, err)
 			return err
@@ -575,7 +636,7 @@ func (client *clientImpl) UploadToCAS(ctx context.Context, sha1 string, data io.
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		published, err := client.remote.finalizeUpload(ctx, session.ID)
+		published, err := client.finalizeUpload(ctx, session.ID)
 		if err != nil {
 			logging.Warningf(ctx, "cipd: upload of %s failed: %s", sha1, err)
 			return err
@@ -596,10 +657,49 @@ func (client *clientImpl) UploadToCAS(ctx context.Context, sha1 string, data io.
 	}
 }
 
+// TODO(vadimsh): Inline.
+func (client *clientImpl) initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error) {
+	op, err := client.cas.BeginUpload(ctx, &api.BeginUploadRequest{
+		Object: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: sha1,
+		},
+	}, prpc.ExpectedCode(codes.AlreadyExists))
+	switch grpc.Code(err) {
+	case codes.OK:
+		return &UploadSession{op.OperationId, op.UploadUrl}, nil
+	case codes.AlreadyExists:
+		return nil, nil
+	default:
+		return nil, err
+	}
+}
+
+// TODO(vadimsh): Inline.
+func (client *clientImpl) finalizeUpload(ctx context.Context, sessionID string) (bool, error) {
+	op, err := client.cas.FinishUpload(ctx, &api.FinishUploadRequest{
+		UploadOperationId: sessionID,
+	})
+	if err != nil {
+		return false, err
+	}
+	switch op.Status {
+	case api.UploadStatus_UPLOADING, api.UploadStatus_VERIFYING:
+		return false, nil // still verifying
+	case api.UploadStatus_PUBLISHED:
+		return true, nil // verified!
+	case api.UploadStatus_ERRORED:
+		return false, errors.New(op.ErrorMessage)
+	default:
+		return false, fmt.Errorf("unrecognized upload operation status %s", op.Status)
+	}
+}
+
 func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return common.Pin{}, err
 	}
+
 	// Is it instance ID already? Don't bother calling the backend.
 	if common.ValidateInstanceID(version) == nil {
 		return common.Pin{PackageName: packageName, InstanceID: version}, nil
@@ -607,11 +707,12 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	if err := common.ValidateInstanceVersion(version); err != nil {
 		return common.Pin{}, err
 	}
-	// Use local cache when resolving tags to avoid round trips to backend when
-	// calling same 'cipd ensure' command again and again.
+
+	// Use a local cache when resolving tags to avoid round trips to the backend
+	// when calling same 'cipd ensure' command again and again.
 	var cache *internal.TagCache
 	if common.ValidateInstanceTag(version) == nil {
-		cache = client.getTagCache()
+		cache = client.getTagCache() // note: may be nil if the cache is disabled
 	}
 	if cache != nil {
 		cached, err := cache.ResolveTag(ctx, packageName, version)
@@ -623,16 +724,28 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 			return cached, nil
 		}
 	}
-	pin, err := client.remote.resolveVersion(ctx, packageName, version)
+
+	// Either resolving a ref, or a tag cache miss? Hit the backend.
+	resp, err := client.repo.ResolveVersion(ctx, &api.ResolveVersionRequest{
+		Package: packageName,
+		Version: version,
+	}, expectedCodes)
 	if err != nil {
-		return pin, err
+		return common.Pin{}, humanErr(err)
 	}
+	pin := common.Pin{
+		PackageName: packageName,
+		InstanceID:  common.ObjectRefToInstanceID(resp.Instance),
+	}
+
+	// If was resolving a tag, store it in the cache.
 	if cache != nil {
 		if err := cache.AddTag(ctx, pin, version); err != nil {
 			logging.Warningf(ctx, "cipd: could not add tag to the cache")
 		}
 		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
+
 	return pin, nil
 }
 
@@ -647,6 +760,7 @@ func init() {
 		clientFileName = "cipd.exe"
 	}
 
+	// TODO(vadimsh): Use template.DefaultExpander().
 	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase,
 		platform.CurrentOS(), platform.CurrentArchitecture())
 }
@@ -705,6 +819,8 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return
 	}
 
+	// Get the expected SHA1 of the client binary corresponding to the resolved
+	// pin. See AddFile call below for where it is stored.
 	cache := client.getTagCache()
 	exeHash := ""
 	if cache != nil {
@@ -713,8 +829,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		}
 	}
 	if exeHash == currentHash {
-		// already up-to-date. Make sure version file is up to date.
-		return
+		return // the running binary is already up-to-date
 	}
 
 	if targetVersion == pin.InstanceID {
@@ -723,34 +838,38 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		logging.Infof(ctx, "cipd: updating client to %s (%s)", pin, targetVersion)
 	}
 
-	info, err := client.remote.fetchClientBinaryInfo(ctx, pin)
+	// Grab the signed URL to the client binary.
+	info, err := client.repo.DescribeClient(ctx, &api.DescribeClientRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, expectedCodes)
 	if err != nil {
-		return
+		return common.Pin{}, humanErr(err)
 	}
+
+	// Store the mapping 'resolve pin => SHA1 of the client binary'.
 	if cache != nil {
-		if err = cache.AddFile(ctx, pin, clientFileName, info.SHA1); err != nil {
+		if err = cache.AddFile(ctx, pin, clientFileName, info.LegacySha1); err != nil {
 			return
 		}
+		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
-	client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
-	if info.SHA1 == currentHash {
-		// already up-to-date, but the cache didn't know that. Make sure version
-		// file is update.
+
+	if info.LegacySha1 == currentHash {
+		// The running binary is already up-to-date, but the cache didn't know that.
+		// It knows now.
 		return
 	}
 
-	err = client.installClient(ctx, fs, sha1.New(), info.FetchURL, destination, info.SHA1)
-	if err != nil {
-		return
-	}
-
+	// The running client is actually stale. Replace it.
+	err = client.installClient(ctx, fs, sha1.New(), info.ClientBinary.SignedUrl, destination, info.LegacySha1)
 	return
 }
 
 func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
 	// Attempt to register.
 	logging.Infof(ctx, "cipd: registering %s", instance.Pin())
-	result, err := client.remote.registerInstance(ctx, instance.Pin())
+	result, err := client.registerInstanceRPC(ctx, instance.Pin())
 	if err != nil {
 		return err
 	}
@@ -765,7 +884,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 		}
 		// Try again, now that file is uploaded.
 		logging.Infof(ctx, "cipd: registering %s", instance.Pin())
-		result, err = client.remote.registerInstance(ctx, instance.Pin())
+		result, err = client.registerInstanceRPC(ctx, instance.Pin())
 		if err != nil {
 			return err
 		}
@@ -785,13 +904,56 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.P
 	return nil
 }
 
+// TODO(vadimsh): Inline into RegisterInstance.
+func (client *clientImpl) registerInstanceRPC(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error) {
+	resp, err := client.repo.RegisterInstance(ctx, &api.Instance{
+		Package: pin.PackageName,
+		Instance: &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1,
+			HexDigest: pin.InstanceID,
+		},
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+	switch resp.Status {
+	case api.RegistrationStatus_REGISTERED, api.RegistrationStatus_ALREADY_REGISTERED:
+		return &registerInstanceResponse{
+			alreadyRegistered: resp.Status == api.RegistrationStatus_ALREADY_REGISTERED,
+			registeredBy:      resp.Instance.RegisteredBy,
+			registeredTs:      google.TimeFromProto(resp.Instance.RegisteredTs),
+		}, nil
+	case api.RegistrationStatus_NOT_UPLOADED:
+		return &registerInstanceResponse{
+			uploadSession: &UploadSession{resp.UploadOp.OperationId, resp.UploadOp.UploadUrl},
+		}, nil
+	default:
+		return nil, fmt.Errorf("unrecognized package registration status %s", resp.Status)
+	}
+}
+
 func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
 	if err := common.ValidatePin(pin); err != nil {
 		return nil, err
 	}
-	return client.remote.describeInstance(ctx, pin, opts)
+	if opts == nil {
+		opts = &DescribeInstanceOpts{}
+	}
+
+	resp, err := client.repo.DescribeInstance(ctx, &api.DescribeInstanceRequest{
+		Package:      pin.PackageName,
+		Instance:     common.InstanceIDToObjectRef(pin.InstanceID),
+		DescribeRefs: opts.DescribeRefs,
+		DescribeTags: opts.DescribeTags,
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+
+	return apiDescToInfo(resp), nil
 }
 
+// TODO(vadimsh): Use context deadline.
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
@@ -805,7 +967,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err := client.remote.setRef(ctx, ref, pin)
+		err := client.setRefRPC(ctx, ref, pin)
 		if err == nil {
 			logging.Infof(ctx, "cipd: ref %q is set", ref)
 			return nil
@@ -822,6 +984,20 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	return ErrSetRefTimeout
 }
 
+// // TODO(vadimsh): Inline.
+func (client *clientImpl) setRefRPC(ctx context.Context, ref string, pin common.Pin) error {
+	_, err := client.repo.CreateRef(ctx, &api.Ref{
+		Name:     ref,
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, expectedCodes)
+	if grpc.Code(err) == codes.FailedPrecondition {
+		return &pendingProcessingError{grpc.ErrorDesc(err)}
+	}
+	return humanErr(err)
+}
+
+// TODO(vadimsh): Use context deadline.
 func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
 	err := common.ValidatePin(pin)
 	if err != nil {
@@ -838,7 +1014,7 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		err = client.remote.attachTags(ctx, pin, tags)
+		err = client.attachTagsRPC(ctx, pin, tags)
 		if err == nil {
 			logging.Infof(ctx, "cipd: all tags attached")
 			return nil
@@ -855,20 +1031,59 @@ func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pi
 	return ErrAttachTagsTimeout
 }
 
-func (client *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (ps common.PinSlice, err error) {
-	if err = common.ValidatePackageName(packageName); err != nil {
-		return
-	}
-	if len(tags) == 0 {
-		err = errors.New("at least one tag is required")
-		return
-	}
-	for _, t := range tags {
-		if err = common.ValidateInstanceTag(t); err != nil {
-			return
+// TODO(vadimsh): Inline.
+func (client *clientImpl) attachTagsRPC(ctx context.Context, pin common.Pin, tags []string) error {
+	apiTags := make([]*api.Tag, len(tags))
+	for i, t := range tags {
+		var err error
+		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
+			return err
 		}
 	}
-	return client.remote.searchInstances(ctx, packageName, tags)
+	_, err := client.repo.AttachTags(ctx, &api.AttachTagsRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		Tags:     apiTags,
+	}, expectedCodes)
+	if grpc.Code(err) == codes.FailedPrecondition {
+		return &pendingProcessingError{grpc.ErrorDesc(err)}
+	}
+	return humanErr(err)
+}
+
+func (client *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
+	if err := common.ValidatePackageName(packageName); err != nil {
+		return nil, err
+	}
+	if len(tags) == 0 {
+		return nil, errors.New("at least one tag is required")
+	}
+
+	apiTags := make([]*api.Tag, len(tags))
+	for i, t := range tags {
+		var err error
+		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
+			return nil, err
+		}
+	}
+
+	resp, err := client.repo.SearchInstances(ctx, &api.SearchInstancesRequest{
+		Package:  packageName,
+		Tags:     apiTags,
+		PageSize: 1000, // TODO(vadimsh): Support pagination on the client.
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+
+	out := make(common.PinSlice, len(resp.Instances))
+	for i, inst := range resp.Instances {
+		out[i] = apiInstanceToInfo(inst).Pin
+	}
+	if resp.NextPageToken != "" {
+		logging.Warningf(ctx, "Truncating the result only to first %d instances", len(resp.Instances))
+	}
+	return out, nil
 }
 
 func (client *clientImpl) ListInstances(ctx context.Context, packageName string) (InstanceEnumerator, error) {
@@ -877,11 +1092,19 @@ func (client *clientImpl) ListInstances(ctx context.Context, packageName string)
 	}
 	return &instanceEnumeratorImpl{
 		fetch: func(ctx context.Context, limit int, cursor string) ([]InstanceInfo, string, error) {
-			resp, err := client.remote.listInstances(ctx, packageName, limit, cursor)
+			resp, err := client.repo.ListInstances(ctx, &api.ListInstancesRequest{
+				Package:   packageName,
+				PageSize:  int32(limit),
+				PageToken: cursor,
+			}, expectedCodes)
 			if err != nil {
-				return nil, "", err
+				return nil, "", humanErr(err)
 			}
-			return resp.instances, resp.cursor, nil
+			instances := make([]InstanceInfo, len(resp.Instances))
+			for i, inst := range resp.Instances {
+				instances[i] = apiInstanceToInfo(inst)
+			}
+			return instances, resp.NextPageToken, nil
 		},
 	}, nil
 }
@@ -890,9 +1113,17 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return nil, err
 	}
-	refs, err := client.remote.fetchPackageRefs(ctx, packageName)
+
+	resp, err := client.repo.ListRefs(ctx, &api.ListRefsRequest{
+		Package: packageName,
+	}, expectedCodes)
 	if err != nil {
-		return nil, err
+		return nil, humanErr(err)
+	}
+
+	refs := make([]RefInfo, len(resp.Refs))
+	for i, r := range resp.Refs {
+		refs[i] = apiRefToInfo(r)
 	}
 	return refs, nil
 }
@@ -1019,7 +1250,7 @@ func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common
 }
 
 // remoteFetchInstance fetches the package file into 'output' and verifies its
-// hash along the way.
+// hash along the way. Assumes 'pin' is already validated.
 func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
 	defer func() {
 		if err != nil {
@@ -1030,15 +1261,19 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	}()
 
 	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
-	url, err := client.remote.fetchInstanceURL(ctx, pin)
+	resp, err := client.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, expectedCodes)
 	if err != nil {
-		return
+		return humanErr(err)
 	}
+
 	hash, err := local.HashForInstanceID(pin.InstanceID)
 	if err != nil {
 		return
 	}
-	if err = client.storage.download(ctx, url, output, hash); err != nil {
+	if err = client.storage.download(ctx, resp.SignedUrl, output, hash); err != nil {
 		return
 	}
 	if local.InstanceIDFromHash(hash) != pin.InstanceID {
@@ -1189,37 +1424,6 @@ func (e *pendingProcessingError) Error() string {
 	return e.message
 }
 
-type remote interface {
-	init() error
-
-	fetchACL(ctx context.Context, packagePath string) ([]PackageACL, error)
-	modifyACL(ctx context.Context, packagePath string, changes []PackageACLChange) error
-	fetchRoles(ctx context.Context, packagePath string) ([]string, error)
-
-	resolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
-
-	initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error)
-	finalizeUpload(ctx context.Context, sessionID string) (bool, error)
-	registerInstance(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error)
-
-	fetchPackageRefs(ctx context.Context, packageName string) ([]RefInfo, error)
-
-	setRef(ctx context.Context, ref string, pin common.Pin) error
-	attachTags(ctx context.Context, pin common.Pin, tags []string) error
-	fetchInstanceURL(ctx context.Context, pin common.Pin) (string, error)
-	fetchClientBinaryInfo(ctx context.Context, pin common.Pin) (*clientBinary, error)
-	describeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
-
-	listPackages(ctx context.Context, path string, recursive, showHidden bool) ([]string, []string, error)
-	searchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error)
-	listInstances(ctx context.Context, packageName string, limit int, cursor string) (*listInstancesResponse, error)
-}
-
-type storage interface {
-	upload(ctx context.Context, url string, data io.ReadSeeker) error
-	download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error
-}
-
 type registerInstanceResponse struct {
 	uploadSession     *UploadSession
 	alreadyRegistered bool
@@ -1227,17 +1431,28 @@ type registerInstanceResponse struct {
 	registeredTs      time.Time
 }
 
-type fetchInstanceResponse struct {
-	registeredBy string
-	registeredTs time.Time
-}
+////////////////////////////////////////////////////////////////////////////////
+// pRPC error handling.
 
-type clientBinary struct {
-	SHA1     string `json:"sha1"`
-	FetchURL string `json:"fetch_url"`
-}
+// gRPC errors that may be returned by api.RepositoryClient that we recognize
+// and handle ourselves. They will not be logged by the pRPC library.
+var expectedCodes = prpc.ExpectedCode(
+	codes.Aborted,
+	codes.AlreadyExists,
+	codes.FailedPrecondition,
+	codes.NotFound,
+	codes.PermissionDenied,
+)
 
-type listInstancesResponse struct {
-	instances []InstanceInfo
-	cursor    string
+// humanErr takes gRPC errors and returns a human readable error that can be
+// presented in the CLI.
+//
+// It basically strips scary looking gRPC framing around the error message.
+func humanErr(err error) error {
+	if err != nil {
+		if status, ok := status.FromError(err); ok {
+			return errors.New(status.Message())
+		}
+	}
+	return err
 }

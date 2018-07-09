@@ -15,6 +15,7 @@
 package cipd
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -32,8 +33,8 @@ import (
 //
 // These structs largely define public API of 'cipd ... -json-output ...'.
 
-// UnixTime is time.Time that serializes to unix timestamp in JSON (represented
-// as a number of seconds since January 1, 1970 UTC).
+// UnixTime is time.Time that serializes to integer unix timestamp in JSON
+// (represented as a number of seconds since January 1, 1970 UTC).
 type UnixTime time.Time
 
 // String is needed to be able to print UnixTime.
@@ -66,7 +67,10 @@ type JSONError struct {
 
 // MarshalJSON is used by JSON encoder.
 func (e JSONError) MarshalJSON() ([]byte, error) {
-	return []byte(e.Error()), nil
+	if e.error == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(e.Error())
 }
 
 // InstanceInfo is information about single package instance.
@@ -153,14 +157,18 @@ func apiTagToInfo(t *api.Tag) TagInfo {
 func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 	desc := &InstanceDescription{
 		InstanceInfo: apiInstanceToInfo(d.Instance),
-		Refs:         make([]RefInfo, len(d.Refs)),
-		Tags:         make([]TagInfo, len(d.Tags)),
 	}
-	for i, r := range d.Refs {
-		desc.Refs[i] = apiRefToInfo(r)
+	if len(d.Refs) != 0 {
+		desc.Refs = make([]RefInfo, len(d.Refs))
+		for i, r := range d.Refs {
+			desc.Refs[i] = apiRefToInfo(r)
+		}
 	}
-	for i, t := range d.Tags {
-		desc.Tags[i] = apiTagToInfo(t)
+	if len(d.Tags) != 0 {
+		desc.Tags = make([]TagInfo, len(d.Tags))
+		for i, t := range d.Tags {
+			desc.Tags[i] = apiTagToInfo(t)
+		}
 	}
 	return desc
 }
