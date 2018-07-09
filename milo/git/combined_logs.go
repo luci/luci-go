@@ -188,6 +188,10 @@ func saveCacheToDS(c context.Context, host, project, excludeRef string, limit in
 	return datastore.Put(c, items)
 }
 
+// maxGitilesRequests is the max number of Gitiles requests allowed per user
+// request to avoid exceeding Gitiles quota.
+const maxGitilesRequests = 50
+
 func (impl *implementation) loadLogsForRefs(c context.Context, host, project, excludeRef string, limit int, refTips map[string]string) ([][]*gitpb.Commit, error) {
 	cachedLogs := loadCacheFromDS(c, host, project, excludeRef, limit, refTips)
 	logging.Infof(c, "Fetched %d logs from cache, will fetch remaining %d logs from Gitiles", len(cachedLogs), len(refTips)-len(cachedLogs))
@@ -195,6 +199,7 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 	// Load missing logs from Gitiles.
 	newLogs := make(map[string][]*gitpb.Commit)
 	lock := sync.Mutex{} // for concurrent writes to the map
+	numRequests := 0
 	err := parallel.FanOutIn(func(ch chan<- func() error) {
 		for ref := range refTips {
 			if _, ok := cachedLogs[ref]; ok {
@@ -203,6 +208,18 @@ func (impl *implementation) loadLogsForRefs(c context.Context, host, project, ex
 
 			ref := ref
 			ch <- func() error {
+				lock.Lock()
+				if numRequests++; numRequests > maxGitilesRequests {
+					// TODO(sergiyb,tandrii): if you have genuine need for this many refs
+					// at once, implement a cron job that runs this very function
+					// continuously to avoid bursts of gitiles traffic that will make Milo
+					// not functional for the other projects.
+					return errors.Reason("too many refs are new or changed to be "+
+						"fetched at once, stopping after %d. Check your config and/or "+
+						"reload the page", maxGitilesRequests).Err()
+				}
+				lock.Unlock()
+
 				log, err := impl.log(c, host, project, refTips[ref], excludeRef, &LogOptions{Limit: limit})
 				if err != nil {
 					return err
