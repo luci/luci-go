@@ -26,23 +26,23 @@ type Step struct {
 	//
 	// Pipe character ("|") is reserved to separate parent and child step names.
 	// For example, value "a|b" indicates step "b" under step "a".
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The timestamp when the step started.
-	StartTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime" json:"start_time,omitempty"`
+	StartTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp when the step ended.
-	EndTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime" json:"end_time,omitempty"`
+	EndTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// Current status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
-	Status Status `protobuf:"varint,4,opt,name=status,enum=buildbucket.v2.Status" json:"status,omitempty"`
+	Status Status `protobuf:"varint,4,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
 	// Logs produced by the step.
 	// Log order is up to the step.
-	Logs []*Step_Log `protobuf:"bytes,5,rep,name=logs" json:"logs,omitempty"`
+	Logs []*Step_Log `protobuf:"bytes,5,rep,name=logs,proto3" json:"logs,omitempty"`
 	// Human-oriented summary of the step provided by the step itself,
 	// in Markdown format (https://spec.commonmark.org/0.28/).
 	//
 	// V1 equivalent: combines and supersedes Buildbot's step_text and step links and also supports
 	// other formatted text.
-	SummaryMarkdown      string   `protobuf:"bytes,7,opt,name=summary_markdown,json=summaryMarkdown" json:"summary_markdown,omitempty"`
+	SummaryMarkdown      string   `protobuf:"bytes,7,opt,name=summary_markdown,json=summaryMarkdown,proto3" json:"summary_markdown,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -118,9 +118,9 @@ func (m *Step) GetSummaryMarkdown() string {
 type Step_Log struct {
 	// Log name, standard ("stdout", "stderr") or custom ("json.output").
 	// Unique within the step.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// URL of a human-oriented page that displays log contents.
-	ViewUrl              string   `protobuf:"bytes,2,opt,name=view_url,json=viewUrl" json:"view_url,omitempty"`
+	ViewUrl              string   `protobuf:"bytes,2,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
