@@ -161,13 +161,6 @@ func TestConfig(t *testing.T) {
 				})
 			})
 		})
-
-		Convey("AddDeprecatedRef", func() {
-			refs := []string{}
-			AddDeprecatedRef(&refs, "master")
-			AddDeprecatedRef(&refs, "refs/heads/develop")
-			So(refs, ShouldResemble, []string{"refs/heads/master", "refs/heads/develop"})
-		})
 	})
 }
 
@@ -179,7 +172,7 @@ headers: {
 consoles: {
 	id: "default"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	ref: "master"
+	refs: "refs/heads/master"
 	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
@@ -195,7 +188,7 @@ consoles: {
 consoles: {
 	id: "default_header"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	ref: "master"
+	refs: "refs/heads/master"
 	manifest_name: "REVISION"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
@@ -246,7 +239,7 @@ headers: {
 consoles: {
 	id: "default_header"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	ref: "master"
+	refs: "refs/heads/master"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -262,7 +255,7 @@ consoles: {
 consoles: {
 	id: "console.bar"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	ref: "master"
+	refs: "refs/heads/master"
 	builders: {
 		name: "buildbucket/luci.foo.something/bar"
 		category: "main|something"
@@ -272,7 +265,7 @@ consoles: {
 consoles: {
 	id: "console.baz"
 	repo_url: "https://chromium.googlesource.com/foo/bar"
-	ref: "master"
+	refs: "refs/heads/master"
 	builders: {
 		name: "buildbucket/luci.foo.other/baz"
 		category: "main|other"

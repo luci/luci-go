@@ -118,6 +118,8 @@ message Header {
 // Console is a waterfall definition consisting of one or more builders.
 message Console {
   reserved 8;
+  reserved 4;
+  reserved "ref";
 
   // Id is the reference to the console, and will be the address to make the
   // console reachable from /console/<Project>/<ID>.
@@ -129,9 +131,6 @@ message Console {
 
   // RepoUrl is the URL of the git repository to display as the rows of the console.
   string repo_url = 3;
-
-  // DEPRECATED. Same as refs below.
-  string ref = 4;
 
   // Refs are the refs to pull commits from when displaying the console.
   //

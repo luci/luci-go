@@ -592,19 +592,6 @@ func init() {
 	validation.Rules.Add("services/${appid}", globalConfigFilename, validateServiceCfg)
 }
 
-// AddDeprecatedRef converts/adds a ref in deprecated format to list of refs.
-// TODO(sergiyb): Remove this function after deprecating ref field.
-func AddDeprecatedRef(refs *[]string, deprecatedRef string) {
-	// The ref field was allowed to just contain the branch name, whereas refs
-	// field is only allowed to contain fully-qualified ref names (i.e. those
-	// starting with "refs/"), therefore we need to prepend "refs/heads/" prefix
-	// before adding it to refs list unless it already starts with "refs/".
-	if !strings.HasPrefix(deprecatedRef, "refs/") {
-		deprecatedRef = "refs/heads/" + deprecatedRef
-	}
-	*refs = append(*refs, deprecatedRef)
-}
-
 // validateProjectCfg implements validation.Func by taking a potential Milo
 // config at path, validating it, and writing the result into ctx.
 //
@@ -647,15 +634,9 @@ func validateProjectCfg(ctx *validation.Context, configSet, path string, content
 			if console.RepoUrl == "" {
 				ctx.Errorf("ci console missing repo url")
 			}
-			if console.Ref == "" && len(console.Refs) == 0 {
+			if len(console.Refs) == 0 {
 				ctx.Errorf("ci console missing refs")
 			} else {
-				if console.Ref != "" {
-					AddDeprecatedRef(&console.Refs, console.Ref)
-					// TODO(sergiyb): Deprecate ref field when all configs were updated and this
-					// warning is not reported anymore.
-					logging.Warningf(ctx.Context, "found usage of deprecated ref field in config set %s", configSet)
-				}
 				gitiles.ValidateRefSet(ctx, console.Refs)
 			}
 		} else {
