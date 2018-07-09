@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dc3f5e4f_a8c36da5",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-09T21:12:38Z",
+      "side": 1,
+      "message": "consider \"maxGitilesLogRPCsPerRequest\"",
+      "range": {
+        "startLine": 193,
+        "startChar": 6,
+        "endLine": 193,
+        "endChar": 24
+      },
+      "revId": "3d64904d454b78f2e3d9577cfc2804f617a406e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3f7bf7d6_4961a35d",
+        "filename": "milo/git/combined_logs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-07-09T21:12:38Z",
+      "side": 1,
+      "message": "you don\u0027t need lock if you move it to line 208. Also, there is no point in iterating the rest of the refTips once this point is reached.",
+      "range": {
+        "startLine": 211,
+        "startChar": 4,
+        "endLine": 221,
+        "endChar": 17
+      },
+      "revId": "3d64904d454b78f2e3d9577cfc2804f617a406e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
