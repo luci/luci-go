@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ad4ec8a_29dfdda9",
+        "filename": "common/gcloud/pubsub/publisher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-07-10T23:15:11Z",
+      "side": 1,
+      "message": "Note, I don\u0027t think this is wrong, but it\u0027s the first time I\u0027ve seen functions as members of a struct in Go. I think this could also be done by defining an interface with Client and RecreateClient, and defining methods on the UnbufferedPublisher type, right?",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 22
+      },
+      "revId": "173eb68fc40e7fe426c7cc14bb5bd0e5b81da1cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
