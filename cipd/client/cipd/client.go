@@ -110,6 +110,23 @@ var (
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 )
 
+// ParanoiaMode specifies how paranoid EnsurePackages should be.
+type ParanoiaMode = local.ParanoiaMode
+
+const (
+	// NotParanoid indicates that EnsurePackages should trust its metadata
+	// directory: if a package is marked as installed there, it should be
+	// considered correctly installed in the site root too.
+	NotParanoid = local.NotParanoid
+
+	// CheckPresence indicates that CheckDeployed should verify all files
+	// that are supposed to be installed into the site root are indeed present
+	// there, and reinstall ones that are missing.
+	//
+	// Note that it will not check file's content or file mode. Only its presence.
+	CheckPresence = local.CheckPresence
+)
+
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
 	UserAgent = "cipd 2.0.0"
@@ -261,11 +278,15 @@ type Client interface {
 	// will do all necessary actions to bring the state of the site root to the
 	// desired one.
 	//
+	// Depending on the paranoia mode, will optionally verify that all installed
+	// packages are installed correctly and will attempt to fix ones that are not.
+	// See the enum for more info.
+	//
 	// If dryRun is true, will just check for changes and return them in Actions
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, dryRun bool) (ActionMap, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoiaMode, dryRun bool) (ActionMap, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1327,9 +1348,46 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	return err
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, dryRun bool) (aMap ActionMap, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoiaMode, dryRun bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(); err != nil {
 		return
+	}
+
+	// needsRepair decided whether we should attempt to repair an already
+	// installed package.
+	needsRepair := func(string, common.Pin) *RepairPlan { return nil }
+	if paranoia != NotParanoid {
+		needsRepair = func(subdir string, pin common.Pin) *RepairPlan {
+			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia); {
+			case err != nil:
+				// This error is probably non-recoverable, but we'll try anyway and
+				// properly fail later.
+				return &RepairPlan{
+					NeedsReinstall:  true,
+					ReinstallReason: fmt.Sprintf("failed to check the package state - %s", err),
+				}
+			case !state.Deployed:
+				// This should generally not happen. Can probably happen if two clients
+				// are messing with same .cipd/* directory concurrently.
+				return &RepairPlan{
+					NeedsReinstall:  true,
+					ReinstallReason: "the package is not deployed at all",
+				}
+			case state.Pin.InstanceID != pin.InstanceID:
+				// Same here.
+				return &RepairPlan{
+					NeedsReinstall:  true,
+					ReinstallReason: fmt.Sprintf("expected to see instance %q, but saw %q", pin.InstanceID, state.Pin.InstanceID),
+				}
+			case len(state.ToRedeploy) != 0:
+				// Have some corrupted files that needs to be redeployed.
+				return &RepairPlan{
+					ToRedeploy: state.ToRedeploy,
+				}
+			default:
+				return nil // the package needs no repairs
+			}
+		}
 	}
 
 	client.BeginBatch(ctx)
@@ -1342,7 +1400,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	}
 
 	// Figure out what needs to be updated and deleted, log it.
-	aMap = buildActionPlan(allPins, existing)
+	aMap = buildActionPlan(allPins, existing, needsRepair)
 	if len(aMap) == 0 {
 		logging.Debugf(ctx, "Everything is up-to-date.")
 		return
@@ -1373,26 +1431,40 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		}
 	})
 
-	// Install all new and updated stuff. Install in the order specified by
-	// 'pins'. Order matters if multiple packages install same file.
+	// Install all new and updated stuff, repair broken stuff. Install in the
+	// order specified by 'pins'. Order matters if multiple packages install same
+	// file.
 	aMap.LoopOrdered(func(subdir string, actions *Actions) {
 		toDeploy := make(map[string]bool, len(actions.ToInstall)+len(actions.ToUpdate))
+		toRepair := make(map[string]*RepairPlan, len(actions.ToRepair))
 		for _, p := range actions.ToInstall {
 			toDeploy[p.PackageName] = true
 		}
 		for _, pair := range actions.ToUpdate {
 			toDeploy[pair.To.PackageName] = true
 		}
-		for _, pin := range allPins[subdir] {
-			if !toDeploy[pin.PackageName] {
-				continue
+		for _, broken := range actions.ToRepair {
+			if broken.RepairPlan.NeedsReinstall {
+				toDeploy[broken.Pin.PackageName] = true
+			} else {
+				toRepair[broken.Pin.PackageName] = &broken.RepairPlan
 			}
-			err = client.FetchAndDeployInstance(ctx, subdir, pin)
+		}
+		for _, pin := range allPins[subdir] {
+			var action string
+			var err error
+			if toDeploy[pin.PackageName] {
+				action = "install"
+				err = client.FetchAndDeployInstance(ctx, subdir, pin)
+			} else if plan := toRepair[pin.PackageName]; plan != nil {
+				action = "repair"
+				err = nil // TODO(vadmish): Actually implement the repair.
+			}
 			if err != nil {
-				logging.Errorf(ctx, "Failed to install %s - %s", pin, err)
+				logging.Errorf(ctx, "Failed to %s %s - %s", action, pin, err)
 				hasErrors = true
 				actions.Errors = append(actions.Errors, ActionError{
-					Action: "install",
+					Action: action,
 					Pin:    pin,
 					Error:  JSONError{err},
 				})
