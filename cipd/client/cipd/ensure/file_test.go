@@ -44,7 +44,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"ServiceURL",
-		&File{"https://something.example.com", nil, nil},
+		&File{"https://something.example.com", "", nil, nil},
 		f(
 			"$ServiceURL https://something.example.com",
 		),
@@ -52,7 +52,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"simple packages",
-		&File{"", map[string]PackageSlice{
+		&File{"", "", map[string]PackageSlice{
 			"": {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},
@@ -66,7 +66,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"full file",
-		&File{"https://some.example.com", map[string]PackageSlice{
+		&File{"https://some.example.com", "", map[string]PackageSlice{
 			"": {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},
