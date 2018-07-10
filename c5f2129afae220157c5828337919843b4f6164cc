@@ -22,6 +22,30 @@
       "revId": "c5f2129afae220157c5828337919843b4f6164cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7105b02e_7bb1a882",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-10T22:50:53Z",
+      "side": 1,
+      "message": "Yep it\u0027s copied from https://chromium.googlesource.com/infra/infra/+/master/crdx/feedback/README.md\n\nNot sure if a comment would be useful because it\u0027s supposed to be the \"de-facto\" feedback button for chops, so everyone is \"supposed\" to have the same snippet, making the comment a bit redundant.",
+      "parentUuid": "5d262cab_7f93ff4d",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 109
+      },
+      "revId": "c5f2129afae220157c5828337919843b4f6164cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
