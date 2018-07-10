@@ -68,6 +68,34 @@ import (
 // such as description and manifest files with a list of extracted files (to
 // know what to uninstall).
 
+// ParanoiaMode specifies how paranoid CheckDeployed should be.
+type ParanoiaMode string
+
+const (
+	// NotParanoid indicates that CheckDeployed should trust its metadata
+	// directory: if a package is marked as installed there, it should be
+	// considered correctly installed in the site root too.
+	NotParanoid ParanoiaMode = "NotParanoid"
+
+	// CheckPresence indicates that CheckDeployed should verify all files
+	// that are supposed to be installed into the site root are indeed present
+	// there.
+	//
+	// Note that it will not check file's content or file mode. Only its presence.
+	CheckPresence ParanoiaMode = "CheckPresence"
+)
+
+// DeployedPackage represents a state of the deployed (or partially deployed)
+// package, as returned by CheckDeployed.
+//
+// ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
+// and the package needs repairs.
+type DeployedPackage struct {
+	Deployed   bool       // true if the package is deployed (perhaps partially)
+	Pin        common.Pin // the currently installed pin
+	ToRedeploy []string   // the list of files that needs to be redeployed
+}
+
 // Deployer knows how to unzip and place packages into site root directory.
 type Deployer interface {
 	// DeployInstance installs an instance of a package into the given subdir of
@@ -85,10 +113,19 @@ type Deployer interface {
 	// CheckDeployed checks whether a given package is deployed at the given
 	// subdir.
 	//
-	// It returns information about installed version (or error if not installed).
-	CheckDeployed(ctx context.Context, subdir, packageName string) (common.Pin, error)
+	// Returns an error if it can't check the package state for some reason.
+	// Otherwise returns the state of the package. In particular, if the package
+	// is not deployed, returns DeployedPackage{Deployed: false}.
+	//
+	// Depending on the paranoia mode will also verify that package's files are
+	// correctly installed into the site root and will return a list of files
+	// that needs to be redeployed (as part of DeployedPackage).
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia ParanoiaMode) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
+	//
+	// It just does a shallow examination of the metadata directory, without
+	// paranoid checks that all installed packages are free from corruption.
 	FindDeployed(ctx context.Context) (out common.PinSliceBySubdir, err error)
 
 	// RemoveDeployed deletes a package from a subdir given its name.
@@ -129,8 +166,8 @@ func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (c
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string) (common.Pin, error) {
-	return common.Pin{}, d.err
+func (d errDeployer) CheckDeployed(context.Context, string, string, ParanoiaMode) (*DeployedPackage, error) {
+	return nil, d.err
 }
 
 func (d errDeployer) FindDeployed(context.Context) (out common.PinSliceBySubdir, err error) {
@@ -290,42 +327,66 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Verify it's all right.
-	newPin, err := d.CheckDeployed(ctx, subdir, pin.PackageName)
-	if err == nil && newPin.InstanceID != pin.InstanceID {
-		err = fmt.Errorf("other instance (%s) was deployed concurrently", newPin.InstanceID)
-	}
-	if err == nil {
-		logging.Infof(ctx, "Successfully deployed %s", pin)
-	} else {
+	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid)
+	switch {
+	case err != nil:
 		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
+		return common.Pin{}, err
+	case !state.Deployed: // should not happen really...
+		logging.Errorf(ctx, "Failed to deploy %s: the package is reported as not installed", pin)
+		return common.Pin{}, fmt.Errorf("unknown error when deploying, see logs")
+	case state.Pin.InstanceID != pin.InstanceID:
+		err = fmt.Errorf("other instance (%s) was deployed concurrently", state.Pin.InstanceID)
+		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
+		return state.Pin, err
+	default:
+		return pin, nil
 	}
-	return newPin, err
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string) (common.Pin, error) {
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, paranoia ParanoiaMode) (*DeployedPackage, error) {
 	if err := common.ValidateSubdir(subdir); err != nil {
-		return common.Pin{}, err
+		return nil, err
+	}
+
+	switch paranoia {
+	case NotParanoid, CheckPresence:
+		break // known modes
+	default:
+		return nil, fmt.Errorf("unrecognized paranoia mode %q", paranoia)
 	}
 
 	pkgPath, err := d.packagePath(ctx, subdir, pkg, false)
-	if err != nil {
-		return common.Pin{}, err
-	}
-	if pkgPath == "" {
-		return common.Pin{}, fmt.Errorf("package %s is not installed", pkg)
+	switch {
+	case err != nil:
+		return nil, err // this error is fatal, reinstalling probably won't help
+	case pkgPath == "":
+		return &DeployedPackage{Deployed: false}, nil
 	}
 
 	current, err := d.getCurrentInstanceID(pkgPath)
-	if err != nil {
-		return common.Pin{}, err
+	switch {
+	case err != nil: // this error MAY be recovered from by reinstalling
+		logging.Errorf(ctx, "Failed to figure out installed instance ID of %q in %q: %s", pkg, subdir, err)
+		return &DeployedPackage{Deployed: false}, nil
+	case current == "":
+		return &DeployedPackage{Deployed: false}, nil
 	}
-	if current == "" {
-		return common.Pin{}, fmt.Errorf("package %s is not installed", pkg)
+
+	state := DeployedPackage{
+		Deployed: true,
+		Pin: common.Pin{
+			PackageName: pkg,
+			InstanceID:  current,
+		},
 	}
-	return common.Pin{
-		PackageName: pkg,
-		InstanceID:  current,
-	}, nil
+
+	if paranoia == CheckPresence {
+		// TODO(vadimsh): Check that all required files are indeed installed and
+		// populate state.ToRedeploy with ones that are not.
+	}
+
+	return &state, nil
 }
 
 func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {

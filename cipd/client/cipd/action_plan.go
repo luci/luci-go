@@ -15,6 +15,7 @@
 package cipd
 
 import (
+	"fmt"
 	"sort"
 
 	"golang.org/x/net/context"
@@ -27,20 +28,25 @@ import (
 
 // Helper structs and implementation guts of EnsurePackages call.
 
-// Actions is returned by EnsurePackages.
+// Actions lists what the cipd.Client should do or did to ensure the state of
+// some single subdirectory under the installation root.
 //
-// It lists pins that were attempted to be installed, updated or removed, as
-// well as all errors.
+// Is it part of a per-directory ActionMap returned by EnsurePackages.
 type Actions struct {
 	ToInstall common.PinSlice `json:"to_install,omitempty"` // pins to be installed
 	ToUpdate  []UpdatedPin    `json:"to_update,omitempty"`  // pins to be replaced
 	ToRemove  common.PinSlice `json:"to_remove,omitempty"`  // pins to be removed
-	Errors    []ActionError   `json:"errors,omitempty"`     // all individual errors
+	ToRepair  []BrokenPin     `json:"to_repair,omitempty"`  // pins to be repaired
+
+	Errors []ActionError `json:"errors,omitempty"` // all individual errors
 }
 
 // Empty is true if there are no actions specified.
 func (a *Actions) Empty() bool {
-	return len(a.ToInstall) == 0 && len(a.ToUpdate) == 0 && len(a.ToRemove) == 0
+	return len(a.ToInstall) == 0 &&
+		len(a.ToUpdate) == 0 &&
+		len(a.ToRemove) == 0 &&
+		len(a.ToRepair) == 0
 }
 
 // UpdatedPin specifies a pair of pins: old and new version of a package.
@@ -49,7 +55,36 @@ type UpdatedPin struct {
 	To   common.Pin `json:"to"`
 }
 
-// ActionError holds an error that happened when installing or removing the pin.
+// BrokenPin specifies a pin that should be repaired and how.
+type BrokenPin struct {
+	Pin        common.Pin `json:"pin"`
+	RepairPlan RepairPlan `json:"repair_plan"`
+}
+
+// RepairPlan describes what should be redeployed to fix a broken pin.
+type RepairPlan struct {
+	// NeedsReinstall is true if the package is broken to the point it is simpler
+	// to completely reinstall it.
+	//
+	// ReinstallReason contains explanation why the reinstall is needed.
+	//
+	// If NeedsReinstall is false, then the package may be repaired just by
+	// extracting a bunch of files, specified in ToRedeploy list.
+	NeedsReinstall bool `json:"needs_reinstall,omitempty"`
+
+	// ReinstallReason is a human-readable reason of why the package should be
+	// completely reinstalled rather than selectively repaired.
+	ReinstallReason string `json:"reinstall_reason,omitempty"`
+
+	// ToRedeploy is a list of slash-separated file names (as they are specified
+	// inside the package file), that needs to be redeployed into the site root in
+	// order to repair the package.
+	//
+	// Set only if NeedsReinstall is false.
+	ToRedeploy []string `json:"to_redeploy,omitempty"`
+}
+
+// ActionError holds an error that happened when working on the pin.
 type ActionError struct {
 	Action string     `json:"action"`
 	Pin    common.Pin `json:"pin"`
@@ -107,12 +142,29 @@ func (am ActionMap) Log(ctx context.Context) {
 				logging.Infof(ctx, "    %s", pin)
 			}
 		}
+		if len(actions.ToRepair) != 0 {
+			logging.Infof(ctx, "  to repair:")
+			for _, broken := range actions.ToRepair {
+				more := broken.RepairPlan.ReinstallReason
+				if more == "" {
+					more = fmt.Sprintf("%d files to redeploy", len(broken.RepairPlan.ToRedeploy))
+				}
+				logging.Infof(ctx, "    %s (%s)", broken.Pin, more)
+			}
+		}
 	}
 }
 
-// buildActionPlan is used by EnsurePackages to figure out what to install or
-// remove.
-func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap) {
+// repairCB is called for each installed pin to decide whether it should be
+// repaired and how.
+type repairCB func(subdir string, pin common.Pin) *RepairPlan
+
+// buildActionPlan is used by EnsurePackages to figure out what to install,
+// remove, update or repair.
+//
+// The given 'needsRepair' callback is called for each installed pin to decide
+// whether it should be repaired and how.
+func buildActionPlan(desired, existing common.PinSliceBySubdir, needsRepair repairCB) (aMap ActionMap) {
 	desiredSubdirs := stringset.New(len(desired))
 	for desiredSubdir := range desired {
 		desiredSubdirs.Add(desiredSubdir)
@@ -145,7 +197,7 @@ func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap)
 	desiredSubdirs.Intersect(existingSubdirs).Iter(func(subdir string) bool {
 		a := Actions{}
 
-		// Figure out what needs to be installed or updated.
+		// Figure out what needs to be installed, updated or repaired.
 		haveMap := existing[subdir].ToMap()
 		for _, want := range desired[subdir] {
 			if haveID, exists := haveMap[want.PackageName]; !exists {
@@ -154,6 +206,11 @@ func buildActionPlan(desired, existing common.PinSliceBySubdir) (aMap ActionMap)
 				a.ToUpdate = append(a.ToUpdate, UpdatedPin{
 					From: common.Pin{PackageName: want.PackageName, InstanceID: haveID},
 					To:   want,
+				})
+			} else if repairPlan := needsRepair(subdir, want); repairPlan != nil {
+				a.ToRepair = append(a.ToRepair, BrokenPin{
+					Pin:        want,
+					RepairPlan: *repairPlan,
 				})
 			}
 		}
