@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/cli"
+	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/local"
@@ -300,8 +301,11 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	doInstall := true
 	if !force {
 		d := local.NewDeployer(site.siteRoot)
-		existing, err := d.CheckDeployed(ctx, "", pkgName)
-		if err == nil && existing == resolved {
+		switch state, err := d.CheckDeployed(ctx, "", pkgName, local.NotParanoid); {
+		case err != nil:
+			logging.Errorf(ctx, "Failed to check installed package state - %s", err)
+			logging.Errorf(ctx, "Will attempt to reinstall")
+		case state.Deployed && state.Pin == resolved:
 			fmt.Printf("Package %s is up-to-date.\n", pkgName)
 			doInstall = false
 		}

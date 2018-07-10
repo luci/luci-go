@@ -853,7 +853,6 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-
 	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
 		return nil, nil, err
@@ -875,7 +874,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 		return nil, nil, err
 	}
 
-	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, cipd.NotParanoid, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
