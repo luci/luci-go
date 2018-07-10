@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1a087eb4_dd3f0049",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-10T21:13:57Z",
+      "side": 1,
+      "message": "For nicer public API of \u0027cipd\u0027 package. \u0027common\u0027 is not very descriptive when used outside of cipd/* packages. \n\nNote that I intend to refactor package structure eventually. The current one is bad.",
+      "parentUuid": "01abae58_1958f305",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 12
+      },
+      "revId": "b3ba941bec84f5503ebf80f23122f28440888e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "18550735_17522682",
         "filename": "cipd/client/cipd/ensure/file_test.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "b3ba941bec84f5503ebf80f23122f28440888e52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d692dd8a_c6017eff",
+        "filename": "cipd/client/cipd/ensure/file_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-10T21:13:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "18550735_17522682",
+      "range": {
+        "startLine": 69,
+        "startChar": 36,
+        "endLine": 69,
+        "endChar": 37
+      },
+      "revId": "b3ba941bec84f5503ebf80f23122f28440888e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
