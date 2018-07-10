@@ -33,7 +33,8 @@ import (
 
 // File is an in-process representation of the 'ensure file' format.
 type File struct {
-	ServiceURL string
+	ServiceURL   string
+	ParanoidMode common.ParanoidMode
 
 	PackagesBySubdir map[string]PackageSlice
 	VerifyPlatforms  []template.Platform
@@ -126,7 +127,8 @@ func ParseFile(r io.Reader) (*File, error) {
 // ResolvedFile only contains valid, fully-resolved information and is the
 // result of calling File.Resolve.
 type ResolvedFile struct {
-	ServiceURL string
+	ServiceURL   string
+	ParanoidMode common.ParanoidMode
 
 	PackagesBySubdir common.PinSliceBySubdir
 }
@@ -145,7 +147,7 @@ func (f *ResolvedFile) Serialize(w io.Writer) (int, error) {
 		}
 		packagesBySubdir[k] = slc
 	}
-	return (&File{f.ServiceURL, packagesBySubdir, nil}).Serialize(w)
+	return (&File{f.ServiceURL, f.ParanoidMode, packagesBySubdir, nil}).Serialize(w)
 }
 
 // Resolve takes the current unresolved File and expands all package templates
@@ -166,6 +168,14 @@ func (f *File) ResolveWith(rslv VersionResolver, expander template.Expander) (*R
 		if _, err := url.Parse(f.ServiceURL); err != nil {
 			return nil, errors.Annotate(err, "bad ServiceURL").Err()
 		}
+	}
+
+	ret.ParanoidMode = common.NotParanoid
+	if f.ParanoidMode != "" {
+		if err := f.ParanoidMode.Validate(); err != nil {
+			return nil, errors.Annotate(err, "bad ParanoidMode").Err()
+		}
+		ret.ParanoidMode = f.ParanoidMode
 	}
 
 	ret.ServiceURL = f.ServiceURL
@@ -231,7 +241,16 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 		if f.ServiceURL != "" {
 			maybeAddNL()
 			fmt.Fprintf(w, "$ServiceURL %s", f.ServiceURL)
-			needsNLs = 2
+			needsNLs = 1
+		}
+		if f.ParanoidMode != "" && f.ParanoidMode != common.NotParanoid {
+			maybeAddNL()
+			fmt.Fprintf(w, "$ParanoidMode %s", f.ParanoidMode)
+			needsNLs = 1
+		}
+
+		if needsNLs != 0 {
+			needsNLs += 1 // new line separator if any of $Directives were used
 		}
 
 		if len(f.VerifyPlatforms) > 0 {

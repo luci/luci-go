@@ -107,6 +107,12 @@ var badEnsureFiles = []struct {
 	},
 
 	{
+		"bad paranoid mode",
+		"$ParanoidMode ZZZ",
+		`unrecognized paranoid mode`,
+	},
+
+	{
 		"too many urls",
 		f(
 			"$serviceurl https://something.example.com",

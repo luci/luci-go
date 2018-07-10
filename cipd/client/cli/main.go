@@ -874,7 +874,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 		return nil, nil, err
 	}
 
-	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, cipd.NotParanoid, dryRun)
+	actions, err := client.EnsurePackages(ctx, resolved.PackagesBySubdir, resolved.ParanoidMode, dryRun)
 	if err != nil {
 		return nil, actions, err
 	}
@@ -882,6 +882,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 	if ensureFileOut != "" {
 		buf := bytes.Buffer{}
 		resolved.ServiceURL = clientOpts.resolvedServiceURL()
+		resolved.ParanoidMode = ""
 		_, err = resolved.Serialize(&buf)
 		if err == nil {
 			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
