@@ -68,23 +68,6 @@ import (
 // such as description and manifest files with a list of extracted files (to
 // know what to uninstall).
 
-// ParanoiaMode specifies how paranoid CheckDeployed should be.
-type ParanoiaMode string
-
-const (
-	// NotParanoid indicates that CheckDeployed should trust its metadata
-	// directory: if a package is marked as installed there, it should be
-	// considered correctly installed in the site root too.
-	NotParanoid ParanoiaMode = "NotParanoid"
-
-	// CheckPresence indicates that CheckDeployed should verify all files
-	// that are supposed to be installed into the site root are indeed present
-	// there.
-	//
-	// Note that it will not check file's content or file mode. Only its presence.
-	CheckPresence ParanoiaMode = "CheckPresence"
-)
-
 // DeployedPackage represents a state of the deployed (or partially deployed)
 // package, as returned by CheckDeployed.
 //
@@ -120,7 +103,7 @@ type Deployer interface {
 	// Depending on the paranoia mode will also verify that package's files are
 	// correctly installed into the site root and will return a list of files
 	// that needs to be redeployed (as part of DeployedPackage).
-	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia ParanoiaMode) (*DeployedPackage, error)
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
 	//
@@ -166,7 +149,7 @@ func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (c
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string, ParanoiaMode) (*DeployedPackage, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode) (*DeployedPackage, error) {
 	return nil, d.err
 }
 
@@ -327,7 +310,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Verify it's all right.
-	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid)
+	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid)
 	switch {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
@@ -344,16 +327,12 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, paranoia ParanoiaMode) (*DeployedPackage, error) {
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, paranoia common.ParanoidMode) (*DeployedPackage, error) {
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return nil, err
 	}
-
-	switch paranoia {
-	case NotParanoid, CheckPresence:
-		break // known modes
-	default:
-		return nil, fmt.Errorf("unrecognized paranoia mode %q", paranoia)
+	if err := paranoia.Validate(); err != nil {
+		return nil, err
 	}
 
 	pkgPath, err := d.packagePath(ctx, subdir, pkg, false)
@@ -381,7 +360,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 		},
 	}
 
-	if paranoia == CheckPresence {
+	if paranoia == common.CheckPresence {
 		// TODO(vadimsh): Check that all required files are indeed installed and
 		// populate state.ToRedeploy with ones that are not.
 	}

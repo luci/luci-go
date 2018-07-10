@@ -46,7 +46,7 @@ var goodEnsureFiles = []struct {
 			"path/to/other_package some_tag:version",
 			"path/to/yet_another a_ref",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
 				p("path/to/other_package", "some_tag:version"),
@@ -61,7 +61,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch} latest",
 			"path/to/other/${platform} latest",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
@@ -75,7 +75,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os}-${arch=neep,test_arch} latest",
 			"path/to/other/${platform=test_os-test_arch} latest",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("path/to/package/test_os-test_arch", "latest"),
 				p("path/to/other/test_os-test_arch", "latest"),
@@ -89,7 +89,7 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${os=spaz}-${arch=neep,test_arch} latest",
 			"path/to/package/${platform=neep-foo} latest",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{}},
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{}},
 	},
 
 	{
@@ -114,7 +114,7 @@ var goodEnsureFiles = []struct {
 			"@Subdir something/${os=test_os,other}",
 			"some/os_specific/package canary",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("some/package", "latest"),
 				p("cool/package", "beef"),
@@ -142,7 +142,7 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"https://cipd.example.com/path/to/thing", common.PinSliceBySubdir{
+		&ResolvedFile{"https://cipd.example.com/path/to/thing", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
 			},
@@ -158,7 +158,21 @@ var goodEnsureFiles = []struct {
 			"",
 			"some/package version",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
+			"": {
+				p("some/package", "version"),
+			},
+		}},
+	},
+
+	{
+		"ParanoidMode setting",
+		f(
+			"$ParanoidMode CheckPresence",
+			"",
+			"some/package version",
+		),
+		&ResolvedFile{"", common.CheckPresence, common.PinSliceBySubdir{
 			"": {
 				p("some/package", "version"),
 			},
@@ -168,7 +182,7 @@ var goodEnsureFiles = []struct {
 	{
 		"empty",
 		"",
-		&ResolvedFile{},
+		&ResolvedFile{"", common.NotParanoid, nil},
 	},
 
 	{
@@ -178,7 +192,7 @@ var goodEnsureFiles = []struct {
 			"tabs/to/package\t\t\t\tlatest",
 			"\ttabs/and/spaces  \t  \t  \tlatest   \t",
 		),
-		&ResolvedFile{"", common.PinSliceBySubdir{
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
 			"": {
 				p("path/to/package", "latest"),
 				p("tabs/to/package", "latest"),

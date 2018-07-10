@@ -110,21 +110,21 @@ var (
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 )
 
-// ParanoiaMode specifies how paranoid EnsurePackages should be.
-type ParanoiaMode = local.ParanoiaMode
+// ParanoidMode specifies how paranoid EnsurePackages should be.
+type ParanoidMode = common.ParanoidMode
 
 const (
 	// NotParanoid indicates that EnsurePackages should trust its metadata
 	// directory: if a package is marked as installed there, it should be
 	// considered correctly installed in the site root too.
-	NotParanoid = local.NotParanoid
+	NotParanoid = common.NotParanoid
 
 	// CheckPresence indicates that CheckDeployed should verify all files
 	// that are supposed to be installed into the site root are indeed present
 	// there, and reinstall ones that are missing.
 	//
 	// Note that it will not check file's content or file mode. Only its presence.
-	CheckPresence = local.CheckPresence
+	CheckPresence = common.CheckPresence
 )
 
 var (
@@ -286,7 +286,7 @@ type Client interface {
 	// struct, but won't actually perform them.
 	//
 	// If the update was only partially applied, returns both Actions and error.
-	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoiaMode, dryRun bool) (ActionMap, error)
+	EnsurePackages(ctx context.Context, pkgs common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (ActionMap, error)
 }
 
 // ClientOptions is passed to NewClient factory function.
@@ -1348,8 +1348,11 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	return err
 }
 
-func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoiaMode, dryRun bool) (aMap ActionMap, err error) {
+func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (aMap ActionMap, err error) {
 	if err = allPins.Validate(); err != nil {
+		return
+	}
+	if err = paranoia.Validate(); err != nil {
 		return
 	}
 

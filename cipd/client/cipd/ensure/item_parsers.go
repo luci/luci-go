@@ -74,6 +74,15 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 	return nil
 }
 
+func paranoidModeParser(_ *itemParserState, f *File, val string) error {
+	p := common.ParanoidMode(val)
+	if err := p.Validate(); err != nil {
+		return fmt.Errorf("bad $ParanoidMode: %s", err)
+	}
+	f.ParanoidMode = p
+	return nil
+}
+
 // itemParsers is the main way that the ensure file format is extended. If you
 // need to add a new setting or directive, please add an appropriate function
 // above and then add it to this map.
@@ -81,4 +90,5 @@ var itemParsers = map[string]itemParser{
 	"@subdir":           subdirParser,
 	"$serviceurl":       serviceURLParser,
 	"$verifiedplatform": verifyParser,
+	"$paranoidmode":     paranoidModeParser,
 }
