@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ffc3c7d2_1a36b72b",
+        "filename": "cipd/client/cipd/action_plan.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "when is this true? what if this is false?",
+      "range": {
+        "startLine": 66,
+        "startChar": 65,
+        "endLine": 66,
+        "endChar": 93
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b7fff0e_8cd440f8",
+        "filename": "cipd/client/cipd/action_plan.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "broken/missing?",
+      "range": {
+        "startLine": 134,
+        "startChar": 38,
+        "endLine": 134,
+        "endChar": 44
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34a59fbd_d39a0eb7",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "flags? like permissions/timestamps?",
+      "range": {
+        "startLine": 126,
+        "startChar": 50,
+        "endLine": 126,
+        "endChar": 55
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98b81837_a68020ac",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1363,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "too bad there\u0027s not a way to tag the error so that we know for sure... ;)",
+      "range": {
+        "startLine": 1363,
+        "startChar": 21,
+        "endLine": 1363,
+        "endChar": 45
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "434488f0_b31d321e",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1450,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "what about folders with bad ownership? e.g. if root/something is owned by not-us, but root/something/file is missing, should we attempt to fix permissions of the intermediate folders?",
+      "range": {
+        "startLine": 1450,
+        "startChar": 47,
+        "endLine": 1450,
+        "endChar": 57
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c9e1466_76f2350f",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1461,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T01:28:41Z",
+      "side": 1,
+      "message": "errors.New(\"not implemented\")\n\nor panic?",
+      "range": {
+        "startLine": 1461,
+        "startChar": 10,
+        "endLine": 1461,
+        "endChar": 13
+      },
+      "revId": "592d30c169b429c770fa717b8d4e07abb936389c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
