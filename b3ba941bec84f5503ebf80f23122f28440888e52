@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "01abae58_1958f305",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T20:42:22Z",
+      "side": 1,
+      "message": "why redefine these here and not just use common.NotParanoid everywhere?",
+      "range": {
+        "startLine": 120,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 12
+      },
+      "revId": "b3ba941bec84f5503ebf80f23122f28440888e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18550735_17522682",
+        "filename": "cipd/client/cipd/ensure/file_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-10T20:42:22Z",
+      "side": 1,
+      "message": "add something here and update the file in 82",
+      "range": {
+        "startLine": 69,
+        "startChar": 36,
+        "endLine": 69,
+        "endChar": 37
+      },
+      "revId": "b3ba941bec84f5503ebf80f23122f28440888e52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
