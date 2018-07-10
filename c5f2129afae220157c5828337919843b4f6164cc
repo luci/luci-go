@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d262cab_7f93ff4d",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-07-10T22:45:02Z",
+      "side": 1,
+      "message": "Is this a snippet copied from somewhere else? Would a comment be helpful?",
+      "range": {
+        "startLine": 123,
+        "startChar": 0,
+        "endLine": 126,
+        "endChar": 109
+      },
+      "revId": "c5f2129afae220157c5828337919843b4f6164cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
