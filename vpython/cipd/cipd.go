@@ -170,7 +170,7 @@ func (pl *PackageLoader) Ensure(c context.Context, root string, packages []*vpyt
 	client.BeginBatch(c)
 	defer client.EndBatch(c)
 
-	actionMap, err := client.EnsurePackages(c, pinSlice, false)
+	actionMap, err := client.EnsurePackages(c, pinSlice, cipd.NotParanoid, false)
 	if err != nil {
 		return errors.Annotate(err, "failed to install CIPD packages").Err()
 	}
