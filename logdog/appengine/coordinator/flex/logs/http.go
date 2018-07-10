@@ -121,6 +121,14 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		<a href="{{.LogoutURL}}" alt="Logout">Logout</a>
 	{{ end }}
 </div></header><hr><div class="lines">
+<script>
+  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+
+  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3ELogDog');
+</script>
 `))
 
 type footer struct {
