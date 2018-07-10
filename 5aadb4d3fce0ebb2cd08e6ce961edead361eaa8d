@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "31b93210_91e7441e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 877,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-10T00:51:32Z",
+      "side": 1,
+      "message": "How should we set it?\n\nShould it be a CLI flag to \u0027cipd ensure\u0027 (if so, how should it be named)?\nShould it be a @Directive in the ensure file?\nShould we be paranoid by default and suffer some performance hit on bots with slow file system? (RPIs mostly).",
+      "range": {
+        "startLine": 877,
+        "startChar": 71,
+        "endLine": 877,
+        "endChar": 87
+      },
+      "revId": "5aadb4d3fce0ebb2cd08e6ce961edead361eaa8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
