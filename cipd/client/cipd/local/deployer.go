@@ -74,9 +74,18 @@ import (
 // ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
 // and the package needs repairs.
 type DeployedPackage struct {
-	Deployed   bool       // true if the package is deployed (perhaps partially)
-	Pin        common.Pin // the currently installed pin
-	ToRedeploy []string   // the list of files that needs to be redeployed
+	Deployed bool       // true if the package is deployed (perhaps partially)
+	Pin      common.Pin // the currently installed pin
+
+	// ToRedeploy is a list of files that needs to be reextracted from the
+	// original package and relinked into the site root.
+	ToRedeploy []string
+
+	// ToRelink is a list of files that needs to be relinked into the site root.
+	//
+	// They are already present in the .cipd/* guts, so there's no need to fetch
+	// the original package to get them.
+	ToRelink []string
 }
 
 // Deployer knows how to unzip and place packages into site root directory.
@@ -352,7 +361,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 		return &DeployedPackage{Deployed: false}, nil
 	}
 
-	state := DeployedPackage{
+	state := &DeployedPackage{
 		Deployed: true,
 		Pin: common.Pin{
 			PackageName: pkg,
@@ -360,12 +369,18 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 		},
 	}
 
-	if paranoia == common.CheckPresence {
-		// TODO(vadimsh): Check that all required files are indeed installed and
-		// populate state.ToRedeploy with ones that are not.
+	if paranoia != common.NotParanoid {
+		// Check that all files are present. If the deployment can't even be
+		// examined we assume it is totally broken and in a need of a complete
+		// reinstall.
+		state.ToRedeploy, state.ToRelink, err = d.checkIntegrity(ctx, subdir, state.Pin, pkgPath)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to check the integrity of %q in %q - %s", pkg, subdir, err)
+			return &DeployedPackage{Deployed: false}, nil
+		}
 	}
 
-	return &state, nil
+	return state, nil
 }
 
 func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
@@ -865,6 +880,106 @@ func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, fi
 			removeEmptyTrees(ctx, subdirAbs, dirsToCleanup)
 		}
 	}
+}
+
+// checkSiteRoot returns files that are not present in the site root.
+//
+// Checks only file's presence (not their mode or content). Follows symlinks:
+// a broken symlink is treated as an absent file.
+//
+// Missing files may need to be redeployed or readded to the site root. Files
+// that cannot be checked for some reasons are considered absent (and the
+// corresponding errors are logged).
+func (d *deployerImpl) checkSiteRoot(ctx context.Context, subdir string, files []FileInfo) (missing []FileInfo) {
+	// TODO(vadimsh): This can be optimized - if "dir/" is absent, there's no
+	// sense in checking for presence of "dir/a".
+	for _, f := range files {
+		absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
+		if err != nil { // this usually means the file is not under the root
+			logging.Warningf(ctx, "Refusing to deal with %q: %s", f.Name, err)
+			continue
+		}
+		// TODO(vadimsh): In a higher paranoia modes we can compare ModTime with
+		// the expected one, and check hashes of files that were touched to detect
+		// changes.
+		switch _, err = d.fs.Stat(ctx, absPath); {
+		case err == nil:
+			continue // exists
+		case !os.IsNotExist(err):
+			logging.Warningf(ctx, "Failed to check presence of %q, assuming it needs repair: %s", f.Name, err)
+		}
+		missing = append(missing, f)
+	}
+	return
+}
+
+// checkIntegrity verifies the given package is correctly installed and returns
+// a list of files to relink and to redeploy if something is broken.
+//
+// See DeployedPackage struct for definition of "relink" and "redeploy".
+func (d *deployerImpl) checkIntegrity(ctx context.Context, subdir string, pin common.Pin, pkgDir string) (redeploy, relink []string, err error) {
+	logging.Debugf(ctx, "Checking integrity of %q in subdir %q", pin.PackageName, subdir)
+
+	// Directory inside .cipd/* guts where the package were extracted to.
+	instDir := filepath.Join(pkgDir, pin.InstanceID)
+
+	// Read the manifest to get a list of files that are expected to be installed.
+	manifest, err := d.readManifest(ctx, instDir)
+	if err != nil {
+		return
+	}
+	installMode, err := checkInstallMode(manifest.InstallMode)
+	if err != nil {
+		return
+	}
+
+	// Grab a list of files that should be present in the site root, but they are
+	// not. We may need to relink, or even to redeploy such files.
+	missing := d.checkSiteRoot(ctx, subdir, manifest.Files)
+
+	// In both 'copy' and 'symlink' modes if we lost a symlink file, we can
+	// restore it without refetching anything (all necessary information is
+	// already available in the manifest).
+	missingFiles := missing[:0]
+	for _, f := range missing {
+		if f.Symlink != "" {
+			relink = append(relink, f.Name)
+		} else {
+			missingFiles = append(missingFiles, f)
+		}
+	}
+
+	// In 'copy' install mode regular files are stored in the site root directly.
+	// If they are gone, we need to refetch the package to restore them.
+	if installMode == InstallModeCopy {
+		redeploy = make([]string, len(missingFiles))
+		for i, f := range missingFiles {
+			redeploy[i] = f.Name
+		}
+		return
+	}
+	if installMode != InstallModeSymlink {
+		panic("impossible")
+	}
+
+	// In 'symlink' install mode there are two possibilities: the symlink in the
+	// site root is gone, or the original file in .cipd/* guts is gone. Check
+	// the presence of the original file.
+	for _, f := range missingFiles {
+		original := filepath.Join(instDir, filepath.FromSlash(f.Name))
+		switch _, err := d.fs.Stat(ctx, original); {
+		case err == nil:
+			// The original file exists. It means we only need to restore the symlink
+			// in the site root.
+			relink = append(relink, f.Name)
+			continue
+		case !os.IsNotExist(err):
+			logging.Warningf(ctx, "Failed to check presence of %q, assuming it needs repair: %s", f.Name, err)
+		}
+		redeploy = append(redeploy, f.Name)
+	}
+
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////
