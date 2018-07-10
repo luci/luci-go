@@ -61,6 +61,7 @@ type header struct {
 	LogoutURL   string
 	UserPicture string
 	UserEmail   string
+	Path        string
 }
 
 // The stylesheet is inlined because static_dir isn't supported in flex.
@@ -109,6 +110,7 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
 <div>
+<a href="/v/?s={{.Path}}">Use the old viewer</a> |
 	{{ if .IsAnonymous }}
 		<a href="{{.LoginURL}}" alt="Login">Login</a>
 	{{ else }}
@@ -435,6 +437,7 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 		title = fmt.Sprintf("%s | %s", project, path)
 	}
 	if err := headerTemplate.ExecuteTemplate(ctx.Writer, "header", header{
+		Path:        fmt.Sprintf("%s/%s", data.options.project, data.options.path),
 		Title:       title,
 		Link:        data.viewerURL(),
 		IsAnonymous: auth.CurrentIdentity(ctx.Context) == identity.AnonymousIdentity,
