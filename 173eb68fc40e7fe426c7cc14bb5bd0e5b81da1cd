@@ -22,6 +22,30 @@
       "revId": "173eb68fc40e7fe426c7cc14bb5bd0e5b81da1cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "15318b71_59807bc5",
+        "filename": "common/gcloud/pubsub/publisher.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-07-11T21:03:19Z",
+      "side": 1,
+      "message": "You\u0027re right this is a bit strange.  I\u0027ve changed this into a ClientFactory interface, and made the ProdService conform to that interface.\n\nBoth are a bit unconventional probably, but maybe calling it a Factory will lessen the confusion.",
+      "parentUuid": "9ad4ec8a_29dfdda9",
+      "range": {
+        "startLine": 47,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 22
+      },
+      "revId": "173eb68fc40e7fe426c7cc14bb5bd0e5b81da1cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
