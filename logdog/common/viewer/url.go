@@ -24,6 +24,7 @@ import (
 )
 
 // GetURL generates a LogDog app viewer URL for the specified streams.
+// Uses the plain-text endpoint for single stream paths, and the client-side endpoint for multi-stream paths.
 func GetURL(host string, project types.ProjectName, paths ...types.StreamPath) string {
 	values := make([]string, len(paths))
 	for i, p := range paths {
@@ -32,10 +33,14 @@ func GetURL(host string, project types.ProjectName, paths ...types.StreamPath) s
 	u := url.URL{
 		Scheme: "https",
 		Host:   host,
-		Path:   "v/",
-		RawQuery: url.Values{
+	}
+	if len(values) == 1 {
+		u.Path = "logs/" + values[0]
+	} else {
+		u.Path = "v/"
+		u.RawQuery = url.Values{
 			"s": values,
-		}.Encode(),
+		}.Encode()
 	}
 	return u.String()
 }
