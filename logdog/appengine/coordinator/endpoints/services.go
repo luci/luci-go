@@ -54,12 +54,24 @@ type Services interface {
 // Coordinator services. A zero-value struct should be used.
 //
 // It can be installed via middleware using its Base method.
+// This also fulfills the publisher ClientFactory interface.
 type ProdService struct {
 	pubSubLock   sync.Mutex
 	pubSubClient *vkit.PublisherClient
 }
 
-func (svc *ProdService) getPubSubClient(c context.Context) (*vkit.PublisherClient, error) {
+// RecreateClient removes the attached pubsub client so that the next
+// Client calls returns a new client.
+func (svc *ProdService) RecreateClient() {
+	svc.pubSubLock.Lock()
+	defer svc.pubSubLock.Unlock()
+	svc.pubSubClient = nil
+}
+
+// Client creates or returns a new or existing pubsub client.
+// If the client is reused, the client context might be from a previous request
+// on the same instance.
+func (svc *ProdService) Client(c context.Context) (*vkit.PublisherClient, error) {
 	svc.pubSubLock.Lock()
 	defer svc.pubSubLock.Unlock()
 
@@ -143,19 +155,11 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.Arc
 		return nil, errors.New("invalid archival topic")
 	}
 
-	// Create a new Pub/Sub client. Use our AppEngine Context, since we need to
-	// execute a socket API call.
-	client, err := s.getPubSubClient(s.aeCtx)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to create Pub/Sub client.")
-		return nil, err
-	}
-
 	// Create a Topic, and configure it to not bundle messages.
 	return &coordinator.PubsubArchivalPublisher{
 		Publisher: &pubsub.UnbufferedPublisher{
-			Topic:  fullTopic,
-			Client: client,
+			Topic:         fullTopic,
+			ClientFactory: s,
 		},
 		AECtx:            s.aeCtx,
 		PublishIndexFunc: s.nextArchiveIndex,
