@@ -160,6 +160,7 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.Arc
 		Publisher: &pubsub.UnbufferedPublisher{
 			Topic:         fullTopic,
 			ClientFactory: s,
+			AECtx:         s.aeCtx,
 		},
 		AECtx:            s.aeCtx,
 		PublishIndexFunc: s.nextArchiveIndex,
