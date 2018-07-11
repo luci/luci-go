@@ -1404,6 +1404,186 @@ func TestRemoveDeployedWindows(t *testing.T) {
 	})
 }
 
+func TestCheckDeployed(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("Given a temp directory", t, func() {
+		tempDir := mkTempDir()
+		dep := NewDeployer(tempDir)
+
+		deployInst := func(mode InstallMode, f ...File) PackageInstance {
+			inst := makeTestInstance("test/package", f, mode)
+			inst.instanceID = "1111111111111111111111111111111111111111"
+			_, err := dep.DeployInstance(ctx, "subdir", inst)
+			So(err, ShouldBeNil)
+			return inst
+		}
+
+		rm := func(p string) {
+			So(os.Remove(filepath.Join(tempDir, filepath.FromSlash(p))), ShouldBeNil)
+		}
+
+		Convey("Copy install mode, no symlinks", func() {
+			inst := deployInst(InstallModeCopy,
+				NewTestFile("some/file/path", "data a", TestFileOpts{}),
+				NewTestFile("another-file", "data b", TestFileOpts{}),
+				NewTestFile("some/executable", "data c", TestFileOpts{Executable: true}),
+			)
+
+			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+			So(err, ShouldBeNil)
+			So(dp, ShouldResemble, &DeployedPackage{
+				Deployed: true,
+				Pin:      inst.Pin(),
+			})
+
+			rm("subdir/some/file/path")
+			rm("subdir/another-file")
+
+			dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+			So(err, ShouldBeNil)
+			So(dp, ShouldResemble, &DeployedPackage{
+				Deployed:   true,
+				Pin:        inst.Pin(),
+				ToRedeploy: []string{"some/file/path", "another-file"},
+			})
+		})
+
+		if runtime.GOOS != "windows" {
+			Convey("Copy install mode, with symlink files", func() {
+				inst := deployInst(InstallModeCopy,
+					NewTestFile("some/file/path", "data a", TestFileOpts{}),
+					NewTestFile("another-file", "data b", TestFileOpts{}),
+					NewTestFile("some/executable", "data c", TestFileOpts{Executable: true}),
+					NewTestSymlink("some/symlink", "executable"),
+					NewTestSymlink("working_abs_symlink", "/bin"),
+					// Even though this symlink points to a missing file, it should not
+					// be considered broken, since it was specified like this in the
+					// package file (so "repairing" it won't change anything).
+					NewTestSymlink("broken_abs_symlink", "/i_hope_this_dir_is_missing_on_bots"),
+				)
+
+				dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+				So(err, ShouldBeNil)
+				So(dp, ShouldResemble, &DeployedPackage{
+					Deployed: true,
+					Pin:      inst.Pin(),
+				})
+
+				Convey("Symlink itself is gone but the target is not", func() {
+					rm("subdir/some/symlink")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed: true,
+						Pin:      inst.Pin(),
+						ToRelink: []string{"some/symlink"},
+					})
+				})
+
+				Convey("Target is gone, but the symlink is not", func() {
+					rm("subdir/some/executable")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed:   true,
+						Pin:        inst.Pin(),
+						ToRedeploy: []string{"some/executable"},
+						ToRelink:   []string{"some/symlink"}, // ~ noop
+					})
+				})
+
+				Convey("Absolute symlinks are gone", func() {
+					rm("subdir/working_abs_symlink")
+					rm("subdir/broken_abs_symlink")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed: true,
+						Pin:      inst.Pin(),
+						ToRelink: []string{"working_abs_symlink", "broken_abs_symlink"},
+					})
+				})
+			})
+
+			Convey("Symlink install mode", func() {
+				inst := deployInst(InstallModeSymlink,
+					NewTestFile("some/file/path", "data a", TestFileOpts{}),
+					NewTestFile("another-file", "data b", TestFileOpts{}),
+					NewTestFile("some/executable", "data c", TestFileOpts{Executable: true}),
+					NewTestSymlink("some/symlink", "executable"),
+					NewTestSymlink("working_abs_symlink", "/bin"),
+					NewTestSymlink("broken_abs_symlink", "/i_hope_this_dir_is_missing_on_bots"),
+				)
+
+				dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+				So(err, ShouldBeNil)
+				So(dp, ShouldResemble, &DeployedPackage{
+					Deployed: true,
+					Pin:      inst.Pin(),
+				})
+
+				Convey("Site root files are gone, but gut files are OK", func() {
+					rm("subdir/some/file/path")
+					rm("subdir/some/symlink")
+					rm("subdir/broken_abs_symlink")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed: true,
+						Pin:      inst.Pin(),
+						ToRelink: []string{"some/file/path", "some/symlink", "broken_abs_symlink"},
+					})
+				})
+
+				Convey("Regular gut files are gone", func() {
+					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/some/executable")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed:   true,
+						Pin:        inst.Pin(),
+						ToRedeploy: []string{"some/executable"},
+						ToRelink:   []string{"some/symlink"},
+					})
+				})
+
+				Convey("Rel symlink gut files are gone", func() {
+					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/some/symlink")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed: true,
+						Pin:      inst.Pin(),
+						ToRelink: []string{"some/symlink"},
+					})
+				})
+
+				Convey("Abs symlink gut files are gone", func() {
+					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/working_abs_symlink")
+					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/broken_abs_symlink")
+
+					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
+					So(err, ShouldBeNil)
+					So(dp, ShouldResemble, &DeployedPackage{
+						Deployed: true,
+						Pin:      inst.Pin(),
+						ToRelink: []string{"working_abs_symlink", "broken_abs_symlink"},
+					})
+				})
+			})
+		}
+	})
+}
+
 func TestUpgradeOldPkgDir(t *testing.T) {
 	t.Parallel()
 
