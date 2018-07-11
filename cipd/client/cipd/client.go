@@ -1382,10 +1382,11 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 					NeedsReinstall:  true,
 					ReinstallReason: fmt.Sprintf("expected to see instance %q, but saw %q", pin.InstanceID, state.Pin.InstanceID),
 				}
-			case len(state.ToRedeploy) != 0:
-				// Have some corrupted files that needs to be redeployed.
+			case len(state.ToRedeploy) != 0 || len(state.ToRelink) != 0:
+				// Have some corrupted files that need to be repaired.
 				return &RepairPlan{
 					ToRedeploy: state.ToRedeploy,
+					ToRelink:   state.ToRelink,
 				}
 			default:
 				return nil // the package needs no repairs
@@ -1461,7 +1462,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 				err = client.FetchAndDeployInstance(ctx, subdir, pin)
 			} else if plan := toRepair[pin.PackageName]; plan != nil {
 				action = "repair"
-				err = nil // TODO(vadmish): Actually implement the repair.
+				err = client.repairDeployment(ctx, subdir, pin, plan)
 			}
 			if err != nil {
 				logging.Errorf(ctx, "Failed to %s %s - %s", action, pin, err)
@@ -1484,6 +1485,24 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 		err = ErrEnsurePackagesFailed
 	}
 	return
+}
+
+func (client *clientImpl) repairDeployment(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan) error {
+	// TODO(vadimsh): Implement. For now do nothing, to match the existing CIPD
+	// behavior.
+	if len(plan.ToRedeploy) != 0 {
+		logging.Warningf(ctx, "Would have redeployed, but this is not implemented yet:")
+		for _, f := range plan.ToRedeploy {
+			logging.Warningf(ctx, "  %s", f)
+		}
+	}
+	if len(plan.ToRelink) != 0 {
+		logging.Warningf(ctx, "Would have relinked, but this is not implemented yet:")
+		for _, f := range plan.ToRelink {
+			logging.Warningf(ctx, "  %s", f)
+		}
+	}
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

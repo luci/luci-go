@@ -74,9 +74,18 @@ import (
 // ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
 // and the package needs repairs.
 type DeployedPackage struct {
-	Deployed   bool       // true if the package is deployed (perhaps partially)
-	Pin        common.Pin // the currently installed pin
-	ToRedeploy []string   // the list of files that needs to be redeployed
+	Deployed bool       // true if the package is deployed (perhaps partially)
+	Pin      common.Pin // the currently installed pin
+
+	// ToRedeploy is a list of files that needs to be reextracted from the
+	// original package and relinked into the site root.
+	ToRedeploy []string
+
+	// ToRelink is a list of files that needs to be relinked into the site root.
+	//
+	// They are already present in the .cipd/* guts, so there's no need to fetch
+	// the original package to get them.
+	ToRelink []string
 }
 
 // Deployer knows how to unzip and place packages into site root directory.
@@ -352,7 +361,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 		return &DeployedPackage{Deployed: false}, nil
 	}
 
-	state := DeployedPackage{
+	state := &DeployedPackage{
 		Deployed: true,
 		Pin: common.Pin{
 			PackageName: pkg,
@@ -360,12 +369,18 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 		},
 	}
 
-	if paranoia == common.CheckPresence {
-		// TODO(vadimsh): Check that all required files are indeed installed and
-		// populate state.ToRedeploy with ones that are not.
+	if paranoia != common.NotParanoid {
+		// Check that all files are present. If the deployment can't even be
+		// examined we assume it is totally broken and in a need of a complete
+		// reinstall.
+		state.ToRedeploy, state.ToRelink, err = d.checkIntegrity(ctx, subdir, state.Pin, pkgPath)
+		if err != nil {
+			logging.Errorf(ctx, "Failed to check the integrity of %q in %q - %s", pkg, subdir, err)
+			return &DeployedPackage{Deployed: false}, nil
+		}
 	}
 
-	return &state, nil
+	return state, nil
 }
 
 func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
@@ -865,6 +880,129 @@ func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, fi
 			removeEmptyTrees(ctx, subdirAbs, dirsToCleanup)
 		}
 	}
+}
+
+// isPresentInSite checks whether the given file is installed in the site root.
+//
+// Optionally follows symlinks.
+//
+// If the file can't be checked for some reason, logs the error and returns
+// false.
+func (d *deployerImpl) isPresentInSite(ctx context.Context, subdir string, f FileInfo, followSymlinks bool) bool {
+	absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
+	if err != nil {
+		panic(err) // should not happen for files present in installed packages
+	}
+
+	stat := d.fs.Lstat
+	if followSymlinks {
+		stat = d.fs.Stat
+	}
+
+	// TODO(vadimsh): Use result of this call to check the correctness of file
+	// mode of the deployed file. Also use ModTime to detect modifications to the
+	// file content in higher paranoia modes.
+	switch _, err = stat(ctx, absPath); {
+	case err == nil:
+		return true
+	case os.IsNotExist(err):
+		return false
+	default:
+		logging.Warningf(ctx, "Failed to check presence of %q, assuming it needs repair: %s", f.Name, err)
+		return false
+	}
+}
+
+// isPresentInGuts checks whether the given file exists in .cipd/* guts.
+//
+// Doesn't follow symlinks.
+//
+// If the file can't be checked for some reason, logs the error and returns
+// false.
+func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f FileInfo) bool {
+	absPath, err := d.fs.RootRelToAbs(filepath.Join(instDir, filepath.FromSlash(f.Name)))
+	if err != nil {
+		panic(err) // should not happen for files present in installed packages
+	}
+
+	switch _, err = d.fs.Lstat(ctx, absPath); {
+	case err == nil:
+		return true
+	case os.IsNotExist(err):
+		return false
+	default:
+		logging.Warningf(ctx, "Failed to check presence of %q, assuming it needs repair: %s", f.Name, err)
+		return false
+	}
+}
+
+// checkIntegrity verifies the given package is correctly installed and returns
+// a list of files to relink and to redeploy if something is broken.
+//
+// See DeployedPackage struct for definition of "relink" and "redeploy".
+func (d *deployerImpl) checkIntegrity(ctx context.Context, subdir string, pin common.Pin, pkgDir string) (redeploy, relink []string, err error) {
+	logging.Debugf(ctx, "Checking integrity of %q in subdir %q", pin.PackageName, subdir)
+
+	// Directory inside .cipd/* guts where the package was extracted to.
+	instDir := filepath.Join(pkgDir, pin.InstanceID)
+
+	// Read the manifest to get a list of files that are expected to be installed.
+	manifest, err := d.readManifest(ctx, instDir)
+	if err != nil {
+		return
+	}
+	installMode, err := checkInstallMode(manifest.InstallMode)
+	if err != nil {
+		return
+	}
+
+	// Examine files that are supposed to be installed.
+	for _, f := range manifest.Files {
+		switch {
+		case d.isPresentInSite(ctx, subdir, f, true): // no need to repair
+			continue
+		case f.Symlink == "": // a regular file (not a symlink)
+			switch {
+			case installMode == InstallModeCopy:
+				// In 'copy' mode regular files are stored in the site root directly.
+				// If they are gone, we need to refetch the package to restore them.
+				redeploy = append(redeploy, f.Name)
+			case d.isPresentInGuts(ctx, instDir, f):
+				// This is 'symlink' mode and the original file in .cipd guts exist. We
+				// only need to relink the file then to repair it.
+				relink = append(relink, f.Name)
+			default:
+				// This is 'symlink' mode, but the original file in .cipd guts is gone,
+				// so we need to refetch it.
+				redeploy = append(redeploy, f.Name)
+			}
+		case !filepath.IsAbs(filepath.FromSlash(f.Symlink)): // a relative symlink
+			// We can restore it right away, all necessary information is in the
+			// manifest. Note that CIPD packages cannot have invalid relative
+			// symlinks, so if we see a broken one we know it is a corruption.
+			relink = append(relink, f.Name)
+		default:
+			// This is a broken absolute symlink. Several possibilities here:
+			//  1. The symlink file itself in the site root is missing.
+			//  2. This is 'symlink' mode, and the symlink in .cipd/guts is missing.
+			//  3. Both CIPD-managed symlinks exist and the external file is missing.
+			//     Such symlink is NOT broken. If we try to "repair" it, we end up in
+			//     the same state anyway: absolute symlinks point to files outside of
+			//     our control.
+			switch {
+			case !d.isPresentInSite(ctx, subdir, f, false):
+				// The symlink in the site root is gone, need to restore it.
+				relink = append(relink, f.Name)
+			case installMode == InstallModeSymlink && !d.isPresentInGuts(ctx, instDir, f):
+				// The symlink in the guts is gone, need to restore it.
+				relink = append(relink, f.Name)
+			default:
+				// Both CIPD-managed symlinks are fine, nothing to restore.
+			}
+		}
+	}
+
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////

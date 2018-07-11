@@ -64,6 +64,12 @@ type FileSystem interface {
 	// atomically renamed without contention.
 	OpenFile(path string) (*os.File, error)
 
+	// Stat returns a FileInfo describing the named file, following symlinks.
+	Stat(ctx context.Context, path string) (os.FileInfo, error)
+
+	// Lstat returns a FileInfo describing the named file, not following symlinks.
+	Lstat(ctx context.Context, path string) (os.FileInfo, error)
+
 	// EnsureDirectory creates a directory at given native path.
 	//
 	// Does nothing it the path already exists. It takes an absolute path or
@@ -147,6 +153,8 @@ func (f *fsImplErr) Root() string                                               
 func (f *fsImplErr) CwdRelToAbs(string) (string, error)                             { return "", f.err }
 func (f *fsImplErr) RootRelToAbs(string) (string, error)                            { return "", f.err }
 func (f *fsImplErr) OpenFile(string) (*os.File, error)                              { return nil, f.err }
+func (f *fsImplErr) Stat(context.Context, string) (os.FileInfo, error)              { return nil, f.err }
+func (f *fsImplErr) Lstat(context.Context, string) (os.FileInfo, error)             { return nil, f.err }
 func (f *fsImplErr) EnsureDirectory(context.Context, string) (string, error)        { return "", f.err }
 func (f *fsImplErr) EnsureSymlink(context.Context, string, string) error            { return f.err }
 func (f *fsImplErr) EnsureFile(context.Context, string, func(*os.File) error) error { return f.err }
@@ -195,6 +203,22 @@ func (f *fsImpl) OpenFile(p string) (*os.File, error) {
 		return nil, err
 	}
 	return openFile(p)
+}
+
+func (f *fsImpl) Stat(ctx context.Context, p string) (os.FileInfo, error) {
+	p, err := f.CwdRelToAbs(p)
+	if err != nil {
+		return nil, err
+	}
+	return os.Stat(p)
+}
+
+func (f *fsImpl) Lstat(ctx context.Context, p string) (os.FileInfo, error) {
+	p, err := f.CwdRelToAbs(p)
+	if err != nil {
+		return nil, err
+	}
+	return os.Lstat(p)
 }
 
 func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, error) {
