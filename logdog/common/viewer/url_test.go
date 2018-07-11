@@ -34,11 +34,9 @@ func TestGetURL(t *testing.T) {
 			url     string
 		}{
 			{"example.appspot.com", "test", []types.StreamPath{"foo/bar/+/baz"},
-				"https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz"},
+				"https://example.appspot.com/logs/test/foo/bar/+/baz"},
 			{"example.appspot.com", "test", []types.StreamPath{"foo/bar/+/baz", "qux/+/quux"},
 				"https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz&s=test%2Fqux%2F%2B%2Fquux"},
-			{"example.appspot.com", "test", []types.StreamPath{"query/*/+/**"},
-				"https://example.appspot.com/v/?s=test%2Fquery%2F%2A%2F%2B%2F%2A%2A"},
 		} {
 			Convey(fmt.Sprintf(`Can generate a URL for host %q, project %q, paths %q: [%s]`, tc.host, tc.project, tc.paths, tc.url), func() {
 				So(GetURL(tc.host, tc.project, tc.paths...), ShouldEqual, tc.url)

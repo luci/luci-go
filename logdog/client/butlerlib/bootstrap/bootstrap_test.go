@@ -141,8 +141,7 @@ func TestBootstrapURLGeneration(t *testing.T) {
 				paths []types.StreamPath
 				url   string
 			}{
-				{[]types.StreamPath{"foo/bar/+/baz"}, "https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2Fbaz"},
-				{[]types.StreamPath{"foo/bar/+/**"}, "https://example.appspot.com/v/?s=test%2Ffoo%2Fbar%2F%2B%2F%2A%2A"},
+				{[]types.StreamPath{"foo/bar/+/baz"}, "https://example.appspot.com/logs/test/foo/bar/+/baz"},
 				{[]types.StreamPath{
 					"foo/bar/+/baz",
 					"foo/bar/+/qux",
