@@ -1303,25 +1303,29 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 	return
 }
 
-func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return err
-	}
+// fetchAndDo will fetch and open an instance and pass it to the callback.
+//
+// If the callback fails with an error that indicates a corrupted instance, will
+// delete the instance from the cache, refetch it and call the callback again,
+// thus the callback should be idempotent.
+//
+// Any other error from the callback is propagated as is.
+func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb func(local.PackageInstance) error) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
 
-	doit := func() error {
+	doit := func() (err error) {
 		// Fetch the package (verifying its hash) and obtain a pointer to its data.
 		instanceFile, err := client.FetchInstance(ctx, pin)
 		if err != nil {
-			return err
+			return
 		}
 
 		defer func() {
 			corrupt := local.IsCorruptionError(err)
-			if err := instanceFile.Close(ctx, corrupt); err != nil && err != os.ErrClosed {
-				logging.Warningf(ctx, "cipd: failed to close the package file - %s", err)
+			if clErr := instanceFile.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
+				logging.Warningf(ctx, "cipd: failed to close the package file - %s", clErr)
 			}
 		}()
 
@@ -1329,15 +1333,14 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		// the hash already, so skip verification.
 		instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
 		if err != nil {
-			return err
+			return
 		}
 
 		// Opportunistically clean up trashed files.
 		defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
 
-		// Deploy it. 'defer' will take care of removing the temp file if needed.
-		_, err = client.deployer.DeployInstance(ctx, subdir, instance)
-		return err
+		// Use it. 'defer' will take care of removing the temp file if needed.
+		return cb(instance)
 	}
 
 	err := doit()
@@ -1346,6 +1349,16 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 		err = doit()
 	}
 	return err
+}
+
+func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir string, pin common.Pin) error {
+	if err := common.ValidateSubdir(subdir); err != nil {
+		return err
+	}
+	return client.fetchAndDo(ctx, pin, func(instance local.PackageInstance) error {
+		_, err := client.deployer.DeployInstance(ctx, subdir, instance)
+		return err
+	})
 }
 
 func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (aMap ActionMap, err error) {
@@ -1462,7 +1475,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 				err = client.FetchAndDeployInstance(ctx, subdir, pin)
 			} else if plan := toRepair[pin.PackageName]; plan != nil {
 				action = "repair"
-				err = client.repairDeployment(ctx, subdir, pin, plan)
+				err = client.repairDeployed(ctx, subdir, pin, plan)
 			}
 			if err != nil {
 				logging.Errorf(ctx, "Failed to %s %s - %s", action, pin, err)
@@ -1487,22 +1500,22 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	return
 }
 
-func (client *clientImpl) repairDeployment(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan) error {
-	// TODO(vadimsh): Implement. For now do nothing, to match the existing CIPD
-	// behavior.
+func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin common.Pin, plan *RepairPlan) error {
+	// Fetch the package from the backend (or the cache) if some files are really
+	// missing. Skip this if we only need to restore symlinks.
 	if len(plan.ToRedeploy) != 0 {
-		logging.Warningf(ctx, "Would have redeployed, but this is not implemented yet:")
-		for _, f := range plan.ToRedeploy {
-			logging.Warningf(ctx, "  %s", f)
-		}
+		logging.Infof(ctx, "Getting %q to extract %d missing file(s) from it", pin.PackageName, len(plan.ToRedeploy))
+		return client.fetchAndDo(ctx, pin, func(instance local.PackageInstance) error {
+			return client.deployer.RepairDeployed(ctx, subdir, pin, local.RepairParams{
+				Instance:   instance,
+				ToRedeploy: plan.ToRedeploy,
+				ToRelink:   plan.ToRelink,
+			})
+		})
 	}
-	if len(plan.ToRelink) != 0 {
-		logging.Warningf(ctx, "Would have relinked, but this is not implemented yet:")
-		for _, f := range plan.ToRelink {
-			logging.Warningf(ctx, "  %s", f)
-		}
-	}
-	return nil
+	return client.deployer.RepairDeployed(ctx, subdir, pin, local.RepairParams{
+		ToRelink: plan.ToRelink,
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
