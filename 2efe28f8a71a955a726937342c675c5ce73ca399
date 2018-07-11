@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b9622898_f290f3f5",
+        "filename": "cipd/client/cipd/action_plan.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T20:28:00Z",
+      "side": 1,
+      "message": "Done. Though I think it is a bit excessive.",
+      "parentUuid": "b4abbd9a_633b9304",
+      "range": {
+        "startLine": 163,
+        "startChar": 46,
+        "endLine": 163,
+        "endChar": 111
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9cfbb77b_0f00e968",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34d4ab91_496974cb",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1465,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T20:28:00Z",
+      "side": 1,
+      "message": "Yeah. In fact, FetchAndDeployInstance should also be internal, EnsurePackages should be the only public API to install/remove stuff.\n\nUnfortunately, FetchAndDeployInstance is currently used by \"friendly\" CLI (\"cipd install ...\"), so hiding it is not possible currently. \"cipd install\" should learn to just modify ensure file and call EnsurePackages.",
+      "parentUuid": "9cfbb77b_0f00e968",
+      "range": {
+        "startLine": 1465,
+        "startChar": 17,
+        "endLine": 1465,
+        "endChar": 33
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "73480529_b6536364",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T20:28:00Z",
+      "side": 1,
+      "message": "\u003e I wonder if this redeploy/relink distinction should be handled by the client, since it knows how the package was deployed?\n\nThe client doesn\u0027t know how the package was deployed. For example, it doesn\u0027t know install mode. Deployer has all the intimate knowledge.\n\n\u003e Is there ever a case where ToRedeploy and ToRelink will both be populated in the same DeployedPackage?\n\nYes. In copy mode, if the package itself contains a symlink and this symlink and some other regular file are removed, both ToRedeploy and ToRelink will be set. If only symlink is removed, only ToRelink will be set. Restoring a symlink doesn\u0027t require fetching the package (since we still have a copy of the manifest with data on all symlinks in .cipd/* guts).\n\n\u003e edit: is this in case someone deletes portions/all of the guts files?\n\nYeah, but this is mostly in preparation for a more paranoid mode where we check file contents. It is unlikely guts are removed, but with \u0027symlink\u0027 mode files in the guts can very easily be modified.",
+      "parentUuid": "b2735ff8_d06417bf",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 9
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "caee4c10_b84d554b",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 4
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "2bb7b146_0b6037de",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 897,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T20:28:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "caee4c10_b84d554b",
+      "range": {
+        "startLine": 897,
+        "startChar": 1,
+        "endLine": 897,
+        "endChar": 5
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9c9ebae5_9dca485c",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 4
@@ -114,6 +210,30 @@
       "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2c20e53_a577954b",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 925,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T20:28:00Z",
+      "side": 1,
+      "message": "Added TODO. But I don\u0027t consider fixing file mode to be a priority. It likely never happens...",
+      "parentUuid": "9c9ebae5_9dca485c",
+      "range": {
+        "startLine": 925,
+        "startChar": 22,
+        "endLine": 925,
+        "endChar": 27
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
