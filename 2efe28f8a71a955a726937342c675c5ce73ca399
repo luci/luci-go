@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b4abbd9a_633b9304",
+        "filename": "cipd/client/cipd/action_plan.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "I know it\u0027s a small function, but maybe this should be a function on RepairPlan (in case we add more to it later)",
+      "range": {
+        "startLine": 163,
+        "startChar": 46,
+        "endLine": 163,
+        "endChar": 111
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cfbb77b_0f00e968",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1465,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "why internal? because generating `plan` is too annoying for a reasonable caller? (e.g. we would never have `cipd repair pkgname path/to/file`?)",
+      "range": {
+        "startLine": 1465,
+        "startChar": 17,
+        "endLine": 1465,
+        "endChar": 33
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2735ff8_d06417bf",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "I wonder if this redeploy/relink distinction should be handled by the client, since it knows how the package was deployed? Is there ever a case where ToRedeploy and ToRelink will both be populated in the same DeployedPackage?\n\nedit: is this in case someone deletes portions/all of the guts files?",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 9
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "caee4c10_b84d554b",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 897,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "stat?",
+      "range": {
+        "startLine": 897,
+        "startChar": 1,
+        "endLine": 897,
+        "endChar": 5
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c9ebae5_9dca485c",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 925,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "tbh if we\u0027re using stat, we should probably have a TODO to make this mode also check permissions (since it\u0027s ~free)",
+      "range": {
+        "startLine": 925,
+        "startChar": 22,
+        "endLine": 925,
+        "endChar": 27
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e9f2c79_47310897",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 988,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-11T04:08:13Z",
+      "side": 1,
+      "message": "I hate infra-python...",
+      "range": {
+        "startLine": 985,
+        "startChar": 0,
+        "endLine": 988,
+        "endChar": 22
+      },
+      "revId": "2efe28f8a71a955a726937342c675c5ce73ca399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
