@@ -77,11 +77,29 @@ type RepairPlan struct {
 	ReinstallReason string `json:"reinstall_reason,omitempty"`
 
 	// ToRedeploy is a list of slash-separated file names (as they are specified
-	// inside the package file), that needs to be redeployed into the site root in
-	// order to repair the package.
+	// inside the package file) that needs to be reextracted from the original
+	// package and relinked into the site root in order to repair the deployment.
+	//
+	// If this list is not empty, it means we'll need an original package file
+	// to repair the deployment.
 	//
 	// Set only if NeedsReinstall is false.
 	ToRedeploy []string `json:"to_redeploy,omitempty"`
+
+	// ToRelink is a list of slash-separated file names (as they are specified
+	// inside the package file) that needs to be relinked into the site root in
+	// order to repair the deployment.
+	//
+	// They are already present in the .cipd/* guts, so there's no need to fetch
+	// the original package file to get them.
+	//
+	// Set only if NeedsReinstall is false.
+	ToRelink []string `json:"to_relink,omitempty"`
+}
+
+// NumBrokenFiles returns number of files that will be repaired.
+func (p *RepairPlan) NumBrokenFiles() int {
+	return len(p.ToRedeploy) + len(p.ToRelink)
 }
 
 // ActionError holds an error that happened when working on the pin.
@@ -147,7 +165,7 @@ func (am ActionMap) Log(ctx context.Context) {
 			for _, broken := range actions.ToRepair {
 				more := broken.RepairPlan.ReinstallReason
 				if more == "" {
-					more = fmt.Sprintf("%d files to redeploy", len(broken.RepairPlan.ToRedeploy))
+					more = fmt.Sprintf("%d file(s) to repair", broken.RepairPlan.NumBrokenFiles())
 				}
 				logging.Infof(ctx, "    %s (%s)", broken.Pin, more)
 			}
