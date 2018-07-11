@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d52b07f0_4e8a22f4",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 959,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-11T03:04:03Z",
+      "side": 1,
+      "message": "I had several iterations of this logic. This is the cleanest I can make it for now without any major rewrites :( There are some edge cases (encountered in real packages, e.g. infra/infra_python) that make it convoluted.",
+      "range": {
+        "startLine": 959,
+        "startChar": 2,
+        "endLine": 959,
+        "endChar": 10
+      },
+      "revId": "7e8ef85513eb9d5ce0b37b6d62b2e8b59b2d38dc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
