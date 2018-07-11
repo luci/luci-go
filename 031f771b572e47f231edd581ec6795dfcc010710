@@ -1,0 +1,22 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc608ca3_0b3d6239",
+        "filename": "milo/frontend/expectations/swarming.build-build-running-logdog.html",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-07-11T22:19:35Z",
+      "side": 1,
+      "message": "Shh :-P",
+      "parentUuid": "caa2244b_c65b997d",
+      "revId": "031f771b572e47f231edd581ec6795dfcc010710",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
