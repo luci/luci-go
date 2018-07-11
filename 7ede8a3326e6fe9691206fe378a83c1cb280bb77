@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44a95111_4cc99b8c",
+        "filename": "logdog/appengine/coordinator/endpoints/services.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-07-11T22:23:06Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 71,
+        "startChar": 38,
+        "endLine": 71,
+        "endChar": 46
+      },
+      "revId": "7ede8a3326e6fe9691206fe378a83c1cb280bb77",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
