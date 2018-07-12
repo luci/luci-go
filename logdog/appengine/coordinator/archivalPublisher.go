@@ -77,7 +77,11 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 	//
 	// The goroutine will naturally exit at the end of this function when "AECtx"
 	// is cancelled via defer.
-	aeCtx, cancelFunc := context.WithCancel(p.AECtx)
+	//
+	// Publishing usually happens immediately.
+	// If it's taken more than 15s, something has already gone horribly wrong,
+	// so just kill it and try again.
+	aeCtx, cancelFunc := clock.WithTimeout(p.AECtx, time.Second*15)
 	defer cancelFunc()
 
 	go func(aeCtx context.Context) {
@@ -98,11 +102,7 @@ func (p *PubsubArchivalPublisher) Publish(c context.Context, t *logdog.ArchiveTa
 		"key":     t.Key,
 	}.Infof(c, "Publishing archival message for stream.")
 
-	// Publishing usually happens immediately.
-	// If it's taken more than 15s, something has already gone horribly wrong,
-	// so just kill it and try again.
-	nc, _ := clock.WithTimeout(c, time.Second*15)
-	_, err = p.Publisher.Publish(nc, &msg)
+	_, err = p.Publisher.Publish(aeCtx, &msg)
 	return err
 }
 
