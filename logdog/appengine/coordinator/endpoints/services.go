@@ -65,7 +65,10 @@ type ProdService struct {
 func (svc *ProdService) RecreateClient() {
 	svc.pubSubLock.Lock()
 	defer svc.pubSubLock.Unlock()
-	svc.pubSubClient = nil
+	if svc.pubSubClient != nil {
+		svc.pubSubClient.Close()
+		svc.pubSubClient = nil
+	}
 }
 
 // Client creates or returns a new or existing pubsub client.
