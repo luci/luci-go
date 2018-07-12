@@ -259,7 +259,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs), filterCipd); err != nil {
+	if err := ExtractInstanceTxn(ctx, inst, NewDestination(destPath, d.fs), filterCipd); err != nil {
 		return common.Pin{}, err
 	}
 
