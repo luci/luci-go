@@ -22,17 +22,17 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A switch in the database.
 type Switch struct {
 	// The name of this switch. Uniquely identifies this switch.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this switch.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The number of ports this switch has.
-	Ports int32 `protobuf:"varint,3,opt,name=ports" json:"ports,omitempty"`
+	Ports int32 `protobuf:"varint,3,opt,name=ports,proto3" json:"ports,omitempty"`
 	// The datacenter this switch belongs to.
-	Datacenter string `protobuf:"bytes,4,opt,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter string `protobuf:"bytes,4,opt,name=datacenter,proto3" json:"datacenter,omitempty"`
 	// The rack this switch belongs to.
-	Rack string `protobuf:"bytes,5,opt,name=rack" json:"rack,omitempty"`
+	Rack string `protobuf:"bytes,5,opt,name=rack,proto3" json:"rack,omitempty"`
 	// The state of this switch.
-	State                v1.State `protobuf:"varint,6,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,6,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -107,11 +107,11 @@ func (m *Switch) GetState() v1.State {
 // A request to list switches in the database.
 type ListSwitchesRequest struct {
 	// The names of switches to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The datacenters to filter retrieved switches on.
-	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	// The racks to filter retrieved switches on.
-	Racks                []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
+	Racks                []string `protobuf:"bytes,3,rep,name=racks,proto3" json:"racks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -165,7 +165,7 @@ func (m *ListSwitchesRequest) GetRacks() []string {
 // A response containing a list of switches in the database.
 type ListSwitchesResponse struct {
 	// The switches matching the request.
-	Switches             []*Switch `protobuf:"bytes,1,rep,name=switches" json:"switches,omitempty"`
+	Switches             []*Switch `protobuf:"bytes,1,rep,name=switches,proto3" json:"switches,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`

@@ -21,9 +21,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A request to delete a physical or virtual host from the database.
 type DeleteHostRequest struct {
 	// The name of the host to delete.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The VLAN the host belongs to.
-	Vlan                 int64    `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan                 int64    `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

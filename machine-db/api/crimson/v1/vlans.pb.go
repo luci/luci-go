@@ -22,15 +22,15 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A VLAN in the database.
 type VLAN struct {
 	// The ID of this VLAN. Uniquely identifies this VLAN.
-	Id int64 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// An alias for this VLAN.
-	Alias string `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
+	Alias string `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
 	// A description of this VLAN.
-	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// The state of this VLAN.
-	State v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The block of IPv4 addresses belonging to this VLAN.
-	CidrBlock            string   `protobuf:"bytes,5,opt,name=cidr_block,json=cidrBlock" json:"cidr_block,omitempty"`
+	CidrBlock            string   `protobuf:"bytes,5,opt,name=cidr_block,json=cidrBlock,proto3" json:"cidr_block,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -98,9 +98,9 @@ func (m *VLAN) GetCidrBlock() string {
 // A request to list VLANs in the database.
 type ListVLANsRequest struct {
 	// The IDs of VLANs to retrieve.
-	Ids []int64 `protobuf:"varint,1,rep,packed,name=ids" json:"ids,omitempty"`
+	Ids []int64 `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
 	// The aliases of VLANs to retrieve.
-	Aliases              []string `protobuf:"bytes,2,rep,name=aliases" json:"aliases,omitempty"`
+	Aliases              []string `protobuf:"bytes,2,rep,name=aliases,proto3" json:"aliases,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -147,7 +147,7 @@ func (m *ListVLANsRequest) GetAliases() []string {
 // A response containing a list of VLANs in the database.
 type ListVLANsResponse struct {
 	// The VLANs matching the request.
-	Vlans                []*VLAN  `protobuf:"bytes,1,rep,name=vlans" json:"vlans,omitempty"`
+	Vlans                []*VLAN  `protobuf:"bytes,1,rep,name=vlans,proto3" json:"vlans,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

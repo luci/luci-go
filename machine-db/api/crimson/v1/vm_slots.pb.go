@@ -22,11 +22,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type FindVMSlotsRequest struct {
 	// The number of available VM slots to find.
 	// Values < 1 return all available VM slots.
-	Slots int32 `protobuf:"varint,1,opt,name=slots" json:"slots,omitempty"`
+	Slots int32 `protobuf:"varint,1,opt,name=slots,proto3" json:"slots,omitempty"`
 	// The platform manufacturers to filter found VM slots on.
-	Manufacturers []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
+	Manufacturers []string `protobuf:"bytes,2,rep,name=manufacturers,proto3" json:"manufacturers,omitempty"`
 	// The virtual datacenter to filter found VM slots on.
-	VirtualDatacenters   []string `protobuf:"bytes,3,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	VirtualDatacenters   []string `protobuf:"bytes,3,rep,name=virtual_datacenters,json=virtualDatacenters,proto3" json:"virtual_datacenters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -82,7 +82,7 @@ type FindVMSlotsResponse struct {
 	// The hosts with available VM slots.
 	// Only includes name, vlan_id, and vm_slots.
 	// vm_slots in this context means the number of available VM slots.
-	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`

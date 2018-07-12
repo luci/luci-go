@@ -21,11 +21,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A platform to store in the database.
 type Platform struct {
 	// The name of this platform. Must be unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this platform.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The name of the hardware manufacturer of this platform.
-	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer,proto3" json:"manufacturer,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -79,7 +79,7 @@ func (m *Platform) GetManufacturer() string {
 // A list of platforms.
 type Platforms struct {
 	// A list of platforms.
-	Platform             []*Platform `protobuf:"bytes,1,rep,name=platform" json:"platform,omitempty"`
+	Platform             []*Platform `protobuf:"bytes,1,rep,name=platform,proto3" json:"platform,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`

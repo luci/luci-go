@@ -22,13 +22,13 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A switch to store in the database.
 type Switch struct {
 	// The name of this switch. Must be globally unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this switch.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The number of ports this switch has.
-	Ports int32 `protobuf:"varint,3,opt,name=ports" json:"ports,omitempty"`
+	Ports int32 `protobuf:"varint,3,opt,name=ports,proto3" json:"ports,omitempty"`
 	// The state of this switch.
-	State                v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -89,20 +89,20 @@ func (m *Switch) GetState() v1.State {
 // A KVM to store in the database.
 type KVM struct {
 	// The name of this KVM on the network. Must be globally unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this KVM.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The type of platform this KVM is.
-	Platform string `protobuf:"bytes,3,opt,name=platform" json:"platform,omitempty"`
+	Platform string `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"`
 	// The rack this KVM belongs to.
 	// Must be the name of a rack in the same datacenter.
-	Rack string `protobuf:"bytes,4,opt,name=rack" json:"rack,omitempty"`
+	Rack string `protobuf:"bytes,4,opt,name=rack,proto3" json:"rack,omitempty"`
 	// The MAC address associated with this KVM.
-	MacAddress string `protobuf:"bytes,5,opt,name=mac_address,json=macAddress" json:"mac_address,omitempty"`
+	MacAddress string `protobuf:"bytes,5,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	// The IPv4 address associated with this KVM.
-	Ipv4 string `protobuf:"bytes,6,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,6,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The state of this KVM.
-	State                v1.State `protobuf:"varint,7,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,7,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -184,15 +184,15 @@ func (m *KVM) GetState() v1.State {
 // A rack to store in the database.
 type Rack struct {
 	// The name of this rack. Must be globally unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this rack.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The switches belonging to this rack.
-	Switch []*Switch `protobuf:"bytes,3,rep,name=switch" json:"switch,omitempty"`
+	Switch []*Switch `protobuf:"bytes,3,rep,name=switch,proto3" json:"switch,omitempty"`
 	// The state of this rack.
-	State v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The KVM serving this rack.
-	Kvm                  string   `protobuf:"bytes,5,opt,name=kvm" json:"kvm,omitempty"`
+	Kvm                  string   `protobuf:"bytes,5,opt,name=kvm,proto3" json:"kvm,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -260,15 +260,15 @@ func (m *Rack) GetKvm() string {
 // A datacenter to store in the database.
 type Datacenter struct {
 	// The name of this datacenter. Must be globally unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this datacenter.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The racks belonging to this datacenter.
-	Rack []*Rack `protobuf:"bytes,3,rep,name=rack" json:"rack,omitempty"`
+	Rack []*Rack `protobuf:"bytes,3,rep,name=rack,proto3" json:"rack,omitempty"`
 	// The state of this datacenter.
-	State v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The KVMs belonging to this datacenter.
-	Kvm                  []*KVM   `protobuf:"bytes,5,rep,name=kvm" json:"kvm,omitempty"`
+	Kvm                  []*KVM   `protobuf:"bytes,5,rep,name=kvm,proto3" json:"kvm,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -336,7 +336,7 @@ func (m *Datacenter) GetKvm() []*KVM {
 // A list of datacenter config files.
 type Datacenters struct {
 	// A list of names of datacenter config files.
-	Datacenter           []string `protobuf:"bytes,1,rep,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter           []string `protobuf:"bytes,1,rep,name=datacenter,proto3" json:"datacenter,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

@@ -22,15 +22,15 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A rack in the database.
 type Rack struct {
 	// The name of this rack. Uniquely identifies this rack.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this rack.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The datacenter this rack belongs to.
-	Datacenter string `protobuf:"bytes,3,opt,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter string `protobuf:"bytes,3,opt,name=datacenter,proto3" json:"datacenter,omitempty"`
 	// The state of this rack.
-	State v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The KVM serving this rack.
-	Kvm                  string   `protobuf:"bytes,5,opt,name=kvm" json:"kvm,omitempty"`
+	Kvm                  string   `protobuf:"bytes,5,opt,name=kvm,proto3" json:"kvm,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -98,11 +98,11 @@ func (m *Rack) GetKvm() string {
 // A request to list racks in the database.
 type ListRacksRequest struct {
 	// The names of racks to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The datacenters to filter retrieved racks on.
-	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters []string `protobuf:"bytes,2,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	// The KVMs to filter retrieved racks on.
-	Kvms                 []string `protobuf:"bytes,3,rep,name=kvms" json:"kvms,omitempty"`
+	Kvms                 []string `protobuf:"bytes,3,rep,name=kvms,proto3" json:"kvms,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -156,7 +156,7 @@ func (m *ListRacksRequest) GetKvms() []string {
 // A response containing a list of racks in the database.
 type ListRacksResponse struct {
 	// The racks matching the request.
-	Racks                []*Rack  `protobuf:"bytes,1,rep,name=racks" json:"racks,omitempty"`
+	Racks                []*Rack  `protobuf:"bytes,1,rep,name=racks,proto3" json:"racks,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

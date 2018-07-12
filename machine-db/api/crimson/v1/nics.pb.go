@@ -22,15 +22,15 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A network interface in the database.
 type NIC struct {
 	// The name of this NIC. With machine, uniquely identifies this NIC.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The machine this NIC belongs to. With name, uniquely identifies this NIC.
-	Machine string `protobuf:"bytes,2,opt,name=machine" json:"machine,omitempty"`
+	Machine string `protobuf:"bytes,2,opt,name=machine,proto3" json:"machine,omitempty"`
 	// The MAC address associated with this NIC.
-	MacAddress string `protobuf:"bytes,3,opt,name=mac_address,json=macAddress" json:"mac_address,omitempty"`
+	MacAddress string `protobuf:"bytes,3,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	// The switch this NIC is connected to.
-	Switch string `protobuf:"bytes,4,opt,name=switch" json:"switch,omitempty"`
+	Switch string `protobuf:"bytes,4,opt,name=switch,proto3" json:"switch,omitempty"`
 	// The switchport this NIC is connected to.
-	Switchport           int32    `protobuf:"varint,5,opt,name=switchport" json:"switchport,omitempty"`
+	Switchport           int32    `protobuf:"varint,5,opt,name=switchport,proto3" json:"switchport,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -98,7 +98,7 @@ func (m *NIC) GetSwitchport() int32 {
 // A request to create a new NIC in the database.
 type CreateNICRequest struct {
 	// The NIC to create in the database.
-	Nic                  *NIC     `protobuf:"bytes,1,opt,name=nic" json:"nic,omitempty"`
+	Nic                  *NIC     `protobuf:"bytes,1,opt,name=nic,proto3" json:"nic,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -138,9 +138,9 @@ func (m *CreateNICRequest) GetNic() *NIC {
 // A request to delete a NIC from the database.
 type DeleteNICRequest struct {
 	// The name of the NIC to delete.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The machine the NIC belongs to.
-	Machine              string   `protobuf:"bytes,2,opt,name=machine" json:"machine,omitempty"`
+	Machine              string   `protobuf:"bytes,2,opt,name=machine,proto3" json:"machine,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -187,13 +187,13 @@ func (m *DeleteNICRequest) GetMachine() string {
 // A request to list NICs in the database.
 type ListNICsRequest struct {
 	// The names of NICs to get.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The machines to filter retrieved NICs on.
-	Machines []string `protobuf:"bytes,2,rep,name=machines" json:"machines,omitempty"`
+	Machines []string `protobuf:"bytes,2,rep,name=machines,proto3" json:"machines,omitempty"`
 	// The MAC addresses to filter retrieved NICs on.
-	MacAddresses []string `protobuf:"bytes,3,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`
+	MacAddresses []string `protobuf:"bytes,3,rep,name=mac_addresses,json=macAddresses,proto3" json:"mac_addresses,omitempty"`
 	// The switches to filter retrieved NICs on.
-	Switches             []string `protobuf:"bytes,4,rep,name=switches" json:"switches,omitempty"`
+	Switches             []string `protobuf:"bytes,4,rep,name=switches,proto3" json:"switches,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -254,7 +254,7 @@ func (m *ListNICsRequest) GetSwitches() []string {
 // A response containing a list of NICs in the database.
 type ListNICsResponse struct {
 	// The NICs matching this request.
-	Nics                 []*NIC   `protobuf:"bytes,1,rep,name=nics" json:"nics,omitempty"`
+	Nics                 []*NIC   `protobuf:"bytes,1,rep,name=nics,proto3" json:"nics,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -294,9 +294,9 @@ func (m *ListNICsResponse) GetNics() []*NIC {
 // A request to update a NIC in the database.
 type UpdateNICRequest struct {
 	// The NIC to update in the database.
-	Nic *NIC `protobuf:"bytes,1,opt,name=nic" json:"nic,omitempty"`
+	Nic *NIC `protobuf:"bytes,1,opt,name=nic,proto3" json:"nic,omitempty"`
 	// The fields to update in the NIC.
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`

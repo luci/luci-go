@@ -22,23 +22,23 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A KVM in the database.
 type KVM struct {
 	// The name of this KVM on the network. Uniquely identifies this KVM.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The VLAN this KVM belongs to.
-	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The type of platform this KVM is.
-	Platform string `protobuf:"bytes,3,opt,name=platform" json:"platform,omitempty"`
+	Platform string `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"`
 	// The datacenter this KVM belongs to.
-	Datacenter string `protobuf:"bytes,4,opt,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter string `protobuf:"bytes,4,opt,name=datacenter,proto3" json:"datacenter,omitempty"`
 	// The rack this KVM belongs to.
-	Rack string `protobuf:"bytes,5,opt,name=rack" json:"rack,omitempty"`
+	Rack string `protobuf:"bytes,5,opt,name=rack,proto3" json:"rack,omitempty"`
 	// A description of this KVM.
-	Description string `protobuf:"bytes,6,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 	// The MAC address associated with this KVM.
-	MacAddress string `protobuf:"bytes,7,opt,name=mac_address,json=macAddress" json:"mac_address,omitempty"`
+	MacAddress string `protobuf:"bytes,7,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	// The IPv4 address associated with this KVM.
-	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The state of this KVM.
-	State                v1.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,9,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -134,21 +134,21 @@ func (m *KVM) GetState() v1.State {
 // A request to list KVMs in the database.
 type ListKVMsRequest struct {
 	// The names of KVMs to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The VLANs to filter retrieved KVMs on.
-	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans" json:"vlans,omitempty"`
+	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans,proto3" json:"vlans,omitempty"`
 	// The platforms to filter retrieved KVMs on.
-	Platforms []string `protobuf:"bytes,3,rep,name=platforms" json:"platforms,omitempty"`
+	Platforms []string `protobuf:"bytes,3,rep,name=platforms,proto3" json:"platforms,omitempty"`
 	// The datacenters to filter retrieved KVMs on.
-	Datacenters []string `protobuf:"bytes,4,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters []string `protobuf:"bytes,4,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	// The racks to filter retrieved KVMs on.
-	Racks []string `protobuf:"bytes,5,rep,name=racks" json:"racks,omitempty"`
+	Racks []string `protobuf:"bytes,5,rep,name=racks,proto3" json:"racks,omitempty"`
 	// The MAC addresses to filter retrieved KVMs on.
-	MacAddresses []string `protobuf:"bytes,6,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`
+	MacAddresses []string `protobuf:"bytes,6,rep,name=mac_addresses,json=macAddresses,proto3" json:"mac_addresses,omitempty"`
 	// The IPv4 addresses to filter retrieved KVMs on.
-	Ipv4S []string `protobuf:"bytes,7,rep,name=ipv4s" json:"ipv4s,omitempty"`
+	Ipv4S []string `protobuf:"bytes,7,rep,name=ipv4s,proto3" json:"ipv4s,omitempty"`
 	// The states to filter retrieved KVMs on.
-	States               []v1.State `protobuf:"varint,8,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States               []v1.State `protobuf:"varint,8,rep,packed,name=states,proto3,enum=common.State" json:"states,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -237,7 +237,7 @@ func (m *ListKVMsRequest) GetStates() []v1.State {
 // A response containing a list of KVMs in the database.
 type ListKVMsResponse struct {
 	// The KVMs matching the request.
-	Kvms                 []*KVM   `protobuf:"bytes,1,rep,name=kvms" json:"kvms,omitempty"`
+	Kvms                 []*KVM   `protobuf:"bytes,1,rep,name=kvms,proto3" json:"kvms,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

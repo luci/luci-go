@@ -21,11 +21,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A platform in the database.
 type Platform struct {
 	// The name of this platform. Uniquely identifies this platform.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this platform.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The manufacturer of this platform.
-	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer" json:"manufacturer,omitempty"`
+	Manufacturer         string   `protobuf:"bytes,3,opt,name=manufacturer,proto3" json:"manufacturer,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -79,9 +79,9 @@ func (m *Platform) GetManufacturer() string {
 // A request to list platforms in the database.
 type ListPlatformsRequest struct {
 	// The names of platforms to retrieve.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The manufacturers to filter retrieved platforms on.
-	Manufacturers        []string `protobuf:"bytes,2,rep,name=manufacturers" json:"manufacturers,omitempty"`
+	Manufacturers        []string `protobuf:"bytes,2,rep,name=manufacturers,proto3" json:"manufacturers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -128,7 +128,7 @@ func (m *ListPlatformsRequest) GetManufacturers() []string {
 // A response containing a list of platforms in the database.
 type ListPlatformsResponse struct {
 	// The platforms matching the request.
-	Platforms            []*Platform `protobuf:"bytes,1,rep,name=platforms" json:"platforms,omitempty"`
+	Platforms            []*Platform `protobuf:"bytes,1,rep,name=platforms,proto3" json:"platforms,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`

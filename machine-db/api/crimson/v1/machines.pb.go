@@ -23,24 +23,24 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A machine in the database.
 type Machine struct {
 	// The name of this machine. Uniquely identifies this machine.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The type of platform this machine is.
-	Platform string `protobuf:"bytes,2,opt,name=platform" json:"platform,omitempty"`
+	Platform string `protobuf:"bytes,2,opt,name=platform,proto3" json:"platform,omitempty"`
 	// The rack this machine belongs to.
-	Rack string `protobuf:"bytes,3,opt,name=rack" json:"rack,omitempty"`
+	Rack string `protobuf:"bytes,3,opt,name=rack,proto3" json:"rack,omitempty"`
 	// A description of this machine.
-	Description string `protobuf:"bytes,4,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	// The asset tag associated with this machine.
-	AssetTag string `protobuf:"bytes,5,opt,name=asset_tag,json=assetTag" json:"asset_tag,omitempty"`
+	AssetTag string `protobuf:"bytes,5,opt,name=asset_tag,json=assetTag,proto3" json:"asset_tag,omitempty"`
 	// The service tag associated with this machine.
-	ServiceTag string `protobuf:"bytes,6,opt,name=service_tag,json=serviceTag" json:"service_tag,omitempty"`
+	ServiceTag string `protobuf:"bytes,6,opt,name=service_tag,json=serviceTag,proto3" json:"service_tag,omitempty"`
 	// The deployment ticket associated with this machine.
-	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket" json:"deployment_ticket,omitempty"`
+	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket,proto3" json:"deployment_ticket,omitempty"`
 	// The state of this machine.
-	State v1.State `protobuf:"varint,8,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,8,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The datacenter this machine belongs to.
 	// When creating a machine, omit this field. It will be inferred from the rack.
-	Datacenter           string   `protobuf:"bytes,9,opt,name=datacenter" json:"datacenter,omitempty"`
+	Datacenter           string   `protobuf:"bytes,9,opt,name=datacenter,proto3" json:"datacenter,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -136,7 +136,7 @@ func (m *Machine) GetDatacenter() string {
 // A request to create a new machine in the database.
 type CreateMachineRequest struct {
 	// The machine to create in the database.
-	Machine              *Machine `protobuf:"bytes,1,opt,name=machine" json:"machine,omitempty"`
+	Machine              *Machine `protobuf:"bytes,1,opt,name=machine,proto3" json:"machine,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -176,7 +176,7 @@ func (m *CreateMachineRequest) GetMachine() *Machine {
 // A request to delete a machine from the database.
 type DeleteMachineRequest struct {
 	// The name of the machine to delete.
-	Name                 string   `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -216,15 +216,15 @@ func (m *DeleteMachineRequest) GetName() string {
 // A request to list machines in the database.
 type ListMachinesRequest struct {
 	// The names of machines to get.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The platforms to filter retrieved machines on.
-	Platforms []string `protobuf:"bytes,2,rep,name=platforms" json:"platforms,omitempty"`
+	Platforms []string `protobuf:"bytes,2,rep,name=platforms,proto3" json:"platforms,omitempty"`
 	// The racks to filter retrieved machines on.
-	Racks []string `protobuf:"bytes,3,rep,name=racks" json:"racks,omitempty"`
+	Racks []string `protobuf:"bytes,3,rep,name=racks,proto3" json:"racks,omitempty"`
 	// The states to filter retrieved machines on.
-	States []v1.State `protobuf:"varint,4,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States []v1.State `protobuf:"varint,4,rep,packed,name=states,proto3,enum=common.State" json:"states,omitempty"`
 	// The datacenters to filter retrieved machines on.
-	Datacenters          []string `protobuf:"bytes,5,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters          []string `protobuf:"bytes,5,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -292,7 +292,7 @@ func (m *ListMachinesRequest) GetDatacenters() []string {
 // A response containing a list of machines in the database.
 type ListMachinesResponse struct {
 	// The machines matching this request.
-	Machines             []*Machine `protobuf:"bytes,1,rep,name=machines" json:"machines,omitempty"`
+	Machines             []*Machine `protobuf:"bytes,1,rep,name=machines,proto3" json:"machines,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -332,9 +332,9 @@ func (m *ListMachinesResponse) GetMachines() []*Machine {
 // A request to rename a machine in the database.
 type RenameMachineRequest struct {
 	// The name of the machine to rename.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The new name to give this machine.
-	NewName              string   `protobuf:"bytes,2,opt,name=new_name,json=newName" json:"new_name,omitempty"`
+	NewName              string   `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3" json:"new_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -381,9 +381,9 @@ func (m *RenameMachineRequest) GetNewName() string {
 // A request to update a machine in the database.
 type UpdateMachineRequest struct {
 	// The machine to update in the database.
-	Machine *Machine `protobuf:"bytes,1,opt,name=machine" json:"machine,omitempty"`
+	Machine *Machine `protobuf:"bytes,1,opt,name=machine,proto3" json:"machine,omitempty"`
 	// The fields to update in the machine.
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
