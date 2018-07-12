@@ -194,7 +194,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstance(ctx, inst, dest, func(f File) bool {
+		err = ExtractInstanceTxn(ctx, inst, dest, func(f File) bool {
 			return strings.HasPrefix(f.Name(), "bad_dir/")
 		})
 		So(err, ShouldBeNil)
@@ -348,7 +348,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstance(ctx, inst, dest, func(f File) bool {
+		err = ExtractInstanceTxn(ctx, inst, dest, func(f File) bool {
 			return strings.HasPrefix(f.Name(), "bad_dir/")
 		})
 		So(err, ShouldBeNil)

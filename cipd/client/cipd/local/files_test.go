@@ -319,14 +319,14 @@ func ensureSymlinkTarget(file File, target string) {
 	So(discoveredTarget, ShouldEqual, target)
 }
 
-func TestFileSystemDestination(t *testing.T) {
+func TestNewDestination(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		destDir := filepath.Join(tempDir, "dest")
 		So(err, ShouldBeNil)
-		dest := NewFileSystemDestination(destDir, nil)
+		dest := NewDestination(destDir, nil)
 		defer os.RemoveAll(tempDir)
 
 		writeFileToDest := func(name string, opts CreateFileOptions, data string) {
