@@ -88,6 +88,22 @@ type DeployedPackage struct {
 	ToRelink []string
 }
 
+// RepairsParams is passed to RepairDeployment.
+type RepairParams struct {
+	// Instance holds the original package data.
+	//
+	// Must be present if ToRedeploy is not empty. Otherwise not used.
+	Instance PackageInstance
+
+	// ToRedeploy is a list of files that needs to be extracted from the instance
+	// and relinked into the site root.
+	ToRedeploy []string
+
+	// ToRelink is a list of files that just needs to be relinked into the site
+	// root.
+	ToRelink []string
+}
+
 // Deployer knows how to unzip and place packages into site root directory.
 type Deployer interface {
 	// DeployInstance installs an instance of a package into the given subdir of
@@ -122,6 +138,16 @@ type Deployer interface {
 
 	// RemoveDeployed deletes a package from a subdir given its name.
 	RemoveDeployed(ctx context.Context, subdir, packageName string) error
+
+	// RepairDeployed attempts to restore broken deployed instance.
+	//
+	// Use CheckDeployed first to figure out what parts of the package need
+	// repairs.
+	//
+	// 'pin' indicates an instances that is supposed to be installed in the given
+	// subdir. If there's no such package there or its version is different from
+	// the one specified in the pin, returns an error.
+	RepairDeployed(ctx context.Context, subdir string, pin common.Pin, params RepairParams) error
 
 	// TempFile returns os.File located in <base>/.cipd/tmp/*.
 	//
@@ -165,9 +191,16 @@ func (d errDeployer) CheckDeployed(context.Context, string, string, common.Paran
 func (d errDeployer) FindDeployed(context.Context) (out common.PinSliceBySubdir, err error) {
 	return nil, d.err
 }
+
 func (d errDeployer) RemoveDeployed(context.Context, string, string) error { return d.err }
-func (d errDeployer) TempFile(context.Context, string) (*os.File, error)   { return nil, d.err }
-func (d errDeployer) CleanupTrash(context.Context) error                   { return d.err }
+
+func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, RepairParams) error {
+	return d.err
+}
+
+func (d errDeployer) TempFile(context.Context, string) (*os.File, error) { return nil, d.err }
+
+func (d errDeployer) CleanupTrash(context.Context) error { return d.err }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -456,6 +489,31 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 		d.removeFromSiteRoot(ctx, subdir, manifest.Files)
 	}
 	return d.fs.EnsureDirectoryGone(ctx, pkgPath)
+}
+
+func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, params RepairParams) error {
+	switch {
+	case len(params.ToRedeploy) != 0 && params.Instance == nil:
+		panic("if ToRedeploy is not empty, Instance must be given too")
+	case params.Instance != nil && params.Instance.Pin() != pin:
+		panic(fmt.Sprintf("expecting instance with pin %s, got %s", pin, params.Instance.Pin()))
+	}
+
+	// TODO(vadimsh): Implement.
+	if len(params.ToRedeploy) != 0 {
+		logging.Warningf(ctx, "Would have redeployed, but this is not implemented yet:")
+		for _, f := range params.ToRedeploy {
+			logging.Warningf(ctx, "  %s", f)
+		}
+	}
+	if len(params.ToRelink) != 0 {
+		logging.Warningf(ctx, "Would have relinked, but this is not implemented yet:")
+		for _, f := range params.ToRelink {
+			logging.Warningf(ctx, "  %s", f)
+		}
+	}
+
+	return nil
 }
 
 func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, error) {
