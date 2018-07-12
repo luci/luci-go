@@ -30,10 +30,10 @@ func printMachines(tsv bool, machines ...*crimson.Machine) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
+			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "Drac Password", "State")
 		}
 		for _, m := range machines {
-			p.Row(m.Name, m.Platform, m.Rack, m.Datacenter, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+			p.Row(m.Name, m.Platform, m.Rack, m.Datacenter, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.DracPassword, m.State)
 		}
 	}
 }
@@ -78,6 +78,7 @@ func addMachineCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.DracPassword, "drac_pwd", "", "The initial DRAC password associated with this machine.")
 			return cmd
 		},
 	}
@@ -166,6 +167,7 @@ func editMachineCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.DracPassword, "drac_pwd", "", "The initial DRAC password associated with this machine.")
 			return cmd
 		},
 	}
