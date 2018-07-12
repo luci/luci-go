@@ -21,9 +21,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // An operating system in the database.
 type OS struct {
 	// The name of this operating system. Uniquely identifies this operating system.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this operating system.
-	Description          string   `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -70,7 +70,7 @@ func (m *OS) GetDescription() string {
 // A request to list operating systems in the database.
 type ListOSesRequest struct {
 	// The names of operating systems to retrieve.
-	Names                []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names                []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -110,7 +110,7 @@ func (m *ListOSesRequest) GetNames() []string {
 // A response containing a list of operating systems in the database.
 type ListOSesResponse struct {
 	// The operating systems matching the request.
-	Oses                 []*OS    `protobuf:"bytes,1,rep,name=oses" json:"oses,omitempty"`
+	Oses                 []*OS    `protobuf:"bytes,1,rep,name=oses,proto3" json:"oses,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

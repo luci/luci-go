@@ -22,11 +22,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A datacenter in the database.
 type Datacenter struct {
 	// The name of this datacenter. Uniquely identifies this datacenter.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this datacenter.
-	Description string `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	// The state of this datacenter.
-	State                v1.State `protobuf:"varint,3,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,3,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -80,7 +80,7 @@ func (m *Datacenter) GetState() v1.State {
 // A request to list datacenters in the database.
 type ListDatacentersRequest struct {
 	// The names of datacenters to retrieve.
-	Names                []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names                []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -120,7 +120,7 @@ func (m *ListDatacentersRequest) GetNames() []string {
 // A response containing a list of datacenters in the database.
 type ListDatacentersResponse struct {
 	// The datacenters matching the request.
-	Datacenters          []*Datacenter `protobuf:"bytes,1,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters          []*Datacenter `protobuf:"bytes,1,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`

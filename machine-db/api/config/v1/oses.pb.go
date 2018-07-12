@@ -21,9 +21,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // An operating system to store in the database.
 type OS struct {
 	// The name of this operating system. Must be unique.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A description of this operating system.
-	Description          string   `protobuf:"bytes,2,opt,name=description" json:"description,omitempty"`
+	Description          string   `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -70,7 +70,7 @@ func (m *OS) GetDescription() string {
 // A list of operating systems.
 type OSes struct {
 	// A list of operating systems.
-	OperatingSystem      []*OS    `protobuf:"bytes,1,rep,name=operating_system,json=operatingSystem" json:"operating_system,omitempty"`
+	OperatingSystem      []*OS    `protobuf:"bytes,1,rep,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

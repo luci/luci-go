@@ -22,20 +22,20 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A DRAC in the database.
 type DRAC struct {
 	// The name of this DRAC on the network. With VLAN, uniquely identifies this DRAC.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The machine this DRAC belongs to. Uniquely identifies this DRAC.
-	Machine string `protobuf:"bytes,2,opt,name=machine" json:"machine,omitempty"`
+	Machine string `protobuf:"bytes,2,opt,name=machine,proto3" json:"machine,omitempty"`
 	// The IPv4 address associated with this DRAC.
-	Ipv4 string `protobuf:"bytes,3,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,3,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The VLAN this DRAC belongs to.
 	// When creating a DRAC, omit this field. It will be inferred from the IPv4 address.
-	Vlan int64 `protobuf:"varint,4,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,4,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The MAC address associated with this DRAC.
-	MacAddress string `protobuf:"bytes,5,opt,name=mac_address,json=macAddress" json:"mac_address,omitempty"`
+	MacAddress string `protobuf:"bytes,5,opt,name=mac_address,json=macAddress,proto3" json:"mac_address,omitempty"`
 	// The switch this DRAC is connected to.
-	Switch string `protobuf:"bytes,6,opt,name=switch" json:"switch,omitempty"`
+	Switch string `protobuf:"bytes,6,opt,name=switch,proto3" json:"switch,omitempty"`
 	// The switchport this DRAC is connected to.
-	Switchport           int32    `protobuf:"varint,7,opt,name=switchport" json:"switchport,omitempty"`
+	Switchport           int32    `protobuf:"varint,7,opt,name=switchport,proto3" json:"switchport,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -117,7 +117,7 @@ func (m *DRAC) GetSwitchport() int32 {
 // A request to create a new DRAC in the database.
 type CreateDRACRequest struct {
 	// The DRAC to create in the database.
-	Drac                 *DRAC    `protobuf:"bytes,1,opt,name=drac" json:"drac,omitempty"`
+	Drac                 *DRAC    `protobuf:"bytes,1,opt,name=drac,proto3" json:"drac,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -157,17 +157,17 @@ func (m *CreateDRACRequest) GetDrac() *DRAC {
 // A request to list DRACs in the database.
 type ListDRACsRequest struct {
 	// The names of DRACs to get.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The machines to filter retrieved DRACs on.
-	Machines []string `protobuf:"bytes,2,rep,name=machines" json:"machines,omitempty"`
+	Machines []string `protobuf:"bytes,2,rep,name=machines,proto3" json:"machines,omitempty"`
 	// The IPv4 addresses to filter retrieved DRACs on.
-	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s" json:"ipv4s,omitempty"`
+	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s,proto3" json:"ipv4s,omitempty"`
 	// The VLANs to filter retrieved DRACs on.
-	Vlans []int64 `protobuf:"varint,4,rep,packed,name=vlans" json:"vlans,omitempty"`
+	Vlans []int64 `protobuf:"varint,4,rep,packed,name=vlans,proto3" json:"vlans,omitempty"`
 	// The MAC addresses to filter retrieved DRACs on.
-	MacAddresses []string `protobuf:"bytes,5,rep,name=mac_addresses,json=macAddresses" json:"mac_addresses,omitempty"`
+	MacAddresses []string `protobuf:"bytes,5,rep,name=mac_addresses,json=macAddresses,proto3" json:"mac_addresses,omitempty"`
 	// The switches to filter retrieved DRACs on.
-	Switches             []string `protobuf:"bytes,6,rep,name=switches" json:"switches,omitempty"`
+	Switches             []string `protobuf:"bytes,6,rep,name=switches,proto3" json:"switches,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -242,7 +242,7 @@ func (m *ListDRACsRequest) GetSwitches() []string {
 // A response containing a list of DRACs in the database.
 type ListDRACsResponse struct {
 	// The DRACs matching this request.
-	Dracs                []*DRAC  `protobuf:"bytes,1,rep,name=dracs" json:"dracs,omitempty"`
+	Dracs                []*DRAC  `protobuf:"bytes,1,rep,name=dracs,proto3" json:"dracs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -282,9 +282,9 @@ func (m *ListDRACsResponse) GetDracs() []*DRAC {
 // A request to update a DRAC in the database.
 type UpdateDRACRequest struct {
 	// The DRAC to update in the database.
-	Drac *DRAC `protobuf:"bytes,1,opt,name=drac" json:"drac,omitempty"`
+	Drac *DRAC `protobuf:"bytes,1,opt,name=drac,proto3" json:"drac,omitempty"`
 	// The fields to update in the DRAC.
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`

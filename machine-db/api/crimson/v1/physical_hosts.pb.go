@@ -23,26 +23,26 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A physical host in the database.
 type PhysicalHost struct {
 	// The name of this host on the network. With VLAN ID, uniquely identifies this host.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The VLAN this host belongs to. With hostname, uniquely identifies this host.
 	// When creating a host, omit this field. It will be inferred from the IPv4 address.
-	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The machine backing this host.
-	Machine string `protobuf:"bytes,3,opt,name=machine" json:"machine,omitempty"`
+	Machine string `protobuf:"bytes,3,opt,name=machine,proto3" json:"machine,omitempty"`
 	// The operating system backing this host.
-	Os string `protobuf:"bytes,4,opt,name=os" json:"os,omitempty"`
+	Os string `protobuf:"bytes,4,opt,name=os,proto3" json:"os,omitempty"`
 	// The number of VMs which can be deployed on this host.
-	VmSlots int32 `protobuf:"varint,5,opt,name=vm_slots,json=vmSlots" json:"vm_slots,omitempty"`
+	VmSlots int32 `protobuf:"varint,5,opt,name=vm_slots,json=vmSlots,proto3" json:"vm_slots,omitempty"`
 	// A description of this host.
-	Description string `protobuf:"bytes,6,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 	// The deployment ticket associated with this host.
-	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket" json:"deployment_ticket,omitempty"`
+	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket,proto3" json:"deployment_ticket,omitempty"`
 	// The IPv4 address associated with this host.
-	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The state of the machine backing this host.
-	State v1.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State v1.State `protobuf:"varint,9,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	// The virtual datacenter VMs deployed on this host belong to.
-	VirtualDatacenter    string   `protobuf:"bytes,10,opt,name=virtual_datacenter,json=virtualDatacenter" json:"virtual_datacenter,omitempty"`
+	VirtualDatacenter    string   `protobuf:"bytes,10,opt,name=virtual_datacenter,json=virtualDatacenter,proto3" json:"virtual_datacenter,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -145,7 +145,7 @@ func (m *PhysicalHost) GetVirtualDatacenter() string {
 // A request to create a new physical host in the database.
 type CreatePhysicalHostRequest struct {
 	// The host to create in the database.
-	Host                 *PhysicalHost `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host                 *PhysicalHost `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`
@@ -185,25 +185,25 @@ func (m *CreatePhysicalHostRequest) GetHost() *PhysicalHost {
 // A request to list physical hosts in the database.
 type ListPhysicalHostsRequest struct {
 	// The names of hosts to get.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The VLANs to filter retrieved hosts on.
-	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans" json:"vlans,omitempty"`
+	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans,proto3" json:"vlans,omitempty"`
 	// The IPv4 addresses to filter retrieved hosts on.
-	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s" json:"ipv4s,omitempty"`
+	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s,proto3" json:"ipv4s,omitempty"`
 	// The machines to filter retrieved hosts on.
-	Machines []string `protobuf:"bytes,4,rep,name=machines" json:"machines,omitempty"`
+	Machines []string `protobuf:"bytes,4,rep,name=machines,proto3" json:"machines,omitempty"`
 	// The operating systems to filter retrieved hosts on.
-	Oses []string `protobuf:"bytes,5,rep,name=oses" json:"oses,omitempty"`
+	Oses []string `protobuf:"bytes,5,rep,name=oses,proto3" json:"oses,omitempty"`
 	// The states to filter retrieved hosts on.
-	States []v1.State `protobuf:"varint,6,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States []v1.State `protobuf:"varint,6,rep,packed,name=states,proto3,enum=common.State" json:"states,omitempty"`
 	// The platforms to filter retrieved hosts on.
-	Platforms []string `protobuf:"bytes,7,rep,name=platforms" json:"platforms,omitempty"`
+	Platforms []string `protobuf:"bytes,7,rep,name=platforms,proto3" json:"platforms,omitempty"`
 	// The racks to filter retrieved hosts on.
-	Racks []string `protobuf:"bytes,8,rep,name=racks" json:"racks,omitempty"`
+	Racks []string `protobuf:"bytes,8,rep,name=racks,proto3" json:"racks,omitempty"`
 	// The datacenters to filter retrieved hosts on.
-	Datacenters []string `protobuf:"bytes,9,rep,name=datacenters" json:"datacenters,omitempty"`
+	Datacenters []string `protobuf:"bytes,9,rep,name=datacenters,proto3" json:"datacenters,omitempty"`
 	// The virtual datacenters to filter retrieved hosts on.
-	VirtualDatacenters   []string `protobuf:"bytes,10,rep,name=virtual_datacenters,json=virtualDatacenters" json:"virtual_datacenters,omitempty"`
+	VirtualDatacenters   []string `protobuf:"bytes,10,rep,name=virtual_datacenters,json=virtualDatacenters,proto3" json:"virtual_datacenters,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -306,7 +306,7 @@ func (m *ListPhysicalHostsRequest) GetVirtualDatacenters() []string {
 // A response containing a list of physical hosts in the database.
 type ListPhysicalHostsResponse struct {
 	// The hosts matching this request.
-	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts                []*PhysicalHost `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -346,9 +346,9 @@ func (m *ListPhysicalHostsResponse) GetHosts() []*PhysicalHost {
 // A request to update a physical host in the database.
 type UpdatePhysicalHostRequest struct {
 	// The host to update in the database.
-	Host *PhysicalHost `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host *PhysicalHost `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// The fields to update in the host.
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`

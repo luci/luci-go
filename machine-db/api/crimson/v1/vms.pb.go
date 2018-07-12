@@ -23,24 +23,24 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A VM in the database.
 type VM struct {
 	// The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
 	// When creating a VM, omit this field. It will be inferred from the IPv4 address.
-	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The physical host this VM is running on.
-	Host string `protobuf:"bytes,3,opt,name=host" json:"host,omitempty"`
+	Host string `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
 	// The VLAN this VM's physical host belongs to.
-	HostVlan int64 `protobuf:"varint,4,opt,name=host_vlan,json=hostVlan" json:"host_vlan,omitempty"`
+	HostVlan int64 `protobuf:"varint,4,opt,name=host_vlan,json=hostVlan,proto3" json:"host_vlan,omitempty"`
 	// The operating system running on this VM.
-	Os string `protobuf:"bytes,5,opt,name=os" json:"os,omitempty"`
+	Os string `protobuf:"bytes,5,opt,name=os,proto3" json:"os,omitempty"`
 	// A description of this VM.
-	Description string `protobuf:"bytes,6,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
 	// The deployment ticket associated with this VM.
-	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket" json:"deployment_ticket,omitempty"`
+	DeploymentTicket string `protobuf:"bytes,7,opt,name=deployment_ticket,json=deploymentTicket,proto3" json:"deployment_ticket,omitempty"`
 	// The IPv4 address associated with this host.
-	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,8,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The state of this VM.
-	State                v1.State `protobuf:"varint,9,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,9,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -136,7 +136,7 @@ func (m *VM) GetState() v1.State {
 // A request to create a new VM in the database.
 type CreateVMRequest struct {
 	// The VM to create in the database.
-	Vm                   *VM      `protobuf:"bytes,1,opt,name=vm" json:"vm,omitempty"`
+	Vm                   *VM      `protobuf:"bytes,1,opt,name=vm,proto3" json:"vm,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -176,19 +176,19 @@ func (m *CreateVMRequest) GetVm() *VM {
 // A request to list VMs in the database.
 type ListVMsRequest struct {
 	// The names of VMs to get.
-	Names []string `protobuf:"bytes,1,rep,name=names" json:"names,omitempty"`
+	Names []string `protobuf:"bytes,1,rep,name=names,proto3" json:"names,omitempty"`
 	// The VLANs to filter retrieved VMs on.
-	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans" json:"vlans,omitempty"`
+	Vlans []int64 `protobuf:"varint,2,rep,packed,name=vlans,proto3" json:"vlans,omitempty"`
 	// The IPv4 addresses to filter retrieved VMs on.
-	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s" json:"ipv4s,omitempty"`
+	Ipv4S []string `protobuf:"bytes,3,rep,name=ipv4s,proto3" json:"ipv4s,omitempty"`
 	// The physical hosts to filter retrieved VMs on.
-	Hosts []string `protobuf:"bytes,4,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts []string `protobuf:"bytes,4,rep,name=hosts,proto3" json:"hosts,omitempty"`
 	// The physical host VLANs to filter retrieved VMs on.
-	HostVlans []int64 `protobuf:"varint,5,rep,packed,name=host_vlans,json=hostVlans" json:"host_vlans,omitempty"`
+	HostVlans []int64 `protobuf:"varint,5,rep,packed,name=host_vlans,json=hostVlans,proto3" json:"host_vlans,omitempty"`
 	// The operating system to filter retrieved VMs on.
-	Oses []string `protobuf:"bytes,6,rep,name=oses" json:"oses,omitempty"`
+	Oses []string `protobuf:"bytes,6,rep,name=oses,proto3" json:"oses,omitempty"`
 	// The states to filter retrieved VMs on.
-	States               []v1.State `protobuf:"varint,10,rep,packed,name=states,enum=common.State" json:"states,omitempty"`
+	States               []v1.State `protobuf:"varint,10,rep,packed,name=states,proto3,enum=common.State" json:"states,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -270,7 +270,7 @@ func (m *ListVMsRequest) GetStates() []v1.State {
 // A response containing a list of VMs in the database.
 type ListVMsResponse struct {
 	// The VMs matching this request.
-	Vms                  []*VM    `protobuf:"bytes,1,rep,name=vms" json:"vms,omitempty"`
+	Vms                  []*VM    `protobuf:"bytes,1,rep,name=vms,proto3" json:"vms,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -310,9 +310,9 @@ func (m *ListVMsResponse) GetVms() []*VM {
 // A request to update a VM in the database.
 type UpdateVMRequest struct {
 	// The VM to update in the database.
-	Vm *VM `protobuf:"bytes,1,opt,name=vm" json:"vm,omitempty"`
+	Vm *VM `protobuf:"bytes,1,opt,name=vm,proto3" json:"vm,omitempty"`
 	// The fields to update in the VM.
-	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask" json:"update_mask,omitempty"`
+	UpdateMask           *field_mask.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`

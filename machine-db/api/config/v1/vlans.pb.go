@@ -22,13 +22,13 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // A VLAN to store in the database.
 type VLAN struct {
 	// The ID of this VLAN. Must be unique.
-	Id int64 `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id int64 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	// An alias for this VLAN.
-	Alias string `protobuf:"bytes,2,opt,name=alias" json:"alias,omitempty"`
+	Alias string `protobuf:"bytes,2,opt,name=alias,proto3" json:"alias,omitempty"`
 	// The block of IPv4 addresses belonging to this VLAN.
-	CidrBlock string `protobuf:"bytes,3,opt,name=cidr_block,json=cidrBlock" json:"cidr_block,omitempty"`
+	CidrBlock string `protobuf:"bytes,3,opt,name=cidr_block,json=cidrBlock,proto3" json:"cidr_block,omitempty"`
 	// The state of this VLAN.
-	State                v1.State `protobuf:"varint,4,opt,name=state,enum=common.State" json:"state,omitempty"`
+	State                v1.State `protobuf:"varint,4,opt,name=state,proto3,enum=common.State" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -89,7 +89,7 @@ func (m *VLAN) GetState() v1.State {
 // A list of VLANs.
 type VLANs struct {
 	// A list of VLANs.
-	Vlan                 []*VLAN  `protobuf:"bytes,1,rep,name=vlan" json:"vlan,omitempty"`
+	Vlan                 []*VLAN  `protobuf:"bytes,1,rep,name=vlan,proto3" json:"vlan,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

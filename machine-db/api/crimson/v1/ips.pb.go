@@ -21,11 +21,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // An IP address in the database.
 type IP struct {
 	// The IPv4 address. Uniquely identifies this IP address.
-	Ipv4 string `protobuf:"bytes,1,opt,name=ipv4" json:"ipv4,omitempty"`
+	Ipv4 string `protobuf:"bytes,1,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
 	// The VLAN this IP address belongs to.
-	Vlan int64 `protobuf:"varint,2,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The hostname this IP address is assigned to.
-	Hostname             string   `protobuf:"bytes,3,opt,name=hostname" json:"hostname,omitempty"`
+	Hostname             string   `protobuf:"bytes,3,opt,name=hostname,proto3" json:"hostname,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -79,9 +79,9 @@ func (m *IP) GetHostname() string {
 // A request to list free IP addresses in the database.
 type ListFreeIPsRequest struct {
 	// The VLAN to list free IP addresses on.
-	Vlan int64 `protobuf:"varint,1,opt,name=vlan" json:"vlan,omitempty"`
+	Vlan int64 `protobuf:"varint,1,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The maximum number of free IP addresses to return, or 0 to let the server decide.
-	PageSize             int32    `protobuf:"varint,2,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize             int32    `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -128,7 +128,7 @@ func (m *ListFreeIPsRequest) GetPageSize() int32 {
 // A response containing a list of IP addresses in the database.
 type ListIPsResponse struct {
 	// The IP addresses matching this request.
-	Ips                  []*IP    `protobuf:"bytes,1,rep,name=ips" json:"ips,omitempty"`
+	Ips                  []*IP    `protobuf:"bytes,1,rep,name=ips,proto3" json:"ips,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
