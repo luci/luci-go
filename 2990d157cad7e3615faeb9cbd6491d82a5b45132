@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19a66912_e70908df",
+        "filename": "cipd/client/cipd/local/files.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 458,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-12T05:27:04Z",
+      "side": 0,
+      "message": "I couldn\u0027t remember why this \u0027x\u0027 is needed... I removed it, I think it is unnecessary. What happens now:\n1. If deploying into new a/b/c.\n2. Create temp directory a/b/tmp_***.\n3. Drop all files there.\n4. Rename a/b/tmp_*** into a/b/c, thus making all files a/b/c/* appear \"atomically\".\n\nBefore we for some reason creates a/b/tmp_***/x and then renamed it into a/b/c. I can\u0027t remember why...",
+      "range": {
+        "startLine": 458,
+        "startChar": 17,
+        "endLine": 458,
+        "endChar": 73
+      },
+      "revId": "2990d157cad7e3615faeb9cbd6491d82a5b45132",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
