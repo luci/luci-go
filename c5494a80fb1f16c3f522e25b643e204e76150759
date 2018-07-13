@@ -22,6 +22,30 @@
       "revId": "c5494a80fb1f16c3f522e25b643e204e76150759",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aa79f8b5_be2e234e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-13T06:49:21Z",
+      "side": 1,
+      "message": "Nvm, .cipd/* guts don\u0027t end up in the manifest file, since it contains only files that were really deployed.",
+      "parentUuid": "c2d7f5ae_bb704cf2",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 14,
+        "endChar": 38
+      },
+      "revId": "c5494a80fb1f16c3f522e25b643e204e76150759",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
