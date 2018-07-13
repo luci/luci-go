@@ -65,6 +65,23 @@
     },
     {
       "key": {
+        "uuid": "06e2a40a_5ca96386",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T22:50:32Z",
+      "side": 1,
+      "message": "Add [-\u003cflag\u003e \u003cpassword\u003e] to the end of this string.",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bcf15559_5ddfce5d",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -82,6 +99,40 @@
         "endLine": 81,
         "endChar": 59
       },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a96e0de8_56298bdd",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T22:50:32Z",
+      "side": 1,
+      "message": "Add \"flag\": \"drac_password\" here. This translates flag names into the name of a field to modify.",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3da5c0a_172e5cfc",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T22:50:32Z",
+      "side": 1,
+      "message": "And here.",
       "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
