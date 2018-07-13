@@ -76,8 +76,8 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	// Sanitize the Inputs.
 	for _, f := range opts.Input {
 		// Make sure no files are written to package service directory.
-		if strings.HasPrefix(f.Name(), packageServiceDir+"/") {
-			return fmt.Errorf("can't write to %s: %s", packageServiceDir, f.Name())
+		if strings.HasPrefix(f.Name(), PackageServiceDir+"/") {
+			return fmt.Errorf("can't write to %s: %s", PackageServiceDir, f.Name())
 		}
 		// Make sure no files are written to cipd's internal state directory.
 		if strings.HasPrefix(f.Name(), SiteServiceDir+"/") {
@@ -294,7 +294,7 @@ var compressedExt = stringset.NewFromSlice(
 
 type manifestFile []byte
 
-func (m *manifestFile) Name() string       { return manifestName }
+func (m *manifestFile) Name() string       { return ManifestName }
 func (m *manifestFile) Size() uint64       { return uint64(len(*m)) }
 func (m *manifestFile) Executable() bool   { return false }
 func (m *manifestFile) Writable() bool     { return false }
@@ -319,7 +319,7 @@ func makeManifestFile(opts BuildInstanceOptions) (File, error) {
 	if err := ValidateInstallMode(opts.InstallMode); err != nil {
 		return nil, err
 	}
-	formatVer := manifestFormatVersion
+	formatVer := ManifestFormatVersion
 	if opts.overrideFormatVersion != "" {
 		formatVer = opts.overrideFormatVersion
 	}
