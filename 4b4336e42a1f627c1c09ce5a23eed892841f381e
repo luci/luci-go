@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c6da81d8_c849e89f",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T00:13:17Z",
+      "side": 1,
+      "message": "DRAC (all caps) for consistency with other comments in this directory.",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 13
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eb6f3c88_91b65574",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T00:13:17Z",
+      "side": 1,
+      "message": "This is fine, but keep in mind we\u0027ve already run CREATE TABLE on the live database, so you need to run something like in the actual database:\nALTER TABLE machines ADD COLUMN drac_password varchar(255);\nUPDATE machines SET drac_password \u003d \"\";\n\nI\u0027ve done it for the dev instance. I can do it for prod once this is all verified on dev. It\u0027ll be necessary before making this the live prod version.",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01f98b55_0a70b935",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T00:13:17Z",
+      "side": 1,
+      "message": "DRAC for consistency with casing used on the server.",
+      "range": {
+        "startLine": 33,
+        "startChar": 116,
+        "endLine": 33,
+        "endChar": 120
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bcf15559_5ddfce5d",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T00:13:17Z",
+      "side": 1,
+      "message": "Eight characters seems a bit long for some users (also underscore requires pressing shift). How about dpwd or dpass (since pwd is also the \"print working directory\" tool), too vague?",
+      "range": {
+        "startLine": 81,
+        "startChar": 51,
+        "endLine": 81,
+        "endChar": 59
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3356025_82016770",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T00:13:17Z",
+      "side": 1,
+      "message": "Same here for whatever is decided above.",
+      "range": {
+        "startLine": 170,
+        "startChar": 51,
+        "endLine": 170,
+        "endChar": 59
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
