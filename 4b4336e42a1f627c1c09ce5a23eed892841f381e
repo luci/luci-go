@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1ae0fa37_3120c9d7",
+        "filename": "machine-db/api/crimson/v1/machines.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c6da81d8_c849e89f",
+      "range": {
+        "startLine": 33,
+        "startChar": 9,
+        "endLine": 33,
+        "endChar": 13
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "eb6f3c88_91b65574",
         "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
         "patchSetId": 1
@@ -65,6 +89,30 @@
     },
     {
       "key": {
+        "uuid": "4ce9772c_7cc41bf2",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01f98b55_0a70b935",
+      "range": {
+        "startLine": 33,
+        "startChar": 116,
+        "endLine": 33,
+        "endChar": 120
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "06e2a40a_5ca96386",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -82,6 +130,24 @@
     },
     {
       "key": {
+        "uuid": "f83a47f3_62085c70",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06e2a40a_5ca96386",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bcf15559_5ddfce5d",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -93,6 +159,30 @@
       "writtenOn": "2018-07-13T00:13:17Z",
       "side": 1,
       "message": "Eight characters seems a bit long for some users (also underscore requires pressing shift). How about dpwd or dpass (since pwd is also the \"print working directory\" tool), too vague?",
+      "range": {
+        "startLine": 81,
+        "startChar": 51,
+        "endLine": 81,
+        "endChar": 59
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45407099_2ce01866",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "I asked the team and they wanted to make sure that the type of password was indicated thus keeping drac and was told \"pass\" instead of \"pwd\"(which to SA\u0027s means print working directory).",
+      "parentUuid": "bcf15559_5ddfce5d",
       "range": {
         "startLine": 81,
         "startChar": 51,
@@ -122,6 +212,24 @@
     },
     {
       "key": {
+        "uuid": "3026c73a_2c361a7f",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a96e0de8_56298bdd",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d3da5c0a_172e5cfc",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -136,6 +244,24 @@
       "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "630a7cf7_6e442ca4",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d3da5c0a_172e5cfc",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -159,6 +285,30 @@
       "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "416d3718_1c8652d2",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-07-13T23:09:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3356025_82016770",
+      "range": {
+        "startLine": 170,
+        "startChar": 51,
+        "endLine": 170,
+        "endChar": 59
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
