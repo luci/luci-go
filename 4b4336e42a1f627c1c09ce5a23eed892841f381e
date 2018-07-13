@@ -66,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "f914d2e2_fdfc6bab",
+        "filename": "machine-db/appengine/database/setup/migrations/005_initialize_machines.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T23:12:31Z",
+      "side": 1,
+      "message": "I\u0027ve updated the prod db.",
+      "parentUuid": "eb6f3c88_91b65574",
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01f98b55_0a70b935",
         "filename": "machine-db/client/cli/machines.go",
         "patchSetId": 1
@@ -192,6 +210,30 @@
       "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "239ff2f4_8fd75c18",
+        "filename": "machine-db/client/cli/machines.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-13T23:12:31Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "45407099_2ce01866",
+      "range": {
+        "startLine": 81,
+        "startChar": 51,
+        "endLine": 81,
+        "endChar": 59
+      },
+      "revId": "4b4336e42a1f627c1c09ce5a23eed892841f381e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
