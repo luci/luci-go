@@ -30,10 +30,10 @@ func printMachines(tsv bool, machines ...*crimson.Machine) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "State")
+			p.Row("Name", "Platform", "Rack", "Datacenter", "Description", "Asset Tag", "Service Tag", "Deployment Ticket", "DRAC Password", "State")
 		}
 		for _, m := range machines {
-			p.Row(m.Name, m.Platform, m.Rack, m.Datacenter, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+			p.Row(m.Name, m.Platform, m.Rack, m.Datacenter, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.DracPassword, m.State)
 		}
 	}
 }
@@ -64,7 +64,7 @@ func (c *AddMachineCmd) Run(app subcommands.Application, args []string, env subc
 // addMachineCmd returns a command to add a machine.
 func addMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-machine -name <name> -plat <platform> -rack <rack> -state <state> [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
+		UsageLine: "add-machine -name <name> -plat <platform> -rack <rack> -state <state> [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>] [-dracpass <DRAC password>]",
 		ShortDesc: "adds a machine",
 		LongDesc:  "Adds a machine to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -78,6 +78,7 @@ func addMachineCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.DracPassword, "dracpass", "", "The initial DRAC password associated with this machine.")
 			return cmd
 		},
 	}
@@ -130,13 +131,14 @@ func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env sub
 	req := &crimson.UpdateMachineRequest{
 		Machine: &c.machine,
 		UpdateMask: getUpdateMask(&c.Flags, map[string]string{
-			"plat":  "platform",
-			"rack":  "rack",
-			"state": "state",
-			"desc":  "description",
-			"atag":  "asset_tag",
-			"stag":  "service_tag",
-			"tick":  "deployment_ticket",
+			"plat":     "platform",
+			"rack":     "rack",
+			"state":    "state",
+			"desc":     "description",
+			"atag":     "asset_tag",
+			"stag":     "service_tag",
+			"tick":     "deployment_ticket",
+			"dracpass": "drac_password",
 		}),
 	}
 	client := getClient(ctx)
@@ -152,7 +154,7 @@ func (c *EditMachineCmd) Run(app subcommands.Application, args []string, env sub
 // editMachineCmd returns a command to edit a machine.
 func editMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-machine -name <name> [-plat <platform>] [-rack <rack>] [-state <state>] [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>]",
+		UsageLine: "edit-machine -name <name> [-plat <platform>] [-rack <rack>] [-state <state>] [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>] [-dracpass <DRAC password>]",
 		ShortDesc: "edits a machine",
 		LongDesc:  "Edits a machine in the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -166,6 +168,7 @@ func editMachineCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.machine.AssetTag, "atag", "", "The asset tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.ServiceTag, "stag", "", "The service tag associated with this machine.")
 			cmd.Flags.StringVar(&cmd.machine.DeploymentTicket, "tick", "", "The deployment ticket associated with this machine.")
+			cmd.Flags.StringVar(&cmd.machine.DracPassword, "dracpass", "", "The initial DRAC password associated with this machine.")
 			return cmd
 		},
 	}

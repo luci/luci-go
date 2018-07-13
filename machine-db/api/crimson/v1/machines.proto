@@ -30,6 +30,8 @@ message Machine {
   // The datacenter this machine belongs to.
   // When creating a machine, omit this field. It will be inferred from the rack.
   string datacenter = 9;
+  // The DRAC password associated with this machine.
+  string drac_password = 10;
 }
 
 // A request to create a new machine in the database.

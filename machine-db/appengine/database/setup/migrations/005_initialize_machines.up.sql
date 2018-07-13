@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS machines (
 	service_tag varchar(255),
 	-- The deployment ticket associated with this machine.
 	deployment_ticket varchar(255),
+	-- The initial DRAC password associated with this machine.
+	drac_password varchar(255),
 	PRIMARY KEY (id),
 	FOREIGN KEY (platform_id) REFERENCES platforms (id) ON DELETE RESTRICT,
 	FOREIGN KEY (rack_id) REFERENCES racks (id) ON DELETE RESTRICT,

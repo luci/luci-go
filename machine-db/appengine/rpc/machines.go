@@ -82,9 +82,9 @@ func createMachine(c context.Context, m *crimson.Machine) error {
 	// By setting machines.platform_id and machines.rack_id NOT NULL when setting up the database, we can avoid checking if the given
 	// platform and rack are valid. MySQL will turn up NULL for their column values which will be rejected as an error.
 	_, err := db.ExecContext(c, `
-		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, state)
-		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?, ?)
-	`, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.State)
+		INSERT INTO machines (name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, drac_password, state)
+		VALUES (?, (SELECT id FROM platforms WHERE name = ?), (SELECT id FROM racks WHERE name = ?), ?, ?, ?, ?, ?, ?)
+	`, m.Name, m.Platform, m.Rack, m.Description, m.AssetTag, m.ServiceTag, m.DeploymentTicket, m.DracPassword, m.State)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -145,6 +145,7 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 		"m.asset_tag",
 		"m.service_tag",
 		"m.deployment_ticket",
+		"m.drac_password",
 		"m.state",
 	)
 	stmt = stmt.From("machines m, platforms p, racks r, datacenters d").
@@ -176,6 +177,7 @@ func listMachines(c context.Context, q database.QueryerContext, req *crimson.Lis
 			&m.AssetTag,
 			&m.ServiceTag,
 			&m.DeploymentTicket,
+			&m.DracPassword,
 			&m.State,
 		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch machine").Err()
@@ -259,6 +261,8 @@ func updateMachine(c context.Context, m *crimson.Machine, mask *field_mask.Field
 			stmt = stmt.Set("service_tag", m.ServiceTag)
 		case "deployment_ticket":
 			stmt = stmt.Set("deployment_ticket", m.DeploymentTicket)
+		case "drac_password":
+			stmt = stmt.Set("drac_password", m.DracPassword)
 		}
 	}
 	stmt = stmt.Where("name = ?", m.Name)
@@ -362,6 +366,8 @@ func validateMachineForUpdate(m *crimson.Machine, mask *field_mask.FieldMask) er
 			// Empty service tag is allowed, nothing to validate.
 		case "deployment_ticket":
 			// Empty deployment ticket is allowed, nothing to validate.
+		case "drac_password":
+			// Empty DRAC password is allowed, nothing to validate.
 		default:
 			return status.Errorf(codes.InvalidArgument, "unsupported update mask path %q", path)
 		}
