@@ -551,7 +551,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) error {
 			return err
 		}
 		for _, line := range log.GetText().GetLines() {
-			text := line.GetValue()
+			text := template.HTMLEscapeString(line.GetValue())
 			if data.options.format == formatHTML {
 				duration, err := ptypes.Duration(log.GetTimeOffset())
 				if err != nil {

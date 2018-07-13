@@ -19,6 +19,11 @@ cron:
   schedule: "every 1 minutes"
   target: backend
 
+- description: "gather stats to send to monitoring"
+  url: "/internal/cron/stats"
+  schedule: "every 1 minutes"
+  target: backend
+
 # This cron task supports the refresh of the datastore cache every 10 minutes.
 - description: "LUCI Config datastore cache periodic refresh"
   url: "/admin/config/cache/manager"
