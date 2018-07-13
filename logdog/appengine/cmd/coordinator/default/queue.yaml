@@ -14,5 +14,6 @@
 
 queue:
 - name: "tumble"
-  rate: 100/s
+  rate: 200/s
+  bucket_size: 40
   target: backend
