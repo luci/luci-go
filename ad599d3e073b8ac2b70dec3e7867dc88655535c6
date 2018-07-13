@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7410770_b3b738bd",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1468,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-13T22:44:51Z",
+      "side": 1,
+      "message": "\u003e_\u003c",
+      "range": {
+        "startLine": 1467,
+        "startChar": 4,
+        "endLine": 1468,
+        "endChar": 44
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6a864904_71c3dcbd",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-13T22:44:51Z",
+      "side": 1,
+      "message": "Should this become a fatal error? I think it can happen only if someone messes with the manifest file manually (so contents of the manifest !\u003d what\u0027s in the package file). I kept it as a warning, since I believe even if it happens, RepairDeployed makes enough progress to be useful.",
+      "range": {
+        "startLine": 602,
+        "startChar": 3,
+        "endLine": 602,
+        "endChar": 78
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de558b3e_de620c8c",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 618,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-13T22:44:51Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 618,
+        "startChar": 3,
+        "endLine": 618,
+        "endChar": 63
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
