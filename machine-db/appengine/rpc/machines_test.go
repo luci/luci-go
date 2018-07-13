@@ -40,8 +40,8 @@ func TestCreateMachine(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		insertStmt := `
-			^INSERT INTO machines \(name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, state\)
-			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?, \?\)$
+			^INSERT INTO machines \(name, platform_id, rack_id, description, asset_tag, service_tag, deployment_ticket, drac_password, state\)
+			VALUES \(\?, \(SELECT id FROM platforms WHERE name = \?\), \(SELECT id FROM racks WHERE name = \?\), \?, \?, \?, \?, \?, \?\)$
 		`
 
 		Convey("query failed", func() {
@@ -51,7 +51,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(fmt.Errorf("error"))
 			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
@@ -62,7 +62,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "duplicate machine")
 		})
 
@@ -73,7 +73,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'platform_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown platform")
 		})
 
@@ -84,7 +84,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'rack_id' is null"})
 			So(createMachine(c, machine), ShouldErrLike, "unknown rack")
 		})
 
@@ -95,7 +95,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
@@ -106,7 +106,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name platform_id rack_id"})
 			So(createMachine(c, machine), ShouldErrLike, "failed to create machine")
 		})
 
@@ -117,7 +117,7 @@ func TestCreateMachine(t *testing.T) {
 				Rack:     "rack",
 				State:    common.State_FREE,
 			}
-			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertStmt).WithArgs(machine.Name, machine.Platform, machine.Rack, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State).WillReturnResult(sqlmock.NewResult(1, 1))
 			So(createMachine(c, machine), ShouldBeNil)
 		})
 	})
@@ -159,12 +159,12 @@ func TestListMachines(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.drac_password", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("query failed", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 				FROM machines m, platforms p, racks r, datacenters d
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 			`
@@ -180,7 +180,7 @@ func TestListMachines(t *testing.T) {
 
 		Convey("empty request", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 				FROM machines m, platforms p, racks r, datacenters d
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id$
 			`
@@ -194,7 +194,7 @@ func TestListMachines(t *testing.T) {
 
 		Convey("empty response", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 				FROM machines m, platforms p, racks r, datacenters d
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 			`
@@ -210,15 +210,15 @@ func TestListMachines(t *testing.T) {
 
 		Convey("non-empty", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 				FROM machines m, platforms p, racks r, datacenters d
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?,\?\)$
 			`
 			req := &crimson.ListMachinesRequest{
 				Names: []string{"machine 1", "machine 2"},
 			}
-			rows.AddRow(req.Names[0], "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", 0)
-			rows.AddRow(req.Names[1], "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", common.State_SERVING)
+			rows.AddRow(req.Names[0], "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", "", 0)
+			rows.AddRow(req.Names[1], "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WithArgs(req.Names[0], req.Names[1]).WillReturnRows(rows)
 			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
@@ -244,13 +244,13 @@ func TestListMachines(t *testing.T) {
 
 		Convey("ok", func() {
 			selectStmt := `
-				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+				^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 				FROM machines m, platforms p, racks r, datacenters d
 				WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id$
 			`
 			req := &crimson.ListMachinesRequest{}
-			rows.AddRow("machine 1", "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", 0)
-			rows.AddRow("machine 2", "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", common.State_SERVING)
+			rows.AddRow("machine 1", "platform 1", "rack 1", "datacenter 1", "description 1", "", "", "", "", 0)
+			rows.AddRow("machine 2", "platform 2", "rack 2", "datacenter 2", "description 2", "", "", "", "", common.State_SERVING)
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			machines, err := listMachines(c, db, req)
 			So(err, ShouldBeNil)
@@ -282,11 +282,11 @@ func TestRenameMachine(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 			FROM machines m, platforms p, racks r, datacenters d
 			WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 		`
-		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.drac_password", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("name unspecified", func() {
@@ -346,7 +346,7 @@ func TestRenameMachine(t *testing.T) {
 				SET name = \?
 				WHERE name = \?$
 			`
-			rows.AddRow("new machine", "platform", "rack", "datacenter", "", "", "", "", common.State_SERVING)
+			rows.AddRow("new machine", "platform", "rack", "datacenter", "", "", "", "", "", common.State_SERVING)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs("new machine", "old machine").WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -371,11 +371,11 @@ func TestUpdateMachine(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		selectStmt := `
-			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.state
+			^SELECT m.name, p.name, r.name, d.name, m.description, m.asset_tag, m.service_tag, m.deployment_ticket, m.drac_password, m.state
 			FROM machines m, platforms p, racks r, datacenters d
 			WHERE m.platform_id = p.id AND m.rack_id = r.id AND r.datacenter_id = d.id AND m.name IN \(\?\)$
 		`
-		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.state"}
+		columns := []string{"m.name", "p.name", "r.name", "d.name", "m.description", "m.asset_tag", "m.service_tag", "m.deployment_ticket", "m.drac_password", "m.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("update platform", func() {
@@ -395,7 +395,7 @@ func TestUpdateMachine(t *testing.T) {
 					"platform",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -428,7 +428,7 @@ func TestUpdateMachine(t *testing.T) {
 					"rack",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Rack, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -461,7 +461,7 @@ func TestUpdateMachine(t *testing.T) {
 					"state",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -496,7 +496,7 @@ func TestUpdateMachine(t *testing.T) {
 					"state",
 				},
 			}
-			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.State)
+			rows.AddRow(machine.Name, machine.Platform, machine.Rack, machine.Datacenter, machine.Description, machine.AssetTag, machine.ServiceTag, machine.DeploymentTicket, machine.DracPassword, machine.State)
 			m.ExpectBegin()
 			m.ExpectExec(updateStmt).WithArgs(machine.Platform, machine.Rack, machine.State, machine.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
@@ -593,6 +593,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "machine specification is required")
@@ -612,6 +613,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "machine name is required and must be non-empty")
@@ -665,6 +667,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "platform is required and must be non-empty")
@@ -683,6 +686,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "rack is required and must be non-empty")
@@ -704,6 +708,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "datacenter cannot be updated, update rack instead")
@@ -723,6 +728,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "state is required")
@@ -758,6 +764,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"service_tag",
 				"deployment_ticket",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldErrLike, "duplicate update mask path")
@@ -778,6 +785,7 @@ func TestValidateMachineForUpdate(t *testing.T) {
 				"asset_tag",
 				"service_tag",
 				"deployment_ticket",
+				"drac_password",
 			},
 		})
 		So(err, ShouldBeNil)
