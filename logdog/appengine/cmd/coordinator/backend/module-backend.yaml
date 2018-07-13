@@ -16,7 +16,7 @@ service: backend
 runtime: go
 api_version: go1
 
-instance_class: F2
+instance_class: F4_1G
 
 inbound_services:
   - warmup
