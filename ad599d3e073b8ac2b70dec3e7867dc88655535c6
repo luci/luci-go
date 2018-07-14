@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "d2c977bf_9de6f3da",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1468,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-14T02:48:26Z",
+      "side": 1,
+      "message": "wait what? why? loop?",
+      "parentUuid": "e7410770_b3b738bd",
+      "range": {
+        "startLine": 1467,
+        "startChar": 4,
+        "endLine": 1468,
+        "endChar": 44
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1947649c_2f67f1be",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 531,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-14T02:48:26Z",
+      "side": 1,
+      "message": "this is /very/ slight... the cost of len(Files) move calls, right? Couldn\u0027t we further make this generically faster by parallelizing the move operations (so we spend less time in userspace between syscalls?)... assuming it\u0027s worth speeding up at all? (SD card RPi\u0027s?). Maybe only if len(Files) \u003e 500 or something?",
+      "range": {
+        "startLine": 531,
+        "startChar": 21,
+        "endLine": 531,
+        "endChar": 29
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "6a864904_71c3dcbd",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 1
@@ -36,6 +83,30 @@
       "writtenOn": "2018-07-13T22:44:51Z",
       "side": 1,
       "message": "Should this become a fatal error? I think it can happen only if someone messes with the manifest file manually (so contents of the manifest !\u003d what\u0027s in the package file). I kept it as a warning, since I believe even if it happens, RepairDeployed makes enough progress to be useful.",
+      "range": {
+        "startLine": 602,
+        "startChar": 3,
+        "endLine": 602,
+        "endChar": 78
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68ab5b60_6b3f68e3",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-14T02:48:26Z",
+      "side": 1,
+      "message": "Hm... is there a way we could accumulate this error and only show it at the end (so that the tool still exits !0, but we repair as much as we can?). Could/should we abort and redeploy the entire thing if this happens?",
+      "parentUuid": "6a864904_71c3dcbd",
       "range": {
         "startLine": 602,
         "startChar": 3,
