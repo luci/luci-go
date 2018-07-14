@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b2ebf70c_a88755f3",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-14T00:15:46Z",
+      "side": 1,
+      "message": "isn\u0027t this normally what \"private field\" means? (aka I don\u0027t think this comment is needed)",
+      "range": {
+        "startLine": 104,
+        "startChar": 4,
+        "endLine": 105,
+        "endChar": 11
+      },
+      "revId": "b9c8ab0b18999b4a3db81656bdef38f785d21ab0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
