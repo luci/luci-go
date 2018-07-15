@@ -129,7 +129,7 @@ const (
 
 var (
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.0.0"
+	UserAgent = "cipd 2.1.0"
 )
 
 func init() {
@@ -1464,7 +1464,8 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 			if broken.RepairPlan.NeedsReinstall {
 				toDeploy[broken.Pin.PackageName] = true
 			} else {
-				toRepair[broken.Pin.PackageName] = &broken.RepairPlan
+				plan := broken.RepairPlan
+				toRepair[broken.Pin.PackageName] = &plan
 			}
 		}
 		for _, pin := range allPins[subdir] {
