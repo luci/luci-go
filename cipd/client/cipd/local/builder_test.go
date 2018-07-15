@@ -55,8 +55,7 @@ func TestBuildInstance(t *testing.T) {
 		files := readZip(out.Bytes())
 		So(files, ShouldResemble, []zippedFile{
 			{
-				// See structs.go, manifestName.
-				name: ".cipdpkg/manifest.json",
+				name: ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
@@ -146,8 +145,7 @@ func TestBuildInstance(t *testing.T) {
 				body: []byte("/abc/def"),
 			},
 			{
-				// See structs.go, manifestName.
-				name: ".cipdpkg/manifest.json",
+				name: ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
@@ -244,8 +242,7 @@ func TestBuildInstance(t *testing.T) {
 				body: []byte("/abc/def"),
 			},
 			{
-				// See structs.go, manifestName.
-				name: ".cipdpkg/manifest.json",
+				name: ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
