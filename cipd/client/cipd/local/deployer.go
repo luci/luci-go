@@ -68,17 +68,6 @@ import (
 // such as description and manifest files with a list of extracted files (to
 // know what to uninstall).
 
-// ManifestCheck is passed to CheckDeployed and tells whether it should fetch
-// the instance's manifest or not.
-type ManifestCheck bool
-
-const (
-	// WithoutManifest indicates CheckDeployed should not fetch the manifest.
-	WithoutManifest ManifestCheck = false
-	// WithManifest indicates CheckDeployed should fetch the manifest.
-	WithManifest ManifestCheck = true
-)
-
 // DeployedPackage represents a state of the deployed (or partially deployed)
 // package, as returned by CheckDeployed.
 //
@@ -161,7 +150,7 @@ type Deployer interface {
 	// manifest and install mode. This is optional, since not all callers need it,
 	// and it is pretty heavy operation. Any paranoid mode implies WithManifest
 	// too.
-	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode, manifest ManifestCheck) (*DeployedPackage, error)
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode, manifest ManifestMode) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
 	//
@@ -217,7 +206,7 @@ func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (c
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode, ManifestCheck) (*DeployedPackage, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode, ManifestMode) (*DeployedPackage, error) {
 	return nil, d.err
 }
 
@@ -293,7 +282,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractFilesTxn(ctx, files, NewDestination(destPath, d.fs)); err != nil {
+	if err := ExtractFilesTxn(ctx, files, NewDestination(destPath, d.fs), WithManifest); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -403,7 +392,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, par common.ParanoidMode, m ManifestCheck) (out *DeployedPackage, err error) {
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, par common.ParanoidMode, m ManifestMode) (out *DeployedPackage, err error) {
 	if err = common.ValidateSubdir(subdir); err != nil {
 		return
 	}
@@ -885,7 +874,7 @@ func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc
 // readManifest reads package manifest given a path to a package instance
 // (.cipd/pkgs/<name>/<instance id>).
 func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Manifest, error) {
-	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(manifestName))
+	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(ManifestName))
 	r, err := os.Open(manifestPath)
 	if err != nil {
 		return Manifest{}, err
@@ -1120,7 +1109,7 @@ func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 		if err != nil {
 			return err
 		}
-		if rel == packageServiceDir || rel == SiteServiceDir {
+		if rel == PackageServiceDir || rel == SiteServiceDir {
 			return filepath.SkipDir
 		}
 		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {

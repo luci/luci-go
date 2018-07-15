@@ -21,20 +21,20 @@ import (
 	"io/ioutil"
 )
 
-// SiteServiceDir is a name of the directory inside an installation root
-// reserved for cipd stuff.
-const SiteServiceDir = ".cipd"
-
 const (
-	// packageServiceDir is a name of the directory inside the package
+	// SiteServiceDir is a name of the directory inside an installation root
 	// reserved for cipd stuff.
-	packageServiceDir = ".cipdpkg"
+	SiteServiceDir = ".cipd"
 
-	// manifestName is a name of the manifest file inside the package.
-	manifestName = packageServiceDir + "/manifest.json"
+	// PackageServiceDir is a name of the directory inside the package
+	// reserved for cipd stuff.
+	PackageServiceDir = ".cipdpkg"
 
-	// manifestFormatVersion is a version to write to the manifest file.
-	manifestFormatVersion = "1.1"
+	// ManifestName is a full name of the manifest file inside the package.
+	ManifestName = PackageServiceDir + "/manifest.json"
+
+	// ManifestFormatVersion is a version to write to the manifest file.
+	ManifestFormatVersion = "1.1"
 )
 
 // InstallMode defines how to install a package.
@@ -53,6 +53,20 @@ const (
 	// other OSes. If installation is aborted midway, the package may end up
 	// in inconsistent state.
 	InstallModeCopy InstallMode = "copy"
+)
+
+// ManifestMode is used to indicate presence of absence of manifest when calling
+// various functions.
+//
+// Just to improve code readability, since Func(..., WithManifest) is less
+// cryptic than Func(..., true).
+type ManifestMode bool
+
+const (
+	// WithoutManifest indicates the function should skip manifest.
+	WithoutManifest ManifestMode = false
+	// WithManifest indicates the function should handle manifest.
+	WithManifest ManifestMode = true
 )
 
 // Manifest defines structure of manifest.json file.
