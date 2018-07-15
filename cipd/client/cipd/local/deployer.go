@@ -68,14 +68,28 @@ import (
 // such as description and manifest files with a list of extracted files (to
 // know what to uninstall).
 
+// ManifestCheck is passed to CheckDeployed and tells whether it should fetch
+// the instance's manifest or not.
+type ManifestCheck bool
+
+const (
+	// WithoutManifest indicates CheckDeployed should not fetch the manifest.
+	WithoutManifest ManifestCheck = false
+	// WithManifest indicates CheckDeployed should fetch the manifest.
+	WithManifest ManifestCheck = true
+)
+
 // DeployedPackage represents a state of the deployed (or partially deployed)
 // package, as returned by CheckDeployed.
 //
 // ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
 // and the package needs repairs.
 type DeployedPackage struct {
-	Deployed bool       // true if the package is deployed (perhaps partially)
-	Pin      common.Pin // the currently installed pin
+	Deployed    bool        // true if the package is deployed (perhaps partially)
+	Pin         common.Pin  // the currently installed pin
+	Subdir      string      // the site subdirectory where the package is installed
+	Manifest    *Manifest   // instance's manifest, if available
+	InstallMode InstallMode // validated install mode, if available
 
 	// ToRedeploy is a list of files that needs to be reextracted from the
 	// original package and relinked into the site root.
@@ -86,6 +100,20 @@ type DeployedPackage struct {
 	// They are already present in the .cipd/* guts, so there's no need to fetch
 	// the original package to get them.
 	ToRelink []string
+
+	// packagePath is a native path to the package directory in the CIPD guts, as
+	// returned by deployed.packagePath(...) e.g. .cipd/pkgs/<index>.
+	//
+	// Set only if it can be identified. May be set even if Deployed is false, in
+	// case the package was partially deployed (e.g. the gut directory already
+	// exists, but the instance hasn't been extracted there yet).
+	packagePath string
+
+	// instancePath is a native path to the guts where the package instance is
+	// located, e.g. .cipd/pkgs/<index>/<digest>.
+	//
+	// Same caveats as for packagePath apply.
+	instancePath string
 }
 
 // RepairsParams is passed to RepairDeployment.
@@ -128,7 +156,12 @@ type Deployer interface {
 	// Depending on the paranoia mode will also verify that package's files are
 	// correctly installed into the site root and will return a list of files
 	// that needs to be redeployed (as part of DeployedPackage).
-	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode) (*DeployedPackage, error)
+	//
+	// If manifest is set to WithManifest, will also fetch and return the instance
+	// manifest and install mode. This is optional, since not all callers need it,
+	// and it is pretty heavy operation. Any paranoid mode implies WithManifest
+	// too.
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode, manifest ManifestCheck) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
 	//
@@ -184,7 +217,7 @@ func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (c
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode) (*DeployedPackage, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode, ManifestCheck) (*DeployedPackage, error) {
 	return nil, d.err
 }
 
@@ -352,7 +385,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Verify it's all right.
-	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid)
+	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid, WithoutManifest)
 	switch {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
@@ -369,51 +402,64 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, paranoia common.ParanoidMode) (*DeployedPackage, error) {
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return nil, err
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, par common.ParanoidMode, m ManifestCheck) (out *DeployedPackage, err error) {
+	if err = common.ValidateSubdir(subdir); err != nil {
+		return
 	}
-	if err := paranoia.Validate(); err != nil {
-		return nil, err
+	if err = common.ValidatePackageName(pkg); err != nil {
+		return
+	}
+	if err = par.Validate(); err != nil {
+		return
 	}
 
-	pkgPath, err := d.packagePath(ctx, subdir, pkg, false)
+	out = &DeployedPackage{Subdir: subdir}
+
+	switch out.packagePath, err = d.packagePath(ctx, subdir, pkg, false); {
+	case err != nil:
+		out = nil
+		return // this error is fatal, reinstalling probably won't help
+	case out.packagePath == "":
+		return // not fully deployed
+	}
+
+	current, err := d.getCurrentInstanceID(out.packagePath)
 	switch {
 	case err != nil:
-		return nil, err // this error is fatal, reinstalling probably won't help
-	case pkgPath == "":
-		return &DeployedPackage{Deployed: false}, nil
-	}
-
-	current, err := d.getCurrentInstanceID(pkgPath)
-	switch {
-	case err != nil: // this error MAY be recovered from by reinstalling
 		logging.Errorf(ctx, "Failed to figure out installed instance ID of %q in %q: %s", pkg, subdir, err)
-		return &DeployedPackage{Deployed: false}, nil
+		err = nil // this error MAY be recovered from by reinstalling
+		return
 	case current == "":
-		return &DeployedPackage{Deployed: false}, nil
+		return // not deployed
+	default:
+		out.instancePath = filepath.Join(out.packagePath, current)
 	}
 
-	state := &DeployedPackage{
-		Deployed: true,
-		Pin: common.Pin{
-			PackageName: pkg,
-			InstanceID:  current,
-		},
-	}
-
-	if paranoia != common.NotParanoid {
-		// Check that all files are present. If the deployment can't even be
-		// examined we assume it is totally broken and in a need of a complete
-		// reinstall.
-		state.ToRedeploy, state.ToRelink, err = d.checkIntegrity(ctx, subdir, state.Pin, pkgPath)
+	// Read the manifest if asked or if doing any paranoid checks (they need the
+	// list of files from the manifest).
+	if m || par != common.NotParanoid {
+		manifest, err := d.readManifest(ctx, out.instancePath)
 		if err != nil {
-			logging.Errorf(ctx, "Failed to check the integrity of %q in %q - %s", pkg, subdir, err)
-			return &DeployedPackage{Deployed: false}, nil
+			logging.Errorf(ctx, "Failed to read the manifest of %s: %s", pkg, err)
+			return out, nil // this error MAY be recovered from by reinstalling
+		}
+		out.Manifest = &manifest
+		out.InstallMode, err = checkInstallMode(manifest.InstallMode)
+		if err != nil {
+			return nil, err // this is fatal, the manifest has unrecognized mode
 		}
 	}
 
-	return state, nil
+	// Yay, found something in a pretty healthy state.
+	out.Deployed = true
+	out.Pin = common.Pin{PackageName: pkg, InstanceID: current}
+
+	// checkIntegrity needs DeployedPackage with Pin set, so call it last.
+	if par != common.NotParanoid {
+		out.ToRedeploy, out.ToRelink = d.checkIntegrity(ctx, out)
+	}
+
+	return
 }
 
 func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdir, error) {
@@ -457,38 +503,28 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 }
 
 func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName string) error {
-	if err := common.ValidateSubdir(subdir); err != nil {
-		return err
-	}
-
 	logging.Infof(ctx, "Removing %s from %s(/%s)", packageName, d.fs.Root(), subdir)
-	if err := common.ValidatePackageName(packageName); err != nil {
+
+	deployed, err := d.CheckDeployed(ctx, subdir, packageName, common.NotParanoid, WithManifest)
+	switch {
+	case err != nil:
+		// This error is unrecoverable, we can't even figure out whether the package
+		// is installed. The state is too broken to mess with it.
 		return err
-	}
-	pkgPath, err := d.packagePath(ctx, subdir, packageName, false)
-	if err != nil {
-		return err
-	}
-	if pkgPath == "" {
-		logging.Warningf(ctx, "Package %s not found", packageName)
+	case deployed.packagePath == "":
+		// No gut directory for the package => the package is not installed at all.
+		if deployed.Deployed {
+			panic("impossible")
+		}
 		return nil
+	case deployed.Deployed:
+		d.removeFromSiteRoot(ctx, subdir, deployed.Manifest.Files)
+	default:
+		// The package was partially installed in the guts, but not into the site
+		// root. We can just remove the guts thus forgetting about the package.
+		logging.Warningf(ctx, "Package %s is partially installed, removing it", packageName)
 	}
-
-	// Read the manifest of the currently installed version.
-	manifest := Manifest{}
-	currentID, err := d.getCurrentInstanceID(pkgPath)
-	if err == nil && currentID != "" {
-		manifest, err = d.readManifest(ctx, filepath.Join(pkgPath, currentID))
-	}
-
-	// Warn, but continue with removal anyway. EnsureDirectoryGone call below
-	// will nuke everything (even if it's half broken).
-	if err != nil {
-		logging.Warningf(ctx, "Package %s is in a broken state: %s", packageName, err)
-	} else {
-		d.removeFromSiteRoot(ctx, subdir, manifest.Files)
-	}
-	return d.fs.EnsureDirectoryGone(ctx, pkgPath)
+	return d.fs.EnsureDirectoryGone(ctx, deployed.packagePath)
 }
 
 func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin common.Pin, params RepairParams) error {
@@ -994,38 +1030,25 @@ func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f Fi
 	}
 }
 
-// checkIntegrity verifies the given package is correctly installed and returns
-// a list of files to relink and to redeploy if something is broken.
+// checkIntegrity verifies the given deployed package is correctly installed and
+// returns a list of files to relink and to redeploy if something is broken.
 //
 // See DeployedPackage struct for definition of "relink" and "redeploy".
-func (d *deployerImpl) checkIntegrity(ctx context.Context, subdir string, pin common.Pin, pkgDir string) (redeploy, relink []string, err error) {
-	logging.Debugf(ctx, "Checking integrity of %q in subdir %q", pin.PackageName, subdir)
-
-	// Directory inside .cipd/* guts where the package was extracted to.
-	instDir := filepath.Join(pkgDir, pin.InstanceID)
-
-	// Read the manifest to get a list of files that are expected to be installed.
-	manifest, err := d.readManifest(ctx, instDir)
-	if err != nil {
-		return
-	}
-	installMode, err := checkInstallMode(manifest.InstallMode)
-	if err != nil {
-		return
-	}
+func (d *deployerImpl) checkIntegrity(ctx context.Context, pkg *DeployedPackage) (redeploy, relink []string) {
+	logging.Debugf(ctx, "Checking integrity of %q in subdir %q", pkg.Pin.PackageName, pkg.Subdir)
 
 	// Examine files that are supposed to be installed.
-	for _, f := range manifest.Files {
+	for _, f := range pkg.Manifest.Files {
 		switch {
-		case d.isPresentInSite(ctx, subdir, f, true): // no need to repair
+		case d.isPresentInSite(ctx, pkg.Subdir, f, true): // no need to repair
 			continue
 		case f.Symlink == "": // a regular file (not a symlink)
 			switch {
-			case installMode == InstallModeCopy:
+			case pkg.InstallMode == InstallModeCopy:
 				// In 'copy' mode regular files are stored in the site root directly.
 				// If they are gone, we need to refetch the package to restore them.
 				redeploy = append(redeploy, f.Name)
-			case d.isPresentInGuts(ctx, instDir, f):
+			case d.isPresentInGuts(ctx, pkg.instancePath, f):
 				// This is 'symlink' mode and the original file in .cipd guts exist. We
 				// only need to relink the file then to repair it.
 				relink = append(relink, f.Name)
@@ -1048,10 +1071,10 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, subdir string, pin co
 			//     the same state anyway: absolute symlinks point to files outside of
 			//     our control.
 			switch {
-			case !d.isPresentInSite(ctx, subdir, f, false):
+			case !d.isPresentInSite(ctx, pkg.Subdir, f, false):
 				// The symlink in the site root is gone, need to restore it.
 				relink = append(relink, f.Name)
-			case installMode == InstallModeSymlink && !d.isPresentInGuts(ctx, instDir, f):
+			case pkg.InstallMode == InstallModeSymlink && !d.isPresentInGuts(ctx, pkg.instancePath, f):
 				// The symlink in the guts is gone, need to restore it.
 				relink = append(relink, f.Name)
 			default:

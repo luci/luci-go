@@ -1425,6 +1425,15 @@ func TestCheckDeployed(t *testing.T) {
 			So(os.Remove(filepath.Join(tempDir, filepath.FromSlash(p))), ShouldBeNil)
 		}
 
+		check := func(expected *DeployedPackage) *DeployedPackage {
+			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, WithoutManifest)
+			So(err, ShouldBeNil)
+			So(dp.Manifest, ShouldNotBeNil)
+			dp.Manifest = nil
+			So(dp, ShouldResemble, expected)
+			return dp
+		}
+
 		Convey("Copy install mode, no symlinks", func() {
 			inst := deployInst(InstallModeCopy,
 				NewTestFile("some/file/path", "data a", TestFileOpts{}),
@@ -1432,23 +1441,19 @@ func TestCheckDeployed(t *testing.T) {
 				NewTestFile("some/executable", "data c", TestFileOpts{Executable: true}),
 			)
 
-			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-			So(err, ShouldBeNil)
-			So(dp, ShouldResemble, &DeployedPackage{
-				Deployed: true,
-				Pin:      inst.Pin(),
+			expected := check(&DeployedPackage{
+				Deployed:     true,
+				Pin:          inst.Pin(),
+				Subdir:       "subdir",
+				InstallMode:  InstallModeCopy,
+				packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
+				instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 			})
 
 			rm("subdir/some/file/path")
 			rm("subdir/another-file")
-
-			dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-			So(err, ShouldBeNil)
-			So(dp, ShouldResemble, &DeployedPackage{
-				Deployed:   true,
-				Pin:        inst.Pin(),
-				ToRedeploy: []string{"some/file/path", "another-file"},
-			})
+			expected.ToRedeploy = []string{"some/file/path", "another-file"}
+			check(expected)
 		})
 
 		if runtime.GOOS != "windows" {
@@ -1465,49 +1470,33 @@ func TestCheckDeployed(t *testing.T) {
 					NewTestSymlink("broken_abs_symlink", "/i_hope_this_dir_is_missing_on_bots"),
 				)
 
-				dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-				So(err, ShouldBeNil)
-				So(dp, ShouldResemble, &DeployedPackage{
-					Deployed: true,
-					Pin:      inst.Pin(),
+				expected := check(&DeployedPackage{
+					Deployed:     true,
+					Pin:          inst.Pin(),
+					Subdir:       "subdir",
+					InstallMode:  InstallModeCopy,
+					packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
+					instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
 
 				Convey("Symlink itself is gone but the target is not", func() {
 					rm("subdir/some/symlink")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed: true,
-						Pin:      inst.Pin(),
-						ToRelink: []string{"some/symlink"},
-					})
+					expected.ToRelink = []string{"some/symlink"}
+					check(expected)
 				})
 
 				Convey("Target is gone, but the symlink is not", func() {
 					rm("subdir/some/executable")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed:   true,
-						Pin:        inst.Pin(),
-						ToRedeploy: []string{"some/executable"},
-						ToRelink:   []string{"some/symlink"}, // ~ noop
-					})
+					expected.ToRedeploy = []string{"some/executable"}
+					expected.ToRelink = []string{"some/symlink"} // ~ noop
+					check(expected)
 				})
 
 				Convey("Absolute symlinks are gone", func() {
 					rm("subdir/working_abs_symlink")
 					rm("subdir/broken_abs_symlink")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed: true,
-						Pin:      inst.Pin(),
-						ToRelink: []string{"working_abs_symlink", "broken_abs_symlink"},
-					})
+					expected.ToRelink = []string{"working_abs_symlink", "broken_abs_symlink"}
+					check(expected)
 				})
 			})
 
@@ -1521,63 +1510,41 @@ func TestCheckDeployed(t *testing.T) {
 					NewTestSymlink("broken_abs_symlink", "/i_hope_this_dir_is_missing_on_bots"),
 				)
 
-				dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-				So(err, ShouldBeNil)
-				So(dp, ShouldResemble, &DeployedPackage{
-					Deployed: true,
-					Pin:      inst.Pin(),
+				expected := check(&DeployedPackage{
+					Deployed:     true,
+					Pin:          inst.Pin(),
+					Subdir:       "subdir",
+					InstallMode:  InstallModeSymlink,
+					packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
+					instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
 
 				Convey("Site root files are gone, but gut files are OK", func() {
 					rm("subdir/some/file/path")
 					rm("subdir/some/symlink")
 					rm("subdir/broken_abs_symlink")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed: true,
-						Pin:      inst.Pin(),
-						ToRelink: []string{"some/file/path", "some/symlink", "broken_abs_symlink"},
-					})
+					expected.ToRelink = []string{"some/file/path", "some/symlink", "broken_abs_symlink"}
+					check(expected)
 				})
 
 				Convey("Regular gut files are gone", func() {
 					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/some/executable")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed:   true,
-						Pin:        inst.Pin(),
-						ToRedeploy: []string{"some/executable"},
-						ToRelink:   []string{"some/symlink"},
-					})
+					expected.ToRedeploy = []string{"some/executable"}
+					expected.ToRelink = []string{"some/symlink"}
+					check(expected)
 				})
 
 				Convey("Rel symlink gut files are gone", func() {
 					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/some/symlink")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed: true,
-						Pin:      inst.Pin(),
-						ToRelink: []string{"some/symlink"},
-					})
+					expected.ToRelink = []string{"some/symlink"}
+					check(expected)
 				})
 
 				Convey("Abs symlink gut files are gone", func() {
 					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/working_abs_symlink")
 					rm(".cipd/pkgs/0/1111111111111111111111111111111111111111/broken_abs_symlink")
-
-					dp, err = dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence)
-					So(err, ShouldBeNil)
-					So(dp, ShouldResemble, &DeployedPackage{
-						Deployed: true,
-						Pin:      inst.Pin(),
-						ToRelink: []string{"working_abs_symlink", "broken_abs_symlink"},
-					})
+					expected.ToRelink = []string{"working_abs_symlink", "broken_abs_symlink"}
+					check(expected)
 				})
 			})
 		}
