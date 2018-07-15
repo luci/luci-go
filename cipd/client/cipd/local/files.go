@@ -104,26 +104,28 @@ type CreateFileOptions struct {
 	WinAttrs WinAttrs
 }
 
-// Destination knows how to create files when extracting a package.
+// Destination knows how to create files and symlink when extracting a package.
 //
-// It supports transactional semantic by providing 'Begin' and 'End' methods.
-// No changes should be applied until End(true) is called. A call to End(false)
-// should discard any pending changes. All paths are slash separated.
+// All paths are slash separated and relative to the destination root.
 //
-// While between 'Begin' and 'End', 'CreateFile' and 'CreateSymlink' can be
-// called concurrently.
+// 'CreateFile' and 'CreateSymlink' can be called concurrently.
 type Destination interface {
-	// Begin initiates a new write transaction. Called before first CreateFile.
-	Begin(ctx context.Context) error
-
 	// CreateFile opens a writer to extract some package file to.
 	CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error)
-
 	// CreateSymlink creates a symlink (with absolute or relative target).
-	//
-	// 'name' must be a slash separated path relative to the destination root.
 	CreateSymlink(ctx context.Context, name string, target string) error
+}
 
+// TransactionalDestination is a destination that supports transactions.
+//
+// It provides 'Begin' and 'End' methods: all calls to 'CreateFile' and
+// 'CreateSymlink' should happen between them. No changes are really applied
+// until End(true) is called. A call to End(false) discards any pending changes.
+type TransactionalDestination interface {
+	Destination
+
+	// Begin initiates a new write transaction.
+	Begin(ctx context.Context) error
 	// End finalizes package extraction (commit or rollback, based on success).
 	End(ctx context.Context, success bool) error
 }
@@ -390,91 +392,84 @@ func isCleanSlashPath(p string) bool {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// FileSystemDestination implementation.
+// Destination implementation based on FileSystem.
 
-type fileSystemDestination struct {
-	// Destination directory.
-	dir string
-	// FileSystem implementation to use.
+// fsDest implements Destination on top of some existing file system directory.
+type fsDest struct {
+	// FileSystem implementation to use for manipulating files.
 	fs FileSystem
-	// Root temporary directory.
-	tempDir string
-	// Where to extract all temp files, subdirectory of tempDir.
-	outDir string
+	// Where to create all files in, must be under 'fs' root.
+	dest string
+	// If true, CreateFile will use atomic rename trick to drop files.
+	atomic bool
 
 	// Currently open files.
 	lock      sync.RWMutex
 	openFiles map[string]*os.File
 }
 
-// NewFileSystemDestination returns a destination in the file system (directory)
-// to extract a package to.
+// ExistingDestination returns an object that knows how to create files in an
+// existing directory in the file system.
 //
 // Will use a provided FileSystem object to operate on files if given, otherwise
-// use a default one. If FileSystem is provided, dir must be in a subdirectory
+// uses a default one. If FileSystem is provided, dest must be in a subdirectory
 // of the given FileSystem root.
-func NewFileSystemDestination(dir string, fs FileSystem) Destination {
+//
+// Note that the returned object doesn't support transactional semantics, since
+// transactionally writing a bunch of files into an existing directory is hard.
+//
+// See NewDestination for writing files into a completely new directory. This
+// method supports transactions.
+func ExistingDestination(dest string, fs FileSystem) Destination {
 	if fs == nil {
-		fs = NewFileSystem(filepath.Dir(dir), "")
+		fs = NewFileSystem(filepath.Dir(dest), "")
 	}
-	return &fileSystemDestination{
-		dir:       dir,
+	return &fsDest{
 		fs:        fs,
+		dest:      dest,
+		atomic:    true, // note: txnFSDest unsets this, see Begin
 		openFiles: map[string]*os.File{},
 	}
 }
 
-func (d *fileSystemDestination) Begin(ctx context.Context) error {
-	if d.tempDir != "" {
-		return fmt.Errorf("destination is already open")
-	}
-
-	// Ensure a parent directory of the destination directory exists.
-	var err error
-	if d.dir, err = d.fs.CwdRelToAbs(d.dir); err != nil {
-		return err
-	}
-	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(d.dir)); err != nil {
-		return err
-	}
-
-	// Called in case something below fails.
-	cleanup := func() {
-		if d.tempDir != "" {
-			d.fs.EnsureDirectoryGone(ctx, d.tempDir)
-		}
-		d.tempDir = ""
-		d.outDir = ""
-	}
-
-	// Create root temp dir, on the same level as the destination directory.
-	d.tempDir, err = tempDir(filepath.Dir(d.dir), "", 0700)
-	if err != nil {
-		cleanup()
-		return err
-	}
-
-	// Create a staging output directory where everything will be extracted.
-	d.outDir, err = d.fs.EnsureDirectory(ctx, filepath.Join(d.tempDir, "x"))
-	if err != nil {
-		cleanup()
-		return err
-	}
-
-	return nil
+// numOpenFiles returns a number of currently open files.
+//
+// Used by txnFSDest to make sure all files are closed before finalizing the
+// transaction.
+func (d *fsDest) numOpenFiles() (n int) {
+	d.lock.RLock()
+	n = len(d.openFiles)
+	d.lock.RUnlock()
+	return
 }
 
-func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
-	d.lock.RLock()
-	_, ok := d.openFiles[name]
-	d.lock.RUnlock()
-	if ok {
-		return nil, fmt.Errorf("file %s is already open", name)
+// prepareFilePath performs steps common to CreateFile and CreateSymlink.
+//
+// It does some validation, expands "name" to an absolute path and creates
+// parent directories for a future file. Returns absolute path where the file
+// should be put.
+func (d *fsDest) prepareFilePath(ctx context.Context, name string) (string, error) {
+	path := filepath.Clean(filepath.Join(d.dest, filepath.FromSlash(name)))
+	if !isSubpath(path, d.dest) {
+		return "", fmt.Errorf("invalid relative file name: %s", name)
 	}
+	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
+		return "", err
+	}
+	return path, nil
+}
 
+func (d *fsDest) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
 	path, err := d.prepareFilePath(ctx, name)
 	if err != nil {
 		return nil, err
+	}
+
+	d.lock.RLock()
+	_, ok := d.openFiles[path]
+	d.lock.RUnlock()
+	if ok {
+		return nil, fmt.Errorf("file %s is already open", name)
 	}
 
 	// Let the umask trim the file mode.
@@ -494,42 +489,89 @@ func (d *fileSystemDestination) CreateFile(ctx context.Context, name string, opt
 		logging.Warningf(ctx, "[data-loss] ignoring +%s on %q", opts.WinAttrs, name)
 	}
 
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_EXCL, mode)
+	// In atomic mode we write to a temp file and then rename it into 'path',
+	// in non-atomic mode we just directly write into 'path' (perhaps overwriting
+	// it).
+	writeTo := path
+	flags := os.O_CREATE | os.O_WRONLY
+	if d.atomic {
+		writeTo = tempFileName(path)
+		flags |= os.O_EXCL // for improbable case of collision on temp file name
+	}
+	file, err := os.OpenFile(writeTo, flags, mode)
+	if !d.atomic && os.IsPermission(err) {
+		// Attempting to open an existing read-only file in non-atomic mode. Delete
+		// it and try again. We are overriding it anyway.
+		d.fs.EnsureFileGone(ctx, writeTo)
+		file, err = os.OpenFile(writeTo, flags, mode)
+	}
 	if err != nil {
 		return nil, err
 	}
-	if err := setWinFileAttributes(path, opts.WinAttrs); err != nil {
-		file.Close()
+
+	// Close and delete (if it was a temp) on failures. Best effort.
+	disarm := false
+	defer func() {
+		if !disarm {
+			if clErr := file.Close(); clErr != nil {
+				logging.Warningf(ctx, "Failed to close %s when cleaning up - %s", writeTo, clErr)
+			}
+			if d.atomic {
+				// Nuke the unfinished temp file. The error is logged inside.
+				d.fs.EnsureFileGone(ctx, writeTo)
+			}
+		}
+	}()
+
+	if err := setWinFileAttributes(writeTo, opts.WinAttrs); err != nil {
 		return nil, err
 	}
 
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	// This should never happen in theory (due to O_EXCL).
-	if _, ok := d.openFiles[name]; ok {
-		file.Close()
+	if _, ok := d.openFiles[path]; ok {
 		return nil, fmt.Errorf("race condition when creating %s", name)
 	}
-	d.openFiles[name] = file
+	d.openFiles[path] = file
+	disarm = true // skip the defer, we want to keep the file open
 
-	return &fileSystemDestinationFile{
-		nested: file,
-		parent: d,
-		closeCallback: func() {
+	return &hookedWriter{
+		Writer: file,
+
+		closeCb: func() (err error) {
+			d.lock.Lock()
+			delete(d.openFiles, path)
+			d.lock.Unlock()
+
+			err = file.Close()
+
 			if !opts.ModTime.IsZero() {
-				if err := os.Chtimes(path, opts.ModTime, opts.ModTime); err != nil {
-					logging.Warningf(ctx, "[data-loss] cannot set mtime for %s", path)
+				if chErr := os.Chtimes(writeTo, opts.ModTime, opts.ModTime); chErr != nil {
+					logging.Warningf(ctx, "[data-loss] cannot set mtime for %s - %s", path, chErr)
 				}
 			}
-			d.lock.Lock()
-			delete(d.openFiles, name)
-			d.lock.Unlock()
+
+			// In atomic mode need to rename the temp file into its final name.
+			if writeTo != path {
+				replErr := d.fs.Replace(ctx, writeTo, path)
+				if err == nil { // prefer to return errors from Close()
+					err = replErr
+				}
+			}
+			return
 		},
 	}, nil
 }
 
-func (d *fileSystemDestination) CreateSymlink(ctx context.Context, name string, target string) error {
+type hookedWriter struct {
+	io.Writer
+	closeCb func() error
+}
+
+func (w *hookedWriter) Close() error { return w.closeCb() }
+
+func (d *fsDest) CreateSymlink(ctx context.Context, name string, target string) error {
 	path, err := d.prepareFilePath(ctx, name)
 	if err != nil {
 		return err
@@ -539,7 +581,7 @@ func (d *fileSystemDestination) CreateSymlink(ctx context.Context, name string, 
 	target = filepath.FromSlash(target)
 	if !filepath.IsAbs(target) {
 		targetAbs := filepath.Clean(filepath.Join(filepath.Dir(path), target))
-		if !isSubpath(targetAbs, d.outDir) {
+		if !isSubpath(targetAbs, d.dest) {
 			return fmt.Errorf("relative symlink is pointing outside of the destination dir: %s", name)
 		}
 	}
@@ -547,63 +589,99 @@ func (d *fileSystemDestination) CreateSymlink(ctx context.Context, name string, 
 	return d.fs.EnsureSymlink(ctx, path, target)
 }
 
-func (d *fileSystemDestination) End(ctx context.Context, success bool) error {
-	if d.tempDir == "" {
-		return fmt.Errorf("destination is not open")
+////////////////////////////////////////////////////////////////////////////////
+// TransactionalDestination implementation based on FileSystem.
+
+// txnFSDest implements TransactionalDestination on top of a file system using
+// "atomically rename a directory" trick for transactionality.
+type txnFSDest struct {
+	// FileSystem implementation to use for manipulating files.
+	fs FileSystem
+	// The final destination directory to be created when End(true) is called.
+	dest string
+
+	// The underlying FS destination which will be renamed into 'dest' in End().
+	//
+	// Setup to be a temp directory in Begin().
+	fsDest *fsDest
+}
+
+// NewDestination returns a destination in the file system (a new directory)
+// to extract a package to.
+//
+// Will use a provided FileSystem object to operate on files if given, otherwise
+// use a default one. If FileSystem is provided, dir must be in a subdirectory
+// of the given FileSystem root.
+func NewDestination(dest string, fs FileSystem) TransactionalDestination {
+	if fs == nil {
+		fs = NewFileSystem(filepath.Dir(dest), "")
+	}
+	return &txnFSDest{fs: fs, dest: dest}
+}
+
+func (d *txnFSDest) Begin(ctx context.Context) error {
+	if d.fsDest != nil {
+		return fmt.Errorf("destination is already open")
 	}
 
-	d.lock.RLock()
-	leaking := len(d.openFiles)
-	d.lock.RUnlock()
-	if leaking != 0 {
-		return fmt.Errorf("not all files were closed (leaking %d files)", leaking)
+	// Ensure the parent directory of the destination directory exists, to be able
+	// to create a temp subdir there.
+	var err error
+	if d.dest, err = d.fs.CwdRelToAbs(d.dest); err != nil {
+		return err
+	}
+	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(d.dest)); err != nil {
+		return err
 	}
 
-	// Clean up temp dir and the state no matter what.
-	defer func() {
-		d.fs.EnsureDirectoryGone(ctx, d.tempDir)
-		d.tempDir = ""
-		d.outDir = ""
-	}()
-
-	if success {
-		return d.fs.Replace(ctx, d.outDir, d.dir)
+	// Create the staging directory, on the same level as the destination
+	// directory, so it can just be renamed into d.dest on completion.
+	tempDir, err := tempDir(filepath.Dir(d.dest), "", 0700)
+	if err != nil {
+		return err
 	}
-	// Let the defer to clean the garbage in tempDir.
+
+	// Setup a non-txn destination that extracts into the staging directory. Note
+	// that tempDir is totally owned by txnFSDest, and we ensure there are no
+	// concurrent writes to the same destination file, so we disable 'atomic' mode
+	// as it is unnecessary (and costs a bunch of syscalls per file).
+	d.fsDest = ExistingDestination(tempDir, d.fs).(*fsDest)
+	d.fsDest.atomic = false
 	return nil
 }
 
-// prepareFilePath performs steps common to CreateFile and CreateSymlink.
-//
-// It does some validation, expands "name" to an absolute path and creates
-// parent directories for a future file. Returns absolute path where the file
-// should be put.
-func (d *fileSystemDestination) prepareFilePath(ctx context.Context, name string) (string, error) {
-	if d.tempDir == "" {
-		return "", fmt.Errorf("destination is not open")
+func (d *txnFSDest) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
+	if d.fsDest == nil {
+		return nil, fmt.Errorf("destination is not open")
 	}
-	path := filepath.Clean(filepath.Join(d.outDir, filepath.FromSlash(name)))
-	if !isSubpath(path, d.outDir) {
-		return "", fmt.Errorf("invalid relative file name: %s", name)
-	}
-	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
-		return "", err
-	}
-	return path, nil
+	return d.fsDest.CreateFile(ctx, name, opts)
 }
 
-type fileSystemDestinationFile struct {
-	nested        io.WriteCloser
-	parent        *fileSystemDestination
-	closeCallback func()
+func (d *txnFSDest) CreateSymlink(ctx context.Context, name string, target string) error {
+	if d.fsDest == nil {
+		return fmt.Errorf("destination is not open")
+	}
+	return d.fsDest.CreateSymlink(ctx, name, target)
 }
 
-func (f *fileSystemDestinationFile) Write(p []byte) (n int, err error) {
-	return f.nested.Write(p)
-}
+func (d *txnFSDest) End(ctx context.Context, success bool) error {
+	if d.fsDest == nil {
+		return fmt.Errorf("destination is not open")
+	}
+	if leaking := d.fsDest.numOpenFiles(); leaking != 0 {
+		return fmt.Errorf("not all files were closed (leaking %d files)", leaking)
+	}
 
-func (f *fileSystemDestinationFile) Close() error {
-	err := f.nested.Close()
-	f.closeCallback()
-	return err
+	// Clean up the temp dir and the state no matter what. On success it is
+	// already gone (renamed into d.dest).
+	defer func() {
+		d.fs.EnsureDirectoryGone(ctx, d.fsDest.dest)
+		d.fsDest = nil
+	}()
+
+	if success {
+		return d.fs.Replace(ctx, d.fsDest.dest, d.dest)
+	}
+	// Let the defer clean the garbage left in fsDest.
+	return nil
 }

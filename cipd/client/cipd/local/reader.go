@@ -120,23 +120,12 @@ func OpenInstanceFile(ctx context.Context, path string, instanceID string, v Ver
 // destination).
 type ExtractFilter func(f File) bool
 
-// ExtractInstance extracts all files from a package instance into a destination.
+// ExtractInstance extracts all files from a package instance into a
+// destination.
 //
 // If exclude != nil, it will be used to filter the contents of the
 // PackageInstance before extraction.
 func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination, exclude ExtractFilter) error {
-	if err := dest.Begin(ctx); err != nil {
-		return err
-	}
-
-	// Do not leave garbage around in case of a panic.
-	needToEnd := true
-	defer func() {
-		if needToEnd {
-			dest.End(ctx, false)
-		}
-	}()
-
 	allFiles := inst.Files()
 	var files []File
 	if exclude != nil {
@@ -260,25 +249,40 @@ func ExtractInstance(ctx context.Context, inst PackageInstance, dest Destination
 		}
 	}
 
+	if err != nil {
+		return err
+	}
+
 	// Finally extract the extended manifest, now that we have read (and cached)
 	// all 'SymlinkTarget' values.
-	if err == nil {
-		if manifest == nil {
-			err = fmt.Errorf("no %s file, this is bad", manifestName)
-		} else {
-			err = extractManifestFile(manifest)
+	if manifest == nil {
+		return fmt.Errorf("no %s file, this is bad", manifestName)
+	}
+	return extractManifestFile(manifest)
+}
+
+// ExtractInstanceTxn is like ExtractInstance, but it also opens and closes
+// the transaction over TransactionalDestination object.
+//
+// It guarantees that if extraction fails for some reason, there'll be no
+// garbage layout around.
+func ExtractInstanceTxn(ctx context.Context, inst PackageInstance, dest TransactionalDestination, exclude ExtractFilter) (err error) {
+	if err := dest.Begin(ctx); err != nil {
+		return err
+	}
+
+	// Cleanup the garbage even on panics.
+	defer func() {
+		endErr := dest.End(ctx, err == nil)
+		if err == nil {
+			err = endErr
+		} else if endErr != nil {
+			// Log endErr, but return the original error from ExtractInstance.
+			logging.Warningf(ctx, "Failed to cleanup the destination after failed extraction - %s", endErr)
 		}
-	}
+	}()
 
-	needToEnd = false
-	if err == nil {
-		err = dest.End(ctx, true)
-	} else {
-		// Ignore error in 'End' and return the original error.
-		dest.End(ctx, false)
-	}
-
-	return err
+	return ExtractInstance(ctx, inst, dest, exclude)
 }
 
 // progressReporter periodically logs progress of the extraction.

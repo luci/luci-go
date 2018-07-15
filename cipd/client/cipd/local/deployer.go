@@ -240,7 +240,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	// Extract new version to the .cipd/pkgs/* guts. For "symlink" install mode it
 	// is the final destination. For "copy" install mode it's a temp destination
 	// and files will be moved to the site root later (in addToSiteRoot call).
-	// ExtractPackageInstance knows how to build full paths and how to atomically
+	// ExtractInstanceTxn knows how to build full paths and how to atomically
 	// extract a package. No need to delete garbage if it fails.
 	pkgPath, err := d.packagePath(ctx, subdir, pin.PackageName, true)
 	if err != nil {
@@ -259,7 +259,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractInstance(ctx, inst, NewFileSystemDestination(destPath, d.fs), filterCipd); err != nil {
+	if err := ExtractInstanceTxn(ctx, inst, NewDestination(destPath, d.fs), filterCipd); err != nil {
 		return common.Pin{}, err
 	}
 
