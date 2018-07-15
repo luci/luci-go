@@ -273,26 +273,27 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	// Extract new version to the .cipd/pkgs/* guts. For "symlink" install mode it
 	// is the final destination. For "copy" install mode it's a temp destination
 	// and files will be moved to the site root later (in addToSiteRoot call).
-	// ExtractInstanceTxn knows how to build full paths and how to atomically
-	// extract a package. No need to delete garbage if it fails.
+	// ExtractFilesTxn knows how to build full paths and how to atomically extract
+	// a package. No need to delete garbage if it fails.
 	pkgPath, err := d.packagePath(ctx, subdir, pin.PackageName, true)
 	if err != nil {
 		return common.Pin{}, err
 	}
 
-	svcDir := SiteServiceDir + "/"
-	filterCipd := func(f File) bool {
-		name := f.Name()
-		if strings.HasPrefix(name, svcDir) {
+	// Skip extracting .cipd/* guts if they mistakenly ended up inside the
+	// package. Extracting them clobbers REAL guts.
+	files := make([]File, 0, len(inst.Files()))
+	for _, f := range inst.Files() {
+		if name := f.Name(); strings.HasPrefix(name, SiteServiceDir+"/") {
 			logging.Warningf(ctx, "[non-fatal] ignoring internal file: %s", name)
-			return true
+		} else {
+			files = append(files, f)
 		}
-		return false
 	}
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractInstanceTxn(ctx, inst, NewDestination(destPath, d.fs), filterCipd); err != nil {
+	if err := ExtractFilesTxn(ctx, files, NewDestination(destPath, d.fs)); err != nil {
 		return common.Pin{}, err
 	}
 
