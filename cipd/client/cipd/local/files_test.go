@@ -28,6 +28,8 @@ import (
 )
 
 func TestScanFileSystem(t *testing.T) {
+	t.Parallel()
+
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
@@ -200,6 +202,8 @@ func TestScanFileSystem(t *testing.T) {
 }
 
 func TestWrapFile(t *testing.T) {
+	t.Parallel()
+
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		So(err, ShouldBeNil)
@@ -312,6 +316,26 @@ func writeSymlink(root string, path string, target string) {
 	}
 }
 
+func writeFileToDest(dest Destination, name string, opts CreateFileOptions, data string) {
+	writer, err := dest.CreateFile(context.Background(), name, opts)
+	So(err, ShouldBeNil)
+	_, err = writer.Write([]byte(data))
+	So(err, ShouldBeNil)
+	So(writer.Close(), ShouldBeNil)
+}
+
+func writeAttrFileToDest(dest Destination, name string, attr WinAttrs, data string) {
+	writer, err := dest.CreateFile(context.Background(), name, CreateFileOptions{WinAttrs: attr})
+	So(err, ShouldBeNil)
+	_, err = writer.Write([]byte(data))
+	So(err, ShouldBeNil)
+	So(writer.Close(), ShouldBeNil)
+}
+
+func writeSymlinkToDest(dest Destination, name string, target string) {
+	So(dest.CreateSymlink(context.Background(), name, target), ShouldBeNil)
+}
+
 func ensureSymlinkTarget(file File, target string) {
 	So(file.Symlink(), ShouldBeTrue)
 	discoveredTarget, err := file.SymlinkTarget()
@@ -319,40 +343,180 @@ func ensureSymlinkTarget(file File, target string) {
 	So(discoveredTarget, ShouldEqual, target)
 }
 
-func TestFileSystemDestination(t *testing.T) {
+func createBunchOfFiles(dest Destination, tempDir string) {
+	testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
+	writeFileToDest(dest, "a", CreateFileOptions{}, "a data")
+	writeFileToDest(dest, "exe", CreateFileOptions{Executable: true}, "exe data")
+	writeFileToDest(dest, "dir/c", CreateFileOptions{}, "dir/c data")
+	writeFileToDest(dest, "dir/dir/d", CreateFileOptions{}, "dir/dir/d data")
+	writeFileToDest(dest, "ts", CreateFileOptions{ModTime: testMTime}, "ts data")
+	writeFileToDest(dest, "wr", CreateFileOptions{Writable: true}, "wr data")
+	if runtime.GOOS != "windows" {
+		writeSymlinkToDest(dest, "abs_symlink", filepath.FromSlash(tempDir))
+		writeSymlinkToDest(dest, "dir/dir/rel_symlink", "../../a")
+	} else {
+		writeAttrFileToDest(dest, "secret_file", WinAttrHidden, "ninja")
+		writeAttrFileToDest(dest, "system_file", WinAttrSystem, "system")
+	}
+}
+
+func checkBunchOfFiles(destDir, tempDir string) {
+	testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
+
+	// Ensure everything is there.
+	files, err := ScanFileSystem(destDir, destDir, nil, ScanOptions{
+		PreserveModTime:  true,
+		PreserveWritable: true,
+	})
+	So(err, ShouldBeNil)
+	names := make([]string, len(files))
+	mapping := make(map[string]File, len(files))
+	for i, f := range files {
+		names[i] = f.Name()
+		mapping[f.Name()] = f
+	}
+
+	if runtime.GOOS == "windows" {
+		So(names, ShouldResemble, []string{
+			"a",
+			"dir/c",
+			"dir/dir/d",
+			"exe",
+			"secret_file",
+			"system_file",
+			"ts",
+			"wr",
+		})
+	} else {
+		So(names, ShouldResemble, []string{
+			"a",
+			"abs_symlink",
+			"dir/c",
+			"dir/dir/d",
+			"dir/dir/rel_symlink",
+			"exe",
+			"ts",
+			"wr",
+		})
+	}
+
+	// Ensure data is valid (check first file only).
+	r, err := mapping["a"].Open()
+	if r != nil {
+		defer r.Close()
+	}
+	So(err, ShouldBeNil)
+	data, err := ioutil.ReadAll(r)
+	So(err, ShouldBeNil)
+	So(data, ShouldResemble, []byte("a data"))
+
+	// File mode and symlinks are valid.
+	if runtime.GOOS != "windows" {
+		So(mapping["a"].Writable(), ShouldBeFalse)
+		So(mapping["exe"].Executable(), ShouldBeTrue)
+		So(mapping["ts"].ModTime(), ShouldEqual, testMTime)
+		So(mapping["wr"].Writable(), ShouldBeTrue)
+		ensureSymlinkTarget(mapping["abs_symlink"], filepath.FromSlash(tempDir))
+		ensureSymlinkTarget(mapping["dir/dir/rel_symlink"], "../../a")
+	} else {
+		So(mapping["secret_file"].WinAttrs()&WinAttrHidden, ShouldEqual, WinAttrHidden)
+		So(mapping["system_file"].WinAttrs()&WinAttrSystem, ShouldEqual, WinAttrSystem)
+	}
+
+	// Ensure no temp files left.
+	allFiles, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
+	So(len(allFiles), ShouldEqual, len(files))
+}
+
+func TestExistingDestination(t *testing.T) {
+	t.Parallel()
+
 	ctx := context.Background()
 
 	Convey("Given a temp directory", t, func() {
 		tempDir, err := ioutil.TempDir("", "cipd_test")
 		destDir := filepath.Join(tempDir, "dest")
 		So(err, ShouldBeNil)
-		dest := NewFileSystemDestination(destDir, nil)
+		dest := ExistingDestination(destDir, nil)
 		defer os.RemoveAll(tempDir)
 
-		writeFileToDest := func(name string, opts CreateFileOptions, data string) {
-			writer, err := dest.CreateFile(ctx, name, opts)
-			if writer != nil {
-				defer writer.Close()
-			}
+		readFromDest := func(name string) string {
+			b, err := ioutil.ReadFile(filepath.Join(destDir, name))
 			So(err, ShouldBeNil)
-			_, err = writer.Write([]byte(data))
-			So(err, ShouldBeNil)
+			return string(b)
 		}
 
-		writeAttrFileToDest := func(name string, attr WinAttrs, data string) {
-			writer, err := dest.CreateFile(ctx, name, CreateFileOptions{WinAttrs: attr})
-			if writer != nil {
-				defer writer.Close()
-			}
+		Convey("Creates files", func() {
+			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
+			So(readFromDest("a/b/c"), ShouldEqual, "123")
+		})
+
+		Convey("CreateFile can override read-only files, atomic mode", func() {
+			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
+			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "456")
+			So(readFromDest("a/b/c"), ShouldEqual, "456")
+		})
+
+		Convey("CreateFile can override read-only files, non-atomic mode", func() {
+			dest.(*fsDest).atomic = false
+			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "123")
+			writeFileToDest(dest, "a/b/c", CreateFileOptions{}, "456")
+			So(readFromDest("a/b/c"), ShouldEqual, "456")
+		})
+
+		Convey("Can't have two instances of a file open at the same time", func() {
+			wr, err := dest.CreateFile(ctx, "a/b/c", CreateFileOptions{})
 			So(err, ShouldBeNil)
-			_, err = writer.Write([]byte(data))
+
+			// Open same file (perhaps via lexically different path).
+			_, err = dest.CreateFile(ctx, "a/b/d/../c", CreateFileOptions{})
+			So(err.Error(), ShouldEqual, "file a/b/d/../c is already open")
+
+			So(wr.Close(), ShouldBeNil)
+
+			// Can be opened now.
+			wr, err = dest.CreateFile(ctx, "a/b/d/../c", CreateFileOptions{})
 			So(err, ShouldBeNil)
+			So(wr.Close(), ShouldBeNil)
+		})
+
+		Convey("CreateFile rejects invalid relative paths", func() {
+			// Rel path that is still inside the package is ok.
+			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", CreateFileOptions{})
+			So(err, ShouldBeNil)
+			wr.Close()
+			// Rel path pointing outside is forbidden.
+			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", CreateFileOptions{})
+			So(err, ShouldNotBeNil)
+		})
+
+		if runtime.GOOS != "windows" {
+			Convey("CreateSymlink rejects invalid relative paths", func() {
+				// Rel symlink to a file inside the destination is OK.
+				So(dest.CreateSymlink(ctx, "a/b/c", "../.."), ShouldBeNil)
+				// Rel symlink to a file outside -> error.
+				So(dest.CreateSymlink(ctx, "a/b/c", "../../.."), ShouldNotBeNil)
+			})
 		}
 
-		writeSymlinkToDest := func(name string, target string) {
-			err := dest.CreateSymlink(ctx, name, target)
-			So(err, ShouldBeNil)
-		}
+		Convey("Creating a bunch of files", func() {
+			createBunchOfFiles(dest, tempDir)
+			checkBunchOfFiles(destDir, tempDir)
+		})
+	})
+}
+
+func TestNewDestination(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	Convey("Given a temp directory", t, func() {
+		tempDir, err := ioutil.TempDir("", "cipd_test")
+		destDir := filepath.Join(tempDir, "dest")
+		So(err, ShouldBeNil)
+		dest := NewDestination(destDir, nil)
+		defer os.RemoveAll(tempDir)
 
 		Convey("Empty success write works", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
@@ -391,122 +555,16 @@ func TestFileSystemDestination(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
-		Convey("CreateFile rejects invalid relative paths", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			defer dest.End(ctx, true)
-
-			// Rel path that is still inside the package is ok.
-			wr, err := dest.CreateFile(ctx, "a/b/c/../../../d", CreateFileOptions{})
-			So(err, ShouldBeNil)
-			wr.Close()
-
-			// Rel path pointing outside is forbidden.
-			_, err = dest.CreateFile(ctx, "a/b/c/../../../../d", CreateFileOptions{})
-			So(err, ShouldNotBeNil)
-		})
-
-		if runtime.GOOS != "windows" {
-			Convey("CreateSymlink rejects invalid relative paths", func() {
-				So(dest.Begin(ctx), ShouldBeNil)
-				defer dest.End(ctx, true)
-
-				// Rel symlink to a file inside the destination is OK.
-				So(dest.CreateSymlink(ctx, "a/b/c", "../.."), ShouldBeNil)
-				// Rel symlink to a file outside -> error.
-				So(dest.CreateSymlink(ctx, "a/b/c", "../../.."), ShouldNotBeNil)
-			})
-		}
-
 		Convey("Committing bunch of files works", func() {
-			testMTime := time.Date(2018, 1, 1, 1, 0, 0, 0, time.UTC)
 			So(dest.Begin(ctx), ShouldBeNil)
-			writeFileToDest("a", CreateFileOptions{}, "a data")
-			writeFileToDest("exe", CreateFileOptions{Executable: true}, "exe data")
-			writeFileToDest("dir/c", CreateFileOptions{}, "dir/c data")
-			writeFileToDest("dir/dir/d", CreateFileOptions{}, "dir/dir/d data")
-			writeFileToDest("ts", CreateFileOptions{ModTime: testMTime}, "ts data")
-			writeFileToDest("wr", CreateFileOptions{Writable: true}, "wr data")
-			if runtime.GOOS != "windows" {
-				writeSymlinkToDest("abs_symlink", filepath.FromSlash(tempDir))
-				writeSymlinkToDest("dir/dir/rel_symlink", "../../a")
-			} else {
-				writeAttrFileToDest("secret_file", WinAttrHidden, "ninja")
-				writeAttrFileToDest("system_file", WinAttrSystem, "system")
-			}
+			createBunchOfFiles(dest, tempDir)
 			So(dest.End(ctx, true), ShouldBeNil)
-
-			// Ensure everything is there.
-			files, err := ScanFileSystem(destDir, destDir, nil, ScanOptions{PreserveModTime: true, PreserveWritable: true})
-			So(err, ShouldBeNil)
-			names := make([]string, len(files))
-			mapping := make(map[string]File, len(files))
-			for i, f := range files {
-				names[i] = f.Name()
-				mapping[f.Name()] = f
-			}
-
-			if runtime.GOOS == "windows" {
-				So(names, ShouldResemble, []string{
-					"a",
-					"dir/c",
-					"dir/dir/d",
-					"exe",
-					"secret_file",
-					"system_file",
-					"ts",
-					"wr",
-				})
-			} else {
-				So(names, ShouldResemble, []string{
-					"a",
-					"abs_symlink",
-					"dir/c",
-					"dir/dir/d",
-					"dir/dir/rel_symlink",
-					"exe",
-					"ts",
-					"wr",
-				})
-			}
-
-			// Ensure data is valid (check first file only).
-			r, err := mapping["a"].Open()
-			if r != nil {
-				defer r.Close()
-			}
-			So(err, ShouldBeNil)
-			data, err := ioutil.ReadAll(r)
-			So(err, ShouldBeNil)
-			So(data, ShouldResemble, []byte("a data"))
-
-			// File mode and symlinks are valid.
-			if runtime.GOOS != "windows" {
-				So(mapping["a"].Writable(), ShouldBeFalse)
-				So(mapping["exe"].Executable(), ShouldBeTrue)
-				So(mapping["ts"].ModTime(), ShouldEqual, testMTime)
-				So(mapping["wr"].Writable(), ShouldBeTrue)
-				ensureSymlinkTarget(mapping["abs_symlink"], filepath.FromSlash(tempDir))
-				ensureSymlinkTarget(mapping["dir/dir/rel_symlink"], "../../a")
-			} else {
-				So(mapping["secret_file"].WinAttrs()&WinAttrHidden, ShouldEqual, WinAttrHidden)
-				So(mapping["system_file"].WinAttrs()&WinAttrSystem, ShouldEqual, WinAttrSystem)
-			}
-
-			// Ensure no temp files left.
-			allFiles, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
-			So(len(allFiles), ShouldEqual, len(files))
+			checkBunchOfFiles(destDir, tempDir)
 		})
 
 		Convey("Rolling back bunch of files works", func() {
 			So(dest.Begin(ctx), ShouldBeNil)
-			writeFileToDest("a", CreateFileOptions{}, "a data")
-			writeFileToDest("dir/c", CreateFileOptions{}, "dir/c data")
-			if runtime.GOOS != "windows" {
-				writeSymlinkToDest("dir/d", "c")
-			} else {
-				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
-				writeAttrFileToDest("system", WinAttrSystem, "machine")
-			}
+			createBunchOfFiles(dest, tempDir)
 			So(dest.End(ctx, false), ShouldBeNil)
 
 			// No dest directory.
@@ -527,28 +585,11 @@ func TestFileSystemDestination(t *testing.T) {
 
 			// Now deploy something to it.
 			So(dest.Begin(ctx), ShouldBeNil)
-			writeFileToDest("a", CreateFileOptions{}, "a data")
-			if runtime.GOOS != "windows" {
-				writeSymlinkToDest("b", "a")
-			} else {
-				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
-				writeAttrFileToDest("system", WinAttrSystem, "machine")
-			}
+			createBunchOfFiles(dest, tempDir)
 			So(dest.End(ctx, true), ShouldBeNil)
 
 			// Overwritten.
-			files, err := ScanFileSystem(destDir, destDir, nil, ScanOptions{})
-			So(err, ShouldBeNil)
-			if runtime.GOOS == "windows" {
-				So(len(files), ShouldEqual, 3)
-				So(files[0].Name(), ShouldEqual, "a")
-				So(files[1].Name(), ShouldEqual, "secret")
-				So(files[2].Name(), ShouldEqual, "system")
-			} else {
-				So(len(files), ShouldEqual, 2)
-				So(files[0].Name(), ShouldEqual, "a")
-				So(files[1].Name(), ShouldEqual, "b")
-			}
+			checkBunchOfFiles(destDir, tempDir)
 		})
 
 		Convey("Not overwriting a directory works", func() {
@@ -560,13 +601,7 @@ func TestFileSystemDestination(t *testing.T) {
 
 			// Now attempt deploy something to it, but roll back.
 			So(dest.Begin(ctx), ShouldBeNil)
-			writeFileToDest("a", CreateFileOptions{}, "a data")
-			if runtime.GOOS != "windows" {
-				writeSymlinkToDest("b", "a")
-			} else {
-				writeAttrFileToDest("secret", WinAttrHidden, "ninja")
-				writeAttrFileToDest("system", WinAttrSystem, "machine")
-			}
+			createBunchOfFiles(dest, tempDir)
 			So(dest.End(ctx, false), ShouldBeNil)
 
 			// Kept as is.
@@ -574,15 +609,6 @@ func TestFileSystemDestination(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 1)
 			So(files[0].Name(), ShouldEqual, "data")
-		})
-
-		Convey("Opening file twice fails", func() {
-			So(dest.Begin(ctx), ShouldBeNil)
-			writeFileToDest("a", CreateFileOptions{}, "a data")
-			w, err := dest.CreateFile(ctx, "a", CreateFileOptions{})
-			So(w, ShouldBeNil)
-			So(err, ShouldNotBeNil)
-			So(dest.End(ctx, true), ShouldBeNil)
 		})
 
 		Convey("End with opened files fail", func() {
