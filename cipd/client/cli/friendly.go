@@ -301,7 +301,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	doInstall := true
 	if !force {
 		d := local.NewDeployer(site.siteRoot)
-		switch state, err := d.CheckDeployed(ctx, "", pkgName, cipd.NotParanoid); {
+		switch state, err := d.CheckDeployed(ctx, "", pkgName, cipd.NotParanoid, local.WithoutManifest); {
 		case err != nil:
 			logging.Errorf(ctx, "Failed to check installed package state - %s", err)
 			logging.Errorf(ctx, "Will attempt to reinstall")

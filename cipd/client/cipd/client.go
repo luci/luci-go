@@ -1374,7 +1374,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	needsRepair := func(string, common.Pin) *RepairPlan { return nil }
 	if paranoia != NotParanoid {
 		needsRepair = func(subdir string, pin common.Pin) *RepairPlan {
-			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia); {
+			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, local.WithoutManifest); {
 			case err != nil:
 				// This error is probably non-recoverable, but we'll try anyway and
 				// properly fail later.
