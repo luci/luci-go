@@ -192,7 +192,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractFilesTxn(ctx, inst.Files(), dest)
+		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -343,7 +343,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractFilesTxn(ctx, inst.Files(), dest)
+		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)

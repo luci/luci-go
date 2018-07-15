@@ -1896,14 +1896,14 @@ func makeTestInstance(name string, files []File, installMode InstallMode) *testP
 	// Generate and append manifest file.
 	out := bytes.Buffer{}
 	err := writeManifest(&Manifest{
-		FormatVersion: manifestFormatVersion,
+		FormatVersion: ManifestFormatVersion,
 		PackageName:   name,
 		InstallMode:   installMode,
 	}, &out)
 	if err != nil {
 		panic("Failed to write a manifest")
 	}
-	files = append(files, NewTestFile(manifestName, string(out.Bytes()), TestFileOpts{}))
+	files = append(files, NewTestFile(ManifestName, string(out.Bytes()), TestFileOpts{}))
 	return &testPackageInstance{
 		packageName: name,
 		instanceID:  "0123456789abcdef00000123456789abcdef0000",

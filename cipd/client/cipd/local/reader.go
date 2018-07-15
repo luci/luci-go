@@ -116,7 +116,26 @@ func OpenInstanceFile(ctx context.Context, path string, instanceID string, v Ver
 
 // ExtractFiles extracts all given files into a destination, with a progress
 // report.
-func ExtractFiles(ctx context.Context, files []File, dest Destination) error {
+//
+// This function has intimate understanding of specifics of CIPD packages, such
+// as manifest files and .cipdpkg/* directory, thus it should be used only when
+// extracting files from CIPD packages.
+//
+// If withManifest is WithManifest, the manifest file is required to be among
+// 'files'. It will be extended with information about extracted files and
+// placed into the destination.
+//
+// If withManifest is WithoutManifest, the function will fail if the manifest is
+// among 'files' (as a precaution against unintended override of manifests).
+func ExtractFiles(ctx context.Context, files []File, dest Destination, withManifest ManifestMode) error {
+	if !withManifest {
+		for _, f := range files {
+			if f.Name() == ManifestName {
+				return fmt.Errorf("refusing to extract the manifest, it is unexpected here")
+			}
+		}
+	}
+
 	progress := newProgressReporter(ctx, files)
 
 	extractManifestFile := func(f File) (err error) {
@@ -130,7 +149,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination) error {
 			// Do not put info about service .cipdpkg files into the manifest,
 			// otherwise it becomes recursive and "size" property of manifest file
 			// itself is not correct.
-			if strings.HasPrefix(file.Name(), packageServiceDir+"/") {
+			if strings.HasPrefix(file.Name(), PackageServiceDir+"/") {
 				continue
 			}
 			fi := FileInfo{
@@ -208,7 +227,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination) error {
 
 		default:
 			switch {
-			case f.Name() == manifestName:
+			case f.Name() == ManifestName:
 				// We delay writing the extended manifest until the very end because it
 				// contains values of 'SymlinkTarget' fields of all extracted files.
 				// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
@@ -233,18 +252,22 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination) error {
 
 	// Finally extract the extended manifest, now that we have read (and cached)
 	// all 'SymlinkTarget' values.
-	if manifest == nil {
-		return fmt.Errorf("no %s file, this is bad", manifestName)
+	if withManifest {
+		if manifest == nil {
+			return fmt.Errorf("no %s file, this is bad", ManifestName)
+		}
+		return extractManifestFile(manifest)
 	}
-	return extractManifestFile(manifest)
+
+	return nil
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes
 // the transaction over TransactionalDestination object.
 //
 // It guarantees that if extraction fails for some reason, there'll be no
-// garbage layout around.
-func ExtractFilesTxn(ctx context.Context, files []File, dest TransactionalDestination) (err error) {
+// garbage laying around.
+func ExtractFilesTxn(ctx context.Context, files []File, dest TransactionalDestination, withManifest ManifestMode) (err error) {
 	if err := dest.Begin(ctx); err != nil {
 		return err
 	}
@@ -260,7 +283,7 @@ func ExtractFilesTxn(ctx context.Context, files []File, dest TransactionalDestin
 		}
 	}()
 
-	return ExtractFiles(ctx, files, dest)
+	return ExtractFiles(ctx, files, dest, withManifest)
 }
 
 // progressReporter periodically logs progress of the extraction.
@@ -405,7 +428,7 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 	inst.files = make([]File, len(inst.zip.File))
 	for i, zf := range inst.zip.File {
 		fiz := &fileInZip{z: zf}
-		if fiz.Name() == manifestName {
+		if fiz.Name() == ManifestName {
 			// The manifest is later read again when extracting, keep it in memory.
 			if err = fiz.prefetch(); err != nil {
 				return err
