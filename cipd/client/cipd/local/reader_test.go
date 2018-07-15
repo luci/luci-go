@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
-	"strings"
 	"testing"
 	"time"
 
@@ -161,13 +160,12 @@ func TestPackageReading(t *testing.T) {
 		So(inst, ShouldNotBeNil)
 	})
 
-	Convey("ExtractInstance works", t, func() {
+	Convey("ExtractFiles works", t, func() {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
 		inFiles := []File{
 			NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
 			NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
-			NewTestFile("bad_dir/pkg/0/description.json", "{}", TestFileOpts{}),
 			NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
 			NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
 			NewTestSymlink("rel_symlink", "abc"),
@@ -194,9 +192,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstanceTxn(ctx, inst, dest, func(f File) bool {
-			return strings.HasPrefix(f.Name(), "bad_dir/")
-		})
+		err = ExtractFilesTxn(ctx, inst.Files(), dest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -243,12 +239,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "284036fec1eaf6492a4e75d1db0920be5e8b3fd7",
+			"instance_id": "5152808e3c130b9ab02ee44ec13b454631a89209",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "7745210cceeb08f108cbb81122f5dbe3a415aaa2",
+				"instance_id": "4a2ca8f4e5be9ee0d84ab7829ca6dd9af8a4328d",
 				"package_name": "testing"
 			}`
 		}
@@ -314,7 +310,7 @@ func TestPackageReading(t *testing.T) {
 			shouldBeSameJSONDict, goodManifest)
 	})
 
-	Convey("ExtractInstance handles v1 packages correctly", t, func() {
+	Convey("ExtractFiles handles v1 packages correctly", t, func() {
 		// ZipInfos in packages with format_version "1" always have the writable bit
 		// set, and always have 0 timestamp. During the extraction of such package,
 		// the writable bit should be cleared, and the timestamp should not be reset
@@ -322,7 +318,6 @@ func TestPackageReading(t *testing.T) {
 		inFiles := []File{
 			NewTestFile("testing/qwerty", "12345", TestFileOpts{Writable: true}),
 			NewTestFile("abc", "duh", TestFileOpts{Executable: true, Writable: true}),
-			NewTestFile("bad_dir/pkg/0/description.json", "{}", TestFileOpts{Writable: true}),
 			NewTestSymlink("rel_symlink", "abc"),
 			NewTestSymlink("abs_symlink", "/abc/def"),
 		}
@@ -348,9 +343,7 @@ func TestPackageReading(t *testing.T) {
 		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
-		err = ExtractInstanceTxn(ctx, inst, dest, func(f File) bool {
-			return strings.HasPrefix(f.Name(), "bad_dir/")
-		})
+		err = ExtractFilesTxn(ctx, inst.Files(), dest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -390,12 +383,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "2caf604d611300332f4f5d97dc2e3e1b40b9fc10",
+			"instance_id": "4e4ad913996bcf3a227ef9a3f59b2a65df2acf0f",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "64ba7831cc5374c8747e24315674b2b966065c5e",
+				"instance_id": "a54b5f7d7f48961e39edee3f1e3f675c8066ab82",
 				"package_name": "testing"
 			}`
 		}

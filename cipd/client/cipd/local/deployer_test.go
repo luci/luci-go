@@ -194,6 +194,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				NewTestFile("some/file/path", "data a", TestFileOpts{}),
 				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
+				NewTestFile(".cipd/pkg/0/description.json", "{}", TestFileOpts{}), // should be ignored
 			}, InstallModeSymlink)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
@@ -536,6 +537,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				NewTestFile("some/file/path", "data a", TestFileOpts{}),
 				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
 				NewTestSymlink("some/symlink", "executable"),
+				NewTestFile(".cipd/pkg/0/description.json", "{}", TestFileOpts{}), // should be ignored
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
@@ -807,6 +809,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			inst := makeTestInstance("test/package", []File{
 				NewTestFile("some/file/path", "data a", TestFileOpts{}),
 				NewTestFile("some/executable", "data b", TestFileOpts{Executable: true}),
+				NewTestFile(".cipd/pkg/0/description.json", "{}", TestFileOpts{}), // should be ignored
 			}, InstallModeCopy)
 			_, err := NewDeployer(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
