@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "140284cf_024704fa",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1468,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-16T01:28:17Z",
+      "side": 1,
+      "message": "Yes, \u0026broken.RepairPlan points to \u0027broken\u0027 loop variable, that gets overwritten on every iteration. The complication is that we take pointer to its field. But this field is physically inside \u0027broken\u0027 memory, so it gets overwritten too.",
+      "parentUuid": "d2c977bf_9de6f3da",
+      "range": {
+        "startLine": 1467,
+        "startChar": 4,
+        "endLine": 1468,
+        "endChar": 44
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1947649c_2f67f1be",
         "filename": "cipd/client/cipd/local/deployer.go",
         "patchSetId": 1
@@ -69,6 +93,30 @@
       "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d38a40e2_87a0db9f",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 531,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-16T01:28:17Z",
+      "side": 1,
+      "message": "\u003e this is /very/ slight... the cost of len(Files) move calls, right?\n\nYes, it is O(len(files)) number of FS metadata calls (moves, stats, mkdirs). It does add up for packages with lots of small files (like e.g. GAE sdk package), even on fast machines.\n\nBUT, for repairs, I don\u0027t care. Repairs shouldn\u0027t be a regular event.\n\n\u003e Couldn\u0027t we further make this generically faster by parallelizing the move operations (so we spend less time in userspace between syscalls?)...\n\nProbably. IIRC, I tried some time ago, it gives no noticeable improvement, at least on OSX (probably hitting some lock in the kernel).\n\n\u003e assuming it\u0027s worth speeding up at all? (SD card RPi\u0027s?). Maybe only if len(Files) \u003e 500 or something?\n\nNeeds experimentation.",
+      "parentUuid": "1947649c_2f67f1be",
+      "range": {
+        "startLine": 531,
+        "startChar": 21,
+        "endLine": 531,
+        "endChar": 29
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -116,6 +164,30 @@
       "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88ffb90a_7a868d78",
+        "filename": "cipd/client/cipd/local/deployer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 602,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-16T01:28:17Z",
+      "side": 1,
+      "message": "\u003e Hm... is there a way we could accumulate this error and only show it at the end (so that the tool still exits !0, but we repair as much as we can?). \n\nOk, returning an error now.\n\n\u003e Could/should we abort and redeploy the entire thing if this happens?\n\nThis is a more complicated change, since we may not have PackageInstance here, and need to ask cipd.Client to fetch it first. This is further complicated by the retry loop in cipd.Client for handling of broken cached files.\n\nI\u0027m 80% sure we\u0027ll never see this repair errors (or rather, the errors we\u0027ll see will be related to file system permissions, or bad disks, and thus won\u0027t be fixable by full reinstall either). So I prefer to punt on this for now and improve only if needed.",
+      "parentUuid": "68ab5b60_6b3f68e3",
+      "range": {
+        "startLine": 602,
+        "startChar": 3,
+        "endLine": 602,
+        "endChar": 78
+      },
+      "revId": "ad599d3e073b8ac2b70dec3e7867dc88655535c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
