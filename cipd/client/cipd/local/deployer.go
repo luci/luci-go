@@ -105,7 +105,7 @@ type DeployedPackage struct {
 	instancePath string
 }
 
-// RepairsParams is passed to RepairDeployment.
+// RepairsParams is passed to RepairDeployed.
 type RepairParams struct {
 	// Instance holds the original package data.
 	//
@@ -525,20 +525,120 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 		panic(fmt.Sprintf("expecting instance with pin %s, got %s", pin, params.Instance.Pin()))
 	}
 
-	// TODO(vadimsh): Implement.
-	if len(params.ToRedeploy) != 0 {
-		logging.Warningf(ctx, "Would have redeployed, but this is not implemented yet:")
-		for _, f := range params.ToRedeploy {
-			logging.Warningf(ctx, "  %s", f)
-		}
+	// Note that we can slightly optimize the repairs of packages in 'copy'
+	// install mode by extracting directly into the site root. But this
+	// complicates the code and introduces a "unique" code path, not exercised by
+	// DeployInstance. Instead we prefer a bit slower code that resembles
+	// DeployInstance in its logic: it extracts everything into the instance
+	// directory in the guts, and then symlinks/moves it to the site root.
+
+	// Check that the package we are repairing is still installed and grab its
+	// manifest (for the install mode and list of files).
+	pkg, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid, WithManifest)
+	switch {
+	case err != nil:
+		return err
+	case !pkg.Deployed:
+		return fmt.Errorf("the package %s is not deployed any more, refusing to recover", pin.PackageName)
+	case pkg.Pin != pin:
+		return fmt.Errorf("expected to find pin %s, got %s, refusing to recover", pin, pkg.Pin)
+	case pkg.packagePath == "":
+		panic("impossible, packagePath cannot be empty for deployed pkg")
+	case pkg.instancePath == "":
+		panic("impossible, instancePath cannot be empty for deployed pkg")
 	}
-	if len(params.ToRelink) != 0 {
-		logging.Warningf(ctx, "Would have relinked, but this is not implemented yet:")
-		for _, f := range params.ToRelink {
-			logging.Warningf(ctx, "  %s", f)
+
+	// manifest contains all files that should be present in a healthy deployment.
+	manifest := make(map[string]FileInfo, len(pkg.Manifest.Files))
+	for _, f := range pkg.Manifest.Files {
+		manifest[f.Name] = f
+	}
+
+	// repairableFiles is subset of files in 'manifest' we are able to repair,
+	// given data we have.
+	var repairableFiles map[string]File
+	if params.Instance != nil {
+		repairableFiles = make(map[string]File, len(params.Instance.Files()))
+		for _, f := range params.Instance.Files() {
+			// Ignore files not in the manifest (usually .cipd/* guts skipped during
+			// the initial deployment)
+			if _, ok := manifest[f.Name()]; ok {
+				repairableFiles[f.Name()] = f
+			}
+		}
+	} else {
+		// Without PackageInstance present we can repair only symlinks based on info
+		// in the manifest.
+		repairableFiles = map[string]File{}
+		for _, f := range pkg.Manifest.Files {
+			if f.Symlink != "" {
+				repairableFiles[f.Name] = &symlinkFile{name: f.Name, target: f.Symlink}
+			}
 		}
 	}
 
+	// Names of files we want to extract into the instance gut directory. Note
+	// that ToRelink set MAY include symlinks we need to restore in the guts, if
+	// the package originally had symlinks.
+	broken := make([]string, 0, len(params.ToRedeploy))
+	broken = append(broken, params.ToRedeploy...)
+	for _, name := range params.ToRelink {
+		if manifest[name].Symlink != "" {
+			broken = append(broken, name)
+		}
+	}
+
+	failed := false
+
+	// Collect corresponding []File entries and extract them into the gut
+	// directory. This restores all broken files and symlinks there, but doesn't
+	// yet link them to the site root.
+	repair := make([]File, 0, len(broken))
+	for _, name := range broken {
+		if f := repairableFiles[name]; f != nil {
+			repair = append(repair, f)
+		} else {
+			logging.Errorf(ctx, "Can't repair %q, the source is not available", name)
+			failed = true
+		}
+	}
+	if len(repair) != 0 {
+		logging.Infof(ctx, "Repairing %d files...", len(repair))
+		if err := ExtractFiles(ctx, repair, ExistingDestination(pkg.instancePath, d.fs), WithoutManifest); err != nil {
+			return err
+		}
+	}
+
+	// Finally relink/move everything into the site root.
+	infos := make([]FileInfo, 0, len(params.ToRedeploy)+len(params.ToRelink))
+	add := func(name string) {
+		if info, ok := manifest[name]; ok {
+			infos = append(infos, info)
+		} else {
+			logging.Errorf(ctx, "Can't relink %q, unknown file", name)
+			failed = true
+		}
+	}
+	for _, name := range params.ToRedeploy {
+		add(name)
+	}
+	for _, name := range params.ToRelink {
+		add(name)
+	}
+	logging.Infof(ctx, "Relinking %d files...", len(infos))
+	if err := d.addToSiteRoot(ctx, pkg.Subdir, infos, pkg.InstallMode, pkg.packagePath, pkg.instancePath); err != nil {
+		return err
+	}
+
+	// Cleanup empty directories left in the guts after files have been moved
+	// away, just like DeployInstance does. Best effort.
+	if pkg.InstallMode == InstallModeCopy {
+		removeEmptyTree(pkg.instancePath, func(string) bool { return true })
+	}
+
+	if failed {
+		return fmt.Errorf("repair of %s failed, see logs", pkg.Pin.PackageName)
+	}
 	return nil
 }
 
@@ -561,6 +661,24 @@ func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileM
 func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
 	return d.fs.CleanupTrash(ctx)
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Symlink File implementation used by RepairDeployed.
+
+type symlinkFile struct {
+	name   string
+	target string
+}
+
+func (f *symlinkFile) Name() string                   { return f.name }
+func (f *symlinkFile) Size() uint64                   { return 0 }
+func (f *symlinkFile) Executable() bool               { return false }
+func (f *symlinkFile) Writable() bool                 { return false }
+func (f *symlinkFile) ModTime() time.Time             { return time.Time{} }
+func (f *symlinkFile) Symlink() bool                  { return true }
+func (f *symlinkFile) SymlinkTarget() (string, error) { return f.target, nil }
+func (f *symlinkFile) WinAttrs() WinAttrs             { return 0 }
+func (f *symlinkFile) Open() (io.ReadCloser, error)   { return nil, fmt.Errorf("can't open a symlink") }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Utility methods.
@@ -1025,7 +1143,7 @@ func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f Fi
 //
 // See DeployedPackage struct for definition of "relink" and "redeploy".
 func (d *deployerImpl) checkIntegrity(ctx context.Context, pkg *DeployedPackage) (redeploy, relink []string) {
-	logging.Debugf(ctx, "Checking integrity of %q in subdir %q", pkg.Pin.PackageName, pkg.Subdir)
+	logging.Debugf(ctx, "Checking integrity of %q deployment...", pkg.Pin.PackageName)
 
 	// Examine files that are supposed to be installed.
 	for _, f := range pkg.Manifest.Files {
