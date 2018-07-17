@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13364e7a_ce6dff01",
+        "filename": "logdog/client/annotee/processor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-17T23:08:16Z",
+      "side": 0,
+      "message": "inlined, it was called from one place only. Jumping between 4 three-line function is not helping readability.",
+      "range": {
+        "startLine": 458,
+        "startChar": 0,
+        "endLine": 462,
+        "endChar": 1
+      },
+      "revId": "63806c9c90e04f774f4988ddf1e34508c5dab81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "66ace991_474f6a09",
+        "filename": "logdog/client/annotee/processor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 629,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-17T23:08:16Z",
+      "side": 0,
+      "message": "also inlined, it was called from one place only",
+      "range": {
+        "startLine": 629,
+        "startChar": 0,
+        "endLine": 629,
+        "endChar": 45
+      },
+      "revId": "63806c9c90e04f774f4988ddf1e34508c5dab81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
