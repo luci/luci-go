@@ -45,6 +45,30 @@
       "revId": "85b962875bb80b796435851211b7391e90236f6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79ba9a3d_8144727d",
+        "filename": "logdog/client/annotee/processor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-17T23:13:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "060fba44_1bc0978a",
+      "range": {
+        "startLine": 487,
+        "startChar": 20,
+        "endLine": 487,
+        "endChar": 33
+      },
+      "revId": "85b962875bb80b796435851211b7391e90236f6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
