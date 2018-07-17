@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=5
-ExecStart={{.Agent}} --user {{.User}}
+ExecStart={{.Agent}} --server {{.Server}} --service-account {{.ServiceAccount}} --user {{.User}}
 
 [Install]
 WantedBy=multi-user.target
