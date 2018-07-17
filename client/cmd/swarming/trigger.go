@@ -121,7 +121,7 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.StringVar(&c.isolated, "isolated", "", "Hash of the .isolated to grab from the isolate server.")
 	c.Flags.Var(&c.dimensions, "dimension", "Dimension to filter slaves on.")
 	c.Flags.Var(&c.env, "env", "Environment variables to set.")
-	c.Flags.Int64Var(&c.priority, "priority", 100, "The lower value, the more important the task.")
+	c.Flags.Int64Var(&c.priority, "priority", 200, "The lower value, the more important the task.")
 	c.Flags.StringVar(&c.taskName, "task-name", "", "Display name of the task. Defaults to <base_name>/<dimensions>/<isolated hash>/<timestamp> if an  isolated file is provided, if a hash is provided, it defaults to <user>/<dimensions>/<isolated hash>/<timestamp>")
 	c.Flags.Var(&c.tags, "tag", "Tags to assign to the task.")
 	c.Flags.StringVar(&c.user, "user", "", "User associated with the task. Defaults to authenticated user on the server.")
