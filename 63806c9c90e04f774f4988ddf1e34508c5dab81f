@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e107c756_7a80ade3",
+        "filename": "logdog/client/annotee/processor.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-17T23:12:45Z",
+      "side": 0,
+      "message": "but but composability! reusability! programility! engineerity!",
+      "parentUuid": "13364e7a_ce6dff01",
+      "range": {
+        "startLine": 458,
+        "startChar": 0,
+        "endLine": 462,
+        "endChar": 1
+      },
+      "revId": "63806c9c90e04f774f4988ddf1e34508c5dab81f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "66ace991_474f6a09",
         "filename": "logdog/client/annotee/processor.go",
         "patchSetId": 1
