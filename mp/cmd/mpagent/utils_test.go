@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -24,8 +25,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	. "go.chromium.org/luci/common/testing/assertions"
-
-	"golang.org/x/net/context"
 )
 
 func TestAck(t *testing.T) {

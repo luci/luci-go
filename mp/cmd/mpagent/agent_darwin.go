@@ -15,9 +15,9 @@
 package main
 
 import (
-	"go.chromium.org/luci/common/errors"
+	"context"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/common/errors"
 )
 
 // getAgent returns an agent which runs on Mac OS.

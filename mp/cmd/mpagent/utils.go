@@ -16,12 +16,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"text/template"
 
 	machine "go.chromium.org/luci/common/api/machine_provider/machine/v1"
-
-	"golang.org/x/net/context"
 )
 
 // MachineProvider encapsulates a client for interacting with Machine Provider.

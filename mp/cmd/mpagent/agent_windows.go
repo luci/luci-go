@@ -15,12 +15,11 @@
 package main
 
 import (
+	"context"
 	"os/exec"
 	"syscall"
 
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 type WindowsStrategy struct {

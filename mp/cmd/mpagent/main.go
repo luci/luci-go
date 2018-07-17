@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -36,8 +37,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/teelogger"
-
-	"golang.org/x/net/context"
 )
 
 // Strategy is platform-specific agent implementation. See agent_*.go.
