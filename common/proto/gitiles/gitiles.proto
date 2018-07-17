@@ -38,14 +38,14 @@ message LogRequest {
     //   - a ref defined as n-th parent of R in the form "R~n".
     //     For example, "master~2" or "deadbeef~1".
     // Required.
-    string treeish = 3;
+    string committish = 3;
     // If specified, only commits not reachable from this commit (inclusive)
     // will be returned.
     //
     // In git's notation, this is
-    //   $ git log ^exclude_ancestors_of treeish
+    //   $ git log ^exclude_ancestors_of committish
     //  OR
-    //   $ git log exclude_ancestors_of..treeish
+    //   $ git log exclude_ancestors_of..committish
     // https://git-scm.com/docs/gitrevisions#gitrevisions-Theememtwo-dotRangeNotation
     //
     // For example, given this repo
@@ -54,7 +54,7 @@ message LogRequest {
     //        \
     //         X -> Y -> Z  == refs/heads/release
     //
-    // calling Log(treeish='refs/heads/release',
+    // calling Log(committish='refs/heads/release',
     //             exclude_ancestors_of='refs/heads/master')
     // will return ['Z', Y', 'X'].
     string exclude_ancestors_of = 2;

@@ -94,7 +94,7 @@ func TestTriggerBuild(t *testing.T) {
 		expectLog := func(new, old string, pageSize int, ids []string, errs ...error) *gomock.Call {
 			req := &gitilespb.LogRequest{
 				Project:            "b",
-				Treeish:            new,
+				Committish:         new,
 				ExcludeAncestorsOf: old,
 				PageSize:           int32(pageSize),
 			}

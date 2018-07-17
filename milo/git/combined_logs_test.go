@@ -82,7 +82,7 @@ func TestCombinedLogs(t *testing.T) {
 
 		mockLogCall := func(reqCommit string, respCommits []*gitpb.Commit) *gomock.Call {
 			return gitilesMock.EXPECT().Log(gomock.Any(), &gitilespb.LogRequest{
-				Project: "project", Treeish: reqCommit,
+				Project: "project", Committish: reqCommit,
 				PageSize: 100, ExcludeAncestorsOf: "refs/heads/master",
 			}).Return(&gitilespb.LogResponse{Log: respCommits}, nil)
 		}

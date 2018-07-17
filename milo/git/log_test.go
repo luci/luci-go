@@ -74,9 +74,9 @@ func TestLog(t *testing.T) {
 			})
 
 			req := &gitilespb.LogRequest{
-				Project:  "project",
-				Treeish:  "refs/heads/master",
-				PageSize: 100,
+				Project:    "project",
+				Committish: "refs/heads/master",
+				PageSize:   100,
 			}
 			res := &gitilespb.LogResponse{
 				Log: fakeCommits[1:101], // return 100 commits
@@ -122,9 +122,9 @@ func TestLog(t *testing.T) {
 
 			Convey("min is honored", func() {
 				req2 := &gitilespb.LogRequest{
-					Project:  "project",
-					Treeish:  fakeCommits[2].Id,
-					PageSize: 100,
+					Project:    "project",
+					Committish: fakeCommits[2].Id,
+					PageSize:   100,
 				}
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[2:102],
@@ -139,9 +139,9 @@ func TestLog(t *testing.T) {
 
 			Convey("request of item not in cache", func() {
 				req2 := &gitilespb.LogRequest{
-					Project:  "project",
-					Treeish:  fakeCommits[101].Id,
-					PageSize: 100,
+					Project:    "project",
+					Committish: fakeCommits[101].Id,
+					PageSize:   100,
 				}
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[101:201],
@@ -162,9 +162,9 @@ func TestLog(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				req2 := &gitilespb.LogRequest{
-					Project:  "project",
-					Treeish:  "refs/heads/master",
-					PageSize: 100,
+					Project:    "project",
+					Committish: "refs/heads/master",
+					PageSize:   100,
 				}
 				res2 := &gitilespb.LogResponse{
 					Log: fakeCommits[:100],
@@ -177,17 +177,17 @@ func TestLog(t *testing.T) {
 		})
 		Convey("paging", func() {
 			req1 := &gitilespb.LogRequest{
-				Project:  "project",
-				Treeish:  "refs/heads/master",
-				PageSize: 100,
+				Project:    "project",
+				Committish: "refs/heads/master",
+				PageSize:   100,
 			}
 			res1 := &gitilespb.LogResponse{
 				Log: fakeCommits[:100],
 			}
 			req2 := &gitilespb.LogRequest{
-				Project:  "project",
-				Treeish:  res1.Log[len(res1.Log)-1].Id,
-				PageSize: 100, // we always fetch 100
+				Project:    "project",
+				Committish: res1.Log[len(res1.Log)-1].Id,
+				PageSize:   100, // we always fetch 100
 			}
 			res2 := &gitilespb.LogResponse{
 				Log: fakeCommits[99:199],

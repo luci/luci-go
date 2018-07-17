@@ -221,10 +221,10 @@ func (l *logReq) call(c context.Context) ([]*gitpb.Commit, error) {
 	// cache miss, cache failure or corrupted cache.
 	// Call Gitiles.
 	req := &gitilespb.LogRequest{
-		Project:  l.project,
-		Treeish:  l.commitish,
-		PageSize: 100,
-		TreeDiff: l.withFiles,
+		Project:    l.project,
+		Committish: l.commitish,
+		PageSize:   100,
+		TreeDiff:   l.withFiles,
 	}
 	if l.ancestor != "" {
 		req.ExcludeAncestorsOf = l.ancestor

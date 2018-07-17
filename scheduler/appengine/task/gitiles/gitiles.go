@@ -339,7 +339,7 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 
 	commits, err := gitiles.PagingLog(c, g, gitilespb.LogRequest{
 		Project:            g.project,
-		Treeish:            newHead,
+		Committish:         newHead,
 		ExcludeAncestorsOf: oldHead, // empty if ref is new, but then maxCommits is 1.
 		PageSize:           int32(maxCommits),
 	}, maxCommits)
@@ -376,8 +376,8 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 
 	// Fetch log of newHead only.
 	commits, newErr := gitiles.PagingLog(c, g, gitilespb.LogRequest{
-		Project: g.project,
-		Treeish: newHead,
+		Project:    g.project,
+		Committish: newHead,
 	}, 1)
 	if newErr != nil {
 		ctl.DebugLog("Ref %s: failed to fetch even log of just new rev %s %s", ref, newHead, err)
@@ -385,8 +385,8 @@ func (s *refsState) newCommits(c context.Context, ctl task.Controller, g *gitile
 	}
 	// Fetch log of oldHead only.
 	_, errOld := gitiles.PagingLog(c, g, gitilespb.LogRequest{
-		Project: g.project,
-		Treeish: oldHead,
+		Project:    g.project,
+		Committish: oldHead,
 	}, 1)
 	switch status.Code(errOld) {
 	case codes.NotFound:

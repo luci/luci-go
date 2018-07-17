@@ -49,7 +49,7 @@ func TestPagingLog(t *testing.T) {
 			req := gitiles.LogRequest{
 				Project:            "repo",
 				ExcludeAncestorsOf: "master",
-				Treeish:            "8de6836858c99e48f3c58164ab717bda728e95dd",
+				Committish:         "8de6836858c99e48f3c58164ab717bda728e95dd",
 			}
 			commits, err := PagingLog(ctx, c, req, 10)
 			So(err, ShouldBeNil)
@@ -63,8 +63,8 @@ func TestPagingLog(t *testing.T) {
 
 		Convey("Page till limit", func() {
 			req := gitiles.LogRequest{
-				Project: "repo",
-				Treeish: "master",
+				Project:    "repo",
+				Committish: "master",
 			}
 			commits, err := PagingLog(ctx, c, req, 1)
 			So(err, ShouldBeNil)
