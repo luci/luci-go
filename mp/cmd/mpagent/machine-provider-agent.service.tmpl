@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=5
-ExecStart={{.Agent}} --user {{.User}}
+ExecStart={{.Agent}} -gce-service-account {{.ServiceAccount}} -server {{.Server}} -user {{.User}}
 
 [Install]
 WantedBy=multi-user.target
