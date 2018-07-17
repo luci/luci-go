@@ -25,8 +25,10 @@ import (
 	"unicode"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/client/annotee/annotation"
@@ -455,20 +457,39 @@ func (p *Processor) getStepHandler(step *annotation.Step, create bool) (*stepHan
 	return h, nil
 }
 
-func (p *Processor) closeStep(step *annotation.Step) {
-	if h, _ := p.getStepHandler(step, false); h != nil {
-		p.finishStepHandler(h, true)
-	}
-}
-
 func (p *Processor) finishStepHandler(h *stepHandler, closeSteps bool) {
 	// Remove this handler from our list. This will stop us from
-	// double-finishing when finish() calls Close(), which calls the StepClosed
-	// callback.
+	// double-finishing when we call Close() below, which calls the StepClosed
+	// callback, which calls finishStepHandler if the step is still in the map.
 	delete(p.stepHandlers, h.step)
 
+	if h.finished {
+		return
+	}
+
 	// Finish the step.
-	h.finish(closeSteps)
+	if closeSteps {
+		// Note: this is noop if the step is already closed. In particular, when
+		// we end up here through StepClosed callback.
+		h.step.Close(p.stepCloseTime())
+	}
+
+	// Close all streams associated with this handler.
+	if closeSteps {
+		h.closeAllStreams()
+	}
+
+	// Notify that the annotation state has updated (closed).
+	h.processor.annotationStateUpdated(annotation.UpdateStructural)
+	h.finished = true
+}
+
+func (p *Processor) stepCloseTime() *timestamp.Timestamp {
+	if p.astate.Offline {
+		return nil
+	}
+	// Note: p.astate.Clock is never nil here, see astate initialization in New().
+	return google.NewTimestamp(p.astate.Clock.Now())
 }
 
 func (p *Processor) createStream(name types.StreamName, archetype *streamproto.Flags) (streamclient.Stream, error) {
@@ -548,7 +569,9 @@ type annotationCallbacks struct {
 }
 
 func (c *annotationCallbacks) StepClosed(step *annotation.Step) {
-	c.closeStep(step)
+	if h, _ := c.getStepHandler(step, false); h != nil {
+		c.finishStepHandler(h, true)
+	}
 }
 
 func (c *annotationCallbacks) Updated(step *annotation.Step, ut annotation.UpdateType) {
@@ -624,25 +647,6 @@ func newStepHandler(p *Processor, step *annotation.Step) (*stepHandler, error) {
 
 func (h *stepHandler) String() string {
 	return h.step.String()
-}
-
-func (h *stepHandler) finish(closeSteps bool) {
-	if h.finished {
-		return
-	}
-
-	if closeSteps {
-		h.step.Close(nil)
-	}
-
-	// Close all streams associated with this handler.
-	if closeSteps {
-		h.closeAllStreams()
-	}
-
-	// Notify that the annotation state has updated (closed).
-	h.processor.annotationStateUpdated(annotation.UpdateStructural)
-	h.finished = true
 }
 
 func (h *stepHandler) writeBaseStream(s *Stream, line string) error {
