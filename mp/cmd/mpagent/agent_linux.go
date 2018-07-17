@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"os/user"
@@ -22,8 +23,6 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 type LinuxStrategy struct {
