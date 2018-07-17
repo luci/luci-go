@@ -37,6 +37,9 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/teelogger"
+	"go.chromium.org/luci/common/tsmon"
+
+	_ "go.chromium.org/luci/common/tsmon/metric"
 )
 
 // Strategy is platform-specific agent implementation. See agent_*.go.
@@ -99,6 +102,17 @@ func (agent *Agent) configureLogging(ctx context.Context) (context.Context, erro
 	}
 	config := gologger.LoggerConfig{Out: out}
 	return teelogger.Use(ctx, config.NewLogger), nil
+}
+
+// configureMonitoring configures tsmon monitoring.
+func (agent *Agent) configureMonitoring(ctx context.Context) error {
+	flags := tsmon.NewFlags()
+	flags.Flush = "manual"
+	flags.Target.AutoGenHostname = true
+	flags.Target.TargetType = "task"
+	flags.Target.TaskJobName = "default"
+	flags.Target.TaskServiceName = "mpagent"
+	return tsmon.InitializeFromFlags(ctx, &flags)
 }
 
 // configureSwarmingAutoStart configures auto-connect to the given Swarming server on reboot.
@@ -178,10 +192,10 @@ func (agent *Agent) initialize(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, err
 	}
-	agent.hostname, err = metadata.InstanceName()
-	if err != nil {
+	if err = agent.configureMonitoring(ctx); err != nil {
 		return ctx, err
 	}
+
 	// TODO(smut): Remove fallback on metadata server.
 	if agent.server == "" {
 		agent.server, err = metadata.Get("instance/attributes/machine_provider_server")
@@ -195,11 +209,17 @@ func (agent *Agent) initialize(ctx context.Context) (context.Context, error) {
 			return ctx, err
 		}
 	}
+
 	options := auth.Options{
 		GCEAccountName:         agent.serviceAccount,
 		ServiceAccountJSONPath: auth.GCEServiceAccount,
 	}
 	agent.client, err = auth.NewAuthenticator(ctx, auth.SilentLogin, options).Client()
+	if err != nil {
+		return ctx, err
+	}
+	metadataClient := metadata.NewClient(agent.client)
+	agent.hostname, err = metadataClient.InstanceName()
 	if err != nil {
 		return ctx, err
 	}
@@ -272,6 +292,7 @@ func (agent *Agent) poll(ctx context.Context) error {
 				return err
 			}
 		}
+		tsmon.Flush(ctx)
 		time.Sleep(time.Minute)
 	}
 }
@@ -302,6 +323,7 @@ func (agent *Agent) handle(ctx context.Context, instruction *machine.ComponentsM
 // Does not return except in case of error.
 func (agent *Agent) reboot(ctx context.Context) error {
 	logging.Infof(ctx, "Rebooting.")
+	tsmon.Flush(ctx)
 	for {
 		if err := agent.strategy.reboot(ctx); err != nil {
 			return err
