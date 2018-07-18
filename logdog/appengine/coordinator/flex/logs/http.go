@@ -465,6 +465,9 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
 	// Tell the browser to prefer https.
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	// Tell the browser where we can load scripts and images from.
+	// Of note, the LogDog logo and feedback script are both stored on Google Cloud Storage.
+	ctx.Writer.Header().Set("Content-Security-Policy", "default-src 'self' 'unsafe-inline' www.google-analytics.com storage.googleapis.com")
 	// Set the correct content type based off the log stream and format.
 	contentType := data.logStream.ContentType
 	if contentType == "text/plain" && data.options.format == formatHTML {
