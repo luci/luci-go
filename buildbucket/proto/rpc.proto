@@ -94,7 +94,7 @@ message SearchBuildsRequest {
   google.protobuf.FieldMask fields = 100;
 
   // Number of builds to return.
-  // Any value >100 is interpreted as 100.
+  // Defaults to 100.
   int32 page_size = 101;
 
   // Value of SearchBuildsResponse.next_page_token from the previous response.
