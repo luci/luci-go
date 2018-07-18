@@ -16,7 +16,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
@@ -71,7 +71,7 @@ func (t *taskOutputOption) Set(s string) error {
 	case "", "none":
 		*t = taskOutputNone
 	default:
-		return fmt.Errorf("invalid task output option: %s", s)
+		return errors.Reason("invalid task output option: %s", s).Err()
 	}
 	return nil
 }
@@ -161,29 +161,29 @@ func (c *collectRun) Parse(args *[]string) error {
 
 	// Validate timeout duration.
 	if c.timeout < 0 {
-		return fmt.Errorf("negative timeout is not allowed")
+		return errors.Reason("negative timeout is not allowed").Err()
 	}
 
 	// Validate arguments.
 	if c.jsonInput != "" {
 		data, err := ioutil.ReadFile(c.jsonInput)
 		if err != nil {
-			return fmt.Errorf("reading json input: %v", err)
+			return errors.Annotate(err, "reading json input").Err()
 		}
 		input := jsonDump{}
 		if err := json.Unmarshal(data, &input); err != nil {
-			return fmt.Errorf("unmarshalling json input: %v", err)
+			return errors.Annotate(err, "unmarshalling json input").Err()
 		}
 		// Modify args to contain all the task IDs.
 		*args = append(*args, input.TaskID)
 	}
 	for _, arg := range *args {
 		if !regexp.MustCompile("^[a-z0-9]+$").MatchString(arg) {
-			return errors.New("task ID %q must contain only [a-z0-9]")
+			return errors.Reason("task ID %q must contain only [a-z0-9]", arg).Err()
 		}
 	}
 	if len(*args) == 0 {
-		return errors.New("must specify at least one task id, either directly or through -json")
+		return errors.Reason("must specify at least one task id, either directly or through -json").Err()
 	}
 	return err
 }
@@ -295,7 +295,7 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		if timerResult.Err != nil {
 			err := timerResult.Err
 			if result.err != nil {
-				result.err = fmt.Errorf("%v: %v", timerResult.Err, result.err)
+				result.err = errors.Annotate(result.err, "%v", timerResult.Err).Err()
 			} else {
 				result.err = err
 			}
