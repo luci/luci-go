@@ -22,6 +22,30 @@
       "revId": "b2e223662b55ab6bfc157800c557b67db57b4fa7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23b26b6c_dd6c90bb",
+        "filename": "mp/cmd/mpagent/machine-provider-agent.bat.tmpl",
+        "patchSetId": 4
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-18T22:44:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "acbbdcfd_cef7e3eb",
+      "range": {
+        "startLine": 5,
+        "startChar": 12,
+        "endLine": 5,
+        "endChar": 14
+      },
+      "revId": "b2e223662b55ab6bfc157800c557b67db57b4fa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
