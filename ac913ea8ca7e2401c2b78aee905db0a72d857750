@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d217d57_55b604a4",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T21:46:00Z",
+      "side": 1,
+      "message": "This implies mpagent will be usable only on GCE (like it is now). When I first looked at the CL, I assumed you wanted to decouple mpagent from GCE.\n\nWhat\u0027s the purpose of the CL?",
+      "range": {
+        "startLine": 203,
+        "startChar": 26,
+        "endLine": 203,
+        "endChar": 48
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "573959d7_e45cb8fc",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T21:46:00Z",
+      "side": 1,
+      "message": "nit: I think this can be deduped a bit:\n\nsubstitutions :\u003d map[string]string{\n  \"Agent\": exe,\n  ...\n}",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 2
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33e8bd60_a3246693",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T21:46:00Z",
+      "side": 1,
+      "message": "Name of a GCE service account ...",
+      "range": {
+        "startLine": 330,
+        "startChar": 57,
+        "endLine": 330,
+        "endChar": 93
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
