@@ -38,12 +38,20 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 )
 
+// triggerResults is a set of results from using the trigger subcommand,
+// describing all of the tasks that were triggered successfully.
+type triggerResults struct {
+	// Tasks is a list of successfully triggered tasks represented as
+	// TriggerResult values.
+	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
+}
+
 var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
 // swarmingService is an interface intended to stub out the swarming API
 // bindings for testing.
 type swarmingService interface {
-	// TODO: Add support for trigger-related mocks.
+	NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error)
 	GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error)
 	GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -52,6 +60,10 @@ type swarmingService interface {
 type swarmingServiceImpl struct {
 	*http.Client
 	*swarming.Service
+}
+
+func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+	return s.Service.Tasks.New(req).Fields("task_result").Do()
 }
 
 func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
@@ -153,6 +165,19 @@ func (c *commonFlags) createAuthClient() (*http.Client, error) {
 	return auth.NewAuthenticator(ctx, auth.OptionalLogin, c.parsedAuthOpts).Client()
 }
 
+func (c *commonFlags) createSwarmingClient() (swarmingService, error) {
+	client, err := c.createAuthClient()
+	if err != nil {
+		return nil, err
+	}
+	s, err := swarming.New(client)
+	if err != nil {
+		return nil, err
+	}
+	s.BasePath = c.serverURL + swarmingAPISuffix
+	return &swarmingServiceImpl{client, s}, nil
+}
+
 func tagTransientGoogleAPIError(err error) error {
 	if gerr, _ := err.(*googleapi.Error); gerr != nil && gerr.Code >= 500 {
 		return transient.Tag.Apply(err)
@@ -162,10 +187,4 @@ func tagTransientGoogleAPIError(err error) error {
 
 func printError(a subcommands.Application, err error) {
 	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
-}
-
-type jsonDump struct {
-	TaskID  string
-	ViewURL string
-	Request swarming.SwarmingRpcsNewTaskRequest
 }
