@@ -27,18 +27,21 @@ import (
 // higher level APIs (command line flags, ensure files, etc) and internally in
 // the datastore.
 //
-// Instance IDs of packages that use SHA1 refs are just hex encoded SHA1
-// digests, in lowercase.
+// Its exact form depends on a hash being used:
+//   * SHA1: Instance IDs are hex encoded SHA1 digests, in lowercase.
+//   * SHA256: Instance IDs are URL-safe raw base64 encoded SHA256 digests.
 //
 // The ref is not checked for correctness. Use ValidateObjectRef if this is
 // a concern. Panics if something is not right.
 func ObjectRefToInstanceID(ref *api.ObjectRef) string {
-	switch ref.HashAlgo {
-	case api.HashAlgo_SHA1:
-		return ref.HexDigest
-	default:
-		panic(fmt.Sprintf("unrecognized hash algo %d", ref.HashAlgo))
+	if err := ValidateObjectRef(ref); err != nil {
+		panic(err)
 	}
+	iid, err := supportedAlgos[ref.HashAlgo].hexDigestToIID(ref.HexDigest)
+	if err != nil {
+		panic(err)
+	}
+	return iid
 }
 
 // InstanceIDToObjectRef is a reverse of ObjectRefToInstanceID.
@@ -46,12 +49,21 @@ func ObjectRefToInstanceID(ref *api.ObjectRef) string {
 // It doesn't check the instance ID for correctness. Use ValidateInstanceID if
 // this is a concern. Panics if something is not right.
 func InstanceIDToObjectRef(iid string) *api.ObjectRef {
-	ref := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA1, // TODO(vadimsh): Recognize more.
-		HexDigest: iid,
+	algo := algoByIIDLen[len(iid)]
+	if algo == 0 {
+		panic(fmt.Errorf("not a valid package instance ID %q - wrong length", iid))
 	}
-	if err := ValidateObjectRef(ref); err != nil {
-		panic(fmt.Sprintf("bad instance ID %q, the resulting ref is broken - %s", iid, err))
+	props := supportedAlgos[algo]
+
+	switch hex, err := props.iidToHexDigest(iid); {
+	case err != nil:
+		panic(fmt.Errorf("not a valid package instance ID %q - %s", iid, err))
+	case len(hex) != props.hexDigestLen:
+		panic(fmt.Errorf("after parsing %q, hex length %d != %d", iid, len(hex), props.hexDigestLen))
+	default:
+		return &api.ObjectRef{
+			HashAlgo:  algo,
+			HexDigest: hex,
+		}
 	}
-	return ref
 }

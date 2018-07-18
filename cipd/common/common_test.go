@@ -84,16 +84,34 @@ func TestValidatePackagePrefix(t *testing.T) {
 func TestValidateInstanceID(t *testing.T) {
 	t.Parallel()
 
-	Convey("ValidateInstanceID works", t, func() {
-		So(ValidateInstanceID(""), ShouldNotBeNil)
-		So(ValidateInstanceID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
-		So(ValidateInstanceID("0123456789abcdefaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldBeNil)
-		So(ValidateInstanceID("€aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidateInstanceID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidateInstanceID("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidateInstanceID("gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-		So(ValidateInstanceID("AAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), ShouldNotBeNil)
-	})
+	good := []string{
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"0123456789abcdefaaaaaaaaaaaaaaaaaaaaaaaa",
+		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMU",
+		"-dXsPJ3XDdzO3GLNqekTAmNfIXtE697vame6_4_HNUk",
+		"ytsp2xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0",
+	}
+	for _, iid := range good {
+		Convey(fmt.Sprintf("Works with %q", iid), t, func() {
+			So(ValidateInstanceID(iid), ShouldBeNil)
+		})
+	}
+
+	bad := []string{
+		"",
+		"€aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"AAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMa===", // no padding allowed
+		"/7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMU", // should be URL encoding, NOT std
+	}
+	for _, iid := range bad {
+		Convey(fmt.Sprintf("Fails with %q", iid), t, func() {
+			So(ValidateInstanceID(iid), ShouldNotBeNil)
+		})
+	}
 }
 
 func TestValidateInstanceTag(t *testing.T) {

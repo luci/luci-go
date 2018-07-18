@@ -42,28 +42,53 @@ func TestNewHash(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(algo, ShouldNotBeNil)
 	})
+
+	Convey("SHA256", t, func() {
+		algo, err := NewHash(api.HashAlgo_SHA256)
+		So(err, ShouldBeNil)
+		So(algo, ShouldNotBeNil)
+	})
 }
 
 func TestValidateObjectRef(t *testing.T) {
 	t.Parallel()
 
-	Convey("good", t, func() {
+	Convey("SHA1", t, func() {
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "0123456789abcdef0123456789abcdef00000000",
 		}), ShouldBeNil)
-	})
 
-	Convey("bad", t, func() {
-		So(ValidateObjectRef(nil), ShouldErrLike, "not provided")
-		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 12345}), ShouldErrLike, "unsupported")
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "abc",
 		}), ShouldErrLike, "expecting 40 chars, got 3")
+
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("A", 40), // uppercase are forbidden
 		}), ShouldErrLike, "wrong char")
+	})
+
+	Convey("SHA256", t, func() {
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
+		}), ShouldBeNil)
+
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: "abc",
+		}), ShouldErrLike, "expecting 64 chars, got 3")
+
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
+		}), ShouldErrLike, "wrong char")
+	})
+
+	Convey("Bad args", t, func() {
+		So(ValidateObjectRef(nil), ShouldErrLike, "not provided")
+		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 12345}), ShouldErrLike, "unsupported")
 	})
 }

@@ -21,22 +21,51 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TesRefIIDConversion(t *testing.T) {
+func TestRefIIDConversion(t *testing.T) {
 	t.Parallel()
 
 	Convey("SHA1 works", t, func() {
-		sha1 := strings.Repeat("a", 40)
+		sha1hex := strings.Repeat("a", 40)
+		sha1iid := sha1hex // iid and hex digest coincide for SHA1
 
 		So(ObjectRefToInstanceID(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
-		}), ShouldEqual, sha1)
+			HexDigest: sha1hex,
+		}), ShouldEqual, sha1iid)
 
-		So(InstanceIDToObjectRef(sha1), ShouldResemble, &api.ObjectRef{
+		So(InstanceIDToObjectRef(sha1iid), ShouldResemble, &api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
+			HexDigest: sha1hex,
 		})
+	})
+
+	Convey("SHA256 works", t, func() {
+		sha256hex := "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447"
+		sha256iid := "qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaGSpEc"
+
+		So(ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: sha256hex,
+		}), ShouldEqual, sha256iid)
+
+		So(InstanceIDToObjectRef(sha256iid), ShouldResemble, &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: sha256hex,
+		})
+	})
+
+	Convey("Wrong length in InstanceIDToObjectRef", t, func() {
+		So(func() {
+			InstanceIDToObjectRef("aaaa")
+		}, ShouldPanicLike, "wrong length")
+	})
+
+	Convey("Bad format in InstanceIDToObjectRef", t, func() {
+		So(func() {
+			InstanceIDToObjectRef("qUiQTy8PR5uPgZdpSzAYSw0u0cHNKh7A-4XSmaG????")
+		}, ShouldPanicLike, "illegal base64 data")
 	})
 }
