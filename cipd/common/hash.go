@@ -16,6 +16,7 @@ package common
 
 import (
 	"crypto/sha1"
+	"encoding/hex"
 	"hash"
 
 	"go.chromium.org/luci/common/errors"
@@ -23,6 +24,13 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
+
+// DefaultHashAlgo is a hash algorithm to use for deriving IDs of new package
+// instances.
+//
+// Currently SHA1, but will change to SHA256 soon. Older existing instances are
+// allowed to use some other hash algo.
+const DefaultHashAlgo = api.HashAlgo_SHA1
 
 // Supported algo => its digest length (in hex encoding) + factory function.
 var supportedAlgos = []struct {
@@ -39,6 +47,17 @@ func NewHash(algo api.HashAlgo) (hash.Hash, error) {
 		return nil, err
 	}
 	return supportedAlgos[algo].hash(), nil
+}
+
+// MustNewHash as like NewHash, but panics on errors.
+//
+// Appropriate for cases when the hash algo has already been validated.
+func MustNewHash(algo api.HashAlgo) hash.Hash {
+	h, err := NewHash(algo)
+	if err != nil {
+		panic(err)
+	}
+	return h
 }
 
 // ValidateHashAlgo returns a grpc-annotated error if the given algo is invalid.
@@ -84,4 +103,9 @@ func ValidateObjectRef(ref *api.ObjectRef) error {
 	}
 
 	return nil
+}
+
+// HexDigest returns a digest string as it is used in ObjectRef.
+func HexDigest(h hash.Hash) string {
+	return hex.EncodeToString(h.Sum(nil))
 }
