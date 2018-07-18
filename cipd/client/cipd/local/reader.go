@@ -30,9 +30,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // VerificationMode defines whether to verify hash or not.
@@ -370,47 +372,51 @@ func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
 	var dataSize int64
 	var err error
 
+	// Assert instanceID is well-formated if given. This is important for
+	// SkipHashVerification mode, where the user can pass whatever, and for
+	// VerifyHash that parses the instance ID.
+	if instanceID != "" {
+		if err = common.ValidateInstanceID(instanceID); err != nil {
+			return err
+		}
+	}
+
 	switch {
 	case instanceID == "":
-		// Calculate the default hash and use it as instance ID, regardless of
+		// Calculate the default hash and use it for the instance ID, regardless of
 		// the verification mode.
-		h := DefaultHash()
+		h := common.MustNewHash(common.DefaultHashAlgo)
 		dataSize, err = getHashAndSize(inst.data, h)
 		if err != nil {
 			return err
 		}
-		instanceID = InstanceIDFromHash(h)
+		inst.instanceID = common.ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  common.DefaultHashAlgo,
+			HexDigest: common.HexDigest(h),
+		})
 
 	case v == VerifyHash:
-		var h hash.Hash
-		h, err = HashForInstanceID(instanceID)
-		if err != nil {
-			return err
-		}
+		obj := common.InstanceIDToObjectRef(instanceID)
+		h := common.MustNewHash(obj.HashAlgo)
 		dataSize, err = getHashAndSize(inst.data, h)
 		if err != nil {
 			return err
 		}
-		if InstanceIDFromHash(h) != instanceID {
+		if common.HexDigest(h) != obj.HexDigest {
 			return ErrHashMismatch
 		}
+		inst.instanceID = instanceID // validated to match the data!
 
 	case v == SkipHashVerification:
 		dataSize, err = inst.data.Seek(0, os.SEEK_END)
 		if err != nil {
 			return err
 		}
+		inst.instanceID = instanceID // just trust
 
 	default:
 		return fmt.Errorf("invalid verification mode %q", v)
 	}
-
-	// Assert it is well-formated. This is important for SkipHashVerification
-	// mode, where the user can pass whatever.
-	if err = common.ValidateInstanceID(instanceID); err != nil {
-		return err
-	}
-	inst.instanceID = instanceID
 
 	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker
 	// before falling back to a generic (potentially slower) implementation. This

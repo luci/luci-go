@@ -1281,24 +1281,25 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 		}
 	}()
 
+	objRef := common.InstanceIDToObjectRef(pin.InstanceID)
+
 	logging.Infof(ctx, "cipd: resolving fetch URL for %s", pin)
 	resp, err := client.repo.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
 		Package:  pin.PackageName,
-		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		Instance: objRef,
 	}, expectedCodes)
 	if err != nil {
 		return humanErr(err)
 	}
 
-	hash, err := local.HashForInstanceID(pin.InstanceID)
-	if err != nil {
-		return
-	}
+	hash := common.MustNewHash(objRef.HashAlgo)
 	if err = client.storage.download(ctx, resp.SignedUrl, output, hash); err != nil {
 		return
 	}
-	if local.InstanceIDFromHash(hash) != pin.InstanceID {
-		err = fmt.Errorf("package hash mismatch")
+
+	// Make sure we fetched what we've asked for.
+	if digest := common.HexDigest(hash); objRef.HexDigest != digest {
+		err = fmt.Errorf("package hash mismatch: expecting %q, got %q", objRef.HexDigest, digest)
 	}
 	return
 }
