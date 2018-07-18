@@ -34,7 +34,7 @@ const (
 	mtPRPCText           = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingText
 
 	// JSONPBPrefix is prepended to a message in JSONPB format to avoid CSRF.
-	JSONPBPrefix = ")]}'\n"
+	JSONPBPrefix = ")]}'"
 )
 
 var bytesJSONPBPrefix = []byte(JSONPBPrefix)
