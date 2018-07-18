@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "9f700036_2f69a30b",
+        "filename": "cipd/common/hash.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-18T21:26:45Z",
+      "side": 1,
+      "message": "sha1.Size*2 and sha256.Size*2?\n\nNot sure if that\u0027s better... it certainly doesn\u0027t actually matter :)",
+      "range": {
+        "startLine": 42,
+        "startChar": 38,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2acdb3f4_1ae09d4b",
         "filename": "cipd/common/iid.go",
         "patchSetId": 6
@@ -18,6 +41,53 @@
         "startChar": 3,
         "endLine": 97,
         "endChar": 52
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eec2af35_ab723d86",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-18T21:26:45Z",
+      "side": 1,
+      "message": "specificially, panics if it\u0027s not (IMO this is correct for this function. Just wish go types were strict enough to make a ValidatedInstanceID that wasn\u0027t a pain in the ass to work with).",
+      "parentUuid": "2acdb3f4_1ae09d4b",
+      "range": {
+        "startLine": 97,
+        "startChar": 3,
+        "endLine": 97,
+        "endChar": 52
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4473b9bb_1d073dd6",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-18T21:26:45Z",
+      "side": 1,
+      "message": "I guess no SHA2-224 then 💩",
+      "range": {
+        "startLine": 133,
+        "startChar": 22,
+        "endLine": 133,
+        "endChar": 24
       },
       "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
