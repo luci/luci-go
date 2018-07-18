@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -31,6 +30,7 @@ import (
 	"go.chromium.org/luci/client/downloader"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/isolated"
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"
@@ -105,7 +105,7 @@ func parseTaskState(state string) (taskState, error) {
 	case "TIMED_OUT":
 		return stateTimedOut, nil
 	default:
-		return stateUnknown, fmt.Errorf("unrecognized state %q", state)
+		return stateUnknown, errors.Reason("unrecognized state: %q", state).Err()
 	}
 }
 
@@ -135,7 +135,7 @@ func (c *commonFlags) Parse() error {
 		return err
 	}
 	if c.serverURL == "" {
-		return errors.New("must provide -server")
+		return errors.Reason("must provide -server").Err()
 	}
 	s, err := lhttp.CheckURL(c.serverURL)
 	if err != nil {

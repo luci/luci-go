@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/kr/pretty"
@@ -23,6 +22,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
+	"go.chromium.org/luci/common/errors"
 )
 
 func cmdRequestShow(defaultAuthOpts auth.Options) *subcommands.Command {
@@ -47,7 +47,7 @@ func (c *requestShowRun) Parse(a subcommands.Application, args []string) error {
 		return err
 	}
 	if len(args) != 1 {
-		return errors.New("must only provide a task id")
+		return errors.Reason("must only provide a task id").Err()
 	}
 	return nil
 }
