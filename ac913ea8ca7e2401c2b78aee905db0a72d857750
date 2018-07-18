@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "c1e9d1a1_203ff0e8",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 203,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-18T22:19:29Z",
+      "side": 1,
+      "message": "To not have some parameters (like user, e.g. chrome-bot) discerned from CLI and others (like service account) from metadata. I don\u0027t think we\u0027ll need the agent to run on non-GCE any time soon. Whenever we do, this can be updated.",
+      "parentUuid": "8d217d57_55b604a4",
+      "range": {
+        "startLine": 203,
+        "startChar": 26,
+        "endLine": 203,
+        "endChar": 48
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "573959d7_e45cb8fc",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "847167f2_8c5bf758",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-18T22:19:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "573959d7_e45cb8fc",
+      "range": {
+        "startLine": 223,
+        "startChar": 1,
+        "endLine": 233,
+        "endChar": 2
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33e8bd60_a3246693",
         "filename": "mp/cmd/mpagent/main.go",
         "patchSetId": 1
@@ -68,6 +116,30 @@
       "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ffbe2d3f_79441369",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-18T22:19:29Z",
+      "side": 1,
+      "message": "Doesn\u0027t account imply account name? Anyways, added name.",
+      "parentUuid": "33e8bd60_a3246693",
+      "range": {
+        "startLine": 330,
+        "startChar": 57,
+        "endLine": 330,
+        "endChar": 93
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
