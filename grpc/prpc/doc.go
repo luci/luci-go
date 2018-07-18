@@ -53,7 +53,7 @@
 // pRPC protocol defines three protocol buffer encodings and media types.
 //  - Binary: "application/prpc; encoding=binary" (default).
 //  - JSON:   "application/prpc; encoding=json"   or "application/json"
-//    A response body MUST have `)]}'` prefix to prevent XSSI.
+//    A response body MUST have `)]}'\n` prefix to prevent XSSI.
 //  - Text:   "application/prpc; encoding=text"
 // A pRPC server MUST support Binary and SHOULD support JSON and Text.
 //
