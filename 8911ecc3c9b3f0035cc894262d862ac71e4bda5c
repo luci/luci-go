@@ -22,6 +22,30 @@
       "revId": "8911ecc3c9b3f0035cc894262d862ac71e4bda5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "97bbbb5e_a0f5b966",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 295,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-18T23:25:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6bd8fee4_acbe32b3",
+      "range": {
+        "startLine": 295,
+        "startChar": 2,
+        "endLine": 295,
+        "endChar": 18
+      },
+      "revId": "8911ecc3c9b3f0035cc894262d862ac71e4bda5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
