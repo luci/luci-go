@@ -86,21 +86,9 @@ func validatePathishString(p, title string) error {
 	return nil
 }
 
-// ValidateInstanceID returns error if a string isn't a valid instance id.
-func ValidateInstanceID(s string) error {
-	// Instance id is SHA1 hex digest currently.
-	if len(s) != 40 {
-		return fmt.Errorf("not a valid package instance ID %q: not 40 bytes", s)
-	}
-	for _, c := range s {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-			return fmt.Errorf("not a valid package instance ID %q: wrong char %c", s, c)
-		}
-	}
-	return nil
-}
-
 // ValidateFileHash returns error if a string isn't a valid exe hash.
+//
+// TODO(vadimsh): Switch to SHA256 eventually.
 func ValidateFileHash(s string) error {
 	// file hashes are SHA1 hex digests currently.
 	if len(s) != 40 {
