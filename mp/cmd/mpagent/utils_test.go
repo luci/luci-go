@@ -161,14 +161,10 @@ func TestPoll(t *testing.T) {
 func TestSubstitute(t *testing.T) {
 	t.Parallel()
 
-	substitutions := struct {
-		Field1 string
-		Field2 string
-		Field3 string
-	}{
-		Field1: "Value 1",
-		Field2: "Value 2",
-		Field3: "Value 3",
+	substitutions := map[string]string{
+		"Field1": "Value 1",
+		"Field2": "Value 2",
+		"Field3": "Value 3",
 	}
 
 	Convey("substitute works", t, func() {

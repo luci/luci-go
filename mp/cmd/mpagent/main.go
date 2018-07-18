@@ -66,6 +66,10 @@ type Agent struct {
 	logsDir string
 	// mp is the client to use to communicate with the Machine Provider server.
 	mp *MachineProvider
+	// server is the Machine Provider server to communicate with.
+	server string
+	// serviceAccount is the name of the service account to authenticate HTTP requests with.
+	serviceAccount string
 	// swarmingAutoStartPath is the path to install this agent's Swarming auto-start config to.
 	swarmingAutoStartPath string
 	// swarmingAutoStartTemplate is the name of the asset containing this agent's Swarming auto-start template.
@@ -111,12 +115,9 @@ func (agent *Agent) configureSwarmingAutoStart(ctx context.Context, server strin
 		return err
 	}
 
-	substitutions := struct {
-		Path string
-		User string
-	}{
-		Path: path,
-		User: agent.swarmingUser,
+	substitutions := map[string]string{
+		"Path": path,
+		"User": agent.swarmingUser,
 	}
 	content, err := substituteAsset(ctx, agent.swarmingAutoStartTemplate, substitutions)
 	if err != nil {
@@ -181,23 +182,28 @@ func (agent *Agent) initialize(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, err
 	}
-	server, err := metadata.Get("instance/attributes/machine_provider_server")
-	if err != nil {
-		return ctx, err
+	// TODO(smut): Remove fallback on metadata server.
+	if agent.server == "" {
+		agent.server, err = metadata.Get("instance/attributes/machine_provider_server")
+		if err != nil {
+			return ctx, err
+		}
 	}
-	serviceAccount, err := metadata.Get("instance/attributes/machine_service_account")
-	if err != nil {
-		return ctx, err
+	if agent.serviceAccount == "" {
+		agent.serviceAccount, err = metadata.Get("instance/attributes/machine_service_account")
+		if err != nil {
+			return ctx, err
+		}
 	}
 	options := auth.Options{
-		GCEAccountName:         serviceAccount,
+		GCEAccountName:         agent.serviceAccount,
 		ServiceAccountJSONPath: auth.GCEServiceAccount,
 	}
 	agent.client, err = auth.NewAuthenticator(ctx, auth.SilentLogin, options).Client()
 	if err != nil {
 		return ctx, err
 	}
-	agent.mp, err = getClient(ctx, agent.client, server)
+	agent.mp, err = getClient(ctx, agent.client, agent.server)
 	if err != nil {
 		return ctx, err
 	}
@@ -211,12 +217,11 @@ func (agent *Agent) install(ctx context.Context) error {
 		return err
 	}
 
-	substitutions := struct {
-		Agent string
-		User  string
-	}{
-		Agent: exe,
-		User:  agent.swarmingUser,
+	substitutions := map[string]string{
+		"Agent":          exe,
+		"Server":         agent.server,
+		"ServiceAccount": agent.serviceAccount,
+		"User":           agent.swarmingUser,
 	}
 	content, err := substituteAsset(ctx, agent.agentAutoStartTemplate, substitutions)
 	if err != nil {
@@ -311,8 +316,10 @@ func Main(args []string) int {
 	var err error
 
 	var install bool
-	var user string
+	var server, serviceAccount, user string
 	flag.BoolVar(&install, "install", false, "Install the agent and exit.")
+	flag.StringVar(&server, "server", "", "Machine Provider server URL.")
+	flag.StringVar(&serviceAccount, "gce-service-account", "", "GCE service account name to authenticate with.")
 	flag.StringVar(&user, "user", "chrome-bot", "User to set up Swarming for.")
 	flag.Parse()
 
@@ -331,6 +338,8 @@ func Main(args []string) int {
 		logging.Errorf(ctx, "%s", err.Error())
 		return 1
 	}
+	agent.server = server
+	agent.serviceAccount = serviceAccount
 	agent.swarmingUser = user
 
 	ctx, err = agent.initialize(ctx)

@@ -2,4 +2,4 @@
 ::
 :: Runs the Machine Provider agent process.
 
-@{{.Agent}} --user {{.User}}
+@{{.Agent}} -gce-service-account {{.ServiceAccount}} -server {{.Server}} -user {{.User}}
