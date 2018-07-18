@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c1ebe6cd_9fc08ea8",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 470,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T23:34:31Z",
+      "side": 1,
+      "message": "This is way too permissive, since anyone can upload any files to Google Storage and serve them through storage.googleapis.com.\n\nFor logo, we should upload it to GAE \u0027static\u0027 module and serve it from the logdog domain. It would also be faster, I think.\n\nFor feedback script, we can change URL in the snipped to https://crdx-feedback.appspot.com.storage.googleapis.com/feedback.js and whitelist only crdx-feedback.appspot.com.storage.googleapis.com.\n\nFinally, instead of unsafe-inline we should use nonces, they are very easy to use.",
+      "range": {
+        "startLine": 470,
+        "startChar": 113,
+        "endLine": 470,
+        "endChar": 135
+      },
+      "revId": "1174ff320fdd9a057631c5c0b24701926f8c3d5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
