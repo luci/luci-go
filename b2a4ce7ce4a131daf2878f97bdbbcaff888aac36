@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0828587d_1335ccb4",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-18T19:01:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c4ee85a_e315ec7e",
+      "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9e869491_7b3c1c51",
         "filename": "client/cmd/swarming/common.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9b47ca2d_bef1c5a6",
+        "filename": "client/cmd/swarming/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-18T19:01:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9e869491_7b3c1c51",
+      "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "d350d0c2_a763f440",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-18T19:01:40Z",
+      "side": 1,
+      "message": "WDYT about slightly different behavior, like best-effort applying whatever is specified to _all_ swarming tasks if taskList is available, sort of like an override? We kind of have a use-case for this, and we can document the behavior in the UX.",
+      "parentUuid": "5801494f_b20ee1e6",
+      "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fd612782_1b01123b",
         "filename": "client/cmd/swarming/trigger.go",
         "patchSetId": 4
@@ -67,6 +121,24 @@
       "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d8cea3c_82c5c4bc",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-18T19:01:40Z",
+      "side": 1,
+      "message": "Done, I switched everything to just use TaskRequestMetadata (which includes the task result) instead of the custom TriggerResult thing, so we get the task result for free.",
+      "parentUuid": "fd612782_1b01123b",
+      "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
