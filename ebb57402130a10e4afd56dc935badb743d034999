@@ -22,6 +22,30 @@
       "revId": "ebb57402130a10e4afd56dc935badb743d034999",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "25313b5d_374842ed",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-18T19:01:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "025892ec_5f8ef535",
+      "range": {
+        "startLine": 182,
+        "startChar": 33,
+        "endLine": 182,
+        "endChar": 35
+      },
+      "revId": "ebb57402130a10e4afd56dc935badb743d034999",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
