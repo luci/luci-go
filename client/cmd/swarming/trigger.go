@@ -21,6 +21,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -108,6 +109,9 @@ type triggerRun struct {
 	dumpJSON    string
 	cipdPackage stringmapflag.Value
 	outputs     common.Strings
+
+	// Tasks file.
+	tasksFile string
 }
 
 func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
@@ -136,12 +140,18 @@ func (c *triggerRun) Init(defaultAuthOpts auth.Options) {
 	c.Flags.Var(&c.cipdPackage, "cipd-package",
 		"(repeatable) CIPD packages to install on the swarming bot. This takes a parameter of `[subdir:]pkgname=version`. "+
 			"Using an empty version will remove the package. The subdir is optional and defaults to '.'.")
+	c.Flags.StringVar(&c.tasksFile, "tasks-file", "", "A file containing a JSON list of tasks to trigger")
 }
 
 func (c *triggerRun) Parse(args []string) error {
 	var err error
 	if err := c.commonFlags.Parse(); err != nil {
 		return err
+	}
+
+	// Skip all the parsing if we have a tasks file; we don't care.
+	if c.tasksFile != "" {
+		return nil
 	}
 
 	// Validate options and args.
@@ -183,32 +193,29 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
-	request, err := c.processTriggerOptions(args, env)
-	if err != nil {
-		return err
+
+	var requests []*swarming.SwarmingRpcsNewTaskRequest
+	if c.tasksFile != "" {
+		var err error
+		requests, err = processTasksFile(c.tasksFile)
+		if err != nil {
+			return err
+		}
+	} else {
+		requests = []*swarming.SwarmingRpcsNewTaskRequest{
+			c.processTriggerOptions(args, env),
+		}
 	}
 
-	result, err := c.createNewTask(request)
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("Triggered task: %s\n\n", result.TaskId)
-	viewURL := fmt.Sprintf("%s/user/task/%s", c.serverURL, result.TaskId)
-
-	if len(c.dumpJSON) > 0 {
+	results, merr := c.createNewTasks(requests)
+	if c.dumpJSON != "" {
 		dump, err := os.Create(c.dumpJSON)
 		if err != nil {
 			return err
 		}
 		defer dump.Close()
 
-		data := jsonDump{
-			TaskID:  result.TaskId,
-			ViewURL: viewURL,
-			Request: *request,
-		}
-
+		data := TriggerResults{Tasks: results}
 		b, err := json.MarshalIndent(&data, "", "  ")
 		if err != nil {
 			return errors.Annotate(err, "marshalling trigger result").Err()
@@ -225,19 +232,19 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		}
 	} else if !c.defaultFlags.Quiet {
 		fmt.Println("To collect results use:")
-		fmt.Printf("  swarming collect -server %s %s\n", c.serverURL, result.TaskId)
-	}
-
-	if !c.defaultFlags.Quiet {
-		fmt.Printf("or visit: %s\n", viewURL)
+		fmt.Printf("  swarming collect -server %s", c.serverURL)
+		for _, result := range results {
+			fmt.Printf(" %s", result.TaskID)
+		}
+		fmt.Println()
 	}
 
 	duration := time.Since(start)
 	log.Printf("Duration: %s\n", units.Round(duration, time.Millisecond))
-	return err
+	return merr
 }
 
-func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *swarming.SwarmingRpcsNewTaskRequest {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
 	var extraArgs []string
@@ -248,11 +255,11 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		extraArgs = args
 	}
 
-	if len(c.taskName) == 0 {
+	if c.taskName != "" {
 		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
 	}
 
-	if len(c.isolated) > 0 {
+	if c.isolated != "" {
 		if len(c.taskName) == 0 {
 			c.taskName = fmt.Sprintf("%s/%s", c.taskName, c.isolated)
 		}
@@ -292,7 +299,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
 
-	request := swarming.SwarmingRpcsNewTaskRequest{
+	return &swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.hardTimeout,
 		Name:           c.taskName,
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
@@ -301,28 +308,56 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Tags:           c.tags,
 		User:           c.user,
 	}
-	return &request, nil
 }
 
-func (c *triggerRun) createNewTask(request *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+func (c *triggerRun) createNewTask(request *swarming.SwarmingRpcsNewTaskRequest) (TriggerResult, error) {
 	client, err := c.createAuthClient()
 	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
+		return nil, err
 	}
 
 	s, err := swarming.New(client)
 	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
+		return nil, err
 	}
 	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
 
 	call := s.Tasks.New(request).Fields("task_result")
 	result, err := call.Do()
 	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
+		return nil, err
 	}
+	return TriggerResult{
+		TaskID: result.TaskId,
+		ViewURL: fmt.Sprintf("%s/user/task/%s", c.serverURL, result.TaskId),
+		Request: *request,
+	}, nil
+}
 
-	// Recursively look at error and log.
-
-	return result, nil
+func (c *triggerRun) createNewTasks(requests []*swarming.SwarmingRpcsNewTaskRequest) ([]TriggerResult, errors.MultiError) {
+	var results []TriggerResult
+	var merr errors.MultiError
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for _, request := range requests {
+		wg.Add(1)
+		go func() {
+			result, err := c.createNewTask(request)
+			if err != nil {
+				mu.Lock()
+				merr = append(merr, err)
+				mu.Unlock()
+				return
+			}
+			mu.Lock()
+			results = append(results, result)
+			if !c.defaultFlags.Quiet {
+				fmt.Printf("Triggered task: %s\n", result.TaskID)
+			}
+			mu.Unlock()
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	return results, merr
 }
