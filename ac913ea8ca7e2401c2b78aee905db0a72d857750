@@ -140,6 +140,30 @@
       "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc657358_1d286b81",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T22:23:48Z",
+      "side": 1,
+      "message": "The keyword that is missing in the help string is \"GCE\". This property controls which GCE account to pick (rather than some regular service account).\n\nIn fact, it would be better if this flag is named -gce-service-account. Because many other CLI tools use similarly named -service-account-json for NON GCE accounts.",
+      "parentUuid": "ffbe2d3f_79441369",
+      "range": {
+        "startLine": 330,
+        "startChar": 57,
+        "endLine": 330,
+        "endChar": 93
+      },
+      "revId": "ac913ea8ca7e2401c2b78aee905db0a72d857750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
