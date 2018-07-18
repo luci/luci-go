@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"os"
 	"testing"
 
@@ -24,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/flag/stringmapflag"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func init() {
@@ -130,7 +130,7 @@ func TestTriggerParse_NoArgs(t *testing.T) {
 		c.Init(auth.Options{})
 
 		err := c.Parse([]string(nil))
-		So(err, ShouldResemble, errors.New("must provide -server"))
+		So(err, ShouldErrLike, "must provide -server")
 	})
 }
 
@@ -142,7 +142,7 @@ func TestTriggerParse_NoDimension(t *testing.T) {
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldResemble, errors.New("please at least specify one dimension"))
+		So(err, ShouldErrLike, "please at least specify one dimension")
 	})
 }
 
@@ -157,7 +157,7 @@ func TestTriggerParse_NoIsolated(t *testing.T) {
 		})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldResemble, errors.New("please use -isolated to specify hash or -raw-cmd"))
+		So(err, ShouldErrLike, "please use -isolated to specify hash or -raw-cmd")
 	})
 }
 
@@ -174,7 +174,7 @@ func TestTriggerParse_RawNoArgs(t *testing.T) {
 		})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldResemble, errors.New("arguments with -raw-cmd should be passed after -- as command delimiter"))
+		So(err, ShouldErrLike, "arguments with -raw-cmd should be passed after -- as command delimiter")
 	})
 }
 
