@@ -104,10 +104,10 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
+			return nil, status.Errorf(codes.NotFound, "machine %q does not exist", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", h.Os)
 		}
 		return nil, errors.Annotate(err, "failed to create physical host").Err()
 	}
@@ -276,10 +276,10 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 				return nil, status.Errorf(codes.AlreadyExists, "duplicate physical host for machine %q", h.Machine)
 			case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 				// e.g. "Error 1048: Column 'machine_id' cannot be null".
-				return nil, status.Errorf(codes.NotFound, "unknown machine %q", h.Machine)
+				return nil, status.Errorf(codes.NotFound, "machine %q does not exist", h.Machine)
 			case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 				// e.g. "Error 1048: Column 'os_id' cannot be null".
-				return nil, status.Errorf(codes.NotFound, "unknown operating system %q", h.Os)
+				return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", h.Os)
 			}
 			return nil, errors.Annotate(err, "failed to update physical host").Err()
 		}
@@ -305,7 +305,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated physical host").Err()
 	case len(hosts) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown physical host %q for VLAN %d", h.Name, h.Vlan)
+		return nil, status.Errorf(codes.NotFound, "physical host %q does not exist on VLAN %d", h.Name, h.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {

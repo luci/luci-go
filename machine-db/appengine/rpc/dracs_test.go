@@ -209,7 +209,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "unknown machine")
+			So(err, ShouldErrLike, "does not exist")
 			So(res, ShouldBeNil)
 		})
 
@@ -228,7 +228,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
-			So(err, ShouldErrLike, "unknown switch")
+			So(err, ShouldErrLike, "does not exist")
 			So(res, ShouldBeNil)
 		})
 

@@ -79,7 +79,7 @@ func (t *RacksTable) computeChanges(c context.Context, datacenters []*config.Dat
 		for _, cfg := range dc.Rack {
 			id, ok := t.datacenters[dc.Name]
 			if !ok {
-				return errors.Reason("failed to determine datacenter ID for rack %q: unknown datacenter %q", cfg.Name, dc.Name).Err()
+				return errors.Reason("failed to determine datacenter ID for rack %q: datacenter %q does not exist", cfg.Name, dc.Name).Err()
 			}
 			cfgs[cfg.Name] = &Rack{
 				Rack: config.Rack{

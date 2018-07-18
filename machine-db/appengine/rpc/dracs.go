@@ -90,10 +90,10 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", d.MacAddress)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown machine %q", d.Machine)
+			return nil, status.Errorf(codes.NotFound, "machine %q does not exist", d.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
+			return nil, status.Errorf(codes.NotFound, "switch %q does not exist", d.Switch)
 		}
 		return nil, errors.Annotate(err, "failed to create DRAC").Err()
 	}
@@ -205,10 +205,10 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 			return nil, status.Errorf(codes.AlreadyExists, "duplicate MAC address %q", d.MacAddress)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown machine %q", d.Machine)
+			return nil, status.Errorf(codes.NotFound, "machine %q does not exist", d.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'switch_id'"):
 			// e.g. "Error 1048: Column 'switch_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "unknown switch %q", d.Switch)
+			return nil, status.Errorf(codes.NotFound, "switch %q does not exist", d.Switch)
 		}
 		return nil, errors.Annotate(err, "failed to update DRAC").Err()
 	}
@@ -223,7 +223,7 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated DRAC").Err()
 	case len(dracs) == 0:
-		return nil, status.Errorf(codes.NotFound, "unknown DRAC %q for VLAN %d", d.Name, d.Vlan)
+		return nil, status.Errorf(codes.NotFound, "DRAC %q does not exist on VLAN %d", d.Name, d.Vlan)
 	}
 
 	if err := tx.Commit(); err != nil {

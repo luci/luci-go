@@ -96,11 +96,11 @@ func (t *KVMsTable) computeChanges(c context.Context, datacenters []*config.Data
 			}
 			pId, ok := t.platforms[cfg.Platform]
 			if !ok {
-				return errors.Reason("failed to determine platform ID for KVM %q: unknown platform %q", cfg.Name, cfg.Platform).Err()
+				return errors.Reason("failed to determine platform ID for KVM %q: platform %q does not exist", cfg.Name, cfg.Platform).Err()
 			}
 			rId, ok := t.racks[cfg.Rack]
 			if !ok {
-				return errors.Reason("failed to determine rack ID for KVM %q: unknown rack %q", cfg.Name, cfg.Rack).Err()
+				return errors.Reason("failed to determine rack ID for KVM %q: rack %q does not exist", cfg.Name, cfg.Rack).Err()
 			}
 			cfgs[cfg.Name] = &KVM{
 				KVM: config.KVM{
