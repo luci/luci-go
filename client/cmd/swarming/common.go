@@ -15,6 +15,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -37,6 +38,14 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
 )
+
+// triggerResults is a set of results from using the trigger subcommand,
+// describing all of the tasks that were triggered successfully.
+type triggerResults struct {
+	// Tasks is a list of successfully triggered tasks represented as
+	// TriggerResult values.
+	Tasks []*swarming.SwarmingRpcsTaskRequestMetadata `json:"tasks"`
+}
 
 var swarmingAPISuffix = "/_ah/api/swarming/v1/"
 
@@ -164,8 +173,20 @@ func printError(a subcommands.Application, err error) {
 	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 }
 
-type jsonDump struct {
-	TaskID  string
-	ViewURL string
-	Request swarming.SwarmingRpcsNewTaskRequest
+func processTasksFile(tasksFile string) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
+	file, err := os.Open(tasksFile)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to open tasks file").Err()
+	}
+
+	dec := json.NewDecoder(file)
+	dec.DisallowUnknownFields()
+
+	var requests struct{
+		Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
+	}
+	if err := dec.Decode(&requests); err != nil {
+		return nil, errors.Annotate(err, "decoding tasks file").Err()
+	}
+	return requests.Requests, nil
 }
