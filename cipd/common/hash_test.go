@@ -15,7 +15,6 @@
 package common
 
 import (
-	"strings"
 	"testing"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -42,28 +41,10 @@ func TestNewHash(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(algo, ShouldNotBeNil)
 	})
-}
 
-func TestValidateObjectRef(t *testing.T) {
-	t.Parallel()
-
-	Convey("good", t, func() {
-		So(ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: "0123456789abcdef0123456789abcdef00000000",
-		}), ShouldBeNil)
-	})
-
-	Convey("bad", t, func() {
-		So(ValidateObjectRef(nil), ShouldErrLike, "not provided")
-		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 12345}), ShouldErrLike, "unsupported")
-		So(ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: "abc",
-		}), ShouldErrLike, "expecting 40 chars, got 3")
-		So(ValidateObjectRef(&api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: strings.Repeat("A", 40), // uppercase are forbidden
-		}), ShouldErrLike, "wrong char")
+	Convey("SHA256", t, func() {
+		algo, err := NewHash(api.HashAlgo_SHA256)
+		So(err, ShouldBeNil)
+		So(algo, ShouldNotBeNil)
 	})
 }
