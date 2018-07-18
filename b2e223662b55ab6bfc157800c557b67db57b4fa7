@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "acbbdcfd_cef7e3eb",
+        "filename": "mp/cmd/mpagent/machine-provider-agent.bat.tmpl",
+        "patchSetId": 4
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-18T22:31:04Z",
+      "side": 1,
+      "message": "nit: for Go binaries it is customary to use \u0027-\u0027, e.g. \u0027-gce-service-account\u0027. No big deal though.",
+      "range": {
+        "startLine": 5,
+        "startChar": 12,
+        "endLine": 5,
+        "endChar": 14
+      },
+      "revId": "b2e223662b55ab6bfc157800c557b67db57b4fa7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
