@@ -170,12 +170,14 @@ func (c *collectRun) Parse(args *[]string) error {
 		if err != nil {
 			return errors.Annotate(err, "reading json input").Err()
 		}
-		input := jsonDump{}
+		input := triggerResults{}
 		if err := json.Unmarshal(data, &input); err != nil {
 			return errors.Annotate(err, "unmarshalling json input").Err()
 		}
 		// Modify args to contain all the task IDs.
-		*args = append(*args, input.TaskID)
+		for _, task := range input.Tasks {
+			*args = append(*args, task.TaskId)
+		}
 	}
 	for _, arg := range *args {
 		if !regexp.MustCompile("^[a-z0-9]+$").MatchString(arg) {
@@ -327,16 +329,10 @@ func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
 
 func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 	// Set up swarming service.
-	client, err := c.createAuthClient()
+	service, err := c.createSwarmingClient()
 	if err != nil {
 		return err
 	}
-	s, err := swarming.New(client)
-	if err != nil {
-		return err
-	}
-	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
-	service := &swarmingServiceImpl{client, s}
 
 	// Prepare context.
 	ctx := context.Background()
