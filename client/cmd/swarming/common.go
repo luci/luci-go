@@ -15,7 +15,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -164,8 +166,26 @@ func printError(a subcommands.Application, err error) {
 	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
 }
 
-type jsonDump struct {
-	TaskID  string
-	ViewURL string
-	Request swarming.SwarmingRpcsNewTaskRequest
+func processTasksFile(tasksFile string) ([]*swarming.SwarmingRpcsNewTaskRequest, error) {
+	var requests struct{
+		Requests []*swarming.SwarmingRpcsNewTaskRequest `json:"requests"`
+	}
+	bytes, err := ioutil.ReadFile(tasksFile)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read tasks file").Err()
+	}
+	if err := json.Unmarshal(bytes, &requests); err != nil {
+		return nil, errors.Annotate(err, "parsing tasks file").Err()
+	}
+	return requests.Requests, nil
+}
+
+type TriggerResults struct {
+	Tasks []*TriggerResult `json:"tasks"`
+}
+
+type TriggerResult struct {
+	TaskID  string `json:"task_id"`
+	ViewURL string `json:"view_url"`
+	Request swarming.SwarmingRpcsNewTaskRequest `json:"request"`
 }

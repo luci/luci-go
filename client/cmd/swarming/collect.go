@@ -170,12 +170,14 @@ func (c *collectRun) Parse(args *[]string) error {
 		if err != nil {
 			return errors.Annotate(err, "reading json input").Err()
 		}
-		input := jsonDump{}
+		input := TriggerResults{}
 		if err := json.Unmarshal(data, &input); err != nil {
 			return errors.Annotate(err, "unmarshalling json input").Err()
 		}
 		// Modify args to contain all the task IDs.
-		*args = append(*args, input.TaskID)
+		for _, task := range input.Tasks {
+			*args = append(*args, task.TaskID)
+		}
 	}
 	for _, arg := range *args {
 		if !regexp.MustCompile("^[a-z0-9]+$").MatchString(arg) {
