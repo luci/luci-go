@@ -16,7 +16,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -30,6 +29,7 @@ import (
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/data/text/units"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/flag/stringmapflag"
 )
 
@@ -146,13 +146,13 @@ func (c *triggerRun) Parse(args []string) error {
 
 	// Validate options and args.
 	if c.dimensions == nil {
-		return errors.New("please at least specify one dimension")
+		return errors.Reason("please at least specify one dimension").Err()
 	}
 
 	if c.rawCmd && len(args) == 0 {
-		return errors.New("arguments with -raw-cmd should be passed after -- as command delimiter")
+		return errors.Reason("arguments with -raw-cmd should be passed after -- as command delimiter").Err()
 	} else if !c.rawCmd && len(c.isolated) == 0 {
-		return errors.New("please use -isolated to specify hash or -raw-cmd")
+		return errors.Reason("please use -isolated to specify hash or -raw-cmd").Err()
 	}
 
 	if len(c.user) == 0 {
@@ -211,12 +211,12 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 
 		b, err := json.MarshalIndent(&data, "", "  ")
 		if err != nil {
-			return errors.New("could not marshal data")
+			return errors.Annotate(err, "marshalling trigger result").Err()
 		}
 
 		_, err = dump.Write(b)
 		if err != nil {
-			return errors.New("could not dump response to json file")
+			return errors.Annotate(err, "writing json dump").Err()
 		}
 
 		if !c.defaultFlags.Quiet {
