@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "319aa622_6ed55996",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-07-19T23:59:14Z",
+      "side": 1,
+      "message": "Existing databases updated with:\nALTER TABLE hostnames DROP INDEX name;\nALTER TABLE hostnames ADD CONSTRAINT name UNIQUE (name);",
+      "revId": "ac66ba4128084a85521840610ac196cb8befc3b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
