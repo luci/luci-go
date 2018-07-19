@@ -46,8 +46,8 @@ func TestOperation(t *testing.T) {
 				ID:        123,
 				Status:    api.UploadStatus_UPLOADING,
 				UploadURL: "http://upload-url.example.com",
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("a", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
 				Error:     "zzz",
 			}
 
