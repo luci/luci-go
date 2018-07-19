@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "e8b21e40_cf2b7f52",
+        "filename": "client/cmd/swarming/trigger.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T02:57:00Z",
+      "side": 1,
+      "message": "As per offline discussion, I moved all this code into its own subcommand.",
+      "parentUuid": "d350d0c2_a763f440",
+      "revId": "b2a4ce7ce4a131daf2878f97bdbbcaff888aac36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fd612782_1b01123b",
         "filename": "client/cmd/swarming/trigger.go",
         "patchSetId": 4
