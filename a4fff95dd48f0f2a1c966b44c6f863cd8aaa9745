@@ -22,6 +22,30 @@
       "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "967437dd_62e57dd1",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T01:29:03Z",
+      "side": 1,
+      "message": "CAS operates in terms of ObjectRefs directly, which are (algo, digest) tuples. That was the case even in python implementation. Changing that would be hard, and pretty pointless. This layer is mostly hidden from CIPD users. We use base64 scheme for instance IDs mostly for the benefit of CIPD client (shorter strings, simple recognizable structure).",
+      "parentUuid": "6f06e351_243d5ea6",
+      "range": {
+        "startLine": 659,
+        "startChar": 36,
+        "endLine": 659,
+        "endChar": 100
+      },
+      "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
