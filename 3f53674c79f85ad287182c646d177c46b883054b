@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cde095b4_1972558e",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9025797a_3e48c193",
+      "range": {
+        "startLine": 1,
+        "startChar": 16,
+        "endLine": 1,
+        "endChar": 17
+      },
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ea90da5_e041ef81",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 8
@@ -39,6 +63,24 @@
       "revId": "3f53674c79f85ad287182c646d177c46b883054b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c45e7b30_7a0ed006",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ea90da5_e041ef81",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "e859e1a3_527219a7",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b63f2c98_3356a258",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "59e8407e_17abc05f",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 8
@@ -73,6 +133,24 @@
       "revId": "3f53674c79f85ad287182c646d177c46b883054b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "76325197_f8375db2",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59e8407e_17abc05f",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -93,6 +171,24 @@
     },
     {
       "key": {
+        "uuid": "c2250b75_43be7b58",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "119e32ea_5c93de60",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0363de0_f96d51a3",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 8
@@ -110,6 +206,24 @@
     },
     {
       "key": {
+        "uuid": "94fa034d_2b2aba3d",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0363de0_f96d51a3",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b0263df_303865d2",
         "filename": "client/cmd/swarming/spawn_tasks.go",
         "patchSetId": 8
@@ -124,6 +238,24 @@
       "revId": "3f53674c79f85ad287182c646d177c46b883054b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de9b8f89_144d38c6",
+        "filename": "client/cmd/swarming/spawn_tasks.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-07-19T16:46:03Z",
+      "side": 1,
+      "message": "Done, and oops, good catch. If I was not appending, it would work because the value wouldn\u0027t be modified, but that\u0027s probably just unintuitive anyway.",
+      "parentUuid": "1b0263df_303865d2",
+      "revId": "3f53674c79f85ad287182c646d177c46b883054b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
