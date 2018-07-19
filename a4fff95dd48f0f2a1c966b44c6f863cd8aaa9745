@@ -46,6 +46,30 @@
       "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "555b9b77_5fc96a66",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-19T01:39:43Z",
+      "side": 1,
+      "message": "I was mostly asking for the purpose of debuggability; if they\u0027re the standard encoding then it\u0027s an easy cut-and-paste mapping of \"string you have on the command line\" and \"directory prefix in bucket\". With the hex form it\u0027s mappable but requires an extra step.\n\nIf it\u0027s hard to change then *shrug*, but that\u0027s what I was thinking about.",
+      "parentUuid": "967437dd_62e57dd1",
+      "range": {
+        "startLine": 659,
+        "startChar": 36,
+        "endLine": 659,
+        "endChar": 100
+      },
+      "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
