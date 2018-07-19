@@ -36,27 +36,27 @@ func TestDeleteHost(t *testing.T) {
 		defer db.Close()
 		c := database.With(context.Background(), db)
 		deleteStmt := `
-			^DELETE FROM hostnames WHERE name = \? AND vlan_id = \?$
+			^DELETE FROM hostnames WHERE name = \?$
 		`
 
 		Convey("query failed", func() {
-			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnError(fmt.Errorf("error"))
-			So(deleteHost(c, "host", 1), ShouldErrLike, "failed to delete host")
+			m.ExpectExec(deleteStmt).WithArgs("host").WillReturnError(fmt.Errorf("error"))
+			So(deleteHost(c, "host"), ShouldErrLike, "failed to delete host")
 		})
 
 		Convey("referenced", func() {
-			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_ROW_IS_REFERENCED_2, Message: "`physical_host_id`"})
-			So(deleteHost(c, "host", 1), ShouldErrLike, "delete entities referencing this host first")
+			m.ExpectExec(deleteStmt).WithArgs("host").WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_ROW_IS_REFERENCED_2, Message: "`physical_host_id`"})
+			So(deleteHost(c, "host"), ShouldErrLike, "delete entities referencing this host first")
 		})
 
 		Convey("invalid", func() {
-			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnResult(sqlmock.NewResult(1, 0))
-			So(deleteHost(c, "host", 1), ShouldErrLike, "does not exist")
+			m.ExpectExec(deleteStmt).WithArgs("host").WillReturnResult(sqlmock.NewResult(1, 0))
+			So(deleteHost(c, "host"), ShouldErrLike, "does not exist")
 		})
 
 		Convey("ok", func() {
-			m.ExpectExec(deleteStmt).WithArgs("host", 1).WillReturnResult(sqlmock.NewResult(1, 1))
-			So(deleteHost(c, "host", 1), ShouldBeNil)
+			m.ExpectExec(deleteStmt).WithArgs("host").WillReturnResult(sqlmock.NewResult(1, 1))
+			So(deleteHost(c, "host"), ShouldBeNil)
 		})
 	})
 }

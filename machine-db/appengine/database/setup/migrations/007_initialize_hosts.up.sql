@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS hostnames (
 	vlan_id int NOT NULL,
 	PRIMARY KEY (id),
 	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE RESTRICT,
-	UNIQUE (name, vlan_id)
+	UNIQUE (name)
 );
 
 CREATE TABLE IF NOT EXISTS physical_hosts (

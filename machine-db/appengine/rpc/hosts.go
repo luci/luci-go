@@ -34,25 +34,20 @@ import (
 
 // DeleteHost handles a request to delete an existing host.
 func (*Service) DeleteHost(c context.Context, req *crimson.DeleteHostRequest) (*empty.Empty, error) {
-	if err := deleteHost(c, req.Name, req.Vlan); err != nil {
+	if err := deleteHost(c, req.Name); err != nil {
 		return nil, err
 	}
 	return &empty.Empty{}, nil
 }
 
 // deleteHost deletes an existing host from the database.
-func deleteHost(c context.Context, name string, vlan int64) error {
-	switch {
-	case name == "":
+func deleteHost(c context.Context, name string) error {
+	if name == "" {
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
-	case vlan < 1:
-		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
 	}
 
 	db := database.Get(c)
-	res, err := db.ExecContext(c, `
-		DELETE FROM hostnames WHERE name = ? AND vlan_id = ?
-	`, name, vlan)
+	res, err := db.ExecContext(c, `DELETE FROM hostnames WHERE name = ?`, name)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -67,7 +62,7 @@ func deleteHost(c context.Context, name string, vlan int64) error {
 	case err != nil:
 		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
-		return status.Errorf(codes.NotFound, "host %q does not exist on VLAN %d", name, vlan)
+		return status.Errorf(codes.NotFound, "host %q does not exist", name)
 	case rows == 1:
 		return nil
 	default:

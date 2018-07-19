@@ -47,7 +47,7 @@ func TestCreateVM(t *testing.T) {
 			^INSERT INTO vms \(hostname_id, physical_host_id, os_id, description, deployment_ticket, state\)
 			VALUES \(
 				\?,
-				\(SELECT p.id FROM physical_hosts p, hostnames h WHERE p.hostname_id = h.id AND h.name = \? AND h.vlan_id = \?\),
+				\(SELECT p.id FROM physical_hosts p, hostnames h WHERE p.hostname_id = h.id AND h.name = \?\),
 				\(SELECT id FROM oses WHERE name = \?\),
 				\?,
 				\?,
@@ -62,19 +62,18 @@ func TestCreateVM(t *testing.T) {
 		selectStmt := `
 			^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
 			FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
-			WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND i.ipv4 IN \(\?\)$
+			WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\)$
 		`
 		columns := []string{"hv.name", "hv.vlan_id", "hp.name", "hp.vlan_id", "o.name", "vm.description", "vm.deployment_ticket", "i.ipv4", "v.state"}
 		rows := sqlmock.NewRows(columns)
 
 		Convey("invalid IPv4", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1/20",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1/20",
+				State: common.State_FREE,
 			}
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "invalid IPv4 address")
@@ -83,12 +82,11 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("begin failed", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
 			res, err := createVM(c, vm)
@@ -98,12 +96,11 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("invalid IP", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'vlan_id'"})
@@ -113,14 +110,13 @@ func TestCreateVM(t *testing.T) {
 			So(res, ShouldBeNil)
 		})
 
-		Convey("duplicate hostname/VLAN", func() {
+		Convey("duplicate hostname", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
@@ -132,17 +128,16 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("query failed", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "failed to create VM")
@@ -151,17 +146,16 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("invalid host", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'physical_host_id' is null"})
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'physical_host_id' is null"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "does not exist")
@@ -170,17 +164,16 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("invalid operating system", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'os_id' is null"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "does not exist")
@@ -189,17 +182,16 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("unexpected invalid", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "failed to create VM")
@@ -208,17 +200,16 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("unexpected error", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name vlan_id"})
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
 			So(err, ShouldErrLike, "failed to create VM")
@@ -227,19 +218,18 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("commit failed", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
-			rows.AddRow(vm.Name, vm.Vlan, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 2130706433, vm.State)
+			rows.AddRow(vm.Name, vm.Vlan, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 2130706433, vm.State)
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(vm.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WithArgs(vm.Name).WillReturnRows(rows)
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createVM(c, vm)
@@ -249,19 +239,18 @@ func TestCreateVM(t *testing.T) {
 
 		Convey("ok", func() {
 			vm := &crimson.VM{
-				Name:     "vm",
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "os",
-				Ipv4:     "127.0.0.1",
-				State:    common.State_FREE,
+				Name:  "vm",
+				Host:  "host",
+				Os:    "os",
+				Ipv4:  "127.0.0.1",
+				State: common.State_FREE,
 			}
-			rows.AddRow(vm.Name, 1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 2130706433, vm.State)
+			rows.AddRow(vm.Name, 1, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 2130706433, vm.State)
 			m.ExpectBegin()
 			m.ExpectExec(insertNameStmt).WithArgs(vm.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(vm.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectExec(insertVMStmt).WithArgs(1, vm.Host, vm.Os, vm.Description, vm.DeploymentTicket, vm.State).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectStmt).WithArgs(vm.Name).WillReturnRows(rows)
 			m.ExpectCommit()
 			res, err := createVM(c, vm)
 			So(err, ShouldBeNil)
@@ -269,7 +258,7 @@ func TestCreateVM(t *testing.T) {
 				Name:     vm.Name,
 				Vlan:     1,
 				Host:     vm.Host,
-				HostVlan: vm.HostVlan,
+				HostVlan: 10,
 				Os:       vm.Os,
 				Ipv4:     vm.Ipv4,
 				State:    vm.State,
@@ -447,7 +436,7 @@ func TestUpdateVM(t *testing.T) {
 		selectStmt := `
 			^SELECT hv.name, hv.vlan_id, hp.name, hp.vlan_id, o.name, v.description, v.deployment_ticket, i.ipv4, v.state
 			FROM vms v, hostnames hv, physical_hosts p, hostnames hp, oses o, ips i
-			WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\) AND hv.vlan_id IN \(\?\)$
+			WHERE v.hostname_id = hv.id AND v.physical_host_id = p.id AND p.hostname_id = hp.id AND v.os_id = o.id AND i.hostname_id = hv.id AND hv.name IN \(\?\)$
 		`
 		columns := []string{"hv.name", "hv.vlan_id", "hp.name", "hp.vlan_id", "o.name", "vm.description", "vm.deployment_ticket", "i.ipv4", "v.state"}
 		rows := sqlmock.NewRows(columns)
@@ -455,36 +444,33 @@ func TestUpdateVM(t *testing.T) {
 		Convey("update host", func() {
 			updateStmt := `
 				^UPDATE vms
-				SET physical_host_id = \(SELECT id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)\)
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				SET physical_host_id = \(SELECT id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)\)
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			vm := &crimson.VM{
-				Name:     "vm",
-				Vlan:     1,
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "operating system",
-				State:    common.State_SERVING,
-				Ipv4:     "0.0.0.1",
+				Name:  "vm",
+				Host:  "host",
+				Os:    "operating system",
+				State: common.State_SERVING,
+				Ipv4:  "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
 					"host",
-					"host_vlan",
 				},
 			}
-			rows.AddRow(vm.Name, vm.Vlan, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
+			rows.AddRow(vm.Name, 1, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(vm.Host, vm.HostVlan, vm.Name, vm.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(vm.Host, vm.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			vm, err := updateVM(c, vm, mask)
 			So(err, ShouldBeNil)
 			So(vm, ShouldResemble, &crimson.VM{
 				Name:     vm.Name,
-				Vlan:     vm.Vlan,
+				Vlan:     1,
 				Host:     vm.Host,
-				HostVlan: vm.HostVlan,
+				HostVlan: 10,
 				Os:       vm.Os,
 				State:    vm.State,
 				Ipv4:     vm.Ipv4,
@@ -496,34 +482,32 @@ func TestUpdateVM(t *testing.T) {
 			updateStmt := `
 				^UPDATE vms
 				SET os_id = \(SELECT id FROM oses WHERE name = \?\)
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			vm := &crimson.VM{
-				Name:     "vm",
-				Vlan:     1,
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "operating system",
-				State:    common.State_SERVING,
-				Ipv4:     "0.0.0.1",
+				Name:  "vm",
+				Host:  "host",
+				Os:    "operating system",
+				State: common.State_SERVING,
+				Ipv4:  "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
 					"os",
 				},
 			}
-			rows.AddRow(vm.Name, vm.Vlan, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
+			rows.AddRow(vm.Name, 1, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(vm.Os, vm.Name, vm.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(vm.Os, vm.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			vm, err := updateVM(c, vm, mask)
 			So(err, ShouldBeNil)
 			So(vm, ShouldResemble, &crimson.VM{
 				Name:     vm.Name,
-				Vlan:     vm.Vlan,
+				Vlan:     1,
 				Host:     vm.Host,
-				HostVlan: vm.HostVlan,
+				HostVlan: 10,
 				Os:       vm.Os,
 				State:    vm.State,
 				Ipv4:     vm.Ipv4,
@@ -535,34 +519,32 @@ func TestUpdateVM(t *testing.T) {
 			updateStmt := `
 				^UPDATE vms
 				SET state = \?
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			vm := &crimson.VM{
-				Name:     "vm",
-				Vlan:     1,
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "operating system",
-				State:    common.State_SERVING,
-				Ipv4:     "0.0.0.1",
+				Name:  "vm",
+				Host:  "host",
+				Os:    "operating system",
+				State: common.State_SERVING,
+				Ipv4:  "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
 					"state",
 				},
 			}
-			rows.AddRow(vm.Name, vm.Vlan, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
+			rows.AddRow(vm.Name, 1, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(vm.State, vm.Name, vm.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(vm.State, vm.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			vm, err := updateVM(c, vm, mask)
 			So(err, ShouldBeNil)
 			So(vm, ShouldResemble, &crimson.VM{
 				Name:     vm.Name,
-				Vlan:     vm.Vlan,
+				Vlan:     1,
 				Host:     vm.Host,
-				HostVlan: vm.HostVlan,
+				HostVlan: 10,
 				Os:       vm.Os,
 				State:    vm.State,
 				Ipv4:     vm.Ipv4,
@@ -573,40 +555,37 @@ func TestUpdateVM(t *testing.T) {
 		Convey("ok", func() {
 			updateStmt := `
 				^UPDATE vms
-				SET physical_host_id = \(SELECT id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)\),
+				SET physical_host_id = \(SELECT id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)\),
 					os_id = \(SELECT id FROM oses WHERE name = \?\),
 					state = \?
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			vm := &crimson.VM{
-				Name:     "vm",
-				Vlan:     1,
-				Host:     "host",
-				HostVlan: 10,
-				Os:       "operating system",
-				State:    common.State_SERVING,
-				Ipv4:     "0.0.0.1",
+				Name:  "vm",
+				Host:  "host",
+				Os:    "operating system",
+				State: common.State_SERVING,
+				Ipv4:  "0.0.0.1",
 			}
 			mask := &field_mask.FieldMask{
 				Paths: []string{
 					"host",
-					"host_vlan",
 					"os",
 					"state",
 				},
 			}
-			rows.AddRow(vm.Name, vm.Vlan, vm.Host, vm.HostVlan, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
+			rows.AddRow(vm.Name, 1, vm.Host, 10, vm.Os, vm.Description, vm.DeploymentTicket, 1, vm.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(vm.Host, vm.HostVlan, vm.Os, vm.State, vm.Name, vm.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(vm.Host, vm.Os, vm.State, vm.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			vm, err := updateVM(c, vm, mask)
 			So(err, ShouldBeNil)
 			So(vm, ShouldResemble, &crimson.VM{
 				Name:     vm.Name,
-				Vlan:     vm.Vlan,
+				Vlan:     1,
 				Host:     vm.Host,
-				HostVlan: vm.HostVlan,
+				HostVlan: 10,
 				Os:       vm.Os,
 				State:    vm.State,
 				Ipv4:     vm.Ipv4,
@@ -626,115 +605,96 @@ func TestValidateVMForCreation(t *testing.T) {
 
 	Convey("hostname unspecified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
-			State:    common.State_FREE,
+			Host:  "host",
+			Os:    "os",
+			Ipv4:  "127.0.0.1",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
 	})
 
 	Convey("VLAN specified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
-			State:    common.State_FREE,
+			Name:  "vm",
+			Vlan:  1,
+			Host:  "host",
+			Os:    "os",
+			Ipv4:  "127.0.0.1",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "VLAN must not be specified, use IP address instead")
 	})
 
 	Convey("host unspecified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
-			State:    common.State_FREE,
-		})
-		So(err, ShouldErrLike, "physical hostname is required and must be non-empty")
-	})
-
-	Convey("host VLAN unspecified", t, func() {
-		err := validateVMForCreation(&crimson.VM{
 			Name:  "vm",
-			Host:  "host",
 			Os:    "os",
 			Ipv4:  "127.0.0.1",
 			State: common.State_FREE,
 		})
-		So(err, ShouldErrLike, "host VLAN is required and must be positive")
+		So(err, ShouldErrLike, "physical hostname is required and must be non-empty")
 	})
 
-	Convey("host VLAN negative", t, func() {
-		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: -10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
-			State:    common.State_FREE,
-		})
-		So(err, ShouldErrLike, "host VLAN is required and must be positive")
-	})
-
-	Convey("operating system unspecified", t, func() {
+	Convey("host VLAN specified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
 			Name:     "vm",
 			Host:     "host",
 			HostVlan: 10,
+			Os:       "os",
 			Ipv4:     "127.0.0.1",
 			State:    common.State_FREE,
+		})
+		So(err, ShouldErrLike, "host VLAN must not be specified, use physical hostname instead")
+	})
+
+	Convey("operating system unspecified", t, func() {
+		err := validateVMForCreation(&crimson.VM{
+			Name:  "vm",
+			Host:  "host",
+			Ipv4:  "127.0.0.1",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "operating system is required and must be non-empty")
 	})
 
 	Convey("IPv4 address unspecified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_FREE,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "IPv4 address is required and must be non-empty")
 	})
 
 	Convey("IPv4 address invalid", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1/20",
-			State:    common.State_FREE,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			Ipv4:  "127.0.0.1/20",
+			State: common.State_FREE,
 		})
 		So(err, ShouldErrLike, "invalid IPv4 address")
 	})
 
 	Convey("state unspecified", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
+			Name: "vm",
+			Host: "host",
+			Os:   "os",
+			Ipv4: "127.0.0.1",
 		})
 		So(err, ShouldErrLike, "state is required")
 	})
 
 	Convey("ok", t, func() {
 		err := validateVMForCreation(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			Ipv4:     "127.0.0.1",
-			State:    common.State_FREE,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			Ipv4:  "127.0.0.1",
+			State: common.State_FREE,
 		})
 		So(err, ShouldBeNil)
 	})
@@ -747,7 +707,6 @@ func TestValidateVMForUpdate(t *testing.T) {
 		err := validateVMForUpdate(nil, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
 				"os",
 				"state",
 			},
@@ -757,15 +716,13 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("hostname unspecified", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Vlan:  1,
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
 				"os",
 				"state",
 			},
@@ -773,56 +730,32 @@ func TestValidateVMForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
 	})
 
-	Convey("VLAN unspecified", t, func() {
-		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
-		}, &field_mask.FieldMask{
-			Paths: []string{
-				"host",
-				"host_vlan",
-				"os",
-				"state",
-			},
-		})
-		So(err, ShouldErrLike, "VLAN is required and must be positive")
-	})
-
 	Convey("mask unspecified", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, nil)
 		So(err, ShouldErrLike, "update mask is required")
 	})
 
 	Convey("no paths", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{})
 		So(err, ShouldErrLike, "at least one update mask path is required")
 	})
 
 	Convey("unexpected hostname", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"name",
@@ -833,12 +766,11 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("unexpected VLAN", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Vlan:  1,
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"vlan",
@@ -847,17 +779,29 @@ func TestValidateVMForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "VLAN cannot be updated")
 	})
 
-	Convey("host unspecified", t, func() {
+	Convey("unexpected host VLAN", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
 			Name:     "vm",
-			Vlan:     1,
+			Host:     "host",
 			HostVlan: 10,
 			Os:       "os",
 			State:    common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
-				"host",
 				"host_vlan",
+			},
+		})
+		So(err, ShouldErrLike, "host VLAN cannot be updated")
+	})
+
+	Convey("host unspecified", t, func() {
+		err := validateVMForUpdate(&crimson.VM{
+			Name:  "vm",
+			Os:    "os",
+			State: common.State_SERVING,
+		}, &field_mask.FieldMask{
+			Paths: []string{
+				"host",
 				"os",
 				"state",
 			},
@@ -865,35 +809,14 @@ func TestValidateVMForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "physical hostname is required and must be non-empty")
 	})
 
-	Convey("host VLAN unspecified", t, func() {
+	Convey("operating system unspecified", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
 			Name:  "vm",
-			Vlan:  1,
 			Host:  "host",
-			Os:    "os",
 			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
-				"os",
-				"state",
-			},
-		})
-		So(err, ShouldErrLike, "host VLAN is required and must be positive")
-	})
-
-	Convey("operating system unspecified", t, func() {
-		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			State:    common.State_SERVING,
-		}, &field_mask.FieldMask{
-			Paths: []string{
-				"host",
-				"host_vlan",
 				"os",
 				"state",
 			},
@@ -903,15 +826,12 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("state unspecified", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
+			Name: "vm",
+			Host: "host",
+			Os:   "os",
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
 				"os",
 				"state",
 			},
@@ -921,12 +841,10 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("unsupported path", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"unknown",
@@ -937,16 +855,13 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("duplicate path", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
 				"os",
 				"state",
 				"description",
@@ -959,16 +874,13 @@ func TestValidateVMForUpdate(t *testing.T) {
 
 	Convey("ok", t, func() {
 		err := validateVMForUpdate(&crimson.VM{
-			Name:     "vm",
-			Vlan:     1,
-			Host:     "host",
-			HostVlan: 10,
-			Os:       "os",
-			State:    common.State_SERVING,
+			Name:  "vm",
+			Host:  "host",
+			Os:    "os",
+			State: common.State_SERVING,
 		}, &field_mask.FieldMask{
 			Paths: []string{
 				"host",
-				"host_vlan",
 				"os",
 				"state",
 				"description",

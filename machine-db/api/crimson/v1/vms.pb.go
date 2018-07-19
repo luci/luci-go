@@ -22,14 +22,15 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A VM in the database.
 type VM struct {
-	// The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
+	// The name of this VM on the network. Uniquely identifies this VM.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
+	// The VLAN this VM belongs to.
 	// When creating a VM, omit this field. It will be inferred from the IPv4 address.
 	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The physical host this VM is running on.
 	Host string `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
 	// The VLAN this VM's physical host belongs to.
+	// When creating a VM, omit this field. It will be inferred from the host.
 	HostVlan int64 `protobuf:"varint,4,opt,name=host_vlan,json=hostVlan,proto3" json:"host_vlan,omitempty"`
 	// The operating system running on this VM.
 	Os string `protobuf:"bytes,5,opt,name=os,proto3" json:"os,omitempty"`
@@ -50,7 +51,7 @@ func (m *VM) Reset()         { *m = VM{} }
 func (m *VM) String() string { return proto.CompactTextString(m) }
 func (*VM) ProtoMessage()    {}
 func (*VM) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vms_0aa6bb694fc6c462, []int{0}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{0}
 }
 func (m *VM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VM.Unmarshal(m, b)
@@ -146,7 +147,7 @@ func (m *CreateVMRequest) Reset()         { *m = CreateVMRequest{} }
 func (m *CreateVMRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateVMRequest) ProtoMessage()    {}
 func (*CreateVMRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vms_0aa6bb694fc6c462, []int{1}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{1}
 }
 func (m *CreateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateVMRequest.Unmarshal(m, b)
@@ -198,7 +199,7 @@ func (m *ListVMsRequest) Reset()         { *m = ListVMsRequest{} }
 func (m *ListVMsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListVMsRequest) ProtoMessage()    {}
 func (*ListVMsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vms_0aa6bb694fc6c462, []int{2}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{2}
 }
 func (m *ListVMsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsRequest.Unmarshal(m, b)
@@ -280,7 +281,7 @@ func (m *ListVMsResponse) Reset()         { *m = ListVMsResponse{} }
 func (m *ListVMsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListVMsResponse) ProtoMessage()    {}
 func (*ListVMsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vms_0aa6bb694fc6c462, []int{3}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{3}
 }
 func (m *ListVMsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsResponse.Unmarshal(m, b)
@@ -322,7 +323,7 @@ func (m *UpdateVMRequest) Reset()         { *m = UpdateVMRequest{} }
 func (m *UpdateVMRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateVMRequest) ProtoMessage()    {}
 func (*UpdateVMRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vms_0aa6bb694fc6c462, []int{4}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{4}
 }
 func (m *UpdateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateVMRequest.Unmarshal(m, b)
@@ -365,10 +366,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor_vms_0aa6bb694fc6c462)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor_vms_f90236ff19f3c8d7)
 }
 
-var fileDescriptor_vms_0aa6bb694fc6c462 = []byte{
+var fileDescriptor_vms_f90236ff19f3c8d7 = []byte{
 	// 462 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x41, 0x8f, 0xd3, 0x30,
 	0x10, 0x85, 0x95, 0xa4, 0xed, 0x6e, 0xa7, 0xa2, 0x05, 0x8b, 0x83, 0x55, 0xb4, 0x52, 0x54, 0x84,

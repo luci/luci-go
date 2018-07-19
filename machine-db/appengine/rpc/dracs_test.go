@@ -54,8 +54,7 @@ func TestCreateDRAC(t *testing.T) {
 		selectStmt := `
 			^SELECT h.name, h.vlan_id, m.name, s.name, d.switchport, d.mac_address, i.ipv4
 			FROM dracs d, hostnames h, machines m, switches s, ips i
-			WHERE d.hostname_id = h.id AND d.machine_id = m.id AND d.switch_id = s.id AND i.hostname_id = h.id
-				AND h.name IN \(\?\) AND i.ipv4 IN \(\?\)$
+			WHERE d.hostname_id = h.id AND d.machine_id = m.id AND d.switch_id = s.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
 		`
 		columns := []string{"h.name", "h.vlan_id", "m.name", "s.name", "d.switchport", "d.mac_address", "i.ipv4"}
 		rows := sqlmock.NewRows(columns)
@@ -120,7 +119,7 @@ func TestCreateDRAC(t *testing.T) {
 			So(res, ShouldBeNil)
 		})
 
-		Convey("duplicate DRAC/VLAN", func() {
+		Convey("duplicate DRAC", func() {
 			drac := &crimson.DRAC{
 				Name:       "drac",
 				Machine:    "machine",
@@ -284,7 +283,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(drac.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs(drac.Name).WillReturnRows(rows)
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createDRAC(c, drac)
@@ -306,7 +305,7 @@ func TestCreateDRAC(t *testing.T) {
 			m.ExpectExec(insertNameStmt).WithArgs(drac.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertDRACStmt).WithArgs(1, drac.Machine, drac.Switch, drac.Switchport, 1).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(drac.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs(drac.Name).WillReturnRows(rows)
 			m.ExpectCommit()
 			res, err := createDRAC(c, drac)
 			So(err, ShouldBeNil)
@@ -512,7 +511,7 @@ func TestUpdateDRAC(t *testing.T) {
 		selectStmt := `
 			^SELECT h.name, h.vlan_id, m.name, s.name, d.switchport, d.mac_address, i.ipv4
 			FROM dracs d, hostnames h, machines m, switches s, ips i
-			WHERE d.hostname_id = h.id AND d.machine_id = m.id AND d.switch_id = s.id AND i.hostname_id = h.id AND h.name IN \(\?\) AND h.vlan_id IN \(\?\)$
+			WHERE d.hostname_id = h.id AND d.machine_id = m.id AND d.switch_id = s.id AND i.hostname_id = h.id AND h.name IN \(\?\)$
 		`
 		columns := []string{"h.name", "h.vlan_id", "m.name", "s.name", "d.switchport", "d.mac_address", "i.ipv4"}
 		rows := sqlmock.NewRows(columns)
@@ -521,11 +520,10 @@ func TestUpdateDRAC(t *testing.T) {
 			updateStmt := `
 				^UPDATE dracs
 				SET switch_id = \(SELECT id FROM switches WHERE name = \?\)
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			drac := &crimson.DRAC{
 				Name:       "drac",
-				Vlan:       1,
 				Machine:    "machine",
 				MacAddress: "ff:ff:ff:ff:ff:ff",
 				Switch:     "switch",
@@ -538,7 +536,7 @@ func TestUpdateDRAC(t *testing.T) {
 			}
 			rows.AddRow(drac.Name, drac.Vlan, drac.Machine, drac.Switch, drac.Switchport, 1, 1)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(drac.Switch, drac.Name, drac.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(drac.Switch, drac.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			drac, err := updateDRAC(c, drac, mask)
@@ -559,11 +557,10 @@ func TestUpdateDRAC(t *testing.T) {
 			updateStmt := `
 				^UPDATE dracs
 				SET switchport = \?
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			drac := &crimson.DRAC{
 				Name:       "drac",
-				Vlan:       1,
 				Machine:    "machine",
 				MacAddress: "ff:ff:ff:ff:ff:ff",
 				Switch:     "switch",
@@ -576,7 +573,7 @@ func TestUpdateDRAC(t *testing.T) {
 			}
 			rows.AddRow(drac.Name, drac.Vlan, drac.Machine, drac.Switch, drac.Switchport, 1, 1)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(drac.Switchport, drac.Name, drac.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(drac.Switchport, drac.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			drac, err := updateDRAC(c, drac, mask)

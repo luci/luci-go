@@ -21,7 +21,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A DRAC in the database.
 type DRAC struct {
-	// The name of this DRAC on the network. With VLAN, uniquely identifies this DRAC.
+	// The name of this DRAC on the network. Uniquely identifies this DRAC.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The machine this DRAC belongs to. Uniquely identifies this DRAC.
 	Machine string `protobuf:"bytes,2,opt,name=machine,proto3" json:"machine,omitempty"`
@@ -45,7 +45,7 @@ func (m *DRAC) Reset()         { *m = DRAC{} }
 func (m *DRAC) String() string { return proto.CompactTextString(m) }
 func (*DRAC) ProtoMessage()    {}
 func (*DRAC) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{0}
+	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{0}
 }
 func (m *DRAC) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DRAC.Unmarshal(m, b)
@@ -127,7 +127,7 @@ func (m *CreateDRACRequest) Reset()         { *m = CreateDRACRequest{} }
 func (m *CreateDRACRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDRACRequest) ProtoMessage()    {}
 func (*CreateDRACRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{1}
+	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{1}
 }
 func (m *CreateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDRACRequest.Unmarshal(m, b)
@@ -177,7 +177,7 @@ func (m *ListDRACsRequest) Reset()         { *m = ListDRACsRequest{} }
 func (m *ListDRACsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDRACsRequest) ProtoMessage()    {}
 func (*ListDRACsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{2}
+	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{2}
 }
 func (m *ListDRACsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsRequest.Unmarshal(m, b)
@@ -252,7 +252,7 @@ func (m *ListDRACsResponse) Reset()         { *m = ListDRACsResponse{} }
 func (m *ListDRACsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDRACsResponse) ProtoMessage()    {}
 func (*ListDRACsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{3}
+	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{3}
 }
 func (m *ListDRACsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsResponse.Unmarshal(m, b)
@@ -294,7 +294,7 @@ func (m *UpdateDRACRequest) Reset()         { *m = UpdateDRACRequest{} }
 func (m *UpdateDRACRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDRACRequest) ProtoMessage()    {}
 func (*UpdateDRACRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_ceb8ad6005f9d841, []int{4}
+	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{4}
 }
 func (m *UpdateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDRACRequest.Unmarshal(m, b)
@@ -337,10 +337,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor_dracs_ceb8ad6005f9d841)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor_dracs_f1e61d595af6d8f0)
 }
 
-var fileDescriptor_dracs_ceb8ad6005f9d841 = []byte{
+var fileDescriptor_dracs_f1e61d595af6d8f0 = []byte{
 	// 407 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xc1, 0x8e, 0xd3, 0x30,
 	0x10, 0x55, 0x36, 0x69, 0xcb, 0x4e, 0x59, 0x89, 0x5a, 0x08, 0x59, 0x3d, 0x40, 0xc8, 0x5e, 0x72,

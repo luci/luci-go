@@ -11,14 +11,15 @@ import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
 // A VM in the database.
 message VM {
-  // The name of this VM on the network. With VLAN ID, uniquely identifies this VM.
+  // The name of this VM on the network. Uniquely identifies this VM.
   string name = 1;
-  // The VLAN this VM belongs to. With hostname, uniquely identifies this VM.
+  // The VLAN this VM belongs to.
   // When creating a VM, omit this field. It will be inferred from the IPv4 address.
   int64 vlan = 2;
   // The physical host this VM is running on.
   string host = 3;
   // The VLAN this VM's physical host belongs to.
+  // When creating a VM, omit this field. It will be inferred from the host.
   int64 host_vlan = 4;
   // The operating system running on this VM.
   string os = 5;

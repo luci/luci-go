@@ -125,9 +125,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	}
 
 	hosts, err := listPhysicalHosts(c, tx, &crimson.ListPhysicalHostsRequest{
-		// Physical hosts are typically identified by hostname and VLAN, but VLAN is inferred from IP address during creation.
 		Names: []string{h.Name},
-		Ipv4S: []string{h.Ipv4},
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch created physical host").Err()
@@ -252,7 +250,7 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 	var args []interface{}
 	var err error
 	if update {
-		stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", h.Name, h.Vlan)
+		stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ?)", h.Name)
 		query, args, err = stmt.ToSql()
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to generate statement").Err()
@@ -290,8 +288,8 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 		_, err = tx.ExecContext(c, `
 			UPDATE machines
 			SET state = ?
-			WHERE id = (SELECT machine_id FROM physical_hosts WHERE hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?))
-		`, h.State, h.Name, h.Vlan)
+			WHERE id = (SELECT machine_id FROM physical_hosts WHERE hostname_id = (SELECT id FROM hostnames WHERE name = ?))
+		`, h.State, h.Name)
 		if err != nil {
 			return nil, errors.Annotate(err, "failed to update machine").Err()
 		}
@@ -299,13 +297,12 @@ func updatePhysicalHost(c context.Context, h *crimson.PhysicalHost, mask *field_
 
 	hosts, err := listPhysicalHosts(c, tx, &crimson.ListPhysicalHostsRequest{
 		Names: []string{h.Name},
-		Vlans: []int64{h.Vlan},
 	})
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated physical host").Err()
 	case len(hosts) == 0:
-		return nil, status.Errorf(codes.NotFound, "physical host %q does not exist on VLAN %d", h.Name, h.Vlan)
+		return nil, status.Errorf(codes.NotFound, "physical host %q does not exist", h.Name)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -345,8 +342,6 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 		return status.Error(codes.InvalidArgument, "physical host specification is required")
 	case h.Name == "":
 		return status.Error(codes.InvalidArgument, "hostname is required and must be non-empty")
-	case h.Vlan < 1:
-		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
 	case err != nil:
 		return err
 	}
