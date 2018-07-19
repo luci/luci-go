@@ -65,7 +65,7 @@ func (x Role) String() string {
 	return proto.EnumName(Role_name, int32(x))
 }
 func (Role) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{0}
+	return fileDescriptor_repo_c6b375427aa96933, []int{0}
 }
 
 // RegistrationStatus is part of RegisterInstance RPC response.
@@ -95,7 +95,7 @@ func (x RegistrationStatus) String() string {
 	return proto.EnumName(RegistrationStatus_name, int32(x))
 }
 func (RegistrationStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{1}
+	return fileDescriptor_repo_c6b375427aa96933, []int{1}
 }
 
 type Processor_State int32
@@ -124,12 +124,12 @@ func (x Processor_State) String() string {
 	return proto.EnumName(Processor_State_name, int32(x))
 }
 func (Processor_State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{22, 0}
+	return fileDescriptor_repo_c6b375427aa96933, []int{22, 0}
 }
 
 type PrefixRequest struct {
 	// A prefix within the repository, e.g. "a/b/c".
-	Prefix               string   `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix               string   `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -139,7 +139,7 @@ func (m *PrefixRequest) Reset()         { *m = PrefixRequest{} }
 func (m *PrefixRequest) String() string { return proto.CompactTextString(m) }
 func (*PrefixRequest) ProtoMessage()    {}
 func (*PrefixRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{0}
+	return fileDescriptor_repo_c6b375427aa96933, []int{0}
 }
 func (m *PrefixRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PrefixRequest.Unmarshal(m, b)
@@ -173,22 +173,22 @@ type PrefixMetadata struct {
 	// Prefix this metadata is defined at, e.g. "a/b/c".
 	//
 	// Note: there's no metadata at the root, so prefix must never be "".
-	Prefix string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	// An opaque string that identifies a particular version of this metadata.
 	//
 	// Used by UpdatePrefixMetadata to prevent an accidental overwrite of changes.
-	Fingerprint string `protobuf:"bytes,2,opt,name=fingerprint" json:"fingerprint,omitempty"`
+	Fingerprint string `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
 	// When the metadata was modified the last time.
 	//
 	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
-	UpdateTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime" json:"update_time,omitempty"`
+	UpdateTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	// Identity string of whoever modified the metadata the last time.
 	//
 	// Managed by the server, ignored when passed to UpdatePrefixMetadata.
-	UpdateUser string `protobuf:"bytes,4,opt,name=update_user,json=updateUser" json:"update_user,omitempty"`
+	UpdateUser string `protobuf:"bytes,4,opt,name=update_user,json=updateUser,proto3" json:"update_user,omitempty"`
 	// ACLs that apply to this prefix and all subprefixes, as a mapping from
 	// a role to a list of users and groups that have it.
-	Acls                 []*PrefixMetadata_ACL `protobuf:"bytes,5,rep,name=acls" json:"acls,omitempty"`
+	Acls                 []*PrefixMetadata_ACL `protobuf:"bytes,5,rep,name=acls,proto3" json:"acls,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -198,7 +198,7 @@ func (m *PrefixMetadata) Reset()         { *m = PrefixMetadata{} }
 func (m *PrefixMetadata) String() string { return proto.CompactTextString(m) }
 func (*PrefixMetadata) ProtoMessage()    {}
 func (*PrefixMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{1}
+	return fileDescriptor_repo_c6b375427aa96933, []int{1}
 }
 func (m *PrefixMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PrefixMetadata.Unmarshal(m, b)
@@ -255,11 +255,11 @@ func (m *PrefixMetadata) GetAcls() []*PrefixMetadata_ACL {
 
 type PrefixMetadata_ACL struct {
 	// Role that this ACL describes.
-	Role Role `protobuf:"varint,1,opt,name=role,enum=cipd.Role" json:"role,omitempty"`
+	Role Role `protobuf:"varint,1,opt,name=role,proto3,enum=cipd.Role" json:"role,omitempty"`
 	// Users and groups that have the specified role.
 	//
 	// Each entry has a form "<kind>:<value>", e.g "group:..." or "user:...".
-	Principals           []string `protobuf:"bytes,2,rep,name=principals" json:"principals,omitempty"`
+	Principals           []string `protobuf:"bytes,2,rep,name=principals,proto3" json:"principals,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -269,7 +269,7 @@ func (m *PrefixMetadata_ACL) Reset()         { *m = PrefixMetadata_ACL{} }
 func (m *PrefixMetadata_ACL) String() string { return proto.CompactTextString(m) }
 func (*PrefixMetadata_ACL) ProtoMessage()    {}
 func (*PrefixMetadata_ACL) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{1, 0}
+	return fileDescriptor_repo_c6b375427aa96933, []int{1, 0}
 }
 func (m *PrefixMetadata_ACL) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PrefixMetadata_ACL.Unmarshal(m, b)
@@ -309,7 +309,7 @@ type InheritedPrefixMetadata struct {
 	// For example, when requesting metadata for prefix "a/b/c/d" the reply may
 	// contain entries for "a", "a/b", "a/b/c/d" (in that order, with "a/b/c"
 	// skipped in this example as not having any metadata attached).
-	PerPrefixMetadata    []*PrefixMetadata `protobuf:"bytes,1,rep,name=per_prefix_metadata,json=perPrefixMetadata" json:"per_prefix_metadata,omitempty"`
+	PerPrefixMetadata    []*PrefixMetadata `protobuf:"bytes,1,rep,name=per_prefix_metadata,json=perPrefixMetadata,proto3" json:"per_prefix_metadata,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -319,7 +319,7 @@ func (m *InheritedPrefixMetadata) Reset()         { *m = InheritedPrefixMetadata
 func (m *InheritedPrefixMetadata) String() string { return proto.CompactTextString(m) }
 func (*InheritedPrefixMetadata) ProtoMessage()    {}
 func (*InheritedPrefixMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{2}
+	return fileDescriptor_repo_c6b375427aa96933, []int{2}
 }
 func (m *InheritedPrefixMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InheritedPrefixMetadata.Unmarshal(m, b)
@@ -348,7 +348,7 @@ func (m *InheritedPrefixMetadata) GetPerPrefixMetadata() []*PrefixMetadata {
 
 type RolesInPrefixResponse struct {
 	// Unordered set or roles the caller has in the requested prefix.
-	Roles                []*RolesInPrefixResponse_RoleInPrefix `protobuf:"bytes,1,rep,name=roles" json:"roles,omitempty"`
+	Roles                []*RolesInPrefixResponse_RoleInPrefix `protobuf:"bytes,1,rep,name=roles,proto3" json:"roles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                              `json:"-"`
 	XXX_unrecognized     []byte                                `json:"-"`
 	XXX_sizecache        int32                                 `json:"-"`
@@ -358,7 +358,7 @@ func (m *RolesInPrefixResponse) Reset()         { *m = RolesInPrefixResponse{} }
 func (m *RolesInPrefixResponse) String() string { return proto.CompactTextString(m) }
 func (*RolesInPrefixResponse) ProtoMessage()    {}
 func (*RolesInPrefixResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{3}
+	return fileDescriptor_repo_c6b375427aa96933, []int{3}
 }
 func (m *RolesInPrefixResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RolesInPrefixResponse.Unmarshal(m, b)
@@ -386,7 +386,7 @@ func (m *RolesInPrefixResponse) GetRoles() []*RolesInPrefixResponse_RoleInPrefix
 }
 
 type RolesInPrefixResponse_RoleInPrefix struct {
-	Role                 Role     `protobuf:"varint,1,opt,name=role,enum=cipd.Role" json:"role,omitempty"`
+	Role                 Role     `protobuf:"varint,1,opt,name=role,proto3,enum=cipd.Role" json:"role,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -396,7 +396,7 @@ func (m *RolesInPrefixResponse_RoleInPrefix) Reset()         { *m = RolesInPrefi
 func (m *RolesInPrefixResponse_RoleInPrefix) String() string { return proto.CompactTextString(m) }
 func (*RolesInPrefixResponse_RoleInPrefix) ProtoMessage()    {}
 func (*RolesInPrefixResponse_RoleInPrefix) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{3, 0}
+	return fileDescriptor_repo_c6b375427aa96933, []int{3, 0}
 }
 func (m *RolesInPrefixResponse_RoleInPrefix) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RolesInPrefixResponse_RoleInPrefix.Unmarshal(m, b)
@@ -426,11 +426,11 @@ func (m *RolesInPrefixResponse_RoleInPrefix) GetRole() Role {
 type ListPrefixRequest struct {
 	// A prefix within the repository to list, e.g. "a/b/c". Empty prefix is also
 	// accepted: it means "root of the repository".
-	Prefix string `protobuf:"bytes,1,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	// If false, list only direct descendants of the prefix, otherwise all.
-	Recursive bool `protobuf:"varint,2,opt,name=recursive" json:"recursive,omitempty"`
+	Recursive bool `protobuf:"varint,2,opt,name=recursive,proto3" json:"recursive,omitempty"`
 	// If true, include hidden packages in the result.
-	IncludeHidden        bool     `protobuf:"varint,3,opt,name=include_hidden,json=includeHidden" json:"include_hidden,omitempty"`
+	IncludeHidden        bool     `protobuf:"varint,3,opt,name=include_hidden,json=includeHidden,proto3" json:"include_hidden,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -440,7 +440,7 @@ func (m *ListPrefixRequest) Reset()         { *m = ListPrefixRequest{} }
 func (m *ListPrefixRequest) String() string { return proto.CompactTextString(m) }
 func (*ListPrefixRequest) ProtoMessage()    {}
 func (*ListPrefixRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{4}
+	return fileDescriptor_repo_c6b375427aa96933, []int{4}
 }
 func (m *ListPrefixRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPrefixRequest.Unmarshal(m, b)
@@ -483,9 +483,9 @@ func (m *ListPrefixRequest) GetIncludeHidden() bool {
 
 type ListPrefixResponse struct {
 	// Lexicographically sorted list of full packages names.
-	Packages []string `protobuf:"bytes,1,rep,name=packages" json:"packages,omitempty"`
+	Packages []string `protobuf:"bytes,1,rep,name=packages,proto3" json:"packages,omitempty"`
 	// Lexicographically sorted list of child prefixes (without trailing '/').
-	Prefixes             []string `protobuf:"bytes,2,rep,name=prefixes" json:"prefixes,omitempty"`
+	Prefixes             []string `protobuf:"bytes,2,rep,name=prefixes,proto3" json:"prefixes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -495,7 +495,7 @@ func (m *ListPrefixResponse) Reset()         { *m = ListPrefixResponse{} }
 func (m *ListPrefixResponse) String() string { return proto.CompactTextString(m) }
 func (*ListPrefixResponse) ProtoMessage()    {}
 func (*ListPrefixResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{5}
+	return fileDescriptor_repo_c6b375427aa96933, []int{5}
 }
 func (m *ListPrefixResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPrefixResponse.Unmarshal(m, b)
@@ -531,7 +531,7 @@ func (m *ListPrefixResponse) GetPrefixes() []string {
 
 // PackageRequest names a package and nothing else.
 type PackageRequest struct {
-	Package              string   `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package              string   `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -541,7 +541,7 @@ func (m *PackageRequest) Reset()         { *m = PackageRequest{} }
 func (m *PackageRequest) String() string { return proto.CompactTextString(m) }
 func (*PackageRequest) ProtoMessage()    {}
 func (*PackageRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{6}
+	return fileDescriptor_repo_c6b375427aa96933, []int{6}
 }
 func (m *PackageRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PackageRequest.Unmarshal(m, b)
@@ -571,13 +571,13 @@ func (m *PackageRequest) GetPackage() string {
 // Instance is a pointer to an instance of some package.
 type Instance struct {
 	// A name of the package, e.g. "a/b/c/d".
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// A reference to the instance file in the storage.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// User who registered the instance (output only).
-	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy" json:"registered_by,omitempty"`
+	RegisteredBy string `protobuf:"bytes,3,opt,name=registered_by,json=registeredBy,proto3" json:"registered_by,omitempty"`
 	// When the instance was registered (output only).
-	RegisteredTs         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=registered_ts,json=registeredTs" json:"registered_ts,omitempty"`
+	RegisteredTs         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=registered_ts,json=registeredTs,proto3" json:"registered_ts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -587,7 +587,7 @@ func (m *Instance) Reset()         { *m = Instance{} }
 func (m *Instance) String() string { return proto.CompactTextString(m) }
 func (*Instance) ProtoMessage()    {}
 func (*Instance) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{7}
+	return fileDescriptor_repo_c6b375427aa96933, []int{7}
 }
 func (m *Instance) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Instance.Unmarshal(m, b)
@@ -639,14 +639,14 @@ type RegisterInstanceResponse struct {
 	// Outcome of the operation, see the enum for possibilities.
 	//
 	// Defines what other fields are present.
-	Status RegistrationStatus `protobuf:"varint,1,opt,name=status,enum=cipd.RegistrationStatus" json:"status,omitempty"`
+	Status RegistrationStatus `protobuf:"varint,1,opt,name=status,proto3,enum=cipd.RegistrationStatus" json:"status,omitempty"`
 	// For statuses REGISTERED and ALREADY_REGISTERED contains details about the
 	// instance. Not set for NOT_UPLOADED status.
-	Instance *Instance `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance *Instance `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// For status NOT_UPLOADED contains a new upload operation that can be used
 	// together with Storage service to upload the instance file. Not set for
 	// other statuses.
-	UploadOp             *UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp" json:"upload_op,omitempty"`
+	UploadOp             *UploadOperation `protobuf:"bytes,3,opt,name=upload_op,json=uploadOp,proto3" json:"upload_op,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -656,7 +656,7 @@ func (m *RegisterInstanceResponse) Reset()         { *m = RegisterInstanceRespon
 func (m *RegisterInstanceResponse) String() string { return proto.CompactTextString(m) }
 func (*RegisterInstanceResponse) ProtoMessage()    {}
 func (*RegisterInstanceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{8}
+	return fileDescriptor_repo_c6b375427aa96933, []int{8}
 }
 func (m *RegisterInstanceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterInstanceResponse.Unmarshal(m, b)
@@ -699,13 +699,13 @@ func (m *RegisterInstanceResponse) GetUploadOp() *UploadOperation {
 
 type ListInstancesRequest struct {
 	// Name of a package to list instances of.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// Number of instances to return on one page, default is 100.
-	PageSize int32 `protobuf:"varint,20,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize int32 `protobuf:"varint,20,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// Value of 'next_page_token' from the previous response.
 	//
 	// Can be used to resume fetching.
-	PageToken            string   `protobuf:"bytes,21,opt,name=page_token,json=pageToken" json:"page_token,omitempty"`
+	PageToken            string   `protobuf:"bytes,21,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -715,7 +715,7 @@ func (m *ListInstancesRequest) Reset()         { *m = ListInstancesRequest{} }
 func (m *ListInstancesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListInstancesRequest) ProtoMessage()    {}
 func (*ListInstancesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{9}
+	return fileDescriptor_repo_c6b375427aa96933, []int{9}
 }
 func (m *ListInstancesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListInstancesRequest.Unmarshal(m, b)
@@ -758,10 +758,10 @@ func (m *ListInstancesRequest) GetPageToken() string {
 
 type ListInstancesResponse struct {
 	// Package instances, sorted by registration time, most recent first.
-	Instances []*Instance `protobuf:"bytes,1,rep,name=instances" json:"instances,omitempty"`
+	Instances []*Instance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
 	// Value to pass as 'page_token' in ListInstancesRequest to resume fetching or
 	// empty string if there's no more results.
-	NextPageToken        string   `protobuf:"bytes,20,opt,name=next_page_token,json=nextPageToken" json:"next_page_token,omitempty"`
+	NextPageToken        string   `protobuf:"bytes,20,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -771,7 +771,7 @@ func (m *ListInstancesResponse) Reset()         { *m = ListInstancesResponse{} }
 func (m *ListInstancesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListInstancesResponse) ProtoMessage()    {}
 func (*ListInstancesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{10}
+	return fileDescriptor_repo_c6b375427aa96933, []int{10}
 }
 func (m *ListInstancesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListInstancesResponse.Unmarshal(m, b)
@@ -807,20 +807,20 @@ func (m *ListInstancesResponse) GetNextPageToken() string {
 
 type SearchInstancesRequest struct {
 	// Name of a package to query instances of (required).
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// Tags to look for (the found instances have ALL these tags attached).
 	//
 	// Due to internal limitations, the query is most efficient only when it
 	// specifies one tag to filter by. All additional tags are checked in a
 	// separate step after the initial query. For that reason when searching for
 	// multiple tags it is better to specify the most limiting tags first.
-	Tags []*Tag `protobuf:"bytes,2,rep,name=tags" json:"tags,omitempty"`
+	Tags []*Tag `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Number of instances to return on one page, default is 100.
-	PageSize int32 `protobuf:"varint,20,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize int32 `protobuf:"varint,20,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// Value of 'next_page_token' from the previous response.
 	//
 	// Can be used to resume fetching.
-	PageToken            string   `protobuf:"bytes,21,opt,name=page_token,json=pageToken" json:"page_token,omitempty"`
+	PageToken            string   `protobuf:"bytes,21,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -830,7 +830,7 @@ func (m *SearchInstancesRequest) Reset()         { *m = SearchInstancesRequest{}
 func (m *SearchInstancesRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchInstancesRequest) ProtoMessage()    {}
 func (*SearchInstancesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{11}
+	return fileDescriptor_repo_c6b375427aa96933, []int{11}
 }
 func (m *SearchInstancesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchInstancesRequest.Unmarshal(m, b)
@@ -880,10 +880,10 @@ func (m *SearchInstancesRequest) GetPageToken() string {
 
 type SearchInstancesResponse struct {
 	// Package instances, sorted by registration time, most recent first.
-	Instances []*Instance `protobuf:"bytes,1,rep,name=instances" json:"instances,omitempty"`
+	Instances []*Instance `protobuf:"bytes,1,rep,name=instances,proto3" json:"instances,omitempty"`
 	// Value to pass as 'page_token' in SearchInstancesRequest to resume fetching
 	// or empty string if there's no more results.
-	NextPageToken        string   `protobuf:"bytes,20,opt,name=next_page_token,json=nextPageToken" json:"next_page_token,omitempty"`
+	NextPageToken        string   `protobuf:"bytes,20,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -893,7 +893,7 @@ func (m *SearchInstancesResponse) Reset()         { *m = SearchInstancesResponse
 func (m *SearchInstancesResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchInstancesResponse) ProtoMessage()    {}
 func (*SearchInstancesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{12}
+	return fileDescriptor_repo_c6b375427aa96933, []int{12}
 }
 func (m *SearchInstancesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchInstancesResponse.Unmarshal(m, b)
@@ -931,15 +931,15 @@ func (m *SearchInstancesResponse) GetNextPageToken() string {
 // as a version identifier.
 type Ref struct {
 	// Name of the ref, e.g. "latest".
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the package where the ref is defined.
-	Package string `protobuf:"bytes,2,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
 	// A package instance the ref is pointing to.
-	Instance *ObjectRef `protobuf:"bytes,3,opt,name=instance" json:"instance,omitempty"`
+	Instance *ObjectRef `protobuf:"bytes,3,opt,name=instance,proto3" json:"instance,omitempty"`
 	// User who modified this ref the last time (output only).
-	ModifiedBy string `protobuf:"bytes,4,opt,name=modified_by,json=modifiedBy" json:"modified_by,omitempty"`
+	ModifiedBy string `protobuf:"bytes,4,opt,name=modified_by,json=modifiedBy,proto3" json:"modified_by,omitempty"`
 	// When the ref was modified the last time (output only).
-	ModifiedTs           *timestamp.Timestamp `protobuf:"bytes,5,opt,name=modified_ts,json=modifiedTs" json:"modified_ts,omitempty"`
+	ModifiedTs           *timestamp.Timestamp `protobuf:"bytes,5,opt,name=modified_ts,json=modifiedTs,proto3" json:"modified_ts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -949,7 +949,7 @@ func (m *Ref) Reset()         { *m = Ref{} }
 func (m *Ref) String() string { return proto.CompactTextString(m) }
 func (*Ref) ProtoMessage()    {}
 func (*Ref) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{13}
+	return fileDescriptor_repo_c6b375427aa96933, []int{13}
 }
 func (m *Ref) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Ref.Unmarshal(m, b)
@@ -1006,9 +1006,9 @@ func (m *Ref) GetModifiedTs() *timestamp.Timestamp {
 
 type DeleteRefRequest struct {
 	// Name of the ref, e.g. "latest".
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the package where the ref is defined.
-	Package              string   `protobuf:"bytes,2,opt,name=package" json:"package,omitempty"`
+	Package              string   `protobuf:"bytes,2,opt,name=package,proto3" json:"package,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1018,7 +1018,7 @@ func (m *DeleteRefRequest) Reset()         { *m = DeleteRefRequest{} }
 func (m *DeleteRefRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteRefRequest) ProtoMessage()    {}
 func (*DeleteRefRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{14}
+	return fileDescriptor_repo_c6b375427aa96933, []int{14}
 }
 func (m *DeleteRefRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteRefRequest.Unmarshal(m, b)
@@ -1054,7 +1054,7 @@ func (m *DeleteRefRequest) GetPackage() string {
 
 type ListRefsRequest struct {
 	// Name of a package to list refs of.
-	Package              string   `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package              string   `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1064,7 +1064,7 @@ func (m *ListRefsRequest) Reset()         { *m = ListRefsRequest{} }
 func (m *ListRefsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListRefsRequest) ProtoMessage()    {}
 func (*ListRefsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{15}
+	return fileDescriptor_repo_c6b375427aa96933, []int{15}
 }
 func (m *ListRefsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListRefsRequest.Unmarshal(m, b)
@@ -1093,7 +1093,7 @@ func (m *ListRefsRequest) GetPackage() string {
 
 type ListRefsResponse struct {
 	// Package refs, sorted by modification time, most recently touched first.
-	Refs                 []*Ref   `protobuf:"bytes,1,rep,name=refs" json:"refs,omitempty"`
+	Refs                 []*Ref   `protobuf:"bytes,1,rep,name=refs,proto3" json:"refs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1103,7 +1103,7 @@ func (m *ListRefsResponse) Reset()         { *m = ListRefsResponse{} }
 func (m *ListRefsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListRefsResponse) ProtoMessage()    {}
 func (*ListRefsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{16}
+	return fileDescriptor_repo_c6b375427aa96933, []int{16}
 }
 func (m *ListRefsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListRefsResponse.Unmarshal(m, b)
@@ -1140,13 +1140,13 @@ func (m *ListRefsResponse) GetRefs() []*Ref {
 // bytes.
 type Tag struct {
 	// Key should be a lowercase identifier-like string ([a-z0-9_\-]+).
-	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	// Value can be an arbitrary string.
-	Value string `protobuf:"bytes,2,opt,name=value" json:"value,omitempty"`
+	Value string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	// User that attached this tag (output only).
-	AttachedBy string `protobuf:"bytes,3,opt,name=attached_by,json=attachedBy" json:"attached_by,omitempty"`
+	AttachedBy string `protobuf:"bytes,3,opt,name=attached_by,json=attachedBy,proto3" json:"attached_by,omitempty"`
 	// When the tag was attached (output only).
-	AttachedTs           *timestamp.Timestamp `protobuf:"bytes,4,opt,name=attached_ts,json=attachedTs" json:"attached_ts,omitempty"`
+	AttachedTs           *timestamp.Timestamp `protobuf:"bytes,4,opt,name=attached_ts,json=attachedTs,proto3" json:"attached_ts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -1156,7 +1156,7 @@ func (m *Tag) Reset()         { *m = Tag{} }
 func (m *Tag) String() string { return proto.CompactTextString(m) }
 func (*Tag) ProtoMessage()    {}
 func (*Tag) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{17}
+	return fileDescriptor_repo_c6b375427aa96933, []int{17}
 }
 func (m *Tag) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Tag.Unmarshal(m, b)
@@ -1206,11 +1206,11 @@ func (m *Tag) GetAttachedTs() *timestamp.Timestamp {
 
 type AttachTagsRequest struct {
 	// The package that holds the instance we attach tags to.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we attach tags to.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// One or more tags to attach (order doesn't matter).
-	Tags                 []*Tag   `protobuf:"bytes,3,rep,name=tags" json:"tags,omitempty"`
+	Tags                 []*Tag   `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1220,7 +1220,7 @@ func (m *AttachTagsRequest) Reset()         { *m = AttachTagsRequest{} }
 func (m *AttachTagsRequest) String() string { return proto.CompactTextString(m) }
 func (*AttachTagsRequest) ProtoMessage()    {}
 func (*AttachTagsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{18}
+	return fileDescriptor_repo_c6b375427aa96933, []int{18}
 }
 func (m *AttachTagsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AttachTagsRequest.Unmarshal(m, b)
@@ -1263,11 +1263,11 @@ func (m *AttachTagsRequest) GetTags() []*Tag {
 
 type DetachTagsRequest struct {
 	// The package that holds the instance we detach tags from.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we detach tags from.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// One or more tags to detach (order doesn't matter).
-	Tags                 []*Tag   `protobuf:"bytes,3,rep,name=tags" json:"tags,omitempty"`
+	Tags                 []*Tag   `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1277,7 +1277,7 @@ func (m *DetachTagsRequest) Reset()         { *m = DetachTagsRequest{} }
 func (m *DetachTagsRequest) String() string { return proto.CompactTextString(m) }
 func (*DetachTagsRequest) ProtoMessage()    {}
 func (*DetachTagsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{19}
+	return fileDescriptor_repo_c6b375427aa96933, []int{19}
 }
 func (m *DetachTagsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DetachTagsRequest.Unmarshal(m, b)
@@ -1320,9 +1320,9 @@ func (m *DetachTagsRequest) GetTags() []*Tag {
 
 type ResolveVersionRequest struct {
 	// The package that contains the instance we are resolving version of.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The version string to resolve, see ResolveVersion for details.
-	Version              string   `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
+	Version              string   `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1332,7 +1332,7 @@ func (m *ResolveVersionRequest) Reset()         { *m = ResolveVersionRequest{} }
 func (m *ResolveVersionRequest) String() string { return proto.CompactTextString(m) }
 func (*ResolveVersionRequest) ProtoMessage()    {}
 func (*ResolveVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{20}
+	return fileDescriptor_repo_c6b375427aa96933, []int{20}
 }
 func (m *ResolveVersionRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ResolveVersionRequest.Unmarshal(m, b)
@@ -1368,9 +1368,9 @@ func (m *ResolveVersionRequest) GetVersion() string {
 
 type GetInstanceURLRequest struct {
 	// The package that holds the instance we want to get URL of.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we want to get URL of.
-	Instance             *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance             *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -1380,7 +1380,7 @@ func (m *GetInstanceURLRequest) Reset()         { *m = GetInstanceURLRequest{} }
 func (m *GetInstanceURLRequest) String() string { return proto.CompactTextString(m) }
 func (*GetInstanceURLRequest) ProtoMessage()    {}
 func (*GetInstanceURLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{21}
+	return fileDescriptor_repo_c6b375427aa96933, []int{21}
 }
 func (m *GetInstanceURLRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetInstanceURLRequest.Unmarshal(m, b)
@@ -1418,15 +1418,15 @@ func (m *GetInstanceURLRequest) GetInstance() *ObjectRef {
 // performed on an instance.
 type Processor struct {
 	// Internal identifier of the processor, e.g. "cipd_client_binary:v1"
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The state of this processor, see the enum.
-	State Processor_State `protobuf:"varint,2,opt,name=state,enum=cipd.Processor_State" json:"state,omitempty"`
+	State Processor_State `protobuf:"varint,2,opt,name=state,proto3,enum=cipd.Processor_State" json:"state,omitempty"`
 	// When the processor finished running (successfully or not).
-	FinishedTs *timestamp.Timestamp `protobuf:"bytes,3,opt,name=finished_ts,json=finishedTs" json:"finished_ts,omitempty"`
+	FinishedTs *timestamp.Timestamp `protobuf:"bytes,3,opt,name=finished_ts,json=finishedTs,proto3" json:"finished_ts,omitempty"`
 	// For SUCCEEDED state, result of the processing.
-	Result *_struct.Struct `protobuf:"bytes,4,opt,name=result" json:"result,omitempty"`
+	Result *_struct.Struct `protobuf:"bytes,4,opt,name=result,proto3" json:"result,omitempty"`
 	// For FAILED state, the error message.
-	Error                string   `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`
+	Error                string   `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1436,7 +1436,7 @@ func (m *Processor) Reset()         { *m = Processor{} }
 func (m *Processor) String() string { return proto.CompactTextString(m) }
 func (*Processor) ProtoMessage()    {}
 func (*Processor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{22}
+	return fileDescriptor_repo_c6b375427aa96933, []int{22}
 }
 func (m *Processor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Processor.Unmarshal(m, b)
@@ -1493,15 +1493,15 @@ func (m *Processor) GetError() string {
 
 type DescribeInstanceRequest struct {
 	// The package that holds the instance we want to get the info for.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The instance we want to get the info for.
-	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Whether the response should include "refs" field.
-	DescribeRefs bool `protobuf:"varint,3,opt,name=describe_refs,json=describeRefs" json:"describe_refs,omitempty"`
+	DescribeRefs bool `protobuf:"varint,3,opt,name=describe_refs,json=describeRefs,proto3" json:"describe_refs,omitempty"`
 	// Whether the response should include "tags" field.
-	DescribeTags bool `protobuf:"varint,4,opt,name=describe_tags,json=describeTags" json:"describe_tags,omitempty"`
+	DescribeTags bool `protobuf:"varint,4,opt,name=describe_tags,json=describeTags,proto3" json:"describe_tags,omitempty"`
 	// Whether the response should include "processors" field.
-	DescribeProcessors   bool     `protobuf:"varint,5,opt,name=describe_processors,json=describeProcessors" json:"describe_processors,omitempty"`
+	DescribeProcessors   bool     `protobuf:"varint,5,opt,name=describe_processors,json=describeProcessors,proto3" json:"describe_processors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1511,7 +1511,7 @@ func (m *DescribeInstanceRequest) Reset()         { *m = DescribeInstanceRequest
 func (m *DescribeInstanceRequest) String() string { return proto.CompactTextString(m) }
 func (*DescribeInstanceRequest) ProtoMessage()    {}
 func (*DescribeInstanceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{23}
+	return fileDescriptor_repo_c6b375427aa96933, []int{23}
 }
 func (m *DescribeInstanceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescribeInstanceRequest.Unmarshal(m, b)
@@ -1568,22 +1568,22 @@ func (m *DescribeInstanceRequest) GetDescribeProcessors() bool {
 
 type DescribeInstanceResponse struct {
 	// The instance with all output fields filled in.
-	Instance *Instance `protobuf:"bytes,1,opt,name=instance" json:"instance,omitempty"`
+	Instance *Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Refs pointing to the instance, sorted by modification time, most recent
 	// first.
 	//
 	// Present only if the request has describe_refs == true.
-	Refs []*Ref `protobuf:"bytes,2,rep,name=refs" json:"refs,omitempty"`
+	Refs []*Ref `protobuf:"bytes,2,rep,name=refs,proto3" json:"refs,omitempty"`
 	// Tags attached to the instance, sorted by the tag key first, and then
 	// by the timestamp (most recent first).
 	//
 	// Present only if the request has describe_tags == true.
-	Tags []*Tag `protobuf:"bytes,3,rep,name=tags" json:"tags,omitempty"`
+	Tags []*Tag `protobuf:"bytes,3,rep,name=tags,proto3" json:"tags,omitempty"`
 	// State of the processors that handled the instance (if any), sorted by their
 	// ID.
 	//
 	// Present only if the request has describe_processors == true.
-	Processors           []*Processor `protobuf:"bytes,4,rep,name=processors" json:"processors,omitempty"`
+	Processors           []*Processor `protobuf:"bytes,4,rep,name=processors,proto3" json:"processors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -1593,7 +1593,7 @@ func (m *DescribeInstanceResponse) Reset()         { *m = DescribeInstanceRespon
 func (m *DescribeInstanceResponse) String() string { return proto.CompactTextString(m) }
 func (*DescribeInstanceResponse) ProtoMessage()    {}
 func (*DescribeInstanceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{24}
+	return fileDescriptor_repo_c6b375427aa96933, []int{24}
 }
 func (m *DescribeInstanceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescribeInstanceResponse.Unmarshal(m, b)
@@ -1645,9 +1645,9 @@ type DescribeClientRequest struct {
 	// The CIPD client package we want to get info about.
 	//
 	// For example 'infra/tools/cipd/linux-amd64'.
-	Package string `protobuf:"bytes,1,opt,name=package" json:"package,omitempty"`
+	Package string `protobuf:"bytes,1,opt,name=package,proto3" json:"package,omitempty"`
 	// The client instance we want to get the info about.
-	Instance             *ObjectRef `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance             *ObjectRef `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -1657,7 +1657,7 @@ func (m *DescribeClientRequest) Reset()         { *m = DescribeClientRequest{} }
 func (m *DescribeClientRequest) String() string { return proto.CompactTextString(m) }
 func (*DescribeClientRequest) ProtoMessage()    {}
 func (*DescribeClientRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{25}
+	return fileDescriptor_repo_c6b375427aa96933, []int{25}
 }
 func (m *DescribeClientRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescribeClientRequest.Unmarshal(m, b)
@@ -1693,19 +1693,19 @@ func (m *DescribeClientRequest) GetInstance() *ObjectRef {
 
 type DescribeClientResponse struct {
 	// The instance with all output fields filled in.
-	Instance *Instance `protobuf:"bytes,1,opt,name=instance" json:"instance,omitempty"`
+	Instance *Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	// Reference to the extracted client binary in the storage.
 	//
 	// Can be used by the caller to verify the integrity of the binary.
-	ClientRef *ObjectRef `protobuf:"bytes,2,opt,name=client_ref,json=clientRef" json:"client_ref,omitempty"`
+	ClientRef *ObjectRef `protobuf:"bytes,2,opt,name=client_ref,json=clientRef,proto3" json:"client_ref,omitempty"`
 	// Signed URL pointing to the extracted client binary in the storage.
-	ClientBinary *ObjectURL `protobuf:"bytes,3,opt,name=client_binary,json=clientBinary" json:"client_binary,omitempty"`
+	ClientBinary *ObjectURL `protobuf:"bytes,3,opt,name=client_binary,json=clientBinary,proto3" json:"client_binary,omitempty"`
 	// Size of the client binary in bytes.
-	ClientSize int64 `protobuf:"varint,4,opt,name=client_size,json=clientSize" json:"client_size,omitempty"`
+	ClientSize int64 `protobuf:"varint,4,opt,name=client_size,json=clientSize,proto3" json:"client_size,omitempty"`
 	// SHA1 digest of the client binary (as hex string).
 	//
 	// Used only by legacy clients. Newer clients must verify client_ref instead.
-	LegacySha1           string   `protobuf:"bytes,5,opt,name=legacy_sha1,json=legacySha1" json:"legacy_sha1,omitempty"`
+	LegacySha1           string   `protobuf:"bytes,5,opt,name=legacy_sha1,json=legacySha1,proto3" json:"legacy_sha1,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1715,7 +1715,7 @@ func (m *DescribeClientResponse) Reset()         { *m = DescribeClientResponse{}
 func (m *DescribeClientResponse) String() string { return proto.CompactTextString(m) }
 func (*DescribeClientResponse) ProtoMessage()    {}
 func (*DescribeClientResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_repo_9093df0fbc815b27, []int{26}
+	return fileDescriptor_repo_c6b375427aa96933, []int{26}
 }
 func (m *DescribeClientResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescribeClientResponse.Unmarshal(m, b)
@@ -3110,10 +3110,10 @@ var _Repository_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/repo.proto", fileDescriptor_repo_9093df0fbc815b27)
+	proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/repo.proto", fileDescriptor_repo_c6b375427aa96933)
 }
 
-var fileDescriptor_repo_9093df0fbc815b27 = []byte{
+var fileDescriptor_repo_c6b375427aa96933 = []byte{
 	// 1717 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x57, 0xdd, 0x6e, 0xdb, 0xca,
 	0x11, 0x2e, 0x25, 0xd9, 0xb1, 0x46, 0x96, 0x2c, 0x6f, 0xfc, 0x23, 0x30, 0x71, 0x6c, 0x30, 0x68,

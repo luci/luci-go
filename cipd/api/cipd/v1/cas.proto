@@ -100,7 +100,8 @@ service Storage {
 // paths internally.
 enum HashAlgo {
   HASH_ALGO_UNSPECIFIED = 0;
-  SHA1 = 1;
+  SHA1                  = 1;
+  SHA256                = 2;
 }
 
 
