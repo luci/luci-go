@@ -70,6 +70,30 @@
       "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b9ccfe7f_50c37b4e",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T01:49:59Z",
+      "side": 1,
+      "message": "As I tried to explain yesterday, almost ALL backend API surface is formulated in terms of ObjectRef protos, and copy-pasting between instance IDs and RPC Explorer doesn\u0027t really work unless we use hex encoding.\n\nE.g. see output of https://chrome-infra-packages.appspot.com/rpcexplorer/services/cipd.Repository/ResolveVersion?request\u003d{%20%20%20%20%22package%22:%20%22infra/tools/cipd/linux-amd64%22,%20%20%20%20%22version%22:%20%22latest%22}\n\n{\n    \"package\": \"infra/tools/cipd/linux-amd64\",\n    \"instance\": {\n        \"hashAlgo\": \"SHA1\",\n        \"hexDigest\": \"2a6dbbbc0297e01d43cd7acfd8256d808f952814\"\n    },\n    \"registeredBy\": \"user:infra-packager@chops-service-accounts.iam.gserviceaccount.com\",\n    \"registeredTs\": \"2018-07-19T00:16:28.367760Z\"\n}\n\nThat\u0027s how most backend things will look. Instance ID is mostly client side concept (with only exception of ResolveVersion RPC that does understand instance ID encodings).\n\nUsing instance ID in protos doesn\u0027t seem right. Seems like double-encoding. (Not mentioning that changing this now will imply another big migration).",
+      "parentUuid": "555b9b77_5fc96a66",
+      "range": {
+        "startLine": 659,
+        "startChar": 36,
+        "endLine": 659,
+        "endChar": 100
+      },
+      "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
