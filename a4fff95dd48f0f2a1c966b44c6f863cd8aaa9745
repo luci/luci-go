@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f06e351_243d5ea6",
+        "filename": "cipd/appengine/impl/cas/cas_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-19T01:23:20Z",
+      "side": 1,
+      "message": "why not use the base64 representation in the bucket path (or did I misunderstand this string)?",
+      "range": {
+        "startLine": 659,
+        "startChar": 36,
+        "endLine": 659,
+        "endChar": 100
+      },
+      "revId": "a4fff95dd48f0f2a1c966b44c6f863cd8aaa9745",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
