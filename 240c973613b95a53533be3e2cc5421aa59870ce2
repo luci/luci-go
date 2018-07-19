@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "cabea5a9_d2b45b8e",
+        "filename": "cipd/common/hash.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T00:21:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9f700036_2f69a30b",
+      "range": {
+        "startLine": 42,
+        "startChar": 38,
+        "endLine": 42,
+        "endChar": 40
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2acdb3f4_1ae09d4b",
         "filename": "cipd/common/iid.go",
         "patchSetId": 6
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "13b7b3bb_2eef8ab8",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T00:21:51Z",
+      "side": 1,
+      "message": "Clarified.",
+      "parentUuid": "eec2af35_ab723d86",
+      "range": {
+        "startLine": 97,
+        "startChar": 3,
+        "endLine": 97,
+        "endChar": 52
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4473b9bb_1d073dd6",
         "filename": "cipd/common/iid.go",
         "patchSetId": 6
@@ -95,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "a586565b_59b14927",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T00:21:51Z",
+      "side": 1,
+      "message": "I think SHA2-224 digest will result in 39 bytes, so it will be alright :)",
+      "parentUuid": "4473b9bb_1d073dd6",
+      "range": {
+        "startLine": 133,
+        "startChar": 22,
+        "endLine": 133,
+        "endChar": 24
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d9302f28_15ea648e",
         "filename": "cipd/common/iid.go",
         "patchSetId": 6
@@ -115,6 +187,30 @@
       "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f64354eb_a162c6bf",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-19T00:21:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9302f28_15ea648e",
+      "range": {
+        "startLine": 146,
+        "startChar": 22,
+        "endLine": 146,
+        "endChar": 44
+      },
+      "revId": "240c973613b95a53533be3e2cc5421aa59870ce2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
