@@ -29,9 +29,19 @@ import "go.chromium.org/luci/cipd/api/cipd/v1/cas.proto";
 // A package is a named collection of one or more versions of a group of files.
 // A package should typically be used for a single software component or
 // dataset, not a conglomeration. A package instance is a concrete incarnation
-// of a such version: it is a real file, and it is identified by its SHA1 hex
-// digest (referred to as "instance ID"). Thus a package is a named collection
-// of package instances, where each instance is identified by SHA1.
+// of a such version: it is a real file, and it is identified by its SHA256 (or
+// SHA1 for older packages) digest, represented by ObjectRef proto in the
+// protocol.
+//
+// A particular serialization of ObjectRef proto into a string is referred to
+// as "instance ID" and it is used to identify package instances (mostly in
+// the interface exposed by the CIPD command line client, but also in
+// ResolveVersion RPC):
+//   * For legacy reasons SHA1 digests are encoded with lowercase hex encoding,
+//     which always results in 40 char ASCII strings).
+//   * Other digests are encoded using base64(digest + []byte{ref.HashAlgo}),
+//     where 'base64' is URL-safe and unpadded and '+' is concatenation.
+//     For SHA256 digests this results in 44 char ASCII strings that end with C.
 //
 // Instance files themselves are zip archives with some additional metadata.
 // They are produced and consumed by cipd CLI client, and the backend mostly
