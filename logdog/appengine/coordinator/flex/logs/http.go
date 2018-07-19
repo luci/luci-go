@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -30,6 +31,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -62,6 +64,7 @@ type header struct {
 	UserPicture string
 	UserEmail   string
 	Path        string
+	Nonce       string
 }
 
 // The stylesheet is inlined because static_dir isn't supported in flex.
@@ -105,7 +108,7 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		margin-right: 10px;
 	}
 </style>
-<link id="favicon" rel="shortcut icon" type="image/png" href="https://storage.googleapis.com/chrome-infra/logdog-small.png">
+<link id="favicon" rel="shortcut icon" type="image/png" href="https://chrome-infra.storage.googleapis.com/logdog-small.png">
 <title>{{ .Title }} | LogDog </title></head>
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
@@ -121,11 +124,11 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		<a href="{{.LogoutURL}}" alt="Logout">Logout</a>
 	{{ end }}
 </div></header><hr><div class="lines">
-<script>
+<script nonce="{{ .Nonce }}">
   (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+	})(window,document,'script','https://crdx-feedback.appspot.com.storage.googleapis.com/feedback.js','crdx');
 
   crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3ELogDog');
 </script>
@@ -139,7 +142,7 @@ type footer struct {
 var footerTemplate = template.Must(template.New("footer").Parse(`
 </div>
 <hr><footer>
-<div><img class="logdog-logo" src="https://storage.googleapis.com/chrome-infra/logdog-small.png"></div>
+<div><img class="logdog-logo" src="https://chrome-infra.storage.googleapis.com/logdog-small.png"></div>
 <div>{{ .Message }}<br>
 This is <a href="https://chromium.googlesource.com/infra/luci/luci-go/+/master/logdog/">LogDog</a><br>
 Rendering took {{ .Duration }}</div>
@@ -161,6 +164,7 @@ type logData struct {
 	logStream      coordinator.LogStream
 	logStreamState coordinator.LogStreamState
 	options        userOptions
+	nonce          string // Used for Content Security Policy
 }
 
 // viewerURL is a convenience function to extract the logdog.viewer_url tag
@@ -247,6 +251,12 @@ func resolveOptions(request *http.Request, pathStr string) (options userOptions,
 // * A channel where logs entries are sent back.
 // * Log Stream metadata and state.
 func startFetch(c context.Context, request *http.Request, pathStr string) (data logData, err error) {
+	nonce := make([]byte, 64)
+	if _, err = cryptorand.Read(c, nonce); err != nil {
+		err = errors.Annotate(err, "generating nonce").Err()
+		return
+	}
+	data.nonce = base64.StdEncoding.EncodeToString(nonce)
 	if data.options, err = resolveOptions(request, pathStr); err != nil {
 		err = errors.Annotate(err, "resolving options").Tag(grpcutil.InvalidArgumentTag).Err()
 		return
@@ -453,6 +463,7 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 		LogoutURL:   logoutURL,
 		UserPicture: user.Picture,
 		UserEmail:   user.Email,
+		Nonce:       data.nonce,
 	}); err != nil {
 		fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
 	}
@@ -465,6 +476,13 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
 	// Tell the browser to prefer https.
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	// Tell the browser where we can load scripts and images from.
+	csp := fmt.Sprintf(
+		"script-src 'self' 'nonce-%s' www.google-analytics.com crdx-feedback.appspot.com.storage.googleapis.com;",
+		data.nonce,
+	)
+	csp += "img-src 'self' chrome-infra.storage.googleapis.com crdx-feedback.appspot.com.storage.googleapis.com"
+	ctx.Writer.Header().Set("Content-Security-Policy", csp)
 	// Set the correct content type based off the log stream and format.
 	contentType := data.logStream.ContentType
 	if contentType == "text/plain" && data.options.format == formatHTML {
