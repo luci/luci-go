@@ -312,9 +312,10 @@ func (intr *Interpreter) loadIfMissing(key string, loader func() (skylark.String
 //  3) An stdlib module, as supplied by Stdlib callback:
 //        "builtin:some/path/to/be/passed/to/the/callback.sky"
 func (intr *Interpreter) loadImpl(thread *skylark.Thread, module string) (skylark.StringDict, error) {
-	// This would be either a "builtin:..." path or a path relative to the root,
-	// since that's what we pass to skylark.ExecFile.
-	cur := thread.Caller().Position().Filename()
+	// Grab a name of a module that is calling load(...). This would be either a
+	// "builtin:..." path or a path relative to the root, since that's what we
+	// pass to skylark.ExecFile.
+	cur := thread.TopFrame().Position().Filename()
 
 	// Convert it back to an absolute path, as required by normalizePath.
 	curIsBuiltin := strings.HasPrefix(cur, "builtin:")
