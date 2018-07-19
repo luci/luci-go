@@ -95,6 +95,7 @@ message SearchBuildsRequest {
 
   // Number of builds to return.
   // Defaults to 100.
+  // Any value >1000 is interpreted as 1000.
   int32 page_size = 101;
 
   // Value of SearchBuildsResponse.next_page_token from the previous response.
