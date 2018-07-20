@@ -10,6 +10,10 @@ import "google/protobuf/timestamp.proto";
 
 // BlobWithSHA1 is a wrapper around a binary blob with SHA1 hash to verify
 // its integrity.
+//
+// The hash is used to detect a corruption due to bad disk blocks, etc. This is
+// not a cryptographic application, any decent checksum algorithm would suffice.
+// SHA1 was chosen somewhat arbitrarily.
 message BlobWithSHA1 {
   bytes blob = 1;
   bytes sha1 = 2;
@@ -18,29 +22,29 @@ message BlobWithSHA1 {
 // TagCache stores a mapping (service, package name, tag) -> instance ID to
 // speed up subsequent ResolveVersion calls when tags are used.
 //
-// It also contains a (service, instance_id, file_name) -> hash mapping which is
-// used for client self-update purposes. file_name is case-senstive and must
-// always use POSIX-style slashes.
+// It also contains a '(service, instance_id, file_name) -> encoded ObjectRef'
+// mapping which is used for client self-update purposes. file_name is
+// case-senstive and must always use POSIX-style slashes.
 //
 // A service is specified by its hostname. We make it part of the key since
 // same tags may point to different instances on different services.
 message TagCache {
   message Entry {
-    string service = 4;
-    string package = 1;
-    string tag = 2;
-    string instance_id = 3;
+    string service     = 4; // e.g. 'chrome-infra-packages.appspot.com'
+    string package     = 1; // name of a tagged CIPD package
+    string tag         = 2; // the tag, e.g. 'k:v'
+    string instance_id = 3; // the instance ID it resolves to
   }
 
   // Capped list of entries, most recently resolved is last.
   repeated Entry entries = 1;
 
   message FileEntry {
-    string service = 5;
-    string package = 1;
-    string instance_id = 2;
-    string file_name = 3;
-    string hash = 4;
+    string service     = 5; // e.g. 'chrome-infra-packages.appspot.com'
+    string package     = 1; // name of a CIPD package containing the file
+    string instance_id = 2; // identifier of the CIPD package instance
+    string file_name   = 3; // file name inside the package, POSIX-style slashes
+    string object_ref  = 4; // file's ObjectRef as encoded by ObjectRefToInstanceID (for legacy reasons)
   }
   repeated FileEntry file_entries = 2;
 }
