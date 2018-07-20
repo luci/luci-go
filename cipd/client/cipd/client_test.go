@@ -741,7 +741,10 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 			// Setup association "pin -> exe hash" (via the tag cache too).
 			exeHash := strings.Repeat("a", 40)
-			So(client.tagCache.AddFile(ctx, pin, clientFileName, exeHash), ShouldBeNil)
+			So(client.tagCache.AddExtractedObjectRef(ctx, pin, clientFileName, &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: exeHash,
+			}), ShouldBeNil)
 
 			// Does nothing (no RPCs), since everything is up-to-date.
 			pin, err := client.maybeUpdateClient(ctx, nil, "git:deadbeef", exeHash, "some_path")
