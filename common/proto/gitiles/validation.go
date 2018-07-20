@@ -28,10 +28,10 @@ func (r *LogRequest) Validate() error {
 		return errors.New("project is required")
 	case r.PageSize < 0:
 		return errors.New("page size must not be negative")
-	case r.Treeish == "":
-		return errors.New("treeish is required")
-	case strings.Contains(r.Treeish, ".."):
-		return errors.New("treeish cannot contain \"..\"; use Ancestor instead")
+	case r.Committish == "":
+		return errors.New("committish is required")
+	case strings.Contains(r.Committish, ".."):
+		return errors.New("committish cannot contain \"..\"; use Ancestor instead")
 	default:
 		return nil
 	}

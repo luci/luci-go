@@ -34,11 +34,11 @@ import (
 
 func cmdLog(authOpts auth.Options) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "log <options> repository-url treeish",
-		ShortDesc: "prints commits based on a repo and treeish",
-		LongDesc: `Prints commits based on a repo and treeish.
+		UsageLine: "log <options> repository-url committish",
+		ShortDesc: "prints commits based on a repo and committish",
+		LongDesc: `Prints commits based on a repo and committish.
 
-This should be equivalent of a "git log <treeish>" call in that repository.`,
+This should be equivalent of a "git log <committish>" call in that repository.`,
 		CommandRun: func() subcommands.CommandRun {
 			c := logRun{}
 			c.commonFlags.Init(authOpts)
@@ -89,12 +89,12 @@ func (c *logRun) main(a subcommands.Application, args []string) error {
 
 	switch commits := strings.SplitN(args[1], "..", 2); len(commits) {
 	case 0:
-		return errors.New("treeish is required")
+		return errors.New("committish is required")
 	case 1:
-		req.Treeish = commits[0]
+		req.Committish = commits[0]
 	case 2:
 		req.ExcludeAncestorsOf = commits[0]
-		req.Treeish = commits[1]
+		req.Committish = commits[1]
 	default:
 		panic("impossible")
 	}
