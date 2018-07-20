@@ -15,8 +15,8 @@
 package processing
 
 import (
-	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 	"net/http"
 	"strings"
@@ -78,8 +78,9 @@ func GetClientBinaryName(pkg string) string {
 type ClientExtractorResult struct {
 	ClientBinary struct {
 		Size       int64  `json:"size"`
-		HashAlgo   string `json:"hash_algo"`
-		HashDigest string `json:"hash_digest"`
+		HashAlgo   string `json:"hash_algo"`   // cas.HashAlgo enum serialized to string
+		HashDigest string `json:"hash_digest"` // as hex string
+		SHA1Digest string `json:"sha1_digest"` // may be missing in old records for which hash_algo == SHA1
 	} `json:"client_binary"`
 }
 
@@ -87,11 +88,12 @@ type ClientExtractorResult struct {
 //
 // The returned ObjectRef is validated to be syntactically correct already.
 func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
-	if r.ClientBinary.HashAlgo != "SHA1" {
-		return nil, fmt.Errorf("expecting SHA1 hash, got %q", r.ClientBinary.HashAlgo)
+	algo := api.HashAlgo_value[r.ClientBinary.HashAlgo]
+	if algo == 0 {
+		return nil, fmt.Errorf("unrecognized hash algo %q", r.ClientBinary.HashAlgo)
 	}
 	ref := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA1,
+		HashAlgo:  api.HashAlgo(algo),
 		HexDigest: r.ClientBinary.HashDigest,
 	}
 	if err := common.ValidateObjectRef(ref); err != nil {
@@ -102,14 +104,17 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 
 // SHA1 returns client's SHA1 hash or "" if not known.
 //
-// This methods exists in anticipation that ObjectRef will become SHA256-based
-// soon, but we still need to return SHA1 to older clients and bootstrap scripts
-// that don't understand SHA256.
+// Client's SHA1 is still needed for older clients and bootstrap scripts that
+// don't understand ObjectRef.
 func (r *ClientExtractorResult) SHA1() string {
-	if strings.ToLower(r.ClientBinary.HashAlgo) == "sha1" {
+	switch {
+	case r.ClientBinary.SHA1Digest != "":
+		return r.ClientBinary.SHA1Digest
+	case r.ClientBinary.HashAlgo == "SHA1": // for older entries predating ObjectRef
 		return r.ClientBinary.HashDigest
+	default:
+		return ""
 	}
-	return ""
 }
 
 // ClientExtractor is a processor that extracts CIPD client binary from CIPD
@@ -149,6 +154,21 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 		}
 	}()
 
+	// We use same hash algo for naming the extracted file as was used to name
+	// the package instance it is in. This avoid some confusion during the
+	// transition to a new hash.
+	instRef := common.InstanceIDToObjectRef(inst.InstanceID)
+	refHash := common.MustNewHash(instRef.HashAlgo)
+
+	// We also always calculate SHA1 hash in parallel, for legacy bootstrap
+	// scripts that understand only SHA1.
+	var sha1Hash hash.Hash
+	if instRef.HashAlgo == api.HashAlgo_SHA1 {
+		sha1Hash = refHash
+	} else {
+		sha1Hash = common.MustNewHash(api.HashAlgo_SHA1)
+	}
+
 	// Start extracting the file.
 	reader, size, err := pkg.Open(GetClientBinaryName(inst.Package.StringID()))
 	if err != nil {
@@ -159,7 +179,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 
 	// Start writing the result to CAS.
 	op, err := e.CAS.BeginUpload(ctx, &api.BeginUploadRequest{
-		HashAlgo: api.HashAlgo_SHA1,
+		HashAlgo: instRef.HashAlgo,
 	})
 	if err != nil {
 		err = errors.Annotate(err, "failed to open a CAS upload").Tag(transient.Tag).Err()
@@ -179,7 +199,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 		bufferSize = 2 * 1024 * 1024
 	}
 
-	// Copy calculating SHA1 on the fly.
+	// Copy, calculating digests on the fly.
 	//
 	// We use fullReader to make sure we write full 2 Mb chunks to GS. Otherwise
 	// 'reader' uses 32 Kb buffers and they are flushed as 32 Kb buffers to Google
@@ -192,9 +212,13 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// chunks from the underlying file reader. We basically read 512 Kb buffer
 	// from GS, then unzip it in memory via small 32 Kb chunks into 2 Mb output
 	// buffer, and then flush it to GS.
-	hash, _ := common.NewHash(api.HashAlgo_SHA1)
+	writeTo := make([]io.Writer, 0, 3)
+	writeTo = append(writeTo, uploader, refHash)
+	if sha1Hash != refHash {
+		writeTo = append(writeTo, sha1Hash)
+	}
 	copied, err := io.CopyBuffer(
-		io.MultiWriter(uploader, hash),
+		io.MultiWriter(writeTo...),
 		fullReader{reader},
 		make([]byte, bufferSize))
 	if err == nil && copied != size {
@@ -221,12 +245,11 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 
 	// Skip the hash calculation in CAS by enforcing the hash, we've just
 	// calculated it.
-	digest := hex.EncodeToString(hash.Sum(nil))
 	op, err = e.CAS.FinishUpload(ctx, &api.FinishUploadRequest{
 		UploadOperationId: op.OperationId,
 		ForceHash: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: digest,
+			HashAlgo:  instRef.HashAlgo,
+			HexDigest: common.HexDigest(refHash),
 		},
 	})
 
@@ -240,12 +263,14 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 		return
 	}
 
-	logging.Infof(ctx, "Uploaded CIPD client binary %s:%s (%d bytes)", inst.Package.StringID(), digest, size)
-
 	r := ClientExtractorResult{}
 	r.ClientBinary.Size = size
-	r.ClientBinary.HashAlgo = "SHA1"
-	r.ClientBinary.HashDigest = digest
+	r.ClientBinary.HashAlgo = instRef.HashAlgo.String()
+	r.ClientBinary.HashDigest = common.HexDigest(refHash)
+	r.ClientBinary.SHA1Digest = common.HexDigest(sha1Hash)
+
+	logging.Infof(ctx, "Uploaded CIPD client binary %s with %s %s (%d bytes)",
+		inst.Package.StringID(), r.ClientBinary.HashAlgo, r.ClientBinary.HashDigest, size)
 
 	res.Result = r
 	return

@@ -1208,7 +1208,7 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	// SHA1 is required to allow older clients to self-update to a newer client
 	// that supports more than SHA1.
 	if proc.SHA1() == "" {
-		return nil, errors.Reason("malformed client extracto results, missing SHA1 digest").Tag(grpcutil.InternalTag).Err()
+		return nil, errors.Reason("malformed client extraction results, missing SHA1 digest").Tag(grpcutil.InternalTag).Err()
 	}
 
 	// Grab the signed URL of the client binary.
@@ -1404,12 +1404,14 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
+	iid := r.FormValue("instance_id")
+	if err := common.ValidateInstanceID(iid); err != nil {
+		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
 	desc, err := impl.DescribeClient(c, &api.DescribeClientRequest{
-		Package: r.FormValue("package_name"),
-		Instance: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1, // legacy API supported only SHA1
-			HexDigest: r.FormValue("instance_id"),
-		},
+		Package:  r.FormValue("package_name"),
+		Instance: common.InstanceIDToObjectRef(iid),
 	})
 
 	switch grpc.Code(err) {
@@ -1461,14 +1463,16 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
+	iid := r.FormValue("instance_id")
+	if err := common.ValidateInstanceID(iid); err != nil {
+		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
 	// This checks the request format, ACLs, verifies the instance exists and
 	// returns info about it.
 	inst, err := impl.DescribeInstance(c, &api.DescribeInstanceRequest{
-		Package: r.FormValue("package_name"),
-		Instance: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1, // legacy API supported only SHA1
-			HexDigest: r.FormValue("instance_id"),
-		},
+		Package:  r.FormValue("package_name"),
+		Instance: common.InstanceIDToObjectRef(iid),
 	})
 
 	var signedURL *api.ObjectURL
