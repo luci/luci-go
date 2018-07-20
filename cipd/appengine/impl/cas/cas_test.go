@@ -53,10 +53,10 @@ func TestGetReader(t *testing.T) {
 
 	ctx := context.Background()
 
-	sha1 := strings.Repeat("a", 40)
+	sha256 := strings.Repeat("a", 64)
 	gsMock := &mockedGS{
 		files: map[string]string{
-			"/bucket/path/SHA1/" + sha1: "zzz body",
+			"/bucket/path/SHA256/" + sha256: "zzz body",
 		},
 	}
 
@@ -69,8 +69,8 @@ func TestGetReader(t *testing.T) {
 
 	Convey("OK", t, func() {
 		r, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: sha256,
 		})
 		So(err, ShouldBeNil)
 		So(r, ShouldNotBeNil)
@@ -84,7 +84,7 @@ func TestGetReader(t *testing.T) {
 
 	Convey("Bad object ref", t, func() {
 		_, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
+			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "zzz",
 		})
 		So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
@@ -93,8 +93,8 @@ func TestGetReader(t *testing.T) {
 
 	Convey("No such file", t, func() {
 		_, err := impl.GetReader(ctx, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: strings.Repeat("b", 40),
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("b", 64),
 		})
 		So(grpc.Code(err), ShouldEqual, codes.NotFound)
 		So(err, ShouldErrLike, "can't read the object")
@@ -120,22 +120,22 @@ func TestGetObjectURL(t *testing.T) {
 	Convey("OK", t, func() {
 		resp, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("a", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
 			},
 			DownloadFilename: "file.name",
 		})
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &api.ObjectURL{
-			SignedUrl: "http//signed.example.com/bucket/path/SHA1/" +
-				"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa?f=file.name",
+			SignedUrl: "http//signed.example.com/bucket/path/SHA256/" +
+				strings.Repeat("a", 64) + "?f=file.name",
 		})
 	})
 
 	Convey("Bad object ref", t, func() {
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
+				HashAlgo:  api.HashAlgo_SHA256,
 				HexDigest: "zzz",
 			},
 		})
@@ -146,8 +146,8 @@ func TestGetObjectURL(t *testing.T) {
 	Convey("Bad filename", t, func() {
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("a", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
 			},
 			DownloadFilename: "abc\ndef",
 		})
@@ -159,8 +159,8 @@ func TestGetObjectURL(t *testing.T) {
 		signErr = errors.Reason("blah").Tag(grpcutil.NotFoundTag).Err()
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("a", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
 			},
 		})
 		So(grpc.Code(err), ShouldEqual, codes.NotFound)
@@ -171,8 +171,8 @@ func TestGetObjectURL(t *testing.T) {
 		signErr = errors.Reason("internal").Err()
 		_, err := impl.GetObjectURL(ctx, &api.GetObjectURLRequest{
 			Object: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("a", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
 			},
 		})
 		So(grpc.Code(err), ShouldEqual, codes.Unknown)
@@ -263,7 +263,7 @@ func TestBeginUpload(t *testing.T) {
 
 		Convey("Success (no Object)", func() {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA1,
+				HashAlgo: api.HashAlgo_SHA256,
 			})
 			So(err, ShouldBeNil)
 
@@ -293,7 +293,7 @@ func TestBeginUpload(t *testing.T) {
 				Status:     api.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				HashAlgo:   api.HashAlgo_SHA1,
+				HashAlgo:   api.HashAlgo_SHA256,
 				CreatedBy:  uploaderId,
 			})
 		})
@@ -301,8 +301,8 @@ func TestBeginUpload(t *testing.T) {
 		Convey("Success (Object is not present in the store)", func() {
 			resp, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("a", 64),
 				},
 			})
 			So(err, ShouldBeNil)
@@ -320,8 +320,8 @@ func TestBeginUpload(t *testing.T) {
 				Status:     api.UploadStatus_UPLOADING,
 				TempGSPath: "/bucket/tmp_path/1454472306_1",
 				UploadURL:  "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-				HashAlgo:   api.HashAlgo_SHA1,
-				HexDigest:  strings.Repeat("a", 40),
+				HashAlgo:   api.HashAlgo_SHA256,
+				HexDigest:  strings.Repeat("a", 64),
 				CreatedBy:  uploaderId,
 				CreatedTS:  op.CreatedTS,
 				UpdatedTS:  op.UpdatedTS,
@@ -332,8 +332,8 @@ func TestBeginUpload(t *testing.T) {
 			gsMock.exists = true
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("a", 64),
 				},
 			})
 			So(grpc.Code(err), ShouldEqual, codes.AlreadyExists)
@@ -360,10 +360,10 @@ func TestBeginUpload(t *testing.T) {
 		Convey("Mismatch in hash_algo", func() {
 			_, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("a", 64),
 				},
-				HashAlgo: 2,
+				HashAlgo: 333, // something else
 			})
 			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
 			So(err, ShouldErrLike, "'hash_algo' and 'object.hash_algo' do not match")
@@ -416,7 +416,7 @@ func TestFinishUpload(t *testing.T) {
 		Convey("With force hash", func() {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA1,
+				HashAlgo: api.HashAlgo_SHA256,
 			})
 			So(err, ShouldBeNil)
 			So(op, ShouldResemble, &api.UploadOperation{
@@ -432,8 +432,8 @@ func TestFinishUpload(t *testing.T) {
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("a", 40),
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 				So(err, ShouldBeNil)
@@ -442,15 +442,15 @@ func TestFinishUpload(t *testing.T) {
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("a", 40),
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 
 				// Published the file, deleted the temporary one.
 				So(gsMock.publisCalls, ShouldResemble, []publishCall{
 					{
-						dst:    "/bucket/store/SHA1/" + strings.Repeat("a", 40),
+						dst:    "/bucket/store/SHA256/" + strings.Repeat("a", 64),
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: -1,
 					},
@@ -463,8 +463,8 @@ func TestFinishUpload(t *testing.T) {
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("a", 40),
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 				So(grpc.Code(err), ShouldEqual, codes.Internal)
@@ -480,8 +480,8 @@ func TestFinishUpload(t *testing.T) {
 				op, err = impl.FinishUpload(ctx, &api.FinishUploadRequest{
 					UploadOperationId: op.OperationId,
 					ForceHash: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("a", 40),
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: strings.Repeat("a", 64),
 					},
 				})
 				So(err, ShouldBeNil)
@@ -497,7 +497,7 @@ func TestFinishUpload(t *testing.T) {
 		Convey("Without force hash, unknown expected hash", func() {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-				HashAlgo: api.HashAlgo_SHA1,
+				HashAlgo: api.HashAlgo_SHA256,
 			})
 			So(err, ShouldBeNil)
 			So(op, ShouldResemble, &api.UploadOperation{
@@ -545,7 +545,7 @@ func TestFinishUpload(t *testing.T) {
 				// Published the verified file, deleted the temporary one.
 				So(gsMock.publisCalls, ShouldResemble, []publishCall{
 					{
-						dst:    "/bucket/store/SHA1/8cb2237d0679ca88db6464eac60da96345513964",
+						dst:    "/bucket/store/SHA256/5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: 42,
 					},
@@ -562,8 +562,8 @@ func TestFinishUpload(t *testing.T) {
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: "8cb2237d0679ca88db6464eac60da96345513964",
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
 			})
@@ -619,8 +619,8 @@ func TestFinishUpload(t *testing.T) {
 			// Initiate an upload to get operation ID.
 			op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
 				Object: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: "8cb2237d0679ca88db6464eac60da96345513964",
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 				},
 			})
 			So(err, ShouldBeNil)
@@ -656,7 +656,7 @@ func TestFinishUpload(t *testing.T) {
 				// Published the verified file, deleted the temporary one.
 				So(gsMock.publisCalls, ShouldResemble, []publishCall{
 					{
-						dst:    "/bucket/store/SHA1/8cb2237d0679ca88db6464eac60da96345513964",
+						dst:    "/bucket/store/SHA256/5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 						src:    "/bucket/tmp_path/1454472306_1",
 						srcGen: 42,
 					},
@@ -673,8 +673,8 @@ func TestFinishUpload(t *testing.T) {
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: "8cb2237d0679ca88db6464eac60da96345513964",
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
 			})
@@ -684,7 +684,7 @@ func TestFinishUpload(t *testing.T) {
 				gsMock.files["/bucket/tmp_path/1454472306_1"] = "123456"
 
 				err := impl.verifyUploadTask(ctx, t[0].Payload.(*tasks.VerifyUpload))
-				So(err, ShouldErrLike, "expected SHA1 to be")
+				So(err, ShouldErrLike, "expected SHA256 to be")
 				So(transient.Tag.In(err), ShouldBeFalse)
 
 				// The temp file is deleted.
@@ -699,9 +699,9 @@ func TestFinishUpload(t *testing.T) {
 					OperationId: op.OperationId,
 					Status:      api.UploadStatus_ERRORED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
-					ErrorMessage: "Verification failed - expected SHA1 to be " +
-						"8cb2237d0679ca88db6464eac60da96345513964, " +
-						"got 7c4a8d09ca3762af61e59520943dc26494f8941b",
+					ErrorMessage: "Verification failed - expected SHA256 to be " +
+						"5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5, " +
+						"got 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
 				})
 			})
 
@@ -726,8 +726,8 @@ func TestFinishUpload(t *testing.T) {
 					Status:      api.UploadStatus_PUBLISHED,
 					UploadUrl:   "http://upload-url.example.com/for/+/bucket/tmp_path/1454472306_1",
 					Object: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: "8cb2237d0679ca88db6464eac60da96345513964",
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5",
 					},
 				})
 			})
@@ -766,7 +766,7 @@ func TestCancelUpload(t *testing.T) {
 
 		// Initiate an upload to get operation ID.
 		op, err := impl.BeginUpload(ctx, &api.BeginUploadRequest{
-			HashAlgo: api.HashAlgo_SHA1,
+			HashAlgo: api.HashAlgo_SHA256,
 		})
 		So(err, ShouldBeNil)
 		So(op, ShouldResemble, &api.UploadOperation{
