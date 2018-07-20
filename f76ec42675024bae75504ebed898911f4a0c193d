@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d45d4802_2eb6e7a6",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1410,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-20T20:36:28Z",
+      "side": 0,
+      "message": "I checked few bootstrap scripts that hit this endpoint (puppet, ccompute). They luckily do not check format of instance_id, so they should work OK when passed SHA256-based instance ID.",
+      "range": {
+        "startLine": 1410,
+        "startChar": 36,
+        "endLine": 1410,
+        "endChar": 66
+      },
+      "revId": "f76ec42675024bae75504ebed898911f4a0c193d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
