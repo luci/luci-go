@@ -94,8 +94,10 @@ func TestClientExtractor(t *testing.T) {
 	ctx := gaetesting.TestingContext()
 
 	originalBody := strings.Repeat("01234567", 8960)
-	expectedSHA256Digest := hexDigest(api.HashAlgo_SHA256, originalBody)
-	expectedSHA1Digest := hexDigest(api.HashAlgo_SHA1, originalBody)
+	expectedDigests := map[string]string{
+		"SHA1":   hexDigest(api.HashAlgo_SHA1, originalBody),
+		"SHA256": hexDigest(api.HashAlgo_SHA256, originalBody),
+	}
 
 	instSHA256 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA256)
 	instSHA1 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA1)
@@ -146,13 +148,13 @@ func TestClientExtractor(t *testing.T) {
 			r := res.Result.(ClientExtractorResult)
 			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
 			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA256")
-			So(r.ClientBinary.HashDigest, ShouldEqual, expectedSHA256Digest)
-			So(r.ClientBinary.SHA1Digest, ShouldEqual, expectedSHA1Digest)
+			So(r.ClientBinary.HashDigest, ShouldEqual, expectedDigests["SHA256"])
+			So(r.ClientBinary.AllHashDigests, ShouldResemble, expectedDigests)
 
 			So(extracted.String(), ShouldEqual, originalBody)
 			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA256,
-				HexDigest: expectedSHA256Digest,
+				HexDigest: expectedDigests["SHA256"],
 			})
 
 			// Was written by 64 Kb chunks, NOT 32 Kb (as used by zip.Reader).
@@ -169,12 +171,12 @@ func TestClientExtractor(t *testing.T) {
 			r := res.Result.(ClientExtractorResult)
 			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
 			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA1")
-			So(r.ClientBinary.HashDigest, ShouldEqual, expectedSHA1Digest)
-			So(r.ClientBinary.SHA1Digest, ShouldEqual, expectedSHA1Digest)
+			So(r.ClientBinary.HashDigest, ShouldEqual, expectedDigests["SHA1"])
+			So(r.ClientBinary.AllHashDigests, ShouldResemble, expectedDigests)
 
 			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
 				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: expectedSHA1Digest,
+				HexDigest: expectedDigests["SHA1"],
 			})
 		})
 
@@ -243,7 +245,11 @@ func TestGetResult(t *testing.T) {
 			res := ClientExtractorResult{}
 			res.ClientBinary.HashAlgo = "SHA256"
 			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA256, "b")
-			res.ClientBinary.SHA1Digest = phonyHexDigest(api.HashAlgo_SHA1, "c")
+			res.ClientBinary.AllHashDigests = map[string]string{
+				"SHA1":   phonyHexDigest(api.HashAlgo_SHA1, "c"),
+				"SHA256": phonyHexDigest(api.HashAlgo_SHA256, "d"),
+				"SHA999": strings.Repeat("e", 99), // should silently be skipped
+			}
 			write(&res, "")
 
 			out, err := GetClientExtractorResult(ctx, &api.Instance{
@@ -263,7 +269,10 @@ func TestGetResult(t *testing.T) {
 				HexDigest: res.ClientBinary.HashDigest,
 			})
 
-			So(out.SHA1(), ShouldEqual, res.ClientBinary.SHA1Digest)
+			So(out.ObjectRefAliases(), ShouldResemble, []*api.ObjectRef{
+				{HashAlgo: api.HashAlgo_SHA1, HexDigest: phonyHexDigest(api.HashAlgo_SHA1, "c")},
+				{HashAlgo: api.HashAlgo_SHA256, HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "d")},
+			})
 		})
 
 		Convey("Failed processor", func() {
