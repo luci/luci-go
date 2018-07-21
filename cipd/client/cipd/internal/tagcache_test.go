@@ -23,6 +23,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/common"
 
@@ -32,13 +33,19 @@ import (
 func TestTagCacheWorks(t *testing.T) {
 	ctx := context.Background()
 
-	numberedID := func(i int) string {
-		return strings.Repeat(fmt.Sprintf("%02x", i), 20)
+	numberedObjRef := func(i int) *api.ObjectRef {
+		return &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat(fmt.Sprintf("%02x", i), 32),
+		}
+	}
+	numberedIID := func(i int) string {
+		return common.ObjectRefToInstanceID(numberedObjRef(i))
 	}
 	numberedPin := func(i int) common.Pin {
 		return common.Pin{
 			PackageName: "pkg",
-			InstanceID:  numberedID(i),
+			InstanceID:  numberedIID(i),
 		}
 	}
 
@@ -60,9 +67,9 @@ func TestTagCacheWorks(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, common.Pin{})
 
-			file, err := tc.ResolveFile(ctx, cannedPin, "filename")
+			file, err := tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, "")
+			So(file, ShouldBeNil)
 
 			// Add new.
 			tc.AddTag(ctx, common.Pin{
@@ -75,10 +82,10 @@ func TestTagCacheWorks(t *testing.T) {
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("a", 40),
 			})
-			tc.AddFile(ctx, cannedPin, "filename", numberedID(1))
-			file, err = tc.ResolveFile(ctx, cannedPin, "filename")
+			tc.AddExtractedObjectRef(ctx, cannedPin, "filename", numberedObjRef(1))
+			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(1))
+			So(file, ShouldResemble, numberedObjRef(1))
 
 			// Replace existing.
 			tc.AddTag(ctx, common.Pin{
@@ -91,10 +98,10 @@ func TestTagCacheWorks(t *testing.T) {
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("b", 40),
 			})
-			tc.AddFile(ctx, cannedPin, "filename", numberedID(2))
-			file, err = tc.ResolveFile(ctx, cannedPin, "filename")
+			tc.AddExtractedObjectRef(ctx, cannedPin, "filename", numberedObjRef(2))
+			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(2))
+			So(file, ShouldResemble, numberedObjRef(2))
 
 			// Save.
 			So(tc.Save(ctx), ShouldBeNil)
@@ -107,9 +114,9 @@ func TestTagCacheWorks(t *testing.T) {
 				PackageName: "pkg",
 				InstanceID:  strings.Repeat("b", 40),
 			})
-			file, err = tc.ResolveFile(ctx, cannedPin, "filename")
+			file, err = tc.ResolveExtractedObjectRef(ctx, cannedPin, "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(2))
+			So(file, ShouldResemble, numberedObjRef(2))
 		})
 
 		Convey("many tags", func() {
@@ -120,7 +127,7 @@ func TestTagCacheWorks(t *testing.T) {
 				So(tc.AddTag(ctx, cannedPin, fmt.Sprintf("tag:%d", i)), ShouldBeNil)
 			}
 			for i := 0; i < tagCacheMaxExeSize; i++ {
-				So(tc.AddFile(ctx, numberedPin(i), "filename", numberedID(i)), ShouldBeNil)
+				So(tc.AddExtractedObjectRef(ctx, numberedPin(i), "filename", numberedObjRef(i)), ShouldBeNil)
 			}
 			So(tc.Save(ctx), ShouldBeNil)
 
@@ -128,38 +135,38 @@ func TestTagCacheWorks(t *testing.T) {
 			pin, err := tc.ResolveTag(ctx, "pkg", "tag:0")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, cannedPin)
-			file, err := tc.ResolveFile(ctx, numberedPin(0), "filename")
+			file, err := tc.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(0))
+			So(file, ShouldResemble, numberedObjRef(0))
 
 			// Add one more tag. Should evict the oldest one.
 			So(tc.AddTag(ctx, cannedPin, "one_more_tag:0"), ShouldBeNil)
-			So(tc.AddFile(ctx, numberedPin(tagCacheMaxExeSize), "filename", numberedID(tagCacheMaxExeSize)), ShouldBeNil)
+			So(tc.AddExtractedObjectRef(ctx, numberedPin(tagCacheMaxExeSize), "filename", numberedObjRef(tagCacheMaxExeSize)), ShouldBeNil)
 			So(tc.Save(ctx), ShouldBeNil)
 
 			// Oldest tag is evicted.
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:0")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, common.Pin{})
-			file, err = tc.ResolveFile(ctx, numberedPin(0), "filename")
+			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, "")
+			So(file, ShouldBeNil)
 
 			// But next one is alive.
 			pin, err = tc.ResolveTag(ctx, "pkg", "tag:1")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, cannedPin)
-			file, err = tc.ResolveFile(ctx, numberedPin(1), "filename")
+			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(1))
+			So(file, ShouldResemble, numberedObjRef(1))
 
 			// Most recent one is also alive.
 			pin, err = tc.ResolveTag(ctx, "pkg", "one_more_tag:0")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, cannedPin)
-			file, err = tc.ResolveFile(ctx, numberedPin(tagCacheMaxExeSize), "filename")
+			file, err = tc.ResolveExtractedObjectRef(ctx, numberedPin(tagCacheMaxExeSize), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(tagCacheMaxExeSize))
+			So(file, ShouldResemble, numberedObjRef(tagCacheMaxExeSize))
 		})
 
 		Convey("parallel update", func() {
@@ -167,9 +174,9 @@ func TestTagCacheWorks(t *testing.T) {
 			tc2 := NewTagCache(fs, "service.example.com")
 
 			So(tc1.AddTag(ctx, cannedPin, "tag:1"), ShouldBeNil)
-			So(tc1.AddFile(ctx, numberedPin(0), "filename", numberedID(0)), ShouldBeNil)
+			So(tc1.AddExtractedObjectRef(ctx, numberedPin(0), "filename", numberedObjRef(0)), ShouldBeNil)
 			So(tc2.AddTag(ctx, cannedPin, "tag:2"), ShouldBeNil)
-			So(tc2.AddFile(ctx, numberedPin(1), "filename", numberedID(1)), ShouldBeNil)
+			So(tc2.AddExtractedObjectRef(ctx, numberedPin(1), "filename", numberedObjRef(1)), ShouldBeNil)
 
 			So(tc1.Save(ctx), ShouldBeNil)
 			So(tc2.Save(ctx), ShouldBeNil)
@@ -180,15 +187,15 @@ func TestTagCacheWorks(t *testing.T) {
 			pin, err := tc3.ResolveTag(ctx, "pkg", "tag:1")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, cannedPin)
-			file, err := tc3.ResolveFile(ctx, numberedPin(0), "filename")
+			file, err := tc3.ResolveExtractedObjectRef(ctx, numberedPin(0), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(0))
+			So(file, ShouldResemble, numberedObjRef(0))
 			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:2")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, cannedPin)
-			file, err = tc3.ResolveFile(ctx, numberedPin(1), "filename")
+			file, err = tc3.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(1))
+			So(file, ShouldResemble, numberedObjRef(1))
 		})
 
 		Convey("multiple services", func() {
@@ -198,9 +205,9 @@ func TestTagCacheWorks(t *testing.T) {
 			// Add same tags and files, that resolve to different hashes on different
 			// servers.
 			So(tc1.AddTag(ctx, numberedPin(0), "tag:1"), ShouldBeNil)
-			So(tc1.AddFile(ctx, numberedPin(1), "filename", numberedID(10)), ShouldBeNil)
+			So(tc1.AddExtractedObjectRef(ctx, numberedPin(1), "filename", numberedObjRef(10)), ShouldBeNil)
 			So(tc2.AddTag(ctx, numberedPin(2), "tag:1"), ShouldBeNil)
-			So(tc2.AddFile(ctx, numberedPin(1), "filename", numberedID(20)), ShouldBeNil)
+			So(tc2.AddExtractedObjectRef(ctx, numberedPin(1), "filename", numberedObjRef(20)), ShouldBeNil)
 
 			So(tc1.Save(ctx), ShouldBeNil)
 			So(tc2.Save(ctx), ShouldBeNil)
@@ -217,21 +224,21 @@ func TestTagCacheWorks(t *testing.T) {
 			So(pin, ShouldResemble, numberedPin(2))
 
 			// File hashes are cached too.
-			file, err := tc1.ResolveFile(ctx, numberedPin(1), "filename")
+			file, err := tc1.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(10))
-			file, err = tc2.ResolveFile(ctx, numberedPin(1), "filename")
+			So(file, ShouldResemble, numberedObjRef(10))
+			file, err = tc2.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, numberedID(20))
+			So(file, ShouldResemble, numberedObjRef(20))
 
 			// No "ghost" records for some different service.
 			tc3 := NewTagCache(fs, "service3.example.com")
 			pin, err = tc3.ResolveTag(ctx, "pkg", "tag:1")
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, common.Pin{})
-			file, err = tc3.ResolveFile(ctx, numberedPin(1), "filename")
+			file, err = tc3.ResolveExtractedObjectRef(ctx, numberedPin(1), "filename")
 			So(err, ShouldBeNil)
-			So(file, ShouldEqual, "")
+			So(file, ShouldBeNil)
 		})
 	})
 }

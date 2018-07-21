@@ -828,6 +828,7 @@ func (client *clientImpl) MaybeUpdateClient(ctx context.Context, fs local.FileSy
 	return err
 }
 
+// TODO(vadimsh): Support SHA256.
 func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) (pin common.Pin, err error) {
 	if err = common.ValidateFileHash(currentHash); err != nil {
 		return
@@ -841,12 +842,16 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 	}
 
 	// Get the expected SHA1 of the client binary corresponding to the resolved
-	// pin. See AddFile call below for where it is stored.
+	// pin. See AddExtractedObjectRef call below for where it is stored.
 	cache := client.getTagCache()
 	exeHash := ""
 	if cache != nil {
-		if exeHash, err = cache.ResolveFile(ctx, pin, clientFileName); err != nil {
+		var exeObj *api.ObjectRef
+		if exeObj, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return
+		}
+		if exeObj != nil {
+			exeHash = common.ObjectRefToInstanceID(exeObj)
 		}
 	}
 	if exeHash == currentHash {
@@ -868,9 +873,13 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return common.Pin{}, humanErr(err)
 	}
 
-	// Store the mapping 'resolve pin => SHA1 of the client binary'.
+	// Store the mapping 'resolve pin => hash of the client binary'.
 	if cache != nil {
-		if err = cache.AddFile(ctx, pin, clientFileName, info.LegacySha1); err != nil {
+		err = cache.AddExtractedObjectRef(ctx, pin, clientFileName, &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA1, // TODO(vadimsh): use info.ClientRef
+			HexDigest: info.LegacySha1,
+		})
+		if err != nil {
 			return
 		}
 		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)

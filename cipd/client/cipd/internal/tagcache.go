@@ -23,10 +23,12 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/logging"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/common/logging"
 )
 
 const (
@@ -47,11 +49,13 @@ const (
 // the most common case of 'cipd ensure' usage by far.
 //
 // Additionally, this TagCache stores a mapping of (pin, file_name) ->
-// hex(sha1(executable)) to assist in the `selfupdate` flow. Whenever selfupdate
-// resolves what instance ID it SHOULD be at, it checks the SHA1 of its own
-// binary to see if it's actually already at that instance ID (since instance ID
-// is of the whole package, and not of the actual executable inside the
-// package).
+// encode(ObjectRef of extracted file) to assist in the `selfupdate` flow.
+//
+// Whenever selfupdate resolves what CIPD package instance ID (pin) it SHOULD be
+// at, it looks at '(pin, 'cipd') => binary hash' map to figure out what hash
+// the client itself SHOULD have for this instance ID. The client then
+// calculates the hash of itself to see if it's actually already at that
+// instance ID.
 type TagCache struct {
 	fs      local.FileSystem
 	service string
@@ -60,7 +64,7 @@ type TagCache struct {
 
 	cache      *messages.TagCache                       // the last loaded state, if not nil.
 	addedTags  map[tagKey]*messages.TagCache_Entry      // entries added by AddTag
-	addedFiles map[fileKey]*messages.TagCache_FileEntry // entries added by AddFile
+	addedFiles map[fileKey]*messages.TagCache_FileEntry // entries added by AddExtractedObjectRef
 }
 
 type tagKey string
@@ -142,12 +146,21 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 	return
 }
 
-// ResolveFile returns file hash or "" if that file is not in the cache.
+// ResolveExtractedObjectRef returns ObjectRef or nil if that file is not in the
+// cache.
 //
 // Returns error if the cache can't be read.
-func (c *TagCache) ResolveFile(ctx context.Context, pin common.Pin, fileName string) (hash string, err error) {
-	if err = common.ValidatePin(pin); err != nil {
-		return
+func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*api.ObjectRef, error) {
+	if err := common.ValidatePin(pin); err != nil {
+		return nil, err
+	}
+
+	ignoreBrokenObjectRef := func(iid string) *api.ObjectRef {
+		if err := common.ValidateInstanceID(iid); err != nil {
+			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it - %s", iid, fileName, pin, err)
+			return nil
+		}
+		return common.InstanceIDToObjectRef(iid)
 	}
 
 	c.lock.Lock()
@@ -155,23 +168,22 @@ func (c *TagCache) ResolveFile(ctx context.Context, pin common.Pin, fileName str
 
 	key := makeFileKey(pin.PackageName, pin.InstanceID, fileName)
 	if e := c.addedFiles[key]; e != nil {
-		return e.Hash, nil
+		return ignoreBrokenObjectRef(e.ObjectRef), nil
 	}
 
-	if err = c.lazyLoadLocked(ctx); err != nil {
-		return
+	if err := c.lazyLoadLocked(ctx); err != nil {
+		return nil, err
 	}
 
-	// Most recently used tags are usually at the end, search in reverse as a
+	// Most recently used entries are usually at the end, search in reverse as a
 	// silly optimization.
 	for i := len(c.cache.FileEntries) - 1; i >= 0; i-- {
 		e := c.cache.FileEntries[i]
 		if e.Package == pin.PackageName && e.InstanceId == pin.InstanceID && e.FileName == fileName {
-			hash = e.Hash
-			return
+			return ignoreBrokenObjectRef(e.ObjectRef), nil
 		}
 	}
-	return
+	return nil, nil
 }
 
 // AddTag records that (pin.PackageName, tag) maps to pin.InstanceID.
@@ -203,15 +215,18 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 	return nil
 }
 
-// AddFile records that (pin, fileName) maps to hash (where hash is the
-// hex-encoded sha1 of the named file).
+// AddExtractedObjectRef records that fileName extracted from the package at
+// the given pin has the given hash.
+//
+// The hash is represented as ObjectRef, which is a tuple (hash algo, hex
+// digest).
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
-func (c *TagCache) AddFile(ctx context.Context, pin common.Pin, fileName, hash string) error {
+func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *api.ObjectRef) error {
 	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
-	if err := common.ValidateFileHash(hash); err != nil {
+	if err := common.ValidateObjectRef(ref); err != nil {
 		return err
 	}
 
@@ -226,7 +241,7 @@ func (c *TagCache) AddFile(ctx context.Context, pin common.Pin, fileName, hash s
 		Package:    pin.PackageName,
 		InstanceId: pin.InstanceID,
 		FileName:   fileName,
-		Hash:       hash,
+		ObjectRef:  common.ObjectRefToInstanceID(ref),
 	}
 	return nil
 }
