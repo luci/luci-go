@@ -16,8 +16,6 @@ package cli
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -333,14 +331,14 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
-func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, error) {
+func (opts *clientOptions) toCipdClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
-		return nil, err
+		return cipd.ClientOptions{}, err
 	}
 	client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
-		return nil, err
+		return cipd.ClientOptions{}, err
 	}
 
 	realOpts := cipd.ClientOptions{
@@ -351,9 +349,17 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, err
 		AnonymousClient:     http.DefaultClient,
 	}
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return cipd.ClientOptions{}, err
+	}
+	return realOpts, nil
+}
+
+func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, error) {
+	cipdOpts, err := opts.toCipdClientOpts(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return cipd.NewClient(realOpts)
+	return cipd.NewClient(cipdOpts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2316,56 +2322,20 @@ func (s *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		s.printError(makeCLIError("-version is required"))
 		return 1
 	}
+
 	ctx := cli.GetContext(a, s, env)
-	exePath, err := os.Executable()
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-	clientCacheDir := filepath.Join(filepath.Dir(exePath), ".cipd_client_cache")
-	s.clientOptions.cacheDir = clientCacheDir
-	fs := local.NewFileSystem(filepath.Dir(exePath), filepath.Join(clientCacheDir, "trash"))
-	defer fs.CleanupTrash(ctx)
-	return s.doSelfUpdate(ctx, exePath, fs)
-}
 
-func executableSHA1(exePath string) (string, error) {
-	file, err := os.Open(exePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	hash := sha1.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs local.FileSystem) int {
-	if err := common.ValidateInstanceVersion(s.version); err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	curExeHash, err := executableSHA1(exePath)
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	s.clientOptions.rootDir = filepath.Dir(exePath)
-	client, err := s.clientOptions.makeCipdClient(ctx)
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-	if err := client.MaybeUpdateClient(ctx, fs, s.version, curExeHash, exePath); err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	return 0
+	return s.done(func() (common.Pin, error) {
+		exePath, err := os.Executable()
+		if err != nil {
+			return common.Pin{}, err
+		}
+		opts, err := s.clientOptions.toCipdClientOpts(ctx)
+		if err != nil {
+			return common.Pin{}, err
+		}
+		return cipd.MaybeUpdateClient(ctx, opts, s.version, exePath)
+	}())
 }
 
 ////////////////////////////////////////////////////////////////////////////////
