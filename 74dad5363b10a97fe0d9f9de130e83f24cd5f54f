@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e064e815_96344c27",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-21T01:28:55Z",
+      "side": 0,
+      "message": "I fixed the glitch.",
+      "range": {
+        "startLine": 91,
+        "startChar": 18,
+        "endLine": 91,
+        "endChar": 46
+      },
+      "revId": "74dad5363b10a97fe0d9f9de130e83f24cd5f54f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
