@@ -22,6 +22,30 @@
       "revId": "c321c2a14fc3bca635d02b5f0683c1605795a146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2678baf_5dde97fa",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-21T03:14:22Z",
+      "side": 1,
+      "message": "Hm, good point...\n\nI guess I\u0027ll need to add an array of all supported hashes (SHA1, SHA2, ...). The (new and improved) bootstrap scripts will pick the highest hash they support for validation and skip unknown ones.\n\nRemoving hashes from here is problematic, since I\u0027m pretty sure there are bootstrap scripts that resolve \u0027latest\u0027 ref (or something) and then fetch the client. Even very old bootstrap script should be able to fetch the most recent client.\n\nI\u0027ll do it in a separate CL if you don\u0027t mind.",
+      "parentUuid": "fb377a24_31e8a8c0",
+      "range": {
+        "startLine": 163,
+        "startChar": 56,
+        "endLine": 164,
+        "endChar": 37
+      },
+      "revId": "c321c2a14fc3bca635d02b5f0683c1605795a146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
