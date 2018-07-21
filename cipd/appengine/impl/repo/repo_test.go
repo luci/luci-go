@@ -2563,7 +2563,7 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Bad instance ID", func() {
 				code, body := call(goodPkg, "not-an-id", "text")
 				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "invalid SHA1 digest")
+				So(body, ShouldContainSubstring, "not a valid package instance ID")
 			})
 
 			Convey("Missing instance", func() {
@@ -2694,7 +2694,7 @@ func TestLegacyHandlers(t *testing.T) {
 			Convey("Bad instance ID", func() {
 				code, body := callInstance("a/b", strings.Repeat("a", 99), "plain")
 				So(code, ShouldEqual, http.StatusBadRequest)
-				So(body, ShouldContainSubstring, "invalid SHA1 digest")
+				So(body, ShouldContainSubstring, "not a valid package instance ID")
 			})
 
 			Convey("No access", func() {

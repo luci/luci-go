@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"
+	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -43,11 +44,33 @@ func packageReader(data map[string]string) *PackageReader {
 	return r
 }
 
-func instance(ctx context.Context, pkg string) *model.Instance {
+func phonyHexDigest(algo api.HashAlgo, letter string) string {
+	return strings.Repeat(letter, map[api.HashAlgo]int{
+		api.HashAlgo_SHA1:   40,
+		api.HashAlgo_SHA256: 64,
+	}[algo])
+}
+
+func phonyInstanceID(algo api.HashAlgo, letter string) string {
+	return common.ObjectRefToInstanceID(&api.ObjectRef{
+		HashAlgo:  algo,
+		HexDigest: phonyHexDigest(algo, letter),
+	})
+}
+
+func instance(ctx context.Context, pkg string, algo api.HashAlgo) *model.Instance {
 	return &model.Instance{
-		InstanceID: strings.Repeat("a", 40),
+		InstanceID: phonyInstanceID(algo, "a"),
 		Package:    model.PackageKey(ctx, pkg),
 	}
+}
+
+func hexDigest(algo api.HashAlgo, body string) string {
+	h := common.MustNewHash(algo)
+	if _, err := h.Write([]byte(body)); err != nil {
+		panic(err)
+	}
+	return common.HexDigest(h)
 }
 
 func TestGetClientPackage(t *testing.T) {
@@ -71,17 +94,23 @@ func TestClientExtractor(t *testing.T) {
 	ctx := gaetesting.TestingContext()
 
 	originalBody := strings.Repeat("01234567", 8960)
-	expectedDigest := "390eb4008bd5261b63c5bf45c6750c0ad82efc17"
+	expectedSHA256Digest := hexDigest(api.HashAlgo_SHA256, originalBody)
+	expectedSHA1Digest := hexDigest(api.HashAlgo_SHA1, originalBody)
+
+	instSHA256 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA256)
+	instSHA1 := instance(ctx, "infra/tools/cipd/linux-amd64", api.HashAlgo_SHA1)
+
 	goodPkg := packageReader(map[string]string{"cipd": originalBody})
-	inst := instance(ctx, "infra/tools/cipd/linux-amd64")
 
 	Convey("With mocks", t, func() {
 		var publishedRef *api.ObjectRef
 		var canceled bool
 
+		expectedUploadAlgo := api.HashAlgo_SHA256
+
 		cas := testutil.MockCAS{
 			BeginUploadImpl: func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
-				So(r.HashAlgo, ShouldEqual, api.HashAlgo_SHA1)
+				So(r.HashAlgo, ShouldEqual, expectedUploadAlgo)
 				return &api.UploadOperation{
 					OperationId: "op_id",
 					UploadUrl:   "http://example.com/upload",
@@ -109,28 +138,48 @@ func TestClientExtractor(t *testing.T) {
 			bufferSize: 64 * 1024,
 		}
 
-		Convey("Happy path", func() {
-			res, err := ce.Run(ctx, inst, goodPkg)
+		Convey("Happy path, SHA256", func() {
+			res, err := ce.Run(ctx, instSHA256, goodPkg)
 			So(err, ShouldBeNil)
 			So(res.Err, ShouldBeNil)
 
 			r := res.Result.(ClientExtractorResult)
 			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
-			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA1")
-			So(r.ClientBinary.HashDigest, ShouldEqual, expectedDigest)
+			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA256")
+			So(r.ClientBinary.HashDigest, ShouldEqual, expectedSHA256Digest)
+			So(r.ClientBinary.SHA1Digest, ShouldEqual, expectedSHA1Digest)
 
 			So(extracted.String(), ShouldEqual, originalBody)
 			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: expectedDigest,
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: expectedSHA256Digest,
 			})
 
 			// Was written by 64 Kb chunks, NOT 32 Kb (as used by zip.Reader).
 			So(uploader.calls, ShouldResemble, []int{64 * 1024, 6 * 1024})
 		})
 
+		// TODO(vadimsh): Delete this test once SHA1 uploads are forbidden.
+		Convey("Happy path, SHA1", func() {
+			expectedUploadAlgo = api.HashAlgo_SHA1
+			res, err := ce.Run(ctx, instSHA1, goodPkg)
+			So(err, ShouldBeNil)
+			So(res.Err, ShouldBeNil)
+
+			r := res.Result.(ClientExtractorResult)
+			So(r.ClientBinary.Size, ShouldEqual, len(originalBody))
+			So(r.ClientBinary.HashAlgo, ShouldEqual, "SHA1")
+			So(r.ClientBinary.HashDigest, ShouldEqual, expectedSHA1Digest)
+			So(r.ClientBinary.SHA1Digest, ShouldEqual, expectedSHA1Digest)
+
+			So(publishedRef, ShouldResembleProto, &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: expectedSHA1Digest,
+			})
+		})
+
 		Convey("No such file in the package", func() {
-			res, err := ce.Run(ctx, inst, packageReader(nil))
+			res, err := ce.Run(ctx, instSHA256, packageReader(nil))
 			So(err, ShouldBeNil)
 			So(res.Err, ShouldErrLike, `failed to open the file for reading: no file "cipd" inside the package`)
 		})
@@ -139,7 +188,7 @@ func TestClientExtractor(t *testing.T) {
 			cas.BeginUploadImpl = func(_ context.Context, r *api.BeginUploadRequest) (*api.UploadOperation, error) {
 				return nil, grpc.Errorf(codes.Internal, "boo")
 			}
-			_, err := ce.Run(ctx, inst, goodPkg)
+			_, err := ce.Run(ctx, instSHA256, goodPkg)
 			So(err, ShouldErrLike, `failed to open a CAS upload: rpc error: code = Internal desc = boo`)
 		})
 
@@ -147,14 +196,14 @@ func TestClientExtractor(t *testing.T) {
 			cas.FinishUploadImpl = func(_ context.Context, r *api.FinishUploadRequest) (*api.UploadOperation, error) {
 				return nil, grpc.Errorf(codes.Internal, "boo")
 			}
-			_, err := ce.Run(ctx, inst, goodPkg)
+			_, err := ce.Run(ctx, instSHA256, goodPkg)
 			So(err, ShouldErrLike, `failed to finalize the CAS upload: rpc error: code = Internal desc = boo`)
 		})
 
 		Convey("Asked to restart the upload", func() {
 			uploader.err = &gs.RestartUploadError{Offset: 124}
 
-			_, err := ce.Run(ctx, inst, goodPkg)
+			_, err := ce.Run(ctx, instSHA256, goodPkg)
 			So(err, ShouldErrLike, `asked to restart the upload from faraway offset: the upload should be restarted from offset 124`)
 			So(canceled, ShouldBeTrue)
 		})
@@ -162,8 +211,8 @@ func TestClientExtractor(t *testing.T) {
 
 	Convey("Applicable works", t, func() {
 		ce := ClientExtractor{}
-		So(ce.Applicable(instance(ctx, "infra/tools/cipd/linux")), ShouldBeTrue)
-		So(ce.Applicable(instance(ctx, "infra/tools/stuff/linux")), ShouldBeFalse)
+		So(ce.Applicable(instance(ctx, "infra/tools/cipd/linux", api.HashAlgo_SHA256)), ShouldBeTrue)
+		So(ce.Applicable(instance(ctx, "infra/tools/stuff/linux", api.HashAlgo_SHA256)), ShouldBeFalse)
 	})
 }
 
@@ -177,7 +226,7 @@ func TestGetResult(t *testing.T) {
 			r := model.ProcessingResult{
 				ProcID: ClientExtractorProcID,
 				Instance: datastore.KeyForObj(ctx, &model.Instance{
-					InstanceID: strings.Repeat("a", 40),
+					InstanceID: phonyInstanceID(api.HashAlgo_SHA256, "a"),
 					Package:    model.PackageKey(ctx, "a/b/c"),
 				}),
 			}
@@ -192,15 +241,16 @@ func TestGetResult(t *testing.T) {
 
 		Convey("Happy path", func() {
 			res := ClientExtractorResult{}
-			res.ClientBinary.HashAlgo = "SHA1"
-			res.ClientBinary.HashDigest = strings.Repeat("b", 40)
+			res.ClientBinary.HashAlgo = "SHA256"
+			res.ClientBinary.HashDigest = phonyHexDigest(api.HashAlgo_SHA256, "b")
+			res.ClientBinary.SHA1Digest = phonyHexDigest(api.HashAlgo_SHA1, "c")
 			write(&res, "")
 
 			out, err := GetClientExtractorResult(ctx, &api.Instance{
 				Package: "a/b/c",
 				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "a"),
 				},
 			})
 			So(err, ShouldBeNil)
@@ -209,9 +259,11 @@ func TestGetResult(t *testing.T) {
 			ref, err := out.ToObjectRef()
 			So(err, ShouldBeNil)
 			So(ref, ShouldResemble, &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: strings.Repeat("b", 40),
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: res.ClientBinary.HashDigest,
 			})
+
+			So(out.SHA1(), ShouldEqual, res.ClientBinary.SHA1Digest)
 		})
 
 		Convey("Failed processor", func() {
@@ -220,8 +272,8 @@ func TestGetResult(t *testing.T) {
 			_, err := GetClientExtractorResult(ctx, &api.Instance{
 				Package: "a/b/c",
 				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "a"),
 				},
 			})
 			So(err, ShouldErrLike, "boom")
@@ -231,8 +283,8 @@ func TestGetResult(t *testing.T) {
 			_, err := GetClientExtractorResult(ctx, &api.Instance{
 				Package: "a/b/c",
 				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("a", 40),
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: phonyHexDigest(api.HashAlgo_SHA256, "a"),
 				},
 			})
 			So(err, ShouldEqual, datastore.ErrNoSuchEntity)
