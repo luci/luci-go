@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "6a28cd65_ca612243",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1211,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-21T02:47:46Z",
+      "side": 0,
+      "message": "RIP :(",
+      "range": {
+        "startLine": 1211,
+        "startChar": 46,
+        "endLine": 1211,
+        "endChar": 54
+      },
+      "revId": "f76ec42675024bae75504ebed898911f4a0c193d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d45d4802_2eb6e7a6",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 3

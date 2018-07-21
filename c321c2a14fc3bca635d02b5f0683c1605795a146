@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fb377a24_31e8a8c0",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-21T02:47:46Z",
+      "side": 1,
+      "message": "wouldn\u0027t this apply forever? The client you\u0027re making only understands sha2+sha1, so when sha3 rolls around....\n\nI guess we can stop doing this once all known clients are updated? Old bootstraps shouldn\u0027t refer to new clients by sha1, right?",
+      "range": {
+        "startLine": 163,
+        "startChar": 56,
+        "endLine": 164,
+        "endChar": 37
+      },
+      "revId": "c321c2a14fc3bca635d02b5f0683c1605795a146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
