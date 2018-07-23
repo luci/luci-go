@@ -15,8 +15,10 @@
 package cipd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -27,6 +29,8 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -41,7 +45,7 @@ func TestFetchACL(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
@@ -93,7 +97,7 @@ func TestModifyACL(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Modifies existing", func() {
 			repo.expect(rpcCall{
@@ -185,7 +189,7 @@ func TestFetchRoles(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
@@ -254,7 +258,7 @@ func TestListPackages(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
@@ -303,7 +307,7 @@ func TestSearchInstances(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
@@ -383,7 +387,7 @@ func TestListInstances(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		fakeApiInst := func(id string) *api.Instance {
 			return &api.Instance{
@@ -475,7 +479,7 @@ func TestFetchPackageRefs(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
@@ -531,7 +535,7 @@ func TestDescribeInstance(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		pin := common.Pin{
 			PackageName: "a/b",
@@ -604,7 +608,7 @@ func TestResolveVersion(t *testing.T) {
 
 	Convey("With mocks", t, func(c C) {
 		ctx := context.Background()
-		client, _, repo := mockedCipdClient(c)
+		client, _, repo, _ := mockedCipdClient(c)
 
 		expectedPin := common.Pin{
 			PackageName: "a/b",
@@ -653,7 +657,7 @@ func TestResolveVersion(t *testing.T) {
 		})
 
 		Convey("Resolves tag (with tag cache)", func() {
-			setupTagCache(client, c)
+			setupTagCache(client, "", c)
 
 			// Only one RPC, even though we did two ResolveVersion calls.
 			repo.expect(rpcCall{
@@ -725,36 +729,122 @@ func TestEnsurePackage(t *testing.T) {
 func TestMaybeUpdateClient(t *testing.T) {
 	t.Parallel()
 
-	Convey("MaybeUpdateClient", t, func() {
-		ctx := context.Background()
+	clientPackage, err := template.DefaultExpander().Expand(ClientPackage)
+	if err != nil {
+		panic(err)
+	}
+	clientFileName := "cipd"
+	if platform.CurrentOS() == "windows" {
+		clientFileName = "cipd.exe"
+	}
 
-		Convey("Is a NOOP when exeHash matches", func(c C) {
-			client, _, _ := mockedCipdClient(c)
-			setupTagCache(client, c)
+	ctx := context.Background()
 
-			// Setup resolution of git:deadbeef to a pin (via the tag cache).
-			pin := common.Pin{
-				PackageName: clientPackage,
-				InstanceID:  strings.Repeat("0", 40),
+	Convey("With temp dir", t, func(c C) {
+		tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
+		c.So(err, ShouldBeNil)
+		c.Reset(func() {
+			os.RemoveAll(tempDir)
+		})
+
+		clientOpts, _, repo, storage := mockedClientOpts(c)
+
+		clientPkgRef := &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("a", 64),
+		}
+		clientPin := common.Pin{
+			PackageName: clientPackage,
+			InstanceID:  common.ObjectRefToInstanceID(clientPkgRef),
+		}
+
+		clientBin := filepath.Join(tempDir, clientFileName)
+
+		caclObjRef := func(body string, algo api.HashAlgo) *api.ObjectRef {
+			h := common.MustNewHash(algo)
+			h.Write([]byte(body))
+			return &api.ObjectRef{
+				HashAlgo:  algo,
+				HexDigest: common.HexDigest(h),
 			}
-			So(client.tagCache.AddTag(ctx, pin, "git:deadbeef"), ShouldBeNil)
+		}
 
-			// Setup association "pin -> exe hash" (via the tag cache too).
-			exeHash := strings.Repeat("a", 40)
-			So(client.tagCache.AddExtractedObjectRef(ctx, pin, clientFileName, &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: exeHash,
-			}), ShouldBeNil)
+		writeFile := func(path, body string) {
+			So(ioutil.WriteFile(path, []byte(body), 0777), ShouldBeNil)
+		}
 
-			// Does nothing (no RPCs), since everything is up-to-date.
-			pin, err := client.maybeUpdateClient(ctx, nil, "git:deadbeef", exeHash, "some_path")
-			So(pin, ShouldResemble, pin)
+		readFile := func(path string) string {
+			body, err := ioutil.ReadFile(path)
 			So(err, ShouldBeNil)
+			return string(body)
+		}
+
+		Convey("MaybeUpdateClient updates outdated client, warming caches", func() {
+			storage.putStored("http://example.com/client_bin", "up-to-date")
+
+			upToDateSHA256Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
+			upToDateSHA1Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
+			upToDateUnsupRef := &api.ObjectRef{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)}
+
+			writeFile(clientBin, "outdated")
+
+			repo.expect(rpcCall{
+				method: "ResolveVersion",
+				in: &api.ResolveVersionRequest{
+					Package: clientPackage,
+					Version: "git:deadbeef",
+				},
+				out: &api.Instance{
+					Package:  clientPackage,
+					Instance: clientPkgRef,
+				},
+			})
+			repo.expect(rpcCall{
+				method: "DescribeClient",
+				in: &api.DescribeClientRequest{
+					Package:  clientPackage,
+					Instance: clientPkgRef,
+				},
+				out: &api.DescribeClientResponse{
+					Instance: &api.Instance{
+						Package:  clientPackage,
+						Instance: clientPkgRef,
+					},
+					ClientRef: upToDateSHA256Ref,
+					ClientBinary: &api.ObjectURL{
+						SignedUrl: "http://example.com/client_bin",
+					},
+					ClientSize: 10000,
+					LegacySha1: upToDateSHA1Ref.HexDigest,
+					ClientRefAliases: []*api.ObjectRef{
+						upToDateSHA1Ref,
+						upToDateSHA256Ref,
+						upToDateUnsupRef,
+					},
+				},
+			})
+
+			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
+
+			// Yep, updated.
+			So(readFile(clientBin), ShouldEqual, "up-to-date")
+
+			// Also drops .cipd_version file.
+			verFile := filepath.Join(tempDir, ".versions", clientFileName+".cipd_version")
+			So(readFile(verFile), ShouldEqual,
+				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID))
+
+			// And the second update call does nothing and hits no RPCs, since the
+			// client is up-to-date and the tag cache is warm.
+			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
 		})
 	})
 }
-
-// TODO: add more tests for self-update
 
 ////////////////////////////////////////////////////////////////////////////////
 // Batch ops.
@@ -763,7 +853,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient) {
+func mockedClientOpts(c C) (ClientOptions, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
 	cas := &mockedStorageClient{}
 	cas.C(c)
 	repo := &mockedRepoClient{}
@@ -775,21 +865,33 @@ func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient
 		repo.assertAllCalled()
 	})
 
-	return &clientImpl{
-		ClientOptions: ClientOptions{
-			ServiceURL: "https://service.example.com",
-		},
-		cas:  cas,
-		repo: repo,
-	}, cas, repo
+	storage := &mockedStorage{}
+
+	return ClientOptions{
+		ServiceURL:  "https://service.example.com",
+		casMock:     cas,
+		repoMock:    repo,
+		storageMock: storage,
+	}, cas, repo, storage
 }
 
-func setupTagCache(cl *clientImpl, c C) {
-	So(cl.tagCache, ShouldBeNil)
-	tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
+func mockedCipdClient(c C) (*clientImpl, *mockedStorageClient, *mockedRepoClient, *mockedStorage) {
+	opts, cas, repo, storage := mockedClientOpts(c)
+	client, err := NewClient(opts)
 	c.So(err, ShouldBeNil)
-	c.Reset(func() {
-		os.RemoveAll(tempDir)
-	})
+	impl := client.(*clientImpl)
+	return impl, cas, repo, storage
+}
+
+func setupTagCache(cl *clientImpl, tempDir string, c C) {
+	So(cl.tagCache, ShouldBeNil)
+	if tempDir == "" {
+		var err error
+		tempDir, err = ioutil.TempDir("", "cipd_tag_cache")
+		c.So(err, ShouldBeNil)
+		c.Reset(func() {
+			os.RemoveAll(tempDir)
+		})
+	}
 	cl.tagCache = internal.NewTagCache(local.NewFileSystem(tempDir, ""), "service.example.com")
 }

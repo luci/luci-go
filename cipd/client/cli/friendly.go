@@ -229,7 +229,7 @@ func (site *installationSite) initClient(ctx context.Context, authFlags authcli.
 		cacheDir:   site.cfg.CacheDir,
 		rootDir:    site.siteRoot,
 	}
-	site.client, err = clientOpts.makeCipdClient(ctx)
+	site.client, err = clientOpts.makeCIPDClient(ctx)
 	return err
 }
 

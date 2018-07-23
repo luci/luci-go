@@ -42,7 +42,6 @@ package cipd
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -72,6 +71,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/version"
 )
@@ -128,6 +128,8 @@ const (
 )
 
 var (
+	// ClientPackage is a package with the CIPD client. Used during self-update.
+	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
 	UserAgent = "cipd 2.1.0"
 )
@@ -204,12 +206,6 @@ type Client interface {
 
 	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin.
 	ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
-
-	// MaybeUpdateClient will update `destination` to `targetVersion` if
-	// `currentHash` doesn't match version's executable hash.
-	//
-	// This update is done from the "infra/tools/cipd/${os}-${arch}" package.
-	MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error
 
 	// RegisterInstance makes the package instance available for clients.
 	//
@@ -330,6 +326,11 @@ type ClientOptions struct {
 	//
 	// Default is UserAgent const.
 	UserAgent string
+
+	// Mocks used by tests.
+	casMock     api.StorageClient
+	repoMock    api.RepositoryClient
+	storageMock storage
 }
 
 // LoadFromEnv loads supplied default values from an environment into opts.
@@ -395,17 +396,65 @@ func NewClient(opts ClientOptions) (Client, error) {
 		},
 	}
 
-	return &clientImpl{
-		ClientOptions: opts,
-		cas:           api.NewStoragePRPCClient(prpcC),
-		repo:          api.NewRepositoryPRPCClient(prpcC),
-		storage: &storageImpl{
+	cas := opts.casMock
+	if cas == nil {
+		cas = api.NewStoragePRPCClient(prpcC)
+	}
+	repo := opts.repoMock
+	if repo == nil {
+		repo = api.NewRepositoryPRPCClient(prpcC)
+	}
+	storage := opts.storageMock
+	if storage == nil {
+		storage = &storageImpl{
 			chunkSize: uploadChunkSize,
 			userAgent: opts.UserAgent,
 			client:    opts.AnonymousClient,
-		},
-		deployer: local.NewDeployer(opts.Root),
+		}
+	}
+
+	return &clientImpl{
+		ClientOptions: opts,
+		cas:           cas,
+		repo:          repo,
+		storage:       storage,
+		deployer:      local.NewDeployer(opts.Root),
 	}, nil
+}
+
+// MaybeUpdateClient will update the client binary at clientExe (given as
+// a native path) to targetVersion if it's out of date (based on its hash).
+//
+// This update is done from the "infra/tools/cipd/${platform}" package, see
+// ClientPackage. The function will use the given ClientOptions to figure out
+// how to establish a connection with the backend. Its Root and CacheDir values
+// are ignored (values derived from clientExe are used instead).
+//
+// Note that this function make sense only in a context of a default CIPD CLI
+// client. Other binaries that link to cipd package should not use it, they'll
+// be "updated" to the CIPD client binary.
+func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, clientExe string) (common.Pin, error) {
+	if err := common.ValidateInstanceVersion(targetVersion); err != nil {
+		return common.Pin{}, err
+	}
+
+	opts.Root = filepath.Dir(clientExe)
+	opts.CacheDir = filepath.Join(opts.Root, ".cipd_client_cache")
+
+	client, err := NewClient(opts)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	impl := client.(*clientImpl)
+
+	fs := local.NewFileSystem(opts.Root, filepath.Join(opts.CacheDir, "trash"))
+	defer fs.CleanupTrash(ctx)
+
+	pin, err := impl.maybeUpdateClient(ctx, fs, targetVersion, clientExe)
+	if err == nil {
+		impl.ensureClientVersionInfo(ctx, fs, pin, clientExe)
+	}
+	return pin, err
 }
 
 type clientImpl struct {
@@ -770,47 +819,27 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	return pin, nil
 }
 
-const clientPackageBase = "infra/tools/cipd"
-
-var clientPackage = ""
-var clientFileName = ""
-
-func init() {
-	clientFileName = "cipd"
-	if platform.CurrentOS() == "windows" {
-		clientFileName = "cipd.exe"
-	}
-
-	// TODO(vadimsh): Use template.DefaultExpander().
-	clientPackage = fmt.Sprintf("%s/%s-%s", clientPackageBase,
-		platform.CurrentOS(), platform.CurrentArchitecture())
-}
-
-func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, exePath string) {
-	verFile := version.GetVersionFile(exePath)
-
+// ensureClientVersionInfo is called only with the specially constructed client,
+// see MaybeUpdateClient function.
+func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, clientExe string) {
 	expect, err := json.Marshal(version.Info{
 		PackageName: pin.PackageName,
 		InstanceID:  pin.InstanceID,
 	})
 	if err != nil {
-		// should never occur; only error could be if version.Info is not JSON
+		// Should never occur; only error could be if version.Info is not JSON
 		// serializable.
 		logging.WithError(err).Errorf(ctx, "Unable to generate version file content")
 		return
 	}
 
-	if f, err := os.Open(verFile); err == nil {
-		data, err := ioutil.ReadAll(f)
-		f.Close()
-		if err == nil && bytes.Equal(expect, data) {
-			// up to date
-			return
-		}
+	verFile := version.GetVersionFile(clientExe)
+	if data, err := ioutil.ReadFile(verFile); err == nil && bytes.Equal(expect, data) {
+		return // up to date
 	}
-	// there was an error reading the existing version file, or its content does
-	// not match. Proceed with EnsureFile.
 
+	// There was an error reading the existing version file, or its content does
+	// not match. Proceed with EnsureFile.
 	err = fs.EnsureFile(ctx, verFile, func(of *os.File) error {
 		_, err := of.Write(expect)
 		return err
@@ -820,42 +849,69 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.
 	}
 }
 
-func (client *clientImpl) MaybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) error {
-	pin, err := client.maybeUpdateClient(ctx, fs, targetVersion, currentHash, destination)
-	if err == nil {
-		client.ensureClientVersionInfo(ctx, fs, pin, destination)
-	}
-	return err
-}
-
-// TODO(vadimsh): Support SHA256.
-func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, currentHash, destination string) (pin common.Pin, err error) {
-	if err = common.ValidateFileHash(currentHash); err != nil {
-		return
+// maybeUpdateClient is called only with the specially constructed client, see
+// MaybeUpdateClient function.
+func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, clientExe string) (pin common.Pin, err error) {
+	// currentHashMatches calculates (with memoization) the existing client binary
+	// hash and compares it to 'obj'.
+	var lastCalculated *api.ObjectRef
+	currentHashMatches := func(obj *api.ObjectRef) (yep bool, err error) {
+		if lastCalculated != nil && lastCalculated.HashAlgo == obj.HashAlgo {
+			return lastCalculated.HexDigest == obj.HexDigest, nil
+		}
+		hash, err := common.NewHash(obj.HashAlgo)
+		if err != nil {
+			return false, err
+		}
+		file, err := os.Open(clientExe)
+		if err != nil {
+			return false, err
+		}
+		defer file.Close()
+		if _, err := io.Copy(hash, file); err != nil {
+			return false, err
+		}
+		lastCalculated = &api.ObjectRef{
+			HashAlgo:  obj.HashAlgo,
+			HexDigest: common.HexDigest(hash),
+		}
+		return lastCalculated.HexDigest == obj.HexDigest, nil
 	}
 
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
+	clientPackage, err := template.DefaultExpander().Expand(ClientPackage)
+	if err != nil {
+		return // shouldn't be happening in reality
+	}
 	if pin, err = client.ResolveVersion(ctx, clientPackage, targetVersion); err != nil {
 		return
 	}
 
-	// Get the expected SHA1 of the client binary corresponding to the resolved
-	// pin. See AddExtractedObjectRef call below for where it is stored.
+	clientFileName := "cipd"
+	if platform.CurrentOS() == "windows" {
+		clientFileName = "cipd.exe"
+	}
+
+	// Get the expected hash (in a form of ObjectRef) of the client binary
+	// corresponding to the resolved pin. See AddExtractedObjectRef call below for
+	// where it is stored.
+	var exeObj *api.ObjectRef
 	cache := client.getTagCache()
-	exeHash := ""
 	if cache != nil {
-		var exeObj *api.ObjectRef
 		if exeObj, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return
 		}
-		if exeObj != nil {
-			exeHash = common.ObjectRefToInstanceID(exeObj)
-		}
 	}
-	if exeHash == currentHash {
-		return // the running binary is already up-to-date
+
+	// Compare the hash of the running binary to the one that matches 'pin' (if
+	// we know it already from the cache).
+	if exeObj != nil {
+		var yep bool
+		if yep, err = currentHashMatches(exeObj); err != nil || yep {
+			return // either can't read clientExe, or already up-to-date
+		}
 	}
 
 	if targetVersion == pin.InstanceID {
@@ -864,7 +920,8 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		logging.Infof(ctx, "cipd: updating client to %s (%s)", pin, targetVersion)
 	}
 
-	// Grab the signed URL to the client binary.
+	// Grab the signed URL to the client binary and a list of hex digests
+	// calculated using all hash algos known to the server.
 	info, err := client.repo.DescribeClient(ctx, &api.DescribeClientRequest{
 		Package:  pin.PackageName,
 		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
@@ -873,26 +930,43 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		return common.Pin{}, humanErr(err)
 	}
 
+	// Fallback value if the server doesn't support ClientRefAliases yet.
+	clientRef := &api.ObjectRef{
+		HashAlgo:  api.HashAlgo_SHA1,
+		HexDigest: info.LegacySha1,
+	}
+
+	// Pick the best hash algo we understand to use for verification (we assume
+	// the higher the hash enum value, the better the hash algo).
+	for _, ref := range info.ClientRefAliases {
+		if ref.HashAlgo > clientRef.HashAlgo && api.HashAlgo_name[int32(ref.HashAlgo)] != "" {
+			clientRef = ref
+		}
+	}
+
 	// Store the mapping 'resolve pin => hash of the client binary'.
 	if cache != nil {
-		err = cache.AddExtractedObjectRef(ctx, pin, clientFileName, &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1, // TODO(vadimsh): use info.ClientRef
-			HexDigest: info.LegacySha1,
-		})
+		err = cache.AddExtractedObjectRef(ctx, pin, clientFileName, clientRef)
 		if err != nil {
 			return
 		}
 		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
 	}
 
-	if info.LegacySha1 == currentHash {
-		// The running binary is already up-to-date, but the cache didn't know that.
-		// It knows now.
+	var yep bool
+	if yep, err = currentHashMatches(clientRef); err != nil || yep {
+		// Either can't read clientExe, or already up-to-date, but the cache didn't
+		// know that. It knows now.
 		return
 	}
 
 	// The running client is actually stale. Replace it.
-	err = client.installClient(ctx, fs, sha1.New(), info.ClientBinary.SignedUrl, destination, info.LegacySha1)
+	err = client.installClient(
+		ctx, fs,
+		common.MustNewHash(clientRef.HashAlgo),
+		info.ClientBinary.SignedUrl,
+		clientExe,
+		clientRef.HexDigest)
 	return
 }
 
