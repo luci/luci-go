@@ -38,6 +38,7 @@ type rpcCall struct {
 type mockedRPCClient struct {
 	c        C
 	expected []rpcCall
+	many     *rpcCall
 }
 
 func (m *mockedRPCClient) C(c C) {
@@ -48,15 +49,26 @@ func (m *mockedRPCClient) expect(r rpcCall) {
 	m.expected = append(m.expected, r)
 }
 
+func (m *mockedRPCClient) expectMany(r rpcCall) {
+	m.assertAllCalled()
+	m.many = &r
+}
+
 func (m *mockedRPCClient) assertAllCalled() {
-	m.c.So(m.expected, ShouldHaveLength, 0)
+	if m.many == nil {
+		m.c.So(m.expected, ShouldHaveLength, 0)
+	}
 }
 
 func (m *mockedRPCClient) call(method string, in proto.Message, opts []grpc.CallOption) (proto.Message, error) {
 	expected := rpcCall{}
-	if len(m.expected) != 0 {
-		expected = m.expected[0]
-		m.expected = m.expected[1:]
+	if m.many != nil {
+		expected = *m.many
+	} else {
+		if len(m.expected) != 0 {
+			expected = m.expected[0]
+			m.expected = m.expected[1:]
+		}
 	}
 	m.c.So(rpcCall{method: method, in: in}, ShouldResemble, rpcCall{method: expected.method, in: expected.in})
 	return expected.out, expected.err

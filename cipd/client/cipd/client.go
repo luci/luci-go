@@ -92,21 +92,32 @@ const (
 )
 
 var (
-	// ErrFinalizationTimeout is returned if CAS service can not finalize upload fast enough.
+	// ErrFinalizationTimeout is returned if CAS service can not finalize upload
+	// fast enough.
 	ErrFinalizationTimeout = errors.New("timeout while waiting for CAS service to finalize the upload", transient.Tag)
-	// ErrBadUpload is returned when a package file is uploaded, but servers asks us to upload it again.
+
+	// ErrBadUpload is returned when a package file is uploaded, but servers asks
+	// us to upload it again.
 	ErrBadUpload = errors.New("package file is uploaded, but servers asks us to upload it again", transient.Tag)
-	// ErrBadUploadSession is returned by UploadToCAS if provided UploadSession is not valid.
+
+	// ErrBadUploadSession is returned by UploadToCAS if provided UploadSession is
+	// not valid.
 	ErrBadUploadSession = errors.New("uploadURL must be set if UploadSessionID is used")
-	// ErrSetRefTimeout is returned when service refuses to move a ref for a long time.
-	ErrSetRefTimeout = errors.New("timeout while moving a ref", transient.Tag)
-	// ErrAttachTagsTimeout is returned when service refuses to accept tags for a long time.
-	ErrAttachTagsTimeout = errors.New("timeout while attaching tags", transient.Tag)
+
+	// ErrProcessingTimeout is returned by SetRefWhenReady or AttachTagsWhenReady
+	// if the instance processing on the backend takes longer than expected. Refs
+	// and tags can be attached only to processed instances.
+	ErrProcessingTimeout = errors.New("timeout while waiting for the instance to become ready", transient.Tag)
+
 	// ErrDownloadError is returned by FetchInstance on download errors.
 	ErrDownloadError = errors.New("failed to download the package file after multiple attempts", transient.Tag)
-	// ErrUploadError is returned by RegisterInstance and UploadToCAS on upload errors.
+
+	// ErrUploadError is returned by RegisterInstance and UploadToCAS on upload
+	// errors.
 	ErrUploadError = errors.New("failed to upload the package file after multiple attempts", transient.Tag)
-	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not right.
+
+	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not
+	// right.
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 )
 
@@ -1057,7 +1068,6 @@ func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, 
 	return apiDescToInfo(resp), nil
 }
 
-// TODO(vadimsh): Use context deadline.
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
@@ -1066,93 +1076,89 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 		return err
 	}
 	logging.Infof(ctx, "cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
-	deadline := clock.Now(ctx).Add(SetRefTimeout)
-	for clock.Now(ctx).Before(deadline) {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		err := client.setRefRPC(ctx, ref, pin)
-		if err == nil {
-			logging.Infof(ctx, "cipd: ref %q is set", ref)
-			return nil
-		}
-		if _, ok := err.(*pendingProcessingError); ok {
-			logging.Warningf(ctx, "cipd: %s", err)
-			clock.Sleep(ctx, 5*time.Second)
-		} else {
-			logging.Errorf(ctx, "cipd: failed to set ref - %s", err)
-			return err
-		}
+
+	err := retryUntilReady(ctx, SetRefTimeout, func(ctx context.Context) error {
+		_, err := client.repo.CreateRef(ctx, &api.Ref{
+			Name:     ref,
+			Package:  pin.PackageName,
+			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		}, expectedCodes)
+		return err
+	})
+
+	switch err {
+	case nil:
+		logging.Infof(ctx, "cipd: ref %q is set", ref)
+	case ErrProcessingTimeout:
+		logging.Errorf(ctx, "cipd: failed to set ref - deadline exceeded")
+	default:
+		logging.Errorf(ctx, "cipd: failed to set ref - %s", err)
 	}
-	logging.Errorf(ctx, "cipd: failed set ref - deadline exceeded")
-	return ErrSetRefTimeout
+	return err
 }
 
-// // TODO(vadimsh): Inline.
-func (client *clientImpl) setRefRPC(ctx context.Context, ref string, pin common.Pin) error {
-	_, err := client.repo.CreateRef(ctx, &api.Ref{
-		Name:     ref,
-		Package:  pin.PackageName,
-		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-	}, expectedCodes)
-	if grpc.Code(err) == codes.FailedPrecondition {
-		return &pendingProcessingError{grpc.ErrorDesc(err)}
-	}
-	return humanErr(err)
-}
-
-// TODO(vadimsh): Use context deadline.
 func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
-	err := common.ValidatePin(pin)
-	if err != nil {
+	if err := common.ValidatePin(pin); err != nil {
 		return err
 	}
 	if len(tags) == 0 {
 		return nil
 	}
-	for _, tag := range tags {
-		logging.Infof(ctx, "cipd: attaching tag %s", tag)
-	}
-	deadline := clock.Now(ctx).Add(TagAttachTimeout)
-	for clock.Now(ctx).Before(deadline) {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		err = client.attachTagsRPC(ctx, pin, tags)
-		if err == nil {
-			logging.Infof(ctx, "cipd: all tags attached")
-			return nil
-		}
-		if _, ok := err.(*pendingProcessingError); ok {
-			logging.Warningf(ctx, "cipd: %s", err)
-			clock.Sleep(ctx, 5*time.Second)
-		} else {
-			logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)
-			return err
-		}
-	}
-	logging.Errorf(ctx, "cipd: failed to attach tags - deadline exceeded")
-	return ErrAttachTagsTimeout
-}
 
-// TODO(vadimsh): Inline.
-func (client *clientImpl) attachTagsRPC(ctx context.Context, pin common.Pin, tags []string) error {
 	apiTags := make([]*api.Tag, len(tags))
 	for i, t := range tags {
 		var err error
 		if apiTags[i], err = common.ParseInstanceTag(t); err != nil {
 			return err
 		}
+		logging.Infof(ctx, "cipd: attaching tag %s", t)
 	}
-	_, err := client.repo.AttachTags(ctx, &api.AttachTagsRequest{
-		Package:  pin.PackageName,
-		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-		Tags:     apiTags,
-	}, expectedCodes)
-	if grpc.Code(err) == codes.FailedPrecondition {
-		return &pendingProcessingError{grpc.ErrorDesc(err)}
+
+	err := retryUntilReady(ctx, TagAttachTimeout, func(ctx context.Context) error {
+		_, err := client.repo.AttachTags(ctx, &api.AttachTagsRequest{
+			Package:  pin.PackageName,
+			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+			Tags:     apiTags,
+		}, expectedCodes)
+		return err
+	})
+
+	switch err {
+	case nil:
+		logging.Infof(ctx, "cipd: all tags attached")
+	case ErrProcessingTimeout:
+		logging.Errorf(ctx, "cipd: failed to attach tags - deadline exceeded")
+	default:
+		logging.Errorf(ctx, "cipd: failed to attach tags - %s", err)
 	}
-	return humanErr(err)
+	return err
+}
+
+// How long to wait between retries in retryUntilReady.
+const retryDelay = 5 * time.Second
+
+// retryUntilReady calls the callback and retries on FailedPrecondition errors,
+// which indicate that the instance is not ready yet (still being processed by
+// the backend).
+func retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context.Context) error) error {
+	ctx, cancel := clock.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	for {
+		switch err := cb(ctx); {
+		case err == nil:
+			return nil
+		case grpc.Code(err) == codes.FailedPrecondition: // the instance is not ready
+			logging.Warningf(ctx, "cipd: %s", humanErr(err))
+			if res := clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay); res.Incomplete() {
+				return ErrProcessingTimeout
+			}
+		case err == context.DeadlineExceeded:
+			return ErrProcessingTimeout
+		default:
+			return humanErr(err)
+		}
+	}
 }
 
 func (client *clientImpl) SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error) {
@@ -1605,16 +1611,6 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 
 ////////////////////////////////////////////////////////////////////////////////
 // Private structs and interfaces.
-
-// pendingProcessingError is returned by attachTags if package instance is not
-// yet ready and the call should be retried later.
-type pendingProcessingError struct {
-	message string
-}
-
-func (e *pendingProcessingError) Error() string {
-	return e.message
-}
 
 type registerInstanceResponse struct {
 	uploadSession     *UploadSession
