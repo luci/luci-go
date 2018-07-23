@@ -16,8 +16,6 @@ package cli
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -333,14 +331,14 @@ func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
-func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, error) {
+func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOptions, error) {
 	authOpts, err := opts.authFlags.Options()
 	if err != nil {
-		return nil, err
+		return cipd.ClientOptions{}, err
 	}
 	client, err := auth.NewAuthenticator(ctx, auth.OptionalLogin, authOpts).Client()
 	if err != nil {
-		return nil, err
+		return cipd.ClientOptions{}, err
 	}
 
 	realOpts := cipd.ClientOptions{
@@ -351,9 +349,17 @@ func (opts *clientOptions) makeCipdClient(ctx context.Context) (cipd.Client, err
 		AnonymousClient:     http.DefaultClient,
 	}
 	if err := realOpts.LoadFromEnv(cli.MakeGetEnv(ctx)); err != nil {
+		return cipd.ClientOptions{}, err
+	}
+	return realOpts, nil
+}
+
+func (opts *clientOptions) makeCIPDClient(ctx context.Context) (cipd.Client, error) {
+	cipdOpts, err := opts.toCIPDClientOpts(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return cipd.NewClient(realOpts)
+	return cipd.NewClient(cipdOpts)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -859,7 +865,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 	}
 	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -944,7 +950,7 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 		clientOpts.cacheDir = ""
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1165,7 +1171,7 @@ func resolveVersion(ctx context.Context, packagePrefix, version string, clientOp
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1218,7 +1224,7 @@ func describeInstance(ctx context.Context, pkg, version string, clientOpts clien
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1299,7 +1305,7 @@ func listInstances(ctx context.Context, pkg string, limit int, clientOpts client
 		return nil, err
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1467,7 +1473,7 @@ type setRefOrTagArgs struct {
 }
 
 func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) {
-	client, err := args.clientOptions.makeCipdClient(ctx)
+	client, err := args.clientOptions.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1606,7 +1612,7 @@ func (c *listPackagesRun) Run(a subcommands.Application, args []string, env subc
 }
 
 func listPackages(ctx context.Context, path string, recursive, showHidden bool, clientOpts clientOptions) ([]string, error) {
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1664,7 +1670,7 @@ func (c *searchRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func searchInstances(ctx context.Context, packageName string, tags []string, clientOpts clientOptions) ([]common.Pin, error) {
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1720,7 +1726,7 @@ func (c *listACLRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func listACL(ctx context.Context, packagePath string, clientOpts clientOptions) (map[string][]cipd.PackageACL, error) {
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1845,7 +1851,7 @@ func editACL(ctx context.Context, packagePath string, owners, writers, readers, 
 		return nil
 	}
 
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return err
 	}
@@ -1918,7 +1924,7 @@ func (c *checkACLRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func checkACL(ctx context.Context, packagePath string, roles []string, clientOpts clientOptions) (bool, error) {
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -2097,7 +2103,7 @@ func (c *fetchRun) Run(a subcommands.Application, args []string, env subcommands
 }
 
 func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile string, clientOpts clientOptions) (common.Pin, error) {
-	client, err := clientOpts.makeCipdClient(ctx)
+	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -2257,7 +2263,7 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 		return common.Pin{}, err
 	}
 	defer closer()
-	client, err := opts.clientOptions.makeCipdClient(ctx)
+	client, err := opts.clientOptions.makeCIPDClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -2316,56 +2322,20 @@ func (s *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		s.printError(makeCLIError("-version is required"))
 		return 1
 	}
+
 	ctx := cli.GetContext(a, s, env)
-	exePath, err := os.Executable()
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-	clientCacheDir := filepath.Join(filepath.Dir(exePath), ".cipd_client_cache")
-	s.clientOptions.cacheDir = clientCacheDir
-	fs := local.NewFileSystem(filepath.Dir(exePath), filepath.Join(clientCacheDir, "trash"))
-	defer fs.CleanupTrash(ctx)
-	return s.doSelfUpdate(ctx, exePath, fs)
-}
 
-func executableSHA1(exePath string) (string, error) {
-	file, err := os.Open(exePath)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	hash := sha1.New()
-	if _, err := io.Copy(hash, file); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func (s *selfupdateRun) doSelfUpdate(ctx context.Context, exePath string, fs local.FileSystem) int {
-	if err := common.ValidateInstanceVersion(s.version); err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	curExeHash, err := executableSHA1(exePath)
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	s.clientOptions.rootDir = filepath.Dir(exePath)
-	client, err := s.clientOptions.makeCipdClient(ctx)
-	if err != nil {
-		s.printError(err)
-		return 1
-	}
-	if err := client.MaybeUpdateClient(ctx, fs, s.version, curExeHash, exePath); err != nil {
-		s.printError(err)
-		return 1
-	}
-
-	return 0
+	return s.done(func() (common.Pin, error) {
+		exePath, err := os.Executable()
+		if err != nil {
+			return common.Pin{}, err
+		}
+		opts, err := s.clientOptions.toCIPDClientOpts(ctx)
+		if err != nil {
+			return common.Pin{}, err
+		}
+		return cipd.MaybeUpdateClient(ctx, opts, s.version, exePath)
+	}())
 }
 
 ////////////////////////////////////////////////////////////////////////////////
