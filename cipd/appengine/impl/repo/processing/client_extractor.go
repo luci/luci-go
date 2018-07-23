@@ -77,10 +77,20 @@ func GetClientBinaryName(pkg string) string {
 // version number in ClientExtractorProcID should change too.
 type ClientExtractorResult struct {
 	ClientBinary struct {
-		Size       int64  `json:"size"`
+		Size int64 `json:"size"`
+
+		// Algo used to name the extracted file, matches the client package algo.
 		HashAlgo   string `json:"hash_algo"`   // cas.HashAlgo enum serialized to string
 		HashDigest string `json:"hash_digest"` // as hex string
-		SHA1Digest string `json:"sha1_digest"` // may be missing in old records for which hash_algo == SHA1
+
+		// AllHashDigests are hex digests of the extracted file calculated using all
+		// algos known to the server at the time the file was uploaded.
+		//
+		// Keys are cas.HashAlgo enum values as strings ('SHA1', 'SHA256', ...).
+		//
+		// If empty (for old records), only supported algo is HashAlgo from above
+		// (which for old records is always SHA1).
+		AllHashDigests map[string]string `json:"all_hash_digests"`
 	} `json:"client_binary"`
 }
 
@@ -90,6 +100,11 @@ type ClientExtractorResult struct {
 func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 	algo := api.HashAlgo_value[r.ClientBinary.HashAlgo]
 	if algo == 0 {
+		// Note: this means OLD version of the server may not be able to serve
+		// NEW ClientExtractorResult entries due to unknown hash algo. Many other
+		// things will also break in this situation. If this is really happening,
+		// all new entries can be manually removed from the datastore, to stop
+		// confusing the old server version.
 		return nil, fmt.Errorf("unrecognized hash algo %q", r.ClientBinary.HashAlgo)
 	}
 	ref := &api.ObjectRef{
@@ -102,19 +117,40 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 	return ref, nil
 }
 
-// SHA1 returns client's SHA1 hash or "" if not known.
+// ObjectRefAliases is list of ObjectRefs calculated using all hash algos known
+// to the server when the client binary was extracted.
 //
-// Client's SHA1 is still needed for older clients and bootstrap scripts that
-// don't understand ObjectRef.
-func (r *ClientExtractorResult) SHA1() string {
-	switch {
-	case r.ClientBinary.SHA1Digest != "":
-		return r.ClientBinary.SHA1Digest
-	case r.ClientBinary.HashAlgo == "SHA1": // for older entries predating ObjectRef
-		return r.ClientBinary.HashDigest
-	default:
-		return ""
+// Additionally all algos not understood by the server right NOW are skipped
+// too. This may arise if the server was rolled back, but some files have
+// already been uploaded with a newer algo.
+func (r *ClientExtractorResult) ObjectRefAliases() []*api.ObjectRef {
+	all := r.ClientBinary.AllHashDigests
+
+	// Older entries do not have AllHashDigests field at all.
+	if len(all) == 0 {
+		ref := &api.ObjectRef{
+			HashAlgo:  api.HashAlgo(api.HashAlgo_value[r.ClientBinary.HashAlgo]),
+			HexDigest: r.ClientBinary.HashDigest,
+		}
+		if common.ValidateObjectRef(ref) == nil {
+			return []*api.ObjectRef{ref}
+		}
+		return nil // welp, have 0 supported algos, should not really happen
 	}
+
+	// Order the result by HashAlgo enum values. This loop also naturally skips
+	// algos not understood by the current version of the server, since they are
+	// not in HashAlgo_name map.
+	refs := make([]*api.ObjectRef, 0, len(all))
+	for algo := int32(1); api.HashAlgo_name[algo] != ""; algo++ { // skip UNSPECIFIED
+		if digest := all[api.HashAlgo_name[algo]]; digest != "" {
+			ref := &api.ObjectRef{HashAlgo: api.HashAlgo(algo), HexDigest: digest}
+			if common.ValidateObjectRef(ref) == nil {
+				refs = append(refs, ref)
+			}
+		}
+	}
+	return refs
 }
 
 // ClientExtractor is a processor that extracts CIPD client binary from CIPD
@@ -157,16 +193,23 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// We use same hash algo for naming the extracted file as was used to name
 	// the package instance it is in. This avoid some confusion during the
 	// transition to a new hash.
+	if err = common.ValidateInstanceID(inst.InstanceID); err != nil {
+		err = errors.Annotate(err, "unrecognized client instance ID format").Err()
+		return
+	}
 	instRef := common.InstanceIDToObjectRef(inst.InstanceID)
-	refHash := common.MustNewHash(instRef.HashAlgo)
 
-	// We also always calculate SHA1 hash in parallel, for legacy bootstrap
-	// scripts that understand only SHA1.
-	var sha1Hash hash.Hash
-	if instRef.HashAlgo == api.HashAlgo_SHA1 {
-		sha1Hash = refHash
-	} else {
-		sha1Hash = common.MustNewHash(api.HashAlgo_SHA1)
+	// We also always calculate all other hashes we know about at the same time,
+	// for old bootstrap scripts that may not understand the most recent hash
+	// algo.
+	hashes := make(map[api.HashAlgo]hash.Hash, len(api.HashAlgo_name))
+	for algo := range api.HashAlgo_name {
+		if a := api.HashAlgo(algo); a != api.HashAlgo_HASH_ALGO_UNSPECIFIED {
+			hashes[a] = common.MustNewHash(a)
+		}
+	}
+	if hashes[instRef.HashAlgo] == nil {
+		panic("impossible, inst.InstanceID has already been validated")
 	}
 
 	// Start extracting the file.
@@ -212,10 +255,10 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// chunks from the underlying file reader. We basically read 512 Kb buffer
 	// from GS, then unzip it in memory via small 32 Kb chunks into 2 Mb output
 	// buffer, and then flush it to GS.
-	writeTo := make([]io.Writer, 0, 3)
-	writeTo = append(writeTo, uploader, refHash)
-	if sha1Hash != refHash {
-		writeTo = append(writeTo, sha1Hash)
+	writeTo := make([]io.Writer, 0, 1+len(hashes))
+	writeTo = append(writeTo, uploader)
+	for _, hash := range hashes {
+		writeTo = append(writeTo, hash)
 	}
 	copied, err := io.CopyBuffer(
 		io.MultiWriter(writeTo...),
@@ -245,12 +288,13 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 
 	// Skip the hash calculation in CAS by enforcing the hash, we've just
 	// calculated it.
+	extractedRef := &api.ObjectRef{
+		HashAlgo:  instRef.HashAlgo,
+		HexDigest: common.HexDigest(hashes[instRef.HashAlgo]),
+	}
 	op, err = e.CAS.FinishUpload(ctx, &api.FinishUploadRequest{
 		UploadOperationId: op.OperationId,
-		ForceHash: &api.ObjectRef{
-			HashAlgo:  instRef.HashAlgo,
-			HexDigest: common.HexDigest(refHash),
-		},
+		ForceHash:         extractedRef,
 	})
 
 	// CAS should publish the object right away.
@@ -263,14 +307,19 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 		return
 	}
 
+	hexDigests := make(map[string]string, len(hashes))
+	for algo, hash := range hashes {
+		hexDigests[algo.String()] = common.HexDigest(hash)
+	}
+
 	r := ClientExtractorResult{}
 	r.ClientBinary.Size = size
-	r.ClientBinary.HashAlgo = instRef.HashAlgo.String()
-	r.ClientBinary.HashDigest = common.HexDigest(refHash)
-	r.ClientBinary.SHA1Digest = common.HexDigest(sha1Hash)
+	r.ClientBinary.HashAlgo = extractedRef.HashAlgo.String()
+	r.ClientBinary.HashDigest = extractedRef.HexDigest
+	r.ClientBinary.AllHashDigests = hexDigests
 
 	logging.Infof(ctx, "Uploaded CIPD client binary %s with %s %s (%d bytes)",
-		inst.Package.StringID(), r.ClientBinary.HashAlgo, r.ClientBinary.HashDigest, size)
+		inst.Package.StringID(), extractedRef.HashAlgo, extractedRef.HexDigest, size)
 
 	res.Result = r
 	return
