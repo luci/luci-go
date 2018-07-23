@@ -1,0 +1,120 @@
+substep: <
+  step: <
+    name: "running step"
+    status: RUNNING
+  >
+>
+
+substep: <
+  step: <
+    name: "successful step"
+    status: SUCCESS
+  >
+>
+
+substep: <
+  step: <
+    name: "failed step"
+    status: FAILURE
+  >
+>
+
+substep: <
+  step: <
+    name: "infra-failed step"
+    status: FAILURE
+    failure_details: < type: EXCEPTION >
+  >
+>
+
+
+substep: <
+  step: <
+    name: "with time"
+    started: < seconds: 1500000000 >
+    ended: < seconds: 1500001000 >
+  >
+>
+
+substep: <
+  step: <
+    name: "with failure details text"
+    text: "step_text"
+    status: FAILURE
+    failure_details: <
+        text: "failure_details_text"
+    >
+  >
+>
+
+substep: <
+  step: <
+    name: "text with one line"
+    text: "a"
+  >
+>
+
+substep: <
+  step: <
+    name: "text with two lines"
+    text: "a"
+    text: "b"
+  >
+>
+
+substep: <
+  step: <
+    name: "with stdio"
+    stdout_stream: <
+      name: "steps/setup_build/0/stdout"
+    >
+    stderr_stream: <
+      name: "steps/setup_build/0/stderr"
+    >
+  >
+>
+
+substep: <
+  step: <
+    name: "other links logdog"
+    other_links: <
+      label: "run_recipe"
+      logdog_stream: <
+        name: "steps/setup_build/0/logs/run_recipe/0"
+      >
+    >
+  >
+>
+
+substep: <
+  step: <
+    name: "other links url"
+    other_links: <
+      label: "1"
+      url: "https://example.com/1"
+    >
+    other_links: <
+      label: "2"
+      url: "https://example.com/2"
+    >
+  >
+>
+
+substep: <
+  step: <
+    name: "substeps"
+
+    substep: <
+      step: <
+        name: "child"
+
+        substep: <
+          step: < name: "descendant0" >
+        >
+        substep: <
+          step: < name: "descendant1" >
+        >
+      >
+    >
+  >
+>
