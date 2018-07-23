@@ -1,0 +1,96 @@
+steps: <
+  name: "running step"
+  status: STARTED
+>
+
+steps: <
+  name: "successful step"
+  status: SUCCESS
+>
+
+steps: <
+  name: "failed step"
+  status: FAILURE
+>
+
+steps: <
+  name: "infra-failed step"
+  status: INFRA_FAILURE
+>
+
+steps: <
+  name: "with time"
+  start_time: < seconds: 1500000000 >
+  end_time: < seconds: 1500001000 >
+  status: STARTED
+>
+
+steps: <
+  name: "with failure details text"
+  status: FAILURE
+  summary_markdown: <<END
+failure_details_text
+
+step_text
+END
+>
+
+steps: <
+  name: "text with one line"
+  summary_markdown: "a"
+  status: STARTED
+>
+
+steps: <
+  name: "text with two lines"
+  summary_markdown: "a b"
+  status: STARTED
+>
+
+steps: <
+  name: "with stdio"
+  logs: <
+    name: "stdout"
+    view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+  >
+  logs: <
+    name: "stderr"
+    view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstderr"
+  >
+  status: STARTED
+>
+
+steps: <
+  name: "other links logdog"
+  logs: <
+    name: "run_recipe"
+    view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+  >
+  status: STARTED
+>
+
+steps: <
+  name: "other links url"
+  summary_markdown: <<END
+* [1](https://example.com/1)
+* [2](https://example.com/2)
+END
+  status: STARTED
+>
+
+steps: <
+  name: "substeps"
+  status: STARTED
+>
+steps: <
+  name: "substeps|child"
+  status: STARTED
+>
+steps: <
+  name: "substeps|child|descendant0"
+  status: STARTED
+>
+steps: <
+  name: "substeps|child|descendant1"
+  status: STARTED
+>
