@@ -757,7 +757,14 @@ message DescribeClientResponse {
 
   // Reference to the extracted client binary in the storage.
   //
-  // Can be used by the caller to verify the integrity of the binary.
+  // The hash algo here always matches the algo used when uploading the client
+  // package file.
+  //
+  // Clients should expect to find an algo here that they do not support (if
+  // the server was updated to support a better algo). They should pick the best
+  // algo they support from client_ref_aliases list and use it for validation.
+  //
+  // Thus this field is mostly FYI.
   ObjectRef client_ref = 2;
 
   // Signed URL pointing to the extracted client binary in the storage.
@@ -768,6 +775,19 @@ message DescribeClientResponse {
 
   // SHA1 digest of the client binary (as hex string).
   //
-  // Used only by legacy clients. Newer clients must verify client_ref instead.
+  // Used only by old clients and present here for backward compatibility
+  // reasons.
+  //
+  // Newer clients must verify one of client_ref_aliases instead.
   string legacy_sha1 = 5;
+
+  // Contains hashes of the client binary calculated using ALL algos supported
+  // by the server at the time the client package was uploaded.
+  //
+  // The callers that want to verify the client binary hash should pick the best
+  // algo they understand.
+  //
+  // The list at least includes 'client_ref' itself and SHA1 hash (matching
+  // legacy_sha1). The order is undefined.
+  repeated ObjectRef client_ref_aliases = 6;
 }

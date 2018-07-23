@@ -2316,7 +2316,7 @@ func TestClientBootstrap(t *testing.T) {
 		cas := testutil.MockCAS{
 			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
 				return &api.ObjectURL{
-					SignedUrl: fmt.Sprintf("http://fake/%s?d=%s", common.ObjectRefToInstanceID(r.Object), r.DownloadFilename),
+					SignedUrl: fmt.Sprintf("http://fake/%s/%s?d=%s", r.Object.HashAlgo, r.Object.HexDigest, r.DownloadFilename),
 				}, nil
 			},
 		}
@@ -2324,7 +2324,11 @@ func TestClientBootstrap(t *testing.T) {
 		impl := repoImpl{meta: &meta, cas: &cas}
 
 		goodPlat := "linux-amd64"
-		goodVer := strings.Repeat("a", 40)
+		goodDigest := strings.Repeat("f", 64)
+		goodIID := common.ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: goodDigest,
+		})
 		goodPkg, err := processing.GetClientPackage(goodPlat)
 		So(err, ShouldBeNil)
 
@@ -2333,7 +2337,7 @@ func TestClientBootstrap(t *testing.T) {
 			So(err, ShouldBeNil)
 			pkg := &model.Package{Name: pkgName}
 			inst := &model.Instance{
-				InstanceID: goodVer,
+				InstanceID: goodIID,
 				Package:    datastore.KeyForObj(ctx, pkg),
 			}
 			proc := &model.ProcessingResult{
@@ -2353,10 +2357,16 @@ func TestClientBootstrap(t *testing.T) {
 		}
 
 		res := processing.ClientExtractorResult{}
-		res.ClientBinary.HashAlgo = "SHA1"
-		res.ClientBinary.HashDigest = strings.Repeat("b", 40)
+		res.ClientBinary.HashAlgo = "SHA256"
+		res.ClientBinary.HashDigest = strings.Repeat("b", 64)
+		res.ClientBinary.AllHashDigests = map[string]string{
+			"SHA1":   strings.Repeat("c", 40),
+			"SHA256": strings.Repeat("b", 64),
+		}
 		res.ClientBinary.Size = 123456789101112
 		inst, proc := setup(&res, "")
+
+		expectedClientURL := fmt.Sprintf("http://fake/%s/%s?d=cipd", res.ClientBinary.HashAlgo, res.ClientBinary.HashDigest)
 
 		Convey("Bootstrap endpoint", func() {
 			call := func(plat, ver string) *httptest.ResponseRecorder {
@@ -2373,19 +2383,19 @@ func TestClientBootstrap(t *testing.T) {
 			}
 
 			Convey("Happy path", func() {
-				rr := call(goodPlat, goodVer)
+				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusFound)
-				So(rr.Header().Get("Location"), ShouldEqual, "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd")
+				So(rr.Header().Get("Location"), ShouldEqual, expectedClientURL)
 			})
 
 			Convey("No plat", func() {
-				rr := call("", goodVer)
+				rr := call("", goodIID)
 				So(rr.Code, ShouldEqual, http.StatusBadRequest)
 				So(rr.Body.String(), ShouldContainSubstring, "no 'platform' specified")
 			})
 
 			Convey("Bad plat", func() {
-				rr := call("...", goodVer)
+				rr := call("...", goodIID)
 				So(rr.Code, ShouldEqual, http.StatusBadRequest)
 				So(rr.Body.String(), ShouldContainSubstring, "bad platform name")
 			})
@@ -2406,7 +2416,7 @@ func TestClientBootstrap(t *testing.T) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
-				rr := call(goodPlat, goodVer)
+				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusForbidden)
 				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
 			})
@@ -2428,7 +2438,7 @@ func TestClientBootstrap(t *testing.T) {
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
-				rr := call(goodPlat, goodVer)
+				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusNotFound)
 				So(rr.Body.String(), ShouldContainSubstring, "is not extracted yet")
 			})
@@ -2436,60 +2446,70 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Fatal error during extraction", func() {
 				setup(nil, "BOOM")
 
-				rr := call(goodPlat, goodVer)
+				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusNotFound)
 				So(rr.Body.String(), ShouldContainSubstring, "BOOM")
 			})
 		})
 
 		Convey("DescribeClient RPC", func() {
-			call := func(pkg, iid string) (*api.DescribeClientResponse, error) {
+			call := func(pkg, sha256Digest string) (*api.DescribeClientResponse, error) {
 				return impl.DescribeClient(ctx, &api.DescribeClientRequest{
 					Package: pkg,
 					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: iid,
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: sha256Digest,
 					},
 				})
 			}
 
 			Convey("Happy path", func() {
-				resp, err := call(goodPkg, goodVer)
+				resp, err := call(goodPkg, goodDigest)
 				So(err, ShouldBeNil)
 				So(resp, ShouldResemble, &api.DescribeClientResponse{
 					Instance: &api.Instance{
 						Package: goodPkg,
 						Instance: &api.ObjectRef{
-							HashAlgo:  api.HashAlgo_SHA1,
-							HexDigest: goodVer,
+							HashAlgo:  api.HashAlgo_SHA256,
+							HexDigest: goodDigest,
 						},
 					},
 					ClientRef: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: strings.Repeat("b", 40),
+						HashAlgo:  api.HashAlgo_SHA256,
+						HexDigest: res.ClientBinary.AllHashDigests["SHA256"],
 					},
 					ClientBinary: &api.ObjectURL{
-						SignedUrl: "http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd",
+						SignedUrl: expectedClientURL,
 					},
-					ClientSize: 123456789101112,
-					LegacySha1: strings.Repeat("b", 40),
+					ClientSize: res.ClientBinary.Size,
+					LegacySha1: res.ClientBinary.AllHashDigests["SHA1"],
+					ClientRefAliases: []*api.ObjectRef{
+						{
+							HashAlgo:  api.HashAlgo_SHA1,
+							HexDigest: res.ClientBinary.AllHashDigests["SHA1"],
+						},
+						{
+							HashAlgo:  api.HashAlgo_SHA256,
+							HexDigest: res.ClientBinary.AllHashDigests["SHA256"],
+						},
+					},
 				})
 			})
 
 			Convey("Bad package name", func() {
-				_, err := call("not/a/client", goodVer)
+				_, err := call("not/a/client", goodDigest)
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
 				So(err, ShouldErrLike, "not a CIPD client package")
 			})
 
-			Convey("Bad instance ID", func() {
+			Convey("Bad instance ref", func() {
 				_, err := call(goodPkg, "not-an-id")
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "invalid SHA1 digest")
+				So(err, ShouldErrLike, "invalid SHA256 digest")
 			})
 
 			Convey("Missing instance", func() {
-				_, err := call(goodPkg, strings.Repeat("c", 40))
+				_, err := call(goodPkg, strings.Repeat("e", 64))
 				So(grpc.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such instance")
 			})
@@ -2498,7 +2518,7 @@ func TestClientBootstrap(t *testing.T) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
-				_, err := call(goodPkg, strings.Repeat("c", 40))
+				_, err := call(goodPkg, goodDigest)
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "not allowed to see it")
 			})
@@ -2508,7 +2528,7 @@ func TestClientBootstrap(t *testing.T) {
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
-				_, err := call(goodPkg, goodVer)
+				_, err := call(goodPkg, goodDigest)
 				So(grpc.Code(err), ShouldEqual, codes.FailedPrecondition)
 				So(err, ShouldErrLike, "the instance is not ready yet")
 			})
@@ -2516,7 +2536,7 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Fatal error during extraction", func() {
 				setup(nil, "BOOM")
 
-				_, err := call(goodPkg, goodVer)
+				_, err := call(goodPkg, goodDigest)
 				So(grpc.Code(err), ShouldEqual, codes.Aborted)
 				So(err, ShouldErrLike, "some processors failed to process this instance")
 			})
@@ -2544,18 +2564,21 @@ func TestClientBootstrap(t *testing.T) {
 			}
 
 			Convey("Happy path", func() {
-				code, body := call(goodPkg, goodVer, "json")
+				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
-					`{"client_binary":{"fetch_url":"http://fake/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb?d=cipd",`+
-						`"file_name":"cipd","sha1":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",`+
+					fmt.Sprintf(`{"client_binary":{"fetch_url":"%s",`+
+						`"file_name":"cipd","sha1":"%s",`+
 						`"size":"123456789101112"},`+
 						`"instance":{"package_name":"infra/tools/cipd/linux-amd64",`+
-						`"instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"status":"SUCCESS"}`)
+						`"instance_id":"%s"},"status":"SUCCESS"}`,
+						expectedClientURL,
+						res.ClientBinary.AllHashDigests["SHA1"],
+						inst.InstanceID))
 			})
 
 			Convey("Bad package name", func() {
-				code, body := call("not/a/client", goodVer, "text")
+				code, body := call("not/a/client", goodIID, "text")
 				So(code, ShouldEqual, http.StatusBadRequest)
 				So(body, ShouldContainSubstring, "not a CIPD client package")
 			})
@@ -2567,7 +2590,11 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("Missing instance", func() {
-				code, body := call(goodPkg, strings.Repeat("c", 40), "json")
+				badIID := common.ObjectRefToInstanceID(&api.ObjectRef{
+					HashAlgo:  api.HashAlgo_SHA256,
+					HexDigest: strings.Repeat("d", 64),
+				})
+				code, body := call(goodPkg, badIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"error_message":"no such instance","status":"INSTANCE_NOT_FOUND"}`)
@@ -2577,7 +2604,7 @@ func TestClientBootstrap(t *testing.T) {
 				ctx = auth.WithState(ctx, &authtest.FakeState{
 					Identity: "user:someone@example.com",
 				})
-				code, body := call(goodPkg, strings.Repeat("c", 40), "text")
+				code, body := call(goodPkg, goodIID, "text")
 				So(code, ShouldEqual, http.StatusForbidden)
 				So(body, ShouldContainSubstring, "not allowed to see it")
 			})
@@ -2587,7 +2614,7 @@ func TestClientBootstrap(t *testing.T) {
 				datastore.Delete(ctx, proc)
 				datastore.Put(ctx, inst)
 
-				code, body := call(goodPkg, goodVer, "json")
+				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"error_message":"the client binary is not extracted yet, try later","status":"NOT_EXTRACTED_YET"}`)
@@ -2596,7 +2623,7 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Fatal error during extraction", func() {
 				setup(nil, "BOOM")
 
-				code, body := call(goodPkg, goodVer, "json")
+				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
 					`{"error_message":"the client binary is not available - some processors failed`+

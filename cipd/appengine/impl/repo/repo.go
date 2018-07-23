@@ -1202,12 +1202,21 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	}
 	ref, err := proc.ToObjectRef()
 	if err != nil {
-		return nil, errors.Annotate(err, "malformed ref in the client extractor results").Tag(grpcutil.InternalTag).Err()
+		return nil, errors.Annotate(err, "malformed or unrecognized ref in the client extractor results").Tag(grpcutil.InternalTag).Err()
 	}
 
-	// SHA1 is required to allow older clients to self-update to a newer client
-	// that supports more than SHA1.
-	if proc.SHA1() == "" {
+	// refAliases (and SHA1 in particular, as hash supported by oldest code) is
+	// required to allow older clients to self-update to a newer client. See the
+	// doc for DescribeClientResponse proto message.
+	refAliases := proc.ObjectRefAliases()
+	sha1 := ""
+	for _, ref := range refAliases {
+		if ref.HashAlgo == api.HashAlgo_SHA1 {
+			sha1 = ref.HexDigest
+			break
+		}
+	}
+	if sha1 == "" {
 		return nil, errors.Reason("malformed client extraction results, missing SHA1 digest").Tag(grpcutil.InternalTag).Err()
 	}
 
@@ -1221,11 +1230,12 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	}
 
 	return &api.DescribeClientResponse{
-		Instance:     inst.Proto(),
-		ClientRef:    ref,
-		ClientBinary: signedURL,
-		ClientSize:   proc.ClientBinary.Size,
-		LegacySha1:   proc.SHA1(),
+		Instance:         inst.Proto(),
+		ClientRef:        ref,
+		ClientBinary:     signedURL,
+		ClientSize:       proc.ClientBinary.Size,
+		LegacySha1:       sha1,
+		ClientRefAliases: refAliases,
 	}, nil
 }
 
