@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2dca3981_6b584f6f",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T18:38:14Z",
+      "side": 1,
+      "message": "nit: comment should start with the symbol name",
+      "range": {
+        "startLine": 86,
+        "startChar": 4,
+        "endLine": 86,
+        "endChar": 5
+      },
+      "revId": "12729682d6b27e3ba4ddda0229bb226fd76d05a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee30a756_9e7249d0",
+        "filename": "cipd/appengine/impl/repo/processing/client_extractor.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T18:38:14Z",
+      "side": 1,
+      "message": "i don\u0027t see where it is parallel",
+      "range": {
+        "startLine": 202,
+        "startChar": 59,
+        "endLine": 202,
+        "endChar": 71
+      },
+      "revId": "12729682d6b27e3ba4ddda0229bb226fd76d05a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
