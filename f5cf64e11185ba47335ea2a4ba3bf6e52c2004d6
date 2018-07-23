@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4ac63eb9_64972875",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: other files use buildbucketpb. Let\u0027s be consistent.",
+      "range": {
+        "startLine": 24,
+        "startChar": 1,
+        "endLine": 24,
+        "endChar": 5
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2d81a37a_39e9cd88",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "there is no ./build/result.proto or //build/result.proto",
+      "range": {
+        "startLine": 32,
+        "startChar": 7,
+        "endLine": 32,
+        "endChar": 25
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e041aa73_1aff42a0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: let\u0027s use // prefix (\"//buildbucket/proto/step.proto\") to indicate that this is relative to repo root, rather than this dir",
+      "range": {
+        "startLine": 32,
+        "startChar": 27,
+        "endLine": 32,
+        "endChar": 28
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b365864d_6f32b9dd",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 34,
+        "startChar": 0,
+        "endLine": 34,
+        "endChar": 3
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecd6a906_7c32b098",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: this is python style, please use camel case",
+      "range": {
+        "startLine": 34,
+        "startChar": 4,
+        "endLine": 34,
+        "endChar": 12
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0edee21_a19b09e2",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: Go comments must start with the symbol name, see other Go code\napplies to all comments in this file",
+      "range": {
+        "startLine": 36,
+        "startChar": 3,
+        "endLine": 36,
+        "endChar": 8
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18e53102_e5737706",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: Go code likes abbreviations to be capitalized: stepParserFromURL",
+      "range": {
+        "startLine": 37,
+        "startChar": 19,
+        "endLine": 37,
+        "endChar": 22
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

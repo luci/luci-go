@@ -1,0 +1,267 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee2f33ec_910d066c",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "please document that context is used only for logging. otherwise it is unclear why this function would need logging",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0bfe6a6_f7f5ad47",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nit: this allocates an empty slice of capacity 0 which isn\u0027t useful\nconsider `var bbSteps []*bbpb.Step`",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 26
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "43aadcfd_fb87cd89",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "ann.Substep is the only thing we read from ann. It would be cleaner to pass []*Step_Substep directly",
+      "range": {
+        "startLine": 66,
+        "startChar": 25,
+        "endLine": 66,
+        "endChar": 36
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7fc2b20d_72e250c0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "errors.Reason(...)",
+      "range": {
+        "startLine": 69,
+        "startChar": 26,
+        "endLine": 69,
+        "endChar": 48
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c90db6b_5fa05658",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 69,
+        "startChar": 10,
+        "endLine": 69,
+        "endChar": 24
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f0a4d460_fb49484f",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "var summary []string\n\nno need to allocate empty array",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac581f78_cae38ad8",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "please document that summary is a slice of paragraphs, not lines. It is not obivous",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 2
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0e7c396f_06a83ab0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "inline",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 7
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d488268_1bf835b0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "nil",
+      "range": {
+        "startLine": 134,
+        "startChar": 8,
+        "endLine": 134,
+        "endChar": 23
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd5ca479_4cbd14a6",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "\"handle\" functions usually make a side effect, e.g. write to a slice or write to a writer. This function is pure. Consider \"parseStatus\" or \"readStatus\" or \"convertStatus\"\n\nsame below",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1e525cc_836220e2",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "we will append ann.OtherLinks, so let\u0027s preallocate the slice\n\n  aLinks :\u003d make([]*annotpb.Link, 0, len(ann.OtherLinks)+2)\n\nalternative, to avoid allocations, declare a function with L199-212 a body and call it for stdout, stderr and then for other links\n\nthe original code was python, so it was written in a python way (no care for easily avoidable memory allocations)",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cef7aaa5_5745490a",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "same here",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "af613b55_a544c471",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-23T22:56:16Z",
+      "side": 1,
+      "message": "this file needs a public function to convert annotation proto to build steps",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
