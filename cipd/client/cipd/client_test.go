@@ -21,10 +21,15 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
@@ -238,16 +243,120 @@ func TestRegisterInstance(t *testing.T) {
 ////////////////////////////////////////////////////////////////////////////////
 // Setting refs and tags.
 
-func TestSetRefWhenReady(t *testing.T) {
+// SetRefWhenReady and AttachTagsWhenReady are tested together since they
+// are very similar.
+func TestSetRefAndAttachTags(t *testing.T) {
 	t.Parallel()
 
-	// TODO
-}
+	Convey("With mocks", t, func(c C) {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			if testclock.HasTags(t, "cipd-sleeping") {
+				tc.Add(d)
+			}
+		})
 
-func TestAttachTagsWhenReady(t *testing.T) {
-	t.Parallel()
+		client, _, repo, _ := mockedCipdClient(c)
 
-	// TODO
+		objRef := &api.ObjectRef{
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("a", 64),
+		}
+		pin := common.Pin{
+			PackageName: "pkg/name",
+			InstanceID:  common.ObjectRefToInstanceID(objRef),
+		}
+
+		createRefRPC := func() rpcCall {
+			return rpcCall{
+				method: "CreateRef",
+				in: &api.Ref{
+					Name:     "zzz",
+					Package:  "pkg/name",
+					Instance: objRef,
+				},
+				out: &empty.Empty{},
+			}
+		}
+
+		attachTagsRPC := func() rpcCall {
+			return rpcCall{
+				method: "AttachTags",
+				in: &api.AttachTagsRequest{
+					Package:  "pkg/name",
+					Instance: objRef,
+					Tags: []*api.Tag{
+						{Key: "k1", Value: "v1"},
+						{Key: "k2", Value: "v2"},
+					},
+				},
+				out: &empty.Empty{},
+			}
+		}
+
+		Convey("SetRefWhenReady happy path", func() {
+			repo.expect(createRefRPC())
+			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldBeNil)
+		})
+
+		Convey("AttachTagsWhenReady happy path", func() {
+			repo.expect(attachTagsRPC())
+			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldBeNil)
+		})
+
+		Convey("SetRefWhenReady timeout", func() {
+			rpc := createRefRPC()
+			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
+			repo.expectMany(rpc)
+			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldEqual, ErrProcessingTimeout)
+		})
+
+		Convey("AttachTagsWhenReady timeout", func() {
+			rpc := attachTagsRPC()
+			rpc.err = status.Errorf(codes.FailedPrecondition, "not ready")
+			repo.expectMany(rpc)
+			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldEqual, ErrProcessingTimeout)
+		})
+
+		Convey("SetRefWhenReady fatal RPC err", func() {
+			rpc := createRefRPC()
+			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
+			repo.expect(rpc)
+			So(client.SetRefWhenReady(ctx, "zzz", pin), ShouldErrLike, "boo")
+		})
+
+		Convey("AttachTagsWhenReady fatal RPC err", func() {
+			rpc := attachTagsRPC()
+			rpc.err = status.Errorf(codes.PermissionDenied, "boo")
+			repo.expect(rpc)
+			So(client.AttachTagsWhenReady(ctx, pin, []string{"k1:v1", "k2:v2"}), ShouldErrLike, "boo")
+		})
+
+		Convey("SetRefWhenReady bad pin", func() {
+			So(client.SetRefWhenReady(ctx, "zzz", common.Pin{
+				PackageName: "////",
+			}), ShouldErrLike, "invalid package name")
+		})
+
+		Convey("SetRefWhenReady bad ref", func() {
+			So(client.SetRefWhenReady(ctx, "????", pin), ShouldErrLike, "invalid ref name")
+		})
+
+		Convey("AttachTagsWhenReady noop", func() {
+			So(client.AttachTagsWhenReady(ctx, pin, nil), ShouldBeNil)
+		})
+
+		Convey("AttachTagsWhenReady bad pin", func() {
+			So(client.AttachTagsWhenReady(ctx, common.Pin{
+				PackageName: "////",
+			}, []string{"k:v"}), ShouldErrLike, "invalid package name")
+		})
+
+		Convey("AttachTagsWhenReady bad tag", func() {
+			So(client.AttachTagsWhenReady(ctx, pin, []string{"good:tag", "bad_tag"}), ShouldErrLike,
+				"doesn't look like a tag")
+		})
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
