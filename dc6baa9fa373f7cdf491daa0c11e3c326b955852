@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "904a7abd_a1c05a98",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee2f33ec_910d066c",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b0bfe6a6_f7f5ad47",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "d1aac733_7de61349",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b0bfe6a6_f7f5ad47",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 26
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "43aadcfd_fb87cd89",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -62,6 +104,30 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69b18b44_f49e844d",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "43aadcfd_fb87cd89",
+      "range": {
+        "startLine": 66,
+        "startChar": 25,
+        "endLine": 66,
+        "endChar": 36
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +177,54 @@
     },
     {
       "key": {
+        "uuid": "250d1381_ec68eb52",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c90db6b_5fa05658",
+      "range": {
+        "startLine": 69,
+        "startChar": 10,
+        "endLine": 69,
+        "endChar": 24
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4a61871f_505d5348",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7fc2b20d_72e250c0",
+      "range": {
+        "startLine": 69,
+        "startChar": 26,
+        "endLine": 69,
+        "endChar": 48
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f0a4d460_fb49484f",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -151,6 +265,48 @@
     },
     {
       "key": {
+        "uuid": "9686a69e_b7b8fd49",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac581f78_cae38ad8",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 97,
+        "endChar": 2
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "17a48bf4_decc25cc",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0a4d460_fb49484f",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0e7c396f_06a83ab0",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -171,6 +327,30 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a507966_84ad1658",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e7c396f_06a83ab0",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 7
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "93b22fa5_0ab1ddb2",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d488268_1bf835b0",
+      "range": {
+        "startLine": 134,
+        "startChar": 8,
+        "endLine": 134,
+        "endChar": 23
+      },
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd5ca479_4cbd14a6",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -211,6 +415,24 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ea9cc345_a47aa434",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bd5ca479_4cbd14a6",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -231,6 +453,24 @@
     },
     {
       "key": {
+        "uuid": "3e33d52f_86727c38",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done\n\nThe loop body is pretty simple and semantically tied to the rest of the function, and the performance gain is probably negligible, so unless you prefer otherwise I\u0027ll just preallocate.",
+      "parentUuid": "d1e525cc_836220e2",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cef7aaa5_5745490a",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -248,6 +488,24 @@
     },
     {
       "key": {
+        "uuid": "b0b6cd4e_2aae5793",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cef7aaa5_5745490a",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "af613b55_a544c471",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -262,6 +520,24 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "412a2b9c_8adb340b",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-23T23:31:40Z",
+      "side": 1,
+      "message": "s/handleBuildSteps/ConvertBuildSteps",
+      "parentUuid": "af613b55_a544c471",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
