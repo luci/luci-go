@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "290dc7c3_d070add8",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-23T22:27:40Z",
+      "side": 1,
+      "message": ":D",
+      "range": {
+        "startLine": 434,
+        "startChar": 71,
+        "endLine": 435,
+        "endChar": 42
+      },
+      "revId": "b26531ed1e0fe98b7cd1ba75f03bbfacf7c58e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "002fcfc4_aa16190a",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 3
