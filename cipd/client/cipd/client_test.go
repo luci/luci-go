@@ -532,18 +532,12 @@ func TestSearchInstances(t *testing.T) {
 				out: &api.SearchInstancesResponse{
 					Instances: []*api.Instance{
 						{
-							Package: "a/b",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("0", 40),
-							},
+							Package:  "a/b",
+							Instance: fakeObjectRef("0"),
 						},
 						{
-							Package: "a/b",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("1", 40),
-							},
+							Package:  "a/b",
+							Instance: fakeObjectRef("1"),
 						},
 					},
 					NextPageToken: "blah", // ignored for now
@@ -553,8 +547,8 @@ func TestSearchInstances(t *testing.T) {
 			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
 			So(err, ShouldBeNil)
 			So(out, ShouldResemble, common.PinSlice{
-				{PackageName: "a/b", InstanceID: strings.Repeat("0", 40)},
-				{PackageName: "a/b", InstanceID: strings.Repeat("1", 40)},
+				{PackageName: "a/b", InstanceID: fakeIID("0")},
+				{PackageName: "a/b", InstanceID: fakeIID("1")},
 			})
 		})
 
@@ -600,11 +594,8 @@ func TestListInstances(t *testing.T) {
 
 		fakeApiInst := func(id string) *api.Instance {
 			return &api.Instance{
-				Package: "a/b",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat(id, 40),
-				},
+				Package:  "a/b",
+				Instance: fakeObjectRef(id),
 			}
 		}
 
@@ -612,7 +603,7 @@ func TestListInstances(t *testing.T) {
 			return InstanceInfo{
 				Pin: common.Pin{
 					PackageName: "a/b",
-					InstanceID:  strings.Repeat(id, 40),
+					InstanceID:  fakeIID(id),
 				},
 			}
 		}
@@ -697,18 +688,12 @@ func TestFetchPackageRefs(t *testing.T) {
 				out: &api.ListRefsResponse{
 					Refs: []*api.Ref{
 						{
-							Name: "r1",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("0", 40),
-							},
+							Name:     "r1",
+							Instance: fakeObjectRef("0"),
 						},
 						{
-							Name: "r2",
-							Instance: &api.ObjectRef{
-								HashAlgo:  api.HashAlgo_SHA1,
-								HexDigest: strings.Repeat("1", 40),
-							},
+							Name:     "r2",
+							Instance: fakeObjectRef("1"),
 						},
 					},
 				},
@@ -717,8 +702,8 @@ func TestFetchPackageRefs(t *testing.T) {
 			out, err := client.FetchPackageRefs(ctx, "a/b")
 			So(err, ShouldBeNil)
 			So(out, ShouldResemble, []RefInfo{
-				{Ref: "r1", InstanceID: strings.Repeat("0", 40)},
-				{Ref: "r2", InstanceID: strings.Repeat("1", 40)},
+				{Ref: "r1", InstanceID: fakeIID("0")},
+				{Ref: "r2", InstanceID: fakeIID("1")},
 			})
 		})
 
@@ -748,28 +733,22 @@ func TestDescribeInstance(t *testing.T) {
 
 		pin := common.Pin{
 			PackageName: "a/b",
-			InstanceID:  strings.Repeat("0", 40),
+			InstanceID:  fakeIID("0"),
 		}
 
 		Convey("Works", func() {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
 				in: &api.DescribeInstanceRequest{
-					Package: "a/b",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: pin.InstanceID,
-					},
+					Package:      "a/b",
+					Instance:     fakeObjectRef("0"),
 					DescribeRefs: true,
 					DescribeTags: true,
 				},
 				out: &api.DescribeInstanceResponse{
 					Instance: &api.Instance{
-						Package: "a/b",
-						Instance: &api.ObjectRef{
-							HashAlgo:  api.HashAlgo_SHA1,
-							HexDigest: pin.InstanceID,
-						},
+						Package:  "a/b",
+						Instance: fakeObjectRef("0"),
 					},
 				},
 			})
@@ -795,11 +774,8 @@ func TestDescribeInstance(t *testing.T) {
 			repo.expect(rpcCall{
 				method: "DescribeInstance",
 				in: &api.DescribeInstanceRequest{
-					Package: "a/b",
-					Instance: &api.ObjectRef{
-						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: pin.InstanceID,
-					},
+					Package:  "a/b",
+					Instance: fakeObjectRef("0"),
 				},
 				err: status.Errorf(codes.PermissionDenied, "blah error"),
 			})
@@ -821,14 +797,11 @@ func TestResolveVersion(t *testing.T) {
 
 		expectedPin := common.Pin{
 			PackageName: "a/b",
-			InstanceID:  strings.Repeat("0", 40),
+			InstanceID:  fakeIID("0"),
 		}
 		resolvedInst := &api.Instance{
-			Package: "a/b",
-			Instance: &api.ObjectRef{
-				HashAlgo:  api.HashAlgo_SHA1,
-				HexDigest: expectedPin.InstanceID,
-			},
+			Package:  "a/b",
+			Instance: fakeObjectRef("0"),
 		}
 
 		Convey("Resolves ref", func() {
@@ -1083,6 +1056,17 @@ func fakeInstance(name string) local.PackageInstance {
 	inst, err := local.OpenInstance(ctx, bytesInstance(out.Bytes()), "", local.VerifyHash)
 	So(err, ShouldBeNil)
 	return inst
+}
+
+func fakeObjectRef(letter string) *api.ObjectRef {
+	return &api.ObjectRef{
+		HashAlgo:  api.HashAlgo_SHA256,
+		HexDigest: strings.Repeat(letter, 64),
+	}
+}
+
+func fakeIID(letter string) string {
+	return common.ObjectRefToInstanceID(fakeObjectRef(letter))
 }
 
 ////////////////////////////////////////////////////////////////////////////////

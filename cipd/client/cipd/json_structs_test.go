@@ -89,8 +89,8 @@ func TestApiDescToInfo(t *testing.T) {
 	apiInst := &api.Instance{
 		Package: "a",
 		Instance: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: strings.Repeat("0", 40),
+			HashAlgo:  api.HashAlgo_SHA256,
+			HexDigest: strings.Repeat("0", 64),
 		},
 		RegisteredBy: "user:a@example.com",
 		RegisteredTs: google.NewTimestamp(ts),
@@ -99,7 +99,7 @@ func TestApiDescToInfo(t *testing.T) {
 	instInfo := InstanceInfo{
 		Pin: common.Pin{
 			PackageName: "a",
-			InstanceID:  strings.Repeat("0", 40),
+			InstanceID:  common.ObjectRefToInstanceID(apiInst.Instance),
 		},
 		RegisteredBy: "user:a@example.com",
 		RegisteredTs: UnixTime(ts),

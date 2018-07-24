@@ -18,8 +18,9 @@ import (
 	"bytes"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/cipd/client/cipd/template"
+
+	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
