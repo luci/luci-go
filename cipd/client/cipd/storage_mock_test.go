@@ -30,6 +30,7 @@ import (
 type mockedStorage struct {
 	l     sync.RWMutex
 	store map[string]string // URL -> data
+	err   error
 }
 
 func (s *mockedStorage) getStored(url string) string {
@@ -47,6 +48,10 @@ func (s *mockedStorage) putStored(url, data string) {
 	s.store[url] = data
 }
 
+func (s *mockedStorage) returnErr(err error) {
+	s.err = err
+}
+
 func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeeker) error {
 	// Mimic the real storage implementation by seeking in same patter as it does.
 	if _, err := data.Seek(0, os.SEEK_END); err != nil {
@@ -54,6 +59,9 @@ func (s *mockedStorage) upload(ctx context.Context, url string, data io.ReadSeek
 	}
 	if _, err := data.Seek(0, os.SEEK_SET); err != nil {
 		return err
+	}
+	if s.err != nil {
+		return s.err
 	}
 	blob, err := ioutil.ReadAll(data)
 	if err == nil {
@@ -67,6 +75,10 @@ func (s *mockedStorage) download(ctx context.Context, url string, output io.Writ
 	h.Reset()
 	if _, err := output.Seek(0, os.SEEK_SET); err != nil {
 		return err
+	}
+
+	if s.err != nil {
+		return s.err
 	}
 
 	body := s.getStored(url)
