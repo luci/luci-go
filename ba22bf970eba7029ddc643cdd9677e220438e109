@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9d5a63d7_ce3f7cc8",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 915,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-24T23:27:42Z",
+      "side": 1,
+      "message": "Regardless, this is for another CL.",
+      "parentUuid": "ee51e4a1_70392fe8",
+      "range": {
+        "startLine": 915,
+        "startChar": 25,
+        "endLine": 915,
+        "endChar": 71
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a51193b1_39d23451",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 2
@@ -93,6 +117,30 @@
       "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef4acef4_83d988cd",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 956,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-24T23:27:42Z",
+      "side": 1,
+      "message": "Ok, changed not to assume that ContextDeadline from pRPC is indeed for the outter context.",
+      "parentUuid": "fb3c1479_5a0a8c26",
+      "range": {
+        "startLine": 956,
+        "startChar": 3,
+        "endLine": 956,
+        "endChar": 32
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
