@@ -12,9 +12,6 @@ a ZIP file with the package file contents.
 CIPD is different from apt-get, brew, nuget, pip, npm, etc. in that it is not
 tied to a specific OS or language.
 
-The package registry is implemented in Python, and the [source
-code][cipd-service] is in the [infra.git repository][infra-repo].
-
 ## Versions
 
 A package instance can be referenced by a tuple (package name, version), for
@@ -57,7 +54,11 @@ A package directory can have an ACL that applies to packages in that directory
 and inherited by subdirectories. ACLs can be read/controlled by the [CIPD
 client][cipd-client].
 
-[cipd-cient]: ./client/cmd/cipd
-[cipd-service]: https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages
+## API
+
+The API definition with a lot of additional details is available [here][api].
+
+[cipd-client]: ./client
+[cipd-service]: ./appengine
 [ensure-docs]: ./client/cipd/ensure/doc.go
-[infra-repo]: https://chromium.googlesource.com/infra/infra
+[api]: ./api/cipd/v1/repo.proto
