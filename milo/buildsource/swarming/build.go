@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/api/googleapi"
+
 	"github.com/golang/protobuf/ptypes"
 
 	"golang.org/x/net/context"
@@ -187,6 +189,13 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 				if req.taskResCallback != nil && req.taskResCallback(fr.res) {
 					logsCancelled = true
 					cancelLogs()
+				}
+			} else if ierr, ok := err.(*googleapi.Error); ok {
+				switch ierr.Code {
+				case http.StatusNotFound:
+					err = errors.Annotate(ierr, "not found on swarming").Tag(common.CodeNotFound).Err()
+				case http.StatusBadRequest:
+					err = errors.Annotate(ierr, "bad request").Tag(common.CodeParameterError).Err()
 				}
 			}
 			return
