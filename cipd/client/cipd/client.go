@@ -77,11 +77,16 @@ import (
 )
 
 const (
-	// CASFinalizationTimeout is how long to wait for CAS service to finalize the upload.
+	// CASFinalizationTimeout is how long to wait for CAS service to finalize
+	// the upload in RegisterInstance.
 	CASFinalizationTimeout = 5 * time.Minute
-	// SetRefTimeout is how long to wait for an instance to be processed when setting a ref.
+
+	// SetRefTimeout is how long to wait for an instance to be processed when
+	// setting a ref in SetRefWhenReady.
 	SetRefTimeout = 3 * time.Minute
-	// TagAttachTimeout is how long to wait for an instance to be processed when attaching tags.
+
+	// TagAttachTimeout is how long to wait for an instance to be processed when
+	// attaching tags in AttachTagsWhenReady.
 	TagAttachTimeout = 3 * time.Minute
 )
 
@@ -100,10 +105,6 @@ var (
 	// us to upload it again.
 	ErrBadUpload = errors.New("package file is uploaded, but servers asks us to upload it again", transient.Tag)
 
-	// ErrBadUploadSession is returned by UploadToCAS if provided UploadSession is
-	// not valid.
-	ErrBadUploadSession = errors.New("uploadURL must be set if UploadSessionID is used")
-
 	// ErrProcessingTimeout is returned by SetRefWhenReady or AttachTagsWhenReady
 	// if the instance processing on the backend takes longer than expected. Refs
 	// and tags can be attached only to processed instances.
@@ -112,8 +113,7 @@ var (
 	// ErrDownloadError is returned by FetchInstance on download errors.
 	ErrDownloadError = errors.New("failed to download the package file after multiple attempts", transient.Tag)
 
-	// ErrUploadError is returned by RegisterInstance and UploadToCAS on upload
-	// errors.
+	// ErrUploadError is returned by RegisterInstance on upload errors.
 	ErrUploadError = errors.New("failed to upload the package file after multiple attempts", transient.Tag)
 
 	// ErrEnsurePackagesFailed is returned by EnsurePackages if something is not
@@ -204,24 +204,18 @@ type Client interface {
 	// ...).
 	FetchRoles(ctx context.Context, prefix string) ([]string, error)
 
-	// UploadToCAS uploads package data blob to Content Addressed Store.
-	//
-	// Does nothing if it is already there. The data is addressed by SHA1 hash
-	// (also known as package's InstanceID). It can be used as a standalone
-	// function (if 'session' is nil) or as a part of more high level upload
-	// process (in that case upload session can be opened elsewhere and its
-	// properties passed here via 'session' argument).
-	//
-	// Returns nil on successful upload.
-	UploadToCAS(ctx context.Context, sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error
-
 	// ResolveVersion converts an instance ID, a tag or a ref into a concrete Pin.
 	ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error)
 
 	// RegisterInstance makes the package instance available for clients.
 	//
-	// It uploads the instance to the storage and registers it in the package
-	// repository.
+	// It uploads the instance to the storage, waits until the storage verifies
+	// its hash, and then registers the package in the repository, making it
+	// discoverable.
+	//
+	// 'timeout' specifies for how long to wait until the instance hash is
+	// verified by the storage backend. If 0, default CASFinalizationTimeout will
+	// be used.
 	RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error
 
 	// DescribeInstance returns information about a package instance.
@@ -680,102 +674,6 @@ func (client *clientImpl) ListPackages(ctx context.Context, prefix string, recur
 	return listing, nil
 }
 
-// TODO(vadimsh): Remove from the public API.
-func (client *clientImpl) UploadToCAS(ctx context.Context, sha1 string, data io.ReadSeeker, session *UploadSession, timeout time.Duration) error {
-	// Open new upload session if an existing is not provided.
-	var err error
-	if session == nil {
-		logging.Infof(ctx, "cipd: uploading %s: initiating", sha1)
-		session, err = client.initiateUpload(ctx, sha1)
-		if err != nil {
-			logging.Warningf(ctx, "cipd: can't upload %s - %s", sha1, err)
-			return err
-		}
-		if session == nil {
-			logging.Infof(ctx, "cipd: %s is already uploaded", sha1)
-			return nil
-		}
-	} else {
-		if session.ID == "" || session.URL == "" {
-			return ErrBadUploadSession
-		}
-	}
-
-	// Upload the file to CAS storage.
-	err = client.storage.upload(ctx, session.URL, data)
-	if err != nil {
-		return err
-	}
-
-	// Finalize the upload, wait until server verifies and publishes the file.
-	if timeout == 0 {
-		timeout = CASFinalizationTimeout
-	}
-	started := clock.Now(ctx)
-	delay := time.Second
-	for {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		published, err := client.finalizeUpload(ctx, session.ID)
-		if err != nil {
-			logging.Warningf(ctx, "cipd: upload of %s failed: %s", sha1, err)
-			return err
-		}
-		if published {
-			logging.Infof(ctx, "cipd: successfully uploaded %s", sha1)
-			return nil
-		}
-		if clock.Now(ctx).Sub(started) > timeout {
-			logging.Warningf(ctx, "cipd: upload of %s failed: timeout", sha1)
-			return ErrFinalizationTimeout
-		}
-		logging.Infof(ctx, "cipd: uploading - verifying")
-		clock.Sleep(ctx, delay)
-		if delay < 4*time.Second {
-			delay += 500 * time.Millisecond
-		}
-	}
-}
-
-// TODO(vadimsh): Inline.
-func (client *clientImpl) initiateUpload(ctx context.Context, sha1 string) (*UploadSession, error) {
-	op, err := client.cas.BeginUpload(ctx, &api.BeginUploadRequest{
-		Object: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: sha1,
-		},
-	}, prpc.ExpectedCode(codes.AlreadyExists))
-	switch grpc.Code(err) {
-	case codes.OK:
-		return &UploadSession{op.OperationId, op.UploadUrl}, nil
-	case codes.AlreadyExists:
-		return nil, nil
-	default:
-		return nil, err
-	}
-}
-
-// TODO(vadimsh): Inline.
-func (client *clientImpl) finalizeUpload(ctx context.Context, sessionID string) (bool, error) {
-	op, err := client.cas.FinishUpload(ctx, &api.FinishUploadRequest{
-		UploadOperationId: sessionID,
-	})
-	if err != nil {
-		return false, err
-	}
-	switch op.Status {
-	case api.UploadStatus_UPLOADING, api.UploadStatus_VERIFYING:
-		return false, nil // still verifying
-	case api.UploadStatus_PUBLISHED:
-		return true, nil // verified!
-	case api.UploadStatus_ERRORED:
-		return false, errors.New(op.ErrorMessage)
-	default:
-		return false, fmt.Errorf("unrecognized upload operation status %s", op.Status)
-	}
-}
-
 func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, version string) (common.Pin, error) {
 	if err := common.ValidatePackageName(packageName); err != nil {
 		return common.Pin{}, err
@@ -982,68 +880,103 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 }
 
 func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
-	// Attempt to register.
-	logging.Infof(ctx, "cipd: registering %s", instance.Pin())
-	result, err := client.registerInstanceRPC(ctx, instance.Pin())
-	if err != nil {
+	if timeout == 0 {
+		timeout = CASFinalizationTimeout
+	}
+	pin := instance.Pin()
+
+	// attemptToRegister calls RegisterInstance RPC and logs the result.
+	attemptToRegister := func() (*api.UploadOperation, error) {
+		logging.Infof(ctx, "cipd: registering %s", pin)
+		resp, err := client.repo.RegisterInstance(ctx, &api.Instance{
+			Package:  pin.PackageName,
+			Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+		}, expectedCodes)
+		if err != nil {
+			return nil, humanErr(err)
+		}
+		switch resp.Status {
+		case api.RegistrationStatus_REGISTERED:
+			logging.Infof(ctx, "cipd: instance %s was successfully registered", pin)
+			return nil, nil
+		case api.RegistrationStatus_ALREADY_REGISTERED:
+			logging.Infof(
+				ctx, "cipd: instance %s is already registered by %s on %s",
+				pin, resp.Instance.RegisteredBy,
+				google.TimeFromProto(resp.Instance.RegisteredTs).Local())
+			return nil, nil
+		case api.RegistrationStatus_NOT_UPLOADED:
+			return resp.UploadOp, nil
+		default:
+			return nil, fmt.Errorf("unrecognized package registration status %s", resp.Status)
+		}
+	}
+
+	// Attempt to register. May be asked to actually upload the file first.
+	uploadOp, err := attemptToRegister()
+	switch {
+	case err != nil:
+		return err
+	case uploadOp == nil:
+		return nil // no need to upload, the instance is registered
+	}
+
+	// The backend asked us to upload the data to CAS. Do it.
+	if err := client.storage.upload(ctx, uploadOp.UploadUrl, instance.DataReader()); err != nil {
 		return err
 	}
-
-	// Asked to upload the package file to CAS first?
-	if result.uploadSession != nil {
-		err = client.UploadToCAS(
-			ctx, instance.Pin().InstanceID, instance.DataReader(),
-			result.uploadSession, timeout)
-		if err != nil {
-			return err
-		}
-		// Try again, now that file is uploaded.
-		logging.Infof(ctx, "cipd: registering %s", instance.Pin())
-		result, err = client.registerInstanceRPC(ctx, instance.Pin())
-		if err != nil {
-			return err
-		}
-		if result.uploadSession != nil {
-			return ErrBadUpload
-		}
+	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
+		return err
 	}
+	logging.Infof(ctx, "cipd: successfully uploaded and verified %s", pin)
 
-	if result.alreadyRegistered {
-		logging.Infof(
-			ctx, "cipd: instance %s is already registered by %s on %s",
-			instance.Pin(), result.registeredBy, result.registeredTs.Local())
-	} else {
-		logging.Infof(ctx, "cipd: instance %s was successfully registered", instance.Pin())
+	// Try the registration again now that the file is uploaded to CAS. It should
+	// succeed.
+	switch uploadOp, err := attemptToRegister(); {
+	case uploadOp != nil:
+		return ErrBadUpload // welp, the upload didn't work for some reason, give up
+	default:
+		return err
 	}
-
-	return nil
 }
 
-// TODO(vadimsh): Inline into RegisterInstance.
-func (client *clientImpl) registerInstanceRPC(ctx context.Context, pin common.Pin) (*registerInstanceResponse, error) {
-	resp, err := client.repo.RegisterInstance(ctx, &api.Instance{
-		Package: pin.PackageName,
-		Instance: &api.ObjectRef{
-			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: pin.InstanceID,
-		},
-	}, expectedCodes)
-	if err != nil {
-		return nil, humanErr(err)
-	}
-	switch resp.Status {
-	case api.RegistrationStatus_REGISTERED, api.RegistrationStatus_ALREADY_REGISTERED:
-		return &registerInstanceResponse{
-			alreadyRegistered: resp.Status == api.RegistrationStatus_ALREADY_REGISTERED,
-			registeredBy:      resp.Instance.RegisteredBy,
-			registeredTs:      google.TimeFromProto(resp.Instance.RegisteredTs),
-		}, nil
-	case api.RegistrationStatus_NOT_UPLOADED:
-		return &registerInstanceResponse{
-			uploadSession: &UploadSession{resp.UploadOp.OperationId, resp.UploadOp.UploadUrl},
-		}, nil
-	default:
-		return nil, fmt.Errorf("unrecognized package registration status %s", resp.Status)
+// finalizeUpload repeatedly calls FinishUpload RPC until server reports that
+// the uploaded file has been verified.
+func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeout time.Duration) error {
+	ctx, cancel := clock.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	sleep := time.Second
+	for {
+		select {
+		case <-ctx.Done():
+			return ErrFinalizationTimeout
+		default:
+		}
+
+		op, err := client.cas.FinishUpload(ctx, &api.FinishUploadRequest{
+			UploadOperationId: opID,
+		})
+		switch {
+		case err == context.DeadlineExceeded:
+			continue // this may be short RPC deadline, try again
+		case err != nil:
+			return humanErr(err)
+		case op.Status == api.UploadStatus_PUBLISHED:
+			return nil // verified!
+		case op.Status == api.UploadStatus_ERRORED:
+			return errors.New(op.ErrorMessage) // fatal verification error
+		case op.Status == api.UploadStatus_UPLOADING || op.Status == api.UploadStatus_VERIFYING:
+			logging.Infof(ctx, "cipd: uploading - verifying")
+			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), sleep).Incomplete() {
+				return ErrFinalizationTimeout
+			}
+			if sleep < 10*time.Second {
+				sleep += 500 * time.Millisecond
+			}
+		default:
+			return fmt.Errorf("unrecognized upload operation status %s", op.Status)
+		}
 	}
 }
 
@@ -1145,16 +1078,22 @@ func retryUntilReady(ctx context.Context, timeout time.Duration, cb func(context
 	defer cancel()
 
 	for {
+		select {
+		case <-ctx.Done():
+			return ErrProcessingTimeout
+		default:
+		}
+
 		switch err := cb(ctx); {
 		case err == nil:
 			return nil
+		case err == context.DeadlineExceeded:
+			continue // this may be short RPC deadline, try again
 		case grpc.Code(err) == codes.FailedPrecondition: // the instance is not ready
 			logging.Warningf(ctx, "cipd: %s", humanErr(err))
-			if res := clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay); res.Incomplete() {
+			if clock.Sleep(clock.Tag(ctx, "cipd-sleeping"), retryDelay).Incomplete() {
 				return ErrProcessingTimeout
 			}
-		case err == context.DeadlineExceeded:
-			return ErrProcessingTimeout
 		default:
 			return humanErr(err)
 		}
@@ -1607,16 +1546,6 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 	return client.deployer.RepairDeployed(ctx, subdir, pin, local.RepairParams{
 		ToRelink: plan.ToRelink,
 	})
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Private structs and interfaces.
-
-type registerInstanceResponse struct {
-	uploadSession     *UploadSession
-	alreadyRegistered bool
-	registeredBy      string
-	registeredTs      time.Time
 }
 
 ////////////////////////////////////////////////////////////////////////////////
