@@ -27,6 +27,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/cipd/common"
 )
@@ -83,10 +85,16 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+			VerificationMode: CalculateHash,
+			HashAlgo:         api.HashAlgo_SHA256,
+		})
 		So(inst, ShouldNotBeNil)
 		So(err, ShouldBeNil)
-		So(inst.Pin(), ShouldResemble, Pin{"testing", "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569"})
+		So(inst.Pin(), ShouldResemble, Pin{
+			PackageName: "testing",
+			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 		So(len(inst.Files()), ShouldEqual, 1)
 
 		// Contains single manifest file.
@@ -120,21 +128,36 @@ func TestPackageReading(t *testing.T) {
 
 		// Attempt to open it, providing correct instance ID, should work.
 		source := bytesFile(out.Bytes())
-		inst, err := OpenInstance(ctx, source, "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569", VerifyHash)
+		inst, err := OpenInstance(ctx, source, OpenInstanceOpts{
+			VerificationMode: VerifyHash,
+			InstanceID:       "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
-		So(inst.Pin(), ShouldResemble, Pin{"testing", "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569"})
+		So(inst.Pin(), ShouldResemble, Pin{
+			PackageName: "testing",
+			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 
 		// Attempt to open it, providing incorrect instance ID.
-		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", VerifyHash)
-		So(err, ShouldNotBeNil)
+		inst, err = OpenInstance(ctx, source, OpenInstanceOpts{
+			VerificationMode: VerifyHash,
+			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
+		So(err, ShouldEqual, ErrHashMismatch)
 		So(inst, ShouldBeNil)
 
 		// Open with incorrect instance ID, but skipping the verification..
-		inst, err = OpenInstance(ctx, source, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", SkipHashVerification)
+		inst, err = OpenInstance(ctx, source, OpenInstanceOpts{
+			VerificationMode: SkipHashVerification,
+			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
-		So(inst.Pin(), ShouldResemble, Pin{"testing", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+		So(inst.Pin(), ShouldResemble, Pin{
+			PackageName: "testing",
+			InstanceID:  "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 	})
 
 	Convey("OpenInstanceFile works", t, func() {
@@ -154,7 +177,10 @@ func TestPackageReading(t *testing.T) {
 		tempFile.Close()
 
 		// Read the package.
-		inst, closer, err := OpenInstanceFile(ctx, tempFilePath, "", VerifyHash)
+		inst, closer, err := OpenInstanceFile(ctx, tempFilePath, OpenInstanceOpts{
+			VerificationMode: CalculateHash,
+			HashAlgo:         api.HashAlgo_SHA256,
+		})
 		So(err, ShouldBeNil)
 		defer closer()
 		So(inst, ShouldNotBeNil)
@@ -189,7 +215,10 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+			VerificationMode: CalculateHash,
+			HashAlgo:         api.HashAlgo_SHA256,
+		})
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
 		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
@@ -239,12 +268,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "5152808e3c130b9ab02ee44ec13b454631a89209",
+			"instance_id": "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "4a2ca8f4e5be9ee0d84ab7829ca6dd9af8a4328d",
+				"instance_id": "8YWDtsb0eJ3iegl5hBGaGJnw3qB2eNXhs9Fz7WO50B8C",
 				"package_name": "testing"
 			}`
 		}
@@ -288,7 +317,7 @@ func TestPackageReading(t *testing.T) {
 				}%s,
 				{
 					"name": "subpath/version.json",
-					"size": 92
+					"size": 96
 				}
 			]
 		}`
@@ -340,7 +369,10 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), "", VerifyHash)
+		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+			VerificationMode: CalculateHash,
+			HashAlgo:         api.HashAlgo_SHA256,
+		})
 		So(err, ShouldBeNil)
 		dest := &testDestination{}
 		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
@@ -383,12 +415,12 @@ func TestPackageReading(t *testing.T) {
 
 		// Verify version file is correct.
 		goodVersionFile := `{
-			"instance_id": "4e4ad913996bcf3a227ef9a3f59b2a65df2acf0f",
+			"instance_id": "Fmfp6kX5NlbedUcu_lw6ONfNaF_mKRb2_ZX78l3QJqcC",
 			"package_name": "testing"
 		}`
 		if runtime.GOOS == "windows" {
 			goodVersionFile = `{
-				"instance_id": "a54b5f7d7f48961e39edee3f1e3f675c8066ab82",
+				"instance_id": "oVEoO_i5iVpgGhvjxQL-D1Lp_Tn8LUQ-hBbh48651mYC",
 				"package_name": "testing"
 			}`
 		}
@@ -422,7 +454,7 @@ func TestPackageReading(t *testing.T) {
 				}%s,
 				{
 					"name": "subpath/version.json",
-					"size": 92
+					"size": 96
 				}
 			]
 		}`

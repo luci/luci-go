@@ -1053,7 +1053,10 @@ func fakeInstance(name string) local.PackageInstance {
 		PackageName: name,
 	})
 	So(err, ShouldBeNil)
-	inst, err := local.OpenInstance(ctx, bytesInstance(out.Bytes()), "", local.VerifyHash)
+	inst, err := local.OpenInstance(ctx, bytesInstance(out.Bytes()), local.OpenInstanceOpts{
+		VerificationMode: local.CalculateHash,
+		HashAlgo:         api.HashAlgo_SHA256,
+	})
 	So(err, ShouldBeNil)
 	return inst
 }
