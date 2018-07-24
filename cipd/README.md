@@ -57,7 +57,7 @@ A package directory can have an ACL that applies to packages in that directory
 and inherited by subdirectories. ACLs can be read/controlled by the [CIPD
 client][cipd-client].
 
-[cipd-cient]: ./client/cmd/cipd
+[cipd-client]: ./client/cmd/cipd
 [cipd-service]: https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages
 [ensure-docs]: ./client/cipd/ensure/doc.go
 [infra-repo]: https://chromium.googlesource.com/infra/infra
