@@ -613,6 +613,57 @@ func (opts *uploadOptions) registerFlags(f *flag.FlagSet) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// hashOptions mixin.
+
+// allAlgos is used in the flag help text, it is "sha256, sha1, ...".
+var allAlgos string
+
+func init() {
+	algos := make([]string, 0, len(api.HashAlgo_name)-1)
+	for i := len(api.HashAlgo_name) - 1; i > 0; i-- {
+		algos = append(algos, strings.ToLower(api.HashAlgo_name[int32(i)]))
+	}
+	allAlgos = strings.Join(algos, ", ")
+}
+
+// hashAlgoFlag adapts api.HashAlgo to flag.Value interface.
+type hashAlgoFlag api.HashAlgo
+
+// String is called by 'flag' package when displaying default value of a flag.
+func (ha *hashAlgoFlag) String() string {
+	return strings.ToLower(api.HashAlgo(*ha).String())
+}
+
+// Set is called by 'flag' package when parsing command line options.
+func (ha *hashAlgoFlag) Set(value string) error {
+	val := api.HashAlgo_value[strings.ToUpper(value)]
+	if val == 0 {
+		return fmt.Errorf("unknown hash algo %q, should be one of: %s", value, allAlgos)
+	}
+	*ha = hashAlgoFlag(val)
+	return nil
+}
+
+// hashOptions defines -hash-algo flag that specifies hash algo to use for
+// constructing instance IDs.
+//
+// Default value is given by common.DefaultHashAlgo.
+//
+// Not all algos may be accepted by the server.
+type hashOptions struct {
+	algo hashAlgoFlag
+}
+
+func (opts *hashOptions) registerFlags(f *flag.FlagSet) {
+	opts.algo = hashAlgoFlag(common.DefaultHashAlgo)
+	f.Var(&opts.algo, "hash-algo", fmt.Sprintf("Algorithm to use for deriving package instance ID, one of: %s", allAlgos))
+}
+
+func (opts *hashOptions) hashAlgo() api.HashAlgo {
+	return api.HashAlgo(opts.algo)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Support for running operations concurrently.
 
 // batchOperation defines what to do with a packages matching a prefix.
@@ -764,6 +815,7 @@ func cmdCreate(params Parameters) *subcommands.Command {
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
 			c.Opts.clientOptions.registerFlags(&c.Flags, params)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
+			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -775,6 +827,7 @@ type createOpts struct {
 	tagsOptions
 	clientOptions
 	uploadOptions
+	hashOptions
 }
 
 type createRun struct {
@@ -809,6 +862,7 @@ func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, 
 		tagsOptions:   opts.tagsOptions,
 		clientOptions: opts.clientOptions,
 		uploadOptions: opts.uploadOptions,
+		hashOptions:   opts.hashOptions,
 	})
 }
 
@@ -1348,7 +1402,7 @@ func listInstances(ctx context.Context, pkg string, limit int, clientOpts client
 		if len(who) > 25 {
 			who = who[:22] + "..."
 		}
-		return fmt.Sprintf("%-40s │ %-21s │ %-25s │ %-12s", instanceID, when, who, refs)
+		return fmt.Sprintf("%-44s │ %-21s │ %-25s │ %-12s", instanceID, when, who, refs)
 	}
 
 	var refs refsMap // populated on after fetching first page
@@ -1965,6 +2019,7 @@ func cmdBuild() *subcommands.Command {
 			c := &buildRun{}
 			c.registerBaseFlags()
 			c.inputOptions.registerFlags(&c.Flags)
+			c.hashOptions.registerFlags(&c.Flags)
 			c.Flags.StringVar(&c.outputFile, "out", "<path>", "Path to a file to write the final package to.")
 			return c
 		},
@@ -1974,6 +2029,7 @@ func cmdBuild() *subcommands.Command {
 type buildRun struct {
 	cipdSubcommand
 	inputOptions
+	hashOptions
 
 	outputFile string
 }
@@ -1987,7 +2043,7 @@ func (c *buildRun) Run(a subcommands.Application, args []string, env subcommands
 	if err != nil {
 		return c.done(nil, err)
 	}
-	return c.done(inspectInstanceFile(ctx, c.outputFile, false))
+	return c.done(inspectInstanceFile(ctx, c.outputFile, c.hashAlgo(), false))
 }
 
 func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts inputOptions) error {
@@ -2026,6 +2082,7 @@ func cmdDeploy() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &deployRun{}
 			c.registerBaseFlags()
+			c.hashOptions.registerFlags(&c.Flags)
 			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
 			return c
 		},
@@ -2034,6 +2091,7 @@ func cmdDeploy() *subcommands.Command {
 
 type deployRun struct {
 	cipdSubcommand
+	hashOptions
 
 	rootDir string
 }
@@ -2043,13 +2101,13 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(deployInstanceFile(ctx, c.rootDir, args[0]))
+	return c.done(deployInstanceFile(ctx, c.rootDir, args[0], c.hashAlgo()))
 }
 
-func deployInstanceFile(ctx context.Context, root string, instanceFile string) (common.Pin, error) {
+func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo) (common.Pin, error) {
 	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
 		VerificationMode: local.CalculateHash,
-		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
 		return common.Pin{}, err
@@ -2162,6 +2220,7 @@ func cmdInspect() *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &inspectRun{}
 			c.registerBaseFlags()
+			c.hashOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -2169,6 +2228,7 @@ func cmdInspect() *subcommands.Command {
 
 type inspectRun struct {
 	cipdSubcommand
+	hashOptions
 }
 
 func (c *inspectRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -2176,13 +2236,13 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(inspectInstanceFile(ctx, args[0], true))
+	return c.done(inspectInstanceFile(ctx, args[0], c.hashAlgo(), true))
 }
 
-func inspectInstanceFile(ctx context.Context, instanceFile string, listFiles bool) (common.Pin, error) {
+func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.HashAlgo, listFiles bool) (common.Pin, error) {
 	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
 		VerificationMode: local.CalculateHash,
-		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
 		return common.Pin{}, err
@@ -2241,6 +2301,7 @@ func cmdRegister(params Parameters) *subcommands.Command {
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
 			c.Opts.clientOptions.registerFlags(&c.Flags, params)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
+			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
 		},
 	}
@@ -2251,6 +2312,7 @@ type registerOpts struct {
 	tagsOptions
 	clientOptions
 	uploadOptions
+	hashOptions
 }
 
 type registerRun struct {
@@ -2270,7 +2332,7 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
 	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
 		VerificationMode: local.CalculateHash,
-		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+		HashAlgo:         opts.hashAlgo(),
 	})
 	if err != nil {
 		return common.Pin{}, err
