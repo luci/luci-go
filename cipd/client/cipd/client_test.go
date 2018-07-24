@@ -15,6 +15,7 @@
 package cipd
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -237,7 +238,106 @@ func TestFetchRoles(t *testing.T) {
 func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
-	// TODO
+	Convey("With mocks", t, func(c C) {
+		ctx, tc := testclock.UseTime(context.Background(), testclock.TestTimeLocal)
+		tc.SetTimerCallback(func(d time.Duration, t clock.Timer) {
+			if testclock.HasTags(t, "cipd-sleeping") {
+				tc.Add(d)
+			}
+		})
+
+		client, cas, repo, storage := mockedCipdClient(c)
+		inst := fakeInstance("pkg/inst")
+
+		registerInstanceRPC := func(s api.RegistrationStatus, op *api.UploadOperation) rpcCall {
+			return rpcCall{
+				method: "RegisterInstance",
+				in: &api.Instance{
+					Package:  "pkg/inst",
+					Instance: common.InstanceIDToObjectRef(inst.Pin().InstanceID),
+				},
+				out: &api.RegisterInstanceResponse{
+					Status: s,
+					Instance: &api.Instance{
+						Package:  "pkg/inst",
+						Instance: common.InstanceIDToObjectRef(inst.Pin().InstanceID),
+					},
+					UploadOp: op,
+				},
+			}
+		}
+
+		finishUploadRPC := func(opID string, out *api.UploadOperation) rpcCall {
+			return rpcCall{
+				method: "FinishUpload",
+				in:     &api.FinishUploadRequest{UploadOperationId: opID},
+				out:    out,
+			}
+		}
+
+		op := api.UploadOperation{
+			OperationId: "zzz",
+			UploadUrl:   "http://example.com/zzz_op",
+		}
+
+		Convey("Happy path", func() {
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
+				Status: api.UploadStatus_VERIFYING,
+			}))
+			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
+				Status: api.UploadStatus_PUBLISHED,
+			}))
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_REGISTERED, nil))
+
+			So(client.RegisterInstance(ctx, inst, 0), ShouldBeNil)
+			So(storage.getStored(op.UploadUrl), ShouldNotEqual, "")
+		})
+
+		Convey("Already registered", func() {
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil))
+			So(client.RegisterInstance(ctx, inst, 0), ShouldBeNil)
+		})
+
+		Convey("Registration error", func() {
+			rpc := registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil)
+			rpc.err = status.Errorf(codes.PermissionDenied, "denied blah")
+			repo.expect(rpc)
+			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "denied blah")
+		})
+
+		Convey("Upload error", func() {
+			storage.returnErr(fmt.Errorf("upload err blah"))
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "upload err blah")
+		})
+
+		Convey("Verification error", func() {
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
+				Status:       api.UploadStatus_ERRORED,
+				ErrorMessage: "baaaaad",
+			}))
+			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "baaaaad")
+		})
+
+		Convey("Confused backend", func() {
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expect(finishUploadRPC(op.OperationId, &api.UploadOperation{
+				Status: api.UploadStatus_PUBLISHED,
+			}))
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			So(client.RegisterInstance(ctx, inst, 0), ShouldEqual, ErrBadUpload)
+		})
+
+		Convey("Verification timeout", func() {
+			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
+			cas.expectMany(finishUploadRPC(op.OperationId, &api.UploadOperation{
+				Status: api.UploadStatus_VERIFYING,
+			}))
+			So(client.RegisterInstance(ctx, inst, 0), ShouldEqual, ErrFinalizationTimeout)
+		})
+	})
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -959,6 +1059,31 @@ func TestMaybeUpdateClient(t *testing.T) {
 // Batch ops.
 
 // TODO
+
+////////////////////////////////////////////////////////////////////////////////
+
+type bytesInstanceFile struct {
+	*bytes.Reader
+}
+
+func (bytesInstanceFile) Close(context.Context, bool) error { return nil }
+
+func bytesInstance(data []byte) local.InstanceFile {
+	return bytesInstanceFile{bytes.NewReader(data)}
+}
+
+func fakeInstance(name string) local.PackageInstance {
+	ctx := context.Background()
+	out := bytes.Buffer{}
+	err := local.BuildInstance(ctx, local.BuildInstanceOptions{
+		Output:      &out,
+		PackageName: name,
+	})
+	So(err, ShouldBeNil)
+	inst, err := local.OpenInstance(ctx, bytesInstance(out.Bytes()), "", local.VerifyHash)
+	So(err, ShouldBeNil)
+	return inst
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
