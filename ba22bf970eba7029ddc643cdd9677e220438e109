@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aea1d168_7ba1e24c",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 915,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-24T23:08:01Z",
+      "side": 1,
+      "message": "dumb question; cipd server verifies that the instance\u0027s package (inside its manifest) actually matches, right? I assume yes...",
+      "range": {
+        "startLine": 915,
+        "startChar": 25,
+        "endLine": 915,
+        "endChar": 71
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a51193b1_39d23451",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 956,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-24T23:08:01Z",
+      "side": 1,
+      "message": "why not try again? Shouldn\u0027t we be retrying with a short deadline a couple times before the long deadline (`timeout`) happens?",
+      "range": {
+        "startLine": 956,
+        "startChar": 3,
+        "endLine": 956,
+        "endChar": 32
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
