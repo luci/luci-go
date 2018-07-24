@@ -1348,7 +1348,10 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 
 		// Open the instance. This reads its manifest. 'FetchInstance' has verified
 		// the hash already, so skip verification.
-		instance, err := local.OpenInstance(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
+		instance, err := local.OpenInstance(ctx, instanceFile, local.OpenInstanceOpts{
+			VerificationMode: local.SkipHashVerification,
+			InstanceID:       pin.InstanceID,
+		})
 		if err != nil {
 			return
 		}
