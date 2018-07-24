@@ -135,14 +135,14 @@ func TestTriggerParse_NoArgs(t *testing.T) {
 }
 
 func TestTriggerParse_NoDimension(t *testing.T) {
-	Convey(`Make sure that Parse works with no dimensions.`, t, func() {
+	Convey(`Make sure that Parse fails with no dimensions.`, t, func() {
 		c := triggerRun{}
 		c.Init(auth.Options{})
 
 		err := c.GetFlags().Parse([]string{"-server", "http://localhost:9050"})
 
 		err = c.Parse([]string(nil))
-		So(err, ShouldErrLike, "please at least specify one dimension")
+		So(err, ShouldErrLike, "dimension")
 	})
 }
 
@@ -203,8 +203,7 @@ func TestProcessTriggerOptions_WithRawArgs(t *testing.T) {
 		c.isolateServer = "http://localhost:10050"
 		c.rawCmd = true
 
-		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
-		So(err, ShouldBeNil)
+		result := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(result.Properties.Command, ShouldResemble, []string{"arg1", "arg2"})
 		So(result.Properties.ExtraArgs, ShouldResemble, ([]string)(nil))
 		So(result.Properties.InputsRef, ShouldBeNil)
@@ -219,8 +218,7 @@ func TestProcessTriggerOptions_ExtraArgs(t *testing.T) {
 		c.isolateServer = "http://localhost:10050"
 		c.isolated = "1234567890123456789012345678901234567890"
 
-		result, err := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
-		So(err, ShouldBeNil)
+		result := c.processTriggerOptions([]string{"arg1", "arg2"}, nil)
 		So(result.Properties.Command, ShouldBeNil)
 		So(result.Properties.ExtraArgs, ShouldResemble, []string{"arg1", "arg2"})
 		So(result.Properties.InputsRef, ShouldResemble, &swarming.SwarmingRpcsFilesRef{
@@ -238,8 +236,7 @@ func TestProcessTriggerOptions_CipdPackages(t *testing.T) {
 		c.cipdPackage = map[string]string{
 			"path:name": "version",
 		}
-		result, err := c.processTriggerOptions([]string(nil), nil)
-		So(err, ShouldBeNil)
+		result := c.processTriggerOptions([]string(nil), nil)
 		So(result.Properties.CipdInput, ShouldResemble, &swarming.SwarmingRpcsCipdInput{
 			Packages: []*swarming.SwarmingRpcsCipdPackage{{
 				PackageName: "name",

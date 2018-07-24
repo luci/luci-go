@@ -25,6 +25,8 @@ import (
 
 	"github.com/maruel/subcommands"
 
+	"golang.org/x/net/context"
+
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -98,6 +100,7 @@ type triggerRun struct {
 	priority    int64
 	taskName    string
 	tags        common.Strings
+	dumpJSON    string
 	user        string
 	idempotent  bool
 	expiration  int
@@ -105,7 +108,6 @@ type triggerRun struct {
 	hardTimeout int64
 	ioTimeout   int64
 	rawCmd      bool
-	dumpJSON    string
 	cipdPackage stringmapflag.Value
 	outputs     common.Strings
 }
@@ -183,32 +185,27 @@ func (c *triggerRun) Run(a subcommands.Application, args []string, env subcomman
 
 func (c *triggerRun) main(a subcommands.Application, args []string, env subcommands.Env) error {
 	start := time.Now()
-	request, err := c.processTriggerOptions(args, env)
+
+	request := c.processTriggerOptions(args, env)
+
+	service, err := c.createSwarmingClient()
 	if err != nil {
 		return err
 	}
 
-	result, err := c.createNewTask(request)
+	result, err := service.NewTask(context.Background(), request)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Triggered task: %s\n\n", result.TaskId)
-	viewURL := fmt.Sprintf("%s/user/task/%s", c.serverURL, result.TaskId)
-
-	if len(c.dumpJSON) > 0 {
+	if c.dumpJSON != "" {
 		dump, err := os.Create(c.dumpJSON)
 		if err != nil {
 			return err
 		}
 		defer dump.Close()
 
-		data := jsonDump{
-			TaskID:  result.TaskId,
-			ViewURL: viewURL,
-			Request: *request,
-		}
-
+		data := triggerResults{Tasks: []*swarming.SwarmingRpcsTaskRequestMetadata{result}}
 		b, err := json.MarshalIndent(&data, "", "  ")
 		if err != nil {
 			return errors.Annotate(err, "marshalling trigger result").Err()
@@ -225,19 +222,16 @@ func (c *triggerRun) main(a subcommands.Application, args []string, env subcomma
 		}
 	} else if !c.defaultFlags.Quiet {
 		fmt.Println("To collect results use:")
-		fmt.Printf("  swarming collect -server %s %s\n", c.serverURL, result.TaskId)
-	}
-
-	if !c.defaultFlags.Quiet {
-		fmt.Printf("or visit: %s\n", viewURL)
+		fmt.Printf("  swarming collect -server %s %s", c.serverURL, result.TaskId)
+		fmt.Println()
 	}
 
 	duration := time.Since(start)
 	log.Printf("Duration: %s\n", units.Round(duration, time.Millisecond))
-	return err
+	return nil
 }
 
-func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (*swarming.SwarmingRpcsNewTaskRequest, error) {
+func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) *swarming.SwarmingRpcsNewTaskRequest {
 	var inputsRefs *swarming.SwarmingRpcsFilesRef
 	var commands []string
 	var extraArgs []string
@@ -248,11 +242,11 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		extraArgs = args
 	}
 
-	if len(c.taskName) == 0 {
+	if c.taskName != "" {
 		c.taskName = fmt.Sprintf("%s/%s", c.user, namePartFromDimensions(c.dimensions))
 	}
 
-	if len(c.isolated) > 0 {
+	if c.isolated != "" {
 		if len(c.taskName) == 0 {
 			c.taskName = fmt.Sprintf("%s/%s", c.taskName, c.isolated)
 		}
@@ -292,7 +286,7 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		properties.CipdInput = &swarming.SwarmingRpcsCipdInput{Packages: pkgs}
 	}
 
-	request := swarming.SwarmingRpcsNewTaskRequest{
+	return &swarming.SwarmingRpcsNewTaskRequest{
 		ExpirationSecs: c.hardTimeout,
 		Name:           c.taskName,
 		ParentTaskId:   env["SWARMING_TASK_ID"].Value,
@@ -301,28 +295,4 @@ func (c *triggerRun) processTriggerOptions(args []string, env subcommands.Env) (
 		Tags:           c.tags,
 		User:           c.user,
 	}
-	return &request, nil
-}
-
-func (c *triggerRun) createNewTask(request *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-	client, err := c.createAuthClient()
-	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
-	}
-
-	s, err := swarming.New(client)
-	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
-	}
-	s.BasePath = c.commonFlags.serverURL + swarmingAPISuffix
-
-	call := s.Tasks.New(request).Fields("task_result")
-	result, err := call.Do()
-	if err != nil {
-		return &swarming.SwarmingRpcsTaskRequestMetadata{}, err
-	}
-
-	// Recursively look at error and log.
-
-	return result, nil
 }

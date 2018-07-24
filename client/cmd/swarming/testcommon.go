@@ -23,6 +23,7 @@ import (
 )
 
 type testService struct {
+	newTask        func(context.Context, *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error)
 	getTaskResult  func(context.Context, string, bool) (*swarming.SwarmingRpcsTaskResult, error)
 	getTaskOutput  func(context.Context, string) (*swarming.SwarmingRpcsTaskOutput, error)
 	getTaskOutputs func(context.Context, string, string, *swarming.SwarmingRpcsFilesRef) ([]string, error)
@@ -30,6 +31,10 @@ type testService struct {
 
 func (s testService) Client() *http.Client {
 	return nil
+}
+
+func (s testService) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
+	return s.newTask(c, req)
 }
 
 func (s testService) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
