@@ -41,13 +41,17 @@ import (
 type VerificationMode int
 
 const (
-	// VerifyHash instructs OpenPackage to calculate hash of the package and
-	// compare it to the given instanceID.
+	// VerifyHash instructs OpenPackage to calculate the hash of the package file
+	// and compare it to the given InstanceID.
 	VerifyHash VerificationMode = 0
 
 	// SkipHashVerification instructs OpenPackage to skip the hash verification
-	// and trust that the given instanceID matches the package.
+	// and trust that the given InstanceID matches the package.
 	SkipHashVerification VerificationMode = 1
+
+	// CalculateHash instructs OpenPackage to calculate the hash of the package
+	// file using the given hash algo, and use it as a new instance ID.
+	CalculateHash VerificationMode = 2
 )
 
 // ErrHashMismatch is an error when package hash doesn't match.
@@ -75,17 +79,40 @@ type InstanceFile interface {
 	Close(ctx context.Context, corrupt bool) error
 }
 
+// OpenInstanceOpts is passed to OpenInstance and OpenInstanceFile.
+type OpenInstanceOpts struct {
+	// VerificationMode specifies what to do with the hash of the instance file.
+	//
+	// Passing VerifyHash instructs OpenPackage to calculate the hash of the
+	// instance file using the hash algorithm matching InstanceID, and then
+	// compare the resulting digest to InstanceID, failing on mismatch with
+	// ErrHashMismatch. HashAlgo is ignored in this case and should be 0.
+	//
+	// Passing SkipHashVerification instructs OpenPackage to unconditionally
+	// trust the given InstanceID. HashAlgo is also ignored in this case and
+	// should be 0.
+	//
+	// Passing CalculateHash instructs OpenPackage to calculate the hash of the
+	// instance file using the given HashAlgo, and use the resulting digest
+	// as an instance ID of the new PackageInstance object. InstanceID is ignored
+	// in this case and should be "".
+	VerificationMode VerificationMode
+
+	// InstanceID encodes the expected hash of the instance file.
+	//
+	// May be empty. See the comment for VerificationMode for more details.
+	InstanceID string
+
+	// HashAlgo specifies what hashing algorithm to use for computing instance ID.
+	//
+	// May be empty. See the comment for VerificationMode for more details.
+	HashAlgo api.HashAlgo
+}
+
 // OpenInstance prepares the package for extraction.
-//
-// If instanceID is an empty string, OpenInstance will calculate the hash
-// of the package and use it as InstanceID (regardless of verification mode).
-//
-// If instanceID is not empty and verification mode is VerifyHash,
-// OpenInstance will check that package data matches the given instanceID. It
-// skips this check if verification mode is SkipHashVerification.
-func OpenInstance(ctx context.Context, r InstanceFile, instanceID string, v VerificationMode) (PackageInstance, error) {
+func OpenInstance(ctx context.Context, r InstanceFile, opts OpenInstanceOpts) (PackageInstance, error) {
 	out := &packageInstance{data: r}
-	if err := out.open(instanceID, v); err != nil {
+	if err := out.open(opts); err != nil {
 		return nil, err
 	}
 	return out, nil
@@ -101,12 +128,12 @@ func (d dummyInstance) Close(context.Context, bool) error { return d.File.Close(
 //
 // The caller of this function must call closer() if err != nil to close the
 // underlying file.
-func OpenInstanceFile(ctx context.Context, path string, instanceID string, v VerificationMode) (inst PackageInstance, closer func() error, err error) {
+func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (inst PackageInstance, closer func() error, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
 	}
-	inst, err = OpenInstance(ctx, dummyInstance{file}, instanceID, v)
+	inst, err = OpenInstance(ctx, dummyInstance{file}, opts)
 	if err != nil {
 		inst = nil
 		file.Close()
@@ -365,57 +392,73 @@ type packageInstance struct {
 	manifest   Manifest
 }
 
-// open reads the package data, verifies SHA1 hash and reads manifest.
+// open reads the package data, verifies the hash and reads manifest.
 //
 // It doesn't check for corruption, but the caller must do so.
-func (inst *packageInstance) open(instanceID string, v VerificationMode) error {
-	var dataSize int64
-	var err error
+func (inst *packageInstance) open(opts OpenInstanceOpts) error {
+	// Enforce consistency of opts, to avoid situations when caller thinks that
+	// InstanceID is used, while in fact it is not.
+	switch opts.VerificationMode {
+	case VerifyHash, SkipHashVerification:
+		switch {
+		case opts.InstanceID == "":
+			return fmt.Errorf("InstanceID is required with VerifyHash and SkipHashVerification modes")
+		case opts.HashAlgo != api.HashAlgo_HASH_ALGO_UNSPECIFIED:
+			return fmt.Errorf("HashAlgo must not be used with VerifyHash or SkipHashVerification modes")
+		}
+	case CalculateHash:
+		switch {
+		case opts.InstanceID != "":
+			return fmt.Errorf("InstanceID must not be used with CalculateHash mode")
+		case opts.HashAlgo == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
+			return fmt.Errorf("HashAlgo is required with CalculateHash mode")
+		}
+	default:
+		return fmt.Errorf("invalid verification mode %q", opts.VerificationMode)
+	}
 
 	// Assert instanceID is well-formated if given. This is important for
 	// SkipHashVerification mode, where the user can pass whatever, and for
 	// VerifyHash that parses the instance ID.
-	if instanceID != "" {
-		if err = common.ValidateInstanceID(instanceID); err != nil {
+	if opts.InstanceID != "" {
+		if err := common.ValidateInstanceID(opts.InstanceID); err != nil {
 			return err
 		}
 	}
 
-	switch {
-	case instanceID == "":
-		// Calculate the default hash and use it for the instance ID, regardless of
-		// the verification mode.
-		h := common.MustNewHash(common.DefaultHashAlgo)
-		dataSize, err = getHashAndSize(inst.data, h)
-		if err != nil {
+	var dataSize int64
+	var err error
+
+	switch opts.VerificationMode {
+	case CalculateHash:
+		var h hash.Hash
+		if h, err = common.NewHash(opts.HashAlgo); err != nil {
+			return err
+		}
+		if dataSize, err = getHashAndSize(inst.data, h); err != nil {
 			return err
 		}
 		inst.instanceID = common.ObjectRefToInstanceID(&api.ObjectRef{
-			HashAlgo:  common.DefaultHashAlgo,
+			HashAlgo:  opts.HashAlgo,
 			HexDigest: common.HexDigest(h),
 		})
 
-	case v == VerifyHash:
-		obj := common.InstanceIDToObjectRef(instanceID)
+	case VerifyHash:
+		obj := common.InstanceIDToObjectRef(opts.InstanceID)
 		h := common.MustNewHash(obj.HashAlgo)
-		dataSize, err = getHashAndSize(inst.data, h)
-		if err != nil {
+		if dataSize, err = getHashAndSize(inst.data, h); err != nil {
 			return err
 		}
 		if common.HexDigest(h) != obj.HexDigest {
 			return ErrHashMismatch
 		}
-		inst.instanceID = instanceID // validated to match the data!
+		inst.instanceID = opts.InstanceID // validated to match the data!
 
-	case v == SkipHashVerification:
-		dataSize, err = inst.data.Seek(0, os.SEEK_END)
-		if err != nil {
+	case SkipHashVerification:
+		if dataSize, err = inst.data.Seek(0, os.SEEK_END); err != nil {
 			return err
 		}
-		inst.instanceID = instanceID // just trust
-
-	default:
-		return fmt.Errorf("invalid verification mode %q", v)
+		inst.instanceID = opts.InstanceID // just trust
 	}
 
 	// Zip reader needs an io.ReaderAt. Try to sniff it from our io.ReadSeeker

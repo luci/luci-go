@@ -44,6 +44,7 @@ import (
 
 	"go.chromium.org/luci/auth/client/authcli"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/local"
@@ -410,7 +411,7 @@ type inputOptions struct {
 
 	// Deflate compression level (if [1-9]) or 0 to disable compression.
 	//
-	// Default is 1 (fastest).
+	// Default is 5.
 	compressionLevel int
 }
 
@@ -2046,7 +2047,10 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deployInstanceFile(ctx context.Context, root string, instanceFile string) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
+		VerificationMode: local.CalculateHash,
+		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+	})
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -2133,7 +2137,10 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 	// the hash.
 	out.Close()
 	ok = true
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, pin.InstanceID, local.SkipHashVerification)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
+		VerificationMode: local.SkipHashVerification,
+		InstanceID:       pin.InstanceID,
+	})
 	if err != nil {
 		os.Remove(instanceFile)
 		return common.Pin{}, err
@@ -2173,7 +2180,10 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func inspectInstanceFile(ctx context.Context, instanceFile string, listFiles bool) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
+		VerificationMode: local.CalculateHash,
+		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+	})
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -2258,7 +2268,10 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, "", local.VerifyHash)
+	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
+		VerificationMode: local.CalculateHash,
+		HashAlgo:         api.HashAlgo_SHA1, // TODO(vadimsh): Make configurable.
+	})
 	if err != nil {
 		return common.Pin{}, err
 	}

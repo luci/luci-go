@@ -17,7 +17,7 @@ package local
 import (
 	"archive/zip"
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"io"
 	"io/ioutil"
@@ -45,7 +45,7 @@ func TestBuildInstance(t *testing.T) {
 
 		// BuildInstance builds deterministic zip. It MUST NOT depend on
 		// the platform, or a time of day, or anything else, only on the input data.
-		So(getSHA1(&out), ShouldEqual, "b1b76479c47e4ea4da7b6f4629c0d58ff7dc6569")
+		So(getSHA256(&out), ShouldEqual, "66b44a6bd1cdfcb9481d952c6654f3a66882b3c02abc0873f5367337de90a71e")
 
 		// There should be a single file: the manifest.
 		goodManifest := `{
@@ -300,9 +300,9 @@ func TestBuildInstance(t *testing.T) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// getSHA1 returns SHA1 hex digest of a byte buffer.
-func getSHA1(buf *bytes.Buffer) string {
-	h := sha1.New()
+// getSHA256 returns SHA256 hex digest of a byte buffer.
+func getSHA256(buf *bytes.Buffer) string {
+	h := sha256.New()
 	h.Write(buf.Bytes())
 	return hex.EncodeToString(h.Sum(nil))
 }
