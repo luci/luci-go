@@ -84,6 +84,9 @@ const (
 	TaskKilled = "KILLED"
 	// TaskCompleted means task is complete.
 	TaskCompleted = "COMPLETED"
+	// TaskNoResource means there was not enough capacity when scheduled, so the
+	// task failed immediately.
+	TaskNoResource = "NO_RESOURCE"
 )
 
 func getSwarmingClient(c context.Context, host string) (*swarming.Service, error) {
@@ -212,7 +215,7 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 
 	if logErr != nil {
 		switch fr.res.State {
-		case TaskCompleted, TaskRunning, TaskCanceled, TaskKilled:
+		case TaskCompleted, TaskRunning, TaskCanceled, TaskKilled, TaskNoResource:
 		default:
 			//  Ignore log errors if the task might be pending, timed out, expired, etc.
 			if err != nil {
@@ -334,6 +337,13 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 		step.FailureDetails = &miloProto.FailureDetails{
 			Type: miloProto.FailureDetails_CANCELLED,
 			Text: "Task cancelled by user",
+		}
+
+	case TaskNoResource:
+		step.Status = miloProto.Status_FAILURE
+		step.FailureDetails = &miloProto.FailureDetails{
+			Type: miloProto.FailureDetails_EXPIRED,
+			Text: "No resource available on Swarming",
 		}
 
 	case TaskCompleted:
