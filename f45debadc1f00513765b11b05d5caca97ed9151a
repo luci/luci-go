@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "51a47dcb_3606f8bd",
+        "filename": "cipd/appengine/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-24T18:08:43Z",
+      "side": 1,
+      "message": "This is all false now too. I forgot to update this file when I switched to pure Go backend implementation. Thanks for noticing. I\u0027ll write a separate CL with updated README.md, if you don\u0027t mind. So this CL can be closed.",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 10,
+        "endChar": 0
+      },
+      "revId": "f45debadc1f00513765b11b05d5caca97ed9151a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
