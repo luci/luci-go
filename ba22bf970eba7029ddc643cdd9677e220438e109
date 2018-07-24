@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "ee51e4a1_70392fe8",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 915,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-24T23:13:43Z",
+      "side": 1,
+      "message": "No, it does not currently. This can be added relatively simply, as a new \"processor\", but it would mean that bad uploaded files are still referencable by direct hash (they won\u0027t have tags or refs though, since backend forbids to attach tags/refs to instances that didn\u0027t pass processing).",
+      "parentUuid": "aea1d168_7ba1e24c",
+      "range": {
+        "startLine": 915,
+        "startChar": 25,
+        "endLine": 915,
+        "endChar": 71
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a51193b1_39d23451",
         "filename": "cipd/client/cipd/client.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2018-07-24T23:08:01Z",
       "side": 1,
       "message": "why not try again? Shouldn\u0027t we be retrying with a short deadline a couple times before the long deadline (`timeout`) happens?",
+      "range": {
+        "startLine": 956,
+        "startChar": 3,
+        "endLine": 956,
+        "endChar": 32
+      },
+      "revId": "ba22bf970eba7029ddc643cdd9677e220438e109",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb3c1479_5a0a8c26",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 956,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-24T23:13:43Z",
+      "side": 1,
+      "message": "This IS presumably the long deadline (5 min), since \u0027ctx\u0027 has deadline set to 5 min. I assumed pRPC layer doesn\u0027t improvise with deadlines... Does it?",
+      "parentUuid": "a51193b1_39d23451",
       "range": {
         "startLine": 956,
         "startChar": 3,
