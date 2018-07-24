@@ -20,8 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/cipd/common"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func f(lines ...string) string {

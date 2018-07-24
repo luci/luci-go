@@ -16,8 +16,7 @@ package cipd
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/hex"
+	"crypto/sha256"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +28,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/logging/gologger"
@@ -120,7 +120,7 @@ func TestDownload(t *testing.T) {
 					Reply:  "file data",
 				},
 			})
-			h := sha1.New()
+			h := sha256.New()
 			err = storage.download(ctx, "http://localhost/dwn", out, h)
 			So(err, ShouldBeNil)
 
@@ -128,7 +128,7 @@ func TestDownload(t *testing.T) {
 			fetched, err := ioutil.ReadAll(out)
 			So(err, ShouldBeNil)
 			So(string(fetched), ShouldEqual, "file data")
-			So(hex.EncodeToString(h.Sum(nil)), ShouldEqual, "cfb9e9ea5ee050291bc74c7e51fbe578a9f3bd4d")
+			So(common.HexDigest(h), ShouldEqual, "86f3c70fb6673cf303d2206db5f23c237b665d5df9d3e44efef5114845fc9f59")
 		})
 	})
 }
