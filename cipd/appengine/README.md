@@ -11,6 +11,3 @@ resourced used by Python code, since we don't want to override them.
 Code layout:
   * `frontend`, `backend`, `static` - entry points for GAE modules.
   * `impl` - the root package with all implementation guts.
-
-Python code being replaced:
-https://chromium.googlesource.com/infra/infra/+/master/appengine/chrome_infra_packages/
