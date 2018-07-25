@@ -91,6 +91,30 @@
       "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2b80ab50_6952c4e6",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:26:08Z",
+      "side": 1,
+      "message": "or dest could be a field of the struct",
+      "parentUuid": "185046d3_259814c5",
+      "range": {
+        "startLine": 79,
+        "startChar": 38,
+        "endLine": 79,
+        "endChar": 41
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
