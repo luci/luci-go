@@ -76,7 +76,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 		selectStmt := `
 			^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.virtual_datacenter, h.description, h.deployment_ticket, i.ipv4, m.state
 			FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
-			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\) AND i.ipv4 IN \(\?\)$
+			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\)$
 		`
 		columns := []string{"n.name", "n.vlan_id", "m.name", "o.name", "h.vm_slots", "h.virtual_datacenter", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
@@ -124,7 +124,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			So(res, ShouldBeNil)
 		})
 
-		Convey("duplicate host/VLAN", func() {
+		Convey("duplicate host", func() {
 			host := &crimson.PhysicalHost{
 				Name:    "host",
 				Machine: "machine",
@@ -279,7 +279,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertNameStmt).WithArgs(host.Name, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(host.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs(host.Name).WillReturnRows(rows)
 			m.ExpectCommit()
 			res, err := createPhysicalHost(c, host)
 			So(err, ShouldBeNil)
@@ -307,7 +307,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(host.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs(host.Name).WillReturnRows(rows)
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
@@ -329,7 +329,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(updateIPStmt).WithArgs(1, 2130706433).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(insertHostStmt).WithArgs(1, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Machine).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectQuery(selectStmt).WithArgs(host.Name, 2130706433).WillReturnRows(rows)
+			m.ExpectQuery(selectStmt).WithArgs(host.Name).WillReturnRows(rows)
 			m.ExpectCommit()
 			res, err := createPhysicalHost(c, host)
 			So(err, ShouldBeNil)
@@ -570,12 +570,12 @@ func TestUpdatePhysicalHost(t *testing.T) {
 		updateMachineStmt := `
 			UPDATE machines
 			SET state = \?
-			WHERE id = \(SELECT machine_id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)\)
+			WHERE id = \(SELECT machine_id FROM physical_hosts WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)\)
 		`
 		selectStmt := `
 			^SELECT n.name, n.vlan_id, m.name, o.name, h.vm_slots, h.virtual_datacenter, h.description, h.deployment_ticket, i.ipv4, m.state
 			FROM \(physical_hosts h, hostnames n, machines m, oses o, ips i\)
-			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\) AND n.vlan_id IN \(\?\)$
+			WHERE h.hostname_id = n.id AND h.machine_id = m.id AND h.os_id = o.id AND i.hostname_id = n.id AND n.name IN \(\?\)$
 		`
 		columns := []string{"n.name", "n.vlan_id", "m.name", "o.name", "h.vm_slots", "h.virtual_datacenter", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
 		rows := sqlmock.NewRows(columns)
@@ -584,11 +584,10 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			updateStmt := `
 				^UPDATE physical_hosts
 				SET machine_id = \(SELECT id FROM machines WHERE name = \?\)
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			host := &crimson.PhysicalHost{
 				Name:              "hostname",
-				Vlan:              1,
 				Machine:           "machine",
 				Os:                "operating system",
 				VmSlots:           1,
@@ -603,7 +602,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -625,11 +624,10 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			updateStmt := `
 				^UPDATE physical_hosts
 				SET os_id = \(SELECT id FROM oses WHERE name = \?\)
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			host := &crimson.PhysicalHost{
 				Name:              "hostname",
-				Vlan:              1,
 				Machine:           "machine",
 				Os:                "operating system",
 				VmSlots:           1,
@@ -644,7 +642,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(host.Os, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(host.Os, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -666,11 +664,10 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			updateStmt := `
 				^UPDATE physical_hosts
 				SET vm_slots = \?
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			host := &crimson.PhysicalHost{
 				Name:              "hostname",
-				Vlan:              1,
 				Machine:           "machine",
 				Os:                "operating system",
 				VmSlots:           1,
@@ -685,7 +682,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(host.VmSlots, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(host.VmSlots, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -721,7 +718,7 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -743,11 +740,10 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			updateStmt := `
 				^UPDATE physical_hosts
 				SET machine_id = \(SELECT id FROM machines WHERE name = \?\), os_id = \(SELECT id FROM oses WHERE name = \?\), vm_slots = \?, virtual_datacenter = \?
-				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \? AND vlan_id = \?\)$
+				WHERE hostname_id = \(SELECT id FROM hostnames WHERE name = \?\)$
 			`
 			host := &crimson.PhysicalHost{
 				Name:              "hostname",
-				Vlan:              1,
 				Machine:           "machine",
 				Os:                "operating system",
 				VmSlots:           1,
@@ -766,8 +762,8 @@ func TestUpdatePhysicalHost(t *testing.T) {
 			}
 			rows.AddRow(host.Name, host.Vlan, host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket, 1, host.State)
 			m.ExpectBegin()
-			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
-			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name, host.Vlan).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateStmt).WithArgs(host.Machine, host.Os, host.VmSlots, host.VirtualDatacenter, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(updateMachineStmt).WithArgs(host.State, host.Name).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectQuery(selectStmt).WillReturnRows(rows)
 			m.ExpectCommit()
 			host, err := updatePhysicalHost(c, host, mask)
@@ -891,7 +887,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 
 	Convey("hostname unspecified", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -907,28 +902,9 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 		So(err, ShouldErrLike, "hostname is required and must be non-empty")
 	})
 
-	Convey("VLAN unspecified", t, func() {
-		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
-			Name:    "hostname",
-			Machine: "machine",
-			Os:      "os",
-			VmSlots: 1,
-			State:   common.State_SERVING,
-		}, &field_mask.FieldMask{
-			Paths: []string{
-				"machine",
-				"os",
-				"vm_slots",
-				"state",
-			},
-		})
-		So(err, ShouldErrLike, "VLAN is required and must be positive")
-	})
-
 	Convey("mask unspecified", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -940,7 +916,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("no paths", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -952,7 +927,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("unexpected hostname", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -984,7 +958,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("machine unspecified", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Os:      "os",
 			VmSlots: 1,
 			State:   common.State_SERVING,
@@ -1002,7 +975,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("operating system unspecified", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			VmSlots: 1,
 			State:   common.State_SERVING,
@@ -1020,7 +992,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("state unspecified", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -1038,7 +1009,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("unsupported path", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -1054,7 +1024,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("duplicate path", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,
@@ -1076,7 +1045,6 @@ func TestValidatePhysicalHostForUpdate(t *testing.T) {
 	Convey("ok", t, func() {
 		err := validatePhysicalHostForUpdate(&crimson.PhysicalHost{
 			Name:    "hostname",
-			Vlan:    1,
 			Machine: "machine",
 			Os:      "os",
 			VmSlots: 1,

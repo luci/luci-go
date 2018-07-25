@@ -390,7 +390,7 @@ func TestKVMs(t *testing.T) {
 			So(m.ExpectationsWereMet(), ShouldBeNil)
 		})
 
-		Convey("duplicate host/VLAN", func() {
+		Convey("duplicate host", func() {
 			table.additions = append(table.additions, &KVM{
 				KVM: config.KVM{
 					Name: "kvm",

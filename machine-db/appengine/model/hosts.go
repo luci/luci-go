@@ -46,7 +46,7 @@ func AssignHostnameAndIP(c context.Context, tx database.ExecerContext, hostname 
 			// Type assertion failed.
 		case e.Number == mysqlerr.ER_DUP_ENTRY && strings.Contains(e.Message, "'name'"):
 			// e.g. "Error 1062: Duplicate entry 'hostname-vlanId' for key 'name'".
-			return 0, status.Errorf(codes.AlreadyExists, "duplicate hostname %q for VLAN", hostname)
+			return 0, status.Errorf(codes.AlreadyExists, "duplicate hostname %q", hostname)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'vlan_id'"):
 			// e.g. "Error 1048: Column 'vlan_id' cannot be null".
 			return 0, status.Errorf(codes.NotFound, "ensure IPv4 address %q exists and is free first", ipv4)

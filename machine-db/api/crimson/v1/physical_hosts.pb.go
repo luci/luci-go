@@ -22,9 +22,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A physical host in the database.
 type PhysicalHost struct {
-	// The name of this host on the network. With VLAN ID, uniquely identifies this host.
+	// The name of this host on the network. Uniquely identifies this host.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The VLAN this host belongs to. With hostname, uniquely identifies this host.
+	// The VLAN this host belongs to.
 	// When creating a host, omit this field. It will be inferred from the IPv4 address.
 	Vlan int64 `protobuf:"varint,2,opt,name=vlan,proto3" json:"vlan,omitempty"`
 	// The machine backing this host.
@@ -52,7 +52,7 @@ func (m *PhysicalHost) Reset()         { *m = PhysicalHost{} }
 func (m *PhysicalHost) String() string { return proto.CompactTextString(m) }
 func (*PhysicalHost) ProtoMessage()    {}
 func (*PhysicalHost) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{0}
+	return fileDescriptor_physical_hosts_bf924c5ed8cf7354, []int{0}
 }
 func (m *PhysicalHost) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PhysicalHost.Unmarshal(m, b)
@@ -155,7 +155,7 @@ func (m *CreatePhysicalHostRequest) Reset()         { *m = CreatePhysicalHostReq
 func (m *CreatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
 func (*CreatePhysicalHostRequest) ProtoMessage()    {}
 func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{1}
+	return fileDescriptor_physical_hosts_bf924c5ed8cf7354, []int{1}
 }
 func (m *CreatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreatePhysicalHostRequest.Unmarshal(m, b)
@@ -213,7 +213,7 @@ func (m *ListPhysicalHostsRequest) Reset()         { *m = ListPhysicalHostsReque
 func (m *ListPhysicalHostsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsRequest) ProtoMessage()    {}
 func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{2}
+	return fileDescriptor_physical_hosts_bf924c5ed8cf7354, []int{2}
 }
 func (m *ListPhysicalHostsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsRequest.Unmarshal(m, b)
@@ -316,7 +316,7 @@ func (m *ListPhysicalHostsResponse) Reset()         { *m = ListPhysicalHostsResp
 func (m *ListPhysicalHostsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsResponse) ProtoMessage()    {}
 func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{3}
+	return fileDescriptor_physical_hosts_bf924c5ed8cf7354, []int{3}
 }
 func (m *ListPhysicalHostsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsResponse.Unmarshal(m, b)
@@ -358,7 +358,7 @@ func (m *UpdatePhysicalHostRequest) Reset()         { *m = UpdatePhysicalHostReq
 func (m *UpdatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdatePhysicalHostRequest) ProtoMessage()    {}
 func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_2b90a5c9e86ddbd1, []int{4}
+	return fileDescriptor_physical_hosts_bf924c5ed8cf7354, []int{4}
 }
 func (m *UpdatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdatePhysicalHostRequest.Unmarshal(m, b)
@@ -401,10 +401,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor_physical_hosts_2b90a5c9e86ddbd1)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor_physical_hosts_bf924c5ed8cf7354)
 }
 
-var fileDescriptor_physical_hosts_2b90a5c9e86ddbd1 = []byte{
+var fileDescriptor_physical_hosts_bf924c5ed8cf7354 = []byte{
 	// 551 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x4f, 0x6f, 0xd4, 0x3e,
 	0x10, 0x55, 0x92, 0xee, 0xbf, 0xd9, 0xdf, 0xaf, 0xa2, 0x06, 0x24, 0xef, 0x8a, 0x43, 0xb4, 0x08,

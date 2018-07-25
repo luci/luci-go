@@ -99,9 +99,7 @@ func createDRAC(c context.Context, d *crimson.DRAC) (*crimson.DRAC, error) {
 	}
 
 	dracs, err := listDRACs(c, tx, &crimson.ListDRACsRequest{
-		// DRACs are typically identified by hostname and VLAN, but VLAN is inferred from IP address during creation.
 		Names: []string{d.Name},
-		Ipv4S: []string{d.Ipv4},
 	})
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to fetch created DRAC").Err()
@@ -180,7 +178,7 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 			stmt = stmt.Set("switchport", d.Switchport)
 		}
 	}
-	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ? AND vlan_id = ?)", d.Name, d.Vlan)
+	stmt = stmt.Where("hostname_id = (SELECT id FROM hostnames WHERE name = ?)", d.Name)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to generate statement").Err()
@@ -217,13 +215,12 @@ func updateDRAC(c context.Context, d *crimson.DRAC, mask *field_mask.FieldMask) 
 
 	dracs, err := listDRACs(c, tx, &crimson.ListDRACsRequest{
 		Names: []string{d.Name},
-		Vlans: []int64{d.Vlan},
 	})
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch updated DRAC").Err()
 	case len(dracs) == 0:
-		return nil, status.Errorf(codes.NotFound, "DRAC %q does not exist on VLAN %d", d.Name, d.Vlan)
+		return nil, status.Errorf(codes.NotFound, "DRAC %q does not exist", d.Name)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -267,8 +264,6 @@ func validateDRACForUpdate(d *crimson.DRAC, mask *field_mask.FieldMask) error {
 		return status.Error(codes.InvalidArgument, "DRAC specification is required")
 	case d.Name == "":
 		return status.Error(codes.InvalidArgument, "DRAC name is required and must be non-empty")
-	case d.Vlan < 1:
-		return status.Error(codes.InvalidArgument, "VLAN is required and must be positive")
 	case err != nil:
 		return err
 	}

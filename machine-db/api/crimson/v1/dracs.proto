@@ -10,7 +10,7 @@ import "google/protobuf/field_mask.proto";
 
 // A DRAC in the database.
 message DRAC {
-  // The name of this DRAC on the network. With VLAN, uniquely identifies this DRAC.
+  // The name of this DRAC on the network. Uniquely identifies this DRAC.
   string name = 1;
   // The machine this DRAC belongs to. Uniquely identifies this DRAC.
   string machine = 2;

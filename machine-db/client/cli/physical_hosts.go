@@ -70,7 +70,7 @@ func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddPhysicalHostCmd{}
 			cmd.Initialize(params)
-			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be unique per VLAN within the database.")
+			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be unique within the database.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Required and must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
 			cmd.Flags.StringVar(&cmd.host.Ipv4, "ip", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
@@ -119,14 +119,13 @@ func (c *EditPhysicalHostCmd) Run(app subcommands.Application, args []string, en
 // editPhysicalHostCmd returns a command to edit a physical host.
 func editPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "edit-host -name <name> -vlan <id> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "edit-host -name <name> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a physical host",
 		LongDesc:  "Edits a physical host in the database.",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditPhysicalHostCmd{}
 			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be the name of a host returned by get-hosts.")
-			cmd.Flags.Int64Var(&cmd.host.Vlan, "vlan", 0, "The VLAN this host belongs to. Required and must be the ID of a VLAN returned by get-vlans.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Must be the name of a machine returned by get-machines.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Must be the name of an operating system returned by get-oses.")
 			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be a state returned by get-states.")
