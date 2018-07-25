@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7395c7df_d6c4572d",
+        "filename": "cipd/common/iid.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-25T05:30:36Z",
+      "side": 1,
+      "message": "Please start the review from this file.\n\nValidateInstanceID, ValidateObjectRef and ValidatePin learned to accept boolean parameter, which is either \"KnownHash\" or \"AnyHash\".\n\nAlmost all client code uses \"AnyHash\" to transparently pass future hash algos. Only code that does the actual fetching and hash verification uses KnownHash.\n\nAll backend code uses KnownHash, since presumably we\u0027ll never have a client that is more recent than a backend. (We can potentially end up in a situation where the backend is rolled back, and already has some new stuff in the datastore. I decided to ignore this situation for now, since it is relatively easy to fix and rollforward the backend, compared to client side updates).",
+      "revId": "639e58525ddc648d7b40cc04163f8c28e0116144",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
