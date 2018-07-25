@@ -2505,7 +2505,7 @@ func TestClientBootstrap(t *testing.T) {
 			Convey("Bad instance ref", func() {
 				_, err := call(goodPkg, "not-an-id")
 				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-				So(err, ShouldErrLike, "invalid SHA256 digest")
+				So(err, ShouldErrLike, "invalid SHA256 hex digest")
 			})
 
 			Convey("Missing instance", func() {

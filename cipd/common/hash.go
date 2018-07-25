@@ -62,7 +62,8 @@ func MustNewHash(algo api.HashAlgo) hash.Hash {
 	return h
 }
 
-// ValidateHashAlgo returns a grpc-annotated error if the given algo is invalid.
+// ValidateHashAlgo returns a grpc-annotated error if the given algo is invalid,
+// e.g. either unspecified or not known to the current version of the code.
 //
 // Errors have InvalidArgument grpc code.
 func ValidateHashAlgo(h api.HashAlgo) error {

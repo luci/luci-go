@@ -150,9 +150,9 @@ func TestValidatePin(t *testing.T) {
 	t.Parallel()
 
 	Convey("ValidatePin works", t, func() {
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldBeNil)
-		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldNotBeNil)
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}), ShouldNotBeNil)
+		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldBeNil)
+		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
+		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
 	})
 }
 
