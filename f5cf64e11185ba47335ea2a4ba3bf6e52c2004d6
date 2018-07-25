@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "5c3a3bc8_02cc17ba",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "i am fine with annotpb",
+      "parentUuid": "2a2cf5c5_2edf5bc0",
+      "range": {
+        "startLine": 24,
+        "startChar": 1,
+        "endLine": 24,
+        "endChar": 5
+      },
+      "revId": "f5cf64e11185ba47335ea2a4ba3bf6e52c2004d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2d81a37a_39e9cd88",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 1

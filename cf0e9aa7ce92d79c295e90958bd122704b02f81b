@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d61c86ca_263ebe08",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "let\u0027s omit this. BuildRunResult is a very specific thing and will removed soon",
+      "range": {
+        "startLine": 36,
+        "startChar": 69,
+        "endLine": 36,
+        "endChar": 92
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75083b87_91044e42",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "C",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 54,
+        "endChar": 4
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14b865eb_150d91d8",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "thinking about this more, i think this can be removed, see another comment about exported function",
+      "range": {
+        "startLine": 58,
+        "startChar": 24,
+        "endLine": 58,
+        "endChar": 41
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "185046d3_259814c5",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "(looks like Gerrit lost my most valuable comment, i guess because of multiple patches)\n\nThis way we allocate a slice of substeps of each level of step hierarchy and then copy. It would be more efficient and simple if we just passed a pointer to the destination slice to convertSusbteps, as opposed to accepting a slice back:\n\n  func (p *stepConverter) convertSubsteps(c context.Context, dest *[]*buildbucketpb.Step, annSubsteps []*annotpb.Step_Substep, stepPrefix string) error\n\nand then call it here like \n\n  if err :\u003d p.convertSteps(c, dest, annSubstep, stepPrefix); err !\u003d nil {\n    return err\n  }\n\nno need to copy",
+      "range": {
+        "startLine": 79,
+        "startChar": 38,
+        "endLine": 79,
+        "endChar": 41
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

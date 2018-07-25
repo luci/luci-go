@@ -471,6 +471,24 @@
     },
     {
       "key": {
+        "uuid": "31baa7f1_fd38a76e",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "3e33d52f_86727c38",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cef7aaa5_5745490a",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -538,6 +556,24 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "255a4ab5_5d3e0225",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-25T00:07:16Z",
+      "side": 1,
+      "message": "it is still internal because stepParser is internal\n\ni recommend a func with signature\n\n  func(c context.Context, annSteps []*annotpb.Step_Substep, annURL string) []*buildbucketpb.Step\n\nthis way you don\u0027t have to explain that this function can be used only for root step. It is more obvious that one should call it as (c, myRootStep.substeps, ...) rather than creating a slice of substeps with only the root as substep. Then we don\u0027t need ConvertBuildSteps.\n\nThis will be the only exported symbol, so its comment should explain full details of the behavior, including level of support (e.g. kinds of substeps, logs/links, etc) and how context is used.",
+      "parentUuid": "412a2b9c_8adb340b",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
