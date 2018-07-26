@@ -22,6 +22,30 @@
       "revId": "230c1080e2ad3cd2228a3f515428f673135e66fd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "347b5902_fd1ac53e",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-26T19:03:03Z",
+      "side": 1,
+      "message": "Nah. Let\u0027s not be very smart without any actual data to guide the decisions. We can change this later if we notice anything.\n\n(In practice I believe the trash dir is almost always \u003c3 files, since only running executables on Windows end up there).",
+      "parentUuid": "7aee34e2_7d5fe07f",
+      "range": {
+        "startLine": 425,
+        "startChar": 6,
+        "endLine": 425,
+        "endChar": 18
+      },
+      "revId": "230c1080e2ad3cd2228a3f515428f673135e66fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
