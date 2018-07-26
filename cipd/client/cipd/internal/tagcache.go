@@ -151,12 +151,12 @@ func (c *TagCache) ResolveTag(ctx context.Context, pkg, tag string) (pin common.
 //
 // Returns error if the cache can't be read.
 func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string) (*api.ObjectRef, error) {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
 
 	ignoreBrokenObjectRef := func(iid string) *api.ObjectRef {
-		if err := common.ValidateInstanceID(iid); err != nil {
+		if err := common.ValidateInstanceID(iid, common.AnyHash); err != nil {
 			logging.Errorf(ctx, "Stored object_ref %q for %q in %s is invalid, ignoring it - %s", iid, fileName, pin, err)
 			return nil
 		}
@@ -190,7 +190,7 @@ func (c *TagCache) ResolveExtractedObjectRef(ctx context.Context, pin common.Pin
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
 func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
 	if err := common.ValidateInstanceTag(tag); err != nil {
@@ -223,10 +223,10 @@ func (c *TagCache) AddTag(ctx context.Context, pin common.Pin, tag string) error
 //
 // Call 'Save' later to persist these changes to the cache file on disk.
 func (c *TagCache) AddExtractedObjectRef(ctx context.Context, pin common.Pin, fileName string, ref *api.ObjectRef) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
-	if err := common.ValidateObjectRef(ref); err != nil {
+	if err := common.ValidateObjectRef(ref, common.AnyHash); err != nil {
 		return err
 	}
 

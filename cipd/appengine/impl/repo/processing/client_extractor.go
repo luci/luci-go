@@ -111,7 +111,7 @@ func (r *ClientExtractorResult) ToObjectRef() (*api.ObjectRef, error) {
 		HashAlgo:  api.HashAlgo(algo),
 		HexDigest: r.ClientBinary.HashDigest,
 	}
-	if err := common.ValidateObjectRef(ref); err != nil {
+	if err := common.ValidateObjectRef(ref, common.KnownHash); err != nil {
 		return nil, err
 	}
 	return ref, nil
@@ -132,7 +132,7 @@ func (r *ClientExtractorResult) ObjectRefAliases() []*api.ObjectRef {
 			HashAlgo:  api.HashAlgo(api.HashAlgo_value[r.ClientBinary.HashAlgo]),
 			HexDigest: r.ClientBinary.HashDigest,
 		}
-		if common.ValidateObjectRef(ref) == nil {
+		if common.ValidateObjectRef(ref, common.KnownHash) == nil {
 			return []*api.ObjectRef{ref}
 		}
 		return nil // welp, have 0 supported algos, should not really happen
@@ -145,7 +145,7 @@ func (r *ClientExtractorResult) ObjectRefAliases() []*api.ObjectRef {
 	for algo := int32(1); api.HashAlgo_name[algo] != ""; algo++ { // skip UNSPECIFIED
 		if digest := all[api.HashAlgo_name[algo]]; digest != "" {
 			ref := &api.ObjectRef{HashAlgo: api.HashAlgo(algo), HexDigest: digest}
-			if common.ValidateObjectRef(ref) == nil {
+			if common.ValidateObjectRef(ref, common.KnownHash) == nil {
 				refs = append(refs, ref)
 			}
 		}
@@ -193,7 +193,7 @@ func (e *ClientExtractor) Run(ctx context.Context, inst *model.Instance, pkg *Pa
 	// We use same hash algo for naming the extracted file as was used to name
 	// the package instance it is in. This avoid some confusion during the
 	// transition to a new hash.
-	if err = common.ValidateInstanceID(inst.InstanceID); err != nil {
+	if err = common.ValidateInstanceID(inst.InstanceID, common.KnownHash); err != nil {
 		err = errors.Annotate(err, "unrecognized client instance ID format").Err()
 		return
 	}

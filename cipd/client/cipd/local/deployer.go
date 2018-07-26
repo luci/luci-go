@@ -251,8 +251,8 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	pin := inst.Pin()
 	logging.Infof(ctx, "Deploying %s into %s(/%s)", pin, d.fs.Root(), subdir)
 
-	// Be paranoid.
-	if err := common.ValidatePin(pin); err != nil {
+	// Be paranoid (but not too much).
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return common.Pin{}, err
 	}
 	if _, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), subdir)); err != nil {
@@ -910,7 +910,7 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 		}
 		return "", err
 	}
-	if err = common.ValidateInstanceID(current); err != nil {
+	if err = common.ValidateInstanceID(current, common.AnyHash); err != nil {
 		return "", fmt.Errorf(
 			"pointer to currently installed instance doesn't look like a valid instance id: %s", err)
 	}
@@ -921,7 +921,7 @@ func (d *deployerImpl) getCurrentInstanceID(packageDir string) (string, error) {
 //
 // It takes a path to a package directory (.cipd/pkgs/<name>) as input.
 func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, instanceID string) error {
-	if err := common.ValidateInstanceID(instanceID); err != nil {
+	if err := common.ValidateInstanceID(instanceID, common.AnyHash); err != nil {
 		return err
 	}
 	if runtime.GOOS == "windows" {

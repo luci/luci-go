@@ -150,9 +150,9 @@ func TestValidatePin(t *testing.T) {
 	t.Parallel()
 
 	Convey("ValidatePin works", t, func() {
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldBeNil)
-		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}), ShouldNotBeNil)
-		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}), ShouldNotBeNil)
+		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldBeNil)
+		So(ValidatePin(Pin{"BAD/name", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
+		So(ValidatePin(Pin{"good/name", "aaaaaaaaaaa"}, KnownHash), ShouldNotBeNil)
 	})
 }
 
@@ -367,21 +367,21 @@ func TestPinSliceAndMap(t *testing.T) {
 		}
 
 		Convey("Can validate", func() {
-			So(pmr.Validate(), ShouldErrLike, nil)
+			So(pmr.Validate(AnyHash), ShouldErrLike, nil)
 
 			Convey("can see bad subdirs", func() {
 				pmr["/"] = PinSlice{{"something", "version"}}
-				So(pmr.Validate(), ShouldErrLike, "bad subdir")
+				So(pmr.Validate(AnyHash), ShouldErrLike, "bad subdir")
 			})
 
 			Convey("can see duplicate packages", func() {
 				pmr[""] = append(pmr[""], Pin{"pkg", strings.Repeat("2", 40)})
-				So(pmr.Validate(), ShouldErrLike, `subdir "": duplicate package "pkg"`)
+				So(pmr.Validate(AnyHash), ShouldErrLike, `subdir "": duplicate package "pkg"`)
 			})
 
 			Convey("can see bad pins", func() {
 				pmr[""] = append(pmr[""], Pin{"quxxly", "nurbs"})
-				So(pmr.Validate(), ShouldErrLike, `subdir "": not a valid package instance ID`)
+				So(pmr.Validate(AnyHash), ShouldErrLike, `subdir "": not a valid package instance ID`)
 			})
 		})
 

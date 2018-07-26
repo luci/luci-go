@@ -36,7 +36,7 @@ func ResolveVersion(c context.Context, pkg, version string) (*Instance, error) {
 	var iid string
 	var err error
 	switch {
-	case common.ValidateInstanceID(version) == nil:
+	case common.ValidateInstanceID(version, common.KnownHash) == nil:
 		iid = version
 	case common.ValidatePackageRef(version) == nil:
 		var ref *Ref

@@ -18,7 +18,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -26,13 +25,46 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
-// ValidateInstanceID returns an error if the string isn't valid instance id.
-func ValidateInstanceID(iid string) (err error) {
+// HashAlgoValidation is passed to ValidateObjectRef.
+type HashAlgoValidation bool
+
+const (
+	// KnownHash indicates that ValidateObjectRef should only accept refs that
+	// use hash algo known to the current version of the code.
+	//
+	// This is primarily useful on the backend, since it always needs to be sure
+	// that it can handle any ObjectRef that is passed to it.
+	KnownHash HashAlgoValidation = true
+
+	// AnyHash indicates that ValidateObject may accept refs that use algo number
+	// not known to the current version of the code (i.e. presumably from the
+	// future version of the protocol).
+	//
+	// This is useful on the client that for some operations just round-trips
+	// ObjectRef it received from the server, without trying to interpret it.
+	// Using AnyHash allows the client to be friendlier to future protocol
+	// changes. This is particularly important in self-update flow.
+	AnyHash HashAlgoValidation = false
+)
+
+// ValidateInstanceID returns an error if the string isn't a valid instance id.
+//
+// If v is KnownHash, will verify the current version of the code understands
+// the hash algo encoded in idd. Otherwise (if v is AnyHash) will just validate
+// that iid looks syntactically sane, and will accept any hash algo (even if the
+// current code doesn't understand it). This is useful when round-tripping
+// ObjectRefs and instance IDs through the (outdated) client code back to the
+// server.
+func ValidateInstanceID(iid string, v HashAlgoValidation) (err error) {
 	if len(iid) == 40 {
 		// Legacy SHA1-based instances use hex(sha1) as instance ID, 40 chars.
 		err = checkIsHex(iid)
 	} else {
-		_, err = decodeObjectRef(iid)
+		var ref *api.ObjectRef
+		ref, err = decodeObjectRef(iid)
+		if err == nil && v == KnownHash {
+			err = ValidateObjectRef(ref, KnownHash)
+		}
 	}
 	if err == nil {
 		return
@@ -43,26 +75,40 @@ func ValidateInstanceID(iid string) (err error) {
 // ValidateObjectRef returns a grpc-annotated error if the given object ref is
 // invalid.
 //
+// If v is KnownHash, will verify the current version of the code understands
+// the hash algo. Otherwise (if v is AnyHash) will just validate that the hex
+// digest looks sane, and will accept any hash algo (even if the current code
+// doesn't understand it). This is useful when round-tripping ObjectRefs and
+// instance IDs through the (outdated) client code back to the server.
+//
 // Errors have InvalidArgument grpc code.
-func ValidateObjectRef(ref *api.ObjectRef) error {
+func ValidateObjectRef(ref *api.ObjectRef, v HashAlgoValidation) error {
 	if ref == nil {
 		return errors.Reason("the object ref is not provided").
 			Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
-	if err := ValidateHashAlgo(ref.HashAlgo); err != nil {
-		return err
-	}
-
-	hexDigestLen := supportedAlgos[ref.HashAlgo].hexDigestLen
-	if len(ref.HexDigest) != hexDigestLen {
-		return errors.Reason("invalid %s digest: expecting %d chars, got %d", ref.HashAlgo, hexDigestLen, len(ref.HexDigest)).
-			Tag(grpcutil.InvalidArgumentTag).Err()
+	switch {
+	case ref.HashAlgo < 0:
+		return errors.Reason("bad negative hash algo").Tag(grpcutil.InvalidArgumentTag).Err()
+	case ref.HashAlgo == 0:
+		return errors.Reason("unspecified hash algo").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
 	if err := checkIsHex(ref.HexDigest); err != nil {
-		return errors.Annotate(err, "invalid %s digest", ref.HashAlgo).
+		return errors.Annotate(err, "invalid %s hex digest", ref.HashAlgo).
 			Tag(grpcutil.InvalidArgumentTag).Err()
+	}
+
+	if v {
+		if err := ValidateHashAlgo(ref.HashAlgo); err != nil {
+			return err
+		}
+		hexDigestLen := supportedAlgos[ref.HashAlgo].hexDigestLen
+		if len(ref.HexDigest) != hexDigestLen {
+			return errors.Reason("invalid %s digest: expecting %d chars, got %d", ref.HashAlgo, hexDigestLen, len(ref.HexDigest)).
+				Tag(grpcutil.InvalidArgumentTag).Err()
+		}
 	}
 
 	return nil
@@ -83,7 +129,7 @@ func ValidateObjectRef(ref *api.ObjectRef) error {
 // The ref is not checked for correctness. Use ValidateObjectRef if this is
 // a concern. Panics if something is not right.
 func ObjectRefToInstanceID(ref *api.ObjectRef) string {
-	if err := ValidateObjectRef(ref); err != nil {
+	if err := ValidateObjectRef(ref, AnyHash); err != nil {
 		panic(err)
 	}
 	if ref.HashAlgo == api.HashAlgo_SHA1 {
@@ -116,25 +162,6 @@ func InstanceIDToObjectRef(iid string) *api.ObjectRef {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// possibleObjRefLen is used to quickly skip wrong IDs in decodeObjectRef.
-var possibleObjRefLen map[int]bool
-
-func init() {
-	possibleObjRefLen = make(map[int]bool, len(supportedAlgos))
-	for algo, prop := range supportedAlgos {
-		if prop.hash != nil {
-			l := len(encodeObjectRef(&api.ObjectRef{
-				HashAlgo:  api.HashAlgo(algo),
-				HexDigest: strings.Repeat("0", prop.hexDigestLen),
-			}))
-			possibleObjRefLen[l] = true
-		}
-	}
-	if possibleObjRefLen[40] {
-		panic("oops, there'll be no way to distinguish legacy SHA1 ids from new ones")
-	}
-}
-
 // encodeObjectRef returns a compact stable human-readable serialization of
 // ObjectRef.
 //
@@ -143,14 +170,19 @@ func init() {
 //
 // Panics if ref is invalid.
 func encodeObjectRef(ref *api.ObjectRef) string {
-	if ref.HashAlgo < 0 || int(ref.HashAlgo) >= len(supportedAlgos) {
-		panic(fmt.Errorf("unknown hash algo %d", ref.HashAlgo))
+	switch {
+	case ref.HashAlgo < 0:
+		panic(fmt.Errorf("bad negative hash algo %d", ref.HashAlgo))
+	case ref.HashAlgo == 0:
+		panic(fmt.Errorf("unspecified hash algo"))
 	}
-	switch prop := supportedAlgos[ref.HashAlgo]; {
-	case prop.hexDigestLen == 0:
-		panic(fmt.Errorf("unsupported hash algo %s", ref.HashAlgo))
-	case len(ref.HexDigest) != prop.hexDigestLen:
-		panic(fmt.Errorf("wrong hex digest len %d for algo %s", len(ref.HexDigest), ref.HashAlgo))
+
+	// If algo is known to us, make sure it is valid. Otherwise just encode what
+	// we've given, assuming the consumer will eventually understand it.
+	if int(ref.HashAlgo) < len(supportedAlgos) {
+		if prop := supportedAlgos[ref.HashAlgo]; len(ref.HexDigest) != prop.hexDigestLen {
+			panic(fmt.Errorf("wrong hex digest len %d for algo %s", len(ref.HexDigest), ref.HashAlgo))
+		}
 	}
 
 	blob, err := hex.DecodeString(ref.HexDigest)
@@ -164,8 +196,10 @@ func encodeObjectRef(ref *api.ObjectRef) string {
 // decodeObjectRef is a reverse of encodeObjectRef.
 func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 	// Skip obviously wrong instance IDs faster and with a cleaner error message.
-	if !possibleObjRefLen[len(iid)] {
-		return nil, fmt.Errorf("not a valid size for a digest")
+	// We assume we use at least 160 bit digests here (which translates to at
+	// least 28 bytes of encoded iid).
+	if len(iid) < 28 {
+		return nil, fmt.Errorf("not a valid size for an encoded digest")
 	}
 
 	blob, err := base64.RawURLEncoding.DecodeString(iid)
@@ -174,19 +208,24 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 		return nil, fmt.Errorf("cannot base64 decode - %s", err)
 	case len(blob) == 0:
 		return nil, fmt.Errorf("empty")
+	case len(blob)%2 != 1: // 1 byte for hashAlgo, the rest is the digest
+		return nil, fmt.Errorf("the digest can't be odd")
 	}
 
 	hashAlgo := api.HashAlgo(blob[len(blob)-1])
 	digest := blob[:len(blob)-1]
 
-	if int(hashAlgo) >= len(supportedAlgos) {
-		return nil, fmt.Errorf("unknown hash algo %d", hashAlgo)
+	if hashAlgo == 0 {
+		return nil, fmt.Errorf("unspecified hash algo (0)")
 	}
-	switch prop := supportedAlgos[hashAlgo]; {
-	case prop.hexDigestLen == 0:
-		return nil, fmt.Errorf("unsupported hash algo %s", hashAlgo)
-	case len(digest)*2 != prop.hexDigestLen:
-		return nil, fmt.Errorf("wrong digest len %d for algo %s", len(digest), hashAlgo)
+
+	// If algo is known to us, make sure it is valid. Otherwise just decode what
+	// we've given, assuming the caller will later verify the hash using
+	// ValidateHashAlgo, if really needed.
+	if int(hashAlgo) < len(supportedAlgos) {
+		if prop := supportedAlgos[hashAlgo]; len(digest)*2 != prop.hexDigestLen {
+			return nil, fmt.Errorf("wrong digest len %d for algo %s", len(digest), hashAlgo)
+		}
 	}
 
 	return &api.ObjectRef{
@@ -196,7 +235,15 @@ func decodeObjectRef(iid string) (*api.ObjectRef, error) {
 }
 
 // checkIsHex returns an error if a string is not a lowercase hex string.
+//
+// Empty string is rejected as invalid too.
 func checkIsHex(s string) error {
+	switch {
+	case s == "":
+		return fmt.Errorf("empty hex string")
+	case len(s)%2 != 0:
+		return fmt.Errorf("uneven number of symbols in the hex string")
+	}
 	for _, c := range s {
 		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
 			return fmt.Errorf("bad lowercase hex string %q, wrong char %c", s, c)

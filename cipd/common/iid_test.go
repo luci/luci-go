@@ -37,26 +37,37 @@ func TestValidateInstanceID(t *testing.T) {
 	}
 	for _, iid := range good {
 		Convey(fmt.Sprintf("Works with %q", iid), t, func() {
-			So(ValidateInstanceID(iid), ShouldBeNil)
+			So(ValidateInstanceID(iid, KnownHash), ShouldBeNil)
+			So(ValidateInstanceID(iid, AnyHash), ShouldBeNil)
 		})
 	}
 
 	bad := []string{
 		"",
 		"€aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"gaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"AAAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajM==", // no padding allowed
 		"/7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUC", // should be URL encoding, NOT std
 		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUA", // unspecified hash algo
-		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUD", // unrecognized hash algo
 		"AAAAAAAAAAAAAAAAAAAAAAAAAAAC",                 // bad digest len for an algo
 	}
 	for _, iid := range bad {
 		Convey(fmt.Sprintf("Fails with %q", iid), t, func() {
-			So(ValidateInstanceID(iid), ShouldNotBeNil)
+			So(ValidateInstanceID(iid, KnownHash), ShouldNotBeNil)
+			So(ValidateInstanceID(iid, AnyHash), ShouldNotBeNil)
+		})
+	}
+
+	unknown := []string{
+		"B7r75joOfFfFcq7fHCKAIrU34oeFAT174Bf8eHMajMUD", // unrecognized hash algo
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",      // happens to be looking like unknown hash algo
+	}
+	for _, iid := range unknown {
+		Convey(fmt.Sprintf("Works with %q", iid), t, func() {
+			So(ValidateInstanceID(iid, KnownHash), ShouldNotBeNil)
+			So(ValidateInstanceID(iid, AnyHash), ShouldBeNil)
 		})
 	}
 }
@@ -68,39 +79,64 @@ func TestValidateObjectRef(t *testing.T) {
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: "0123456789abcdef0123456789abcdef00000000",
-		}), ShouldBeNil)
+		}, KnownHash), ShouldBeNil)
 
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
-			HexDigest: "abc",
-		}), ShouldErrLike, "expecting 40 chars, got 3")
+			HexDigest: "abcd",
+		}, KnownHash), ShouldErrLike, "expecting 40 chars, got 4")
 
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA1,
 			HexDigest: strings.Repeat("A", 40), // uppercase are forbidden
-		}), ShouldErrLike, "wrong char")
+		}, KnownHash), ShouldErrLike, "wrong char")
 	})
 
 	Convey("SHA256", t, func() {
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
-		}), ShouldBeNil)
+		}, KnownHash), ShouldBeNil)
 
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
-			HexDigest: "abc",
-		}), ShouldErrLike, "expecting 64 chars, got 3")
+			HexDigest: "abcd",
+		}, KnownHash), ShouldErrLike, "expecting 64 chars, got 4")
 
 		So(ValidateObjectRef(&api.ObjectRef{
 			HashAlgo:  api.HashAlgo_SHA256,
 			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
-		}), ShouldErrLike, "wrong char")
+		}, KnownHash), ShouldErrLike, "wrong char")
+	})
+
+	Convey("Some future hash in KnownHash mode", t, func() {
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
+		}, KnownHash), ShouldErrLike, "unsupported hash algorithm 33")
+	})
+
+	Convey("Some future hash in AnyHash mode", t, func() {
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: "a948904f2f0f479b8f8197694b30184b0d2ed1c1cd2a1ec0fb85d299a192a447",
+		}, AnyHash), ShouldBeNil)
+
+		// Still checks that the hex digest looks like a digest.
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: "abc",
+		}, KnownHash), ShouldErrLike, "uneven number of symbols")
+
+		So(ValidateObjectRef(&api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: strings.Repeat("A", 64), // uppercase are forbidden
+		}, KnownHash), ShouldErrLike, "wrong char")
 	})
 
 	Convey("Bad args", t, func() {
-		So(ValidateObjectRef(nil), ShouldErrLike, "not provided")
-		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 12345}), ShouldErrLike, "unsupported")
+		So(ValidateObjectRef(nil, AnyHash), ShouldErrLike, "not provided")
+		So(ValidateObjectRef(&api.ObjectRef{HashAlgo: 0}, AnyHash), ShouldErrLike, "unspecified hash algo")
 	})
 }
 
@@ -137,10 +173,25 @@ func TestRefIIDConversion(t *testing.T) {
 		})
 	})
 
+	Convey("Some future unknown hash", t, func() {
+		hex := strings.Repeat("a", 60)
+		iid := "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqIQ"
+
+		So(ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: hex,
+		}), ShouldEqual, iid)
+
+		So(InstanceIDToObjectRef(iid), ShouldResemble, &api.ObjectRef{
+			HashAlgo:  33,
+			HexDigest: hex,
+		})
+	})
+
 	Convey("Wrong length in InstanceIDToObjectRef", t, func() {
 		So(func() {
 			InstanceIDToObjectRef("aaaa")
-		}, ShouldPanicLike, "not a valid size for a digest")
+		}, ShouldPanicLike, "not a valid size for an encoded digest")
 	})
 
 	Convey("Bad format in InstanceIDToObjectRef", t, func() {

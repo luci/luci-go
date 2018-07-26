@@ -417,11 +417,11 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 		return fmt.Errorf("invalid verification mode %q", opts.VerificationMode)
 	}
 
-	// Assert instanceID is well-formated if given. This is important for
-	// SkipHashVerification mode, where the user can pass whatever, and for
-	// VerifyHash that parses the instance ID.
+	// Assert instanceID is well-formated and uses a hash known to us, if given.
+	// This is important for SkipHashVerification mode, where the user can pass
+	// whatever, and for VerifyHash that parses the instance ID.
 	if opts.InstanceID != "" {
-		if err := common.ValidateInstanceID(opts.InstanceID); err != nil {
+		if err := common.ValidateInstanceID(opts.InstanceID, common.KnownHash); err != nil {
 			return err
 		}
 	}

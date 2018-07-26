@@ -142,7 +142,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.2.0"
+	UserAgent = "cipd 2.2.1"
 )
 
 func init() {
@@ -680,7 +680,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 	}
 
 	// Is it instance ID already? Don't bother calling the backend.
-	if common.ValidateInstanceID(version) == nil {
+	if common.ValidateInstanceID(version, common.AnyHash) == nil {
 		return common.Pin{PackageName: packageName, InstanceID: version}, nil
 	}
 	if err := common.ValidateInstanceVersion(version); err != nil {
@@ -981,7 +981,7 @@ func (client *clientImpl) finalizeUpload(ctx context.Context, opID string, timeo
 }
 
 func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error) {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
 	if opts == nil {
@@ -1005,7 +1005,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 	if err := common.ValidatePackageRef(ref); err != nil {
 		return err
 	}
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
 	logging.Infof(ctx, "cipd: setting ref of %q: %q => %q", pin.PackageName, ref, pin.InstanceID)
@@ -1031,7 +1031,7 @@ func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin c
 }
 
 func (client *clientImpl) AttachTagsWhenReady(ctx context.Context, pin common.Pin, tags []string) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
 	if len(tags) == 0 {
@@ -1178,7 +1178,7 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 }
 
 func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return nil, err
 	}
 	if cache := client.getInstanceCache(ctx); cache != nil {
@@ -1188,7 +1188,7 @@ func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (lo
 }
 
 func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, output io.WriteSeeker) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return err
 	}
 
@@ -1340,7 +1340,7 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 //
 // Any other error from the callback is propagated as is.
 func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb func(local.PackageInstance) error) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return err
 	}
 
@@ -1394,7 +1394,7 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 }
 
 func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.PinSliceBySubdir, paranoia ParanoidMode, dryRun bool) (aMap ActionMap, err error) {
-	if err = allPins.Validate(); err != nil {
+	if err = allPins.Validate(common.AnyHash); err != nil {
 		return
 	}
 	if err = paranoia.Validate(); err != nil {
