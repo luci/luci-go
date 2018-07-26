@@ -635,8 +635,11 @@ func (d *txnFSDest) Begin(ctx context.Context) error {
 	}
 
 	// Create the staging directory, on the same level as the destination
-	// directory, so it can just be renamed into d.dest on completion.
-	tempDir, err := tempDir(filepath.Dir(d.dest), "", 0700)
+	// directory, so it can just be renamed into d.dest on completion. Let umask
+	// trim the permissions appropriately. Note that it is not really a "private"
+	// temp dir, since it will be eventually renamed into the "public" destination
+	// that should be readable to everyone (sans umask).
+	tempDir, err := tempDir(filepath.Dir(d.dest), "", 0777)
 	if err != nil {
 		return err
 	}
