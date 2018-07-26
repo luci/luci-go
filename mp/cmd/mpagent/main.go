@@ -38,8 +38,6 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/logging/teelogger"
 	"go.chromium.org/luci/common/tsmon"
-
-	_ "go.chromium.org/luci/common/tsmon/metric"
 )
 
 // Strategy is platform-specific agent implementation. See agent_*.go.
@@ -309,12 +307,14 @@ func (agent *Agent) handle(ctx context.Context, instruction *machine.ComponentsM
 	}
 
 	logging.Infof(ctx, "Received new instruction:\n%s", instruction)
+	instructionsReceived.Add(ctx, 1, agent.server, instruction.Instruction.SwarmingServer)
 	if err := agent.configureSwarmingAutoStart(ctx, instruction.Instruction.SwarmingServer); err != nil {
 		return err
 	}
 	if err := agent.mp.ack(ctx, agent.hostname, "GCE"); err != nil {
 		return err
 	}
+	instructionsAcked.Add(ctx, 1, agent.server, instruction.Instruction.SwarmingServer)
 	return agent.reboot(ctx)
 }
 
