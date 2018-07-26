@@ -133,7 +133,7 @@ func packagePage(c *router.Context, pkg string) error {
 
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
 		"Package":     pkg,
-		"Breadcrumbs": breadcrumbs(pfx),
+		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, siblings.Prefixes),
 		"Packages":    packagesListing(pfx, siblings.Packages, pkg),
 		"Instances":   instListing,

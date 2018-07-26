@@ -39,6 +39,9 @@ func init() {
 	// Install auth, config and tsmon handlers.
 	standard.InstallHandlers(r)
 
+	// For devappserver's sake.
+	impl.TQ.InstallRoutes(r, standard.Base())
+
 	// Register non-pRPC routes, such as the client bootstrap handler and routes
 	// to support minimal subset of legacy API required to let old CIPD clients
 	// fetch packages and self-update.

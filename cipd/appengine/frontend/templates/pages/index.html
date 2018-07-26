@@ -1,14 +1,6 @@
 {{define "content"}}
 
-<ol class="breadcrumb">
-  {{range $crumb := .Breadcrumbs }}
-    {{if $crumb.Last}}
-    <li class="breadcrumb-item active">{{$crumb.Title}}</li>
-    {{else}}
-    <li class="breadcrumb-item"><a href="{{$crumb.Href}}">{{$crumb.Title}}</a></li>
-    {{end}}
-  {{end}}
-</ol>
+{{template "breadcrumbs" .}}
 
 <div class="container">
   <div class="row">

@@ -1,0 +1,48 @@
+{{define "content"}}
+
+{{template "breadcrumbs" .}}
+
+<div class="container">
+  <div class="row">
+
+    <div class="col-sm-4" style="padding-right:20px; border-right: 1px solid #ccc;">
+      <h4 class="monospace">{{.Prefix}}/</h4>
+      <ul class="list-group monospace">
+        {{range $item := .Family}}
+
+          {{if $item.Current}}
+          <li class="list-group-item">
+            <b>{{$item.Title}}</b>
+            <span class="glyphicon glyphicon-arrow-right pull-right"></span>
+          </li>
+          {{else if $item.Missing}}
+          <li class="list-group-item disabled">
+            {{$item.Title}}
+            {{if not $item.Skipped}}
+              <small class="pull-right">no such version</small>
+            {{end}}
+          </li>
+          {{else if $item.Broken}}
+          <li class="list-group-item list-group-item-danger">
+            {{$item.Title}}
+            <span class="glyphicon glyphicon-exclamation-sign pull-right" title="{{$item.Err}}"></span>
+          </li>
+          {{else}}
+          <li class="list-group-item">
+            <a href="{{$item.InstanceHref}}">{{$item.Title}}</a>
+          </li>
+          {{end}}
+
+        {{end}}
+      </ul>
+
+    </div>
+
+    <div class="col-sm-8">
+      <h1>TODO</h1>
+    </div>
+
+  </div>
+</div>
+
+{{end}}
