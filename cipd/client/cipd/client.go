@@ -142,7 +142,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.2.1"
+	UserAgent = "cipd 2.2.2"
 )
 
 func init() {
@@ -265,7 +265,8 @@ type Client interface {
 
 	// SearchInstances finds instances of some package with all given tags.
 	//
-	// Returns their concrete Pins.
+	// Returns their concrete Pins. If the package doesn't exist at all, returns
+	// empty slice and nil error.
 	SearchInstances(ctx context.Context, packageName string, tags []string) (common.PinSlice, error)
 
 	// ListInstances enumerates instances of a package, most recent first.
@@ -1121,7 +1122,10 @@ func (client *clientImpl) SearchInstances(ctx context.Context, packageName strin
 		Tags:     apiTags,
 		PageSize: 1000, // TODO(vadimsh): Support pagination on the client.
 	}, expectedCodes)
-	if err != nil {
+	switch {
+	case status.Code(err) == codes.NotFound: // no such package => no instances
+		return nil, nil
+	case err != nil:
 		return nil, humanErr(err)
 	}
 
