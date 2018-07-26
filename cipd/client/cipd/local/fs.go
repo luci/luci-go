@@ -26,7 +26,6 @@ import (
 	"sync"
 	"time"
 
-	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
@@ -103,8 +102,9 @@ type FileSystem interface {
 
 	// CleanupTrash attempts to remove all files that ended up in the trash.
 	//
-	// This is best effort operation.
-	CleanupTrash(ctx context.Context) error
+	// This is a best effort operation. Errors are logged (either at Debug or
+	// Warning level, depending on severity of the trash state).
+	CleanupTrash(ctx context.Context)
 }
 
 // NewFileSystem returns default FileSystem implementation.
@@ -161,7 +161,7 @@ func (f *fsImplErr) EnsureFile(context.Context, string, func(*os.File) error) er
 func (f *fsImplErr) EnsureFileGone(context.Context, string) error                   { return f.err }
 func (f *fsImplErr) EnsureDirectoryGone(context.Context, string) error              { return f.err }
 func (f *fsImplErr) Replace(context.Context, string, string) error                  { return f.err }
-func (f *fsImplErr) CleanupTrash(context.Context) error                             { return f.err }
+func (f *fsImplErr) CleanupTrash(context.Context)                                   {}
 
 /// Implementation.
 
@@ -401,36 +401,33 @@ func (f *fsImpl) Replace(ctx context.Context, oldpath, newpath string) error {
 	return nil
 }
 
-func (f *fsImpl) CleanupTrash(ctx context.Context) error {
+func (f *fsImpl) CleanupTrash(ctx context.Context) {
 	trashed, err := ioutil.ReadDir(f.trash)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return
 		}
-		return err
-	}
-	if len(trashed) == 0 {
-		os.Remove(f.trash) // it's OK if it fails, not a big deal
-		return nil
+		logging.Warningf(ctx, "fs: cannot read the trash dir - %s", err)
+		return
 	}
 
-	logging.Infof(ctx, "fs: cleaning up trash (%d items)...", len(trashed))
-
-	var merr errors.MultiError
+	if len(trashed) > 0 {
+		logging.Debugf(ctx, "fs: cleaning up trash (%d items)...", len(trashed))
+	}
+	undead := 0
 	for _, file := range trashed {
-		if err := f.cleanupTrashedFile(ctx, filepath.Join(f.trash, file.Name())); err != nil {
-			merr = append(merr, err)
+		if f.cleanupTrashedFile(ctx, filepath.Join(f.trash, file.Name())) != nil {
+			undead++
 		}
 	}
 
-	if len(merr) != 0 {
-		return merr
+	switch {
+	case undead > 100:
+		logging.Warningf(ctx, "fs: too many undeletable files (%d) in the trash dir %s", undead, f.trash)
+	case undead == 0:
+		// Remove the empty directory too. Not a big deal if fails.
+		os.Remove(f.trash)
 	}
-
-	// Remove the empty directory too. Not a big deal if fails.
-	os.Remove(f.trash)
-
-	return nil
 }
 
 // moveToTrash is best-effort function to move file or dir to trash.
@@ -461,7 +458,7 @@ func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	}
 	err := os.RemoveAll(path)
 	if err != nil {
-		logging.Warningf(ctx, "fs: failed to cleanup trashed file - %s", err)
+		logging.Debugf(ctx, "fs: failed to cleanup trashed file - %s", err)
 	}
 	return err
 }

@@ -178,8 +178,9 @@ type Deployer interface {
 
 	// CleanupTrash attempts to remove stale files.
 	//
-	// May return errors if some files are still locked, this is fine.
-	CleanupTrash(ctx context.Context) error
+	// This is a best effort operation. Errors are logged (either at Debug or
+	// Warning level, depending on severity of the trash state).
+	CleanupTrash(ctx context.Context)
 }
 
 // NewDeployer return default Deployer implementation.
@@ -222,7 +223,7 @@ func (d errDeployer) RepairDeployed(context.Context, string, common.Pin, RepairP
 
 func (d errDeployer) TempFile(context.Context, string) (*os.File, error) { return nil, d.err }
 
-func (d errDeployer) CleanupTrash(context.Context) error { return d.err }
+func (d errDeployer) CleanupTrash(context.Context) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
@@ -658,8 +659,8 @@ func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileM
 	return tempDir(dir, prefix, mode)
 }
 
-func (d *deployerImpl) CleanupTrash(ctx context.Context) error {
-	return d.fs.CleanupTrash(ctx)
+func (d *deployerImpl) CleanupTrash(ctx context.Context) {
+	d.fs.CleanupTrash(ctx)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

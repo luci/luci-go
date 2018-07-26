@@ -511,9 +511,7 @@ func (client *clientImpl) saveTagCache(ctx context.Context) {
 }
 
 func (client *clientImpl) cleanupTrash(ctx context.Context) {
-	if err := client.deployer.CleanupTrash(ctx); err != nil {
-		logging.Warningf(ctx, "cipd: failed to cleanup trash (this is fine) - %s", err)
-	}
+	client.deployer.CleanupTrash(ctx)
 }
 
 // getTagCache lazy-initializes tagCache and returns it.

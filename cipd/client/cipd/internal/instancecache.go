@@ -248,9 +248,7 @@ func (c *InstanceCache) gc(ctx context.Context, state *messages.InstanceCache, n
 		return true
 	})
 
-	if err := c.fs.CleanupTrash(ctx); err != nil {
-		logging.Warningf(ctx, "cipd: failed to cleanup cache trash (this is fine) - %s", err)
-	}
+	c.fs.CleanupTrash(ctx)
 }
 
 // readState loads cache state from the state file.
