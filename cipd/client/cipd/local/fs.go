@@ -461,7 +461,8 @@ func (f *fsImpl) cleanupTrashedFile(ctx context.Context, path string) error {
 	}
 	err := os.RemoveAll(path)
 	if err != nil {
-		logging.Warningf(ctx, "fs: failed to cleanup trashed file - %s", err)
+		// Locked trashed files on Windows are expected, so log at Info verbosity.
+		logging.Infof(ctx, "fs: failed to cleanup trashed file - %s", err)
 	}
 	return err
 }
