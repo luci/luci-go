@@ -500,7 +500,7 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := common.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -859,7 +859,7 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empt
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := common.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -960,7 +960,7 @@ func validateMultiTagReq(pkg string, inst *api.ObjectRef, tags []*api.Tag) error
 	if err := common.ValidatePackageName(pkg); err != nil {
 		return status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := common.ValidateObjectRef(inst); err != nil {
+	if err := common.ValidateObjectRef(inst, common.KnownHash); err != nil {
 		return status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 	return validateTagList(tags)
@@ -1059,7 +1059,7 @@ func (impl *repoImpl) GetInstanceURL(c context.Context, r *api.GetInstanceURLReq
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := common.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1092,7 +1092,7 @@ func (impl *repoImpl) DescribeInstance(c context.Context, r *api.DescribeInstanc
 	if err := common.ValidatePackageName(r.Package); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
 	}
-	if err := common.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1173,7 +1173,7 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 	if !processing.IsClientPackage(r.Package) {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - not a CIPD client package")
 	}
-	if err := common.ValidateObjectRef(r.Instance); err != nil {
+	if err := common.ValidateObjectRef(r.Instance, common.KnownHash); err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "bad 'instance' - %s", err)
 	}
 
@@ -1415,7 +1415,7 @@ func (impl *repoImpl) handleLegacyClientInfo(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
 	iid := r.FormValue("instance_id")
-	if err := common.ValidateInstanceID(iid); err != nil {
+	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
 		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 
@@ -1474,7 +1474,7 @@ func (impl *repoImpl) handleLegacyInstance(ctx *router.Context) error {
 	c, r, w := ctx.Context, ctx.Request, ctx.Writer
 
 	iid := r.FormValue("instance_id")
-	if err := common.ValidateInstanceID(iid); err != nil {
+	if err := common.ValidateInstanceID(iid, common.KnownHash); err != nil {
 		return errors.Annotate(err, "bad instance_id").Tag(grpcutil.InvalidArgumentTag).Err()
 	}
 

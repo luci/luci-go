@@ -124,7 +124,7 @@ func (f *cacheFile) UnderlyingFile() *os.File {
 //
 // If the instance is not found, returns an os.IsNotExists error.
 func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (local.InstanceFile, error) {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}
 
@@ -150,7 +150,7 @@ func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) 
 // write must write the instance contents. May remove some instances from the
 // cache that were not accessed for a long time.
 func (c *InstanceCache) Put(ctx context.Context, pin common.Pin, now time.Time, write func(*os.File) error) error {
-	if err := common.ValidatePin(pin); err != nil {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return err
 	}
 	path, err := c.fs.RootRelToAbs(pin.InstanceID)
@@ -317,7 +317,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 		}
 		existingIDs := stringset.New(len(instanceIDs))
 		for _, id := range instanceIDs {
-			if common.ValidateInstanceID(id) != nil {
+			if common.ValidateInstanceID(id, common.AnyHash) != nil {
 				continue
 			}
 			existingIDs.Add(id)

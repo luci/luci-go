@@ -87,16 +87,16 @@ func validatePathishString(p, title string) error {
 }
 
 // ValidatePin returns error if package name or instance id are invalid.
-func ValidatePin(pin Pin) error {
+func ValidatePin(pin Pin, v HashAlgoValidation) error {
 	if err := ValidatePackageName(pin.PackageName); err != nil {
 		return err
 	}
-	return ValidateInstanceID(pin.InstanceID)
+	return ValidateInstanceID(pin.InstanceID, v)
 }
 
 // ValidatePackageRef returns error if a string doesn't look like a valid ref.
 func ValidatePackageRef(r string) error {
-	if ValidateInstanceID(r) == nil {
+	if ValidateInstanceID(r, AnyHash) == nil {
 		return fmt.Errorf("invalid ref name (looks like an instance ID): %q", r)
 	}
 	if !packageRefRe.MatchString(r) {
@@ -153,7 +153,9 @@ func JoinInstanceTag(t *api.Tag) string {
 //  2) Package ref (e.g. "latest").
 //  3) Instance tag (e.g. "git_revision:abcdef...").
 func ValidateInstanceVersion(v string) error {
-	if ValidateInstanceID(v) == nil || ValidatePackageRef(v) == nil || ValidateInstanceTag(v) == nil {
+	if ValidateInstanceID(v, AnyHash) == nil ||
+		ValidatePackageRef(v) == nil ||
+		ValidateInstanceTag(v) == nil {
 		return nil
 	}
 	return fmt.Errorf("bad version (not an instance ID, a ref or a tag): %q", v)
@@ -252,10 +254,10 @@ type PinSlice []Pin
 
 // Validate ensures that this PinSlice contains no duplicate packages or invalid
 // pins.
-func (s PinSlice) Validate() error {
+func (s PinSlice) Validate(v HashAlgoValidation) error {
 	dedup := stringset.New(len(s))
 	for _, p := range s {
-		if err := ValidatePin(p); err != nil {
+		if err := ValidatePin(p, v); err != nil {
 			return err
 		}
 		if !dedup.Add(p.PackageName) {
@@ -296,12 +298,12 @@ type PinSliceBySubdir map[string]PinSlice
 
 // Validate ensures that this doesn't contain any invalid
 // subdirs, duplicate packages within the same subdir, or invalid pins.
-func (p PinSliceBySubdir) Validate() error {
+func (p PinSliceBySubdir) Validate(v HashAlgoValidation) error {
 	for subdir, pkgs := range p {
 		if err := ValidateSubdir(subdir); err != nil {
 			return err
 		}
-		if err := pkgs.Validate(); err != nil {
+		if err := pkgs.Validate(v); err != nil {
 			return fmt.Errorf("subdir %q: %s", subdir, err)
 		}
 	}
