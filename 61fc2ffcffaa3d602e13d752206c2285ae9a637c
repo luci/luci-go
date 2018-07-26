@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "05450f46_f6ec8cf0",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-26T18:55:51Z",
+      "side": 0,
+      "message": "change to\n\n  logging.Fatalf(ctx, \"cipd: failed to cleanup trash (ignore) - FATAL: %s\", err)",
+      "range": {
+        "startLine": 514,
+        "startChar": 56,
+        "endLine": 514,
+        "endChar": 68
+      },
+      "revId": "61fc2ffcffaa3d602e13d752206c2285ae9a637c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

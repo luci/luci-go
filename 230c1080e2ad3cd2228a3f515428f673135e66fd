@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7aee34e2_7d5fe07f",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 425,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-26T18:55:51Z",
+      "side": 1,
+      "message": "I don\u0027t suppose we can use the size of the accumulated files instead (since we get the Stat for free with ReadDir)? I guess it\u0027s hard to pick a threshold, given the size differences of various cipd packages. Maybe just pick something very high, like 5GB, and then warn on either condition.",
+      "range": {
+        "startLine": 425,
+        "startChar": 6,
+        "endLine": 425,
+        "endChar": 18
+      },
+      "revId": "230c1080e2ad3cd2228a3f515428f673135e66fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
