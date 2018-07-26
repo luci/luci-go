@@ -262,6 +262,18 @@ func PutPendingCount(c context.Context, master, builder string, count int) error
 	})
 }
 
+// touchMaster updates the Modified field of a master entity.
+func touchMaster(c context.Context, name string) error {
+	entity := &masterEntity{
+		Name: name,
+	}
+	if err := datastore.Get(c, entity); err != nil {
+		return err
+	}
+	entity.Modified = clock.Now(c).UTC()
+	return datastore.Put(c, entity)
+}
+
 // ExpireCallback is called when a build is marked as expired.
 type ExpireCallback func(b *buildbot.Build, reason string)
 
@@ -315,6 +327,9 @@ func SaveMaster(c context.Context, master *buildbot.Master,
 	}
 	logging.Debugf(c, "Length of gzipped master data: %d", len(entity.Data))
 	if len(entity.Data) > maxDataSize {
+		if ierr := touchMaster(c, master.Name); ierr != nil {
+			logging.WithError(err).Errorf(c, "Failed to update master entity timestamp.")
+		}
 		return errors.Reason("master data is %d bytes, which is more than %d limit", len(entity.Data), maxDataSize).
 			Tag(TooBigTag).
 			Err()
@@ -442,7 +457,7 @@ type masterEntity struct {
 	Internal bool
 	// Data is the json serialized and gzipped buildbot.Master.
 	Data []byte `gae:",noindex"`
-	// Modified is when this entry was last modified.
+	// Modified is when the last message from buildbot arrived.
 	Modified time.Time
 }
 
