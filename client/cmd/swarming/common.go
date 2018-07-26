@@ -63,7 +63,7 @@ type swarmingServiceImpl struct {
 }
 
 func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-	return s.Service.Tasks.New(req).Fields("task_result").Do()
+	return s.Service.Tasks.New(req).Context(c).Do()
 }
 
 func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
