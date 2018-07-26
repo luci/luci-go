@@ -262,6 +262,18 @@ func PutPendingCount(c context.Context, master, builder string, count int) error
 	})
 }
 
+// TouchMaster updates the Modified field of a master entity.
+func TouchMaster(c context.Context, name string) error {
+	entity := &masterEntity{
+		Name: name,
+	}
+	if err := datastore.Get(c, entity); err != nil {
+		return err
+	}
+	entity.Modified = clock.Now(c).UTC()
+	return datastore.Put(c, entity)
+}
+
 // ExpireCallback is called when a build is marked as expired.
 type ExpireCallback func(b *buildbot.Build, reason string)
 
@@ -442,7 +454,7 @@ type masterEntity struct {
 	Internal bool
 	// Data is the json serialized and gzipped buildbot.Master.
 	Data []byte `gae:",noindex"`
-	// Modified is when this entry was last modified.
+	// Modified is when the last message from buildbot arrived.
 	Modified time.Time
 }
 

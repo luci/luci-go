@@ -159,6 +159,10 @@ func saveMaster(c context.Context, master *buildbot.Master, internal bool) int {
 		logging.WithError(err).Errorf(c, "Could not import master")
 		masterCounter.Add(c, 1, internal, fullname, "failure")
 		if buildstore.TooBigTag.In(err) {
+			// Update the timestamp regardless.
+			if ierr := buildstore.TouchMaster(c, master.Name); ierr != nil {
+				logging.WithError(err).Errorf(c, "Failed to update master entity timestamp.")
+			}
 			// FIXME: there should have been a metric and alert.
 			return 0
 		}
