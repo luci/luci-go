@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9a7bb648_166199ad",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-07-26T02:15:11Z",
+      "side": 1,
+      "message": "conditional on runtime.GOOS? not worth it?",
+      "range": {
+        "startLine": 464,
+        "startChar": 26,
+        "endLine": 464,
+        "endChar": 36
+      },
+      "revId": "cde09fbef32e2100bb876a715e99ee91858dd80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
