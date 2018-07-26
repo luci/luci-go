@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1ed392e8_9fd7dcc9",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 260,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-26T00:41:59Z",
+      "side": 1,
+      "message": "Fine, changed to parameter.\n\nPinSlice is used only in contexts that use AnyHash.",
+      "parentUuid": "0b1fbc2b_ae53bbb3",
+      "range": {
+        "startLine": 260,
+        "startChar": 27,
+        "endLine": 260,
+        "endChar": 34
+      },
+      "revId": "639e58525ddc648d7b40cc04163f8c28e0116144",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7395c7df_d6c4572d",
         "filename": "cipd/common/iid.go",
         "patchSetId": 1
