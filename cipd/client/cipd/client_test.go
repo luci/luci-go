@@ -518,8 +518,8 @@ func TestSearchInstances(t *testing.T) {
 		ctx := context.Background()
 		client, _, repo, _ := mockedCipdClient(c)
 
-		Convey("Works", func() {
-			repo.expect(rpcCall{
+		searchInstanceRPC := func() rpcCall {
+			return rpcCall{
 				method: "SearchInstances",
 				in: &api.SearchInstancesRequest{
 					Package: "a/b",
@@ -542,7 +542,11 @@ func TestSearchInstances(t *testing.T) {
 					},
 					NextPageToken: "blah", // ignored for now
 				},
-			})
+			}
+		}
+
+		Convey("Works", func() {
+			repo.expect(searchInstanceRPC())
 
 			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
 			So(err, ShouldBeNil)
@@ -568,19 +572,22 @@ func TestSearchInstances(t *testing.T) {
 		})
 
 		Convey("Error response", func() {
-			repo.expect(rpcCall{
-				method: "SearchInstances",
-				in: &api.SearchInstancesRequest{
-					Package: "a/b",
-					Tags: []*api.Tag{
-						{Key: "k", Value: "v"},
-					},
-					PageSize: 1000,
-				},
-				err: status.Errorf(codes.PermissionDenied, "blah error"),
-			})
-			_, err := client.SearchInstances(ctx, "a/b", []string{"k:v"})
+			rpc := searchInstanceRPC()
+			rpc.err = status.Errorf(codes.PermissionDenied, "blah error")
+			repo.expect(rpc)
+
+			_, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
 			So(err, ShouldErrLike, "blah error")
+		})
+
+		Convey("No package", func() {
+			rpc := searchInstanceRPC()
+			rpc.err = status.Errorf(codes.NotFound, "no such package")
+			repo.expect(rpc)
+
+			out, err := client.SearchInstances(ctx, "a/b", []string{"k1:v1", "k2:v2"})
+			So(out, ShouldHaveLength, 0)
+			So(err, ShouldBeNil)
 		})
 	})
 }
