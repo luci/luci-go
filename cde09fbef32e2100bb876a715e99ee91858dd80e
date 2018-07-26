@@ -22,6 +22,30 @@
       "revId": "cde09fbef32e2100bb876a715e99ee91858dd80e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "641af14f_5b30d46c",
+        "filename": "cipd/client/cipd/local/fs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 464,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-07-26T02:42:10Z",
+      "side": 1,
+      "message": "Nah. Also I\u0027ve never seen this on Linux or OSX anyway.\n\nAlso, I\u0027ve realized \u0027selfupdate\u0027 runs on default logging level, so I lowered this line to Debugf() level too :-/\n\nTo counteract it I\u0027ve added warning level logging to CleanupTrash if it finds excessive amount of undeletable files in the trash.",
+      "parentUuid": "9a7bb648_166199ad",
+      "range": {
+        "startLine": 464,
+        "startChar": 26,
+        "endLine": 464,
+        "endChar": 36
+      },
+      "revId": "cde09fbef32e2100bb876a715e99ee91858dd80e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
