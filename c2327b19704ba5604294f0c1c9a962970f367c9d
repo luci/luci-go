@@ -22,6 +22,30 @@
       "revId": "c2327b19704ba5604294f0c1c9a962970f367c9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "16ebb678_9a9d2059",
+        "filename": "buildbucket/proto/doc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-27T18:56:14Z",
+      "side": 1,
+      "message": "yes. i will move this. my main problem is that these functions are so undiscoverable that i have to write this.",
+      "parentUuid": "3e17f829_cdbc7faa",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 37
+      },
+      "revId": "c2327b19704ba5604294f0c1c9a962970f367c9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
