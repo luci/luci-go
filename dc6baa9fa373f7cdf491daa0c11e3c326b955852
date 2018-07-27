@@ -574,6 +574,24 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "240418b8_2a897e73",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-27T23:46:13Z",
+      "side": 1,
+      "message": "Done.\n\nI mostly took the convertBuildSteps description for the public function, let me know what you think.",
+      "parentUuid": "255a4ab5_5d3e0225",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }

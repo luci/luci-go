@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bc1e3d1f_278f4708",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-27T23:46:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d61c86ca_263ebe08",
+      "range": {
+        "startLine": 36,
+        "startChar": 69,
+        "endLine": 36,
+        "endChar": 92
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "75083b87_91044e42",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 4
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "c22c3f41_6c18b86b",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-27T23:46:13Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "75083b87_91044e42",
+      "range": {
+        "startLine": 54,
+        "startChar": 3,
+        "endLine": 54,
+        "endChar": 4
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14b865eb_150d91d8",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 4
@@ -68,6 +116,30 @@
       "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc6321d8_4d2a444a",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-27T23:46:13Z",
+      "side": 1,
+      "message": "Done; mostly appropriated this+description to the public-facing function.",
+      "parentUuid": "14b865eb_150d91d8",
+      "range": {
+        "startLine": 58,
+        "startChar": 24,
+        "endLine": 58,
+        "endChar": 41
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -106,6 +178,30 @@
       "side": 1,
       "message": "or dest could be a field of the struct",
       "parentUuid": "185046d3_259814c5",
+      "range": {
+        "startLine": 79,
+        "startChar": 38,
+        "endLine": 79,
+        "endChar": 41
+      },
+      "revId": "cf0e9aa7ce92d79c295e90958bd122704b02f81b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "760483aa_a8e2b1c0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-27T23:46:13Z",
+      "side": 1,
+      "message": "OK. That had seemed more pythonic and I thought a more functional approach would be preferred here, but sg.",
+      "parentUuid": "2b80ab50_6952c4e6",
       "range": {
         "startLine": 79,
         "startChar": 38,
