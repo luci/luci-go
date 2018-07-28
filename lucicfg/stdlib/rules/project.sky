@@ -1,0 +1,136 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Defines 'project' rule used to declare a LUCI project."""
+
+load(
+    'builtin:go.chromium.org/luci/common/proto/config/project_config.proto',
+    config_pb = 'config')
+load(
+    'builtin:go.chromium.org/luci/lucicfg/stdlib/types.proto',
+    types_pb ='lucicfg')
+load('builtin:lib/acls.sky', 'acls')
+load('builtin:lib/services.sky', 'services')
+
+
+# Last defined project as types_pb.Project.
+_cur_proj = mutable()
+
+
+def _project(
+    name,
+    repo = None,
+    logo_url = None,
+    favicon_url = None,
+
+    # ACLs.
+    readers = None,
+
+    # Services used by rules in the project by default.
+    buildbucket = None,
+    logdog = None,
+    milo = None,
+    scheduler = None,
+    swarming = None):
+  """Defines a LUCI project for which configs are being generated.
+
+  Currently only one project is supported.
+
+  Args:
+    name: LUCI project name, as defined in the project registry in luci-config.
+    repo: main git repository URL (may be used as default in various rules).
+    logo_url: storage.googleapis.com URL to a PNG project logo, if any.
+    favicon_url: storage.googleapis.com URL to a project icon, if any.
+
+    readers: list of groups that can read this project's data.
+
+    buildbucket: app ID of a Buildbucket service to use by default.
+    logdog: app ID of a Logdog service to use by default.
+    milo: app ID of a Milo service to use by default.
+    scheduler: app ID of a Scheduler service to use by default.
+    swarming: app ID of a Swarming service to use by default.
+  """
+  readers = acls.normalize('readers', readers)
+
+  p = types_pb.Project(
+      name = name,
+      readers = readers,
+      repo = repo,
+      logo_url = logo_url,
+      favicon_url = favicon_url,
+  )
+  if buildbucket:
+    p.buildbucket = services.info(buildbucket)
+  if logdog:
+    p.logdog = services.info(logdog)
+  if milo:
+    p.milo = services.info(milo)
+  if scheduler:
+    p.scheduler = services.info(scheduler)
+  if swarming:
+    p.swarming = services.info(swarming)
+
+  # Let the other skylark rules know about the project.
+  if _cur_proj:
+    fail('only one project can be defined currently')
+  _cur_proj.set(p)
+
+  # And actually generate project config.
+  __write_proto_later(
+      'project',
+      'project.cfg',
+      config_pb.ProjectCfg(
+          name = name,
+          access = readers,
+      ),
+  )
+
+
+################################################################################
+
+
+def _current():
+  """Returns information about the last defined project, as types_pb.Project."""
+  if not _cur_proj:
+    fail('define a project first using project(...) rule')
+  return _cur_proj.get()
+
+
+def _service(key, app_id, required = True):
+  """Returns types_pb.Service for the given service kind, perhaps taking it from
+  the project defaults.
+
+  Args:
+    key: key in types_pb.Project to lookup if app_id is not given (e.g. 'milo').
+    app_id: app ID of a service to fetch info for, or None to pick it from the
+        project defaults.
+    required: if True, fail if the service is not set, otherwise return None.
+
+  Returns:
+    types_pb.Service or None.
+  """
+  if app_id:
+    return services.info(app_id)
+  default = getattr(_current(), key)
+  if not default and required:
+    fail('%s app ID is not defined in the rule nor in the project' % key)
+  return default
+
+
+# Exported symbols.
+project = struct(
+    project = _project,
+    current = _current,
+    service = _service,
+)

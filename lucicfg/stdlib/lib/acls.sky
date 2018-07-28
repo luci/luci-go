@@ -1,0 +1,100 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Utilities for working with access control lists."""
+
+
+def _split(
+    title,
+    acl,
+    allow_empty = False,
+    only_groups = False,
+    only_idents = False):
+  """Categorizes given list of principals into list of groups and identities.
+
+  Follows these rules (sequentially):
+    1) If an item has a form <kind>:<value>, compares kind to 'group'.
+    2) If an item has '/', it is a group (e.g. 'google/committers@chromium.org).
+    3) If an item has '@', it is an user identity (e.g. 'user@example.com).
+    4) Otherwise it is a group.
+
+  Args:
+    title: name of the ACL for error messages, e.g. 'readers'.
+    acl: list of principals (groups or emails, or <kind>:<value> identities).
+    allow_empty: if True, empty acl is not an error.
+    only_groups: if True, acl should contain only groups, no identities.
+    only_idents: if True, acl should contain only identities, no groups.
+
+  Returns:
+    (list of group name, list of identities as (<kind>, <value>) tuples).
+  """
+  groups = []
+  idents = []
+
+  for item in (acl or []):
+    if not item:
+      fail('empty principal in %r acl' % title)
+
+    if ':' in item:
+      kind, val = item.split(':', 1)
+    elif '/' in item:
+      kind, val = 'group', item
+    elif '@' in item:
+      kind, val = 'user', item
+    else:
+      kind, val = 'group', item
+
+    if kind == 'group':
+      groups.append(val)
+    elif kind in ('anonymous', 'bot', 'user'):
+      idents.append((kind, val))
+    else:
+      fail('unknown principal format %r in %r acl' % (item, title))
+
+  if only_groups and idents:
+    fail('acl %r supports only groups' % title)
+  if only_idents and groups:
+    fail('acl %r support only identities' % title)
+
+  if not allow_empty and not groups and not idents:
+    fail('%r acl must not be empty' % title)
+
+  return groups, idents
+
+
+def _normalize(
+    title,
+    acl,
+    allow_empty = False,
+    only_groups = False,
+    only_idents = False):
+  """Like split, but also joins the acl into a list of <kind>:<value> pairs.
+
+  For example:
+    ['g', 'a@example.com'] => ['group:g', 'user:a@example.com'].
+  """
+  groups, idents = _split(title, acl, allow_empty, only_groups, only_idents)
+  out = []
+  for g in groups:
+    out.append('group:'+g)
+  for k, v in idents:
+    out.append(k + ':' + v)
+  return out
+
+
+# Exported symbols.
+acls = struct(
+    split = _split,
+    normalize = _normalize,
+)

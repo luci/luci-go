@@ -1,0 +1,290 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Defines LUCI Scheduler rules."""
+
+load(
+    'builtin:go.chromium.org/luci/scheduler/appengine/messages/config.proto',
+    scheduler_pb = 'scheduler.config')
+load('builtin:lib/acls.sky', 'acls')
+load('builtin:rules/project.sky', 'project')
+load('builtin:rules/buildbucket.sky', bbmodule='buildbucket')
+
+
+def _gitiles_trigger(
+    name,
+
+    # What to poll.
+    repo = None,
+    refs = None,
+
+    # Triggering.
+    schedule = None,
+    triggering_policy = None,
+    triggered_by = None,
+
+    # ACLs.
+    readers = None,
+    triggerers = None,
+    owners = None,
+
+    # Involved services.
+    scheduler = None):
+  """Defines a gitiles poller that can trigger scheduled jobs.
+
+  Args:
+    name: name of the job, must be unique within the project.
+
+    repo: URL of a repo to poll (defaults to project's main repo).
+    refs: list of git refs to poll (defaults to ['refs/heads/master']).
+
+    schedule: poller's cron schedule, default is "with 30s interval".
+    triggering_policy: scheduler_pb.TriggeringPolicy proto.
+    triggered_by: list of names of already defined triggers that trigger this
+        builder. Rarely used for pollers.
+
+    readers: list of groups that view debug log of scheduled jobs.
+    triggerers: list of groups that can call EmitTriggers RPC on the jobs.
+    owners: list of groups that can pause, abort and force run jobs.
+
+    scheduler: app ID of a LUCI Scheduler instance for this job (project-level
+        default if not set).
+  """
+  job = _define_generic_job(
+      scheduler = project.service('scheduler', scheduler),
+      kind = 'Trigger',
+      name = name,
+      readers = readers,
+      triggerers = triggerers,
+      owners = owners,
+      schedule = schedule or 'with 30s interval',
+      triggering_policy = triggering_policy,
+      triggered_by = triggered_by,
+  )
+  job.gitiles = scheduler_pb.GitilesTask(
+      repo = repo or project.current().repo,
+      refs = refs or ['refs/heads/master'],
+  )
+
+
+def _scheduler_job(
+    name,
+
+    # What to run.
+    bucket,
+    builder = None,
+
+    # Triggering.
+    schedule = None,
+    triggering_policy = None,
+    triggered_by = None,
+
+    # ACLs.
+    readers = None,
+    triggerers = None,
+    owners = None,
+
+    # Involved services.
+    scheduler = None,
+    buildbucket = None):
+  """Defines a Buildbucket scheduler job.
+
+  Args:
+    name: name of the job, must be unique within the project.
+
+    bucket: name of the bucket with the builder to run.
+    builder: name of the builder to run, defaults to job's name.
+
+    schedule: job's cron schedule for periodic jobs.
+    triggering_policy: scheduler_pb.TriggeringPolicy proto.
+    triggered_by: list of names of already defined triggers that trigger this
+        builder, see e.g. gitiles_trigger().
+
+    readers: list of groups that view debug log of scheduled jobs.
+    triggerers: list of groups that can call EmitTriggers RPC on the jobs.
+    owners: list of groups that can pause, abort and force run jobs.
+
+    scheduler: app ID of a LUCI Scheduler instance for this job (project-level
+        default if not set).
+    buildbucket: app ID of a Buildbucket instance that hosts the builder
+        (project-level default if not set).
+  """
+  scheduler = project.service('scheduler', scheduler)
+  buildbucket = project.service('buildbucket', buildbucket)
+
+  builder = builder or name
+  bbmodule.check_builder_defined(buildbucket, bucket, builder)
+
+  job = _define_generic_job(
+      scheduler = scheduler,
+      kind = 'Job',
+      name = name,
+      readers = readers,
+      triggerers = triggerers,
+      owners = owners,
+      schedule = schedule or 'triggered',
+      triggering_policy = triggering_policy,
+      triggered_by = triggered_by,
+  )
+  job.buildbucket = scheduler_pb.BuildbucketTask(
+      server = buildbucket.canonical_host,
+      bucket = bucket,
+      builder = builder,
+  )
+
+
+################################################################################
+
+
+# Scheduler app_id => scheduler_pb.ProjectConfig.
+_configs = mutable({})
+
+
+def _ensure_service(scheduler):
+  """Ensures there's an entry for the given service in _configs.
+
+  Args:
+    scheduler: types_pb.Service instance of a scheduler service.
+
+  Returns:
+    scheduler_pb.ProjectConfig.
+  """
+  cfg = _configs.get()
+  if scheduler.app_id not in cfg:
+    proj_cfg = scheduler_pb.ProjectConfig()
+    cfg[scheduler.app_id] = proj_cfg
+    __write_proto_later('project', scheduler.project_cfg_file, proj_cfg)
+  return cfg[scheduler.app_id]
+
+
+def _define_generic_job(
+    scheduler,
+    kind,
+    name,
+    readers = None,
+    triggerers = None,
+    owners = None,
+    schedule = None,
+    triggering_policy = None,
+    triggered_by = None):
+  """Adds new Job or Trigger to the config and returns it.
+
+  Args:
+    scheduler: types_pb.Service instance of a scheduler service.
+    kind: either 'Job' or 'Trigger'.
+    name: name of the new job.
+    readers: list of groups that view debug log of scheduled jobs.
+    triggerers: list of groups that can call EmitTriggers RPC on the jobs.
+    owners: list of groups that can pause, abort and force run jobs.
+    schedule: job's cron schedule.
+    triggering_policy: scheduler_pb.TriggeringPolicy proto.
+    triggered_by: list of names of already defined triggers that trigger this
+        builder, see e.g. gitiles_trigger().
+
+  Returns:
+    scheduler_pb.Job or scheduler_pb.Trigger depending on 'kind'.
+  """
+  cfg = _ensure_service(scheduler)
+
+  # Defined already? Note that namespace of Jobs and Triggers is shared.
+  if _get_job(scheduler, name, None):
+    fail('scheduler job %r has already been defined' % name)
+
+  # Make sure all triggering jobs in triggered_by are already defined and grab
+  # their configs to update them.
+  triggering_jobs = []
+  for j in (triggered_by or []):
+    tr = _get_job(scheduler, j, 'Trigger')
+    if not tr:
+      fail('scheduler job %r references an undefined trigger %r' % (name, j))
+    triggering_jobs.append(tr)
+
+  # Define the new job.
+  if kind == 'Job':
+    j = scheduler_pb.Job()
+    cfg.job.append(j)
+  elif kind == 'Trigger':
+    j = scheduler_pb.Trigger()
+    cfg.trigger.append(j)
+  else:
+    fail('unknown scheduler job kind %r' % kind)
+
+  # Fill-in properties common for all jobs, the rest will be filled in by the
+  # caller.
+  j.id = name
+  j.schedule = schedule
+  j.triggering_policy = triggering_policy
+
+  # ACLs.
+  readers = acls.normalize('readers', readers or project.current().readers)
+  triggerers = acls.normalize('triggerers', triggerers, allow_empty = True)
+  owners = acls.normalize('owners', owners, allow_empty = True)
+  j.acls.extend(_to_acl(scheduler_pb.Acl.READER, readers))
+  j.acls.extend(_to_acl(scheduler_pb.Acl.TRIGGERER, triggerers))
+  j.acls.extend(_to_acl(scheduler_pb.Acl.OWNER, owners))
+
+  # Make triggers trigger it.
+  for tr in triggering_jobs:
+    tr.triggers.append(name)
+
+  return j
+
+
+def _get_job(scheduler, name, kind=None):
+  """Returns an already defined job or None.
+
+  Args:
+    scheduler: types_pb.Service instance of a scheduler service.
+    name: name of the job.
+    kind: either 'Job' or 'Trigger' or None for both.
+
+  Returns:
+    scheduler_pb.Job or scheduler_pb.Trigger depending on the job kind.
+  """
+  # TODO(vadimsh): Keep a map {name => job} to have O(1) lookup.
+  cfg = _configs.get().get(scheduler.app_id)
+  if not cfg:
+    return None
+
+  if kind == 'Job':
+    l = cfg.job
+  elif kind == 'Trigger':
+    l = cfg.trigger
+  elif kind == None:
+    l = cfg.job + cfg.trigger
+  else:
+    fail('unknown scheduler job kind %r' % kind)
+
+  for j in l:
+    if j.id == name:
+      return j
+  return None
+
+
+def _to_acl(role, principals):
+  return [scheduler_pb.Acl(role = role, granted_to = p) for p in principals]
+
+
+# Exported symbols.
+scheduler = struct(
+    gitiles_trigger = _gitiles_trigger,
+    scheduler_job = _scheduler_job,
+
+    # Trimmed down version of protobuf module, since we don't want to duplicate
+    # some hairy protos from there, like TriggeringPolicy. This is advanced
+    # stuff anyway.
+    scheduler_pb = struct(
+        TriggeringPolicy = scheduler_pb.TriggeringPolicy,
+    ),
+)

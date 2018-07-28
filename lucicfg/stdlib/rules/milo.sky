@@ -1,0 +1,190 @@
+# Copyright 2018 The LUCI Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Defines Milo rules."""
+
+load(
+    'builtin:go.chromium.org/luci/milo/api/config/project.proto',
+    milo_pb = 'milo')
+load('builtin:rules/project.sky', 'project')
+load('builtin:rules/buildbucket.sky', bbmodule='buildbucket')
+
+
+def _milo_console(
+    name,
+
+    repo = None,
+
+    title = None,
+    favicon_url = None,
+    header = None,
+
+    include_experimental_builds = False,
+    builder_view_only = False,
+
+    # Involved services.
+    milo = None):
+  """Defines a new console.
+
+  Args:
+    name: name of the console, will be part of its URL.
+
+    repo: URL of the git repository to display as the rows of the console,
+        defaults to project's main repo.
+
+    title: the longform name of the waterfall, defaults to name.
+    favicon_url: URL to a custom favicon, defaults to project's favicon.
+    header: an instance of milo_pb.Header, you'll have to construct it manually.
+
+    include_experimental_builds: if True, this console will not filter out
+        builds marked as Experimental.
+    builder_view_only: if true, only builders view will be available. Console
+        view (i.e. git log based view) will be disabled and users redirected to
+        builder view.
+
+    milo: app ID of a Milo instance for this console (project-level default if
+        not set).
+  """
+  milo = project.service('milo', milo)
+  if _get_console(milo, name):
+    fail('milo console %r has already been defined' % name)
+  _ensure_service(milo).consoles.append(milo_pb.Console(
+      id = name,
+      name = title or name,
+      repo_url = repo or project.current().repo,
+      manifest_name = 'REVISION',
+      favicon_url = favicon_url or project.current().favicon_url,
+      header = header,
+      include_experimental_builds = include_experimental_builds,
+      builder_view_only = builder_view_only,
+  ))
+
+
+def _milo_console_column(
+    console,
+    builder,
+    bucket,
+    buildbot = False,
+
+    short_name = None,
+    category = None,
+
+    # Involved services.
+    milo = None,
+    buildbucket = None):
+  """Defines a builder column in some already defined console.
+
+  Args:
+    console: name of an already defined console.
+
+    builder: name of an already defined builder.
+    bucket: name of a bucket where the builder is located.
+    buildbot: if True, 'bucket' is interpreted as a buildbot master name and
+        this entry is for a buildbot builder.
+
+    short_name: the 1-3 character abbreviation of the builder.
+    category: describes the hierarchy of the builder on the header of the
+        console (as a list of strings). Neighboring builders with common
+        ancestors will be have their headers merged.
+
+    milo: app ID of a Milo instance with this console (project-level default if
+        not set).
+    buildbucket: app ID of a Buildbucket instance that hosts the builder
+        (project-level default if not set). Ignored! Milo always uses the
+        instance of Buildbucket specified in its service-level configs.
+  """
+  c = _get_console(project.service('milo', milo), console)
+  if not c:
+    fail('milo console %r is not defined yet' % console)
+
+  if not buildbot:
+    buildbucket = project.service('buildbucket', buildbucket)
+    bbmodule.check_builder_defined(buildbucket, bucket, builder)
+    name = 'buildbucket/%s/%s' % (bucket, builder)
+  else:
+    name = 'buildbot/%s/%s' % (bucket, builder)
+
+  # TODO(vadimsh): Keep a set of already defined entries to speed up this check.
+  for b in c.builders:
+    for n in b.name:
+      if n == name:
+        fail('milo console %r already has a row for %r' % (console, name))
+
+  # TODO(vadimsh): Support rows with merged builders (multiple names).
+  c.builders.append(milo_pb.Builder(
+      name = [name],
+      category = '|'.join(category or []),
+      short_name = short_name,
+  ))
+
+
+################################################################################
+
+
+# Milo app_id => milo_pb.Project.
+_configs = mutable({})
+
+
+def _ensure_service(milo):
+  """Ensures there's an entry for the given service in _configs.
+
+  Args:
+    scheduler: types_pb.Service instance of a Milo service.
+
+  Returns:
+    milo_pb.Project.
+  """
+  cfg = _configs.get()
+  if milo.app_id not in cfg:
+    proj_cfg = milo_pb.Project(logo_url = project.current().logo_url)
+    cfg[milo.app_id] = proj_cfg
+    __write_proto_later('project', milo.project_cfg_file, proj_cfg)
+  return cfg[milo.app_id]
+
+
+def _get_console(milo, name):
+  """Returns an already defined console or None.
+
+  Args:
+    milo: types_pb.Service instance of a Milo service.
+    name: a name of the console to return.
+
+  Returns:
+    milo_pb.Console or None.
+  """
+  cfg = _configs.get().get(milo.app_id)
+  if not cfg:
+    return None
+  # TODO(vadimsh): Keep a map {name => console} to have O(1) lookup.
+  for c in cfg.consoles:
+    if c.id == name:
+      return c
+  return None
+
+
+# Exported symbols.
+milo = struct(
+    milo_console = _milo_console,
+    milo_console_column = _milo_console_column,
+
+    # Trimmed down version of protobuf module, since we don't want to duplicate
+    # some hairy protos from there.
+    milo_pb = struct(
+        Header = milo_pb.Header,
+        Link = milo_pb.Link,
+        Oncall = milo_pb.Oncall,
+        LinkGroup = milo_pb.LinkGroup,
+        ConsoleSummaryGroup = milo_pb.ConsoleSummaryGroup,
+    ),
+)

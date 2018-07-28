@@ -1,0 +1,165 @@
+project(
+    name = 'infra',
+    readers = ['all'],
+    repo = 'https://chromium.googlesource.com/infra/infra',
+
+    logo_url = 'https://storage.googleapis.com/chrome-infra-public/logo/chrome-infra-logo-200x200.png',
+    favicon_url = 'https://storage.googleapis.com/chrome-infra-public/logo/favicon.ico',
+
+    buildbucket = 'cr-buildbucket.appspot.com',
+    logdog = 'luci-logdog.appspot.com',
+    milo = 'luci-milo.appspot.com',
+    scheduler = 'luci-scheduler.appspot.com',
+    swarming = 'chromium-swarm.appspot.com',
+)
+
+
+logdog(
+    writers = ['luci-logdog-chromium-writers'],
+    archive_gs_bucket = 'chromium-luci-logdog',
+)
+
+
+################################################################################
+## Buckets.
+
+
+bucket(
+    name = 'luci.infra.ci',
+    schedulers = ['luci-scheduler@appspot.gserviceaccount.com'],
+)
+
+
+bucket(
+    name = 'luci.infra.try',
+    schedulers = [
+        'project-infra-tryjob-access',
+        'service-account-cq',
+    ],
+)
+
+
+################################################################################
+## Consoles.
+
+
+milo_console(
+    name = 'infra',
+    title = 'infra/infra repository console',
+    include_experimental_builds = True,
+)
+
+milo_console(
+    name = 'infra-side-by-side',
+    title = 'infra/infra repository console with LUCI along side Buildbot',
+    include_experimental_builds = True,
+)
+
+
+################################################################################
+## Infra builders.
+
+
+gitiles_trigger(name = 'infra-gitiles-trigger')
+
+
+def infra_ci_builder(name, os, cpu = 'x86-64', buildbot = True):
+  """Defines a CI builder that tests infra.git changes.
+
+  Args:
+    name: name of the builder.
+    os: OS swarming dimension.
+    cpu: CPU swarming dimension.
+    buildbot: if True, there's an equivalent builder on Buildbot, False if not.
+  """
+  os_name, os_ver = os.split('-', 1)
+  os_flavor = {
+    'Ubuntu': 'linux', 'Mac': 'mac', 'Windows': 'win',
+  }.get(os_name, 'unknown')
+
+  # Derive a category path for Milo.
+  category = [os_flavor]
+  if os_flavor != 'mac':
+    category.append({'x86-64': '64 bit', 'x86-32': '32 bit'}.get(cpu, '? bit'))
+  category.append(os_ver)
+
+  builder(
+      name = name,
+      bucket = 'luci.infra.ci',
+      recipe = recipe(
+          script = 'infra_continuous_luci',
+          cipd_package = 'infra/recipe_bundles/chromium.googlesource.com/infra/infra',
+          cipd_version = 'refs/heads/master',
+          properties = {'mastername': 'chromium.infra'},
+      ),
+      service_account = 'infra-ci-builder@chops-service-accounts.iam.gserviceaccount.com',
+      dimensions = {
+          'cpu': cpu,
+          'os': os,
+          'pool': 'luci.flex.ci',
+      },
+      swarming_tags = ['vpython:native-python-wrapper'],
+      swarming_caches = [
+          swarming_cache(
+              name = 'infra_gclient_with_go',
+              path = 'infra_gclient_with_go',
+          ),
+      ],
+      execution_timeout_secs = 1800,
+      build_numbers = True,
+  )
+  scheduler_job(
+      name = name,
+      builder = name,
+      bucket = 'luci.infra.ci',
+      triggered_by = ['infra-gitiles-trigger'],
+  )
+
+  # A column for the main console.
+  milo_console_column(
+      console = 'infra',
+      builder = name,
+      bucket = 'luci.infra.ci',
+      category = category,
+  )
+
+  # And two columns for side-by-side console.
+  milo_console_column(
+      console = 'infra-side-by-side',
+      builder = name,
+      bucket = 'luci.infra.ci',
+      short_name = '🎉',
+      category = category,
+  )
+  if buildbot:
+    milo_console_column(
+        console = 'infra-side-by-side',
+        builder = name,
+        bucket = 'chromium.infra',
+        buildbot = True,
+        short_name = '💣',
+        category = category,
+    )
+
+
+################################################################################
+## Actually define everything.
+
+
+infra_ci_builder('infra-continuous-zesty-64', 'Ubuntu-17.04')
+infra_ci_builder('infra-continuous-yakkety-64', 'Ubuntu-16.10')
+infra_ci_builder('infra-continuous-xenial-64', 'Ubuntu-16.04')
+infra_ci_builder('infra-continuous-trusty-64', 'Ubuntu-14.04')
+infra_ci_builder('infra-continuous-trusty-32', 'Ubuntu-14.04', cpu = 'x86-32')
+infra_ci_builder('infra-continuous-precise-64', 'Ubuntu-12.04')
+infra_ci_builder('infra-continuous-precise-32', 'Ubuntu-12.04', cpu = 'x86-32')
+
+infra_ci_builder('infra-continuous-mac-10.13-64', 'Mac-10.13')
+infra_ci_builder('infra-continuous-mac-10.12-64', 'Mac-10.12')
+infra_ci_builder('infra-continuous-mac-10.11-64', 'Mac-10.11')
+infra_ci_builder('infra-continuous-mac-10.10-64', 'Mac-10.10')
+infra_ci_builder('infra-continuous-mac-10.9-64', 'Mac-10.9')
+
+infra_ci_builder('infra-continuous-win7-64', 'Windows-7-SP1')
+infra_ci_builder('infra-continuous-win7-32', 'Windows-7-SP1', cpu = 'x86-32')
+infra_ci_builder('infra-continuous-win10-64', 'Windows-10', buildbot = False)
