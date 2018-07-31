@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "91d70a00_4ea13d8d",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-31T16:14:27Z",
+      "side": 1,
+      "message": "the choice of names here is a bit confusing. annStep has type Substep and annSubstep has type Step. Consider swapping names.",
+      "range": {
+        "startLine": 80,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 12
+      },
+      "revId": "0c4c33d75a80fe85671dce93546a23103168d9ae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
