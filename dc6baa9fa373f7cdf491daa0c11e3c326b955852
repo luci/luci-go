@@ -592,6 +592,24 @@
       "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5961695c_f2bd7324",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "240418b8_2a897e73",
+      "revId": "dc6baa9fa373f7cdf491daa0c11e3c326b955852",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

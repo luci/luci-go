@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "36a8182b_cab8f61b",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f60bf2e5_c4fd676d",
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81efef5b_78981f3f",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 6
@@ -33,6 +51,24 @@
       "revId": "035a4a172849040d9b578825d691992f43e42f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "097d2d59_8a235c74",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "I\u0027d been under the impression that :\u003d allocated each time in contrast to var, but that seems not to be the case (and that the allocation gets reused exactly the same way with :\u003d). Neat!",
+      "parentUuid": "81efef5b_78981f3f",
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "9a435f92_93175c2a",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e91a0c3_4081cfe6",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 102,
+        "endChar": 2
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b12073d6_66fc95f0",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 6
@@ -79,6 +139,30 @@
       "revId": "035a4a172849040d9b578825d691992f43e42f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f86ae5b3_a0d7e2bf",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b12073d6_66fc95f0",
+      "range": {
+        "startLine": 113,
+        "startChar": 1,
+        "endLine": 113,
+        "endChar": 6
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "607727df_cc942399",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "310474d2_bf022865",
+      "range": {
+        "startLine": 136,
+        "startChar": 1,
+        "endLine": 138,
+        "endChar": 43
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ad6192c_7015b292",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 6
@@ -125,6 +233,30 @@
       "revId": "035a4a172849040d9b578825d691992f43e42f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15347803_52cf482a",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ad6192c_7015b292",
+      "range": {
+        "startLine": 144,
+        "startChar": 1,
+        "endLine": 145,
+        "endChar": 51
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "f2cb09ed_342f4c44",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "376ffdc4_0374dae1",
+      "range": {
+        "startLine": 201,
+        "startChar": 42,
+        "endLine": 201,
+        "endChar": 46
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a74dffa7_661240c6",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 6
@@ -171,6 +327,30 @@
       "revId": "035a4a172849040d9b578825d691992f43e42f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fce91e5e_a7f577bf",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-07-31T05:03:36Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a74dffa7_661240c6",
+      "range": {
+        "startLine": 202,
+        "startChar": 1,
+        "endLine": 202,
+        "endChar": 8
+      },
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
