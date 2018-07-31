@@ -1,0 +1,12 @@
+{{define "title"}}Machine DB - Platforms{{end}}
+
+{{define "content"}}
+
+<h1>Platforms</h1>
+<ul>
+     {{range .Platforms}}
+      <li><b>{{.Name}}</b>: {{.Description}}</li>
+     {{end}}
+</ul>
+
+{{end}}

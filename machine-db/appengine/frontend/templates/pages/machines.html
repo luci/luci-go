@@ -1,0 +1,32 @@
+{{define "title"}}Machine DB - Machines{{end}}
+
+{{define "content"}}
+
+<h1>Machines</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Machine Name</th>
+        <th class="mdl-data-table__cell--non-numeric">Platform</th>
+        <th class="mdl-data-table__cell--non-numeric">Rack</th>
+        <th class="mdl-data-table__cell--non-numeric">Service Tag</th>
+        <th class="mdl-data-table__cell--non-numeric">State</th>
+        <th class="mdl-data-table__cell--non-numeric">Datacenter</th>
+      </tr>
+    </thead>
+    <tbody>
+     {{range .Machines}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Platform}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Rack}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.ServiceTag}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.State}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Datacenter}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+
+{{end}}
