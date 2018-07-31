@@ -72,6 +72,24 @@
     },
     {
       "key": {
+        "uuid": "562fc5d0_ddca6b4e",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-07-31T16:16:26Z",
+      "side": 1,
+      "message": "yeah, memory for local variables is allocated on the stack frame, and a stack frame has a fixed size. Compiler knows stack frame size before calling this function. Each time this line runs, we overwrite exiting value in the local variable (initially zero) with the return value of GetStep",
+      "parentUuid": "097d2d59_8a235c74",
+      "revId": "035a4a172849040d9b578825d691992f43e42f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e91a0c3_4081cfe6",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 6
