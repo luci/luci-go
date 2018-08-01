@@ -140,6 +140,14 @@ message Builder {
     // In most cases, it does not need slashes at all.
     // Must be unique in the given builder.
     string path = 2;
+    // Number of seconds to wait for a bot with a warm cache to pick up the
+    // task, before falling back to any bot, even the ones with a cold
+    // (non-existent) cache.
+    //
+    // The default is 0, which means that no preference will be chosen for a bot
+    // with this or without this cache, and a bot without this cache may be
+    // chosen instead.
+    int32 wait_for_warm_cache_secs = 3;
   }
 
   // Specifies a recipe to run.
