@@ -94,6 +94,30 @@
       "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e9e5cbf_4abd5bc8",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-01T22:37:14Z",
+      "side": 1,
+      "message": "Why do you need two of them? Won\u0027t instructionsReceived or instructionsAcked alone suffice?",
+      "parentUuid": "d254465f_21fa7921",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
