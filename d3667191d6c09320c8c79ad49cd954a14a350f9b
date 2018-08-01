@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "320a49c0_08bde38f",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-01T19:26:45Z",
+      "side": 1,
+      "message": "What\u0027s the value in having two counters? Note that trying to count errors by getting a difference between instructionsAcked and instructionsReceived will be cumbersome (for example, I have no idea whether it is possible to plot a rate of such errors).\n\nIt would be more direct and useful to have \u0027instructionsReceived\u0027 and \u0027instructionErrors\u0027 (or something) counters. Where errors can also be parametrized by a kind of an error (if it makes sense). At very least there are 3 kinds: \"FAILED_TO_CONFIGURE\", \"FAILED_TO_ACK\", \"FAILED_TO_REBOOT\".\n\nIt would be great if \u0027configureSwarmingAutoStart\u0027 also learned to return a category of an error (perhaps via error tags, see common/errors in luci-go): error during download, file permission error when installing.\n\nFinally, it may make sense to also have a counter for agent.mp.poll calls, that will act as a \"hearbeat\" for liveness of the MP agent. If there\u0027re no data point in last N minutes, then the agent is dead.",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
