@@ -22,6 +22,30 @@
       "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "93950f04_280d84f5",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-01T21:33:05Z",
+      "side": 1,
+      "message": "I\u0027m not trying to count errors, I\u0027m trying to figure out when the majority of instructions are received/acknowledged to see if a spike in VMs receiving and then acking an instruction is related to an increase in latency. All I see with the HTTP request instrumentation is that sometimes a request to MP takes awhile.\n\nSpeaking of HTTP request instrumentation, this already acts as a proxy for poll call monitoring. You can tell the agent is alive by the fact that it is still sending HTTP requests to Machine Provider.\n\nError monitoring would probably be good, I didn\u0027t include all the metrics I could think of in this CL in case something was fundamentally wrong with the way I\u0027m reporting them. I was considering adding a metric for time between receipt and ack as well.",
+      "parentUuid": "320a49c0_08bde38f",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
