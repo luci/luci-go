@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4a5231c0_4198d8e7",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-01T15:37:40Z",
+      "side": 1,
+      "message": "could you clarify here how 0 (default) works?",
+      "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
