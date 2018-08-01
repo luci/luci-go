@@ -140,6 +140,9 @@ message Builder {
     // In most cases, it does not need slashes at all.
     // Must be unique in the given builder.
     string path = 2;
+    // Number of seconds to wait for a warm cache before falling back to a cold
+    // cache.
+    int32 wait_for_warm_cache_secs = 3;
   }
 
   // Specifies a recipe to run.
