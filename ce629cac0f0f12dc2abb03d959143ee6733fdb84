@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "1e50f4a7_d9048965",
+        "filename": "machine-db/appengine/frontend/app.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fe0fb5d1_1317a097",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d6672db3_21401d5a",
         "filename": "machine-db/appengine/frontend/templates/includes/base.html",
         "patchSetId": 3
@@ -59,6 +77,30 @@
     },
     {
       "key": {
+        "uuid": "b9a924ec_57718b94",
+        "filename": "machine-db/appengine/frontend/templates/includes/base.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6672db3_21401d5a",
+      "range": {
+        "startLine": 34,
+        "startChar": 62,
+        "endLine": 34,
+        "endChar": 63
+      },
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "143d8725_dedf5450",
         "filename": "machine-db/appengine/frontend/templates/pages/datacenters.html",
         "patchSetId": 3
@@ -73,6 +115,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e099cf02_4963b8b0",
+        "filename": "machine-db/appengine/frontend/templates/pages/datacenters.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "143d8725_dedf5450",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +159,30 @@
     },
     {
       "key": {
+        "uuid": "328e09e7_e1bac0ff",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "abd34d26_b5d33a85",
+      "range": {
+        "startLine": 1,
+        "startChar": 18,
+        "endLine": 1,
+        "endChar": 22
+      },
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b6f77a4_8efe643f",
         "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
         "patchSetId": 3
@@ -113,6 +197,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "870e1530_705d4c37",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b6f77a4_8efe643f",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -133,6 +235,24 @@
     },
     {
       "key": {
+        "uuid": "04b6f140_1d7f3e24",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c83d2b32_511dc732",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20426768_86703751",
         "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
         "patchSetId": 3
@@ -147,6 +267,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8511282b_2c492642",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20426768_86703751",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -167,6 +305,24 @@
     },
     {
       "key": {
+        "uuid": "2b65485b_945b46cb",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a79d4bf_a64dcfa7",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a813b4db_8f5ea56b",
         "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
         "patchSetId": 3
@@ -181,6 +337,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0c1bac89_83f09156",
+        "filename": "machine-db/appengine/frontend/templates/pages/hosts.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a813b4db_8f5ea56b",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -201,6 +375,24 @@
     },
     {
       "key": {
+        "uuid": "ae61132b_87abd0b5",
+        "filename": "machine-db/appengine/frontend/templates/pages/machines.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3facd7d_0b28e3b0",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5badfc77_2d0c1319",
         "filename": "machine-db/appengine/frontend/templates/pages/machines.html",
         "patchSetId": 3
@@ -215,6 +407,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d7668b3_a217a0c8",
+        "filename": "machine-db/appengine/frontend/templates/pages/machines.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5badfc77_2d0c1319",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -235,6 +445,24 @@
     },
     {
       "key": {
+        "uuid": "1d76fa37_0b9da889",
+        "filename": "machine-db/appengine/frontend/templates/pages/platforms.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f285da6d_13dbb744",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "86ac61d4_a3eeffd3",
         "filename": "machine-db/appengine/ui/common.go",
         "patchSetId": 3
@@ -249,6 +477,24 @@
       "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21969a5f_2479d8b4",
+        "filename": "machine-db/appengine/ui/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-01T23:56:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "86ac61d4_a3eeffd3",
+      "revId": "ce629cac0f0f12dc2abb03d959143ee6733fdb84",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
