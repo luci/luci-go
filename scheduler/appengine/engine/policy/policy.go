@@ -94,7 +94,7 @@ func New(p *messages.TriggeringPolicy) (Func, error) {
 }
 
 var defaultPolicy = messages.TriggeringPolicy{
-	Kind: messages.TriggeringPolicy_GREEDY_BATCHING,
+	Kind:                     messages.TriggeringPolicy_GREEDY_BATCHING,
 	MaxConcurrentInvocations: 1,
 	MaxBatchSize:             1000,
 }
