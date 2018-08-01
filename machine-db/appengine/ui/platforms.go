@@ -21,13 +21,13 @@ import (
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 )
 
-func indexPage(c *router.Context) {
-	resp, err := server(c.Context).ListDatacenters(c.Context, &crimson.ListDatacentersRequest{})
+func platformsPage(c *router.Context) {
+	resp, err := server(c.Context).ListPlatforms(c.Context, &crimson.ListPlatformsRequest{})
 	if err != nil {
 		renderErr(c, err)
 		return
 	}
-	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
-		"Datacenters": resp.Datacenters,
+	templates.MustRender(c.Context, c.Writer, "pages/platforms.html", map[string]interface{}{
+		"Platforms": resp.Platforms,
 	})
 }
