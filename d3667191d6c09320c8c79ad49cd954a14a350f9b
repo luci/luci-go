@@ -46,6 +46,30 @@
       "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc680160_4712e9af",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-01T22:20:24Z",
+      "side": 1,
+      "message": "Increase in what latency?\n\nTracking both number of received instructions and number of acked instructions still seems pointless to me. The most you can do is to take a difference of them, and it will give some vague number of \"number of errored instructions since the beginning of times + number of currently running instructions\". It is not very useful number IMHO.\n\nIf you are tracking latency of \u0027configureSwarmingAutoStart + ack\u0027, just measure it directly and send as cumulative distribution.\n\nIf you track only spikes in instruction processing, either one of \u0027instructionsReceived\u0027 or \u0027instructionsAcked\u0027 will do (assuming error rates are negligible). If they are not negligible, I still think it is better to track instructionsReceived + number of errors.\n\nPlease describe how are you going to use the metrics, maybe I just misunderstand.",
+      "parentUuid": "93950f04_280d84f5",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
