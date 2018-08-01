@@ -70,6 +70,30 @@
       "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d254465f_21fa7921",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-01T22:30:17Z",
+      "side": 1,
+      "message": "The latency I\u0027m observing is in HTTP request duration. If I understand the default metrics correctly, the time between sending an HTTP request and receiving a response. Sometimes it takes a long time to get a response from Machine Provider.\n\nI\u0027m not trying to take a difference between acks and receipts, that wouldn\u0027t really make sense. I guess I\u0027m using ts_mon here as event_mon, I\u0027m trying to report a count of \"something interesting happened\" to see if lots of \"interesting thing happened\" events correlate with anything else.\n\nI am not tracking latency in this CL, I meant I am considering tracking latency in a cumulative later on if the overall approach in this CL (% the particular metrics) is correct.\n\nHow I intend to use them is just as a signal that stuff is occurring, similar to MP\u0027s serverside metrics (e.g. lease_requests_fulfilled++). I don\u0027t expect to design alerts based on these metrics.",
+      "parentUuid": "dc680160_4712e9af",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
