@@ -16,6 +16,24 @@
       "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57e6713c_7cfaa8f0",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-08-01T15:53:33Z",
+      "side": 1,
+      "message": "Done, but I realize I may have chosen something too strict. Also it could make sense to say:\n\nTry builder+git_cache for 5 minutes\nTry git_cache for 5 minutes\nFallback to cold cache\n\nHow would you describe this in the proto?",
+      "parentUuid": "4a5231c0_4198d8e7",
+      "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
