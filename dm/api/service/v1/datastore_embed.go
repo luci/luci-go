@@ -112,7 +112,7 @@ func NewQuestDesc(cfg string, params, distParams string, meta *Quest_Desc_Meta) 
 		DistributorConfigName: cfg,
 		Parameters:            params,
 		DistributorParameters: distParams,
-		Meta: meta,
+		Meta:                  meta,
 	}
 }
 
