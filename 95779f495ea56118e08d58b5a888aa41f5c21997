@@ -34,6 +34,24 @@
       "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1027ddf_665d4be3",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-02T00:09:05Z",
+      "side": 1,
+      "message": "How about a key/value mapping of cache names to seconds to wait for that particular cache? Then each project can state the caches it cares about and how long they\u0027re willing to wait for each. The job starts when every cache is available and fallback occurs when the longest timeout expires and the job runs with whatever caches ended up available before then. So for your example it would be something like:\n\nrepeated string wait_for_warm_cache \u003d 3;\n\nwait_for_warm_cache: \"builder:300\"\nwait_for_warm_cache: \"git:600\"\n\nWhich means wait 5 minutes for builder, 5 more minutes for git. If builder+git are available, run immediately. After 10 minutes, run with whatever\u0027s available (builder+git, builder, or nothing).",
+      "parentUuid": "57e6713c_7cfaa8f0",
+      "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
