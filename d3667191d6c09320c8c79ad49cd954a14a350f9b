@@ -118,6 +118,30 @@
       "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f848ef89_9888d39e",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-02T01:11:14Z",
+      "side": 1,
+      "message": "Arguably they\u0027re two separate events, but since I would expect them to be close to 1:1 in numbers, I\u0027ve converted to one. I\u0027ve also added the duration metric.\n\nI\u0027ll do error reporting separately.",
+      "parentUuid": "1e9e5cbf_4abd5bc8",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 22
+      },
+      "revId": "d3667191d6c09320c8c79ad49cd954a14a350f9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
