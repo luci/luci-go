@@ -46,6 +46,30 @@
       "revId": "54ac0334e644bdf5c39bc2d25d93f789a5437fab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "16687e64_e51f7b1e",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-08-02T20:40:22Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "33557f1b_2fe5155a",
+      "range": {
+        "startLine": 176,
+        "startChar": 28,
+        "endLine": 176,
+        "endChar": 39
+      },
+      "revId": "54ac0334e644bdf5c39bc2d25d93f789a5437fab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
