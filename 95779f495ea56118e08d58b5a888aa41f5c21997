@@ -70,6 +70,24 @@
       "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1cc2923_9e4fd9f3",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-02T16:23:39Z",
+      "side": 1,
+      "message": "semantics in patchset 2 LGTM\n\nYes, creating multiple task slices, ordered by wait_for_warm_cache_secs, is the idea that task slices was born from. Note that there is no combinatorial explosion.",
+      "parentUuid": "7d4e054d_ac216120",
+      "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
