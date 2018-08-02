@@ -52,6 +52,24 @@
       "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d4e054d_ac216120",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-08-02T00:41:29Z",
+      "side": 1,
+      "message": "This could be implemented with the current design, where instead of denying multiple CacheEntry with wait_for_warm_cache_secs, it would allow this and create as many TaskSlice as necessary. I think it\u0027d be better than with name mangling. I can update https://chromium-review.googlesource.com/1158606 accordingly and I\u0027ll update the doc here to be clear about this behavior.",
+      "parentUuid": "b1027ddf_665d4be3",
+      "revId": "95779f495ea56118e08d58b5a888aa41f5c21997",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
