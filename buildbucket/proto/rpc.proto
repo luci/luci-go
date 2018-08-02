@@ -174,6 +174,9 @@ message UpdateBuildRequest {
   //
   // Currently only "build.steps" path is supported.
   google.protobuf.FieldMask update_mask = 2;
+
+  // Fields to include in the response. See also GetBuildRequest.fields.
+  google.protobuf.FieldMask fields = 100;
 }
 
 // A build predicate.
