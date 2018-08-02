@@ -22,6 +22,30 @@
       "revId": "ad47b312b4eba808d65719b34ae2b382c8cf6110",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22431af3_f84d3717",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-02T01:36:33Z",
+      "side": 1,
+      "message": "Changed to Since, but didn\u0027t use clock.Now because there are other places to update time.Now usage if we want to go that route.",
+      "parentUuid": "0f0ff381_2773ed7a",
+      "range": {
+        "startLine": 317,
+        "startChar": 21,
+        "endLine": 317,
+        "endChar": 42
+      },
+      "revId": "ad47b312b4eba808d65719b34ae2b382c8cf6110",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
