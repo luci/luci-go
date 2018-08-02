@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0956347_73094252",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-08-02T19:56:44Z",
+      "side": 1,
+      "message": "It seems from https://cs.chromium.org/chromium/infra/appengine/cr-buildbucket/v2/api.py?l\u003d83\u0026rcl\u003de0f06b32eb5175b4bbf8f619842b4e99c8240ce8 that to be processed like the other RPCs, this should be `fields` --- is that correct?",
+      "range": {
+        "startLine": 176,
+        "startChar": 28,
+        "endLine": 176,
+        "endChar": 39
+      },
+      "revId": "54ac0334e644bdf5c39bc2d25d93f789a5437fab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
