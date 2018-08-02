@@ -1,0 +1,39 @@
+{{define "title"}}Machine DB - Hosts{{end}}
+
+{{define "content"}}
+
+<h1>Hosts</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">VLAN</th>
+        <th class="mdl-data-table__cell--non-numeric">IP Address</th>
+        <th class="mdl-data-table__cell--non-numeric">Machine</th>
+        <th class="mdl-data-table__cell--non-numeric">OS</th>
+        <th class="mdl-data-table__cell--non-numeric">Max VM Slots</th>
+        <th class="mdl-data-table__cell--non-numeric">Virtual Datacenter</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+        <th class="mdl-data-table__cell--non-numeric">Deployment Ticket</th>
+        <th class="mdl-data-table__cell--non-numeric">State</th>
+      </tr>
+    </thead>
+    <tbody>
+     {{range .Hosts}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Vlan}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Ipv4}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Machine}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Os}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.VmSlots}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.VirtualDatacenter}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.DeploymentTicket}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.State}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+{{end}}
