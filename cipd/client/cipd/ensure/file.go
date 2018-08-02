@@ -22,10 +22,12 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync"
 	"unicode"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/iotools"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -104,12 +106,7 @@ func ParseFile(r io.Reader) (*File, error) {
 			settingsAllowed = false
 			pkg := PackageDef{tok1, tok2, lineNo}
 
-			_, err := pkg.Resolve(func(pkg, vers string) (common.Pin, error) {
-				return common.Pin{
-					PackageName: pkg,
-					InstanceID:  vers,
-				}, common.ValidateInstanceVersion(vers)
-			}, template.DefaultExpander())
+			_, err := pkg.Expand(template.DefaultExpander())
 			if err != nil && err != template.ErrSkipTemplate {
 				return nil, err
 			}
@@ -123,6 +120,22 @@ func ParseFile(r io.Reader) (*File, error) {
 
 	return ret, nil
 }
+
+// VersionResolver transforms a {PackageName, Version} tuple (corresponding to
+// the given `def`) into a resolved pin.
+//
+//  - `pkg` is guaranteed to pass common.ValidatePackageName
+//  - `vers` is guaranteed to pass common.ValidateInstanceVersion
+//
+// The returned pin will NOT be checked (so that you can provide a pass-through
+// resolver, if you like). Returning a zero Pin causes File.ResolveWith to
+// silently omit the package from the resolved file.
+//
+// `def` is given as FYI for error messages and logging.
+//
+// VersionResolver should expect to be called concurrently from multiple
+// goroutines.
+type VersionResolver func(pkg, vers string, def PackageDef) (common.Pin, error)
 
 // ResolvedFile only contains valid, fully-resolved information and is the
 // result of calling File.Resolve.
@@ -151,16 +164,10 @@ func (f *ResolvedFile) Serialize(w io.Writer) (int, error) {
 }
 
 // Resolve takes the current unresolved File and expands all package templates
-// using common.DefaultPackageNameExpander(), and also resolves all versions
-// with the provided VersionResolver.
-func (f *File) Resolve(rslv VersionResolver) (*ResolvedFile, error) {
-	return f.ResolveWith(rslv, template.DefaultExpander())
-}
-
-// ResolveWith takes the current unresolved File and expands all package
-// templates using the provided values of arch and os, and also resolves
-// all versions with the provided VersionResolver.
-func (f *File) ResolveWith(rslv VersionResolver, expander template.Expander) (*ResolvedFile, error) {
+// using the provided expander (usually template.DefaultExpander()), and also
+// resolves all versions with the provided VersionResolver, calling it
+// concurrently from multiple goroutines.
+func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*ResolvedFile, error) {
 	ret := &ResolvedFile{}
 
 	if f.ServiceURL != "" {
@@ -183,10 +190,19 @@ func (f *File) ResolveWith(rslv VersionResolver, expander template.Expander) (*R
 		return ret, nil
 	}
 
-	// subdir -> pkg -> orig_lineno
-	resolvedPkgDupList := map[string]map[string]int{}
+	type resolveWorkItem struct {
+		idx    int        // index in the definition, to preserve the ordering
+		subdir string     // expanded
+		pkg    string     // expanded
+		def    PackageDef // original
 
-	ret.PackagesBySubdir = common.PinSliceBySubdir{}
+		pin common.Pin // resolved
+		err error      // resolution error
+	}
+
+	// Collect a list of package defs we want to resolve, expanding the templates
+	// right away.
+	var toResolve []resolveWorkItem
 	for subdir, pkgs := range f.PackagesBySubdir {
 		realSubdir, err := expander.Expand(subdir)
 		switch err {
@@ -201,29 +217,80 @@ func (f *File) ResolveWith(rslv VersionResolver, expander template.Expander) (*R
 		if err := common.ValidateSubdir(realSubdir); err != nil {
 			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
 		}
-		for _, pkg := range pkgs {
-			pin, err := pkg.Resolve(rslv, expander)
-			if err == template.ErrSkipTemplate {
+
+		for _, def := range pkgs {
+			switch realPkg, err := def.Expand(expander); {
+			case err == template.ErrSkipTemplate:
 				continue
+			case err != nil:
+				return nil, err // the error is already properly annotated
+			default:
+				toResolve = append(toResolve, resolveWorkItem{
+					idx:    len(toResolve),
+					subdir: realSubdir,
+					pkg:    realPkg,
+					def:    def,
+				})
 			}
-			if err != nil {
-				return nil, errors.Annotate(err, "resolving package").Err()
-			}
-
-			if origLineNo, ok := resolvedPkgDupList[realSubdir][pin.PackageName]; ok {
-				return nil, errors.
-					Reason("duplicate package in subdir %q: %q: defined on line %d and %d",
-						realSubdir, pin.PackageName, origLineNo, pkg.LineNo).Err()
-			}
-			if resolvedPkgDupList[realSubdir] == nil {
-				resolvedPkgDupList[realSubdir] = map[string]int{}
-			}
-			resolvedPkgDupList[realSubdir][pin.PackageName] = pkg.LineNo
-
-			ret.PackagesBySubdir[realSubdir] = append(ret.PackagesBySubdir[realSubdir], pin)
 		}
 	}
 
+	// Resolve versions into instance IDs in parallel. Errors are collected
+	// through 'resolved'.
+	resolved := make([]*resolveWorkItem, len(toResolve)) // index -> resolved or nil if skipped
+	parallel.FanOutIn(func(tasks chan<- func() error) {
+		mu := sync.Mutex{}
+		for _, p := range toResolve {
+			p := p
+			tasks <- func() error {
+				p.pin, p.err = rslv(p.pkg, p.def.UnresolvedVersion, p.def)
+				switch {
+				case p.err != nil:
+					p.err = errors.Annotate(p.err, "failed to resolve package version (line %d)", p.def.LineNo).Err()
+				case p.pin == (common.Pin{}):
+					return nil // the resolver asked to skip this package
+				}
+				mu.Lock()
+				resolved[p.idx] = &p
+				mu.Unlock()
+				return nil
+			}
+		}
+	})
+
+	// subdir -> pkg -> orig_lineno
+	resolvedPkgDupList := map[string]map[string]int{}
+
+	// Check and split the result.
+	ret.PackagesBySubdir = common.PinSliceBySubdir{}
+	var merr errors.MultiError
+	for _, p := range resolved {
+		switch {
+		case p == nil:
+			continue // was skipped by the resolved
+		case p.err != nil:
+			merr = append(merr, p.err)
+			continue
+		}
+
+		if origLineNo, ok := resolvedPkgDupList[p.subdir][p.pin.PackageName]; ok {
+			merr = append(merr, errors.
+				Reason("duplicate package in subdir %q: %q: defined on line %d and %d",
+					p.subdir, p.pin.PackageName, origLineNo, p.def.LineNo).Err())
+			continue
+		}
+
+		if resolvedPkgDupList[p.subdir] == nil {
+			resolvedPkgDupList[p.subdir] = map[string]int{}
+		}
+		resolvedPkgDupList[p.subdir][p.pin.PackageName] = p.def.LineNo
+
+		ret.PackagesBySubdir[p.subdir] = append(ret.PackagesBySubdir[p.subdir], p.pin)
+	}
+
+	if len(merr) != 0 {
+		return nil, merr
+	}
 	return ret, nil
 }
 
