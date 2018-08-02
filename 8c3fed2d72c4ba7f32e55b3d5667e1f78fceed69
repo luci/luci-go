@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3241e4ea_e9e018cb",
+        "filename": "machine-db/appengine/frontend/README.md",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-02T00:29:16Z",
+      "side": 1,
+      "message": "Generally speaking I\u0027ve referred to this as Machine Database here, and the client + API are called Crimson. Maybe rename to \"Machine Database\" (here, and elsewhere in the README.md)?\n\nAlso, since you added instructions for nearly everything, would you mind making this the README for the whole server? Just change the title and description to remove \"UI\", then add one step that explains how to build the RPC explorer:\ncd ../../../web\n./web.py build rpcexplorer\n\nSomewhere after \"eval `./env.py`\".",
+      "revId": "8c3fed2d72c4ba7f32e55b3d5667e1f78fceed69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
