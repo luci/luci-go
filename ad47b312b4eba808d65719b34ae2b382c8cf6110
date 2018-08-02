@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f0ff381_2773ed7a",
+        "filename": "mp/cmd/mpagent/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-02T01:27:55Z",
+      "side": 1,
+      "message": "time.Since(start)\n\nAlso, if it was for a code under test, better to use clock.Now(ctx) from common/clock library. It provides mockable time for tests. But here it is probably fine to use time.* directly...",
+      "range": {
+        "startLine": 317,
+        "startChar": 21,
+        "endLine": 317,
+        "endChar": 42
+      },
+      "revId": "ad47b312b4eba808d65719b34ae2b382c8cf6110",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
