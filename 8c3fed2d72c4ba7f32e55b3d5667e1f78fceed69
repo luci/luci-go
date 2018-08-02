@@ -16,6 +16,24 @@
       "revId": "8c3fed2d72c4ba7f32e55b3d5667e1f78fceed69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f461156_9d973942",
+        "filename": "machine-db/appengine/frontend/README.md",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-02T21:35:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3241e4ea_e9e018cb",
+      "revId": "8c3fed2d72c4ba7f32e55b3d5667e1f78fceed69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
