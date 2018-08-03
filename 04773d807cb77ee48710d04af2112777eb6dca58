@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "823e1324_42ea5701",
+        "filename": "cipd/client/cipd/ensure/bad_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 1,
+      "message": "It was always needed, except it hardcoded itself to DefaultExpander.\n\nI removed this validation.",
+      "parentUuid": "9d39f0c7_1a47fc10",
+      "range": {
+        "startLine": 222,
+        "startChar": 14,
+        "endLine": 222,
+        "endChar": 33
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b07cd306_36fd3f9c",
         "filename": "cipd/client/cipd/ensure/file.go",
         "patchSetId": 6
@@ -68,6 +92,30 @@
       "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "869c0655_4ed2bd64",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 1,
+      "message": "Yeah,",
+      "parentUuid": "b07cd306_36fd3f9c",
+      "range": {
+        "startLine": 52,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 43
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "1dd9fa10_b37eb042",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 1,
+      "message": "It is needed by VersionResolver itself too (when it collects packages it can\u0027t resolve).",
+      "parentUuid": "70e9fcdb_ec31ba84",
+      "range": {
+        "startLine": 141,
+        "startChar": 43,
+        "endLine": 141,
+        "endChar": 58
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c0346e7b_0baf2e60",
         "filename": "cipd/client/cipd/ensure/file.go",
         "patchSetId": 6
@@ -117,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "34141b03_1f137aaa",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 1,
+      "message": "It is already documented in VersionResolver type and in Resolve comment.",
+      "parentUuid": "c0346e7b_0baf2e60",
+      "range": {
+        "startLine": 241,
+        "startChar": 42,
+        "endLine": 241,
+        "endChar": 50
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8e04bbde_7786bf44",
         "filename": "cipd/client/cipd/resolver.go",
         "patchSetId": 6
@@ -137,6 +233,30 @@
       "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f4df5e0_be92b69d",
+        "filename": "cipd/client/cipd/resolver.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 1,
+      "message": "\u0027err\u0027 here ultimately comes from cipd.Client that has no idea about any definitions. It is just e.g. \"no such tag\".\n\nr.ResolvePackage checks one package only. Why would it return MultiError?\n\nDid you mean file.Resolve() should return multi-error? It actually does now... It used to stop on the first error before, but since I made it parallel, it returns all errors.\n\nI\u0027ll change this code somehow.\n\nEDIT:\n\nWell, it is embarrassingly simple now. I didn\u0027t realize I\u0027ve implemented errors sorting twice (in file.Resolver and here).",
+      "parentUuid": "8e04bbde_7786bf44",
+      "range": {
+        "startLine": 112,
+        "startChar": 31,
+        "endLine": 112,
+        "endChar": 64
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

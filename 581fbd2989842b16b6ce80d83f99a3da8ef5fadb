@@ -45,6 +45,30 @@
       "revId": "581fbd2989842b16b6ce80d83f99a3da8ef5fadb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f89db098_2dab79ab",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:53:00Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "97056004_915d038c",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 107,
+        "endChar": 69
+      },
+      "revId": "581fbd2989842b16b6ce80d83f99a3da8ef5fadb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
