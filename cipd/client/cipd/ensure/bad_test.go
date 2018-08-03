@@ -131,7 +131,7 @@ var badEnsureFiles = []struct {
 	{
 		"bad template",
 		"foo/bar/${not_good} version",
-		"failed to resolve package template",
+		`failed to expand package template (line 1): unknown variable "${not_good}"`,
 	},
 
 	{
@@ -168,6 +168,16 @@ var badEnsureFiles = []struct {
 	},
 
 	{
+		"bad version resolution in multiple packages",
+		f(
+			"some/package/something1 error_version",
+			"some/package/something2 error_version",
+		),
+		`failed to resolve package version (line 1): testResolver returned error ` +
+			`(and 1 other error)`, // errors are sorted by line number
+	},
+
+	{
 		"late setting (pkg)",
 		f(
 			"some/package version",
@@ -199,21 +209,23 @@ var badEnsureFiles = []struct {
 func TestBadEnsureFiles(t *testing.T) {
 	t.Parallel()
 
+	exp := template.Expander{
+		"os":       "test_os",
+		"arch":     "test_arch",
+		"platform": "test_os-test_arch",
+	}
+
 	Convey("bad ensure files", t, func() {
 		for _, tc := range badEnsureFiles {
 			Convey(tc.name, func() {
 				buf := bytes.NewBufferString(tc.file)
-				f, err := ParseFile(buf)
+				f, err := ParseFile(buf, exp)
 				if err != nil {
 					So(f, ShouldBeNil)
 					So(err, ShouldErrLike, tc.err)
 				} else {
 					So(f, ShouldNotBeNil)
-					rf, err := f.ResolveWith(testResolver, template.Expander{
-						"os":       "test_os",
-						"arch":     "test_arch",
-						"platform": "test_os-test_arch",
-					})
+					rf, err := f.Resolve(testResolver, exp)
 					So(rf, ShouldBeNil)
 					So(err, ShouldErrLike, tc.err)
 				}

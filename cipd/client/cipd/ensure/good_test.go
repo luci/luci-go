@@ -20,6 +20,7 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -91,6 +92,19 @@ var goodEnsureFiles = []struct {
 			"path/to/package/${platform=neep-foo} latest",
 		),
 		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{}},
+	},
+
+	{
+		"skipped by the resolver",
+		f(
+			"path/to/package/ok latest",
+			"path/to/package/skipped skip",
+		),
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
+			"": {
+				p("path/to/package/ok", "latest"),
+			},
+		}},
 	},
 
 	{
@@ -203,9 +217,12 @@ var goodEnsureFiles = []struct {
 	},
 }
 
-func testResolver(pkg, vers string) (common.Pin, error) {
-	if strings.Contains(vers, "error") {
+func testResolver(pkg, vers string, _ PackageDef) (common.Pin, error) {
+	switch {
+	case strings.Contains(vers, "error"):
 		return p("", ""), errors.New("testResolver returned error")
+	case strings.Contains(vers, "skip"):
+		return p(pkg, ""), nil
 	}
 	return p(pkg, vers), nil
 }
@@ -213,17 +230,19 @@ func testResolver(pkg, vers string) (common.Pin, error) {
 func TestGoodEnsureFiles(t *testing.T) {
 	t.Parallel()
 
+	exp := template.Expander{
+		"os":       "test_os",
+		"arch":     "test_arch",
+		"platform": "test_os-test_arch",
+	}
+
 	Convey("good ensure files", t, func() {
 		for _, tc := range goodEnsureFiles {
 			Convey(tc.name, func() {
 				buf := bytes.NewBufferString(tc.file)
-				f, err := ParseFile(buf)
+				f, err := ParseFile(buf, exp)
 				So(err, ShouldBeNil)
-				rf, err := f.ResolveWith(testResolver, map[string]string{
-					"os":       "test_os",
-					"arch":     "test_arch",
-					"platform": "test_os-test_arch",
-				})
+				rf, err := f.Resolve(testResolver, exp)
 				So(err, ShouldBeNil)
 				So(rf, ShouldResemble, tc.expect)
 			})
