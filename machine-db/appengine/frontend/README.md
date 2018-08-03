@@ -1,28 +1,28 @@
 # Machine Database
 
-These are instructions for setting up and testing Machine Database.
+These are instructions for setting up development for and testing changes to the Machine Database.
 
 
 ## Setting up
 
-* In infra/go run the following to activate the go environment:
-```
+* In [infra/go](https://chromium.googlesource.com/infra/infra/+/master/go/) run the following to activate the go environment:
+```shell
+cd ../../../../../../
 eval `./env.py`
+cd -
 ```
 
-* To set up the RPC explorer:
-```
+* To set up the UI (frontend and RPC explorer):
+```shell
 cd ../../../web
+./web.py install
 ./web.py build rpcexplorer
+cd -
 ```
-
-* Install [Google App Engine SDK](https://cloud.google.com/appengine/downloads).
-
-* Run `npm install -g bower`
-
-* Run `bower install` in the frontend directory to make sure you have all the dependencies installed.
 
 ## Testing
 
-* Use gae.py to upload to dev:
-`gae.py upload --app-id machine-db-dev`
+* Use [gae.py](https://chromium.googlesource.com/infra/luci/luci-py/+/master/appengine/components/tools/gae.py) to upload to dev:
+```shell
+gae.py upload --app-id machine-db-dev
+```
