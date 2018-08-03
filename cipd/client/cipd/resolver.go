@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/sync/promise"
 
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
@@ -135,6 +136,65 @@ func (r *Resolver) Resolve(ctx context.Context, file *ensure.File, expander temp
 
 	return ret, nil
 }
+
+// ResolveAllPlatforms resolves the ensure file for all platform it is verified
+// for (see file.VerifyPlatforms list).
+//
+// Doesn't stop on a first error. Collects them all into a single multi-error.
+func (r *Resolver) ResolveAllPlatforms(ctx context.Context, file *ensure.File) (map[template.Platform]*ensure.ResolvedFile, error) {
+	logging.Debugf(ctx, "Resolving for %d platform(s) in the ensure file...", len(file.VerifyPlatforms))
+
+	r.Client.BeginBatch(ctx)
+	defer r.Client.EndBatch(ctx)
+
+	type resolvedOrErr struct {
+		resolved *ensure.ResolvedFile
+		err      error
+	}
+	results := make(map[template.Platform]resolvedOrErr, len(file.VerifyPlatforms))
+
+	// Note: errors are reported through 'results'.
+	parallel.FanOutIn(func(tasks chan<- func() error) {
+		mu := sync.Mutex{}
+		for _, plat := range file.VerifyPlatforms {
+			plat := plat
+			tasks <- func() error {
+				ret, err := r.Resolve(ctx, file, plat.Expander())
+				mu.Lock()
+				results[plat] = resolvedOrErr{ret, err}
+				mu.Unlock()
+				return nil
+			}
+		}
+	})
+
+	// Collect all errors into a flat MultiError list sorted by platform.
+	var merr errors.MultiError
+	for _, plat := range file.VerifyPlatforms {
+		err := results[plat].err
+		if err == nil {
+			continue
+		}
+		if me, ok := err.(errors.MultiError); ok {
+			for _, err := range me {
+				merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
+			}
+		} else {
+			merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
+		}
+	}
+	if len(merr) != 0 {
+		return nil, merr
+	}
+
+	out := make(map[template.Platform]*ensure.ResolvedFile, len(results))
+	for plat, res := range results {
+		out[plat] = res.resolved
+	}
+	return out, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 
 // resolveVersion returns a resolved pin for the given package or an error.
 func (r *Resolver) resolveVersion(ctx context.Context, pkg, ver string) (common.Pin, error) {
