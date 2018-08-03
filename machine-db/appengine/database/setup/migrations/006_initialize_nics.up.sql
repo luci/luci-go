@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS nics (
 	PRIMARY KEY (id),
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
 	FOREIGN KEY (switch_id) REFERENCES switches (id) ON DELETE RESTRICT,
+	-- Redundant with PRIMARY KEY (id), but needed by physical_hosts.
+	UNIQUE (id, machine_id),
 	UNIQUE (name, machine_id),
 	UNIQUE (mac_address)
 );
