@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da5b9f3e_306c54e0",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T00:18:51Z",
+      "side": 1,
+      "message": "This is for the mode when we carry on on errors (to collect them all). I don\u0027t want *ResolverFile to contain malformed pins.",
+      "range": {
+        "startLine": 131,
+        "startChar": 27,
+        "endLine": 132,
+        "endChar": 68
+      },
+      "revId": "786f5ce18c1e7871f584ec5ffa828227ae83bde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7bf9bd3c_d30a1f61",
+        "filename": "cipd/client/cipd/resolver.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T00:18:51Z",
+      "side": 1,
+      "message": "It makes no sense to always do this in \u0027cipd ensure\u0027, since if something is missing EnsurePackage will fail anyway. It\u0027s just waste of time to do this check during version resolution. Thus this flag.\n\n(Also for tags and refs, backend guarantees they resolve to a valid pin).",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 15
+      },
+      "revId": "786f5ce18c1e7871f584ec5ffa828227ae83bde9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
