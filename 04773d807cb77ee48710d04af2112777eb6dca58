@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bf48e063_4d372d3b",
+        "filename": "cipd/client/cipd/ensure/bad_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "mmmm tasty!",
+      "range": {
+        "startLine": 134,
+        "startChar": 37,
+        "endLine": 134,
+        "endChar": 77
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9d39f0c7_1a47fc10",
+        "filename": "cipd/client/cipd/ensure/bad_test.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "why is this needed to parse now? Can we remove it from Resolve in that case?",
+      "range": {
+        "startLine": 222,
+        "startChar": 14,
+        "endLine": 222,
+        "endChar": 33
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b07cd306_36fd3f9c",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "honestly I would just have Resolve do this",
+      "range": {
+        "startLine": 52,
+        "startChar": 3,
+        "endLine": 53,
+        "endChar": 43
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70e9fcdb_ec31ba84",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "Is this really needed at the level of VersionResolver, or just the caller of VersionResolver? (it looks like you\u0027re using this information with errors.Annotate at the callsite of rslv)",
+      "range": {
+        "startLine": 141,
+        "startChar": 43,
+        "endLine": 141,
+        "endChar": 58
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0346e7b_0baf2e60",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "fancy. Should we document that VersionResolver should also be threadsafe?",
+      "range": {
+        "startLine": 241,
+        "startChar": 42,
+        "endLine": 241,
+        "endChar": 50
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8e04bbde_7786bf44",
+        "filename": "cipd/client/cipd/resolver.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T22:04:33Z",
+      "side": 1,
+      "message": "won\u0027t \u0027err\u0027 also have this information? i.e. why collate this information in the callback instead of iterating err as a MultiError? Can we just make r.ResolvePackage return a MultiError of errors in this {def, err} format instead?\n\n(Trying to not need `def` for VersionResolver... ignore me if you really like it :))",
+      "range": {
+        "startLine": 112,
+        "startChar": 31,
+        "endLine": 112,
+        "endChar": 64
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
