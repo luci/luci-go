@@ -140,6 +140,72 @@ func TestResolve(t *testing.T) {
 	})
 }
 
+func TestResolveAllPlatforms(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+
+	const iid1 = "11111xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0C"
+	const iid2 = "22222xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0C"
+	const iid3 = "33333xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0C"
+	const iid4 = "44444xXp26LpDqWLjKOUmpGorZXaEJGryJO1-Nkp5t0C"
+
+	file, err := ensure.ParseFile(strings.NewReader(`
+		$VerifiedPlatform windows-amd64 linux-amd64
+		pkg1/${platform} latest
+		pkg2/${platform} latest
+	`))
+	if err != nil {
+		panic(err)
+	}
+
+	Convey("Happy path", t, func() {
+		mc := newMockedClient()
+		mc.mockResolve("pkg1/windows-amd64", "latest", iid1)
+		mc.mockResolve("pkg1/linux-amd64", "latest", iid2)
+		mc.mockResolve("pkg2/windows-amd64", "latest", iid3)
+		mc.mockResolve("pkg2/linux-amd64", "latest", iid4)
+
+		r := Resolver{Client: mc}
+
+		res, err := r.ResolveAllPlatforms(ctx, file)
+		So(err, ShouldBeNil)
+		So(res, ShouldHaveLength, 2)
+		So(res[template.Platform{"linux", "amd64"}].PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+			"": common.PinSlice{
+				{"pkg1/linux-amd64", iid2},
+				{"pkg2/linux-amd64", iid4},
+			},
+		})
+		So(res[template.Platform{"windows", "amd64"}].PackagesBySubdir, ShouldResemble, common.PinSliceBySubdir{
+			"": common.PinSlice{
+				{"pkg1/windows-amd64", iid1},
+				{"pkg2/windows-amd64", iid3},
+			},
+		})
+	})
+
+	Convey("Unhappy path", t, func() {
+		mc := newMockedClient()
+		r := Resolver{Client: mc}
+
+		res, err := r.ResolveAllPlatforms(ctx, file)
+		So(res, ShouldBeNil)
+
+		// Errors order is stable.
+		var lines []string
+		for _, err := range err.(errors.MultiError) {
+			lines = append(lines, err.Error())
+		}
+		So(lines, ShouldResemble, []string{
+			`when resolving windows-amd64 - failed to resolve pkg1/windows-amd64@latest (line 3): no version "latest"`,
+			`when resolving windows-amd64 - failed to resolve pkg2/windows-amd64@latest (line 4): no version "latest"`,
+			`when resolving linux-amd64 - failed to resolve pkg1/linux-amd64@latest (line 3): no version "latest"`,
+			`when resolving linux-amd64 - failed to resolve pkg2/linux-amd64@latest (line 4): no version "latest"`,
+		})
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 type mockedClient struct {
@@ -168,6 +234,9 @@ func (mc *mockedClient) mockResolve(pkg, ver, iid string) {
 func (mc *mockedClient) mockPin(pkg, iid string) {
 	mc.pins[common.Pin{pkg, iid}] = struct{}{}
 }
+
+func (mc *mockedClient) BeginBatch(ctx context.Context) {}
+func (mc *mockedClient) EndBatch(ctx context.Context)   {}
 
 func (mc *mockedClient) ResolveVersion(ctx context.Context, pkg, ver string) (common.Pin, error) {
 	mc.l.Lock()
