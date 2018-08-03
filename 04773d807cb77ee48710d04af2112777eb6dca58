@@ -119,6 +119,29 @@
     },
     {
       "key": {
+        "uuid": "951eef6b_7e9e82f6",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:56:32Z",
+      "side": 1,
+      "message": "This was actually WRONG.\n\ncommon.Pin by definition is a pair of (package name, instance ID). Putting a version identifier into a field called InstanceID is type violation and plain abuse.\n\nResolve() now verifies that VersionResolver actually returns valid pins.",
+      "range": {
+        "startLine": 133,
+        "startChar": 3,
+        "endLine": 134,
+        "endChar": 25
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "70e9fcdb_ec31ba84",
         "filename": "cipd/client/cipd/ensure/file.go",
         "patchSetId": 6
@@ -206,6 +229,52 @@
         "startChar": 42,
         "endLine": 241,
         "endChar": 50
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bdf7ae24_7af27238",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:56:32Z",
+      "side": 1,
+      "message": "I think it is not needed, since goroutines don\u0027t touch same memory?",
+      "range": {
+        "startLine": 245,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 20
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ad939862_a8d433be",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T22:56:32Z",
+      "side": 1,
+      "message": "This is not needed anymore too. It was only needed to carry on on errors. But we do it know anyway.",
+      "range": {
+        "startLine": 288,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 71
       },
       "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
