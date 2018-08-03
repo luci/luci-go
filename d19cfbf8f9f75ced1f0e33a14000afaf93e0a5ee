@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1e2f19a9_92d384b2",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-03T00:14:30Z",
+      "side": 1,
+      "message": "ALTER TABLE nics ADD CONSTRAINT id UNIQUE (id, machine_id);",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "943520f2_25162d4d",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-03T00:14:30Z",
+      "side": 1,
+      "message": "ALTER TABLE physical_hosts ADD COLUMN nic_id int NOT NULL;\nUPDATE physical_hosts p INNER JOIN nics n ON p.machine_id \u003d n.machine_id SET p.nic_id \u003d n.id WHERE n.name \u003d \"eth0\";",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "578d6d01_61eda6f5",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-03T00:14:30Z",
+      "side": 1,
+      "message": "ALTER TABLE physical_hosts ADD CONSTRAINT physical_hosts_ibfk_4 FOREIGN KEY (nic_id, machine_id) REFERENCES nics (id, machine_id);",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

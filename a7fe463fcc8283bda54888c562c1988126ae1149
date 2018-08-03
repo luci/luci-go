@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1e04db4_d87016ea",
+        "filename": "machine-db/appengine/rpc/physical_hosts.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-03T00:14:30Z",
+      "side": 0,
+      "message": "Referenced text was moved to the model package so I\u0027ve copied it here.",
+      "range": {
+        "startLine": 77,
+        "startChar": 97,
+        "endLine": 77,
+        "endChar": 105
+      },
+      "revId": "a7fe463fcc8283bda54888c562c1988126ae1149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
