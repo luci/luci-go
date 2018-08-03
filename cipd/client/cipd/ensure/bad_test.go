@@ -131,7 +131,7 @@ var badEnsureFiles = []struct {
 	{
 		"bad template",
 		"foo/bar/${not_good} version",
-		"failed to resolve package template",
+		`failed to expand package template (line 1): unknown variable "${not_good}"`,
 	},
 
 	{
@@ -165,6 +165,16 @@ var badEnsureFiles = []struct {
 			"some/package/something error_version",
 		),
 		`failed to resolve package version (line 1)`,
+	},
+
+	{
+		"bad version resolution in multiple packages",
+		f(
+			"some/package/something1 error_version",
+			"some/package/something2 error_version",
+		),
+		`failed to resolve package version (line 1): testResolver returned error ` +
+			`(and 1 other error)`, // errors are sorted by line number
 	},
 
 	{
@@ -209,7 +219,7 @@ func TestBadEnsureFiles(t *testing.T) {
 					So(err, ShouldErrLike, tc.err)
 				} else {
 					So(f, ShouldNotBeNil)
-					rf, err := f.ResolveWith(testResolver, template.Expander{
+					rf, err := f.Resolve(testResolver, template.Expander{
 						"os":       "test_os",
 						"arch":     "test_arch",
 						"platform": "test_os-test_arch",

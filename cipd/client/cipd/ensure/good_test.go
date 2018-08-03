@@ -94,6 +94,19 @@ var goodEnsureFiles = []struct {
 	},
 
 	{
+		"skipped by the resolver",
+		f(
+			"path/to/package/ok latest",
+			"path/to/package/skipped skip",
+		),
+		&ResolvedFile{"", common.NotParanoid, common.PinSliceBySubdir{
+			"": {
+				p("path/to/package/ok", "latest"),
+			},
+		}},
+	},
+
+	{
 		"Subdir directives",
 		f(
 			"some/package latest",
@@ -203,9 +216,12 @@ var goodEnsureFiles = []struct {
 	},
 }
 
-func testResolver(pkg, vers string) (common.Pin, error) {
-	if strings.Contains(vers, "error") {
+func testResolver(pkg, vers string, _ PackageDef) (common.Pin, error) {
+	switch {
+	case strings.Contains(vers, "error"):
 		return p("", ""), errors.New("testResolver returned error")
+	case strings.Contains(vers, "skip"):
+		return p(pkg, ""), nil
 	}
 	return p(pkg, vers), nil
 }
@@ -219,7 +235,7 @@ func TestGoodEnsureFiles(t *testing.T) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
 				So(err, ShouldBeNil)
-				rf, err := f.ResolveWith(testResolver, map[string]string{
+				rf, err := f.Resolve(testResolver, map[string]string{
 					"os":       "test_os",
 					"arch":     "test_arch",
 					"platform": "test_os-test_arch",
