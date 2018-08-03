@@ -236,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "f9e68745_987eba45",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T23:25:58Z",
+      "side": 1,
+      "message": "herp, so it is",
+      "parentUuid": "34141b03_1f137aaa",
+      "range": {
+        "startLine": 241,
+        "startChar": 42,
+        "endLine": 241,
+        "endChar": 50
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bdf7ae24_7af27238",
         "filename": "cipd/client/cipd/ensure/file.go",
         "patchSetId": 6
@@ -247,6 +271,30 @@
       "writtenOn": "2018-08-03T22:56:32Z",
       "side": 1,
       "message": "I think it is not needed, since goroutines don\u0027t touch same memory?",
+      "range": {
+        "startLine": 245,
+        "startChar": 2,
+        "endLine": 245,
+        "endChar": 20
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e3d50822_decf15c4",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-03T23:25:58Z",
+      "side": 1,
+      "message": "right",
+      "parentUuid": "bdf7ae24_7af27238",
       "range": {
         "startLine": 245,
         "startChar": 2,
