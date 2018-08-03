@@ -117,18 +117,8 @@ func (pl *PackageLoader) resolveWithOpts(c context.Context, opts cipd.ClientOpti
 	defer client.EndBatch(c)
 
 	// Resolve our ensure file.
-	resolved, err := ef.ResolveWith(func(pkg, vers string) (common.Pin, error) {
-		pin, err := client.ResolveVersion(c, pkg, vers)
-		if err != nil {
-			return pin, errors.Annotate(err, "failed to resolve package %q at version %q", pkg, vers).Err()
-		}
-
-		logging.Fields{
-			"package": pkg,
-			"version": vers,
-		}.Debugf(c, "Resolved package to: %s", pin)
-		return pin, nil
-	}, expander)
+	resolver := cipd.Resolver{Client: client}
+	resolved, err := resolver.Resolve(c, ef, expander)
 	if err != nil {
 		return err
 	}
@@ -196,12 +186,16 @@ func (pl *PackageLoader) Verify(c context.Context, sp *vpython.Spec, tags []*vpy
 		return errors.Annotate(err, "failed to generate CIPD client").Err()
 	}
 
-	verify := cipd.Verifier{
-		Client: client,
+	client.BeginBatch(c)
+	defer client.EndBatch(c)
+
+	resolver := cipd.Resolver{
+		Client:         client,
+		VerifyPresence: true,
 	}
 
 	// Build an Ensure file for our specification under each tag and register it
-	// with our Verifier.
+	// with our Resolver.
 	ensureFileErrors := 0
 	for _, tag := range tags {
 		tagSlice := []*vpython.PEP425Tag{tag}
@@ -216,45 +210,30 @@ func (pl *PackageLoader) Verify(c context.Context, sp *vpython.Spec, tags []*vpy
 
 		expander, err := pl.expanderForTags(c, tagSlice)
 		if err != nil {
-			logging.Errorf(c, "Failed to generate template expander for: %s", tag.TagString())
 			ensureFileErrors++
+			logging.Errorf(c, "Failed to generate template expander for: %s", tag.TagString())
 			continue
 		}
 
-		if _, err := verify.VerifyEnsureFile(c, ef, expander); err != nil {
-			logging.Errorf(c, "Failed to verify package set for: %s", tag.TagString())
+		if _, err := resolver.Resolve(c, ef, expander); err != nil {
 			ensureFileErrors++
+			ts := tag.TagString()
+			if merr, ok := err.(errors.MultiError); ok {
+				for _, err := range merr {
+					logging.Errorf(c, "For %s - %s", ts, err)
+				}
+			} else {
+				logging.Errorf(c, "For %s - %s", ts, err)
+			}
 		}
 	}
 
-	failed := false
 	if ensureFileErrors > 0 {
 		logging.Errorf(c, "Spec could not be resolved for %d tag(s).", ensureFileErrors)
-		failed = true
-	}
-
-	// Verify all registered package sets.
-	result := verify.Result()
-	if result.HasErrors() {
-		logging.Errorf(c, "Package verification failed to verify %d package(s) and %d pin(s).",
-			len(result.InvalidPackages), len(result.InvalidPins))
-
-		for _, pkg := range result.InvalidPackages {
-			logging.Errorf(c, "Could not verify package: %s", pkg)
-		}
-
-		for _, pin := range result.InvalidPins {
-			logging.Errorf(c, "Could not verify pin: %s", pin)
-		}
-
-		failed = true
-	}
-
-	if failed {
 		return errors.New("verification failed")
 	}
 
-	logging.Infof(c, "Successfully verified %d package(s) and %d pin(s).", result.NumPackages, result.NumPins)
+	logging.Infof(c, "Successfully verified all packages.")
 	return nil
 }
 

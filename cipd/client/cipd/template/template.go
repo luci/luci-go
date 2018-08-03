@@ -30,13 +30,13 @@ import (
 // Expander is a mapping of simple string substitutions which is used to
 // expand cipd package name templates. For example:
 //
-//   ex, err := TemplateExpander{
+//   ex, err := template.Expander{
 //     "platform": "mac-amd64"
 //   }.Expand("foo/${platform}")
 //
 // `ex` would be "foo/mac-amd64".
 //
-// Use DefaultPackageNameExpander() to obtain the default mapping for CIPD
+// Use DefaultExpander() to obtain the default mapping for CIPD
 // applications.
 type Expander map[string]string
 

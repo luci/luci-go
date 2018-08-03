@@ -20,17 +20,26 @@ import (
 	"strings"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// fakeIID returns a SHA256 IIDs that has the 'vers' as a substring.
+func fakeIID(vers string) string {
+	if common.ValidateInstanceID(vers, common.AnyHash) == nil {
+		return vers
+	}
+	return strings.Replace(vers, ":", "-", 1) + "-" + strings.Repeat("0", 42-len(vers)) + "C"
+}
 
 func f(lines ...string) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
 func p(pkg, ver string) common.Pin {
-	return common.Pin{PackageName: pkg, InstanceID: ver}
+	return common.Pin{PackageName: pkg, InstanceID: fakeIID(ver)}
 }
 
 var goodEnsureFiles = []struct {
@@ -207,7 +216,7 @@ func testResolver(pkg, vers string) (common.Pin, error) {
 	if strings.Contains(vers, "error") {
 		return p("", ""), errors.New("testResolver returned error")
 	}
-	return p(pkg, vers), nil
+	return p(pkg, fakeIID(vers)), nil
 }
 
 func TestGoodEnsureFiles(t *testing.T) {
@@ -219,7 +228,7 @@ func TestGoodEnsureFiles(t *testing.T) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
 				So(err, ShouldBeNil)
-				rf, err := f.ResolveWith(testResolver, map[string]string{
+				rf, err := f.Resolve(testResolver, template.Expander{
 					"os":       "test_os",
 					"arch":     "test_arch",
 					"platform": "test_os-test_arch",
