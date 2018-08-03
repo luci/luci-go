@@ -1,0 +1,40 @@
+{{define "title"}}Machine DB - Machines{{end}}
+
+{{define "content"}}
+
+<h1>Machines</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">Platform</th>
+        <th class="mdl-data-table__cell--non-numeric">Rack</th>
+        <th class="mdl-data-table__cell--non-numeric">Datacenter</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+        <th class="mdl-data-table__cell--non-numeric">Asset Tag</th>
+        <th class="mdl-data-table__cell--non-numeric">Service Tag</th>
+        <th class="mdl-data-table__cell--non-numeric">Deployment Ticket</th>
+        <th class="mdl-data-table__cell--non-numeric">DRAC Password</th>
+        <th class="mdl-data-table__cell--non-numeric">State</th>
+      </tr>
+    </thead>
+    <tbody>
+     {{range .Machines}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Platform}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Rack}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Datacenter}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.AssetTag}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.ServiceTag}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.DeploymentTicket}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.DracPassword}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.State}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+
+{{end}}

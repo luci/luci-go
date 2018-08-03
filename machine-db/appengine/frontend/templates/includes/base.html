@@ -1,6 +1,9 @@
 {{define "base"}}
 <html>
 <head>
+  <link rel="stylesheet" href="/bower_components/material-design-lite/material.min.css">
+  <script src="/bower_components/material-design-lite/material.min.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
   <title>{{block "title" .}}Machine DB{{end}}</title>
   {{block "head" .}}
   {{end}}
@@ -10,6 +13,7 @@
   <div>
     {{if .IsAnonymous}}
       <a href="{{.LoginURL}}">Login</a>
+    </button>
     {{else}}
       <span>{{.User.Email}}</span>
       <span> |</span>
@@ -17,7 +21,25 @@
     {{end}}
   </div>
 
-  <div>
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-drawer
+            mdl-layout--fixed-header">
+  <header class="mdl-layout__header">
+    <div class="mdl-layout__header-row" style="background-color:#900";>
+      <div class="mdl-layout-spacer"></div>
+    </div>
+  </header>
+  <div class="mdl-layout__drawer">
+    <span class="mdl-layout-title">Crimson</span>
+    <nav class="mdl-navigation">
+      <a class="mdl-navigation__link" href="/datacenters">Datacenters</a>
+      <a class="mdl-navigation__link" href="/platforms">Platforms</a>
+      <a class="mdl-navigation__link" href="/machines">Machines</a>
+      <a class="mdl-navigation__link" href="/hosts">Hosts</a>
+    </nav>
+  </div>
+
+
+  <div style="margin-left:250px";>
     {{block "content" .}}
     {{end}}
   </div>

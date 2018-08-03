@@ -1,0 +1,26 @@
+{{define "title"}}Machine DB - Platforms{{end}}
+
+
+{{define "content"}}
+
+<h1>Platforms</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+        <th class="mdl-data-table__cell--non-numeric">Manufacturer</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Platforms}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Manufacturer}}</td>
+      </tr>
+      {{end}}
+    <tbody>
+  </table>
+
+{{end}}

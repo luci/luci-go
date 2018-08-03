@@ -45,8 +45,15 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, srv crimson.
 		templates.WithTemplates(prepareTemplates(tmplPath)),
 		auth.Authenticate(gaeserver.UsersAPIAuthMethod{}),
 	)
-
 	r.GET("/", m, indexPage)
+	r.GET("/datacenters", m, datacentersPage)
+	r.GET("/hosts", m, hostsPage)
+	r.GET("/machines", m, machinesPage)
+	r.GET("/platforms", m, platformsPage)
+}
+
+func indexPage(c *router.Context) {
+	templates.MustRender(c.Context, c.Writer, "pages/index.html", nil)
 }
 
 // prepareTemplates configures templates.Bundle used by all UI handlers.
