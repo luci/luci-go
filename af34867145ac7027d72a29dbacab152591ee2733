@@ -22,6 +22,30 @@
       "revId": "af34867145ac7027d72a29dbacab152591ee2733",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "74271372_cf825c74",
+        "filename": "common/sync/promise/map.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T00:04:06Z",
+      "side": 1,
+      "message": "and why not 487? :)\n\nBetter not to guess and let the map do its growth thing. In the application I\u0027m going to use it 32 is overkill.",
+      "parentUuid": "8664c9eb_22728b52",
+      "range": {
+        "startLine": 50,
+        "startChar": 41,
+        "endLine": 50,
+        "endChar": 42
+      },
+      "revId": "af34867145ac7027d72a29dbacab152591ee2733",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
