@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7d7a221_9de5c937",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1006,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-03T02:43:12Z",
+      "side": 0,
+      "message": "This was 99% useless since it applied before env var resolution, meaning almost everywhere the cache was still being used (because it was supplied via CIPD_CACHE_DIR env var).",
+      "range": {
+        "startLine": 999,
+        "startChar": 0,
+        "endLine": 1006,
+        "endChar": 0
+      },
+      "revId": "04773d807cb77ee48710d04af2112777eb6dca58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
