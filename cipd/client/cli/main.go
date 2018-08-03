@@ -26,7 +26,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -40,7 +39,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/auth/client/authcli"
 
@@ -889,8 +887,8 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 					` Providing '-' will read from stdin.`))
 			c.Flags.StringVar(&c.ensureFileOut, "ensure-file-output", "",
 				(`A path to write an "ensure" file which is the fully-resolved version ` +
-					`of the input ensure file. This output will not contain any ${params} ` +
-					`or $Settings other than $ServiceURL.`))
+					`of the input ensure file for the current platform. This output will ` +
+					`not contain any ${params} or $Settings other than $ServiceURL.`))
 			return c
 		},
 	}
@@ -996,78 +994,27 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	}
 	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
 
-	// Ignore any configured CIPD cache directory. This ensures that we are
-	// hitting the live service instead of using (potentially invalid) cache
-	// entries.
-	if clientOpts.cacheDir != "" {
-		logging.Warningf(ctx, "Ignoring cache directory %q for verification.", clientOpts.cacheDir)
-		clientOpts.cacheDir = ""
-	}
-
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	client.BeginBatch(ctx)
-	defer client.EndBatch(ctx)
 
 	if len(parsedFile.VerifyPlatforms) == 0 {
 		logging.Errorf(ctx,
 			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
 		return nil, errors.New("no verification platforms configured")
 	}
-	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(parsedFile.VerifyPlatforms))
 
-	// Platform as string => result of the verification (success or failure).
-	type resolvedOrErr struct {
-		resolved *ensure.ResolvedFile
-		err      error
-	}
-	results := make(map[string]resolvedOrErr, len(parsedFile.VerifyPlatforms))
-
-	// Note: errors are reported through 'results'.
 	resolver := cipd.Resolver{Client: client, VerifyPresence: true}
-	parallel.FanOutIn(func(workC chan<- func() error) {
-		mu := sync.Mutex{}
-
-		for _, plat := range parsedFile.VerifyPlatforms {
-			plat := plat
-
-			workC <- func() error {
-				ret, err := resolver.Resolve(ctx, parsedFile, plat.Expander())
-				mu.Lock()
-				results[plat.String()] = resolvedOrErr{ret, err}
-				mu.Unlock()
-				return nil
-			}
-		}
-	})
-
-	// Collect all errors into a flat MultiError list, so they are nicely logged
-	// by printErrors.
-	var merr errors.MultiError
-	for _, plat := range parsedFile.VerifyPlatforms {
-		err := results[plat.String()].err
-		if err == nil {
-			continue
-		}
-		if me, ok := err.(errors.MultiError); ok {
-			for _, err := range me {
-				merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
-			}
-		} else {
-			merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
-		}
-	}
-	if len(merr) != 0 {
-		return nil, merr
+	results, err := resolver.ResolveAllPlatforms(ctx, parsedFile)
+	if err != nil {
+		return nil, err
 	}
 
 	// All platforms verified successfully. Collect pins for the output.
 	pinMap := map[string][]pinInfo{}
-	for plat, res := range results {
-		for subdir, resolvedPins := range res.resolved.PackagesBySubdir {
+	for plat, resolved := range results {
+		for subdir, resolvedPins := range resolved.PackagesBySubdir {
 			pins := pinMap[subdir]
 			for _, pin := range resolvedPins {
 				// Put a copy into 'pins', otherwise they all end up pointing to the
@@ -1076,7 +1023,7 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 				pins = append(pins, pinInfo{
 					Pkg:      pin.PackageName,
 					Pin:      &pin,
-					Platform: plat,
+					Platform: plat.String(),
 				})
 			}
 			pinMap[subdir] = pins
