@@ -928,9 +928,8 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
-	resolved, err := parsedFile.Resolve(func(pkg, vers string) (common.Pin, error) {
-		return client.ResolveVersion(ctx, pkg, vers)
-	})
+	resolver := cipd.Resolver{Client: client}
+	resolved, err := resolver.Resolve(ctx, parsedFile, template.DefaultExpander())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1010,15 +1009,15 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 		return nil, err
 	}
 
+	client.BeginBatch(ctx)
+	defer client.EndBatch(ctx)
+
 	if len(parsedFile.VerifyPlatforms) == 0 {
 		logging.Errorf(ctx,
 			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
 		return nil, errors.New("no verification platforms configured")
 	}
 	logging.Debugf(ctx, "Verifying against %d platform(s) in the ensure file.", len(parsedFile.VerifyPlatforms))
-
-	// Verify all of our platforms in parallel.
-	verify := cipd.Verifier{Client: client}
 
 	// Platform as string => result of the verification (success or failure).
 	type resolvedOrErr struct {
@@ -1028,6 +1027,7 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	results := make(map[string]resolvedOrErr, len(parsedFile.VerifyPlatforms))
 
 	// Note: errors are reported through 'results'.
+	resolver := cipd.Resolver{Client: client, VerifyPresence: true}
 	parallel.FanOutIn(func(workC chan<- func() error) {
 		mu := sync.Mutex{}
 
@@ -1035,7 +1035,7 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 			plat := plat
 
 			workC <- func() error {
-				ret, err := verify.VerifyEnsureFile(ctx, parsedFile, plat.Expander())
+				ret, err := resolver.Resolve(ctx, parsedFile, plat.Expander())
 				mu.Lock()
 				results[plat.String()] = resolvedOrErr{ret, err}
 				mu.Unlock()
@@ -1044,26 +1044,20 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 		}
 	})
 
+	// Collect all errors into a flat MultiError list, so they are nicely logged
+	// by printErrors.
 	var merr errors.MultiError
-
-	// Report all pins we tried to resolve, but couldn't.
-	if result := verify.Result(); result.HasErrors() {
-		logging.Errorf(ctx, "Failed to resolve %d package(s) and %d pin(s):", len(result.InvalidPackages), len(result.InvalidPins))
-		for _, pkg := range result.InvalidPackages {
-			logging.Errorf(ctx, "Failed to resolve package %v.", pkg)
-		}
-		for _, pin := range result.InvalidPins {
-			logging.Errorf(ctx, "Failed to verify pin %s.", pin)
-		}
-		merr = append(merr, errors.New("failed verification"))
-	} else {
-		logging.Infof(ctx, "Verified %d package(s) and %d pin(s)", result.NumPackages, result.NumPins)
-	}
-
-	// Maybe the ensure file has other errors, report them per platform.
 	for _, plat := range parsedFile.VerifyPlatforms {
-		if err := results[plat.String()].err; err != nil {
-			merr = append(merr, fmt.Errorf("when verifying %s - %s", plat, err))
+		err := results[plat.String()].err
+		if err == nil {
+			continue
+		}
+		if me, ok := err.(errors.MultiError); ok {
+			for _, err := range me {
+				merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
+			}
+		} else {
+			merr = append(merr, fmt.Errorf("when resolving %s - %s", plat, err))
 		}
 	}
 	if len(merr) != 0 {

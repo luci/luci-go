@@ -33,42 +33,8 @@ type PackageDef struct {
 	LineNo int
 }
 
-func (p *PackageDef) String() string {
+func (p PackageDef) String() string {
 	return fmt.Sprintf("%s@%s", p.PackageTemplate, p.UnresolvedVersion)
-}
-
-// VersionResolver is expected to tranform a {PackageName, Version} tuple into
-// a resolved instance ID.
-//
-//  - `pkg` is guaranteed to pass common.ValidatePackageName
-//  - `vers` is guaranteed to pass common.ValidateInstanceVersion
-//
-// The returned `instID` will NOT be checked (so that you
-// can provide a pass-through resolver, if you like).
-type VersionResolver func(pkg, vers string) (common.Pin, error)
-
-// Resolve takes a Package definition containing a possibly templated package
-// name, and a possibly unresolved version string and attempts to resolve them
-// into a Pin.
-func (p *PackageDef) Resolve(rslv VersionResolver, expander template.Expander) (pin common.Pin, err error) {
-	switch pin.PackageName, err = expander.Expand(p.PackageTemplate); err {
-	case template.ErrSkipTemplate:
-		return
-	case nil:
-		err = common.ValidatePackageName(pin.PackageName)
-	}
-	if err != nil {
-		err = errors.Annotate(err, "failed to resolve package template (line %d)", p.LineNo).Err()
-		return
-	}
-
-	pin, err = rslv(pin.PackageName, p.UnresolvedVersion)
-	if err != nil {
-		err = errors.Annotate(err, "failed to resolve package version (line %d)", p.LineNo).Err()
-		return
-	}
-
-	return
 }
 
 // PackageSlice is a sortable slice of PackageDef
@@ -77,3 +43,24 @@ type PackageSlice []PackageDef
 func (ps PackageSlice) Len() int           { return len(ps) }
 func (ps PackageSlice) Less(i, j int) bool { return ps[i].PackageTemplate < ps[j].PackageTemplate }
 func (ps PackageSlice) Swap(i, j int)      { ps[i], ps[j] = ps[j], ps[i] }
+
+// Expand expands the package name template and checks that resulting package
+// name and version are syntactically correct.
+//
+// May return template.ErrSkipTemplate is this package definition should be
+// skipped given the current expansion variables values.
+func (p *PackageDef) Expand(expander template.Expander) (pkg string, err error) {
+	switch pkg, err = expander.Expand(p.PackageTemplate); {
+	case err == template.ErrSkipTemplate:
+		return "", err
+	case err != nil:
+		return "", errors.Annotate(err, "failed to expand package template (line %d)", p.LineNo).Err()
+	}
+	if err = common.ValidatePackageName(pkg); err != nil {
+		return "", errors.Annotate(err, "bad package name (line %d)", p.LineNo).Err()
+	}
+	if err = common.ValidateInstanceVersion(p.UnresolvedVersion); err != nil {
+		return "", errors.Annotate(err, "bad package version (line %d)", p.LineNo).Err()
+	}
+	return
+}
