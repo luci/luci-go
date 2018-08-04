@@ -134,7 +134,7 @@ type ResolvedFile struct {
 }
 
 // Serialize writes the ResolvedFile to an io.Writer in canonical order.
-func (f *ResolvedFile) Serialize(w io.Writer) (int, error) {
+func (f *ResolvedFile) Serialize(w io.Writer) error {
 	// piggyback on top of File.Serialize.
 	packagesBySubdir := make(map[string]PackageSlice, len(f.PackagesBySubdir))
 	for k, v := range f.PackagesBySubdir {
@@ -284,8 +284,8 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 }
 
 // Serialize writes the File to an io.Writer in canonical order.
-func (f *File) Serialize(w io.Writer) (int, error) {
-	return iotools.WriteTracker(w, func(w io.Writer) error {
+func (f *File) Serialize(w io.Writer) error {
+	_, err := iotools.WriteTracker(w, func(w io.Writer) error {
 		needsNLs := 0
 		maybeAddNL := func() {
 			if needsNLs > 0 {
@@ -359,4 +359,5 @@ func (f *File) Serialize(w io.Writer) (int, error) {
 		maybeAddNL()
 		return nil
 	})
+	return err
 }
