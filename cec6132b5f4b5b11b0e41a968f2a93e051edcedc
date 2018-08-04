@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "df0d3026_8c09eca6",
+        "filename": "cipd/client/cipd/ensure/file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-04T00:59:53Z",
+      "side": 0,
+      "message": "This was not used and not documented and caused me WTF moment, so I\u0027ve deleted it.",
+      "range": {
+        "startLine": 137,
+        "startChar": 47,
+        "endLine": 137,
+        "endChar": 51
+      },
+      "revId": "cec6132b5f4b5b11b0e41a968f2a93e051edcedc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
