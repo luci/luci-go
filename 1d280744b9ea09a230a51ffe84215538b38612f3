@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b352a780_f95c9b54",
+        "filename": "cipd/appengine/dispatch.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-04T23:07:14Z",
+      "side": 1,
+      "message": "This is for devserver. It is too dumb to understand \u0027target: backend\u0027 in queue.yaml :( It has no negative effect on real GAE (just a bit redundant).",
+      "range": {
+        "startLine": 6,
+        "startChar": 4,
+        "endLine": 7,
+        "endChar": 19
+      },
+      "revId": "1d280744b9ea09a230a51ffe84215538b38612f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
