@@ -102,8 +102,7 @@ func TestFileSerialization(t *testing.T) {
 		for _, tc := range fileSerializationTests {
 			Convey(tc.name, func() {
 				buf := &bytes.Buffer{}
-				_, err := tc.f.Serialize(buf)
-				So(err, ShouldBeNil)
+				So(tc.f.Serialize(buf), ShouldBeNil)
 				So(buf.String(), ShouldEqual, tc.expect)
 			})
 		}

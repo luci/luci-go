@@ -941,8 +941,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 		buf := bytes.Buffer{}
 		resolved.ServiceURL = clientOpts.resolvedServiceURL()
 		resolved.ParanoidMode = ""
-		_, err = resolved.Serialize(&buf)
-		if err == nil {
+		if err = resolved.Serialize(&buf); err == nil {
 			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
 		}
 	}
