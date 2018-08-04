@@ -3,3 +3,5 @@ dispatch:
     module: static
   - url: "*/static/*"
     module: static
+  - url: "*/internal/tq/*"
+    module: backend
