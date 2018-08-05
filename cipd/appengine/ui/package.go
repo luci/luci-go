@@ -51,6 +51,7 @@ func packagePage(c *router.Context, pkg string) error {
 	var instances *api.ListInstancesResponse
 	var siblings *api.ListPrefixResponse
 	var refs *api.ListRefsResponse
+	var meta *metadataBlock
 
 	err := parallel.FanOutIn(func(tasks chan<- func() error) {
 		tasks <- func() error {
@@ -77,6 +78,11 @@ func packagePage(c *router.Context, pkg string) error {
 			siblings, err = impl.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
 				Prefix: pfx,
 			})
+			return err
+		}
+		tasks <- func() error {
+			var err error
+			meta, err = fetchMetadata(c.Context, pkg)
 			return err
 		}
 		tasks <- func() error {
@@ -153,6 +159,7 @@ func packagePage(c *router.Context, pkg string) error {
 		"Breadcrumbs": breadcrumbs(pfx),
 		"Prefixes":    prefixesListing(pfx, siblings.Prefixes),
 		"Packages":    packagesListing(pfx, siblings.Packages, pkg),
+		"Metadata":    meta,
 		"Instances":   instListing,
 		"Refs":        refsListing,
 		"NextPageURL": nextPageURL,
