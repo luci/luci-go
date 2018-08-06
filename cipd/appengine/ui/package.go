@@ -131,12 +131,30 @@ func packagePage(c *router.Context, pkg string) error {
 		}
 	}
 
+	// Prepare separate list of refs (in chronological order) for display.
+	type refItem struct {
+		Title string
+		Href  string
+		User  string
+		Age   string
+	}
+	refsListing := make([]refItem, len(refs.Refs))
+	for i, r := range refs.Refs {
+		refsListing[i] = refItem{
+			Title: r.Name,
+			Href:  instancePageURL(pkg, r.Name),
+			User:  strings.TrimPrefix(r.ModifiedBy, "user:"),
+			Age:   humanize.RelTime(google.TimeFromProto(r.ModifiedTs), now, "", ""),
+		}
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
 		"Package":     pkg,
 		"Breadcrumbs": breadcrumbs(pfx),
 		"Prefixes":    prefixesListing(pfx, siblings.Prefixes),
 		"Packages":    packagesListing(pfx, siblings.Packages, pkg),
 		"Instances":   instListing,
+		"Refs":        refsListing,
 		"NextPageURL": nextPageURL,
 		"PrevPageURL": prevPageURL,
 	})

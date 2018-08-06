@@ -1,3 +1,33 @@
+{{define "head"}}
+<style type="text/css">
+  .right-border {
+    border-right-style: solid;
+    border-width: 1px;
+    border-color: #cccccc;
+  }
+  .pkg-title-row {
+    border-top-style: solid;
+    border-width: 1px;
+    border-color: #cccccc;
+    padding-top: 10px;
+    padding-bottom: 4px;
+  }
+  .age-td {
+    /* as small as possible without wrapping */
+    width: 1px;
+    white-space: nowrap;
+
+    border-right-style: solid;
+    border-width: 1px;
+    border-color: #cccccc;
+  }
+  .none-label {
+    padding-top: 0.3em;
+    color: #cccccc;
+  }
+</style>
+{{end}}
+
 {{define "content"}}
 
 <ol class="breadcrumb">
@@ -13,9 +43,9 @@
 <div class="container">
   <div class="row">
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 right-border">
       <h4>Packages</h4>
-      <table class="table table-striped">
+      <table class="table table-striped table-condensed">
       {{range $item := .Prefixes}}
         <tr>
           <td>
@@ -34,6 +64,7 @@
           <td>
             {{if $item.Active}}
               <b>{{$item.Title}}</b>
+              <span class="glyphicon glyphicon-arrow-down pull-right"></span>
             {{else}}
               <a href="{{$item.Href}}">{{$item.Title}}</a>
             {{end}}
@@ -43,10 +74,26 @@
       </table>
     </div>
 
-    {{if .Instances}}
     <div class="col-sm-6">
-      <h4 class="monospace">{{.Package}}</h4>
-      <table class="table table-striped">
+      <h4>Metadata</h4>
+      <p>TODO</p>
+    </div>
+
+  </div>
+
+
+  {{if .Instances}}
+  <div class="row pkg-title-row">
+    <div class="col-sm-12">
+      <h3 class="monospace text-center">{{.Package}}</h3>
+    </div>
+  </div>
+
+  <div class="row">
+
+    <div class="col-sm-6">
+      <h4>Instances</h4>
+      <table class="table table-striped table-condensed">
       {{if .PrevPageURL}}
         <tr>
           <td><a href="{{.PrevPageURL}}">...</a></td>
@@ -55,12 +102,12 @@
       {{end}}
       {{range $item := .Instances}}
         <tr>
-          <td>
+          <td class="age-td">
             {{.Age}}
           </td>
           <td>
-            <a class="monospace" href="{{$item.Href}}">{{$item.Title}}</a>
-            {{range $ref := $item.Refs}}
+            <a class="monospace" href="{{.Href}}">{{.Title}}</a>
+            {{range $ref := .Refs}}
               <a class="label label-primary" href="{{$ref.Href}}">{{$ref.Title}}</a>
             {{end}}
           </td>
@@ -74,9 +121,30 @@
       {{end}}
       </table>
     </div>
-    {{end}}
 
+    <div class="col-sm-6">
+      <h4>Refs</h4>
+      {{if .Refs}}
+      <table class="table table-striped table-condensed">
+      {{range $ref := .Refs}}
+        <tr>
+          <td class="age-td">{{.Age}}</td>
+          <td>
+            <a class="label label-primary" href="{{.Href}}">{{.Title}}</a>
+            <span style="padding-left: 0.2em;">by {{.User}}</span>
+          </td>
+        </tr>
+      {{end}}
+      </table>
+      {{else}}
+        <p class="none-label">None</p>
+      {{end}}
+      <h4>Recent tags</h4>
+      <p>TODO</p>
+    </div>
   </div>
+  {{end}}
+
 </div>
 
 
