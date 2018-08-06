@@ -45,7 +45,7 @@ func p(pkg, ver string) common.Pin {
 var goodEnsureFiles = []struct {
 	name   string
 	file   string
-	expect *ResolvedFile
+	expect interface{} // either *File or *ResolvedFile depending on what is tested
 }{
 	{
 		"old_style",
@@ -190,6 +190,17 @@ var goodEnsureFiles = []struct {
 	},
 
 	{
+		"ResolvedVersions setting",
+		f(
+			"$ResolvedVersions resolved.versions",
+		),
+		&File{
+			ResolvedVersions: "resolved.versions",
+			PackagesBySubdir: map[string]PackageSlice{},
+		},
+	},
+
+	{
 		"empty",
 		"",
 		&ResolvedFile{"", common.NotParanoid, nil},
@@ -228,13 +239,21 @@ func TestGoodEnsureFiles(t *testing.T) {
 				buf := bytes.NewBufferString(tc.file)
 				f, err := ParseFile(buf)
 				So(err, ShouldBeNil)
-				rf, err := f.Resolve(testResolver, template.Expander{
-					"os":       "test_os",
-					"arch":     "test_arch",
-					"platform": "test_os-test_arch",
-				})
-				So(err, ShouldBeNil)
-				So(rf, ShouldResemble, tc.expect)
+
+				switch expect := tc.expect.(type) {
+				case *File:
+					So(f, ShouldResemble, expect)
+				case *ResolvedFile:
+					rf, err := f.Resolve(testResolver, template.Expander{
+						"os":       "test_os",
+						"arch":     "test_arch",
+						"platform": "test_os-test_arch",
+					})
+					So(err, ShouldBeNil)
+					So(rf, ShouldResemble, expect)
+				default:
+					panic("unexpected type")
+				}
 			})
 		}
 	})

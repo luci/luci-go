@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -912,7 +911,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
+	parsedFile, err := loadEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -941,8 +940,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 		buf := bytes.Buffer{}
 		resolved.ServiceURL = clientOpts.resolvedServiceURL()
 		resolved.ParanoidMode = ""
-		_, err = resolved.Serialize(&buf)
-		if err == nil {
+		if err = resolved.Serialize(&buf); err == nil {
 			err = ioutil.WriteFile(ensureFileOut, buf.Bytes(), 0666)
 		}
 	}
@@ -988,7 +986,7 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 }
 
 func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientOptions) (map[string][]pinInfo, error) {
-	parsedFile, err := loadAndValidateEnsureFile(ctx, ensureFile, &clientOpts)
+	parsedFile, err := loadEnsureFile(ctx, ensureFile, &clientOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -1042,25 +1040,14 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	return pinMap, nil
 }
 
-func loadAndValidateEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
-	var err error
-	var f io.ReadCloser
-	if path == "-" {
-		f = os.Stdin
-	} else {
-		if f, err = os.Open(path); err != nil {
-			return nil, err
-		}
-	}
-	defer f.Close()
-
-	parsedFile, err := ensure.ParseFile(f)
+func loadEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
+	parsedFile, err := ensure.LoadEnsureFile(path)
 	if err != nil {
 		return nil, err
 	}
 
 	// Prefer the ServiceURL from the file (if set), and log a warning if the user
-	// provided one on the commandline that doesn't match the one in the file.
+	// provided one on the command line that doesn't match the one in the file.
 	if parsedFile.ServiceURL != "" {
 		if clientOpts.serviceURL != "" && clientOpts.serviceURL != parsedFile.ServiceURL {
 			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
