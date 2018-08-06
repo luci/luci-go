@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "d63e68aa_3c5bf14e",
+        "filename": "cipd/appengine/frontend/templates/pages/index.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-06T23:21:07Z",
+      "side": 1,
+      "message": "There\u0027s a lot of empty vertical space. Bulleted list looks nicer there.",
+      "parentUuid": "62b34e10_6ebea88c",
+      "range": {
+        "startLine": 92,
+        "startChar": 10,
+        "endLine": 96,
+        "endChar": 15
+      },
+      "revId": "f2afb1b788ea3adb71da072dd7ace09860d00242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a79c8073_2fc377a3",
         "filename": "cipd/appengine/ui/metadata.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "f2afb1b788ea3adb71da072dd7ace09860d00242",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "70f4730f_4d10abc8",
+        "filename": "cipd/appengine/ui/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-06T23:21:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a79c8073_2fc377a3",
+      "range": {
+        "startLine": 90,
+        "startChar": 4,
+        "endLine": 99,
+        "endChar": 5
+      },
+      "revId": "f2afb1b788ea3adb71da072dd7ace09860d00242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
