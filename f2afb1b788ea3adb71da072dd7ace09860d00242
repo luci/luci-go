@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "62b34e10_6ebea88c",
+        "filename": "cipd/appengine/frontend/templates/pages/index.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-06T20:56:42Z",
+      "side": 1,
+      "message": "is this a list of one word items? consider comma separated string",
+      "range": {
+        "startLine": 92,
+        "startChar": 10,
+        "endLine": 96,
+        "endChar": 15
+      },
+      "revId": "f2afb1b788ea3adb71da072dd7ace09860d00242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a79c8073_2fc377a3",
+        "filename": "cipd/appengine/ui/metadata.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-06T20:56:42Z",
+      "side": 1,
+      "message": "nit: switch",
+      "range": {
+        "startLine": 90,
+        "startChar": 4,
+        "endLine": 99,
+        "endChar": 5
+      },
+      "revId": "f2afb1b788ea3adb71da072dd7ace09860d00242",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
