@@ -20,6 +20,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
@@ -34,8 +35,22 @@ func prefixListingPage(c *router.Context, pfx string) error {
 		return status.Errorf(codes.InvalidArgument, "bad prefix - %s", err)
 	}
 
-	r, err := impl.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
-		Prefix: pfx,
+	var listing *api.ListPrefixResponse
+	var meta *metadataBlock
+
+	err = parallel.FanOutIn(func(tasks chan<- func() error) {
+		tasks <- func() error {
+			var err error
+			listing, err = impl.PublicRepo.ListPrefix(c.Context, &api.ListPrefixRequest{
+				Prefix: pfx,
+			})
+			return err
+		}
+		tasks <- func() error {
+			var err error
+			meta, err = fetchMetadata(c.Context, pfx)
+			return err
+		}
 	})
 	if err != nil {
 		return err
@@ -43,8 +58,9 @@ func prefixListingPage(c *router.Context, pfx string) error {
 
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
 		"Breadcrumbs": breadcrumbs(pfx),
-		"Prefixes":    prefixesListing(pfx, r.Prefixes),
-		"Packages":    packagesListing(pfx, r.Packages, ""),
+		"Prefixes":    prefixesListing(pfx, listing.Prefixes),
+		"Packages":    packagesListing(pfx, listing.Packages, ""),
+		"Metadata":    meta,
 		"Instances":   nil,
 	})
 	return nil
