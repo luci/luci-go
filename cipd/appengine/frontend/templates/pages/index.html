@@ -1,9 +1,15 @@
 {{define "head"}}
 <style type="text/css">
+  .bordered-row {
+    min-height: 100%;
+    overflow: hidden;
+  }
   .right-border {
     border-right-style: solid;
     border-width: 1px;
     border-color: #cccccc;
+    margin-bottom: -9999px;
+    padding-bottom: 9999px;
   }
   .pkg-title-row {
     border-top-style: solid;
@@ -12,7 +18,7 @@
     padding-top: 10px;
     padding-bottom: 4px;
   }
-  .age-td {
+  .smallest-td {
     /* as small as possible without wrapping */
     width: 1px;
     white-space: nowrap;
@@ -41,7 +47,7 @@
 </ol>
 
 <div class="container">
-  <div class="row">
+  <div class="row bordered-row">
 
     <div class="col-sm-6 right-border">
       <h4>Packages</h4>
@@ -75,8 +81,44 @@
     </div>
 
     <div class="col-sm-6">
-      <h4>Metadata</h4>
-      <p>TODO</p>
+      <h4>ACLs</h4>
+      {{if not .Metadata.CanView}}
+
+        {{if .IsAnonymous}}
+        <p>Please <a href="{{.LoginURL}}">login</a> to view more.</p>
+        {{else}}
+        <p>Your roles in the prefix are:</p>
+          {{if .Metadata.CallerRoles}}
+          <ul>
+            {{range $role := .Metadata.CallerRoles}}
+            <li>{{.}}</li>
+            {{end}}
+          </ul>
+          {{else}}
+          <p class="none-label">None</p>
+          {{end}}
+        <p>To view all ACLs you must be an owner.</p>
+        {{end}}
+
+      {{else}}
+
+      <table class="table table-striped table-condensed">
+      {{range $acl := .Metadata.ACLs}}
+        <tr>
+          <td class="smallest-td">{{.Role}}</td>
+          <td>
+            {{if .WhoHref}}
+              <a href="{{.WhoHref}}">{{.Who}}</a>
+            {{else}}
+              {{.Who}}
+            {{end}}
+            via <a href="{{.PrefixHref}}">{{.Prefix}}</a>
+          </td>
+        </tr>
+      {{end}}
+      </table>
+
+      {{end}}
     </div>
 
   </div>
@@ -89,9 +131,9 @@
     </div>
   </div>
 
-  <div class="row">
+  <div class="row bordered-row">
 
-    <div class="col-sm-6">
+    <div class="col-sm-6 right-border">
       <h4>Instances</h4>
       <table class="table table-striped table-condensed">
       {{if .PrevPageURL}}
@@ -102,7 +144,7 @@
       {{end}}
       {{range $item := .Instances}}
         <tr>
-          <td class="age-td">
+          <td class="smallest-td">
             {{.Age}}
           </td>
           <td>
@@ -128,7 +170,7 @@
       <table class="table table-striped table-condensed">
       {{range $ref := .Refs}}
         <tr>
-          <td class="age-td">{{.Age}}</td>
+          <td class="smallest-td">{{.Age}}</td>
           <td>
             <a class="label label-primary" href="{{.Href}}">{{.Title}}</a>
             <span style="padding-left: 0.2em;">by {{.User}}</span>
