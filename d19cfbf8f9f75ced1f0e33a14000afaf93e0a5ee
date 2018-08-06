@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9354bd6c_42964ef9",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-06T22:51:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1e2f19a9_92d384b2",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "943520f2_25162d4d",
         "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
         "patchSetId": 1
@@ -36,6 +54,24 @@
     },
     {
       "key": {
+        "uuid": "d2ab31e4_7df3e32e",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-06T22:51:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "943520f2_25162d4d",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "578d6d01_61eda6f5",
         "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
         "patchSetId": 1
@@ -50,6 +86,24 @@
       "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d4d97a1_9e39d745",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-06T22:51:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "578d6d01_61eda6f5",
+      "revId": "d19cfbf8f9f75ced1f0e33a14000afaf93e0a5ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
