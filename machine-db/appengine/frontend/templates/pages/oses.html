@@ -1,0 +1,24 @@
+{{define "title"}}Machine DB - Oses{{end}}
+
+
+{{define "content"}}
+
+<h1>Operating Systems</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Oses}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+      </tr>
+      {{end}}
+    <tbody>
+  </table>
+
+{{end}}
