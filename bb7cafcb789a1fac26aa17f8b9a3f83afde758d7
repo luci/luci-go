@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ed10020b_851b5379",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-07T00:25:48Z",
+      "side": 1,
+      "message": "nit: a",
+      "range": {
+        "startLine": 53,
+        "startChar": 40,
+        "endLine": 53,
+        "endChar": 41
+      },
+      "revId": "bb7cafcb789a1fac26aa17f8b9a3f83afde758d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "253749f6_f7a9fbcf",
+        "filename": "cipd/client/cipd/ensure/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-07T00:25:48Z",
+      "side": 1,
+      "message": "\"the frozen file\" ?",
+      "range": {
+        "startLine": 55,
+        "startChar": 72,
+        "endLine": 55,
+        "endChar": 76
+      },
+      "revId": "bb7cafcb789a1fac26aa17f8b9a3f83afde758d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9edd18ee_bc3ab3a4",
+        "filename": "cipd/client/cipd/ensure/versions_file.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-07T00:25:48Z",
+      "side": 1,
+      "message": "if it is",
+      "range": {
+        "startLine": 64,
+        "startChar": 51,
+        "endLine": 64,
+        "endChar": 53
+      },
+      "revId": "bb7cafcb789a1fac26aa17f8b9a3f83afde758d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37950986_d637bfe6",
+        "filename": "cipd/client/cipd/ensure/versions_file.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-07T00:25:48Z",
+      "side": 1,
+      "message": "IMO we should omit `ver \u003d\u003d iid` from the pin file... I don\u0027t think they give anything useful?",
+      "range": {
+        "startLine": 77,
+        "startChar": 1,
+        "endLine": 77,
+        "endChar": 57
+      },
+      "revId": "bb7cafcb789a1fac26aa17f8b9a3f83afde758d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b6cc0ea_532a0195",
+        "filename": "cipd/client/cipd/ensure/versions_file.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-07T00:25:48Z",
+      "side": 1,
+      "message": "especially because we do this :)",
+      "range": {
+        "startLine": 93,
+        "startChar": 3,
+        "endLine": 93,
+        "endChar": 61
+      },
+      "revId": "bb7cafcb789a1fac26aa17f8b9a3f83afde758d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
