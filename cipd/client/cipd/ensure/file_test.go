@@ -45,7 +45,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"ServiceURL",
-		&File{"https://something.example.com", "", nil, nil},
+		&File{"https://something.example.com", "", "", nil, nil},
 		f(
 			"$ServiceURL https://something.example.com",
 		),
@@ -53,7 +53,7 @@ var fileSerializationTests = []struct {
 
 	{
 		"simple packages",
-		&File{"", "", map[string]PackageSlice{
+		&File{"", "", "", map[string]PackageSlice{
 			"": {
 				PackageDef{"some/thing", "version", 0},
 				PackageDef{"some/other_thing", "latest", 0},
@@ -67,21 +67,28 @@ var fileSerializationTests = []struct {
 
 	{
 		"full file",
-		&File{"https://some.example.com", common.CheckPresence, map[string]PackageSlice{
-			"": {
-				PackageDef{"some/thing", "version", 0},
-				PackageDef{"some/other_thing", "latest", 0},
+		&File{
+			ServiceURL:       "https://some.example.com",
+			ParanoidMode:     common.CheckPresence,
+			ResolvedVersions: "resolved.versions",
+			PackagesBySubdir: map[string]PackageSlice{
+				"": {
+					PackageDef{"some/thing", "version", 0},
+					PackageDef{"some/other_thing", "latest", 0},
+				},
+				"path/to dir/with/spaces": {
+					PackageDef{"different/package", "some_tag:thingy", 0},
+				},
 			},
-			"path/to dir/with/spaces": {
-				PackageDef{"different/package", "some_tag:thingy", 0},
+			VerifyPlatforms: []template.Platform{
+				mustMakePlatform("zoops-ohai"),
+				mustMakePlatform("foos-barch"),
 			},
-		}, []template.Platform{
-			mustMakePlatform("zoops-ohai"),
-			mustMakePlatform("foos-barch"),
-		}},
+		},
 		f(
 			"$ServiceURL https://some.example.com",
 			"$ParanoidMode CheckPresence",
+			"$ResolvedVersions resolved.versions",
 			"",
 			"$VerifiedPlatform zoops-ohai",
 			"$VerifiedPlatform foos-barch",
@@ -102,8 +109,7 @@ func TestFileSerialization(t *testing.T) {
 		for _, tc := range fileSerializationTests {
 			Convey(tc.name, func() {
 				buf := &bytes.Buffer{}
-				_, err := tc.f.Serialize(buf)
-				So(err, ShouldBeNil)
+				So(tc.f.Serialize(buf), ShouldBeNil)
 				So(buf.String(), ShouldEqual, tc.expect)
 			})
 		}
