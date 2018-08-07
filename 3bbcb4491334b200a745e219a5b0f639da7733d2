@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ba115ce_2c23246f",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 306,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-07T02:59:47Z",
+      "side": 0,
+      "message": "I couldn\u0027t figure out why it is needed, so I\u0027ve deleted it. Overriding serviceURL (which already happens) works just as fine.",
+      "range": {
+        "startLine": 306,
+        "startChar": 1,
+        "endLine": 306,
+        "endChar": 21
+      },
+      "revId": "3bbcb4491334b200a745e219a5b0f639da7733d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9852c01d_195c4718",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 308,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-07T02:59:47Z",
+      "side": 0,
+      "message": "wat?\n\nReplaced with Parameters block, to clarify that this thing is constant and supplied from elsewhere during compilation.",
+      "range": {
+        "startLine": 308,
+        "startChar": 1,
+        "endLine": 308,
+        "endChar": 61
+      },
+      "revId": "3bbcb4491334b200a745e219a5b0f639da7733d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
