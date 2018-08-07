@@ -191,10 +191,17 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 		err error      // resolution error
 	}
 
+	subdirs := make([]string, 0, len(f.PackagesBySubdir))
+	for s := range f.PackagesBySubdir {
+		subdirs = append(subdirs, s)
+	}
+	sort.Strings(subdirs)
+
 	// Collect a list of package defs we want to resolve, expanding the templates
-	// right away.
+	// right away. Enumerate the map in deterministic order to make errors
+	// ordered.
 	var toResolve []resolveWorkItem
-	for subdir, pkgs := range f.PackagesBySubdir {
+	for _, subdir := range subdirs {
 		realSubdir, err := expander.Expand(subdir)
 		switch err {
 		case template.ErrSkipTemplate:
@@ -209,7 +216,7 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 			return nil, errors.Annotate(err, "normalizing %q", subdir).Err()
 		}
 
-		for _, def := range pkgs {
+		for _, def := range f.PackagesBySubdir[subdir] {
 			switch realPkg, err := def.Expand(expander); {
 			case err == template.ErrSkipTemplate:
 				continue
