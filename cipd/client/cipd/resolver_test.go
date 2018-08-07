@@ -16,6 +16,7 @@ package cipd
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -60,8 +61,19 @@ func TestResolve(t *testing.T) {
 		mc.mockResolve("pkg1/zzz", "ref2", iid1) // same iid
 		mc.mockPin("pkg2", iid2)
 
-		Convey("With VerifyPresence == true", func() {
-			r := Resolver{Client: mc, VerifyPresence: true}
+		Convey("With VerifyPresence == true and visitor", func() {
+			mu := sync.Mutex{}
+			visited := []string{}
+
+			r := Resolver{
+				Client:         mc,
+				VerifyPresence: true,
+				Visitor: func(pkg, ver, iid string) {
+					mu.Lock()
+					visited = append(visited, fmt.Sprintf("%s@%s => %s", pkg, ver, iid))
+					mu.Unlock()
+				},
+			}
 
 			res, err := r.Resolve(ctx, file, exp)
 			So(err, ShouldBeNil)
@@ -77,6 +89,13 @@ func TestResolve(t *testing.T) {
 
 			So(mc.resolveCalls, ShouldEqual, 2)  // only two refs
 			So(mc.describeCalls, ShouldEqual, 2) // refs resolve into 1 iid + pkg2 iid
+
+			sort.Strings(visited)
+			So(visited, ShouldResemble, []string{
+				"pkg1/zzz@ref1 => " + iid1,
+				"pkg1/zzz@ref2 => " + iid1,
+				fmt.Sprintf("pkg2@%s => %s", iid2, iid2),
+			})
 		})
 
 		Convey("With VerifyPresence == false", func() {
