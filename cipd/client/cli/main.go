@@ -292,40 +292,45 @@ func makeCLIError(msg string, args ...interface{}) error {
 ////////////////////////////////////////////////////////////////////////////////
 // clientOptions mixin.
 
+type rootDirFlag bool
+
+const (
+	withRootDir    rootDirFlag = true
+	withoutRootDir rootDirFlag = false
+)
+
 // clientOptions defines command line arguments related to CIPD client creation.
 // Subcommands that need a CIPD client embed it.
 type clientOptions struct {
-	authFlags  authcli.Flags
-	serviceURL string
+	hardcoded Parameters // whatever was passed to registerFlags(...)
+
+	serviceURL string // also mutated by loadEnsureFile
 	cacheDir   string
+	rootDir    string // used only if registerFlags got withRootDir arg
 
-	// Set by some commands which require a "root" directory.
-	rootDir string
-
-	// Set by commands which parse ensure files.
-	ensureFileServiceURL string
-
-	// Keep this separate so that ensure files can specify this.
-	defaultServiceURL string
+	authFlags authcli.Flags
 }
 
 func (opts *clientOptions) resolvedServiceURL() string {
-	ret := opts.serviceURL
-	if ret == "" {
-		ret = opts.ensureFileServiceURL
+	if opts.serviceURL != "" {
+		return opts.serviceURL
 	}
-	if ret == "" {
-		ret = opts.defaultServiceURL
-	}
-	return ret
+	return opts.hardcoded.ServiceURL
 }
 
-func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters) {
-	opts.defaultServiceURL = params.ServiceURL
+func (opts *clientOptions) registerFlags(f *flag.FlagSet, params Parameters, rootDir rootDirFlag) {
+	opts.hardcoded = params
+
 	f.StringVar(&opts.serviceURL, "service-url", "",
-		"Backend URL. If provided via an 'ensure file', the URL in the file takes precedence.")
+		fmt.Sprintf(`Backend URL. If provided via an "ensure" file, the URL in the file takes precedence. `+
+			`(default %s)`, params.ServiceURL))
 	f.StringVar(&opts.cacheDir, "cache-dir", "",
-		fmt.Sprintf("Directory for shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
+		fmt.Sprintf("Directory for the shared cache (can also be set by %s env var).", cipd.EnvCacheDir))
+
+	if rootDir {
+		f.StringVar(&opts.rootDir, "root", "<path>", "Path to an installation site root directory.")
+	}
+
 	opts.authFlags.Register(f, params.DefaultAuthOptions)
 }
 
@@ -661,6 +666,68 @@ func (opts *hashOptions) hashAlgo() api.HashAlgo {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// ensureFileOptions mixin.
+
+type legacyListFlag bool
+
+const (
+	withLegacyListFlag    legacyListFlag = true
+	withoutLegacyListFlag legacyListFlag = false
+)
+
+type ensureOutFlag bool
+
+const (
+	withEnsureOutFlag    ensureOutFlag = true
+	withoutEnsureOutFlag ensureOutFlag = false
+)
+
+// ensureFileOptions defines -ensure-file flag that specifies a location of the
+// "ensure file", which is a manifest that describes what should be installed
+// into a site root.
+type ensureFileOptions struct {
+	ensureFile    string
+	ensureFileOut string // used only if registerFlags got withEnsureOutFlag arg
+}
+
+func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag, list legacyListFlag) {
+	f.StringVar(&opts.ensureFile, "ensure-file", "<path>",
+		`An "ensure" file. See syntax described here: `+
+			`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.`+
+			` Providing '-' will read from stdin.`)
+	if out {
+		f.StringVar(&opts.ensureFileOut, "ensure-file-output", "",
+			`A path to write an "ensure" file which is the fully-resolved version `+
+				`of the input ensure file for the current platform. This output will `+
+				`not contain any ${params} or $Settings other than $ServiceURL.`)
+	}
+	if list {
+		f.StringVar(&opts.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
+	}
+}
+
+// loadEnsureFile parses the ensure file and mutates clientOpts to point to a
+// service URL specified in the ensure file.
+func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions) (*ensure.File, error) {
+	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prefer the ServiceURL from the file (if set), and log a warning if the user
+	// provided one on the command line that doesn't match the one in the file.
+	if parsedFile.ServiceURL != "" {
+		if clientOpts.serviceURL != "" && clientOpts.serviceURL != parsedFile.ServiceURL {
+			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
+				parsedFile.ServiceURL, clientOpts.serviceURL, parsedFile.ServiceURL)
+		}
+		clientOpts.serviceURL = parsedFile.ServiceURL
+	}
+
+	return parsedFile, nil
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Support for running operations concurrently.
 
 // batchOperation defines what to do with a packages matching a prefix.
@@ -810,7 +877,7 @@ func cmdCreate(params Parameters) *subcommands.Command {
 			c.Opts.inputOptions.registerFlags(&c.Flags)
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
-			c.Opts.clientOptions.registerFlags(&c.Flags, params)
+			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
@@ -877,17 +944,8 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
-			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
-			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
-				(`An "ensure" file. See syntax described here: ` +
-					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
-					` Providing '-' will read from stdin.`))
-			c.Flags.StringVar(&c.ensureFileOut, "ensure-file-output", "",
-				(`A path to write an "ensure" file which is the fully-resolved version ` +
-					`of the input ensure file for the current platform. This output will ` +
-					`not contain any ${params} or $Settings other than $ServiceURL.`))
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.ensureFileOptions.registerFlags(&c.Flags, withEnsureOutFlag, withLegacyListFlag)
 			return c
 		},
 	}
@@ -896,9 +954,7 @@ func cmdEnsure(params Parameters) *subcommands.Command {
 type ensureRun struct {
 	cipdSubcommand
 	clientOptions
-
-	ensureFile    string
-	ensureFileOut string
+	ensureFileOptions
 }
 
 func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -906,17 +962,17 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	currentPins, _, err := ensurePackages(ctx, c.ensureFile, c.ensureFileOut, false, c.clientOptions)
-	return c.done(currentPins, err)
+
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	pins, _, err := ensurePackages(ctx, ef, c.ensureFileOut, false, c.clientOptions)
+	return c.done(pins, err)
 }
 
-func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
-	parsedFile, err := loadEnsureFile(ctx, ensureFile, &clientOpts)
-	if err != nil {
-		return nil, nil, err
-	}
-	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
-
+func ensurePackages(ctx context.Context, ef *ensure.File, ensureFileOut string, dryRun bool, clientOpts clientOptions) (common.PinSliceBySubdir, cipd.ActionMap, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -926,7 +982,7 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 	defer client.EndBatch(ctx)
 
 	resolver := cipd.Resolver{Client: client}
-	resolved, err := resolver.Resolve(ctx, parsedFile, template.DefaultExpander())
+	resolved, err := resolver.Resolve(ctx, ef, template.DefaultExpander())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -948,6 +1004,9 @@ func ensurePackages(ctx context.Context, ensureFile, ensureFileOut string, dryRu
 	return resolved.PackagesBySubdir, actions, err
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// 'ensure-file-verify' subcommand.
+
 func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ensure-file-verify [options]",
@@ -957,13 +1016,9 @@ func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureFileVerifyRun{}
-
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
-			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
-				(`The "ensure" file to verify. See syntax described here: ` +
-					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure.` +
-					` Providing '-' will read from stdin.`))
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
 			return c
 		},
 	}
@@ -972,8 +1027,7 @@ func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 type ensureFileVerifyRun struct {
 	cipdSubcommand
 	clientOptions
-
-	ensureFile string
+	ensureFileOptions
 }
 
 func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -981,30 +1035,30 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	pm, err := verifyEnsureFile(ctx, c.ensureFile, c.clientOptions)
-	return c.doneWithPinMap(pm, err)
+
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	pinMap, err := verifyEnsureFile(ctx, ef, c.clientOptions)
+	return c.doneWithPinMap(pinMap, err)
 }
 
-func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientOptions) (map[string][]pinInfo, error) {
-	parsedFile, err := loadEnsureFile(ctx, ensureFile, &clientOpts)
-	if err != nil {
-		return nil, err
-	}
-	clientOpts.ensureFileServiceURL = parsedFile.ServiceURL
-
+func verifyEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOptions) (map[string][]pinInfo, error) {
 	client, err := clientOpts.makeCIPDClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(parsedFile.VerifyPlatforms) == 0 {
+	if len(f.VerifyPlatforms) == 0 {
 		logging.Errorf(ctx,
 			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
 		return nil, errors.New("no verification platforms configured")
 	}
 
 	resolver := cipd.Resolver{Client: client, VerifyPresence: true}
-	results, err := resolver.ResolveAllPlatforms(ctx, parsedFile)
+	results, err := resolver.ResolveAllPlatforms(ctx, f)
 	if err != nil {
 		return nil, err
 	}
@@ -1040,25 +1094,6 @@ func verifyEnsureFile(ctx context.Context, ensureFile string, clientOpts clientO
 	return pinMap, nil
 }
 
-func loadEnsureFile(ctx context.Context, path string, clientOpts *clientOptions) (*ensure.File, error) {
-	parsedFile, err := ensure.LoadEnsureFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// Prefer the ServiceURL from the file (if set), and log a warning if the user
-	// provided one on the command line that doesn't match the one in the file.
-	if parsedFile.ServiceURL != "" {
-		if clientOpts.serviceURL != "" && clientOpts.serviceURL != parsedFile.ServiceURL {
-			logging.Warningf(ctx, "serviceURL in ensure file != serviceURL on CLI (%q v %q). Using %q from file.",
-				parsedFile.ServiceURL, clientOpts.serviceURL, parsedFile.ServiceURL)
-		}
-		clientOpts.serviceURL = parsedFile.ServiceURL
-	}
-
-	return parsedFile, nil
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // 'puppet-check-updates' subcommand.
 
@@ -1077,12 +1112,8 @@ func cmdPuppetCheckUpdates(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkUpdatesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
-			c.Flags.StringVar(&c.rootDir, "root", "<path>", "Path to an installation site root directory.")
-			c.Flags.StringVar(&c.ensureFile, "list", "<path>", "(DEPRECATED) A synonym for -ensure-file.")
-			c.Flags.StringVar(&c.ensureFile, "ensure-file", "<path>",
-				(`An "ensure" file. See syntax described here: ` +
-					`https://godoc.org/go.chromium.org/luci/cipd/client/cipd/ensure`))
+			c.clientOptions.registerFlags(&c.Flags, params, withRootDir)
+			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withLegacyListFlag)
 			return c
 		},
 	}
@@ -1091,8 +1122,7 @@ func cmdPuppetCheckUpdates(params Parameters) *subcommands.Command {
 type checkUpdatesRun struct {
 	cipdSubcommand
 	clientOptions
-
-	ensureFile string
+	ensureFileOptions
 }
 
 func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -1100,7 +1130,13 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	_, actions, err := ensurePackages(ctx, c.ensureFile, "", true, c.clientOptions)
+
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	if err != nil {
+		return 0 // on fatal errors ask puppet to run 'ensure' for real
+	}
+
+	_, actions, err := ensurePackages(ctx, ef, "", true, c.clientOptions)
 	if err != nil {
 		ret := c.done(actions, err)
 		if transient.Tag.In(err) {
@@ -1126,7 +1162,7 @@ func cmdResolve(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &resolveRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to resolve.")
 			return c
 		},
@@ -1179,7 +1215,7 @@ func cmdDescribe(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &describeRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to describe.")
 			return c
 		},
@@ -1260,7 +1296,7 @@ func cmdInstances(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &instancesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.IntVar(&c.limit, "limit", 20, "How many instances to return or 0 for all.")
 			return c
 		},
@@ -1403,7 +1439,7 @@ func cmdSetRef(params Parameters) *subcommands.Command {
 			c := &setRefRun{}
 			c.registerBaseFlags()
 			c.refsOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to point the ref to.")
 			return c
 		},
@@ -1512,7 +1548,7 @@ func cmdSetTag(params Parameters) *subcommands.Command {
 			c := &setTagRun{}
 			c.registerBaseFlags()
 			c.tagsOptions.registerFlags(&c.Flags)
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>",
 				"Package version to resolve. Could also be itself a tag or ref")
 			return c
@@ -1563,7 +1599,7 @@ func cmdListPackages(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &listPackagesRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.BoolVar(&c.recursive, "r", false, "Whether to list packages in subdirectories.")
 			c.Flags.BoolVar(&c.showHidden, "h", false, "Whether also to list hidden packages.")
 			return c
@@ -1624,7 +1660,7 @@ func cmdSearch(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &searchRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.tagsOptions.registerFlags(&c.Flags)
 			return c
 		},
@@ -1684,7 +1720,7 @@ func cmdListACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &listACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			return c
 		},
 	}
@@ -1776,7 +1812,7 @@ func cmdEditACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &editACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.Var(&c.owner, "owner", "Users or groups to grant OWNER role.")
 			c.Flags.Var(&c.writer, "writer", "Users or groups to grant WRITER role.")
 			c.Flags.Var(&c.reader, "reader", "Users or groups to grant READER role.")
@@ -1858,7 +1894,7 @@ func cmdCheckACL(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &checkACLRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.BoolVar(&c.owner, "owner", false, "Check for OWNER role.")
 			c.Flags.BoolVar(&c.writer, "writer", false, "Check for WRITER role.")
 			c.Flags.BoolVar(&c.reader, "reader", false, "Check for READER role.")
@@ -2063,7 +2099,7 @@ func cmdFetch(params Parameters) *subcommands.Command {
 		CommandRun: func() subcommands.CommandRun {
 			c := &fetchRun{}
 			c.registerBaseFlags()
-			c.clientOptions.registerFlags(&c.Flags, params)
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Flags.StringVar(&c.version, "version", "<version>", "Package version to fetch.")
 			c.Flags.StringVar(&c.outputPath, "out", "<path>", "Path to a file to write fetch to.")
 			return c
@@ -2227,7 +2263,7 @@ func cmdRegister(params Parameters) *subcommands.Command {
 			c.registerBaseFlags()
 			c.Opts.refsOptions.registerFlags(&c.Flags)
 			c.Opts.tagsOptions.registerFlags(&c.Flags)
-			c.Opts.clientOptions.registerFlags(&c.Flags, params)
+			c.Opts.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
 			c.Opts.uploadOptions.registerFlags(&c.Flags)
 			c.Opts.hashOptions.registerFlags(&c.Flags)
 			return c
@@ -2303,7 +2339,7 @@ func cmdSelfUpdate(params Parameters) *subcommands.Command {
 			s.logConfig.Level = logging.Warning
 
 			s.registerBaseFlags()
-			s.clientOptions.registerFlags(&s.Flags, params)
+			s.clientOptions.registerFlags(&s.Flags, params, withoutRootDir)
 			s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
 			return s
 		},
