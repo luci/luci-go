@@ -102,6 +102,19 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 	return common.Pin{}, errors.Reason("no such version - %s@%s is not in the versions file", pkg, ver).Err()
 }
 
+// Equal returns true if version files have same entries.
+func (v VersionsFile) Equal(a VersionsFile) bool {
+	if len(v) != len(a) {
+		return false
+	}
+	for ver, iid := range v {
+		if a[ver] != iid {
+			return false
+		}
+	}
+	return true
+}
+
 // Serialize writes the VersionsFile to an io.Writer in canonical order.
 func (v VersionsFile) Serialize(w io.Writer) error {
 	keys := make([]unresolvedVer, 0, len(v))
