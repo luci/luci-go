@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7ef3424_32b88317",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-07T04:24:11Z",
+      "side": 1,
+      "message": "for consistency with other output files we write",
+      "range": {
+        "startLine": 233,
+        "startChar": 41,
+        "endLine": 233,
+        "endChar": 45
+      },
+      "revId": "268f584abf238e8359edf030d61ea4dda8aa75de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0dbd72bb_d6a3b9d0",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 884,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-07T04:24:11Z",
+      "side": 1,
+      "message": "extracted from verifyEnsureFile without any changes",
+      "range": {
+        "startLine": 884,
+        "startChar": 5,
+        "endLine": 884,
+        "endChar": 26
+      },
+      "revId": "268f584abf238e8359edf030d61ea4dda8aa75de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
