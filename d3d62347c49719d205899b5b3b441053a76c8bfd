@@ -22,6 +22,30 @@
       "revId": "d3d62347c49719d205899b5b3b441053a76c8bfd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "397da9af_ffdc5ef4",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 671,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-08T21:27:55Z",
+      "side": 1,
+      "message": "We vowed to keep CLI backward compatibility forever. Also, it\u0027s not really hard in this case.",
+      "parentUuid": "2216161a_26df97c0",
+      "range": {
+        "startLine": 671,
+        "startChar": 5,
+        "endLine": 671,
+        "endChar": 19
+      },
+      "revId": "d3d62347c49719d205899b5b3b441053a76c8bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
