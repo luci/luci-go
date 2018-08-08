@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2216161a_26df97c0",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 671,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-08T21:24:07Z",
+      "side": 1,
+      "message": "imo, delete this; I think we\u0027ve got all the uses we care about...\n\nedit: sigh... https://cs.chromium.org/chromium/src/third_party/chromite/lib/cipd.py?type\u003dcs\u0026q\u003d%5B%22%27%5D-list+cipd\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d151",
+      "range": {
+        "startLine": 671,
+        "startChar": 5,
+        "endLine": 671,
+        "endChar": 19
+      },
+      "revId": "d3d62347c49719d205899b5b3b441053a76c8bfd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
