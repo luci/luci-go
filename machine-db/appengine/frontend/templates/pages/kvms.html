@@ -1,0 +1,37 @@
+{{define "title"}}Machine DB - KVMs{{end}}
+
+{{define "content"}}
+
+<h1>KVMs</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">VLAN</th>
+        <th class="mdl-data-table__cell--non-numeric">Platform</th>
+        <th class="mdl-data-table__cell--non-numeric">Datacenter</th>
+        <th class="mdl-data-table__cell--non-numeric">Rack</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+        <th class="mdl-data-table__cell--non-numeric">MAC Address</th>
+        <th class="mdl-data-table__cell--non-numeric">IP Address</th>
+        <th class="mdl-data-table__cell--non-numeric">State</th>
+      </tr>
+    </thead>
+    <tbody>
+     {{range .Kvms}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Vlan}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Platform}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Datacenter}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Rack}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.MacAddress}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Ipv4}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.State}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+{{end}}
