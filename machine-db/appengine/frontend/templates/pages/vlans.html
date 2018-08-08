@@ -1,0 +1,30 @@
+{{define "title"}}Machine DB - VLANs{{end}}
+
+
+{{define "content"}}
+
+<h1>VLANs</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">ID</th>
+        <th class="mdl-data-table__cell--non-numeric">Alias</th>
+        <th class="mdl-data-table__cell--non-numeric">Description</th>
+        <th class="mdl-data-table__cell--non-numeric">State</th>
+        <th class="mdl-data-table__cell--non-numeric">CIDR Block</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Vlans}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Id}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Alias}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Description}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.State}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.CidrBlock}}</td>
+      </tr>
+      {{end}}
+    <tbody>
+  </table>
+
+{{end}}

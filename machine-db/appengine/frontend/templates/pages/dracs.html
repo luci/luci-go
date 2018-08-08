@@ -1,0 +1,33 @@
+{{define "title"}}Machine DB - DRACs{{end}}
+
+{{define "content"}}
+
+<h1>DRACs</h1>
+  <table class="mdl-data-table mdl-js-data-table">
+    <thead>
+      <tr>
+        <th class="mdl-data-table__cell--non-numeric">Name</th>
+        <th class="mdl-data-table__cell--non-numeric">Machine</th>
+        <th class="mdl-data-table__cell--non-numeric">MAC Address</th>
+        <th class="mdl-data-table__cell--non-numeric">Switch</th>
+        <th class="mdl-data-table__cell--non-numeric">Port</th>
+        <th class="mdl-data-table__cell--non-numeric">IP Address</th>
+        <th class="mdl-data-table__cell--non-numeric">VLAN</th>
+      </tr>
+    </thead>
+    <tbody>
+     {{range .Dracs}}
+      <tr>
+        <td class="mdl-data-table__cell--non-numeric">{{.Name}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Machine}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.MacAddress}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Switch}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Switchport}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Ipv4}}</td>
+        <td class="mdl-data-table__cell--non-numeric">{{.Vlan}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+
+{{end}}

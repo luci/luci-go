@@ -47,9 +47,17 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, srv crimson.
 	)
 	r.GET("/", m, indexPage)
 	r.GET("/datacenters", m, datacentersPage)
+	r.GET("/dracs", m, dracsPage)
 	r.GET("/hosts", m, hostsPage)
+	r.GET("/kvms", m, kvmsPage)
 	r.GET("/machines", m, machinesPage)
+	r.GET("/nics", m, nicsPage)
+	r.GET("/oses", m, osesPage)
 	r.GET("/platforms", m, platformsPage)
+	r.GET("/racks", m, racksPage)
+	r.GET("/switches", m, switchesPage)
+	r.GET("/vlans", m, vlansPage)
+	r.GET("/vms", m, vmsPage)
 }
 
 func indexPage(c *router.Context) {
