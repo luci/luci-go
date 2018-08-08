@@ -18,7 +18,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	vkit "cloud.google.com/go/pubsub/apiv1"
 	gax "github.com/googleapis/gax-go"
-	"go.chromium.org/luci/common/logging"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 
 	"golang.org/x/net/context"
@@ -31,17 +30,6 @@ import (
 type Publisher interface {
 	Publish(c context.Context, msgs ...*pubsub.Message) ([]string, error)
 	Close() error
-}
-
-// ClientFactory is passed into an UnbufferedPublisher to create or reset a client.
-type ClientFactory interface {
-	// Client returns the Pub/Sub publisher client to use.
-	// Client will be closed when this UnbufferedPublisher is closed.
-	Client(context.Context) (*vkit.PublisherClient, error)
-
-	// RecreateClient is called if any publish calls fail.
-	// This is used to tell the underlying service to maybe generate a new client.
-	RecreateClient()
 }
 
 // UnbufferedPublisher directly instantiates a Pub/Sub client and publishes a
@@ -59,9 +47,9 @@ type UnbufferedPublisher struct {
 	// Topic is the name of the Topic to publish to.
 	Topic Topic
 
-	// ClientFactory produces a client for the publisher.  This is called on each
-	// and every publish request.  If a publish request fails, then RecreateClient is called.
-	ClientFactory ClientFactory
+	// Client is the Pub/Sub publisher client to use. Client will be closed when
+	// this UnbufferedPublisher is closed.
+	Client *vkit.PublisherClient
 
 	// CallOpts are arbitrary call options that will be passed to the Publish
 	// call.
@@ -86,19 +74,11 @@ func (up *UnbufferedPublisher) Publish(c context.Context, msgs ...*pubsub.Messag
 		}
 	}
 
-	client, err := up.ClientFactory.Client(up.AECtx)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := client.Publish(c, &pb.PublishRequest{
+	resp, err := up.Client.Publish(c, &pb.PublishRequest{
 		Topic:    string(up.Topic),
 		Messages: messages,
 	}, up.CallOpts...)
 	if err != nil {
-		// Optimistically recreate the client.
-		up.ClientFactory.RecreateClient()
-		logging.Debugf(c, "Recreating a new PubSub client due to error")
 		return nil, err
 	}
 	return resp.MessageIds, nil
@@ -106,9 +86,5 @@ func (up *UnbufferedPublisher) Publish(c context.Context, msgs ...*pubsub.Messag
 
 // Close closes the UnbufferedPublisher, notably its Client.
 func (up *UnbufferedPublisher) Close() error {
-	client, err := up.ClientFactory.Client(up.AECtx)
-	if err != nil {
-		return err
-	}
-	return client.Close()
+	return up.Client.Close()
 }

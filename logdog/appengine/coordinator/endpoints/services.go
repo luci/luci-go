@@ -55,33 +55,10 @@ type Services interface {
 //
 // It can be installed via middleware using its Base method.
 // This also fulfills the publisher ClientFactory interface.
-type ProdService struct {
-	pubSubLock   sync.Mutex
-	pubSubClient *vkit.PublisherClient
-}
+type ProdService struct{}
 
-// RecreateClient removes the attached pubsub client so that the next
-// Client calls returns a new client.
-func (svc *ProdService) RecreateClient() {
-	svc.pubSubLock.Lock()
-	defer svc.pubSubLock.Unlock()
-	if svc.pubSubClient != nil {
-		svc.pubSubClient.Close()
-		svc.pubSubClient = nil
-	}
-}
-
-// Client creates or returns a new or existing pubsub client.
-// If the client is reused, the client context might be from a previous request
-// on the same instance.
-func (svc *ProdService) Client(c context.Context) (*vkit.PublisherClient, error) {
-	svc.pubSubLock.Lock()
-	defer svc.pubSubLock.Unlock()
-
-	if svc.pubSubClient != nil {
-		return svc.pubSubClient, nil
-	}
-
+// NewClient creates a new pubsub client.
+func NewClient(c context.Context) (*vkit.PublisherClient, error) {
 	// Create a new AppEngine context. Don't pass gRPC metadata to PubSub, since
 	// we don't want any caller RPC to be forwarded to the backend service.
 	c = metadata.NewOutgoingContext(c, nil)
@@ -98,7 +75,6 @@ func (svc *ProdService) Client(c context.Context) (*vkit.PublisherClient, error)
 		return nil, errors.Annotate(err, "Failed to create Pub/Sub client").Err()
 	}
 
-	svc.pubSubClient = client
 	return client, nil
 }
 
@@ -157,13 +133,17 @@ func (s *prodServicesInst) ArchivalPublisher(c context.Context) (coordinator.Arc
 		}.Errorf(c, "Failed to validate archival topic.")
 		return nil, errors.New("invalid archival topic")
 	}
+	psClient, err := NewClient(c)
+	if err != nil {
+		return nil, err
+	}
 
 	// Create a Topic, and configure it to not bundle messages.
 	return &coordinator.PubsubArchivalPublisher{
 		Publisher: &pubsub.UnbufferedPublisher{
-			Topic:         fullTopic,
-			ClientFactory: s,
-			AECtx:         s.aeCtx,
+			Topic:  fullTopic,
+			Client: psClient,
+			AECtx:  s.aeCtx,
 		},
 		AECtx:            s.aeCtx,
 		PublishIndexFunc: s.nextArchiveIndex,
