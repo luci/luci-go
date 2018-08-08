@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2aeac6bb_f6d7663a",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1115,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-08T21:30:42Z",
+      "side": 1,
+      "message": "how is this different than ensure-file-verify? Can we just extend that to write the new file if there\u0027s a $ResolvedVersions directive (and some extra cmdline option)?",
+      "range": {
+        "startLine": 1115,
+        "startChar": 14,
+        "endLine": 1115,
+        "endChar": 33
+      },
+      "revId": "3ff815b3cafb4e7c7cc4de599c30ecbbbcbb1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9d2b3cf5_9a95ff8c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1127,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-08T21:30:42Z",
+      "side": 1,
+      "message": "if we do ensure-file-verify, we could turn this into -update-version-file and make the default behavior to check that all packages in the ensurefile are in the resolved file (or on the server, if there\u0027s no resolved file)",
+      "range": {
+        "startLine": 1127,
+        "startChar": 19,
+        "endLine": 1127,
+        "endChar": 29
+      },
+      "revId": "3ff815b3cafb4e7c7cc4de599c30ecbbbcbb1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
