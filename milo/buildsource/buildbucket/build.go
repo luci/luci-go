@@ -202,12 +202,18 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 			TaskResult struct {
 				BotID string `json:"bot_id"`
 			} `json:"task_result"`
+			BotDimensions struct {
+				ID []string `json:"id"`
+			} `json:"bot_dimensions"`
 		} `json:"swarming"`
 	}
 	if msg.ResultDetailsJson != "" {
 		err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails)
 		info = resultDetails.UI.Info
 		botID = resultDetails.Swarming.TaskResult.BotID
+		if botID == "" && len(resultDetails.Swarming.BotDimensions.ID) > 0 {
+			botID = resultDetails.Swarming.BotDimensions.ID[0]
+		}
 	}
 	return
 }
