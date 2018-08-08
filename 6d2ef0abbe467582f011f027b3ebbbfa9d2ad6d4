@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e70979bc_3af49d2b",
+        "filename": "machine-db/appengine/frontend/templates/pages/dracs.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-08T01:22:27Z",
+      "side": 1,
+      "message": "MAC (uppercase), to match CLI.",
+      "range": {
+        "startLine": 11,
+        "startChar": 54,
+        "endLine": 11,
+        "endChar": 57
+      },
+      "revId": "6d2ef0abbe467582f011f027b3ebbbfa9d2ad6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22f3bdb0_35a83a27",
+        "filename": "machine-db/appengine/frontend/templates/pages/kvms.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-08T01:22:27Z",
+      "side": 1,
+      "message": "MAC",
+      "range": {
+        "startLine": 15,
+        "startChar": 54,
+        "endLine": 15,
+        "endChar": 57
+      },
+      "revId": "6d2ef0abbe467582f011f027b3ebbbfa9d2ad6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51339244_db86c1a0",
+        "filename": "machine-db/appengine/frontend/templates/pages/nics.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-08T01:22:27Z",
+      "side": 1,
+      "message": "MAC",
+      "revId": "6d2ef0abbe467582f011f027b3ebbbfa9d2ad6d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
