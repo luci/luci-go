@@ -432,7 +432,6 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 				if err := ds.Delete(c, key); err == nil {
 					deletedMuts++
 				} else {
-					cnt.add(len(toDel))
 					toDel = append(toDel, key)
 				}
 			} else {
@@ -456,6 +455,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
 		processedMuts, deletedMuts, (numMuts - deletedMuts))
 
+	cnt.add(deletedMuts)
 	if len(toDel) > 0 {
 		cnt.add(len(toDel))
 		for _, k := range toDel {
