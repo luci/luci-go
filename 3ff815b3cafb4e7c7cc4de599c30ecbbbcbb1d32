@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4711dac4_93daff5c",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1115,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-09T03:54:37Z",
+      "side": 1,
+      "message": "ensure-file-verify is strictly \"read only\" operation, as implied by its name. I feel it\u0027s wrong to add more to it. Also I want to setup a correspondence between the name of the directive ($ResolvedVersions) and the subcommand that deals with it (ensure-file-resolve). \"Resolve\" in both words is a hint they are related.",
+      "parentUuid": "2aeac6bb_f6d7663a",
+      "range": {
+        "startLine": 1115,
+        "startChar": 14,
+        "endLine": 1115,
+        "endChar": 33
+      },
+      "revId": "3ff815b3cafb4e7c7cc4de599c30ecbbbcbb1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d2b3cf5_9a95ff8c",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "3ff815b3cafb4e7c7cc4de599c30ecbbbcbb1d32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ec40aa3_9442c1bd",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 1127,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-09T03:54:37Z",
+      "side": 1,
+      "message": "Hm... This is tempting because we already have presubmit scripts written that call \u0027ensure-file-verify\u0027.\n\nI removed \u0027-check-only\u0027 from \u0027ensure-file-resolve\u0027 and instead made \u0027ensure-file-verify\u0027 unconditionally check $ResolvedVersions file if it exists.",
+      "parentUuid": "9d2b3cf5_9a95ff8c",
+      "range": {
+        "startLine": 1127,
+        "startChar": 19,
+        "endLine": 1127,
+        "endChar": 29
+      },
+      "revId": "3ff815b3cafb4e7c7cc4de599c30ecbbbcbb1d32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
