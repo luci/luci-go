@@ -198,6 +198,7 @@ func (t *Testing) Drain(c context.Context) int {
 	for {
 		t.AdvanceTime(c)
 		processed := t.Iterate(c)
+		logging.Debugf(c, "DEBUG: processed %d", processed)
 		if processed == 0 {
 			break
 		}
