@@ -68,6 +68,24 @@ func TestVersionsFile(t *testing.T) {
 		So(v.AddVersion("pkg", iid1, iid2), ShouldErrLike, "should resolve into that ID")
 	})
 
+	Convey("Equal", t, func() {
+		v1 := VersionsFile{
+			{"pkg1", "ver1"}: iid1,
+			{"pkg1", "ver2"}: iid2,
+		}
+		v2 := VersionsFile{
+			{"pkg1", "ver1"}: iid1,
+			{"pkg1", "ver2"}: iid1,
+		}
+		v3 := VersionsFile{
+			{"pkg1", "ver1"}: iid1,
+		}
+
+		So(v1.Equal(v1), ShouldBeTrue)
+		So(v1.Equal(v2), ShouldBeFalse)
+		So(v1.Equal(v3), ShouldBeFalse)
+	})
+
 	Convey("Serialization and successful parsing", t, func() {
 
 		testVersion := VersionsFile{

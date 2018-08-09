@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -229,7 +230,7 @@ func (c *cipdSubcommand) writeJSONOutput(result interface{}, err error) error {
 		return err
 	}
 
-	e = ioutil.WriteFile(c.jsonOutput, out, 0600)
+	e = ioutil.WriteFile(c.jsonOutput, out, 0666)
 	if e != nil {
 		if err == nil {
 			err = e
@@ -682,6 +683,13 @@ const (
 	withoutEnsureOutFlag ensureOutFlag = false
 )
 
+type verifyingEnsureFile bool
+
+const (
+	requireVerifyPlatforms verifyingEnsureFile = true
+	ignoreVerifyPlatforms  verifyingEnsureFile = false
+)
+
 // ensureFileOptions defines -ensure-file flag that specifies a location of the
 // "ensure file", which is a manifest that describes what should be installed
 // into a site root.
@@ -708,7 +716,7 @@ func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag,
 
 // loadEnsureFile parses the ensure file and mutates clientOpts to point to a
 // service URL specified in the ensure file.
-func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions) (*ensure.File, error) {
+func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile) (*ensure.File, error) {
 	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
 	if err != nil {
 		return nil, err
@@ -722,6 +730,13 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 				parsedFile.ServiceURL, clientOpts.serviceURL, parsedFile.ServiceURL)
 		}
 		clientOpts.serviceURL = parsedFile.ServiceURL
+	}
+
+	if verifying && len(parsedFile.VerifyPlatforms) == 0 {
+		logging.Errorf(ctx,
+			"For this feature to work, verification platforms must be specified in "+
+				"the ensure file using one or more $VerifiedPlatform directives.")
+		return nil, errors.New("no verification platforms configured")
 	}
 
 	return parsedFile, nil
@@ -864,6 +879,86 @@ func hasErrors(pinMap map[string][]pinInfo) bool {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Ensure-file related helpers.
+
+func resolveEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOptions) (map[string][]pinInfo, ensure.VersionsFile, error) {
+	client, err := clientOpts.makeCIPDClient(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	out := ensure.VersionsFile{}
+	mu := sync.Mutex{}
+
+	resolver := cipd.Resolver{
+		Client:         client,
+		VerifyPresence: true,
+		Visitor: func(pkg, ver, iid string) {
+			mu.Lock()
+			out.AddVersion(pkg, ver, iid)
+			mu.Unlock()
+		},
+	}
+	results, err := resolver.ResolveAllPlatforms(ctx, f)
+	if err != nil {
+		return nil, nil, err
+	}
+	return resolvedFilesToPinMap(results), out, nil
+}
+
+func resolvedFilesToPinMap(res map[template.Platform]*ensure.ResolvedFile) map[string][]pinInfo {
+	pinMap := map[string][]pinInfo{}
+	for plat, resolved := range res {
+		for subdir, resolvedPins := range resolved.PackagesBySubdir {
+			pins := pinMap[subdir]
+			for _, pin := range resolvedPins {
+				// Put a copy into 'pins', otherwise they all end up pointing to the
+				// same variable living in the outer scope.
+				pin := pin
+				pins = append(pins, pinInfo{
+					Pkg:      pin.PackageName,
+					Pin:      &pin,
+					Platform: plat.String(),
+				})
+			}
+			pinMap[subdir] = pins
+		}
+	}
+
+	// Sort pins by (package name, platform) for deterministic output.
+	for _, v := range pinMap {
+		sort.Slice(v, func(i, j int) bool {
+			if v[i].Pkg == v[j].Pkg {
+				return v[i].Platform < v[j].Platform
+			}
+			return v[i].Pkg < v[j].Pkg
+		})
+	}
+	return pinMap
+}
+
+func loadVersionsFile(path, ensureFile string) (ensure.VersionsFile, error) {
+	switch f, err := os.Open(path); {
+	case os.IsNotExist(err):
+		return nil, fmt.Errorf("the resolved versions file doesn't exist, "+
+			"use 'cipd ensure-file-resolve -ensure-file %q' to generate it", ensureFile)
+	case err != nil:
+		return nil, err
+	default:
+		defer f.Close()
+		return ensure.ParseVersionsFile(f)
+	}
+}
+
+func saveVersionsFile(path string, v ensure.VersionsFile) error {
+	buf := bytes.Buffer{}
+	if err := v.Serialize(&buf); err != nil {
+		return err
+	}
+	return ioutil.WriteFile(path, buf.Bytes(), 0666)
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // 'create' subcommand.
 
 func cmdCreate(params Parameters) *subcommands.Command {
@@ -963,7 +1058,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms)
 	if err != nil {
 		return c.done(nil, err)
 	}
@@ -1011,8 +1106,10 @@ func cmdEnsureFileVerify(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "ensure-file-verify [options]",
 		ShortDesc: "verifies packages in a manifest exist for all platforms",
-		LongDesc: "Collects a list of necessary platforms and verifies that the packages " +
-			"in the manifest exist for all of those platforms. Returns non-zero if any are missing.",
+		LongDesc: "Verifies that the packages in the \"ensure\" file exist for all platforms.\n\n" +
+			"Additionally if the ensure file uses $ResolvedVersions directive, checks that " +
+			"all versions there are up-to-date. Returns non-zero if some version can't be " +
+			"resolved or $ResolvedVersions file is outdated.",
 		Advanced: true,
 		CommandRun: func() subcommands.CommandRun {
 			c := &ensureFileVerifyRun{}
@@ -1036,62 +1133,86 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms)
 	if err != nil {
 		return c.done(nil, err)
 	}
 
-	pinMap, err := verifyEnsureFile(ctx, ef, c.clientOptions)
-	return c.doneWithPinMap(pinMap, err)
+	// Resolving all versions in the ensure file also naturally verifies all
+	// versions exist.
+	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
+	if err != nil || ef.ResolvedVersions == "" {
+		return c.doneWithPinMap(pinMap, err)
+	}
+
+	// Verify $ResolvedVersions file is up-to-date too.
+	switch existing, err := loadVersionsFile(ef.ResolvedVersions, c.ensureFile); {
+	case err != nil:
+		return c.done(nil, err)
+	case !existing.Equal(versions):
+		return c.done(nil, fmt.Errorf("the resolved versions file %s is stale, "+
+			"use 'cipd ensure-file-resolve -ensure-file %q' to update it",
+			filepath.Base(ef.ResolvedVersions), c.ensureFile))
+	default:
+		return c.doneWithPinMap(pinMap, err)
+	}
 }
 
-func verifyEnsureFile(ctx context.Context, f *ensure.File, clientOpts clientOptions) (map[string][]pinInfo, error) {
-	client, err := clientOpts.makeCIPDClient(ctx)
-	if err != nil {
-		return nil, err
-	}
+////////////////////////////////////////////////////////////////////////////////
+// 'ensure-file-resolve' subcommand.
 
-	if len(f.VerifyPlatforms) == 0 {
+func cmdEnsureFileResolve(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		UsageLine: "ensure-file-resolve [options]",
+		ShortDesc: "resolves versions of all packages and writes them into $ResolvedVersions file",
+		LongDesc: "Resolves versions of all packages for all verified platforms in the \"ensure\" file.\n\n" +
+			`Writes them to a file specified by $ResolvedVersions directive in the ensure file, ` +
+			`to be used for version resolution during "cipd ensure ..." instead of calling the backend.`,
+		Advanced: true,
+		CommandRun: func() subcommands.CommandRun {
+			c := &ensureFileResolveRun{}
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.ensureFileOptions.registerFlags(&c.Flags, withoutEnsureOutFlag, withoutLegacyListFlag)
+			return c
+		},
+	}
+}
+
+type ensureFileResolveRun struct {
+	cipdSubcommand
+	clientOptions
+	ensureFileOptions
+}
+
+func (c *ensureFileResolveRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+	ctx := cli.GetContext(a, c, env)
+
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms)
+	switch {
+	case err != nil:
+		return c.done(nil, err)
+	case ef.ResolvedVersions == "":
 		logging.Errorf(ctx,
-			"Verification platforms must be specified in the ensure file using one or more $VerifiedPlatform directives.")
-		return nil, errors.New("no verification platforms configured")
+			"The ensure file doesn't have $ResolvedVersion directive that specifies "+
+				"where to put the resolved package versions, so it can't be resolved.")
+		return c.done(nil, errors.New("no resolved versions file configured"))
 	}
 
-	resolver := cipd.Resolver{Client: client, VerifyPresence: true}
-	results, err := resolver.ResolveAllPlatforms(ctx, f)
+	pinMap, versions, err := resolveEnsureFile(ctx, ef, c.clientOptions)
 	if err != nil {
-		return nil, err
+		return c.doneWithPinMap(pinMap, err)
 	}
 
-	// All platforms verified successfully. Collect pins for the output.
-	pinMap := map[string][]pinInfo{}
-	for plat, resolved := range results {
-		for subdir, resolvedPins := range resolved.PackagesBySubdir {
-			pins := pinMap[subdir]
-			for _, pin := range resolvedPins {
-				// Put a copy into 'pins', otherwise they all end up pointing to the
-				// same variable living in the outer scope.
-				pin := pin
-				pins = append(pins, pinInfo{
-					Pkg:      pin.PackageName,
-					Pin:      &pin,
-					Platform: plat.String(),
-				})
-			}
-			pinMap[subdir] = pins
-		}
+	if err := saveVersionsFile(ef.ResolvedVersions, versions); err != nil {
+		return c.done(nil, err)
 	}
 
-	// Sort pins by (package name, platform) for deterministic output.
-	for _, v := range pinMap {
-		sort.Slice(v, func(i, j int) bool {
-			if v[i].Pkg == v[j].Pkg {
-				return v[i].Platform < v[j].Platform
-			}
-			return v[i].Pkg < v[j].Pkg
-		})
-	}
-	return pinMap, nil
+	fmt.Printf("The resolved versions have been written to %s.\n\n", filepath.Base(ef.ResolvedVersions))
+	return c.doneWithPinMap(pinMap, nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1131,7 +1252,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms)
 	if err != nil {
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
@@ -2439,6 +2560,7 @@ func GetApplication(params Parameters) *cli.Application {
 
 			// Advanced ensure file operations.
 			cmdEnsureFileVerify(params),
+			cmdEnsureFileResolve(params),
 
 			// User friendly subcommands that operates within a site root. Implemented
 			// in friendly.go. These are advanced because they're half-baked.
