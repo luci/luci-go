@@ -68,6 +68,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
@@ -311,6 +312,15 @@ type ClientOptions struct {
 	// If empty, instances are not cached and tags are cached inside the site
 	// root. If both Root and CacheDir are empty, tag cache is disabled.
 	CacheDir string
+
+	// Versions is optional database of (pkg, version) => instance ID resolutions.
+	//
+	// If set, it will be used for all version resolutions done by the client.
+	// The client won't be consulting (or updating) the tag cache and won't make
+	// 'ResolveVersion' backend RPCs.
+	//
+	// This is primarily used to implement $ResolvedVersions ensure file feature.
+	Versions ensure.VersionsFile
 
 	// AnonymousClient is http.Client that doesn't attach authentication headers.
 	//
@@ -678,12 +688,18 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 		return common.Pin{}, err
 	}
 
-	// Is it instance ID already? Don't bother calling the backend.
+	// Is it instance ID already? Then it is already resolved.
 	if common.ValidateInstanceID(version, common.AnyHash) == nil {
 		return common.Pin{PackageName: packageName, InstanceID: version}, nil
 	}
 	if err := common.ValidateInstanceVersion(version); err != nil {
 		return common.Pin{}, err
+	}
+
+	// Use the preresolved version if configured to do so. Do NOT fallback to
+	// the backend calls. A missing version is an error.
+	if client.Versions != nil {
+		return client.Versions.ResolveVersion(packageName, version)
 	}
 
 	// Use a local cache when resolving tags to avoid round trips to the backend

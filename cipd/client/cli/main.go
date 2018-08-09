@@ -307,7 +307,8 @@ type clientOptions struct {
 
 	serviceURL string // also mutated by loadEnsureFile
 	cacheDir   string
-	rootDir    string // used only if registerFlags got withRootDir arg
+	rootDir    string              // used only if registerFlags got withRootDir arg
+	versions   ensure.VersionsFile // mutated by loadEnsureFile
 
 	authFlags authcli.Flags
 }
@@ -349,6 +350,7 @@ func (opts *clientOptions) toCIPDClientOpts(ctx context.Context) (cipd.ClientOpt
 		ServiceURL:          opts.resolvedServiceURL(),
 		Root:                opts.rootDir,
 		CacheDir:            opts.cacheDir,
+		Versions:            opts.versions,
 		AuthenticatedClient: client,
 		AnonymousClient:     http.DefaultClient,
 	}
@@ -690,6 +692,13 @@ const (
 	ignoreVerifyPlatforms  verifyingEnsureFile = false
 )
 
+type versionFileOpt bool
+
+const (
+	parseVersionsFile  versionFileOpt = true
+	ignoreVersionsFile versionFileOpt = false
+)
+
 // ensureFileOptions defines -ensure-file flag that specifies a location of the
 // "ensure file", which is a manifest that describes what should be installed
 // into a site root.
@@ -716,7 +725,7 @@ func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag,
 
 // loadEnsureFile parses the ensure file and mutates clientOpts to point to a
 // service URL specified in the ensure file.
-func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile) (*ensure.File, error) {
+func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile, vers versionFileOpt) (*ensure.File, error) {
 	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
 	if err != nil {
 		return nil, err
@@ -737,6 +746,14 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 			"For this feature to work, verification platforms must be specified in "+
 				"the ensure file using one or more $VerifiedPlatform directives.")
 		return nil, errors.New("no verification platforms configured")
+	}
+
+	if parseVersionsFile && parsedFile.ResolvedVersions != "" {
+		clientOpts.versions, err = loadVersionsFile(parsedFile.ResolvedVersions, opts.ensureFile)
+		if err != nil {
+			return nil, err
+		}
+		logging.Debugf(ctx, "Using the resolved version file %q", filepath.Base(parsedFile.ResolvedVersions))
 	}
 
 	return parsedFile, nil
@@ -1058,7 +1075,7 @@ func (c *ensureRun) Run(a subcommands.Application, args []string, env subcommand
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
@@ -1133,7 +1150,7 @@ func (c *ensureFileVerifyRun) Run(a subcommands.Application, args []string, env 
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms, ignoreVersionsFile)
 	if err != nil {
 		return c.done(nil, err)
 	}
@@ -1191,7 +1208,7 @@ func (c *ensureFileResolveRun) Run(a subcommands.Application, args []string, env
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, requireVerifyPlatforms, ignoreVersionsFile)
 	switch {
 	case err != nil:
 		return c.done(nil, err)
@@ -1252,7 +1269,7 @@ func (c *checkUpdatesRun) Run(a subcommands.Application, args []string, env subc
 	}
 	ctx := cli.GetContext(a, c, env)
 
-	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms)
+	ef, err := c.loadEnsureFile(ctx, &c.clientOptions, ignoreVerifyPlatforms, parseVersionsFile)
 	if err != nil {
 		return 0 // on fatal errors ask puppet to run 'ensure' for real
 	}
