@@ -30,10 +30,10 @@ func printPhysicalHosts(tsv bool, hosts ...*crimson.PhysicalHost) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "VLAN", "IP Address", "Machine", "OS", "Max VM Slots", "Virtual Datacenter", "Description", "Deployment Ticket", "State")
+			p.Row("Name", "VLAN", "IP Address", "Machine", "NIC", "OS", "Max VM Slots", "Virtual Datacenter", "Description", "Deployment Ticket", "State")
 		}
 		for _, h := range hosts {
-			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket, h.State)
+			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Nic, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket, h.State)
 		}
 	}
 }
@@ -64,7 +64,7 @@ func (c *AddPhysicalHostCmd) Run(app subcommands.Application, args []string, env
 // addPhysicalHostCmd returns a command to add a physical host.
 func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-host -name <name> -machine <machine> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
+		UsageLine: "add-host -name <name> -machine <machine> -nic <nic> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a physical host",
 		LongDesc:  "Adds a physical host to the database.",
 		CommandRun: func() subcommands.CommandRun {
@@ -72,6 +72,7 @@ func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 			cmd.Initialize(params)
 			cmd.Flags.StringVar(&cmd.host.Name, "name", "", "The name of this host on the network. Required and must be unique within the database.")
 			cmd.Flags.StringVar(&cmd.host.Machine, "machine", "", "The machine backing this host. Required and must be the name of a machine returned by get-machines.")
+			cmd.Flags.StringVar(&cmd.host.Nic, "nic", "", "The primary NIC for this host. Required and must be the name of a NIC returned by get-nics.")
 			cmd.Flags.StringVar(&cmd.host.Os, "os", "", "The operating system this host is running. Required and must be the name of an operating system returned by get-oses.")
 			cmd.Flags.StringVar(&cmd.host.Ipv4, "ip", "", "The IPv4 address assigned to this host. Required and must be a free IP address returned by get-ips.")
 			cmd.Flags.Var(StateFlag(&cmd.host.State), "state", "The state of this host. Must be the name of a state returned by get-states.")
@@ -160,7 +161,7 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 // getPhysicalHostsCmd returns a command to get physical hosts.
 func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
+		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-nic <nic>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
 		ShortDesc: "retrieves physical hosts",
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
@@ -169,6 +170,7 @@ func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Names), "name", "Name of a physical host to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.Nics), "nic", "Name of a NIC to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Oses), "os", "Name of an operating system to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ip", "IPv4 address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")

@@ -29,6 +29,8 @@ CREATE TABLE IF NOT EXISTS physical_hosts (
 	hostname_id int NOT NULL,
 	-- The machine backing this physical host.
 	machine_id int NOT NULL,
+	-- The primary NIC for this physical host.
+	nic_id int NOT NULL,
 	-- The operating system running on this physical host.
 	os_id int NOT NULL,
 	-- The number of VMs which can be deployed on this physical host.
@@ -42,6 +44,7 @@ CREATE TABLE IF NOT EXISTS physical_hosts (
 	PRIMARY KEY (id),
 	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE CASCADE,
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
+	FOREIGN KEY (nic_id, machine_id) REFERENCES nics (id, machine_id) ON DELETE RESTRICT,
 	FOREIGN KEY (os_id) REFERENCES oses (id) ON DELETE RESTRICT,
 	UNIQUE (hostname_id),
 	UNIQUE (machine_id)

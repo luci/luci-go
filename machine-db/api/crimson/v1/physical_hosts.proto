@@ -32,6 +32,8 @@ message PhysicalHost {
   common.State state = 9;
   // The virtual datacenter VMs deployed on this host belong to.
   string virtual_datacenter = 10;
+  // The primary NIC for this host.
+  string nic = 11;
 }
 
 // A request to create a new physical host in the database.
@@ -62,6 +64,8 @@ message ListPhysicalHostsRequest {
   repeated string datacenters = 9;
   // The virtual datacenters to filter retrieved hosts on.
   repeated string virtual_datacenters = 10;
+  // The NICs to filter retrieved hosts on.
+  repeated string nics = 11;
 }
 
 // A response containing a list of physical hosts in the database.

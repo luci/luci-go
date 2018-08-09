@@ -74,11 +74,13 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		return nil, err
 	}
 
-	// physical_hosts.hostname_id, physical_hosts.machine_id, and physical_hosts.os_id are NOT NULL as above.
+	// By setting hostname_id, machine_id, nic_id, and os_id as FOREIGN KEY and NOT NULL when setting up the
+	// database, we can avoid checking if the given values are valid. MySQL will ensure the given values exist.
 	_, err = tx.ExecContext(c, `
 		INSERT INTO physical_hosts (
 			hostname_id,
 			machine_id,
+			nic_id,
 			os_id,
 			vm_slots,
 			virtual_datacenter,
@@ -88,13 +90,14 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		VALUES (
 			?,
 			(SELECT id FROM machines WHERE name = ?),
+			(SELECT n.id FROM machines m, nics n WHERE n.machine_id = m.id AND m.name = ? AND n.name = ?),
 			(SELECT id FROM oses WHERE name = ?),
 			?,
 			?,
 			?,
 			?
 		)
-	`, hostnameId, h.Machine, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket)
+	`, hostnameId, h.Machine, h.Machine, h.Nic, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -105,6 +108,9 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'machine_id'"):
 			// e.g. "Error 1048: Column 'machine_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "machine %q does not exist", h.Machine)
+		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'nic_id'"):
+			// e.g. "Error 1048: Column 'nic_id' cannot be null".
+			return nil, status.Errorf(codes.NotFound, "NIC %q of machine %q does not exist", h.Nic, h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", h.Os)
@@ -145,9 +151,10 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	}
 
 	stmt := squirrel.Select(
-		"n.name",
-		"n.vlan_id",
+		"hp.name",
+		"hp.vlan_id",
 		"m.name",
+		"n.name",
 		"o.name",
 		"h.vm_slots",
 		"h.virtual_datacenter",
@@ -156,7 +163,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 		"i.ipv4",
 		"m.state",
 	)
-	stmt = stmt.From("(physical_hosts h, hostnames n, machines m, oses o, ips i)")
+	stmt = stmt.From("(physical_hosts h, hostnames hp, machines m, nics n, oses o, ips i)")
 	if len(req.Datacenters) > 0 {
 		stmt = stmt.Join("racks r ON m.rack_id = r.id")
 		stmt = stmt.Join("datacenters d ON r.datacenter_id = d.id")
@@ -166,13 +173,15 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	if len(req.Platforms) > 0 {
 		stmt = stmt.Join("platforms p ON m.platform_id = p.id")
 	}
-	stmt = stmt.Where("h.hostname_id = n.id").
+	stmt = stmt.Where("h.hostname_id = hp.id").
 		Where("h.machine_id = m.id").
+		Where("h.nic_id = n.id").
 		Where("h.os_id = o.id").
-		Where("i.hostname_id = n.id")
-	stmt = selectInString(stmt, "n.name", req.Names)
-	stmt = selectInInt64(stmt, "n.vlan_id", req.Vlans)
+		Where("i.hostname_id = hp.id")
+	stmt = selectInString(stmt, "hp.name", req.Names)
+	stmt = selectInInt64(stmt, "hp.vlan_id", req.Vlans)
 	stmt = selectInString(stmt, "m.name", req.Machines)
+	stmt = selectInString(stmt, "n.name", req.Nics)
 	stmt = selectInString(stmt, "o.name", req.Oses)
 	stmt = selectInString(stmt, "h.virtual_datacenter", req.VirtualDatacenters)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
@@ -198,6 +207,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 			&h.Name,
 			&h.Vlan,
 			&h.Machine,
+			&h.Nic,
 			&h.Os,
 			&h.VmSlots,
 			&h.VirtualDatacenter,
@@ -322,6 +332,8 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "VLAN must not be specified, use IP address instead")
 	case h.Machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
+	case h.Nic == "":
+		return status.Error(codes.InvalidArgument, "NIC is required and must be non-empty")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
 	case h.VmSlots < 0:
@@ -346,7 +358,7 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 		return err
 	}
 	for _, path := range mask.Paths {
-		// TODO(smut): Allow IPv4 address and state to be updated.
+		// TODO(smut): Allow NIC, IPv4 address and state to be updated.
 		switch path {
 		case "name":
 			return status.Error(codes.InvalidArgument, "hostname cannot be updated, delete and create a new physical host instead")
@@ -356,6 +368,8 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 			if h.Machine == "" {
 				return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 			}
+		case "nic":
+			return status.Error(codes.InvalidArgument, "NIC cannot be updated, delete and create a new physical host instead")
 		case "os":
 			if h.Os == "" {
 				return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
