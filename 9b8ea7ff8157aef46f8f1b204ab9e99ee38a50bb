@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48a00a61_aaaf181a",
+        "filename": "tumble/process.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-09T01:33:27Z",
+      "side": 1,
+      "message": "actually... maybe this and 461 should just be `cnt.add(processedMuts)`?",
+      "range": {
+        "startLine": 459,
+        "startChar": 1,
+        "endLine": 459,
+        "endChar": 21
+      },
+      "revId": "9b8ea7ff8157aef46f8f1b204ab9e99ee38a50bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
