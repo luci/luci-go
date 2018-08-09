@@ -38,7 +38,7 @@ func TestVersionsFile(t *testing.T) {
 		v := VersionsFile{}
 
 		_, err := v.ResolveVersion("pkg", "ver")
-		So(err, ShouldErrLike, "no such version - pkg@ver is not in the versions file")
+		So(err, ShouldErrLike, "not in the versions file")
 
 		So(v.AddVersion("pkg", "ver", iid1), ShouldBeNil)
 		So(v.AddVersion("pkg", iid1, iid1), ShouldBeNil) // noop
