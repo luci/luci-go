@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/gae/filter/txnBuf"
 	ds "go.chromium.org/gae/service/datastore"
@@ -42,6 +44,20 @@ const (
 	// minNoWorkDelay is the minimum amount of time to sleep in between rounds if
 	// there was no work done in that round.
 	minNoWorkDelay = time.Second
+)
+
+var metricProcessing = metric.NewCounter(
+	"luci/tumble/processing",
+	"The number of mutations processing by tumble",
+	nil,
+	field.String("namespace"),
+)
+
+var metricProcessed = metric.NewCounter(
+	"luci/tumble/processed",
+	"The number of mutations processed by tumble",
+	nil,
+	field.String("namespace"),
 )
 
 // expandedShardBounds returns the boundary of the expandedShard order that
@@ -186,6 +202,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		_ = parallel.WorkPool(int(cfg.NumGoroutines), func(ch chan<- func() error) {
 			err := ds.Run(c, q, func(pm ds.PropertyMap) error {
 				root := pm.Slice("TargetRoot")[0].Value().(*ds.Key)
+				metricProcessing.Add(c, 1, root.Namespace())
 				encRoot := root.Encode()
 
 				// TODO(riannucci): make banSets remove keys from the banSet which
@@ -455,6 +472,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	fireTasks(c, cfg, allShards, true)
 	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
 		processedMuts, deletedMuts, (numMuts - deletedMuts))
+	metricProcessed.Add(c, int64(processedMuts), root.Namespace())
 
 	if len(toDel) > 0 {
 		cnt.add(len(toDel))
