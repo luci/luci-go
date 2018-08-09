@@ -99,7 +99,7 @@ func (v VersionsFile) ResolveVersion(pkg, ver string) (common.Pin, error) {
 	if iid, ok := v[unresolvedVer{pkg, ver}]; ok {
 		return common.Pin{PackageName: pkg, InstanceID: iid}, nil
 	}
-	return common.Pin{}, errors.Reason("no such version - %s@%s is not in the versions file", pkg, ver).Err()
+	return common.Pin{}, errors.Reason("not in the versions file").Err()
 }
 
 // Equal returns true if version files have same entries.
