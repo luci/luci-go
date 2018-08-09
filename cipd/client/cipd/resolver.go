@@ -43,9 +43,21 @@ import (
 type Resolver struct {
 	// Client is the CIPD client to use for resolving versions.
 	Client Client
+
 	// VerifyPresence specifies whether the resolver should check the resolved
 	// versions actually exist on the backend.
 	VerifyPresence bool
+
+	// Visitor is called for each package version that the resolver has
+	// successfully processed.
+	//
+	// It receives the original (pkg, version) tuple and an instance ID it
+	// resolves to.
+	//
+	// Called concurrently from multiple goroutines in undefined order. Same
+	// (pkg, version) tuple may be visited multiple times. May be called for noop
+	// version resolutions (when the version is already given as an instance ID).
+	Visitor func(pkg, ver, iid string)
 
 	resolving promise.Map // unresolvedPkg => (common.Pin, error)
 	verifying promise.Map // common.Pin => (nil, error)
@@ -81,6 +93,11 @@ func (r *Resolver) ResolvePackage(ctx context.Context, pkg, ver string) (pin com
 	if r.VerifyPresence {
 		err = r.verifyPin(ctx, pin)
 	}
+
+	if err == nil && r.Visitor != nil {
+		r.Visitor(pkg, ver, pin.InstanceID)
+	}
+
 	return
 }
 
@@ -179,7 +196,7 @@ func (r *Resolver) verifyPin(ctx context.Context, pin common.Pin) error {
 		logging.Debugf(ctx, "Validating pin %s...", pin)
 		_, err := r.Client.DescribeInstance(ctx, pin, nil)
 		if err == nil {
-			logging.Debugf(ctx, "Pin %s successfully validated")
+			logging.Debugf(ctx, "Pin %s successfully validated", pin)
 		} else {
 			logging.Debugf(ctx, "Failed to resolve instance info for %s: %s", pin, err)
 		}
