@@ -427,15 +427,15 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 
 			// Finished processing this Mutation.
 			key := iterMutKeys[i]
-			if key.HasAncestor(root) {
+			switch {
+			case key.HasAncestor(root):
 				// try to delete it as part of the same transaction.
 				if err := ds.Delete(c, key); err == nil {
 					deletedMuts++
-				} else {
-					cnt.add(len(toDel))
-					toDel = append(toDel, key)
+					break
 				}
-			} else {
+				fallthrough // Failed to delete, try again outside of the transaction.
+			default:
 				toDel = append(toDel, key)
 			}
 
@@ -456,6 +456,7 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
 		processedMuts, deletedMuts, (numMuts - deletedMuts))
 
+	cnt.add(deletedMuts)
 	if len(toDel) > 0 {
 		cnt.add(len(toDel))
 		for _, k := range toDel {
