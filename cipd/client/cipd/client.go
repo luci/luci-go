@@ -68,6 +68,7 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
@@ -450,10 +451,13 @@ func NewClient(opts ClientOptions) (Client, error) {
 // how to establish a connection with the backend. Its Root and CacheDir values
 // are ignored (values derived from clientExe are used instead).
 //
+// If given 'digests' is not nil, will make sure the hash of the downloaded
+// client binary is in 'digests'.
+//
 // Note that this function make sense only in a context of a default CIPD CLI
 // client. Other binaries that link to cipd package should not use it, they'll
 // be "updated" to the CIPD client binary.
-func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, clientExe string) (common.Pin, error) {
+func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, clientExe string, digests *digests.ClientDigestsFile) (common.Pin, error) {
 	if err := common.ValidateInstanceVersion(targetVersion); err != nil {
 		return common.Pin{}, err
 	}
@@ -470,7 +474,7 @@ func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, c
 	fs := local.NewFileSystem(opts.Root, filepath.Join(opts.CacheDir, "trash"))
 	defer fs.CleanupTrash(ctx)
 
-	pin, err := impl.maybeUpdateClient(ctx, fs, targetVersion, clientExe)
+	pin, err := impl.maybeUpdateClient(ctx, fs, targetVersion, clientExe, digests)
 	if err == nil {
 		impl.ensureClientVersionInfo(ctx, fs, pin, clientExe)
 	}
@@ -779,7 +783,11 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.
 
 // maybeUpdateClient is called only with the specially constructed client, see
 // MaybeUpdateClient function.
-func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem, targetVersion, clientExe string) (pin common.Pin, err error) {
+func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem,
+	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (pin common.Pin, err error) {
+
+	// TODO(vadimsh): Use 'digests'.
+
 	// currentHashMatches calculates (with memoization) the existing client binary
 	// hash and compares it to 'obj'.
 	var lastCalculated *api.ObjectRef

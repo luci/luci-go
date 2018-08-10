@@ -44,6 +44,7 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/template"
@@ -2465,21 +2466,32 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 ////////////////////////////////////////////////////////////////////////////////
 // 'selfupdate' subcommand.
 
+const digestsSfx = ".digests"
+
 func cmdSelfUpdate(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "selfupdate -version <version>",
-		ShortDesc: "updates the current cipd client binary",
-		LongDesc:  "does an in-place upgrade to the current cipd binary",
+		UsageLine: "selfupdate -version <version> | -version-file <path>",
+		ShortDesc: "updates the current CIPD client binary",
+		LongDesc: "Does an in-place upgrade to the current CIPD binary.\n\n" +
+			"Additionally exposes -generate-digests and -check-digests flags used to " +
+			"manage a special *.digests file with pinned hashes of the client binary. " +
+			"When using 'selfupdate -version-file <path> ...', the digests file is loaded " +
+			"from <path>.digests.",
 		CommandRun: func() subcommands.CommandRun {
-			s := &selfupdateRun{}
+			c := &selfupdateRun{}
 
 			// By default, show a reduced number of logs unless something goes wrong.
-			s.logConfig.Level = logging.Warning
+			c.logConfig.Level = logging.Warning
 
-			s.registerBaseFlags()
-			s.clientOptions.registerFlags(&s.Flags, params, withoutRootDir)
-			s.Flags.StringVar(&s.version, "version", "", "Version of the client to update to.")
-			return s
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Flags.StringVar(&c.version, "version", "", "Version of the client to update to (incompatible with -version-file).")
+			c.Flags.StringVar(&c.versionFile, "version-file", "",
+				"Indicates the path to read the new version from (<version-file> itself) and "+
+					"the path to the file with pinned hashes of the CIPD binary (<version-file>.digests file).")
+			c.Flags.BoolVar(&c.generate, "generate-digests", false, "If set, updates the file with pinned hashes of the CIPD binary (<version-file>.digests file).")
+			c.Flags.BoolVar(&c.check, "check-digests", false, "If set, checks that the file with pinned hashes of the CIPD binary (<version-file>.digests file) is up-to-date.")
+			return c
 		},
 	}
 }
@@ -2488,31 +2500,195 @@ type selfupdateRun struct {
 	cipdSubcommand
 	clientOptions
 
-	version string
+	version     string
+	versionFile string
+	generate    bool
+	check       bool
 }
 
-func (s *selfupdateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
-	if !s.checkArgs(args, 0, 0) {
-		return 1
-	}
-	if s.version == "" {
-		s.printError(makeCLIError("-version is required"))
+func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
 		return 1
 	}
 
-	ctx := cli.GetContext(a, s, env)
+	ctx := cli.GetContext(a, c, env)
 
-	return s.done(func() (common.Pin, error) {
+	switch {
+	case c.version != "" && c.versionFile != "":
+		return c.done(nil, makeCLIError("-version and -version-file are mutually exclusive, use only one"))
+	case c.version == "" && c.versionFile == "":
+		return c.done(nil, makeCLIError("either -version or -version-file are required"))
+	}
+
+	if c.check || c.generate {
+		opt := ""
+		switch {
+		case c.check && c.generate:
+			return c.done(nil, makeCLIError("-check-digests and -generated-digests are mutually exclusive"))
+		case c.check:
+			opt = "-check-digests"
+		case c.generate:
+			opt = "-generate-digests"
+		}
+
+		if c.versionFile == "" {
+			return c.done(nil, makeCLIError("-version-file is required when using %s", opt))
+		}
+		version, err := loadClientVersion(c.versionFile)
+		if err != nil {
+			return c.done(nil, err)
+		}
+
+		client, err := c.clientOptions.makeCIPDClient(ctx)
+		if err != nil {
+			return c.done(nil, err)
+		}
+
+		digestFile := c.versionFile + digestsSfx
+		if c.generate {
+			return c.doneWithPins(generateClientDigests(ctx, client, digestFile, version))
+		} else {
+			return c.doneWithPins(checkClientDigests(ctx, client, digestFile, version))
+		}
+	}
+
+	var version = c.version
+	var digests *digests.ClientDigestsFile
+
+	if version == "" { // using -version-file instead, checked above already
+		var err error
+		version, err = loadClientVersion(c.versionFile)
+		if err != nil {
+			return c.done(nil, err)
+		}
+		digests, err = loadClientDigests(c.versionFile + digestsSfx)
+		if err != nil {
+			return c.done(nil, err)
+		}
+	}
+
+	return c.done(func() (common.Pin, error) {
 		exePath, err := os.Executable()
 		if err != nil {
 			return common.Pin{}, err
 		}
-		opts, err := s.clientOptions.toCIPDClientOpts(ctx)
+		opts, err := c.clientOptions.toCIPDClientOpts(ctx)
 		if err != nil {
 			return common.Pin{}, err
 		}
-		return cipd.MaybeUpdateClient(ctx, opts, s.version, exePath)
+		return cipd.MaybeUpdateClient(ctx, opts, c.version, exePath, digests)
 	}())
+}
+
+func generateClientDigests(ctx context.Context, client cipd.Client, path, version string) ([]pinInfo, error) {
+	digests, pins, err := assembleClientDigests(ctx, client, version)
+	if err != nil {
+		return pins, err
+	}
+
+	buf := bytes.Buffer{}
+	versionFileName := strings.TrimSuffix(filepath.Base(path), digestsSfx)
+	if err := digests.Serialize(&buf, version, versionFileName); err != nil {
+		return nil, err
+	}
+	if err := ioutil.WriteFile(path, buf.Bytes(), 0666); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("The pinned client hashes have been written to %s.\n\n", filepath.Base(path))
+	return pins, nil
+}
+
+func checkClientDigests(ctx context.Context, client cipd.Client, path, version string) ([]pinInfo, error) {
+	existing, err := loadClientDigests(path)
+	if err != nil {
+		return nil, err
+	}
+	digests, pins, err := assembleClientDigests(ctx, client, version)
+	if err != nil {
+		return pins, err
+	}
+	if !digests.Equal(existing) {
+		base := filepath.Base(path)
+		return nil, fmt.Errorf("the file with pinned client hashes (%s) is stale, "+
+			"use 'cipd selfupdate -version-file %s -generate-digests' to update it",
+			base, strings.TrimSuffix(base, digestsSfx))
+	}
+	fmt.Printf("The file with pinned client hashes (%s) is up-to-date.\n\n", filepath.Base(path))
+	return pins, nil
+}
+
+// loadClientVersion reads a version string from a file.
+func loadClientVersion(path string) (string, error) {
+	blob, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	version := strings.TrimSpace(string(blob))
+	if err := common.ValidateInstanceVersion(version); err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
+// loadClientDigests loads the *.digests file with client binary hashes.
+func loadClientDigests(path string) (*digests.ClientDigestsFile, error) {
+	switch f, err := os.Open(path); {
+	case os.IsNotExist(err):
+		base := filepath.Base(path)
+		return nil, fmt.Errorf("the file with pinned client hashes (%s) doesn't exist, "+
+			"use 'cipd selfupdate -version-file %s -generate-digests' to generate it",
+			base, strings.TrimSuffix(base, digestsSfx))
+	case err != nil:
+		return nil, err
+	default:
+		defer f.Close()
+		return digests.ParseClientDigestsFile(f)
+	}
+}
+
+// assembleClientDigests produces the digests file by making backend RPCs.
+func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (*digests.ClientDigestsFile, []pinInfo, error) {
+	// Get the list of all registered client packages.
+	if !strings.HasSuffix(cipd.ClientPackage, "${platform}") {
+		panic(fmt.Sprintf("client package template (%q) is expected to end with '${platform}'", cipd.ClientPackage))
+	}
+	pkgs, err := expandPkgDir(ctx, c, strings.TrimSuffix(cipd.ClientPackage, "${platform}"))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	out := &digests.ClientDigestsFile{}
+	mu := sync.Mutex{}
+
+	// Ask the backend to give us hashes of the client binary for all platforms.
+	pins, err := performBatchOperation(ctx, batchOperation{
+		client:   c,
+		packages: pkgs,
+		callback: func(pkg string) (common.Pin, error) {
+			pin, err := c.ResolveVersion(ctx, pkg, version)
+			if err != nil {
+				return common.Pin{}, err
+			}
+			desc, err := c.DescribeClient(ctx, pin)
+			if err != nil {
+				return common.Pin{}, err
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			plat := pkg[strings.LastIndex(pkg, "/")+1:]
+			if err := out.AddClientRef(plat, desc.Digest); err != nil {
+				return common.Pin{}, err
+			}
+			return pin, nil
+		},
+	})
+	if err != nil {
+		return nil, pins, err
+	}
+
+	out.Sort()
+	return out, pins, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
