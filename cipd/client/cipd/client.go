@@ -225,6 +225,10 @@ type Client interface {
 	// the request succeeds, then the instance exists.
 	DescribeInstance(ctx context.Context, pin common.Pin, opts *DescribeInstanceOpts) (*InstanceDescription, error)
 
+	// DescribeClient returns information about a CIPD client binary matching the
+	// given client package pin.
+	DescribeClient(ctx context.Context, pin common.Pin) (*ClientDescription, error)
+
 	// SetRefWhenReady moves a ref to point to a package instance.
 	SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error
 
@@ -1014,6 +1018,22 @@ func (client *clientImpl) DescribeInstance(ctx context.Context, pin common.Pin, 
 	}
 
 	return apiDescToInfo(resp), nil
+}
+
+func (client *clientImpl) DescribeClient(ctx context.Context, pin common.Pin) (*ClientDescription, error) {
+	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
+		return nil, err
+	}
+
+	resp, err := client.repo.DescribeClient(ctx, &api.DescribeClientRequest{
+		Package:  pin.PackageName,
+		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
+	}, expectedCodes)
+	if err != nil {
+		return nil, humanErr(err)
+	}
+
+	return apiClientDescToInfo(resp), nil
 }
 
 func (client *clientImpl) SetRefWhenReady(ctx context.Context, ref string, pin common.Pin) error {

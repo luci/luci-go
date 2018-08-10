@@ -123,6 +123,35 @@ type InstanceDescription struct {
 	Tags []TagInfo `json:"tags,omitempty"`
 }
 
+// ClientDescription contains extended information about a CIPD client binary
+// at some version for some platform, as returned by DescribeClient.
+type ClientDescription struct {
+	InstanceInfo
+
+	// Size of the client binary file in bytes.
+	Size int64 `json:"size"`
+
+	// Digest is the client binary digest using the best hash algo understood by
+	// the current process.
+	//
+	// May potentially be nil if the current process doesn't understand any of
+	// the algos, but this is an extreme situation and it is OK to panic in this
+	// case. At very least all client binaries have SHA1 digests, and it should
+	// be understood by all clients.
+	Digest *api.ObjectRef `json:"digest"`
+
+	// AlternativeDigests is a list of digest calculated using hash algos other
+	// than the one used by Digest.
+	//
+	// This may include both old hash algos (obsoleted by the algo in Digest), as
+	// well as a new ones, not supported by the current process.
+	//
+	// Not all client versions have all digests calculated. Older versions have
+	// only SHA1 digest, which means for them Digest will be SHA1 and
+	// AlternativeDigests list will be empty.
+	AlternativeDigests []*api.ObjectRef `json:"alternative_digests"`
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Converters from proto API to JSON output structs.
 
@@ -170,5 +199,30 @@ func apiDescToInfo(d *api.DescribeInstanceResponse) *InstanceDescription {
 			desc.Tags[i] = apiTagToInfo(t)
 		}
 	}
+	return desc
+}
+
+func apiClientDescToInfo(d *api.DescribeClientResponse) *ClientDescription {
+	desc := &ClientDescription{
+		InstanceInfo:       apiInstanceToInfo(d.Instance),
+		Size:               d.ClientSize,
+		AlternativeDigests: make([]*api.ObjectRef, 0, len(d.ClientRefAliases)),
+	}
+
+	// Pick the best supported algo as 'Digest'.
+	for _, ref := range d.ClientRefAliases {
+		_, supported := api.HashAlgo_name[int32(ref.HashAlgo)]
+		if supported && (desc.Digest == nil || ref.HashAlgo > desc.Digest.HashAlgo) {
+			desc.Digest = ref
+		}
+	}
+
+	// Put everything else into 'AlternativeDigests'.
+	for _, ref := range d.ClientRefAliases {
+		if ref != desc.Digest {
+			desc.AlternativeDigests = append(desc.AlternativeDigests, ref)
+		}
+	}
+
 	return desc
 }
