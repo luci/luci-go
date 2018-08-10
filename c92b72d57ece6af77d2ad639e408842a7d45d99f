@@ -22,6 +22,98 @@
       "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "72fb2104_f8b9eac1",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-10T16:59:45Z",
+      "side": 1,
+      "message": "why is this in the ensure package? IIUC, ensure has nothing to do with it",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 22
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "971397a1_6f2fcdc8",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-10T16:59:45Z",
+      "side": 1,
+      "message": "Maybe just say\n\n   (plat, -HashAlgo)\n\n? Or describe the canonical order somewhere?",
+      "range": {
+        "startLine": 100,
+        "startChar": 40,
+        "endLine": 100,
+        "endChar": 59
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6d2d28f2_4ffc58ef",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-10T16:59:45Z",
+      "side": 1,
+      "message": "nit: regenerate",
+      "range": {
+        "startLine": 135,
+        "startChar": 45,
+        "endLine": 135,
+        "endChar": 56
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de7ddc47_c79aee54",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-08-10T16:59:45Z",
+      "side": 1,
+      "message": "I would add that this is done intentionally to allow easier transitions when the hash algorithm needs to be updated.",
+      "range": {
+        "startLine": 176,
+        "startChar": 15,
+        "endLine": 176,
+        "endChar": 38
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
