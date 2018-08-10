@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "712d27eb_ed470c37",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:16:25Z",
+      "side": 1,
+      "message": "Yes, we trust the server at the moment when we generate $ResolvedVersions and *.digests. As soon as these files are committed, the trust is removed. The main goal is given a git commit to be able to say with 100% certainty whether files fetches by CIPD there are \"good\" or \"bad\". E.g. once files are verified to be \"good\", there\u0027s no way they sneakily change to \"bad\".",
+      "parentUuid": "37e490cb_ef734eab",
+      "range": {
+        "startLine": 20,
+        "startChar": 20,
+        "endLine": 20,
+        "endChar": 35
+      },
+      "revId": "bbc97d427c40dbfa45b5c96da47e5611ace21280",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e6959a2_d1cb71d4",
         "filename": "cipd/client/cli/main.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "bbc97d427c40dbfa45b5c96da47e5611ace21280",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "457f8f95_f3053d08",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2472,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:16:25Z",
+      "side": 1,
+      "message": "Strictly speaking we can\u0027t, since we promised to keep CLI backward compatibility forever.\n\nAlso in some contexts callers are not pedantic about pinning hashes, and using -version there is more convenient (e.g. tricium bot bootstrap script).",
+      "parentUuid": "5e6959a2_d1cb71d4",
+      "range": {
+        "startLine": 2472,
+        "startChar": 25,
+        "endLine": 2472,
+        "endChar": 43
+      },
+      "revId": "bbc97d427c40dbfa45b5c96da47e5611ace21280",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
