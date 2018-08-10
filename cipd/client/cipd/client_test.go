@@ -829,8 +829,12 @@ func TestDescribeClient(t *testing.T) {
 						Package:  "a/b",
 						Instance: fakeObjectRef("0"),
 					},
-					ClientSize:       12345,
+					ClientSize: 12345,
+					ClientBinary: &api.ObjectURL{
+						SignedUrl: "http://example.com/client_binary",
+					},
 					ClientRefAliases: []*api.ObjectRef{sha1Ref, sha256Ref, futureRef},
+					LegacySha1:       sha1Ref.HexDigest,
 				},
 			})
 
@@ -839,6 +843,7 @@ func TestDescribeClient(t *testing.T) {
 			So(desc, ShouldResemble, &ClientDescription{
 				InstanceInfo:       InstanceInfo{Pin: pin},
 				Size:               12345,
+				SignedUrl:          "http://example.com/client_binary",
 				Digest:             sha256Ref, // best supported
 				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
 			})

@@ -786,8 +786,6 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.
 func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem,
 	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (pin common.Pin, err error) {
 
-	// TODO(vadimsh): Use 'digests'.
-
 	// currentHashMatches calculates (with memoization) the existing client binary
 	// hash and compares it to 'obj'.
 	var lastCalculated *api.ObjectRef
@@ -817,7 +815,10 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 	client.BeginBatch(ctx)
 	defer client.EndBatch(ctx)
 
-	clientPackage, err := template.DefaultExpander().Expand(ClientPackage)
+	exp := template.DefaultExpander()
+	plat := exp["platform"]
+
+	clientPackage, err := exp.Expand(ClientPackage)
 	if err != nil {
 		return // shouldn't be happening in reality
 	}
@@ -830,19 +831,31 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		clientFileName = "cipd.exe"
 	}
 
-	// Get the expected hash (in a form of ObjectRef) of the client binary
-	// corresponding to the resolved pin. See AddExtractedObjectRef call below for
-	// where it is stored.
+	// Get the expected hash (in a form of ObjectRef) of the client binary. If
+	// using pinned digests file, grab the hash from it. Otherwise lookup the hash
+	// corresponding to the pin in the extracted refs cache. See rememberClientRef
+	// calls below for where it is stored initially.
 	var exeObj *api.ObjectRef
-	cache := client.getTagCache()
-	if cache != nil {
+	if digests != nil {
+		if exeObj = digests.ClientRef(plat); exeObj == nil {
+			return pin, fmt.Errorf("there's no hash for %q in *.digests file", plat)
+		}
+	} else if cache := client.getTagCache(); cache != nil {
 		if exeObj, err = cache.ResolveExtractedObjectRef(ctx, pin, clientFileName); err != nil {
 			return
 		}
 	}
 
-	// Compare the hash of the running binary to the one that matches 'pin' (if
-	// we know it already from the cache).
+	// rememberClientRef populates the extracted refs cache.
+	rememberClientRef := func(pin common.Pin, ref *api.ObjectRef) {
+		if cache := client.getTagCache(); cache != nil {
+			cache.AddExtractedObjectRef(ctx, pin, clientFileName, ref)
+			client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
+		}
+	}
+
+	// Compare the hash of the running binary to the expected one. Here exeObj
+	// nil only if not using 'digests' and there's a extracted refs cache miss.
 	if exeObj != nil {
 		var yep bool
 		if yep, err = currentHashMatches(exeObj); err != nil || yep {
@@ -856,53 +869,50 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSy
 		logging.Infof(ctx, "cipd: updating client to %s (%s)", pin, targetVersion)
 	}
 
-	// Grab the signed URL to the client binary and a list of hex digests
-	// calculated using all hash algos known to the server.
-	info, err := client.repo.DescribeClient(ctx, &api.DescribeClientRequest{
-		Package:  pin.PackageName,
-		Instance: common.InstanceIDToObjectRef(pin.InstanceID),
-	}, expectedCodes)
+	// Grab the signed URL to the client binary and its server-supplied digest.
+	info, err := client.DescribeClient(ctx, pin)
 	if err != nil {
-		return common.Pin{}, humanErr(err)
-	}
-
-	// Fallback value if the server doesn't support ClientRefAliases yet.
-	clientRef := &api.ObjectRef{
-		HashAlgo:  api.HashAlgo_SHA1,
-		HexDigest: info.LegacySha1,
-	}
-
-	// Pick the best hash algo we understand to use for verification (we assume
-	// the higher the hash enum value, the better the hash algo).
-	for _, ref := range info.ClientRefAliases {
-		if ref.HashAlgo > clientRef.HashAlgo && api.HashAlgo_name[int32(ref.HashAlgo)] != "" {
-			clientRef = ref
-		}
-	}
-
-	// Store the mapping 'resolve pin => hash of the client binary'.
-	if cache != nil {
-		err = cache.AddExtractedObjectRef(ctx, pin, clientFileName, clientRef)
-		if err != nil {
-			return
-		}
-		client.doBatchAwareOp(ctx, batchAwareOpSaveTagCache)
-	}
-
-	var yep bool
-	if yep, err = currentHashMatches(clientRef); err != nil || yep {
-		// Either can't read clientExe, or already up-to-date, but the cache didn't
-		// know that. It knows now.
 		return
 	}
 
-	// The running client is actually stale. Replace it.
+	// The expected hash of the binary comes from the local digests file, or
+	// supplied by the server (if not using digests file).
+	var clientRef *api.ObjectRef
+	if digests != nil {
+		clientRef = digests.ClientRef(plat) // non-nil, checked already above
+	} else {
+		clientRef = info.Digest
+	}
+
+	// Check the local binary hash again. We may end up here if we had a cache
+	// miss in the extracted refs cache and didn't know expected yet clientRef.
+	var yep bool
+	switch yep, err = currentHashMatches(clientRef); {
+	case err != nil:
+		return pin, err // can't read clientExe
+	case yep:
+		// The client was already up-to-date, but the extracted refs cache was
+		// empty, and so we didn't know. We can populate the cache with certainty
+		// now. This allows skipping DescribeClient RPC next time on the happy path.
+		rememberClientRef(pin, clientRef)
+		return
+	}
+
+	// Here we know for sure that the local client has wrong hash (so most likely
+	// it is outdated). Fetch the new binary, verifying its hash matches the one
+	// we expect.
 	err = client.installClient(
 		ctx, fs,
 		common.MustNewHash(clientRef.HashAlgo),
-		info.ClientBinary.SignedUrl,
+		info.SignedUrl,
 		clientExe,
 		clientRef.HexDigest)
+	if err != nil {
+		return // either a download error or hash mismatch
+	}
+
+	// The new fetched binary is valid.
+	rememberClientRef(pin, clientRef)
 	return
 }
 
