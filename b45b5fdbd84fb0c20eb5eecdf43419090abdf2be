@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "46b3d8fb_5ec1737a",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T21:07:50Z",
+      "side": 1,
+      "message": "I decided not to rely on tag cache at all when we use *.digests file. It seems unnecessary, since we know expected hash already. (We still populate the cache, for case if callers of selfupdate stop using *.digests for some reason).",
+      "range": {
+        "startLine": 839,
+        "startChar": 4,
+        "endLine": 839,
+        "endChar": 11
+      },
+      "revId": "b45b5fdbd84fb0c20eb5eecdf43419090abdf2be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "acf911c7_f61b66fc",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 887,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T21:07:50Z",
+      "side": 1,
+      "message": "Note that currentHashMatches does memoization, so this check is fast if clientRef uses same hashAlgo as exeObj above (which is almost always true).",
+      "range": {
+        "startLine": 887,
+        "startChar": 32,
+        "endLine": 887,
+        "endChar": 37
+      },
+      "revId": "b45b5fdbd84fb0c20eb5eecdf43419090abdf2be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
