@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "400e97e7_2f755f97",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T04:31:30Z",
+      "side": 1,
+      "message": "This is a separate struct (instead of an alias for []clientDigestEntry) to make nil-value be different from \"have the file, but there are no hashes there\". This distinction is sort-of important later (mostly to avoid WTF bugs).",
+      "range": {
+        "startLine": 61,
+        "startChar": 23,
+        "endLine": 61,
+        "endChar": 29
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
