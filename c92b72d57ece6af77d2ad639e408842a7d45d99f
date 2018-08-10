@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "af5bc0c9_f581245b",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:03:03Z",
+      "side": 1,
+      "message": "Fine. Moved to its own package. Don\u0027t want to put it into \u0027cipd\u0027, to avoid polluting its namespace with obscure features.",
+      "parentUuid": "72fb2104_f8b9eac1",
+      "range": {
+        "startLine": 61,
+        "startChar": 5,
+        "endLine": 61,
+        "endChar": 22
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "971397a1_6f2fcdc8",
         "filename": "cipd/client/cipd/ensure/client_digests_file.go",
         "patchSetId": 1
@@ -68,6 +92,30 @@
       "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9761241e_41456d35",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:03:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "971397a1_6f2fcdc8",
+      "range": {
+        "startLine": 100,
+        "startChar": 40,
+        "endLine": 100,
+        "endChar": 59
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,30 @@
     },
     {
       "key": {
+        "uuid": "3148e518_8d4f3d71",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 135,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:03:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d2d28f2_4ffc58ef",
+      "range": {
+        "startLine": 135,
+        "startChar": 45,
+        "endLine": 135,
+        "endChar": 56
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "de7ddc47_c79aee54",
         "filename": "cipd/client/cipd/ensure/client_digests_file.go",
         "patchSetId": 1
@@ -114,6 +186,30 @@
       "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6d9f01e_d118f18f",
+        "filename": "cipd/client/cipd/ensure/client_digests_file.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T20:03:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de7ddc47_c79aee54",
+      "range": {
+        "startLine": 176,
+        "startChar": 15,
+        "endLine": 176,
+        "endChar": 38
+      },
+      "revId": "c92b72d57ece6af77d2ad639e408842a7d45d99f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
