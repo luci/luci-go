@@ -25,12 +25,13 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
+	"golang.org/x/sync/errgroup"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/struct"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
@@ -323,27 +324,32 @@ func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 			InsertID: ID.Generate(),
 		}
 	}
+
+	g, ctx := errgroup.WithContext(ctx)
 	for _, rowSet := range batch(rows, u.batchSize()) {
-		var failed int
-		err := u.Uploader.Put(ctx, rowSet)
-		if err != nil {
-			logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
-			if merr, ok := err.(bigquery.PutMultiError); ok {
-				if failed = len(merr); failed > len(rowSet) {
-					logging.Errorf(ctx, "eventupload: %v failures trying to insert %v rows", failed, len(rowSet))
+		rowSet := rowSet
+		g.Go(func() error {
+			var failed int
+			err := u.Uploader.Put(ctx, rowSet)
+			if err != nil {
+				logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
+				if merr, ok := err.(bigquery.PutMultiError); ok {
+					if failed = len(merr); failed > len(rowSet) {
+						logging.Errorf(ctx, "eventupload: %v failures trying to insert %v rows", failed, len(rowSet))
+					}
+				} else {
+					failed = len(rowSet)
 				}
-			} else {
-				failed = len(rowSet)
+				u.updateUploads(ctx, int64(failed), "failure")
 			}
-			u.updateUploads(ctx, int64(failed), "failure")
-		}
-		succeeded := len(rowSet) - failed
-		u.updateUploads(ctx, int64(succeeded), "success")
-		if err != nil {
+			succeeded := len(rowSet) - failed
+			u.updateUploads(ctx, int64(succeeded), "success")
 			return err
-		}
+		})
+
 	}
-	return nil
+
+	return g.Wait()
 }
 
 func batch(rows []*Row, batchSize int) [][]*Row {
