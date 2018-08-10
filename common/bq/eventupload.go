@@ -30,11 +30,12 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/struct"
+	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 )
@@ -323,27 +324,30 @@ func (u *Uploader) Put(ctx context.Context, messages ...proto.Message) error {
 			InsertID: ID.Generate(),
 		}
 	}
-	for _, rowSet := range batch(rows, u.batchSize()) {
-		var failed int
-		err := u.Uploader.Put(ctx, rowSet)
-		if err != nil {
-			logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
-			if merr, ok := err.(bigquery.PutMultiError); ok {
-				if failed = len(merr); failed > len(rowSet) {
-					logging.Errorf(ctx, "eventupload: %v failures trying to insert %v rows", failed, len(rowSet))
+
+	return parallel.WorkPool(16, func(workC chan<- func() error) {
+		for _, rowSet := range batch(rows, u.batchSize()) {
+			rowSet := rowSet
+			workC <- func() error {
+				var failed int
+				err := u.Uploader.Put(ctx, rowSet)
+				if err != nil {
+					logging.WithError(err).Errorf(ctx, "eventupload: Uploader.Put failed")
+					if merr, ok := err.(bigquery.PutMultiError); ok {
+						if failed = len(merr); failed > len(rowSet) {
+							logging.Errorf(ctx, "eventupload: %v failures trying to insert %v rows", failed, len(rowSet))
+						}
+					} else {
+						failed = len(rowSet)
+					}
+					u.updateUploads(ctx, int64(failed), "failure")
 				}
-			} else {
-				failed = len(rowSet)
+				succeeded := len(rowSet) - failed
+				u.updateUploads(ctx, int64(succeeded), "success")
+				return err
 			}
-			u.updateUploads(ctx, int64(failed), "failure")
 		}
-		succeeded := len(rowSet) - failed
-		u.updateUploads(ctx, int64(succeeded), "success")
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	})
 }
 
 func batch(rows []*Row, batchSize int) [][]*Row {
