@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7957df37_ef9899f7",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2590,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T04:39:00Z",
+      "side": 1,
+      "message": "this used only to generate the comment, see example:\nhttps://gist.github.com/vadimsht/c6be2a63b1d5132138b7dda93a5a4638",
+      "range": {
+        "startLine": 2590,
+        "startChar": 35,
+        "endLine": 2590,
+        "endChar": 59
+      },
+      "revId": "bbc97d427c40dbfa45b5c96da47e5611ace21280",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ea5fb63f_e5ac7a0e",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2679,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-10T04:39:00Z",
+      "side": 1,
+      "message": "I decided to use only SHA256 for now. The code that reads hashes is future-compatible (it skips unknown hashes, and picks best known hash for actual validation). So we can deal with supporting multiple hash algos in -generate-digests later, when really needed. Don\u0027t want to complicate the interface even more now.",
+      "range": {
+        "startLine": 2679,
+        "startChar": 13,
+        "endLine": 2679,
+        "endChar": 48
+      },
+      "revId": "bbc97d427c40dbfa45b5c96da47e5611ace21280",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
