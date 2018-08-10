@@ -1088,7 +1088,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 			})
 
 			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
-			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin)
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, clientPin)
 
@@ -1102,7 +1102,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 			// And the second update call does nothing and hits no RPCs, since the
 			// client is up-to-date and the tag cache is warm.
-			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin)
+			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, clientPin)
 		})
