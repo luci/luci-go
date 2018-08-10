@@ -792,6 +792,80 @@ func TestDescribeInstance(t *testing.T) {
 	})
 }
 
+func TestDescribeClient(t *testing.T) {
+	t.Parallel()
+
+	Convey("With mocks", t, func(c C) {
+		ctx := context.Background()
+		client, _, repo, _ := mockedCipdClient(c)
+
+		pin := common.Pin{
+			PackageName: "a/b",
+			InstanceID:  fakeIID("0"),
+		}
+
+		Convey("Works", func() {
+			sha1Ref := &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA1,
+				HexDigest: strings.Repeat("a", 40),
+			}
+			sha256Ref := &api.ObjectRef{
+				HashAlgo:  api.HashAlgo_SHA256,
+				HexDigest: strings.Repeat("a", 64),
+			}
+			futureRef := &api.ObjectRef{
+				HashAlgo:  345,
+				HexDigest: strings.Repeat("a", 16),
+			}
+
+			repo.expect(rpcCall{
+				method: "DescribeClient",
+				in: &api.DescribeClientRequest{
+					Package:  "a/b",
+					Instance: fakeObjectRef("0"),
+				},
+				out: &api.DescribeClientResponse{
+					Instance: &api.Instance{
+						Package:  "a/b",
+						Instance: fakeObjectRef("0"),
+					},
+					ClientSize:       12345,
+					ClientRefAliases: []*api.ObjectRef{sha1Ref, sha256Ref, futureRef},
+				},
+			})
+
+			desc, err := client.DescribeClient(ctx, pin)
+			So(err, ShouldBeNil)
+			So(desc, ShouldResemble, &ClientDescription{
+				InstanceInfo:       InstanceInfo{Pin: pin},
+				Size:               12345,
+				Digest:             sha256Ref, // best supported
+				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
+			})
+		})
+
+		Convey("Bad pin", func() {
+			_, err := client.DescribeClient(ctx, common.Pin{
+				PackageName: "a/b////",
+			})
+			So(err, ShouldErrLike, "invalid package name")
+		})
+
+		Convey("Error response", func() {
+			repo.expect(rpcCall{
+				method: "DescribeClient",
+				in: &api.DescribeClientRequest{
+					Package:  "a/b",
+					Instance: fakeObjectRef("0"),
+				},
+				err: status.Errorf(codes.PermissionDenied, "blah error"),
+			})
+			_, err := client.DescribeClient(ctx, pin)
+			So(err, ShouldErrLike, "blah error")
+		})
+	})
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Version resolution (including tag cache).
 
