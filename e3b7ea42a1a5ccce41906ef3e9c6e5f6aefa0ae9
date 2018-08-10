@@ -16,6 +16,24 @@
       "revId": "e3b7ea42a1a5ccce41906ef3e9c6e5f6aefa0ae9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "467a20ad_4b824404",
+        "filename": "common/bq/eventupload.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 329,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-08-10T21:11:36Z",
+      "side": 1,
+      "message": "Done. It is nice function.",
+      "parentUuid": "d27e3f91_d7712e03",
+      "revId": "e3b7ea42a1a5ccce41906ef3e9c6e5f6aefa0ae9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
