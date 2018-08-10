@@ -1281,7 +1281,9 @@ func adaptGrpcErr(h func(*router.Context) error) router.Handler {
 func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	return json.NewEncoder(w).Encode(obj)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(obj)
 }
 
 // replyWithError sends StatusOK with JSON body containing an error.

@@ -2567,11 +2567,19 @@ func TestClientBootstrap(t *testing.T) {
 				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
 				So(body, ShouldEqual,
-					fmt.Sprintf(`{"client_binary":{"fetch_url":"%s",`+
-						`"file_name":"cipd","sha1":"%s",`+
-						`"size":"123456789101112"},`+
-						`"instance":{"package_name":"infra/tools/cipd/linux-amd64",`+
-						`"instance_id":"%s"},"status":"SUCCESS"}`,
+					fmt.Sprintf(`{
+  "client_binary": {
+    "fetch_url": "%s",
+    "file_name": "cipd",
+    "sha1": "%s",
+    "size": "123456789101112"
+  },
+  "instance": {
+    "package_name": "infra/tools/cipd/linux-amd64",
+    "instance_id": "%s"
+  },
+  "status": "SUCCESS"
+}`,
 						expectedClientURL,
 						res.ClientBinary.AllHashDigests["SHA1"],
 						inst.InstanceID))
@@ -2596,8 +2604,10 @@ func TestClientBootstrap(t *testing.T) {
 				})
 				code, body := call(goodPkg, badIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"no such instance","status":"INSTANCE_NOT_FOUND"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "no such instance",
+  "status": "INSTANCE_NOT_FOUND"
+}`)
 			})
 
 			Convey("No access", func() {
@@ -2616,8 +2626,10 @@ func TestClientBootstrap(t *testing.T) {
 
 				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"the client binary is not extracted yet, try later","status":"NOT_EXTRACTED_YET"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "the client binary is not extracted yet, try later",
+  "status": "NOT_EXTRACTED_YET"
+}`)
 			})
 
 			Convey("Fatal error during extraction", func() {
@@ -2625,9 +2637,10 @@ func TestClientBootstrap(t *testing.T) {
 
 				code, body := call(goodPkg, goodIID, "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"the client binary is not available - some processors failed`+
-						` to process this instance: cipd_client_binary:v1","status":"ERROR"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "the client binary is not available - some processors failed to process this instance: cipd_client_binary:v1",
+  "status": "ERROR"
+}`)
 			})
 		})
 	})
@@ -2706,10 +2719,16 @@ func TestLegacyHandlers(t *testing.T) {
 			Convey("Happy path", func() {
 				code, body := callInstance("a/b", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"fetch_url":"http://fake/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",`+
-						`"instance":{"package_name":"a/b","instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",`+
-						`"registered_by":"user:reg@example.com","registered_ts":"1454472306000000"},"status":"SUCCESS"}`)
+				So(body, ShouldEqual, `{
+  "fetch_url": "http://fake/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "instance": {
+    "package_name": "a/b",
+    "instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "registered_by": "user:reg@example.com",
+    "registered_ts": "1454472306000000"
+  },
+  "status": "SUCCESS"
+}`)
 			})
 
 			Convey("Bad package", func() {
@@ -2733,8 +2752,10 @@ func TestLegacyHandlers(t *testing.T) {
 			Convey("Missing pkg", func() {
 				code, body := callInstance("a/z/z", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"no such package","status":"INSTANCE_NOT_FOUND"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "no such package",
+  "status": "INSTANCE_NOT_FOUND"
+}`)
 			})
 		})
 
@@ -2749,8 +2770,10 @@ func TestLegacyHandlers(t *testing.T) {
 			Convey("Happy path", func() {
 				code, body := callResolve("a/b", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"instance_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","status":"SUCCESS"}`)
+				So(body, ShouldEqual, `{
+  "instance_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "SUCCESS"
+}`)
 			})
 
 			Convey("Bad request", func() {
@@ -2768,15 +2791,19 @@ func TestLegacyHandlers(t *testing.T) {
 			Convey("Missing pkg", func() {
 				code, body := callResolve("a/z/z", strings.Repeat("a", 40), "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"no such package","status":"INSTANCE_NOT_FOUND"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "no such package",
+  "status": "INSTANCE_NOT_FOUND"
+}`)
 			})
 
 			Convey("Ambiguous version", func() {
 				code, body := callResolve("a/b", "k:v", "json")
 				So(code, ShouldEqual, http.StatusOK)
-				So(body, ShouldEqual,
-					`{"error_message":"ambiguity when resolving the tag, more than one instance has it","status":"AMBIGUOUS_VERSION"}`)
+				So(body, ShouldEqual, `{
+  "error_message": "ambiguity when resolving the tag, more than one instance has it",
+  "status": "AMBIGUOUS_VERSION"
+}`)
 			})
 		})
 	})
