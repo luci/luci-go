@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19af25da_917500e2",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 2579,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-11T02:02:31Z",
+      "side": 0,
+      "message": "oops :)",
+      "range": {
+        "startLine": 2579,
+        "startChar": 43,
+        "endLine": 2579,
+        "endChar": 45
+      },
+      "revId": "21599a58c4607cfda4265a884e16679ecc462818",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
