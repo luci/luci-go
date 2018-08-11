@@ -2576,7 +2576,7 @@ func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		if err != nil {
 			return common.Pin{}, err
 		}
-		return cipd.MaybeUpdateClient(ctx, opts, c.version, exePath, digests)
+		return cipd.MaybeUpdateClient(ctx, opts, version, exePath, digests)
 	}())
 }
 
