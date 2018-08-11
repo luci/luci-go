@@ -1283,6 +1283,7 @@ func replyWithJSON(w http.ResponseWriter, obj interface{}) error {
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
+	enc.SetEscapeHTML(false)
 	return enc.Encode(obj)
 }
 

@@ -2316,7 +2316,7 @@ func TestClientBootstrap(t *testing.T) {
 		cas := testutil.MockCAS{
 			GetObjectURLImpl: func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
 				return &api.ObjectURL{
-					SignedUrl: fmt.Sprintf("http://fake/%s/%s?d=%s", r.Object.HashAlgo, r.Object.HexDigest, r.DownloadFilename),
+					SignedUrl: fmt.Sprintf("http://fake/%s/%s?d=%s&blah=zzz", r.Object.HashAlgo, r.Object.HexDigest, r.DownloadFilename),
 				}, nil
 			},
 		}
@@ -2366,7 +2366,7 @@ func TestClientBootstrap(t *testing.T) {
 		res.ClientBinary.Size = 123456789101112
 		inst, proc := setup(&res, "")
 
-		expectedClientURL := fmt.Sprintf("http://fake/%s/%s?d=cipd", res.ClientBinary.HashAlgo, res.ClientBinary.HashDigest)
+		expectedClientURL := fmt.Sprintf("http://fake/%s/%s?d=cipd&blah=zzz", res.ClientBinary.HashAlgo, res.ClientBinary.HashDigest)
 
 		Convey("Bootstrap endpoint", func() {
 			call := func(plat, ver string) *httptest.ResponseRecorder {
