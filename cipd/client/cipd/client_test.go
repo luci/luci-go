@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
@@ -829,8 +830,12 @@ func TestDescribeClient(t *testing.T) {
 						Package:  "a/b",
 						Instance: fakeObjectRef("0"),
 					},
-					ClientSize:       12345,
+					ClientSize: 12345,
+					ClientBinary: &api.ObjectURL{
+						SignedUrl: "http://example.com/client_binary",
+					},
 					ClientRefAliases: []*api.ObjectRef{sha1Ref, sha256Ref, futureRef},
+					LegacySha1:       sha1Ref.HexDigest,
 				},
 			})
 
@@ -839,6 +844,7 @@ func TestDescribeClient(t *testing.T) {
 			So(desc, ShouldResemble, &ClientDescription{
 				InstanceInfo:       InstanceInfo{Pin: pin},
 				Size:               12345,
+				SignedUrl:          "http://example.com/client_binary",
 				Digest:             sha256Ref, // best supported
 				AlternativeDigests: []*api.ObjectRef{sha1Ref, futureRef},
 			})
@@ -1000,10 +1006,11 @@ func TestMaybeUpdateClient(t *testing.T) {
 	if platform.CurrentOS() == "windows" {
 		clientFileName = "cipd.exe"
 	}
+	platform := template.DefaultExpander()["platform"]
 
 	ctx := context.Background()
 
-	Convey("With temp dir", t, func(c C) {
+	Convey("MaybeUpdateClient", t, func(c C) {
 		tempDir, err := ioutil.TempDir("", "cipd_tag_cache")
 		c.So(err, ShouldBeNil)
 		c.Reset(func() {
@@ -1042,15 +1049,13 @@ func TestMaybeUpdateClient(t *testing.T) {
 			return string(body)
 		}
 
-		Convey("MaybeUpdateClient updates outdated client, warming caches", func() {
-			storage.putStored("http://example.com/client_bin", "up-to-date")
+		storage.putStored("http://example.com/client_bin", "up-to-date")
+		upToDateSHA256Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
+		upToDateSHA1Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
 
-			upToDateSHA256Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
-			upToDateSHA1Ref := caclObjRef("up-to-date", api.HashAlgo_SHA256)
-			upToDateUnsupRef := &api.ObjectRef{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)}
+		writeFile(clientBin, "outdated")
 
-			writeFile(clientBin, "outdated")
-
+		expectRPCs := func() {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &api.ResolveVersionRequest{
@@ -1082,12 +1087,15 @@ func TestMaybeUpdateClient(t *testing.T) {
 					ClientRefAliases: []*api.ObjectRef{
 						upToDateSHA1Ref,
 						upToDateSHA256Ref,
-						upToDateUnsupRef,
+						{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)},
 					},
 				},
 			})
+		}
 
+		Convey("Updates outdated client, warming caches", func() {
 			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
+			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, clientPin)
@@ -1105,6 +1113,73 @@ func TestMaybeUpdateClient(t *testing.T) {
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, clientPin)
+		})
+
+		Convey("Skips updating up-to-date client, warming the cache", func() {
+			writeFile(clientBin, "up-to-date")
+
+			// Should just warm the tag cache.
+			expectRPCs()
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
+
+			// Also drops .cipd_version file.
+			verFile := filepath.Join(tempDir, ".versions", clientFileName+".cipd_version")
+			So(readFile(verFile), ShouldEqual,
+				fmt.Sprintf(`{"package_name":"%s","instance_id":"%s"}`, clientPin.PackageName, clientPin.InstanceID))
+
+			// And the second update call does nothing and hits no RPCs, since the
+			// client is up-to-date and the tag cache is warm.
+			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
+		})
+
+		Convey("Updates outdated client using digests file", func() {
+			dig := digests.ClientDigestsFile{}
+			dig.AddClientRef(platform, upToDateSHA256Ref)
+
+			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
+			expectRPCs()
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
+
+			// Yep, updated.
+			So(readFile(clientBin), ShouldEqual, "up-to-date")
+
+			// And the second update call does nothing and hits no RPCs, since the
+			// client is up-to-date already.
+			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
+			So(err, ShouldBeNil)
+			So(pin, ShouldResemble, clientPin)
+		})
+
+		Convey("Refuses to update on hash mismatch", func() {
+			dig := digests.ClientDigestsFile{}
+			dig.AddClientRef(platform, caclObjRef("something-else", api.HashAlgo_SHA256))
+
+			// Should refuse the update.
+			expectRPCs()
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
+			So(err, ShouldErrLike, "file hash mismatch")
+			So(pin, ShouldResemble, common.Pin{})
+
+			// The client file wasn't replaced.
+			So(readFile(clientBin), ShouldEqual, "outdated")
+		})
+
+		Convey("Refuses to fetched unknown unpinned platform", func() {
+			dig := digests.ClientDigestsFile{}
+
+			// Should refuse the update.
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
+			So(err, ShouldErrLike, "there's no supported hash for")
+			So(pin, ShouldResemble, common.Pin{})
+
+			// The client file wasn't replaced.
+			So(readFile(clientBin), ShouldEqual, "outdated")
 		})
 	})
 }
