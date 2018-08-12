@@ -35,6 +35,56 @@ that can be found in the LICENSE file. -->
     .monospace {
       font-family: monospace;
     }
+    .smallest-td {
+      width: 1px;
+      white-space: nowrap;
+      border-right-style: solid;
+      border-width: 1px;
+      border-color: #cccccc;
+    }
+    .age-td {
+      width: 6em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-right-style: solid;
+      border-width: 1px;
+      border-color: #cccccc;
+    }
+    .none-label {
+      padding-top: 0.3em;
+      color: #cccccc;
+    }
+    .bordered-row {
+      min-height: 100%;
+      overflow: hidden;
+    }
+    .right-border {
+      border-right-style: solid;
+      border-width: 1px;
+      border-color: #cccccc;
+      margin-bottom: -9999px;
+      padding-bottom: 9999px;
+    }
+    .row-with-top-border {
+      border-top-style: solid;
+      border-width: 1px;
+      border-color: #cccccc;
+      padding-top: 10px;
+      padding-bottom: 4px;
+    }
+    .refs-table {
+      table-layout: fixed;
+    }
+    .ref-label {
+      margin-left: 0.1em;
+      margin-right: 0.4em;
+    }
+    .trim-long {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
   {{block "head" .}}{{end}}
 </head>
@@ -93,4 +143,58 @@ that can be found in the LICENSE file. -->
 </body>
 
 </html>
+{{end}}
+
+
+{{define "breadcrumbs"}}
+<ol class="breadcrumb">
+  {{range $crumb := .Breadcrumbs }}
+    {{if $crumb.Last}}
+    <li class="breadcrumb-item active">{{$crumb.Title}}</li>
+    {{else}}
+    <li class="breadcrumb-item"><a href="{{$crumb.Href}}">{{$crumb.Title}}</a></li>
+    {{end}}
+  {{end}}
+</ol>
+{{end}}
+
+
+{{define "refs-table"}}
+  {{if .}}
+  <table class="table table-striped table-condensed refs-table">
+  {{range $ref := .}}
+    <tr>
+      <td class="age-td">{{.Age}}</td>
+      <td class="trim-long">
+        <a class="label label-primary ref-label" href="{{.Href}}" title="Set by {{.User}}">
+          {{.Title}}
+        </a>
+        by {{.User}}
+      </td>
+    </tr>
+  {{end}}
+  </table>
+  {{else}}
+    <p class="none-label">None</p>
+  {{end}}
+{{end}}
+
+
+{{define "tags-table"}}
+  {{if .}}
+  <table class="table table-striped table-condensed">
+  {{range $tag := .}}
+    <tr>
+      <td class="age-td">{{.Age}}</td>
+      <td>
+        <a class="monospace" href="{{.Href}}" title="Set by {{.User}}">
+          {{.Title}}
+        </a>
+      </td>
+    </tr>
+  {{end}}
+  </table>
+  {{else}}
+    <p class="none-label">None</p>
+  {{end}}
 {{end}}

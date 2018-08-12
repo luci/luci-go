@@ -105,15 +105,12 @@ func packagePage(c *router.Context, pkg string) error {
 	}
 
 	// Build instance listing, annotating instances with refs that point to them.
-	type instanceRef struct {
-		Title string
-		Href  string
-	}
 	type instanceItem struct {
-		Title string
-		Href  string
-		Refs  []instanceRef
-		Age   string
+		ID          string
+		TruncatedID string
+		Href        string
+		Refs        []refItem
+		Age         string
 	}
 
 	now := clock.Now(c.Context).UTC()
@@ -121,47 +118,22 @@ func packagePage(c *router.Context, pkg string) error {
 	for i, inst := range instances.Instances {
 		iid := common.ObjectRefToInstanceID(inst.Instance)
 		instListing[i] = instanceItem{
-			Title: iid,
-			Href:  instancePageURL(pkg, iid),
-			Age:   humanize.RelTime(google.TimeFromProto(inst.RegisteredTs), now, "", ""),
-		}
-		if refs := refMap[iid]; len(refs) != 0 {
-			refList := make([]instanceRef, len(refs))
-			for i, ref := range refs {
-				refList[i] = instanceRef{
-					Title: ref.Name,
-					Href:  instancePageURL(pkg, ref.Name),
-				}
-			}
-			instListing[i].Refs = refList
-		}
-	}
-
-	// Prepare separate list of refs (in chronological order) for display.
-	type refItem struct {
-		Title string
-		Href  string
-		User  string
-		Age   string
-	}
-	refsListing := make([]refItem, len(refs.Refs))
-	for i, r := range refs.Refs {
-		refsListing[i] = refItem{
-			Title: r.Name,
-			Href:  instancePageURL(pkg, r.Name),
-			User:  strings.TrimPrefix(r.ModifiedBy, "user:"),
-			Age:   humanize.RelTime(google.TimeFromProto(r.ModifiedTs), now, "", ""),
+			ID:          iid,
+			TruncatedID: iid[:30],
+			Href:        instancePageURL(pkg, iid),
+			Age:         humanize.RelTime(google.TimeFromProto(inst.RegisteredTs), now, "", ""),
+			Refs:        refsListing(refMap[iid], pkg, now),
 		}
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/index.html", map[string]interface{}{
 		"Package":     pkg,
-		"Breadcrumbs": breadcrumbs(pfx),
+		"Breadcrumbs": breadcrumbs(pfx, ""),
 		"Prefixes":    prefixesListing(pfx, siblings.Prefixes),
 		"Packages":    packagesListing(pfx, siblings.Packages, pkg),
 		"Metadata":    meta,
 		"Instances":   instListing,
-		"Refs":        refsListing,
+		"Refs":        refsListing(refs.Refs, pkg, now),
 		"NextPageURL": nextPageURL,
 		"PrevPageURL": prevPageURL,
 	})
