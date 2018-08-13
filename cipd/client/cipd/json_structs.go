@@ -131,6 +131,9 @@ type ClientDescription struct {
 	// Size of the client binary file in bytes.
 	Size int64 `json:"size"`
 
+	// SignedUrl is URL of the client binary.
+	SignedUrl string `json:"signed_url"`
+
 	// Digest is the client binary digest using the best hash algo understood by
 	// the current process.
 	//
@@ -206,20 +209,27 @@ func apiClientDescToInfo(d *api.DescribeClientResponse) *ClientDescription {
 	desc := &ClientDescription{
 		InstanceInfo:       apiInstanceToInfo(d.Instance),
 		Size:               d.ClientSize,
+		SignedUrl:          d.ClientBinary.SignedUrl,
 		AlternativeDigests: make([]*api.ObjectRef, 0, len(d.ClientRefAliases)),
+	}
+
+	// Fallback value if the server doesn't support ClientRefAliases yet.
+	desc.Digest = &api.ObjectRef{
+		HashAlgo:  api.HashAlgo_SHA1,
+		HexDigest: d.LegacySha1,
 	}
 
 	// Pick the best supported algo as 'Digest'.
 	for _, ref := range d.ClientRefAliases {
 		_, supported := api.HashAlgo_name[int32(ref.HashAlgo)]
-		if supported && (desc.Digest == nil || ref.HashAlgo > desc.Digest.HashAlgo) {
+		if supported && ref.HashAlgo > desc.Digest.HashAlgo {
 			desc.Digest = ref
 		}
 	}
 
 	// Put everything else into 'AlternativeDigests'.
 	for _, ref := range d.ClientRefAliases {
-		if ref != desc.Digest {
+		if ref.HashAlgo != desc.Digest.HashAlgo {
 			desc.AlternativeDigests = append(desc.AlternativeDigests, ref)
 		}
 	}

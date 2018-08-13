@@ -31,8 +31,8 @@ func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem
 		if err := client.storage.download(ctx, fetchURL, of, h); err != nil {
 			return err
 		}
-		if common.HexDigest(h) != hexDigest {
-			return fmt.Errorf("file hash mismatch")
+		if got := common.HexDigest(h); got != hexDigest {
+			return fmt.Errorf("file hash mismatch: expecting %q, got %q", hexDigest, got)
 		}
 		return nil
 	})

@@ -17,11 +17,15 @@
 package platform
 
 import (
+	"fmt"
 	"runtime"
 )
 
-var currentArchitecture = ""
-var currentOS = ""
+var (
+	currentArchitecture = ""
+	currentOS           = ""
+	currentPlat         = ""
+)
 
 func init() {
 	// TODO(iannucci): rationalize these to just be exactly GOOS and GOARCH.
@@ -34,20 +38,32 @@ func init() {
 	if currentOS == "darwin" {
 		currentOS = "mac"
 	}
+
+	currentPlat = fmt.Sprintf("%s-%s", currentOS, currentArchitecture)
 }
 
 // CurrentArchitecture returns the current cipd-style architecture that the
-// current go binary conforms to. Possible values:
+// current go binary conforms to.
+//
+// Possible values:
 //   - "armv6l" (if GOARCH=arm)
 //   - other GOARCH values
 func CurrentArchitecture() string {
 	return currentArchitecture
 }
 
-// CurrentOS returns the current cipd-style os that the
-// current go binary conforms to. Possible values:
+// CurrentOS returns the current cipd-style os that the current go binary
+// conforms to.
+//
+// Possible values:
 //   - "mac" (if GOOS=darwin)
 //   - other GOOS values
 func CurrentOS() string {
 	return currentOS
+}
+
+// CurrentPlatform returns the current cipd-style platform which is just
+// "${os}-${arch}" string.
+func CurrentPlatform() string {
+	return currentPlat
 }
