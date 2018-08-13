@@ -1,0 +1,67 @@
+{{define "head"}}
+<style type="text/css">
+  .title-h3 {
+    margin-top: 0px;
+    margin-bottom: 20px;
+  }
+</style>
+{{end}}
+
+{{define "content"}}
+
+{{template "breadcrumbs" .}}
+
+<div class="container">
+
+  <div class="row">
+    <div class="col-sm-12">
+      <h3 class="monospace text-center title-h3">{{.Package}}</h3>
+      <table class="table table-striped table-condensed">
+        {{if ne .Version .InstanceID}}
+        <tr>
+          <td class="smallest-td"><b>Version</b></td>
+          <td>{{.Version}}</td>
+        </tr>
+        {{end}}
+        <tr>
+          <td class="smallest-td"><b>Instance ID</b></td>
+          <td>{{.InstanceID}}</td>
+        </tr>
+        <tr>
+          <td class="smallest-td"><b>Download</b></td>
+          <td>
+            <a href="{{.DownloadURL}}" title="Download">
+              <span class="glyphicon glyphicon-cloud-download" aria-hidden="true"></span>
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td class="smallest-td"><b>{{.HashAlgo}}</b></td>
+          <td>{{.HexDigest}}</td>
+        </tr>
+        <tr>
+          <td class="smallest-td"><b>Uploaded by</b></td>
+          <td>{{.Uploader}}</td>
+        </tr>
+        <tr>
+          <td class="smallest-td"><b>Age</b></td>
+          <td>{{.Age}}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="row bordered-row row-with-top-border">
+    <div class="col-sm-6 right-border">
+      <h4>Tags</h4>
+      {{template "tags-table" .Tags}}
+    </div>
+    <div class="col-sm-6">
+      <h4>Refs</h4>
+      {{template "refs-table" .Refs}}
+    </div>
+  </div>
+
+</div>
+
+{{end}}

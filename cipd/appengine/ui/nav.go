@@ -27,12 +27,12 @@ type breadcrumb struct {
 // breadcrumbs builds a data for the breadcrumps navigation element.
 //
 // It contains a prefix path, where each element is clickable.
-func breadcrumbs(pfx string) []breadcrumb {
+func breadcrumbs(path string, ver string) []breadcrumb {
 	out := []breadcrumb{
 		{Title: "[root]", Href: prefixPageURL("")},
 	}
-	if pfx != "" {
-		chunks := strings.Split(pfx, "/")
+	if path != "" {
+		chunks := strings.Split(path, "/")
 		for i, ch := range chunks {
 			out = append(out, breadcrumb{
 				Title: ch,
@@ -40,6 +40,18 @@ func breadcrumbs(pfx string) []breadcrumb {
 			})
 		}
 	}
+
+	// This is a breadcrumb path to an instance of package named 'path'. Fix URL
+	// of the crumb that corresponds to the package to point to the package page,
+	// not the prefix page.
+	if ver != "" {
+		out[len(out)-1].Href = packagePageURL(path, "")
+		out = append(out, breadcrumb{
+			Title: ver,
+			Href:  instancePageURL(path, ver),
+		})
+	}
+
 	out[len(out)-1].Last = true
 	return out
 }

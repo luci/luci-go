@@ -77,7 +77,7 @@ func routeToPage(c *router.Context) error {
 	case len(chunks) == 2 && chunks[1] == "": // ends with '/+/' => package page
 		return packagePage(c, chunks[0])
 	case len(chunks) == 2: // has something after '/+/' => instance page
-		return status.Errorf(codes.Unimplemented, "not implemented yet")
+		return instancePage(c, chunks[0], chunks[1])
 	default:
 		return status.Errorf(codes.InvalidArgument, "malformed page URL")
 	}
