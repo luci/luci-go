@@ -22,6 +22,30 @@
       "revId": "3e1739f261977f7718f4906655fd96af0631d24a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e09c6aa3_6e7ff90b",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 2591,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-14T03:21:20Z",
+      "side": 1,
+      "message": "Actually, there are other problems. So I\u0027ll just use never version in the tests. Removed this TODO.",
+      "parentUuid": "beb06f80_e4bf9afb",
+      "range": {
+        "startLine": 2591,
+        "startChar": 38,
+        "endLine": 2591,
+        "endChar": 41
+      },
+      "revId": "3e1739f261977f7718f4906655fd96af0631d24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
