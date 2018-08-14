@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "beb06f80_e4bf9afb",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 2591,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-14T02:47:22Z",
+      "side": 1,
+      "message": "This will be in the next CL. The problem I\u0027m solving is that some versions do not exist for all platforms, because these platforms were added later. For example the version from here: https://chromium.googlesource.com/chromium/tools/depot_tools/+/master/tests/cipd_bootstrap_test.py#19\n\nI need to generate *.digests for it to be able to fix the test.",
+      "range": {
+        "startLine": 2591,
+        "startChar": 38,
+        "endLine": 2591,
+        "endChar": 41
+      },
+      "revId": "3e1739f261977f7718f4906655fd96af0631d24a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
