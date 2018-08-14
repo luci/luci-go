@@ -274,11 +274,15 @@ func (c *cipdSubcommand) doneWithPinMap(pins map[string][]pinInfo, err error) in
 	} else {
 		printPinsAndError(pins)
 	}
-	ret := c.done(pins, err)
-	if hasErrors(pins) && ret == 0 {
-		return 1
+	if ret := c.done(pins, err); ret != 0 {
+		return ret
 	}
-	return ret
+	for _, infos := range pins {
+		if hasErrors(infos) {
+			return 1
+		}
+	}
+	return 0
 }
 
 // commandLineError is used to tag errors related to CLI.
@@ -797,6 +801,9 @@ func expandPkgDir(ctx context.Context, c cipd.Client, packagePrefix string) ([]s
 
 // performBatchOperation expands a package prefix into a list of packages and
 // calls callback for each of them (concurrently) gathering the results.
+//
+// Returns an error only if the prefix expansion fails. Errors from individual
+// operations are returned through []pinInfo, use hasErrors to check them.
 func performBatchOperation(ctx context.Context, op batchOperation) ([]pinInfo, error) {
 	op.client.BeginBatch(ctx)
 	defer op.client.EndBatch(ctx)
@@ -885,12 +892,10 @@ func printPinsAndError(pinMap map[string][]pinInfo) {
 	}
 }
 
-func hasErrors(pinMap map[string][]pinInfo) bool {
-	for _, pins := range pinMap {
-		for _, p := range pins {
-			if p.Err != "" {
-				return true
-			}
+func hasErrors(pins []pinInfo) bool {
+	for _, p := range pins {
+		if p.Err != "" {
+			return true
 		}
 	}
 	return false
@@ -1648,8 +1653,8 @@ func setRefOrTag(ctx context.Context, args *setRefOrTagArgs) ([]pinInfo, error) 
 	if err != nil {
 		return nil, err
 	}
-	if pm := map[string][]pinInfo{"": pins}; hasErrors(pm) {
-		printPinsAndError(pm)
+	if hasErrors(pins) {
+		printPinsAndError(map[string][]pinInfo{"": pins})
 		return nil, fmt.Errorf("can't find %q version in all packages, aborting", args.version)
 	}
 
@@ -2466,17 +2471,17 @@ func registerInstanceFile(ctx context.Context, instanceFile string, opts *regist
 ////////////////////////////////////////////////////////////////////////////////
 // 'selfupdate' subcommand.
 
-const digestsSfx = ".digests"
-
 func cmdSelfUpdate(params Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "selfupdate -version <version> | -version-file <path>",
 		ShortDesc: "updates the current CIPD client binary",
 		LongDesc: "Does an in-place upgrade to the current CIPD binary.\n\n" +
-			"Additionally exposes -generate-digests and -check-digests flags used to " +
-			"manage a special *.digests file with pinned hashes of the client binary. " +
-			"When using 'selfupdate -version-file <path> ...', the digests file is loaded " +
-			"from <path>.digests.",
+			"Reads the version either from the command line (when using -version) or " +
+			"from a file (when using -version-file). When using -version-file, also " +
+			"loads special *.digests file (from <version-file>.digests path) with " +
+			"pinned hashes of the client binary for all platforms. When selfupdating, " +
+			"the client will verify the new downloaded binary has a hash specified in " +
+			"the *.digests file.",
 		CommandRun: func() subcommands.CommandRun {
 			c := &selfupdateRun{}
 
@@ -2489,8 +2494,6 @@ func cmdSelfUpdate(params Parameters) *subcommands.Command {
 			c.Flags.StringVar(&c.versionFile, "version-file", "",
 				"Indicates the path to read the new version from (<version-file> itself) and "+
 					"the path to the file with pinned hashes of the CIPD binary (<version-file>.digests file).")
-			c.Flags.BoolVar(&c.generate, "generate-digests", false, "If set, updates the file with pinned hashes of the CIPD binary (<version-file>.digests file).")
-			c.Flags.BoolVar(&c.check, "check-digests", false, "If set, checks that the file with pinned hashes of the CIPD binary (<version-file>.digests file) is up-to-date.")
 			return c
 		},
 	}
@@ -2502,8 +2505,6 @@ type selfupdateRun struct {
 
 	version     string
 	versionFile string
-	generate    bool
-	check       bool
 }
 
 func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
@@ -2520,42 +2521,10 @@ func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		return c.done(nil, makeCLIError("either -version or -version-file are required"))
 	}
 
-	if c.check || c.generate {
-		opt := ""
-		switch {
-		case c.check && c.generate:
-			return c.done(nil, makeCLIError("-check-digests and -generated-digests are mutually exclusive"))
-		case c.check:
-			opt = "-check-digests"
-		case c.generate:
-			opt = "-generate-digests"
-		}
-
-		if c.versionFile == "" {
-			return c.done(nil, makeCLIError("-version-file is required when using %s", opt))
-		}
-		version, err := loadClientVersion(c.versionFile)
-		if err != nil {
-			return c.done(nil, err)
-		}
-
-		client, err := c.clientOptions.makeCIPDClient(ctx)
-		if err != nil {
-			return c.done(nil, err)
-		}
-
-		digestFile := c.versionFile + digestsSfx
-		if c.generate {
-			return c.doneWithPins(generateClientDigests(ctx, client, digestFile, version))
-		} else {
-			return c.doneWithPins(checkClientDigests(ctx, client, digestFile, version))
-		}
-	}
-
 	var version = c.version
 	var digests *digests.ClientDigestsFile
 
-	if version == "" { // using -version-file instead, checked above already
+	if version == "" { // using -version-file instead? load *.digests
 		var err error
 		version, err = loadClientVersion(c.versionFile)
 		if err != nil {
@@ -2579,6 +2548,118 @@ func (c *selfupdateRun) Run(a subcommands.Application, args []string, env subcom
 		return cipd.MaybeUpdateClient(ctx, opts, version, exePath, digests)
 	}())
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// 'selfupdate-roll' subcommand.
+
+func cmdSelfUpdateRoll(params Parameters) *subcommands.Command {
+	return &subcommands.Command{
+		Advanced:  true,
+		UsageLine: "selfupdate-roll -version-file <path> (-version <version> | -check)",
+		ShortDesc: "generates or checks the client version and *.digests files",
+		LongDesc: "Generates or checks the client version and *.digests files.\n\n" +
+			"When -version is specified, takes its value as CIPD client version, " +
+			"resolves it into a list of hashes of the client binary at this version " +
+			"for all known platforms, and (on success) puts the version into a file " +
+			"specified by -version-file (referred to as <version-file> below), and " +
+			"all hashes into <version-file>.digests file. They are later used by " +
+			"'selfupdate -version-file <version-file>' to verify validity of the " +
+			"fetched binary.\n\n" +
+			"If -version is not specified, reads it from <version-file> and generates " +
+			"<version-file>.digests file based on it.\n\n" +
+			"When using -check, just verifies hashes in the <version-file>.digests " +
+			"file match the version recorded in the <version-file>.",
+		CommandRun: func() subcommands.CommandRun {
+			c := &selfupdateRollRun{}
+
+			c.registerBaseFlags()
+			c.clientOptions.registerFlags(&c.Flags, params, withoutRootDir)
+			c.Flags.StringVar(&c.version, "version", "", "Version of the client to roll to.")
+			c.Flags.StringVar(&c.versionFile, "version-file", "<version-file>",
+				"Indicates the path to a file with the version (<version-file> itself) and "+
+					"the path to the file with pinned hashes of the CIPD binary (<version-file>.digests file).")
+			c.Flags.BoolVar(&c.check, "check", false, "If set, checks that the file with "+
+				"pinned hashes of the CIPD binary (<version-file>.digests file) is up-to-date.")
+			return c
+		},
+	}
+}
+
+type selfupdateRollRun struct {
+	cipdSubcommand
+	clientOptions
+
+	version     string
+	versionFile string
+	check       bool
+}
+
+func (c *selfupdateRollRun) Run(a subcommands.Application, args []string, env subcommands.Env) int {
+	if !c.checkArgs(args, 0, 0) {
+		return 1
+	}
+
+	ctx := cli.GetContext(a, c, env)
+	client, err := c.clientOptions.makeCIPDClient(ctx)
+	if err != nil {
+		return c.done(nil, err)
+	}
+
+	if c.check {
+		if c.version != "" {
+			return c.done(nil, makeCLIError("-version should not be used in -check mode"))
+		}
+		version, err := loadClientVersion(c.versionFile)
+		if err != nil {
+			return c.done(nil, err)
+		}
+		return c.doneWithPins(checkClientDigests(ctx, client, c.versionFile+digestsSfx, version))
+	}
+
+	// Grab the version from the command line and fallback to the -version-file
+	// otherwise. The fallback is useful when we just want to regenerate *.digests
+	// without touching the version file itself.
+	version := c.version
+	if version == "" {
+		var err error
+		version, err = loadClientVersion(c.versionFile)
+		if err != nil {
+			return c.done(nil, err)
+		}
+	}
+
+	// It really makes sense to pin only tags. Warn about that. Still proceed,
+	// maybe users are using refs and do not move them by convention.
+	switch {
+	case common.ValidateInstanceID(version, common.AnyHash) == nil:
+		return c.done(nil, fmt.Errorf("expecting a version identifier that can be "+
+			"resolved for all per-platform CIPD client packages, not a concrete instance ID"))
+	case common.ValidateInstanceTag(version) != nil:
+		fmt.Printf(
+			"WARNING! Version %q is not a tag. The hash pinning in *.digests file is "+
+				"only useful for unmovable version identifiers. Proceeding, assuming "+
+				"the immutability of %q is maintained manually. If it moves, selfupdate "+
+				"will break due to *.digests file no longer matching the packages!\n\n",
+			version, version)
+	}
+
+	pins, err := generateClientDigests(ctx, client, c.versionFile+digestsSfx, version)
+	if err != nil {
+		return c.doneWithPins(pins, err)
+	}
+
+	if c.version != "" {
+		if err := ioutil.WriteFile(c.versionFile, []byte(c.version+"\n"), 0666); err != nil {
+			return c.done(nil, err)
+		}
+	}
+
+	return c.doneWithPins(pins, nil)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+const digestsSfx = ".digests"
 
 func generateClientDigests(ctx context.Context, client cipd.Client, path, version string) ([]pinInfo, error) {
 	digests, pins, err := assembleClientDigests(ctx, client, version)
@@ -2611,7 +2692,7 @@ func checkClientDigests(ctx context.Context, client cipd.Client, path, version s
 	if !digests.Equal(existing) {
 		base := filepath.Base(path)
 		return nil, fmt.Errorf("the file with pinned client hashes (%s) is stale, "+
-			"use 'cipd selfupdate -version-file %s -generate-digests' to update it",
+			"use 'cipd selfupdate-roll -version-file %s' to update it",
 			base, strings.TrimSuffix(base, digestsSfx))
 	}
 	fmt.Printf("The file with pinned client hashes (%s) is up-to-date.\n\n", filepath.Base(path))
@@ -2637,7 +2718,7 @@ func loadClientDigests(path string) (*digests.ClientDigestsFile, error) {
 	case os.IsNotExist(err):
 		base := filepath.Base(path)
 		return nil, fmt.Errorf("the file with pinned client hashes (%s) doesn't exist, "+
-			"use 'cipd selfupdate -version-file %s -generate-digests' to generate it",
+			"use 'cipd selfupdate-roll -version-file %s' to generate it",
 			base, strings.TrimSuffix(base, digestsSfx))
 	case err != nil:
 		return nil, err
@@ -2649,13 +2730,8 @@ func loadClientDigests(path string) (*digests.ClientDigestsFile, error) {
 
 // assembleClientDigests produces the digests file by making backend RPCs.
 func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (*digests.ClientDigestsFile, []pinInfo, error) {
-	// Get the list of all registered client packages.
-	if !strings.HasSuffix(cipd.ClientPackage, "${platform}") {
+	if !strings.HasSuffix(cipd.ClientPackage, "/${platform}") {
 		panic(fmt.Sprintf("client package template (%q) is expected to end with '${platform}'", cipd.ClientPackage))
-	}
-	pkgs, err := expandPkgDir(ctx, c, strings.TrimSuffix(cipd.ClientPackage, "${platform}"))
-	if err != nil {
-		return nil, nil, err
 	}
 
 	out := &digests.ClientDigestsFile{}
@@ -2663,8 +2739,8 @@ func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (
 
 	// Ask the backend to give us hashes of the client binary for all platforms.
 	pins, err := performBatchOperation(ctx, batchOperation{
-		client:   c,
-		packages: pkgs,
+		client:        c,
+		packagePrefix: strings.TrimSuffix(cipd.ClientPackage, "${platform}"),
 		callback: func(pkg string) (common.Pin, error) {
 			pin, err := c.ResolveVersion(ctx, pkg, version)
 			if err != nil {
@@ -2683,8 +2759,11 @@ func assembleClientDigests(ctx context.Context, c cipd.Client, version string) (
 			return pin, nil
 		},
 	})
-	if err != nil {
+	switch {
+	case err != nil:
 		return nil, pins, err
+	case hasErrors(pins):
+		return nil, pins, errors.New("failed to obtain the client binary digest for all platforms")
 	}
 
 	out.Sort()
@@ -2750,8 +2829,10 @@ func GetApplication(params Parameters) *cli.Application {
 			{},
 			cmdEnsure(params),
 			cmdSelfUpdate(params),
+			cmdSelfUpdateRoll(params),
 
 			// Advanced ensure file operations.
+			{Advanced: true},
 			cmdEnsureFileVerify(params),
 			cmdEnsureFileResolve(params),
 
