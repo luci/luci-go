@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6478e51_33e592f3",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-15T02:37:36Z",
+      "side": 1,
+      "message": "Ideally we\u0027d have UNIQUE (id, machine_id, hostname_id) here, see comment in 007_initialize_hosts.up.sql.",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98cea537_0463eabd",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-15T02:37:36Z",
+      "side": 1,
+      "message": "ALTER TABLE nics ADD COLUMN hostname_id int;\nALTER TABLE nics ADD CONSTRAINT hostname_id UNIQUE (hostname_id);\nUPDATE nics n INNER JOIN physical_hosts p ON p.nic_id \u003d n.id SET n.hostname_id \u003d p.hostname_id;\nALTER TABLE nics ADD CONSTRAINT nics_ibfk_3 FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE SET NULL;",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9c4dd455_bbe476d6",
+        "filename": "machine-db/appengine/database/setup/migrations/007_initialize_hosts.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-15T02:37:36Z",
+      "side": 1,
+      "message": "Ideally we\u0027d have the following:\n1. FK (hostname_id) -\u003e hostnames (id) ON DEL CASCADE\n2. FK (machine_id) -\u003e machines (id) ON DEL RESTRICT\n3. FK (nic_id) -\u003e nics (id) ON DEL RESTRICT\n4. FK (nic_id, machine_id, hostname_id) -\u003e nics (id, machine_id, hostname_id) ON DEL ???\n\nThen any of #1, #2, or #3 being violated inherently violates #4, so the behavior would be:\n#1 and #4 violated: cascade\n#2 and #4 violated: restrict\n#3 and #4 violated: restrict\n#4 only violated: restrict\n\nBut I don\u0027t know how to do this. There may be more complex ways to do it (triggers, some other table), but currently the code ensures it anyway.",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
