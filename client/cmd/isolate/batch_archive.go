@@ -30,6 +30,7 @@ import (
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/client/archiver"
+	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/isolate"
 	"go.chromium.org/luci/common/data/text/units"
 	"go.chromium.org/luci/common/isolated"
@@ -58,6 +59,7 @@ isolate. Format of files is:
 			c := batchArchiveRun{}
 			c.commonServerFlags.Init(defaultAuthOpts)
 			c.loggingFlags.Init(&c.Flags)
+			c.Flags.Var(&c.blacklist, "blacklist", "List of globs to use as blacklist filter when uploading directories")
 			c.Flags.StringVar(&c.dumpJSON, "dump-json", "", "Write isolated digests of archived trees to this file as JSON")
 			c.Flags.BoolVar(&c.expArchive, "exparchive", true, "IGNORED (deprecated) Whether to use the new exparchive implementation, which tars small files before uploading them.")
 			c.Flags.IntVar(&c.maxConcurrentChecks, "max-concurrent-checks", 1, "The maxiumum number of in-flight check requests.")
@@ -74,6 +76,9 @@ type batchArchiveRun struct {
 	expArchive           bool // deprecated
 	maxConcurrentChecks  int
 	maxConcurrentUploads int
+	// Blacklist is a list of filename regexes describing which files to
+	// ignore.
+	blacklist common.Strings
 }
 
 func (c *batchArchiveRun) Parse(a subcommands.Application, args []string) error {
@@ -153,11 +158,12 @@ func (c *batchArchiveRun) main(a subcommands.Application, args []string) error {
 		start: start,
 		quiet: c.defaultFlags.Quiet,
 	}
-	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args)
+	blacklistStrings := []string(c.blacklist)
+	return batchArchive(ctx, client, al, c.dumpJSON, c.maxConcurrentChecks, c.maxConcurrentUploads, args, blacklistStrings)
 }
 
 // batchArchive archives a series of isolates specified by genJSONPaths.
-func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string) error {
+func batchArchive(ctx context.Context, client *isolatedclient.Client, al archiveLogger, dumpJSONPath string, concurrentChecks, concurrentUploads int, genJSONPaths []string, blacklistStrings []string) error {
 	// Set up a checker and uploader. We limit the uploader to one concurrent
 	// upload, since the uploads are all coming from disk (with the exception of
 	// the isolated JSON itself) and we only want a single goroutine reading from
@@ -180,6 +186,10 @@ func batchArchive(ctx context.Context, client *isolatedclient.Client, al archive
 		}
 		log.Printf("Isolate %s referenced %d deps", opts.Isolate, len(deps))
 
+		// Use the explicit blacklist if it's provided.
+		if len(blacklistStrings) > 0 {
+			opts.Blacklist = blacklistStrings
+		}
 		isolSummary, err := a.Archive(deps, rootDir, isol, opts.Blacklist, opts.Isolated)
 		if err != nil && errArchive == nil {
 			errArchive = fmt.Errorf("isolate %s: %v", opts.Isolate, err)
