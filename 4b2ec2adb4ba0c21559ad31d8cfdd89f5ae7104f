@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "eb6b5fad_c6b6cf4d",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-15T22:24:09Z",
+      "side": 1,
+      "message": "Sorry, comment is split between this and another file. The reason for this is that we should have FOREIGN KEY (nic_id, machine_id, hostname_id) REFERENCES nics (id, machine_id, hostname_id) in the physical_hosts table to ensure that the hostname_id in physical_hosts matches the hostname_id in the appropriate row of the nics table (currently only enforced in code), but for reasons explained in that file we can\u0027t have that foreign key. If we could have that foreign key, I believe it would require UNIQUE (id, machine_id, hostname_id) here even though it\u0027s redundant because it would need the index.",
+      "parentUuid": "cf07610a_47b43207",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "98cea537_0463eabd",
         "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
         "patchSetId": 1
