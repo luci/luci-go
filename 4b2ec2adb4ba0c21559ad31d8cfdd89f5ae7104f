@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "cf07610a_47b43207",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-15T21:56:18Z",
+      "side": 1,
+      "message": "i don\u0027t quite understand. We already have\n\n  PRIMARY KEY (id)\n  UNIQUE (hostname_id)\n\neither guarantees uniqueness of (id, machine_id, hostname_id) tuples",
+      "parentUuid": "b6478e51_33e592f3",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "98cea537_0463eabd",
         "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa0cfa11_eb297fbc",
+        "filename": "machine-db/appengine/database/setup/migrations/006_initialize_nics.up.sql",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-15T21:56:18Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "98cea537_0463eabd",
+      "revId": "4b2ec2adb4ba0c21559ad31d8cfdd89f5ae7104f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
