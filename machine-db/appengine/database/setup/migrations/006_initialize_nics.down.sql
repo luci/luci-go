@@ -13,3 +13,4 @@
 -- limitations under the License.
 
 DROP TABLE IF EXISTS nics;
+DROP TABLE IF EXISTS hostnames;

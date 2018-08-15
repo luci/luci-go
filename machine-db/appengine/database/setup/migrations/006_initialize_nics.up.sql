@@ -12,12 +12,25 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
+CREATE TABLE IF NOT EXISTS hostnames (
+	id int NOT NULL AUTO_INCREMENT,
+	-- The hostname.
+	name varchar(255),
+	-- The VLAN this hostname exists on.
+	vlan_id int NOT NULL,
+	PRIMARY KEY (id),
+	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE RESTRICT,
+	UNIQUE (name)
+);
+
 CREATE TABLE IF NOT EXISTS nics (
 	id int NOT NULL AUTO_INCREMENT,
 	-- The name of this NIC.
 	name varchar(255),
 	-- The machine this NIC belongs to.
 	machine_id int NOT NULL,
+	-- The hostname belonging to this physical host.
+	hostname_id int,
 	-- The MAC address associated with this NIC.
 	mac_address bigint unsigned,
 	-- The switch this NIC is connected to.
@@ -26,9 +39,11 @@ CREATE TABLE IF NOT EXISTS nics (
 	switchport int NOT NULL,
 	PRIMARY KEY (id),
 	FOREIGN KEY (machine_id) REFERENCES machines (id) ON DELETE RESTRICT,
+	FOREIGN KEY (hostname_id) REFERENCES hostnames (id) ON DELETE SET NULL,
 	FOREIGN KEY (switch_id) REFERENCES switches (id) ON DELETE RESTRICT,
 	-- Redundant with PRIMARY KEY (id), but needed by physical_hosts.
 	UNIQUE (id, machine_id),
 	UNIQUE (name, machine_id),
+	UNIQUE (hostname_id),
 	UNIQUE (mac_address)
 );
