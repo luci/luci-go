@@ -87,6 +87,9 @@ func (p *BuildInfoProvider) GetBuildInfo(c context.Context, req *milo.BuildInfoR
 	}.Infof(c, "Resolved LogDog annotation stream.")
 
 	step, err := rawpresentation.ReadAnnotations(c, stream)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to read annotations").Err()
+	}
 
 	// Add Swarming task parameters to the Milo step.
 	if err := addTaskToMiloStep(c, sf.GetHost(), fr.res, step); err != nil {
