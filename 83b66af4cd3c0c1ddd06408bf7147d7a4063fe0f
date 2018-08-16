@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "131618ea_9d894e1a",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2018-08-16T21:41:41Z",
+      "side": 1,
+      "message": "Do we still support the additional_build_parameters in v1?",
+      "range": {
+        "startLine": 234,
+        "startChar": 25,
+        "endLine": 234,
+        "endChar": 35
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e786c65e_4e512655",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2018-08-16T21:41:41Z",
+      "side": 1,
+      "message": "qq: is it accessible via Buildbucket get_build API if a public user knows the build id?",
+      "range": {
+        "startLine": 271,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 20
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
