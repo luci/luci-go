@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "bb7bc6c0_9e102dfb",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-16T22:02:18Z",
+      "side": 1,
+      "message": "no, this feature will be dropped. However, the problem that the feature used to solve no longer exist.\nYou can put large (\u003e1Kb) blobs into a property. It was a buildbot limitation.\n\nthere is chance that kitchen commandline will become too large on Windows. If that happens, we can fix that.",
+      "parentUuid": "131618ea_9d894e1a",
+      "range": {
+        "startLine": 234,
+        "startChar": 25,
+        "endLine": 234,
+        "endChar": 35
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e786c65e_4e512655",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2018-08-16T21:41:41Z",
       "side": 1,
       "message": "qq: is it accessible via Buildbucket get_build API if a public user knows the build id?",
+      "range": {
+        "startLine": 271,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 20
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6bf154a_9f2f498b",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-16T22:02:18Z",
+      "side": 1,
+      "message": "sorry, what is accessible? Build message does not have a field for a notification config.",
+      "parentUuid": "e786c65e_4e512655",
       "range": {
         "startLine": 271,
         "startChar": 2,
