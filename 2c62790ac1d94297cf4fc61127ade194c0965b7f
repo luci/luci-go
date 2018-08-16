@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19f0dc3c_fdefa9e8",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 756,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-16T00:24:32Z",
+      "side": 0,
+      "message": "this is an alias for \u0027true\u0027 :-/",
+      "range": {
+        "startLine": 756,
+        "startChar": 4,
+        "endLine": 756,
+        "endChar": 21
+      },
+      "revId": "2c62790ac1d94297cf4fc61127ade194c0965b7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
