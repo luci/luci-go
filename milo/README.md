@@ -1,8 +1,8 @@
 # Milo - The interface into luci.
 
 # Layout
-* appengine/frontend/
-  * milo.go - Main router and entry point into app.
+* frontend/appengine/
+  * main.go - Main router and entry point into app.
   * static/ - CSS and JS assets.  All assets go under a named subfolder.
   * templates/ - HTML assets for use with go templates.
 * common/miloerror - Error subclass used to pass HTTP statuses.
