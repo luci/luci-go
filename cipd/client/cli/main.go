@@ -730,7 +730,7 @@ func (opts *ensureFileOptions) registerFlags(f *flag.FlagSet, out ensureOutFlag,
 
 // loadEnsureFile parses the ensure file and mutates clientOpts to point to a
 // service URL specified in the ensure file.
-func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile, vers versionFileOpt) (*ensure.File, error) {
+func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *clientOptions, verifying verifyingEnsureFile, parseVers versionFileOpt) (*ensure.File, error) {
 	parsedFile, err := ensure.LoadEnsureFile(opts.ensureFile)
 	if err != nil {
 		return nil, err
@@ -753,7 +753,7 @@ func (opts *ensureFileOptions) loadEnsureFile(ctx context.Context, clientOpts *c
 		return nil, errors.New("no verification platforms configured")
 	}
 
-	if parseVersionsFile && parsedFile.ResolvedVersions != "" {
+	if parseVers && parsedFile.ResolvedVersions != "" {
 		clientOpts.versions, err = loadVersionsFile(parsedFile.ResolvedVersions, opts.ensureFile)
 		if err != nil {
 			return nil, err
