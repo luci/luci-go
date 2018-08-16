@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b5ceb5cc_0264dc3b",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2018-08-16T22:18:43Z",
+      "side": 1,
+      "message": "As the findit variable builder is on Luci, we need to migrate away from additional_build_parameters. I think 1Kb might be enough. If needed, we could do some compression when passing over to the recipe.\n\nThe worse case is that a lot of tests or compile targets (could be object files instead of executables) fail consistently. That happened, but luckily it is rare.\n\nI filed https://crbug.com/875082",
+      "parentUuid": "bb7bc6c0_9e102dfb",
+      "range": {
+        "startLine": 234,
+        "startChar": 25,
+        "endLine": 234,
+        "endChar": 35
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e786c65e_4e512655",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "sorry, what is accessible? Build message does not have a field for a notification config.",
       "parentUuid": "e786c65e_4e512655",
+      "range": {
+        "startLine": 271,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 20
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6f71e6c_80c03db1",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1002882
+      },
+      "writtenOn": "2018-08-16T22:18:43Z",
+      "side": 1,
+      "message": "Sorry for the confusion. I just wanted to make sure the user-data/pubsub-topic in the notification config won\u0027t be shown to public users anywhere (e.g. build page, buildbucket get_build_request API, etc)",
+      "parentUuid": "f6bf154a_9f2f498b",
       "range": {
         "startLine": 271,
         "startChar": 2,
