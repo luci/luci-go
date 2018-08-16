@@ -141,6 +141,30 @@
       "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29dc4401_fc76b60d",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 271,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-16T22:21:02Z",
+      "side": 1,
+      "message": "yes, buildbucket does not expose this info",
+      "parentUuid": "f6f71e6c_80c03db1",
+      "range": {
+        "startLine": 271,
+        "startChar": 2,
+        "endLine": 271,
+        "endChar": 20
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
