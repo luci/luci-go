@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3c8145b0_92ed8a27",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-17T01:18:37Z",
+      "side": 1,
+      "message": "i don\u0027t understand what exactly is overriden. Does this override cr-buildbucket.cfg config?",
+      "range": {
+        "startLine": 209,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 21
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "131618ea_9d894e1a",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -70,6 +93,52 @@
       "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "59ceaf8c_0c0bb24a",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-17T01:18:37Z",
+      "side": 1,
+      "message": "this makes sense. Is the canary and experimental flag overriding the same thing?",
+      "range": {
+        "startLine": 256,
+        "startChar": 5,
+        "endLine": 256,
+        "endChar": 78
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ed1e315_a2ba3000",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-17T01:18:37Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 258,
+        "startChar": 26,
+        "endLine": 258,
+        "endChar": 27
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
