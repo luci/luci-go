@@ -12,17 +12,6 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 
-CREATE TABLE IF NOT EXISTS hostnames (
-	id int NOT NULL AUTO_INCREMENT,
-	-- The hostname.
-	name varchar(255),
-	-- The VLAN this hostname exists on.
-	vlan_id int NOT NULL,
-	PRIMARY KEY (id),
-	FOREIGN KEY (vlan_id) REFERENCES vlans (id) ON DELETE RESTRICT,
-	UNIQUE (name)
-);
-
 CREATE TABLE IF NOT EXISTS physical_hosts (
 	id int NOT NULL AUTO_INCREMENT,
 	-- The hostname belonging to this physical host.

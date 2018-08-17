@@ -69,6 +69,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 	}
 	defer tx.MaybeRollback(c)
 
+	// TODO(smut): Support the case where the NIC already has a hostname and IP assigned.
 	hostnameId, err := model.AssignHostnameAndIP(c, tx, h.Name, ip)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 
 	// By setting hostname_id, machine_id, nic_id, and os_id as FOREIGN KEY and NOT NULL when setting up the
 	// database, we can avoid checking if the given values are valid. MySQL will ensure the given values exist.
-	_, err = tx.ExecContext(c, `
+	res, err := tx.ExecContext(c, `
 		INSERT INTO physical_hosts (
 			hostname_id,
 			machine_id,
@@ -116,6 +117,20 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", h.Os)
 		}
 		return nil, errors.Annotate(err, "failed to create physical host").Err()
+	}
+	hostId, err := res.LastInsertId()
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch physical host").Err()
+	}
+
+	// Hostname is also stored with the backing NIC.
+	_, err = tx.ExecContext(c, `
+		UPDATE nics
+		SET hostname_id = ?
+		WHERE id = (SELECT nic_id FROM physical_hosts WHERE id = ?)
+	`, hostnameId, hostId)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to update NIC").Err()
 	}
 
 	// Physical host state is stored with the backing machine. Update if necessary.
@@ -173,7 +188,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	if len(req.Platforms) > 0 {
 		stmt = stmt.Join("platforms p ON m.platform_id = p.id")
 	}
-	stmt = stmt.Where("h.hostname_id = hp.id").
+	stmt = stmt.Where("n.hostname_id = hp.id").
 		Where("h.machine_id = m.id").
 		Where("h.nic_id = n.id").
 		Where("h.os_id = o.id").
