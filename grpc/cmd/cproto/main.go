@@ -26,14 +26,16 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
 )
 
 var (
-	verbose       = flag.Bool("verbose", false, "print debug messages to stderr")
-	withDiscovery = flag.Bool(
+	verbose          = flag.Bool("verbose", false, "print debug messages to stderr")
+	protoImportPaths = stringlistflag.Flag{}
+	withDiscovery    = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
 	descFile = flag.String(
@@ -59,51 +61,72 @@ var googlePackages = map[string]string{
 }
 
 // compile runs protoc on protoFiles. protoFiles must be relative to dir.
-func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut string) error {
-	args := []string{
-		"--descriptor_set_out=" + descSetOut,
-		"--include_imports",
-		"--include_source_info",
-	}
-
+func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, descSetOut string) (outDir string, err error) {
 	// make it absolute to find in $GOPATH and because protoc wants paths
 	// to be under proto paths.
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
+	if dir, err = filepath.Abs(dir); err != nil {
+		return "", err
 	}
 
-	currentGoPath := ""
+	// By default place go files in CWD,
+	// unless proto files are under a $GOPATH/src.
+	goOut := "."
+
+	// Combine user-defined proto paths with $GOPATH/src.
+	allProtoPaths := make([]string, 0, len(importPaths)+len(gopath)+1)
+	for _, p := range importPaths {
+		if p, err = filepath.Abs(p); err != nil {
+			return "", err
+		}
+		allProtoPaths = append(allProtoPaths, p)
+	}
 	for _, p := range gopath {
 		path := filepath.Join(p, "src")
 		if info, err := os.Stat(path); os.IsNotExist(err) || !info.IsDir() {
 			continue
 		} else if err != nil {
-			return err
+			return "", err
 		}
-		args = append(args, "--proto_path="+path)
+		allProtoPaths = append(allProtoPaths, path)
+
+		// If the dir is under $GOPATH/src, generate .go files near .proto files.
 		if strings.HasPrefix(dir, path) {
-			currentGoPath = path
+			goOut = path
 		}
 
 		// Include well-known protobuf types.
 		wellKnownProtoDir := filepath.Join(path, "go.chromium.org", "luci", "grpc", "proto")
 		if info, err := os.Stat(wellKnownProtoDir); err == nil && info.IsDir() {
-			args = append(args, "--proto_path="+wellKnownProtoDir)
+			allProtoPaths = append(allProtoPaths, wellKnownProtoDir)
 		}
 	}
 
-	if currentGoPath == "" {
-		return fmt.Errorf("directory %q is not inside current $GOPATH", dir)
+	// Find where Go files will be generated.
+	for _, p := range allProtoPaths {
+		if strings.HasPrefix(dir, p) {
+			outDir = filepath.Join(goOut, dir[len(p):])
+			break
+		}
+	}
+	if outDir == "" {
+		return "", fmt.Errorf("proto files are neither under $GOPATH/src nor -proto-path")
+	}
+
+	args := []string{
+		"--descriptor_set_out=" + descSetOut,
+		"--include_imports",
+		"--include_source_info",
+	}
+	for _, p := range allProtoPaths {
+		args = append(args, "--proto_path="+p)
 	}
 
 	var params []string
 	for k, v := range googlePackages {
 		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
-
 	params = append(params, "plugins=grpc")
-	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), currentGoPath))
+	args = append(args, fmt.Sprintf("--go_out=%s:%s", strings.Join(params, ","), goOut))
 
 	for _, f := range protoFiles {
 		// We must prepend an go-style absolute path to the filename otherwise
@@ -126,7 +149,7 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 	protoc := exec.Command("protoc", args...)
 	protoc.Stdout = os.Stdout
 	protoc.Stderr = os.Stderr
-	return protoc.Run()
+	return outDir, protoc.Run()
 }
 
 func run(c context.Context, goPath []string, dir string) error {
@@ -158,14 +181,15 @@ func run(c context.Context, goPath []string, dir string) error {
 		descPath = filepath.Join(tmpDir, "package.desc")
 	}
 
-	if err := compile(c, goPath, protoFiles, dir, descPath); err != nil {
+	outDir, err := compile(c, goPath, protoImportPaths, protoFiles, dir, descPath)
+	if err != nil {
 		return err
 	}
 
 	// Transform .go files
 	var goPkg, protoPkg string
 	for _, p := range protoFiles {
-		goFile := filepath.Join(dir, strings.TrimSuffix(p, ".proto")+".pb.go")
+		goFile := filepath.Join(outDir, strings.TrimSuffix(p, ".proto")+".pb.go")
 		var t transformer
 		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
@@ -209,11 +233,19 @@ func usage() {
 		`Compiles all .proto files in a directory to .go with grpc+prpc support.
 usage: cproto [flags] [dir]
 
+If the dir is not under $GOPATH/src, places generated Go files relative to $CWD.
+
 Flags:`)
 	flag.PrintDefaults()
 }
 
 func main() {
+	flag.Var(
+		&protoImportPaths,
+		"proto-path",
+		"additional proto import paths besides $GOPATH/src; "+
+			"May be relative to CWD; "+
+			"May be specified multiple times.")
 	flag.Usage = usage
 	flag.Parse()
 
