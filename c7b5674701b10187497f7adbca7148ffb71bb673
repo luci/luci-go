@@ -22,6 +22,30 @@
       "revId": "c7b5674701b10187497f7adbca7148ffb71bb673",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cecea16_83ae9480",
+        "filename": "grpc/cmd/cproto/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1237795
+      },
+      "writtenOn": "2018-08-17T16:54:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75de490c_785ece8f",
+      "range": {
+        "startLine": 95,
+        "startChar": 4,
+        "endLine": 98,
+        "endChar": 5
+      },
+      "revId": "c7b5674701b10187497f7adbca7148ffb71bb673",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
