@@ -32,8 +32,9 @@ import (
 )
 
 var (
-	verbose       = flag.Bool("verbose", false, "print debug messages to stderr")
-	withDiscovery = flag.Bool(
+	verbose         = flag.Bool("verbose", false, "print debug messages to stderr")
+	protoDirPathPtr = (flag.String("protoDirPath", "", "specific path to the proto directory"))
+	withDiscovery   = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
 	descFile = flag.String(
@@ -72,6 +73,12 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 	if err != nil {
 		return err
 	}
+	protoDirPath := ""
+	if *protoDirPathPtr != "" {
+		if protoDirPath, err = filepath.Abs(*protoDirPathPtr); err != nil {
+			return err
+		}
+	}
 
 	currentGoPath := ""
 	for _, p := range gopath {
@@ -81,10 +88,19 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 		} else if err != nil {
 			return err
 		}
-		args = append(args, "--proto_path="+path)
+		protoPath := path
 		if strings.HasPrefix(dir, path) {
 			currentGoPath = path
+			if protoDirPath != "" {
+				if !strings.HasPrefix(dir, protoDirPath) {
+					return fmt.Errorf(
+						"directory %q is not within the given proto import path %q", dir, protoDirPath)
+				}
+				currentGoPath = protoDirPath
+				protoPath = protoDirPath
+			}
 		}
+		args = append(args, "--proto_path="+protoPath)
 
 		// Include well-known protobuf types.
 		wellKnownProtoDir := filepath.Join(path, "go.chromium.org", "luci", "grpc", "proto")
@@ -166,6 +182,7 @@ func run(c context.Context, goPath []string, dir string) error {
 	var goPkg, protoPkg string
 	for _, p := range protoFiles {
 		goFile := filepath.Join(dir, strings.TrimSuffix(p, ".proto")+".pb.go")
+		logging.Infof(c, "%+v", goFile)
 		var t transformer
 		if err := t.transformGoFile(goFile); err != nil {
 			return fmt.Errorf("could not transform %s: %s", goFile, err)
@@ -221,6 +238,7 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
+
 	dir := "."
 	if flag.NArg() == 1 {
 		dir = flag.Arg(0)
