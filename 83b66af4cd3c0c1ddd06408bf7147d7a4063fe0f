@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7b36b63e_0264a7d5",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-17T18:58:02Z",
+      "side": 1,
+      "message": "clarified. WDYT?",
+      "parentUuid": "3c8145b0_92ed8a27",
+      "range": {
+        "startLine": 209,
+        "startChar": 1,
+        "endLine": 210,
+        "endChar": 21
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "131618ea_9d894e1a",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -119,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "639f8eff_267dbeaa",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-17T18:58:02Z",
+      "side": 1,
+      "message": "something like this. Server does not just take the value in the config, but does some extra computation.",
+      "parentUuid": "59ceaf8c_0c0bb24a",
+      "range": {
+        "startLine": 256,
+        "startChar": 5,
+        "endLine": 256,
+        "endChar": 78
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ed1e315_a2ba3000",
         "filename": "buildbucket/proto/rpc.proto",
         "patchSetId": 4
@@ -139,6 +187,30 @@
       "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "62a5ae35_be39c47f",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-17T18:58:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ed1e315_a2ba3000",
+      "range": {
+        "startLine": 258,
+        "startChar": 26,
+        "endLine": 258,
+        "endChar": 27
+      },
+      "revId": "83b66af4cd3c0c1ddd06408bf7147d7a4063fe0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
