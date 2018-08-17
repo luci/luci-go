@@ -602,16 +602,14 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 		} else if lds.MainStream != nil {
 			step = lds.MainStream.Data
 		}
-	} else {
-		// We don't have any annotated log, just create an empty step so that
-		// swarming task results can be filled in.
-		step = &miloProto.Step{}
+	}
+	if step != nil {
+		if err := addTaskToMiloStep(c, taskURL.Host, fr.res, step); err != nil {
+			return nil, err
+		}
+		rawpresentation.AddLogDogToBuild(c, ub, step, &build)
 	}
 
-	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, step); err != nil {
-		return nil, err
-	}
-	rawpresentation.AddLogDogToBuild(c, ub, step, &build)
 	addFailureSummary(&build)
 
 	err := addTaskToBuild(c, taskURL.Host, fr.res, &build)
@@ -693,11 +691,8 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 		if err := addTaskToMiloStep(c, svc.GetHost(), swarmingResult, step); err != nil {
 			return nil, err
 		}
-		// Milo Resp Build += Milo Step Proto.
-		if step != nil {
-			rawpresentation.AddLogDogToBuild(c, ub, step, &build)
-			addFailureSummary(&build)
-		}
+		rawpresentation.AddLogDogToBuild(c, ub, step, &build)
+		addFailureSummary(&build)
 	}
 
 	// Milo Resp Build += Swarming Result Data
