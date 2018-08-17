@@ -26,14 +26,16 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
 )
 
 var (
-	verbose       = flag.Bool("verbose", false, "print debug messages to stderr")
-	withDiscovery = flag.Bool(
+	verbose          = flag.Bool("verbose", false, "print debug messages to stderr")
+	protoImportPaths = stringlistflag.Flag{}
+	withDiscovery    = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
 	descFile = flag.String(
@@ -73,6 +75,13 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 		return err
 	}
 
+	for _, userDefinedPath := range protoImportPaths {
+		if userDefinedPath, err = filepath.Abs(userDefinedPath); err != nil {
+			return err
+		}
+		args = append(args, "--proto_path="+userDefinedPath)
+	}
+
 	currentGoPath := ""
 	for _, p := range gopath {
 		path := filepath.Join(p, "src")
@@ -94,6 +103,14 @@ func compile(c context.Context, gopath, protoFiles []string, dir, descSetOut str
 	}
 
 	if currentGoPath == "" {
+		//protoc puts the files in /usr/local/google/home/jojwang/cr/infra/appengine/monorail/
+		// tranformGoFile finds them but the generated files remain in /usr/local/google/home/jojwang/cr/infra/appengine/monorail/
+		//currentGoPath, _ = filepath.Abs("../../../../infra/appengine/monorail/")
+
+		// protoc puts the files in ./
+		// transformGoFile is trying to find them in /usr/local/google/home/jojwang/cr/infra/appengine/monorail/
+		//currentGoPath, _ = filepath.Abs(".")
+
 		return fmt.Errorf("directory %q is not inside current $GOPATH", dir)
 	}
 
@@ -214,6 +231,7 @@ Flags:`)
 }
 
 func main() {
+	flag.Var(&protoImportPaths, "protoImportPaths", "the protos' relative import paths")
 	flag.Usage = usage
 	flag.Parse()
 
