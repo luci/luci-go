@@ -38,16 +38,16 @@ func (*Service) FindVMSlots(c context.Context, req *crimson.FindVMSlotsRequest) 
 
 // findVMSlots returns a slice of physical hosts with available VM slots in the database.
 func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.FindVMSlotsRequest) ([]*crimson.PhysicalHost, error) {
-	stmt := squirrel.Select("h.name", "h.vlan_id", "ph.vm_slots - COUNT(v.physical_host_id)").
-		From("(physical_hosts ph, hostnames h)")
+	stmt := squirrel.Select("h.name", "h.vlan_id", "ph.vm_slots - COUNT(v.physical_host_id)", "ph.virtual_datacenter", "m.state").
+		From("(physical_hosts ph, hostnames h, machines m)")
 	if len(req.Manufacturers) > 0 {
-		stmt = stmt.Join("machines m ON ph.machine_id = m.id")
 		stmt = stmt.Join("platforms pl ON m.platform_id = pl.id")
 	}
 	stmt = stmt.LeftJoin("vms v on v.physical_host_id = ph.id").
 		Where("ph.hostname_id = h.id").
 		Where("ph.vm_slots > 0").
-		GroupBy("h.name", "h.vlan_id", "ph.vm_slots").
+		Where("ph.machine_id = m.id").
+		GroupBy("h.name", "h.vlan_id", "ph.vm_slots", "ph.virtual_datacenter", "m.state").
 		Having("ph.vm_slots > COUNT(v.physical_host_id)")
 	if req.Slots > 0 {
 		// In the worst case, each host with at least one available VM slot has only one available VM slot.
@@ -56,6 +56,7 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 	}
 	stmt = selectInString(stmt, "pl.manufacturer", req.Manufacturers)
 	stmt = selectInString(stmt, "ph.virtual_datacenter", req.VirtualDatacenters)
+	stmt = selectInState(stmt, "m.state", req.States)
 	query, args, err := stmt.ToSql()
 	if err != nil {
 		return nil, errors.Annotate(err, "failed to generate statement").Err()
@@ -73,6 +74,8 @@ func findVMSlots(c context.Context, q database.QueryerContext, req *crimson.Find
 			&h.Name,
 			&h.Vlan,
 			&h.VmSlots,
+			&h.VirtualDatacenter,
+			&h.State,
 		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch VM slots").Err()
 		}

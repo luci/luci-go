@@ -30,10 +30,10 @@ func printVMSlots(tsv bool, hosts ...*crimson.PhysicalHost) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "VLAN", "VM Slots")
+			p.Row("Name", "VLAN", "VM Slots", "Virtual Datacenter", "State")
 		}
 		for _, h := range hosts {
-			p.Row(h.Name, h.Vlan, h.VmSlots)
+			p.Row(h.Name, h.Vlan, h.VmSlots, h.VirtualDatacenter, h.State)
 		}
 	}
 }
@@ -60,7 +60,7 @@ func (c *GetVMSlotsCmd) Run(app subcommands.Application, args []string, env subc
 // getVMSlotsCmd returns a command to get available VM slots.
 func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-slots -n <slots> [-man <manufacturer>]... [-vdc <virtual datacenter>]",
+		UsageLine: "get-slots -n <slots> [-man <manufacturer>]... [-vdc <virtual datacenter>]... [-state <state>]...",
 		ShortDesc: "retrieves available VM slots",
 		LongDesc:  "Retrieves available VM slots.",
 		CommandRun: func() subcommands.CommandRun {
@@ -69,6 +69,7 @@ func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.Var(flag.Int32(&cmd.req.Slots), "n", "The number of available VM slots to get.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Manufacturers), "man", "Manufacturer to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.VirtualDatacenters), "vdc", "Virtual datacenter to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
 			return cmd
 		},
 	}
