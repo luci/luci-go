@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d55f5338_dc9f6bce",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-17T19:43:33Z",
+      "side": 1,
+      "message": "I thought of that too, but the Trinary\u0027s \"EITHER\" is a confusing replacement for \"UNSET\" when applied to fields like experimental or auto_builder_dimension. If one of two enums is to be replaced by another, then I\u0027d rather settle for \"UNSET\" than \"EITHER\".",
+      "range": {
+        "startLine": 436,
+        "startChar": 29,
+        "endLine": 437,
+        "endChar": 13
+      },
+      "revId": "84849cdd29242401ee83c66067a0eb263fbe2e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
