@@ -581,18 +581,13 @@ func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID strin
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
 func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuild, error) {
 	var build ui.MiloBuild
-	var step *miloProto.Step
-	var lds *rawpresentation.Streams
-	// Log links are built relative to swarming URLs
-	id := taskURL.Query().Get("id")
-	ub := swarmingURLBuilder(id)
+	var step miloProto.Step
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
 	// to be consistent, which is why the following block of code are not
 	// expected to ever err out.
 	if fr.log != "" {
-		var err error
-		lds, err = streamsFromAnnotatedLog(c, fr.log)
+		lds, err := streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
 			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
 			comp.SubLink = append(comp.SubLink, ui.LinkSet{
@@ -600,18 +595,19 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 			})
 			build.Components = append(build.Components, comp)
 		} else if lds.MainStream != nil {
-			step = lds.MainStream.Data
+			step = *lds.MainStream.Data
 		}
-	} else {
-		// We don't have any annotated log, just create an empty step so that
-		// swarming task results can be filled in.
-		step = &miloProto.Step{}
 	}
 
-	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, step); err != nil {
+	if err := addTaskToMiloStep(c, taskURL.Host, fr.res, &step); err != nil {
 		return nil, err
 	}
-	rawpresentation.AddLogDogToBuild(c, ub, step, &build)
+
+	// Log links are built relative to swarming URLs
+	id := taskURL.Query().Get("id")
+	ub := swarmingURLBuilder(id)
+	rawpresentation.AddLogDogToBuild(c, ub, &step, &build)
+
 	addFailureSummary(&build)
 
 	err := addTaskToBuild(c, taskURL.Host, fr.res, &build)
@@ -682,10 +678,6 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 			"Error", "failed to load annotation stream: "+err.Error()))
 	}
 
-	// Log links are linked directly to the logdog service.  This is used when
-	// converting proto step data to resp build structs
-	ub := rawpresentation.NewURLBuilder(logDogStreamAddr)
-
 	// Skip these steps if the LogDog stream doesn't exist.
 	// i.e. when the stream isn't ready yet, or errored out.
 	if step != nil {
@@ -693,12 +685,12 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 		if err := addTaskToMiloStep(c, svc.GetHost(), swarmingResult, step); err != nil {
 			return nil, err
 		}
-		// Milo Resp Build += Milo Step Proto.
-		if step != nil {
-			rawpresentation.AddLogDogToBuild(c, ub, step, &build)
-			addFailureSummary(&build)
-		}
+		// Log links are linked directly to the logdog service.  This is used when
+		// converting proto step data to resp build structs
+		ub := rawpresentation.NewURLBuilder(logDogStreamAddr)
+		rawpresentation.AddLogDogToBuild(c, ub, step, &build)
 	}
+	addFailureSummary(&build)
 
 	// Milo Resp Build += Swarming Result Data
 	// This is done for things in resp but not in step like the banner, buildset,

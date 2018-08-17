@@ -23,7 +23,9 @@
     "Type": "Recipe",
     "LevelsDeep": 0,
     "Verbosity": 1,
-    "Text": null
+    "Text": [
+      "Running Waiting..."
+    ]
   },
   "Trigger": {
     "AuthorName": "",
