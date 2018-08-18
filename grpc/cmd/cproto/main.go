@@ -212,7 +212,7 @@ func run(c context.Context, goPath []string, dir string) error {
 	if *withDiscovery && goPkg != "" && protoPkg != "" {
 		// Generate pb.prpc.go
 		discoveryFile := "pb.discovery.go"
-		if err := genDiscoveryFile(c, filepath.Join(dir, discoveryFile), descPath, protoPkg, goPkg); err != nil {
+		if err := genDiscoveryFile(c, filepath.Join(outDir, discoveryFile), descPath, protoPkg, goPkg); err != nil {
 			return err
 		}
 	}
