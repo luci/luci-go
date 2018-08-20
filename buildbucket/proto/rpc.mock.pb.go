@@ -189,6 +189,24 @@ func (mr *MockBuildsClientMockRecorder) ScheduleBuild(ctx, in interface{}, opts 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsClient)(nil).ScheduleBuild), varargs...)
 }
 
+// CancelBuild mocks base method
+func (m *MockBuildsClient) CancelBuild(ctx context.Context, in *CancelBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CancelBuild", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelBuild indicates an expected call of CancelBuild
+func (mr *MockBuildsClientMockRecorder) CancelBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsClient)(nil).CancelBuild), varargs...)
+}
+
 // MockBuildsServer is a mock of BuildsServer interface
 type MockBuildsServer struct {
 	ctrl     *gomock.Controller
@@ -275,4 +293,17 @@ func (m *MockBuildsServer) ScheduleBuild(arg0 context.Context, arg1 *ScheduleBui
 // ScheduleBuild indicates an expected call of ScheduleBuild
 func (mr *MockBuildsServerMockRecorder) ScheduleBuild(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsServer)(nil).ScheduleBuild), arg0, arg1)
+}
+
+// CancelBuild mocks base method
+func (m *MockBuildsServer) CancelBuild(arg0 context.Context, arg1 *CancelBuildRequest) (*Build, error) {
+	ret := m.ctrl.Call(m, "CancelBuild", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CancelBuild indicates an expected call of CancelBuild
+func (mr *MockBuildsServerMockRecorder) CancelBuild(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelBuild", reflect.TypeOf((*MockBuildsServer)(nil).CancelBuild), arg0, arg1)
 }
