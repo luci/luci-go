@@ -21,7 +21,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Schema of settings.cfg file, a service config.
 type SettingsCfg struct {
 	// Swarmbucket settings.
-	Swarming             *SwarmingSettings `protobuf:"bytes,1,opt,name=swarming" json:"swarming,omitempty"`
+	Swarming             *SwarmingSettings `protobuf:"bytes,1,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -61,10 +61,10 @@ func (m *SettingsCfg) GetSwarming() *SwarmingSettings {
 // Swarmbucket settings.
 type SwarmingSettings struct {
 	// Swarmbucket build URLs will point to this Milo instance.
-	MiloHostname string `protobuf:"bytes,2,opt,name=milo_hostname,json=miloHostname" json:"milo_hostname,omitempty"`
+	MiloHostname string `protobuf:"bytes,2,opt,name=milo_hostname,json=miloHostname,proto3" json:"milo_hostname,omitempty"`
 	// Default value of swarming.task_template_canary_percentage field in
 	// cr-buildbucket.cfg files.
-	DefaultTaskTemplateCanaryPercentage int32    `protobuf:"varint,3,opt,name=default_task_template_canary_percentage,json=defaultTaskTemplateCanaryPercentage" json:"default_task_template_canary_percentage,omitempty"`
+	DefaultTaskTemplateCanaryPercentage int32    `protobuf:"varint,3,opt,name=default_task_template_canary_percentage,json=defaultTaskTemplateCanaryPercentage,proto3" json:"default_task_template_canary_percentage,omitempty"`
 	XXX_NoUnkeyedLiteral                struct{} `json:"-"`
 	XXX_unrecognized                    []byte   `json:"-"`
 	XXX_sizecache                       int32    `json:"-"`

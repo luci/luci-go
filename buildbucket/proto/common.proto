@@ -83,3 +83,10 @@ message TimeRange {
   // Exclusive upper boundary. Optional.
   google.protobuf.Timestamp end_time = 2;
 }
+
+// A boolean with an undefined value.
+enum Trinary {
+  UNSET = 0;
+  YES = 1;
+  NO = 2;
+}

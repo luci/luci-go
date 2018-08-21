@@ -1,0 +1,46 @@
+// Copyright 2018 The Swarming Authors. All rights reserved.
+// Use of this source code is governed by the Apache v2.0 license that can be
+// found in the LICENSE file.
+
+syntax = "proto3";
+
+package buildbucket.v2;
+
+option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
+
+import "google/protobuf/timestamp.proto";
+
+// A notification about a build.
+message Notification {
+  // When this notification was created.
+  google.protobuf.Timestamp timestamp = 1;
+
+  // Cloud Project ID of the Buildbucket instance that sent this notification,
+  // e.g. "cr-buildbucket".
+  // Useful if a service listens to both prod and dev instances of buildbucket.
+  string app_id = 2;
+
+  // Buildbucket build id.
+  // Use GetBuild rpc to load the contents.
+  int64 build_id = 3;
+
+  // User-defined opaque blob specified in NotificationConfig.user_data.
+  bytes user_data = 4;
+}
+
+// Configuration of notifications.
+message NotificationConfig {
+  // Target Cloud PubSub topic.
+  // Usually has format "projects/{cloud project}/topics/{topic name}".
+  //
+  // The PubSub message data is a Notification message in binary format.
+  //
+  // <buildbucket-app-id>@appspot.gserviceaccount.com must have
+  // "pubsub.topics.publish" permissions on the topic, where
+  // <buildbucket-app-id> is usually "cr-buildbucket."
+  string pubsub_topic = 1;
+
+  // Will be available in Notification.user_data.
+  // Max length: 4096.
+  bytes user_data = 2;
+}
