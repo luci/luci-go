@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84949f52_b8ad56e9",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-21T17:27:20Z",
+      "side": 1,
+      "message": "qq: wdyt about canceling conditionally on current status, e.g., \"Cancel if STATUS!\u003dSTARTED\"?",
+      "range": {
+        "startLine": 290,
+        "startChar": 8,
+        "endLine": 290,
+        "endChar": 26
+      },
+      "revId": "eb7521c61ed31b128c69adfce12637a2312ffdbf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
