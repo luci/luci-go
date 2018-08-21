@@ -44,7 +44,7 @@ message Build {
     // V1 equivalent: corresponds to "properties" key in "parameters_json".
     google.protobuf.Struct properties = 1;
 
-    // Gitiles commits to run against.
+    // The Gitiles commit to run against.
     // Usually present in CI builds, set by LUCI Scheduler.
     // If not present, the build may checkout "refs/heads/master".
     // NOT a blamelist.

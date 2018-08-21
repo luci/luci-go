@@ -362,6 +362,7 @@ message Builder {
   // experimental.
   // This is useful for inherently experimental builders that use production
   // recipes.
+  // See also luci_migration_host field.
   Toggle experimental = 18;
   // If not empty and not "-", and a build request is not marked as
   // experimental/prod explicitly and has "mastername" property, buildbucket
@@ -432,6 +433,7 @@ message BuildbucketCfg {
 // Toggle is a boolean with an extra state UNSET.
 // When protobuf messages are merged, UNSET does not overwrite an existing
 // value.
+// TODO(nodir): replace with Trinary in ../common.proto.
 enum Toggle {
   UNSET = 0;
   YES = 1;
