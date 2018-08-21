@@ -70,6 +70,30 @@
       "revId": "84849cdd29242401ee83c66067a0eb263fbe2e6d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7b1f9f88_84dd2153",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-21T16:52:45Z",
+      "side": 1,
+      "message": "SGTM.",
+      "parentUuid": "7a2e9946_7f0b555a",
+      "range": {
+        "startLine": 436,
+        "startChar": 29,
+        "endLine": 437,
+        "endChar": 13
+      },
+      "revId": "84849cdd29242401ee83c66067a0eb263fbe2e6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
