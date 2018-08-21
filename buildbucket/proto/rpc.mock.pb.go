@@ -171,6 +171,24 @@ func (mr *MockBuildsClientMockRecorder) UpdateBuild(ctx, in interface{}, opts ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsClient)(nil).UpdateBuild), varargs...)
 }
 
+// ScheduleBuild mocks base method
+func (m *MockBuildsClient) ScheduleBuild(ctx context.Context, in *ScheduleBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ScheduleBuild", varargs...)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleBuild indicates an expected call of ScheduleBuild
+func (mr *MockBuildsClientMockRecorder) ScheduleBuild(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsClient)(nil).ScheduleBuild), varargs...)
+}
+
 // MockBuildsServer is a mock of BuildsServer interface
 type MockBuildsServer struct {
 	ctrl     *gomock.Controller
@@ -244,4 +262,17 @@ func (m *MockBuildsServer) UpdateBuild(arg0 context.Context, arg1 *UpdateBuildRe
 // UpdateBuild indicates an expected call of UpdateBuild
 func (mr *MockBuildsServerMockRecorder) UpdateBuild(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBuild", reflect.TypeOf((*MockBuildsServer)(nil).UpdateBuild), arg0, arg1)
+}
+
+// ScheduleBuild mocks base method
+func (m *MockBuildsServer) ScheduleBuild(arg0 context.Context, arg1 *ScheduleBuildRequest) (*Build, error) {
+	ret := m.ctrl.Call(m, "ScheduleBuild", arg0, arg1)
+	ret0, _ := ret[0].(*Build)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ScheduleBuild indicates an expected call of ScheduleBuild
+func (mr *MockBuildsServerMockRecorder) ScheduleBuild(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScheduleBuild", reflect.TypeOf((*MockBuildsServer)(nil).ScheduleBuild), arg0, arg1)
 }
