@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3818944_53fbb34c",
+        "filename": "buildbucket/proto/notification.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-21T02:52:34Z",
+      "side": 1,
+      "message": "nit: may be better to use app id (\u0027cr-buildbucket\u0027), since hostname is not strictly stable (e.g. we have ci.chromium.org and luci-milo.appspot.com which are the same thing).",
+      "range": {
+        "startLine": 21,
+        "startChar": 2,
+        "endLine": 21,
+        "endChar": 22
+      },
+      "revId": "1d962baf36d54469b8ff659a064cfd3c973e4804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fee54a3d_21f03a1d",
+        "filename": "buildbucket/proto/notification.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-21T02:52:34Z",
+      "side": 1,
+      "message": "nit: why so restrictive? Make it at least 4096 or something.",
+      "range": {
+        "startLine": 44,
+        "startChar": 5,
+        "endLine": 44,
+        "endChar": 20
+      },
+      "revId": "1d962baf36d54469b8ff659a064cfd3c973e4804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69857e7b_acd306cd",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-21T02:52:34Z",
+      "side": 1,
+      "message": "How exactly this deduping looks like? It silently returns existing Build? (Please document).",
+      "range": {
+        "startLine": 194,
+        "startChar": 13,
+        "endLine": 194,
+        "endChar": 45
+      },
+      "revId": "1d962baf36d54469b8ff659a064cfd3c973e4804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "903ace25_3558e6fd",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-08-21T02:52:34Z",
+      "side": 1,
+      "message": "either what?",
+      "range": {
+        "startLine": 206,
+        "startChar": 29,
+        "endLine": 206,
+        "endChar": 35
+      },
+      "revId": "1d962baf36d54469b8ff659a064cfd3c973e4804",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
