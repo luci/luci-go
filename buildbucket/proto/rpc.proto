@@ -71,6 +71,10 @@ service Builds {
   // Schedules a new build.
   // The requester must have at least SCHEDULER role in the destination bucket.
   rpc ScheduleBuild(ScheduleBuildRequest) returns (Build) {};
+
+  // Cancels a build.
+  // The requester must have at least SCHEDULER role in the destination bucket.
+  rpc CancelBuild(CancelBuildRequest) returns (Build) {};
 }
 
 // A request message for GetBuild rpc.
@@ -277,6 +281,18 @@ message ScheduleBuildRequest {
 
   // A per-build notification configuration.
   NotificationConfig notify = 12;
+
+  // Fields to include in the response. See also GetBuildRequest.fields.
+  google.protobuf.FieldMask fields = 100;
+}
+
+// A request message for CancelBuild rpc.
+message CancelBuildRequest {
+  // ID of the build to cancel.
+  int64 id = 1;
+
+  // Required. Why the build is being cancelled.
+  CancelReason reason = 2;
 
   // Fields to include in the response. See also GetBuildRequest.fields.
   google.protobuf.FieldMask fields = 100;
