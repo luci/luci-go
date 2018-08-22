@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/tumble"
 
@@ -118,6 +119,9 @@ func TestTerminateStream(t *testing.T) {
 
 						// Add our settle delay, confirm that archival is scheduled.
 						env.Clock.Add(10 * time.Second)
+						env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
+							env.Clock.Add(3 * time.Second)
+						})
 						env.IterateTumbleAll(c)
 						So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 
