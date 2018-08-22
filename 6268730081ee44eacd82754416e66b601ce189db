@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "13cf7894_787ef635",
+        "filename": "tumble/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-22T20:34:43Z",
+      "side": 1,
+      "message": "IIUC code below, `attempted` and `completed` are more descriptive names.",
+      "range": {
+        "startLine": 49,
+        "startChar": 0,
+        "endLine": 61,
+        "endChar": 1
+      },
+      "revId": "6268730081ee44eacd82754416e66b601ce189db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e961720d_59059519",
+        "filename": "tumble/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-22T20:34:43Z",
+      "side": 1,
+      "message": "Robbie, this is far too long method for my brain to not get lost in minor details :(",
+      "range": {
+        "startLine": 164,
+        "startChar": 22,
+        "endLine": 164,
+        "endChar": 29
+      },
+      "revId": "6268730081ee44eacd82754416e66b601ce189db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d7dd0e92_2705e1d7",
+        "filename": "tumble/process.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-22T20:34:43Z",
+      "side": 1,
+      "message": "iiuc, if a mutation fails with transient error, this counter will be incremented more times than counter below.\nSo, I\u0027m wondering what you are trying to measure with this metric. Maybe we should also (or instead?) measure transient and permanent errors encountered alongside successful mutations?",
+      "revId": "6268730081ee44eacd82754416e66b601ce189db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
