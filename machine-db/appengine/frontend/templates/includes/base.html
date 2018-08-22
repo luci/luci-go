@@ -7,17 +7,22 @@
   <title>{{block "title" .}}Machine DB{{end}}</title>
   {{block "head" .}}
   {{end}}
+  <style>
+    .login {
+       display:flex;
+       justify-content:flex-end;
+       align-items:center;
+    }
+  </style>
 </head>
 
 <body>
-  <div>
+  <div class="login">
     {{if .IsAnonymous}}
-      <a href="{{.LoginURL}}">Login</a>
-    </button>
+    <a href="{{.LoginURL}}"><button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">LOGIN</button></a>
     {{else}}
       <span>{{.User.Email}}</span>
-      <span> |</span>
-      <a href="{{.LogoutURL}}">Logout</a>
+      <a href="{{.LogoutURL}}"><button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">LOGOUT</button></a>
     {{end}}
   </div>
 
