@@ -382,6 +382,8 @@ func consoleHeader(c context.Context, project string, header *config.Header) (*u
 		// continue
 	case len(header.Links) != 0:
 		// continue
+	case header.TreeStatusHost != "":
+		// continue
 	default:
 		return nil, nil
 	}

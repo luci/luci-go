@@ -57,6 +57,7 @@
   </div>
 {{ end }}
 
+{{ if or $header.Oncalls $header.Links $header.ConsoleGroups }}
 <div class="console-header">
   <div class="console-header-column">
 
@@ -163,6 +164,7 @@
   </div>
 {{ end }}
 </div>
+{{ end }}
 {{ end }}
 
 <!-- Legend -->
