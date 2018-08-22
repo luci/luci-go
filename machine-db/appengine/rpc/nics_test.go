@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/VividCortex/mysqlerr"
 	"github.com/go-sql-driver/mysql"
 
+	states "go.chromium.org/luci/machine-db/api/common/v1"
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
 	"go.chromium.org/luci/machine-db/common"
@@ -39,9 +41,18 @@ func TestCreateNIC(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		insertStmt := `
-			^INSERT INTO nics \(name, machine_id, mac_address, switch_id, switchport\)
-			VALUES \(\?, \(SELECT id FROM machines WHERE name = \?\), \?, \(SELECT id FROM switches WHERE name = \?\), \?\)$
+		insertNameStmt := `
+			^INSERT INTO hostnames \(name, vlan_id\)
+			VALUES \(\?, \(SELECT vlan_id FROM ips WHERE ipv4 = \? AND hostname_id IS NULL\)\)$
+		`
+		insertNICStmt := `
+			^INSERT INTO nics \(name, machine_id, mac_address, switch_id, switchport, hostname_id\)
+			VALUES \(\?, \(SELECT id FROM machines WHERE name = \?\), \?, \(SELECT id FROM switches WHERE name = \?\), \?, \?\)$
+		`
+		updateIPStmt := `
+			^UPDATE ips
+			SET hostname_id = \?
+			WHERE ipv4 = \? AND hostname_id IS NULL$
 		`
 
 		Convey("begin failed", func() {
@@ -66,7 +77,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(fmt.Errorf("error"))
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
@@ -80,7 +91,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "duplicate NIC")
 		})
@@ -94,7 +105,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
@@ -108,7 +119,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'mac_address'"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'mac_address'"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "duplicate MAC address")
 		})
@@ -122,7 +133,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
@@ -136,7 +147,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
@@ -150,7 +161,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name machine_id switch_id"})
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name machine_id switch_id"})
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
@@ -164,7 +175,7 @@ func TestCreateNIC(t *testing.T) {
 				Switchport: 1,
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{}).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to commit transaction")
@@ -177,9 +188,13 @@ func TestCreateNIC(t *testing.T) {
 				MacAddress: "ff:ff:ff:ff:ff:ff",
 				Switch:     "switch",
 				Switchport: 1,
+				Hostname:   "hostname",
+				Ipv4:       "127.0.0.1",
 			}
 			m.ExpectBegin()
-			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(insertNameStmt).WithArgs(nic.Hostname, 2130706433).WillReturnResult(sqlmock.NewResult(10, 1))
+			m.ExpectExec(updateIPStmt).WithArgs(10, 2130706433).WillReturnResult(sqlmock.NewResult(100, 1))
+			m.ExpectExec(insertNICStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport, sql.NullInt64{Int64: 10, Valid: true}).WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit()
 			So(createNIC(c, nic), ShouldBeNil)
 		})
@@ -191,9 +206,26 @@ func TestDeleteNIC(t *testing.T) {
 		db, m, _ := sqlmock.New()
 		defer db.Close()
 		c := database.With(context.Background(), db)
-		deleteStmt := `
+		selectHostStmt := `
+			^SELECT hp.name, hp.vlan_id, m.name, n.name, n.mac_address, o.name, h.vm_slots, h.virtual_datacenter, h.description, h.deployment_ticket, i.ipv4, m.state
+			FROM \(physical_hosts h, hostnames hp, machines m, nics n, oses o, ips i\)
+			WHERE n.hostname_id = hp.id AND h.machine_id = m.id AND h.nic_id = n.id AND h.os_id = o.id AND i.hostname_id = hp.id AND m.name IN \(\?\)$
+		`
+		selectNameStmt := `
+			^SELECT h.id FROM nics n, machines m, hostnames h
+			WHERE n.machine_id = m.id AND n.hostname_id = h.id AND n.name = \? AND m.name = \?$
+		`
+		deleteNameStmt := `
+			^DELETE FROM hostnames
+			WHERE id = \?$
+		`
+		deleteNICStmt := `
 			^DELETE FROM nics WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
 		`
+		hostColumns := []string{"hp.name", "hp.vlan_id", "m.name", "n.name", "n.mac_address", "o.name", "h.vm_slots", "h.virtual_datacenter", "h.description", "h.deployment_ticket", "i.ipv4", "m.state"}
+		hostRows := sqlmock.NewRows(hostColumns)
+		nameColumns := []string{"h.id"}
+		nameRows := sqlmock.NewRows(nameColumns)
 
 		Convey("begin failed", func() {
 			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
@@ -201,30 +233,85 @@ func TestDeleteNIC(t *testing.T) {
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to begin transaction")
 		})
 
-		Convey("query failed", func() {
+		Convey("host failed", func() {
 			m.ExpectBegin()
-			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to fetch associated physical host")
+		})
+
+		Convey("host exists", func() {
+			hostRows.AddRow("name", 1, "machine", "eth0", 1, "os", 0, "", "", "", 2130706433, states.State_SERVING)
+			m.ExpectBegin()
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "delete entities referencing this NIC first")
+		})
+
+		Convey("select name failed", func() {
+			m.ExpectBegin()
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to fetch associated hostname")
+		})
+
+		Convey("delete name failed", func() {
+			nameRows.AddRow("1")
+			m.ExpectBegin()
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNameStmt).WithArgs(int64(1)).WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to delete associated hostname")
+		})
+
+		Convey("delete failed", func() {
+			nameRows.AddRow("1")
+			m.ExpectBegin()
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNameStmt).WithArgs(int64(1)).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(deleteNICStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to delete NIC")
 		})
 
-		Convey("invalid", func() {
+		Convey("delete ok", func() {
+			nameRows.AddRow("1")
 			m.ExpectBegin()
-			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 0))
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNameStmt).WithArgs(int64(1)).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectExec(deleteNICStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit()
+			So(deleteNIC(c, "eth0", "machine"), ShouldBeNil)
+		})
+
+		Convey("no matching rows", func() {
+			m.ExpectBegin()
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNICStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 0))
 			m.ExpectRollback()
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "does not exist")
 		})
 
 		Convey("commit failed", func() {
 			m.ExpectBegin()
-			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNICStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
 			m.ExpectRollback()
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to commit transaction")
 		})
+
 		Convey("ok", func() {
 			m.ExpectBegin()
-			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectQuery(selectHostStmt).WithArgs("machine").WillReturnRows(hostRows)
+			m.ExpectQuery(selectNameStmt).WithArgs("eth0", "machine").WillReturnRows(nameRows)
+			m.ExpectExec(deleteNICStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
 			m.ExpectCommit()
 			So(deleteNIC(c, "eth0", "machine"), ShouldBeNil)
 		})

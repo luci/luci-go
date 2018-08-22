@@ -64,7 +64,7 @@ func (c *AddNICCmd) Run(app subcommands.Application, args []string, env subcomma
 // addNICCmd returns a command to add a network interface.
 func addNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "add-nic -name <name> -machine <machine> -mac <mac address> -switch <switch> [-port <switch port>]",
+		UsageLine: "add-nic -name <name> -machine <machine> -mac <mac address> -switch <switch> [-port <switch port>] [-host <hostname>] [-ip <ip address>]",
 		ShortDesc: "adds a NIC",
 		LongDesc:  "Adds a network interface to the database.\n\nExample:\ncrimson add-nic -name eth0 -machine xx1-01-720 -mac 00:00:00:00:00:bc -switch switch1.lab -port 30",
 		CommandRun: func() subcommands.CommandRun {
@@ -75,6 +75,8 @@ func addNICCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.StringVar(&cmd.nic.MacAddress, "mac", "", "The MAC address of this NIC. Required and must be a valid MAC-48 address.")
 			cmd.Flags.StringVar(&cmd.nic.Switch, "switch", "", "The switch this NIC is connected to. Required and must be the name of a switch returned by get-switches.")
 			cmd.Flags.Var(flag.Int32(&cmd.nic.Switchport), "port", "The switchport this NIC is connected to.")
+			cmd.Flags.StringVar(&cmd.nic.Hostname, "host", "", "The name of this NIC on the network.")
+			cmd.Flags.StringVar(&cmd.nic.Ipv4, "ip", "", "The IPv4 address assigned to this NIC. Must be a free IP address returned by get-ips.")
 			return cmd
 		},
 	}

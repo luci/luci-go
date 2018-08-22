@@ -15,6 +15,7 @@
 package rpc
 
 import (
+	"database/sql"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -32,6 +33,7 @@ import (
 
 	"go.chromium.org/luci/machine-db/api/crimson/v1"
 	"go.chromium.org/luci/machine-db/appengine/database"
+	"go.chromium.org/luci/machine-db/appengine/model"
 	"go.chromium.org/luci/machine-db/common"
 )
 
@@ -79,12 +81,23 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 	}
 	defer tx.MaybeRollback(c)
 
+	var hostnameId sql.NullInt64
+	if n.Hostname != "" {
+		ip, _ := common.ParseIPv4(n.Ipv4)
+		id, err := model.AssignHostnameAndIP(c, tx, n.Hostname, ip)
+		if err != nil {
+			return err
+		}
+		hostnameId.Int64 = id
+		hostnameId.Valid = true
+	}
+
 	// By setting nics.machine_id NOT NULL when setting up the database, we can avoid checking if the given machine is
 	// valid. MySQL will turn up NULL for its column values which will be rejected as an error.
 	_, err = tx.ExecContext(c, `
-		INSERT INTO nics (name, machine_id, mac_address, switch_id, switchport)
-		VALUES (?, (SELECT id FROM machines WHERE name = ?), ?, (SELECT id FROM switches WHERE name = ?), ?)
-	`, n.Name, n.Machine, mac, n.Switch, n.Switchport)
+		INSERT INTO nics (name, machine_id, mac_address, switch_id, switchport, hostname_id)
+		VALUES (?, (SELECT id FROM machines WHERE name = ?), ?, (SELECT id FROM switches WHERE name = ?), ?, ?)
+	`, n.Name, n.Machine, mac, n.Switch, n.Switchport, hostnameId)
 	if err != nil {
 		switch e, ok := err.(*mysql.MySQLError); {
 		case !ok:
@@ -111,6 +124,26 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 	return nil
 }
 
+// getHostnameForNIC gets the ID of the hostname associated with an existing NIC.
+func getHostnameForNIC(c context.Context, q database.QueryerContext, name, machine string) (*int64, error) {
+	rows, err := q.QueryContext(c, `
+		SELECT h.id FROM nics n, machines m, hostnames h
+		WHERE n.machine_id = m.id AND n.hostname_id = h.id AND n.name = ? AND m.name = ?
+	`, name, machine)
+	if err != nil {
+		return nil, errors.Annotate(err, "failed to fetch associated hostname").Err()
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var hostnameId int64
+		if err = rows.Scan(&hostnameId); err != nil {
+			return nil, errors.Annotate(err, "failed to fetch hostname").Err()
+		}
+		return &hostnameId, nil
+	}
+	return nil, nil
+}
+
 // deleteNIC deletes an existing NIC from the database.
 func deleteNIC(c context.Context, name, machine string) error {
 	switch {
@@ -124,6 +157,31 @@ func deleteNIC(c context.Context, name, machine string) error {
 		return errors.Annotate(err, "failed to begin transaction").Err()
 	}
 	defer tx.MaybeRollback(c)
+
+	// If a NIC is backing a host, don't delete it. If not, delete it and its hostname (if it has one).
+	// Deleting a hostname cascades to the host, so hostname can't be deleted without first checking
+	// for a host. Deleting a hostname sets null in the NIC, so the NIC still has to be deleted.
+	hosts, err := listPhysicalHosts(c, tx, &crimson.ListPhysicalHostsRequest{
+		Machines: []string{machine},
+	})
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch associated physical host").Err()
+	}
+	if len(hosts) > 0 {
+		return status.Errorf(codes.FailedPrecondition, "delete entities referencing this NIC first")
+	}
+
+	// Delete the NIC's hostname, if it has one.
+	hostnameId, err := getHostnameForNIC(c, tx, name, machine)
+	if err != nil {
+		return err
+	}
+	if hostnameId != nil {
+		_, err = tx.ExecContext(c, `DELETE FROM hostnames WHERE id = ?`, *hostnameId)
+		if err != nil {
+			return errors.Annotate(err, "failed to delete associated hostname").Err()
+		}
+	}
 
 	res, err := tx.ExecContext(c, `
 		DELETE FROM nics WHERE name = ? AND machine_id = (SELECT id FROM machines WHERE name = ?)
@@ -271,6 +329,19 @@ func validateNICForCreation(n *crimson.NIC) error {
 	case n.Switchport < 1:
 		return status.Error(codes.InvalidArgument, "switchport must be positive")
 	default:
+		// If hostname or IPv4 address is specified, require both.
+		if n.Hostname != "" || n.Ipv4 != "" {
+			if n.Hostname == "" {
+				return status.Errorf(codes.InvalidArgument, "if IPv4 is specified then hostname is required and must be non-empty")
+			}
+			if n.Ipv4 == "" {
+				return status.Errorf(codes.InvalidArgument, "if hostname is specified then IPv4 address is required and must be non-empty")
+			}
+			_, err := common.ParseIPv4(n.Ipv4)
+			if err != nil {
+				return status.Errorf(codes.InvalidArgument, "invalid IPv4 address %q", n.Ipv4)
+			}
+		}
 		_, err := common.ParseMAC48(n.MacAddress)
 		if err != nil {
 			return status.Errorf(codes.InvalidArgument, "invalid MAC-48 address %q", n.MacAddress)
@@ -292,6 +363,7 @@ func validateNICForUpdate(n *crimson.NIC, mask *field_mask.FieldMask) error {
 		return err
 	}
 	for _, path := range mask.Paths {
+		// TODO(smut): Allow hostname, IPv4 address to be updated.
 		switch path {
 		case "name":
 			return status.Error(codes.InvalidArgument, "NIC name cannot be updated, delete and create a new NIC instead")
