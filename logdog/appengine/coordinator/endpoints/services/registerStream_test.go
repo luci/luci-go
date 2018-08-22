@@ -17,12 +17,14 @@ package services
 import (
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	ds "go.chromium.org/gae/service/datastore"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -48,6 +50,11 @@ func TestRegisterStream(t *testing.T) {
 		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
 			cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
 			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+		})
+
+		// Make it so that any 2s sleep timers progress.
+		env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
+			env.Clock.Add(3 * time.Second)
 		})
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
 			pcfg.MaxStreamAge = google.NewDuration(time.Hour)

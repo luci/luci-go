@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -200,6 +201,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 				ch <- func() error {
 					switch err := processRoot(c, cfg, root, bs, &numProcessed); err {
 					case nil:
+						fmt.Fprintf(os.Stderr, "no errors\n")
 						return nil
 
 					case ds.ErrConcurrentTransaction:
@@ -211,6 +213,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 						return nil
 
 					default:
+						fmt.Fprintf(os.Stderr, "failed to process root\n")
 						logging.Fields{
 							logging.ErrorKey: err,
 							"root":           root,
@@ -241,6 +244,8 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		})
 
 		logging.Infof(c, "cumulatively processed %d items with %d errors(s) and %d transient error(s)",
+			numProcessed, errCount, transientErrCount)
+		fmt.Fprintf(os.Stderr, "cumulatively processed %d items with %d errors(s) and %d transient error(s)",
 			numProcessed, errCount, transientErrCount)
 		switch {
 		case transientErrCount > 0:
@@ -273,6 +278,7 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 		// Either we are looping, we did work last round, or both. Sleep in between
 		// processing rounds for a duration based on whether or not we did work.
 		delay := prd.next(didWork)
+		fmt.Fprintf(os.Stderr, "Delay: %s\n", delay)
 		if delay > 0 {
 			// If we have an end time, and this delay would exceed that end time, then
 			// don't bother sleeping; we're done.
@@ -285,8 +291,10 @@ func (t *processTask) process(c context.Context, cfg *Config, q *ds.Query) error
 			logging.Debugf(c, "Sleeping %s in between rounds...", delay)
 			if err := clock.Sleep(c, delay).Err; err != nil {
 				logging.WithError(err).Warningf(c, "Sleep interrupted, terminating loop.")
+				fmt.Fprintf(os.Stderr, "done sleeping\n")
 				return nil
 			}
+			fmt.Fprintf(os.Stderr, "done sleeping\n")
 		}
 	}
 }
@@ -427,15 +435,16 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 
 			// Finished processing this Mutation.
 			key := iterMutKeys[i]
-			if key.HasAncestor(root) {
+			switch {
+			case key.HasAncestor(root):
 				// try to delete it as part of the same transaction.
 				if err := ds.Delete(c, key); err == nil {
+					fmt.Fprintf(os.Stderr, "deleted\n")
 					deletedMuts++
-				} else {
-					cnt.add(len(toDel))
-					toDel = append(toDel, key)
+					break
 				}
-			} else {
+				fallthrough // Failed to delete, try again outside of the transaction.
+			default:
 				toDel = append(toDel, key)
 			}
 
@@ -455,13 +464,16 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	fireTasks(c, cfg, allShards, true)
 	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
 		processedMuts, deletedMuts, (numMuts - deletedMuts))
+	fmt.Fprintf(os.Stderr, "\n%d - %d\n", processedMuts, deletedMuts)
 
+	cnt.add(processedMuts)
 	if len(toDel) > 0 {
-		cnt.add(len(toDel))
 		for _, k := range toDel {
+			fmt.Fprintf(os.Stderr, "delete %s\n", k)
 			banSet.Add(k.Encode())
 		}
 		if err := ds.Delete(c, toDel); err != nil {
+			fmt.Fprintf(os.Stderr, "can't delete\n")
 			l.Warningf("error deleting finished mutations: %s", err)
 		}
 	}
