@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4c47b9a_88a522aa",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-22T20:15:50Z",
+      "side": 1,
+      "message": "maybe add\n// TODO(tandrii): make a public doc",
+      "range": {
+        "startLine": 74,
+        "startChar": 16,
+        "endLine": 74,
+        "endChar": 31
+      },
+      "revId": "86a6e9022f9dffdc981f02bb35aff0d499748d1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
