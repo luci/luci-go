@@ -7,6 +7,7 @@ syntax = "proto3";
 package crimson;
 
 import "go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto";
+import "go.chromium.org/luci/machine-db/api/common/v1/states.proto";
 
 // A request to find available VM slots in the database.
 message FindVMSlotsRequest {
@@ -17,6 +18,8 @@ message FindVMSlotsRequest {
   repeated string manufacturers = 2;
   // The virtual datacenter to filter found VM slots on.
   repeated string virtual_datacenters = 3;
+  // The states to filter found VM slots on.
+  repeated common.State states = 6;
 }
 
 // A response containing a list of available VM slots in the database.
