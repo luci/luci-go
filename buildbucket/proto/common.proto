@@ -68,6 +68,11 @@ message GitilesCommit {
   // Commit ref, e.g. "refs/heads/master".
   // NOT a branch name: if specified, must start with "refs/".
   string ref = 4;
+
+  // Defines a total order of commits on the ref. Requires ref field.
+  // Typically 1-based, monotonically increasing, contiguous integer
+  // defined by go/git-numberer, a Gerrit plugin.
+  uint32 position = 5;
 }
 
 // A key-value pair of strings.
