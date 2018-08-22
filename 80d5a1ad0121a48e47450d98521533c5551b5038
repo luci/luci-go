@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12f8edc0_042c6f4a",
+        "filename": "machine-db/appengine/frontend/templates/includes/base.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-22T00:56:51Z",
+      "side": 1,
+      "message": "I think we can do without the pipe now, it looks odd to me now that LOGOUT is clearly distinguishable.",
+      "revId": "80d5a1ad0121a48e47450d98521533c5551b5038",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
