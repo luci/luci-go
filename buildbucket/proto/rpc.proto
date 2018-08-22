@@ -56,10 +56,6 @@ service Builds {
   // not exist.
   rpc SearchBuilds(SearchBuildsRequest) returns (SearchBuildsResponse) {};
 
-  // Executes multiple requests in a batch.
-  // The response code is always OK.
-  rpc Batch(BatchRequest) returns (BatchResponse) {};
-
   // Updates a build.
   // Returns updated build. Response includes only the fields
   // included by default in GetBuild and updated fields.
@@ -75,6 +71,10 @@ service Builds {
   // Cancels a build.
   // The requester must have at least SCHEDULER role in the destination bucket.
   rpc CancelBuild(CancelBuildRequest) returns (Build) {};
+
+  // Executes multiple requests in a batch.
+  // The response code is always OK.
+  rpc Batch(BatchRequest) returns (BatchResponse) {};
 }
 
 // A request message for GetBuild rpc.
