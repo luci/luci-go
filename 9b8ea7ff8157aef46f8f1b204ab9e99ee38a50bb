@@ -22,6 +22,30 @@
       "revId": "9b8ea7ff8157aef46f8f1b204ab9e99ee38a50bb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "531afdba_aeb49e8a",
+        "filename": "tumble/process.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-08-22T09:21:39Z",
+      "side": 1,
+      "message": "That seems more intuitive to me.  Done",
+      "parentUuid": "48a00a61_aaaf181a",
+      "range": {
+        "startLine": 459,
+        "startChar": 1,
+        "endLine": 459,
+        "endChar": 21
+      },
+      "revId": "9b8ea7ff8157aef46f8f1b204ab9e99ee38a50bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
