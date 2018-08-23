@@ -22,6 +22,30 @@
       "revId": "534b2420e2debf11bfddd7b6b56cd81032a3f961",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbc0808b_f8a886b0",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-23T17:35:53Z",
+      "side": 1,
+      "message": "i think this Required is confusing. It is meant to be required unless template_build_id is specified. Its doc says that it defines a default for all fields below. I\u0027ve rephrased this.",
+      "parentUuid": "0a48976f_38d82d7d",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 14
+      },
+      "revId": "534b2420e2debf11bfddd7b6b56cd81032a3f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
