@@ -142,6 +142,9 @@ func PutNamedMutations(c context.Context, parent *ds.Key, muts map[string]Mutati
 	}
 
 	err := ds.Put(c, toPut)
+	if err == nil {
+		metricCreated.Add(c, int64(len(toPut)), parent.Namespace())
+	}
 	fireTasks(c, getConfig(c), shardSet, true)
 	return err
 }
@@ -154,5 +157,11 @@ func CancelNamedMutations(c context.Context, parent *ds.Key, names ...string) er
 		toDel = append(toDel, ds.NewKey(c, "tumble.Mutation", "n:"+name, 0, parent))
 		return true
 	})
-	return errors.Filter(ds.Delete(c, toDel), ds.ErrNoSuchEntity)
+	err := ds.Delete(c, toDel)
+	numFailed := int64(0)
+	if me, ok := err.(errors.MultiError); ok {
+		numFailed = int64(len(me))
+	}
+	metricDeleted.Add(c, int64(len(toDel))-numFailed, parent.Namespace())
+	return errors.Filter(err, ds.ErrNoSuchEntity)
 }

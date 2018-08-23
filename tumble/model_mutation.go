@@ -31,11 +31,20 @@ import (
 	"go.chromium.org/luci/appengine/meta"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"golang.org/x/net/context"
 )
 
 var registry = map[string]reflect.Type{}
+
+var metricCreated = metric.NewCounter(
+	"luci/tumble/mutations/created",
+	"The number of mutations created in tumble",
+	nil,
+	field.String("namespace"),
+)
 
 // Register allows |mut| to be played by the tumble backend. This should be
 // called at init() time once for every Mutation implementation.
@@ -172,6 +181,8 @@ func putMutations(c context.Context, cfg *Config, fromRoot *ds.Key, muts []Mutat
 
 	if err = ds.Put(c, toPut); err != nil {
 		logging.Errorf(c, "error putting %d new mutations: %s", len(toPut), err)
+	} else {
+		metricCreated.Add(c, int64(len(toPut)), fromRoot.Namespace())
 	}
 	return
 }
