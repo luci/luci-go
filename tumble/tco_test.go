@@ -90,12 +90,11 @@ func TestTailCallOptimization(t *testing.T) {
 		testing := &Testing{}
 		c := testing.Context()
 
-		// This will start a chain. We should only be able to handle 10 of these in
-		// a single datastore transaction.
+		// This will start a chain.
 		So(RunMutation(c, &SlowMutation{40}), ShouldBeNil)
 
-		// 4 processed shards shows that we did 4 transactions (of 10 each).
-		So(testing.Drain(c), ShouldEqual, 4)
+		// 2 processed shards shows that we did 1 transaction and 1 empty tail call.
+		So(testing.Drain(c), ShouldEqual, 2)
 
 		bog := &BigObjectGroup{}
 		So(ds.Get(c, bog), ShouldBeNil)

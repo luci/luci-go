@@ -416,6 +416,8 @@ func testHighLevelImpl(t *testing.T, namespaces []string) {
 				// appropriately, +1 for the outgoing tail call, which will be processed
 				// immediately since delayed mutations are not enabled.
 				So(l, shouldHaveLogMessage, "successfully processed 101 mutations (1 tail-call), delta 0")
+				// And the counter passed in to keep track of things should also match.
+				So(l, shouldHaveLogMessage, "cumulatively processed 101 items with 0 errors(s) and 0 transient error(s)")
 
 				forEachNS(ctx, func(ctx context.Context, i int) {
 					So(ds.Get(ctx, outMsgs[i]), ShouldBeNil)
