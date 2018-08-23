@@ -200,17 +200,13 @@ message ScheduleBuildRequest {
   // minute, the existing build will be returned.
   string request_id = 1;
 
-  // Value for Build.builder. See its comments.
-  //
-  // Mutually exclusive with template_build_id.
-  BuilderID builder = 2;
-
   // ID of a build to retry as is or altered.
-  // When specified, other fields in this message default to the values in the
-  // template build.
-  //
-  // Mutually exclusive with builder.
-  int64 template_build_id = 3;
+  // When specified, fields below default to the values in the template build.
+  int64 template_build_id = 2;
+
+  // Value for Build.builder. See its comments.
+  // Required, unless template_build_id is specified.
+  BuilderID builder = 3;
 
   // If specified, overrides server-defined value of
   // Build.infra.buildbucket.canary.
