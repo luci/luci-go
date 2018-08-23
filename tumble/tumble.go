@@ -142,6 +142,9 @@ func PutNamedMutations(c context.Context, parent *ds.Key, muts map[string]Mutati
 	}
 
 	err := ds.Put(c, toPut)
+	if err == nil {
+		metricCreated.Add(c, int64(len(toPut)), parent.Namespace())
+	}
 	fireTasks(c, getConfig(c), shardSet, true)
 	return err
 }
