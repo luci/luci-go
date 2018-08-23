@@ -21,6 +21,8 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/gae/filter/txnBuf"
 	ds "go.chromium.org/gae/service/datastore"
@@ -142,6 +144,9 @@ func PutNamedMutations(c context.Context, parent *ds.Key, muts map[string]Mutati
 	}
 
 	err := ds.Put(c, toPut)
+	if err == nil {
+		metricCreated.Add(c, int64(len(toPut)), parent.Namespace())
+	}
 	fireTasks(c, getConfig(c), shardSet, true)
 	return err
 }
