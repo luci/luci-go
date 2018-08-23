@@ -28,6 +28,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/common/tsmon/field"
+	"go.chromium.org/luci/common/tsmon/metric"
 
 	"go.chromium.org/gae/filter/txnBuf"
 	ds "go.chromium.org/gae/service/datastore"
@@ -42,6 +44,27 @@ const (
 	// minNoWorkDelay is the minimum amount of time to sleep in between rounds if
 	// there was no work done in that round.
 	minNoWorkDelay = time.Second
+)
+
+var metricCompleted = metric.NewCounter(
+	"luci/tumble/mutations/completed",
+	"The number of mutations completed by tumble, but not necessarily deleted.",
+	nil,
+	field.String("namespace"),
+)
+
+var metricFailed = metric.NewCounter(
+	"luci/tumble/mutations/failed",
+	"The number of mutations attempted in tumble, but failed to complete.",
+	nil,
+	field.String("namespace"),
+)
+
+var metricDeleted = metric.NewCounter(
+	"luci/tumble/mutations/deleted",
+	"The number of mutations deleted by tumble.",
+	nil,
+	field.String("namespace"),
 )
 
 // expandedShardBounds returns the boundary of the expandedShard order that
@@ -449,12 +472,16 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 	}, nil)
 	if err != nil {
 		l.Errorf("failed running transaction: %s", err)
+		metricFailed.Add(c, int64(numMuts), root.Namespace())
 		return err
 	}
 
 	fireTasks(c, cfg, allShards, true)
 	l.Debugf("successfully processed %d mutations (%d tail-call), delta %d",
 		processedMuts, deletedMuts, (numMuts - deletedMuts))
+	metricCompleted.Add(c, int64(processedMuts), root.Namespace())
+	// This is for the mutations deleted in a transaction.
+	metricDeleted.Add(c, int64(deletedMuts), root.Namespace())
 
 	if len(toDel) > 0 {
 		cnt.add(len(toDel))
@@ -462,7 +489,14 @@ func processRoot(c context.Context, cfg *Config, root *ds.Key, banSet stringset.
 			banSet.Add(k.Encode())
 		}
 		if err := ds.Delete(c, toDel); err != nil {
+			// This is categorized as failed because it's going to get retried again.
+			metricFailed.Add(c, int64(len(toDel)), root.Namespace())
 			l.Warningf("error deleting finished mutations: %s", err)
+		} else {
+			// This is for mutations deleted outside of the transaction,
+			// because they failed to delete the first time we tried to do it
+			// inside the transaction.
+			metricDeleted.Add(c, int64(len(toDel)), root.Namespace())
 		}
 	}
 
