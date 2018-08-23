@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a48976f_38d82d7d",
+        "filename": "buildbucket/proto/rpc.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-23T17:24:26Z",
+      "side": 1,
+      "message": "I see why it\u0027s not mutually exclusive -- s.t. client can overwrite some fields of original build.\nBut why \"required\"?",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 14
+      },
+      "revId": "534b2420e2debf11bfddd7b6b56cd81032a3f961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
