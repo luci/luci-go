@@ -160,6 +160,10 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 
 // listPhysicalHosts returns a slice of physical hosts in the database.
 func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimson.ListPhysicalHostsRequest) ([]*crimson.PhysicalHost, error) {
+	mac48s, err := parseMAC48s(req.MacAddresses)
+	if err != nil {
+		return nil, err
+	}
 	ipv4s, err := parseIPv4s(req.Ipv4S)
 	if err != nil {
 		return nil, err
@@ -170,6 +174,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 		"hp.vlan_id",
 		"m.name",
 		"n.name",
+		"n.mac_address",
 		"o.name",
 		"h.vm_slots",
 		"h.virtual_datacenter",
@@ -197,6 +202,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	stmt = selectInInt64(stmt, "hp.vlan_id", req.Vlans)
 	stmt = selectInString(stmt, "m.name", req.Machines)
 	stmt = selectInString(stmt, "n.name", req.Nics)
+	stmt = selectInUint64(stmt, "n.mac_address", mac48s)
 	stmt = selectInString(stmt, "o.name", req.Oses)
 	stmt = selectInString(stmt, "h.virtual_datacenter", req.VirtualDatacenters)
 	stmt = selectInInt64(stmt, "i.ipv4", ipv4s)
@@ -217,12 +223,14 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 	var hosts []*crimson.PhysicalHost
 	for rows.Next() {
 		h := &crimson.PhysicalHost{}
+		var mac48 common.MAC48
 		var ipv4 common.IPv4
 		if err = rows.Scan(
 			&h.Name,
 			&h.Vlan,
 			&h.Machine,
 			&h.Nic,
+			&mac48,
 			&h.Os,
 			&h.VmSlots,
 			&h.VirtualDatacenter,
@@ -233,6 +241,7 @@ func listPhysicalHosts(c context.Context, q database.QueryerContext, req *crimso
 		); err != nil {
 			return nil, errors.Annotate(err, "failed to fetch physical host").Err()
 		}
+		h.MacAddress = mac48.String()
 		h.Ipv4 = ipv4.String()
 		hosts = append(hosts, h)
 	}
@@ -349,6 +358,8 @@ func validatePhysicalHostForCreation(h *crimson.PhysicalHost) error {
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	case h.Nic == "":
 		return status.Error(codes.InvalidArgument, "NIC is required and must be non-empty")
+	case h.MacAddress != "":
+		return status.Error(codes.InvalidArgument, "MAC address must not be specified, use NIC instead")
 	case h.Os == "":
 		return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")
 	case h.VmSlots < 0:
@@ -385,6 +396,8 @@ func validatePhysicalHostForUpdate(h *crimson.PhysicalHost, mask *field_mask.Fie
 			}
 		case "nic":
 			return status.Error(codes.InvalidArgument, "NIC cannot be updated, delete and create a new physical host instead")
+		case "mac_address":
+			return status.Error(codes.InvalidArgument, "MAC address cannot be updated, update NIC instead")
 		case "os":
 			if h.Os == "" {
 				return status.Error(codes.InvalidArgument, "operating system is required and must be non-empty")

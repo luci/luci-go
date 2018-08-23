@@ -30,10 +30,10 @@ func printPhysicalHosts(tsv bool, hosts ...*crimson.PhysicalHost) {
 		p := newStdoutPrinter(tsv)
 		defer p.Flush()
 		if !tsv {
-			p.Row("Name", "VLAN", "IP Address", "Machine", "NIC", "OS", "Max VM Slots", "Virtual Datacenter", "Description", "Deployment Ticket", "State")
+			p.Row("Name", "VLAN", "IP Address", "Machine", "NIC", "MAC Address", "OS", "Max VM Slots", "Virtual Datacenter", "Description", "Deployment Ticket", "State")
 		}
 		for _, h := range hosts {
-			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Nic, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket, h.State)
+			p.Row(h.Name, h.Vlan, h.Ipv4, h.Machine, h.Nic, h.MacAddress, h.Os, h.VmSlots, h.VirtualDatacenter, h.Description, h.DeploymentTicket, h.State)
 		}
 	}
 }
@@ -161,7 +161,7 @@ func (c *GetPhysicalHostsCmd) Run(app subcommands.Application, args []string, en
 // getPhysicalHostsCmd returns a command to get physical hosts.
 func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
-		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-nic <nic>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
+		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-nic <nic>]... [-mac <mac address>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
 		ShortDesc: "retrieves physical hosts",
 		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
 		CommandRun: func() subcommands.CommandRun {
@@ -171,6 +171,7 @@ func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 			cmd.Flags.Var(flag.Int64Slice(&cmd.req.Vlans), "vlan", "ID of a VLAN to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Machines), "machine", "Name of a machine to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Nics), "nic", "Name of a NIC to filter by. Can be specified multiple times.")
+			cmd.Flags.Var(flag.StringSlice(&cmd.req.MacAddresses), "mac", "MAC address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Oses), "os", "Name of an operating system to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(flag.StringSlice(&cmd.req.Ipv4S), "ip", "IPv4 address to filter by. Can be specified multiple times.")
 			cmd.Flags.Var(StateSliceFlag(&cmd.req.States), "state", "State to filter by. Can be specified multiple times.")
