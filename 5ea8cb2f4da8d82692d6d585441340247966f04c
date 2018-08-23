@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "48dc2c53_adf406b7",
+        "filename": "tumble/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 492,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-23T02:51:37Z",
+      "side": 1,
+      "message": "e",
+      "range": {
+        "startLine": 492,
+        "startChar": 17,
+        "endLine": 492,
+        "endChar": 18
+      },
+      "revId": "5ea8cb2f4da8d82692d6d585441340247966f04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17ac1237_2fe9a5e7",
+        "filename": "tumble/process.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 497,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-23T02:51:37Z",
+      "side": 1,
+      "message": "nit here and in L492: wrap comments at 80 chars for consistency.",
+      "range": {
+        "startLine": 497,
+        "startChar": 68,
+        "endLine": 497,
+        "endChar": 92
+      },
+      "revId": "5ea8cb2f4da8d82692d6d585441340247966f04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2312d314_68d28788",
+        "filename": "tumble/tumble.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-23T02:51:37Z",
+      "side": 1,
+      "message": "does logdog use this? If not, perhaps add // TODO to monitor counts of cancelled ones?",
+      "range": {
+        "startLine": 153,
+        "startChar": 5,
+        "endLine": 153,
+        "endChar": 25
+      },
+      "revId": "5ea8cb2f4da8d82692d6d585441340247966f04c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
