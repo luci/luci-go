@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5318ebde_10bce83b",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-08-24T19:32:27Z",
+      "side": 1,
+      "message": "Copypasta?",
+      "range": {
+        "startLine": 59,
+        "startChar": 0,
+        "endLine": 60,
+        "endChar": 74
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68f9f71f_9b80f271",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-08-24T19:32:27Z",
+      "side": 1,
+      "message": "I don\u0027t think this is needed.",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 79,
+        "endChar": 4
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
