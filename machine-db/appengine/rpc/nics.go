@@ -73,11 +73,15 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 		return err
 	}
 	mac, _ := common.ParseMAC48(n.MacAddress)
-	db := database.Get(c)
+	tx, err := database.Begin(c)
+	if err != nil {
+		return errors.Annotate(err, "failed to begin transaction").Err()
+	}
+	defer tx.MaybeRollback(c)
 
 	// By setting nics.machine_id NOT NULL when setting up the database, we can avoid checking if the given machine is
 	// valid. MySQL will turn up NULL for its column values which will be rejected as an error.
-	_, err := db.ExecContext(c, `
+	_, err = tx.ExecContext(c, `
 		INSERT INTO nics (name, machine_id, mac_address, switch_id, switchport)
 		VALUES (?, (SELECT id FROM machines WHERE name = ?), ?, (SELECT id FROM switches WHERE name = ?), ?)
 	`, n.Name, n.Machine, mac, n.Switch, n.Switchport)
@@ -100,6 +104,10 @@ func createNIC(c context.Context, n *crimson.NIC) error {
 		}
 		return errors.Annotate(err, "failed to create NIC").Err()
 	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Annotate(err, "failed to commit transaction").Err()
+	}
 	return nil
 }
 
@@ -111,9 +119,13 @@ func deleteNIC(c context.Context, name, machine string) error {
 	case machine == "":
 		return status.Error(codes.InvalidArgument, "machine is required and must be non-empty")
 	}
+	tx, err := database.Begin(c)
+	if err != nil {
+		return errors.Annotate(err, "failed to begin transaction").Err()
+	}
+	defer tx.MaybeRollback(c)
 
-	db := database.Get(c)
-	res, err := db.ExecContext(c, `
+	res, err := tx.ExecContext(c, `
 		DELETE FROM nics WHERE name = ? AND machine_id = (SELECT id FROM machines WHERE name = ?)
 	`, name, machine)
 	if err != nil {
@@ -124,6 +136,10 @@ func deleteNIC(c context.Context, name, machine string) error {
 		return errors.Annotate(err, "failed to fetch affected rows").Err()
 	case rows == 0:
 		return status.Errorf(codes.NotFound, "NIC %q does not exist on machine %q", name, machine)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return errors.Annotate(err, "failed to commit transaction").Err()
 	}
 	return nil
 }

@@ -44,6 +44,19 @@ func TestCreateNIC(t *testing.T) {
 			VALUES \(\?, \(SELECT id FROM machines WHERE name = \?\), \?, \(SELECT id FROM switches WHERE name = \?\), \?\)$
 		`
 
+		Convey("begin failed", func() {
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(createNIC(c, nic), ShouldErrLike, "failed to begin transaction")
+		})
+
 		Convey("query failed", func() {
 			nic := &crimson.NIC{
 				Name:       "eth0",
@@ -52,7 +65,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
 
@@ -64,7 +79,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'name'"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "duplicate NIC")
 		})
 
@@ -76,7 +93,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'machine_id' is null"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
 
@@ -88,7 +107,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_DUP_ENTRY, Message: "'mac_address'"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "duplicate MAC address")
 		})
 
@@ -100,7 +121,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'switch_id' is null"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "does not exist")
 		})
 
@@ -112,7 +135,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "error"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
 		})
 
@@ -124,8 +149,25 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_NO, Message: "name machine_id switch_id"})
+			m.ExpectRollback()
 			So(createNIC(c, nic), ShouldErrLike, "failed to create NIC")
+		})
+
+		Convey("commit failed", func() {
+			nic := &crimson.NIC{
+				Name:       "eth0",
+				Machine:    "machine",
+				MacAddress: "ff:ff:ff:ff:ff:ff",
+				Switch:     "switch",
+				Switchport: 1,
+			}
+			m.ExpectBegin()
+			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(createNIC(c, nic), ShouldErrLike, "failed to commit transaction")
 		})
 
 		Convey("ok", func() {
@@ -136,7 +178,9 @@ func TestCreateNIC(t *testing.T) {
 				Switch:     "switch",
 				Switchport: 1,
 			}
+			m.ExpectBegin()
 			m.ExpectExec(insertStmt).WithArgs(nic.Name, nic.Machine, common.MaxMAC48, nic.Switch, nic.Switchport).WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit()
 			So(createNIC(c, nic), ShouldBeNil)
 		})
 	})
@@ -151,18 +195,37 @@ func TestDeleteNIC(t *testing.T) {
 			^DELETE FROM nics WHERE name = \? AND machine_id = \(SELECT id FROM machines WHERE name = \?\)$
 		`
 
+		Convey("begin failed", func() {
+			m.ExpectBegin().WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to begin transaction")
+		})
+
 		Convey("query failed", func() {
+			m.ExpectBegin()
 			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to delete NIC")
 		})
 
 		Convey("invalid", func() {
+			m.ExpectBegin()
 			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 0))
+			m.ExpectRollback()
 			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "does not exist")
 		})
 
-		Convey("ok", func() {
+		Convey("commit failed", func() {
+			m.ExpectBegin()
 			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit().WillReturnError(fmt.Errorf("error"))
+			m.ExpectRollback()
+			So(deleteNIC(c, "eth0", "machine"), ShouldErrLike, "failed to commit transaction")
+		})
+		Convey("ok", func() {
+			m.ExpectBegin()
+			m.ExpectExec(deleteStmt).WithArgs("eth0", "machine").WillReturnResult(sqlmock.NewResult(1, 1))
+			m.ExpectCommit()
 			So(deleteNIC(c, "eth0", "machine"), ShouldBeNil)
 		})
 	})
