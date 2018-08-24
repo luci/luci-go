@@ -2,6 +2,98 @@
   "comments": [
     {
       "key": {
+        "uuid": "15feff4e_c6565bee",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "i think this docstring needs a link to the Firebase auth protocol documentation. Without it, it is hard to validate correctness.",
+      "range": {
+        "startLine": 15,
+        "startChar": 39,
+        "endLine": 15,
+        "endChar": 43
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8128e4af_48333b41",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "this part makes me nervous. Please document what parts are hacky.",
+      "range": {
+        "startLine": 15,
+        "startChar": 33,
+        "endLine": 15,
+        "endChar": 38
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bab2262_55573f52",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "i don\u0027t see anything in this implementation specific to LUCI local auth. It exposes generic oauth2.TokenSource via firebase protocol IIUC.",
+      "range": {
+        "startLine": 16,
+        "startChar": 3,
+        "endLine": 16,
+        "endChar": 13
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db11d718_26c0d33a",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "this return value is not documented\n\nwhy a caller needs it?",
+      "range": {
+        "startLine": 58,
+        "startChar": 45,
+        "endLine": 58,
+        "endChar": 51
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5318ebde_10bce83b",
         "filename": "auth/integration/firebase/firebase.go",
         "patchSetId": 2
@@ -25,6 +117,29 @@
     },
     {
       "key": {
+        "uuid": "c707b3e0_2b828b09",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "this is const false because of L71, so entire defer is noop",
+      "range": {
+        "startLine": 76,
+        "startChar": 5,
+        "endLine": 76,
+        "endChar": 15
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "68f9f71f_9b80f271",
         "filename": "auth/integration/firebase/firebase.go",
         "patchSetId": 2
@@ -41,6 +156,29 @@
         "startChar": 0,
         "endLine": 79,
         "endChar": 4
+      },
+      "revId": "4c7aeaf80e02c69194c327413423531368785a85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9374c1f2_1b0f1e1f",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-24T19:38:17Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 101,
+        "startChar": 63,
+        "endLine": 101,
+        "endChar": 64
       },
       "revId": "4c7aeaf80e02c69194c327413423531368785a85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
