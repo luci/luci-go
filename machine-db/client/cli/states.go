@@ -55,7 +55,7 @@ func getStatesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-states [-prefix <prefix>]",
 		ShortDesc: "retrieves states",
-		LongDesc:  "Retrieves the state matching the given prefix, or all states if prefix is omitted.",
+		LongDesc:  "Retrieves the state matching the given prefix, or all states if prefix is omitted.\n\nExample:\ncrimson get-states",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetStatesCmd{}
 			cmd.Initialize(params)
