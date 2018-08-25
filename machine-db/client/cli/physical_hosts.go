@@ -66,7 +66,7 @@ func addPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-host -name <name> -machine <machine> -nic <nic> -os <os> -ip <ip address> [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a physical host",
-		LongDesc:  "Adds a physical host to the database.",
+		LongDesc:  "Adds a physical host to the database.\n\nExample:\ncrimson add-host -name server01-y1 -machine xx1-07-720 -nic eth0 -os Mac -ip 99.99.99.99",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddPhysicalHostCmd{}
 			cmd.Initialize(params)
@@ -122,7 +122,7 @@ func editPhysicalHostCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-host -name <name> [-machine <machine>] [-os <os>] [-state <state>] [-slots <vm slots>] [-vdc <virtual datacenter>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a physical host",
-		LongDesc:  "Edits a physical host in the database.",
+		LongDesc:  "Edits a physical host in the database.\n\nExample edit the state of a host:\ncrimson edit-host -name server01-y0 -state test -desc 'testing for labs'",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditPhysicalHostCmd{}
 			cmd.Initialize(params)
@@ -163,7 +163,7 @@ func getPhysicalHostsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-hosts [-name <name>]... [-vlan <id>]... [-machine <machine>]... [-nic <nic>]... [-mac <mac address>]... [-os <os>]... [-ip <ip address>]... [-state <state>]... [-vdc <virtual datacenter>]...",
 		ShortDesc: "retrieves physical hosts",
-		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.",
+		LongDesc:  "Retrieves physical hosts matching the given names and VLANs, or all physical hosts if names and VLANs are omitted.\n\nExample to get all hosts:\ncrimson get-hosts\nExample to get hosts in repair state in rack xx1:\ncrimson get-hosts -rack xx1 -state repair",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPhysicalHostsCmd{}
 			cmd.Initialize(params)

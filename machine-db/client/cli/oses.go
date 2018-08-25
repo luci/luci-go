@@ -62,7 +62,7 @@ func getOSesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-oses [-name <name>]...",
 		ShortDesc: "retrieves operating systems",
-		LongDesc:  "Retrieves operating systems matching the given names, or all operating systems if names are omitted.",
+		LongDesc:  "Retrieves operating systems matching the given names, or all operating systems if names are omitted.\n\nExample to get all OSes:\ncrimson get-oses\nExample to get Mac 10.13.3:\ncrimson get-oses -name 'Mac 10.13.3 (Darwin 17.4.0)'",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetOSesCmd{}
 			cmd.Initialize(params)

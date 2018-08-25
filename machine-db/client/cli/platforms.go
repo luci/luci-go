@@ -62,7 +62,7 @@ func getPlatformsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-platforms [-name <name>]... [-man <manufacturer>]...",
 		ShortDesc: "retrieves platforms",
-		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names and manufacturers are omitted.",
+		LongDesc:  "Retrieves platforms matching the given names, or all platforms if names and manufacturers are omitted.\n\nExample to get all platforms:\ncrimson get-platforms\nExample to get all Apple platforms:\ncrimson get-platforms -man apple",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetPlatformsCmd{}
 			cmd.Initialize(params)

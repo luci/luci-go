@@ -62,7 +62,7 @@ func getKVMsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-kvms [-name <name>]... [-vlan <id>]... [-plat <platform>]... [-rack <rack>]... [-dc <datacenter>]... [-mac <mac address>]... [-ip <ip address>]... [-state <state>]...",
 		ShortDesc: "retrieves KVMs",
-		LongDesc:  "Retrieves KVMs matching the given filters, or all KVMs if filters are omitted.",
+		LongDesc:  "Retrieves KVMs matching the given filters, or all KVMs if filters are omitted.\n\nExample to get all KVMs:\ncrimson get-kvms\nExample to get KVMs in rack xx1:\ncrimson get-kvms -rack xx1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetKVMsCmd{}
 			cmd.Initialize(params)

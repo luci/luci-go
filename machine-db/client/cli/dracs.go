@@ -66,7 +66,7 @@ func addDRACCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-drac -name <name> -machine <machine> -mac <mac address> -switch <switch> -port <port> -ip <ip address>",
 		ShortDesc: "adds a DRAC",
-		LongDesc:  "Adds a DRAC to the database.",
+		LongDesc:  "Adds a DRAC to the database.\n\nExample:\ncrimson add-drac -name server01-yy-drac -machine xx1-07-720 -mac 00:00:b3:c0:00:11 -switch switch.lab0 -port 99 -ip 999.999.999.999",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddDRACCmd{}
 			cmd.Initialize(params)
@@ -115,7 +115,7 @@ func editDRACCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-drac -name <name> [-machine <machine>] [-mac <mac address>] [-switch <switch>] [-port <switch port>]",
 		ShortDesc: "edit a DRAC",
-		LongDesc:  "Edits a DRAC in the database.",
+		LongDesc:  "Edits a DRAC in the database.\n\nExample to edit MAC address of a DRAC:\ncrimson edit-drac -name server01-y1-drac -mac 00:00:b3:c0:00:11",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditDRACCmd{}
 			cmd.Initialize(params)
@@ -153,7 +153,7 @@ func getDRACsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-dracs [-name <name>]... [-machine <machine>]... [-mac <mac address>]... [-switch <switch>]... [-ip <ip address>]... [-vlan <id>]...",
 		ShortDesc: "retrieves DRACs",
-		LongDesc:  "Retrieves DRACs matching the given names and machines, or all DRACs if names and machines are omitted.",
+		LongDesc:  "Retrieves DRACs matching the given names and machines, or all DRACs if names and machines are omitted.\n\nExample to get all DRACs:\ncrimson get-dracs\nExample to get all DRACs in VLAN 1:\ncrimson get-dracs -vlan 1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDRACsCmd{}
 			cmd.Initialize(params)

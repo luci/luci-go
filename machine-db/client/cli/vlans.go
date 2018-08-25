@@ -62,7 +62,7 @@ func getVLANsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-vlans [-id <id>]... [-alias <alias>]...",
 		ShortDesc: "retrieves VLANs",
-		LongDesc:  "Retrieves VLANs matching the given IDs or aliases, or all VLANs if IDs and aliases are omitted.",
+		LongDesc:  "Retrieves VLANs matching the given IDs or aliases, or all VLANs if IDs and aliases are omitted.\n\nExample to get all VLANs:\ncrimson get-vlans\nExample to get VLAN 1:\ncrimson get-vlans -id 1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVLANsCmd{}
 			cmd.Initialize(params)
