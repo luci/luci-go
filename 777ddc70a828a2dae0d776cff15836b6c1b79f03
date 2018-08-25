@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fe34e836_dc4838f1",
+        "filename": "machine-db/client/cli/datacenters.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "15b71fc2_1ebf9747",
+      "range": {
+        "startLine": 65,
+        "startChar": 171,
+        "endLine": 65,
+        "endChar": 185
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5bdab8a_df7b3873",
         "filename": "machine-db/client/cli/dracs.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18f09677_d41240f6",
+        "filename": "machine-db/client/cli/dracs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5bdab8a_df7b3873",
+      "range": {
+        "startLine": 118,
+        "startChar": 63,
+        "endLine": 118,
+        "endChar": 66
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "32c8ba36_df16d4cb",
+        "filename": "machine-db/client/cli/dracs.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a41f857_df4f0f27",
+      "range": {
+        "startLine": 156,
+        "startChar": 139,
+        "endLine": 156,
+        "endChar": 144
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "601ae333_d3698309",
         "filename": "machine-db/client/cli/oses.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ae6442b_4f0ed275",
+        "filename": "machine-db/client/cli/oses.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "601ae333_d3698309",
+      "range": {
+        "startLine": 65,
+        "startChar": 177,
+        "endLine": 65,
+        "endChar": 195
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +236,30 @@
     },
     {
       "key": {
+        "uuid": "01a1a77d_b98a0c58",
+        "filename": "machine-db/client/cli/vlans.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b64b4a0_9ddab7d6",
+      "range": {
+        "startLine": 65,
+        "startChar": 174,
+        "endLine": 65,
+        "endChar": 187
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9a14f09d_c4bee62e",
         "filename": "machine-db/client/cli/vms.go",
         "patchSetId": 1
@@ -160,6 +280,30 @@
       "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8baed3e2_f15cbc13",
+        "filename": "machine-db/client/cli/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1228479
+      },
+      "writtenOn": "2018-08-25T03:26:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a14f09d_c4bee62e",
+      "range": {
+        "startLine": 159,
+        "startChar": 182,
+        "endLine": 159,
+        "endChar": 183
+      },
+      "revId": "777ddc70a828a2dae0d776cff15836b6c1b79f03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
