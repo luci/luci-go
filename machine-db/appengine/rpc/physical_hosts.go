@@ -91,7 +91,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 		VALUES (
 			?,
 			(SELECT id FROM machines WHERE name = ?),
-			(SELECT n.id FROM machines m, nics n WHERE n.machine_id = m.id AND m.name = ? AND n.name = ?),
+			(SELECT n.id FROM machines m, nics n WHERE n.machine_id = m.id AND m.name = ? AND n.name = ? AND n.hostname_id IS NULL),
 			(SELECT id FROM oses WHERE name = ?),
 			?,
 			?,
@@ -111,7 +111,7 @@ func createPhysicalHost(c context.Context, h *crimson.PhysicalHost) (*crimson.Ph
 			return nil, status.Errorf(codes.NotFound, "machine %q does not exist", h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'nic_id'"):
 			// e.g. "Error 1048: Column 'nic_id' cannot be null".
-			return nil, status.Errorf(codes.NotFound, "NIC %q of machine %q does not exist", h.Nic, h.Machine)
+			return nil, status.Errorf(codes.NotFound, "NIC %q of machine %q does not exist or already has a hostname", h.Nic, h.Machine)
 		case e.Number == mysqlerr.ER_BAD_NULL_ERROR && strings.Contains(e.Message, "'os_id'"):
 			// e.g. "Error 1048: Column 'os_id' cannot be null".
 			return nil, status.Errorf(codes.NotFound, "operating system %q does not exist", h.Os)
