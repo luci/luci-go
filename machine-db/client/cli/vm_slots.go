@@ -62,7 +62,7 @@ func getVMSlotsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-slots -n <slots> [-man <manufacturer>]... [-vdc <virtual datacenter>]... [-state <state>]...",
 		ShortDesc: "retrieves available VM slots",
-		LongDesc:  "Retrieves available VM slots.",
+		LongDesc:  "Retrieves available VM slots.\n\nExample to get 5 free VM slots on Apple hardware:\ncrimson get-slots -n 5 -man apple",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVMSlotsCmd{}
 			cmd.Initialize(params)

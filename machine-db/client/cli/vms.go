@@ -66,7 +66,7 @@ func addVMCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-vm -name <name> -host <name> -os <os> -ip <ip address> -state <state> [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "adds a VM",
-		LongDesc:  "Adds a VM to the database.",
+		LongDesc:  "Adds a VM to the database.\n\nExample:\ncrimson add-vm -name vm100-x1 -host esxhost1 -os Windows -ip 99.99.99.99 -state prerelease -desc 'test VM' -tick crbug/111111",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddVMCmd{}
 			cmd.Initialize(params)
@@ -117,7 +117,7 @@ func editVMCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-vm -name <name> [-host <machine>] [-os <os>] [-state <state>] [-desc <description>] [-tick <deployment ticket>]",
 		ShortDesc: "edits a VM",
-		LongDesc:  "Edits a VM in the database.",
+		LongDesc:  "Edits a VM in the database.\n\nExample to edit the state of a VM to serving:\ncrimson edit -name vm100-x1 -state serving",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditVMCmd{}
 			cmd.Initialize(params)
@@ -156,7 +156,7 @@ func getVMsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-vms [-name <name>]... [-vlan <id>]... [-ip <ip address>]...",
 		ShortDesc: "retrieves VMs",
-		LongDesc:  "Retrieves VMs matching the given names and VLANs, or all VMs if names and VLANs are omitted.",
+		LongDesc:  "Retrieves VMs matching the given names and VLANs, or all VMs if names and VLANs are omitted.\n\nExample to get all VMs:\ncrimson get-vms\nExample to get VMs on ESX host esxhost1:\ncrimson get-vms -host esxhost1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetVMsCmd{}
 			cmd.Initialize(params)

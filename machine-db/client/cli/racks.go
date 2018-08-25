@@ -62,7 +62,7 @@ func getRacksCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-racks [-name <name>]... [-dc <datacenter>]... [-kvm <kvm>]...",
 		ShortDesc: "retrieves racks",
-		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.",
+		LongDesc:  "Retrieves racks matching the given names and dcs, or all racks if names and dcs are omitted.\n\nExample to get all racks:\ncrimson get-racks\nExample to get racks in datacenter xx1:\ncrimson get-racks -dc xx1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetRacksCmd{}
 			cmd.Initialize(params)

@@ -62,7 +62,7 @@ func getSwitchesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-switches [-name <name>]... [-rack <rack>]... [-dc <datacenter>]...",
 		ShortDesc: "retrieves switches",
-		LongDesc:  "Retrieves switches matching the given names, racks and dcs, or all switches if names, racks, and dcs are omitted.",
+		LongDesc:  "Retrieves switches matching the given names, racks and dcs, or all switches if names, racks, and dcs are omitted.\n\nExample to get all switches:\ncrimson get-switches\nExample to get the switch of rack xx1:\ncrimson get-switches -rack xx1",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetSwitchesCmd{}
 			cmd.Initialize(params)

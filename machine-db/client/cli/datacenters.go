@@ -62,7 +62,7 @@ func getDatacentersCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-dcs [-name <name>]...",
 		ShortDesc: "retrieves datacenters",
-		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.",
+		LongDesc:  "Retrieves datacenters matching the given names, or all datacenters if names are omitted.\n\nExample to get all datacenters:\ncrimson get-dcs\nExample to get LAB0 datacenter:\ncrimson get-dcs -name LAB0",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetDatacentersCmd{}
 			cmd.Initialize(params)

@@ -66,7 +66,7 @@ func addMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-machine -name <name> -plat <platform> -rack <rack> -state <state> [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>] [-dracpass <DRAC password>]",
 		ShortDesc: "adds a machine",
-		LongDesc:  "Adds a machine to the database.",
+		LongDesc:  "Adds a machine to the database.\n\nExample:\ncrimson add-machine -name xx11-11-720 -plat 'Apple Mac Pro' -rack xx1 -state test -stag BC0001",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddMachineCmd{}
 			cmd.Initialize(params)
@@ -108,7 +108,7 @@ func deleteMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-machine -name <name>",
 		ShortDesc: "deletes a machine",
-		LongDesc:  "Deletes a machine from the database.",
+		LongDesc:  "Deletes a machine from the database.\n\nExample:\ncrimson del-machine -name xx11-11-720",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteMachineCmd{}
 			cmd.Initialize(params)
@@ -156,7 +156,7 @@ func editMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-machine -name <name> [-plat <platform>] [-rack <rack>] [-state <state>] [-desc <description>] [-atag <asset tag>] [-stag <service tag>] [-tick <deployment ticket>] [-dracpass <DRAC password>]",
 		ShortDesc: "edits a machine",
-		LongDesc:  "Edits a machine in the database.",
+		LongDesc:  "Edits a machine in the database.\n\nExample to change a machine to repair state and add ticket for repairs:\ncrimson edit-machine -name server01 -state repair -tick tick/1111",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditMachineCmd{}
 			cmd.Initialize(params)
@@ -198,7 +198,7 @@ func getMachinesCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-machines [-name <name>]... [-plat <plat>]... [-rack <rack>]... [-dc <dc>]... [-state <state>]...",
 		ShortDesc: "retrieves machines",
-		LongDesc:  "Retrieves machines matching the given names, platforms, racks, and states, or all machines if names are omitted.",
+		LongDesc:  "Retrieves machines matching the given names, platforms, racks, and states, or all machines if names are omitted.\n\nExample to get all machines:\ncrimson get-machines\nExample to get all machines in rack xx1 that are in repair state:\ncrimson get-machines -rack xx1 -state repair",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetMachinesCmd{}
 			cmd.Initialize(params)
@@ -237,7 +237,7 @@ func renameMachineCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "name-machine -old <name> -new <name>",
 		ShortDesc: "renames a machine",
-		LongDesc:  "Renames a machine in the database.",
+		LongDesc:  "Renames a machine in the database.\n\nExample:\ncrimson name-machine -old xx01-07-720 -new yy01-07-720",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &RenameMachineCmd{}
 			cmd.Initialize(params)

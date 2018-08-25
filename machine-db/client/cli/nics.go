@@ -66,7 +66,7 @@ func addNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "add-nic -name <name> -machine <machine> -mac <mac address> -switch <switch> [-port <switch port>]",
 		ShortDesc: "adds a NIC",
-		LongDesc:  "Adds a network interface to the database.",
+		LongDesc:  "Adds a network interface to the database.\n\nExample:\ncrimson add-nic -name eth0 -machine xx1-01-720 -mac 00:00:00:00:00:bc -switch switch1.lab -port 30",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &AddNICCmd{}
 			cmd.Initialize(params)
@@ -104,7 +104,7 @@ func deleteNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "del-nic -name <name> -machine <machine>",
 		ShortDesc: "deletes a NIC",
-		LongDesc:  "Deletes a network interface from the database.",
+		LongDesc:  "Deletes a network interface from the database.\n\nExample:\ncrimson del-nic -name eth1 -machine xx1-01-720",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &DeleteNICCmd{}
 			cmd.Initialize(params)
@@ -148,7 +148,7 @@ func editNICCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "edit-nic -name <name> -machine <machine> [-mac <mac address>] [-switch <switch>] [-port <switch port>]",
 		ShortDesc: "edit a NIC",
-		LongDesc:  "Edits a network interface in the database.",
+		LongDesc:  "Edits a network interface in the database.\n\nExample to edit a NIC's MAC address:\ncrimson edit-nic -name eth0 -machine xx1-01-720 -mac 00:00:00:00:00:bc",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &EditNICCmd{}
 			cmd.Initialize(params)
@@ -186,7 +186,7 @@ func getNICsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-nics [-name <name>]... [-machine <machine>]...",
 		ShortDesc: "retrieves NICs",
-		LongDesc:  "Retrieves network interfaces matching the given names and machines, or all network interfaces if names and machines are omitted.",
+		LongDesc:  "Retrieves network interfaces matching the given names and machines, or all network interfaces if names and machines are omitted.\n\nExample to get all NICs:\ncrimson get-nics\nExample to get the NIC with a certain MAC address:\ncrimson get-nics -mac 00:00:00:00:00:bc",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetNICsCmd{}
 			cmd.Initialize(params)

@@ -62,7 +62,7 @@ func getIPsCmd(params *Parameters) *subcommands.Command {
 	return &subcommands.Command{
 		UsageLine: "get-ips -vlan <id> [-n <limit>]",
 		ShortDesc: "retrieves free IPs",
-		LongDesc:  "Retrieves free IP addresses on the given VLAN.",
+		LongDesc:  "Retrieves free IP addresses on the given VLAN.\n\nExample to get 20 free IPs in VLAN 001:\ncrimson get-ips -vlan 001 -n 20",
 		CommandRun: func() subcommands.CommandRun {
 			cmd := &GetIPsCmd{}
 			cmd.Initialize(params)
