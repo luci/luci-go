@@ -23,6 +23,7 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/tumble"
 
@@ -68,6 +69,19 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 
 	// Get the log stream.
 	state := m.logStream().State(c)
+
+	now := clock.Now(c)
+
+	// If this was created more than two weeks ago, then abandon it. Issuing
+	// a pubsub task won't help.
+	twoWeeks := time.Hour * 24 * 7 * 2
+	if now.After(state.Created.Add(twoWeeks)) {
+		log.Warningf(c, "Abandoning old log stream: %q", m.ID)
+		state.Updated = now
+		state.ArchivedTime = now
+		state.ArchivalKey = nil
+		return nil, ds.Put(c, state)
+	}
 
 	if err := ds.Get(c, state); err != nil {
 		if err == ds.ErrNoSuchEntity {
