@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "3fe16c9a_2a4e57c5",
+        "filename": "logdog/appengine/coordinator/mutations/createArchiveTask.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-08-27T21:50:38Z",
+      "side": 1,
+      "message": "This doesn\u0027t get the state, this creates an empty state with the ID.  Need to move L102 up here.",
+      "revId": "550e9599c340aab900eeeac5501257c046f8c907",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "26b4bdac_6a5944ac",
         "filename": "logdog/appengine/coordinator/mutations/createArchiveTask.go",
         "patchSetId": 3
