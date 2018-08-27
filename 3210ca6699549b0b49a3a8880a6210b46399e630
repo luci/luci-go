@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "c431a914_03aab1ba",
+        "filename": "logdog/appengine/coordinator/mutations/createArchiveTask.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-08-27T21:14:13Z",
+      "side": 1,
+      "message": "Actually it\u0027s possible for this state to be archived already.  We should not overwrite the state if it is, and instead just exit.",
+      "range": {
+        "startLine": 71,
+        "startChar": 1,
+        "endLine": 71,
+        "endChar": 6
+      },
+      "revId": "3210ca6699549b0b49a3a8880a6210b46399e630",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "72c2d8f4_a7f419cc",
         "filename": "logdog/appengine/coordinator/mutations/createArchiveTask.go",
         "patchSetId": 2
