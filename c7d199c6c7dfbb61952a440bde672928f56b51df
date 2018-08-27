@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "cbea5ae4_037cc50a",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-27T22:17:17Z",
+      "side": 1,
+      "message": "len(hosts) \u003e 0",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 16
+      },
+      "revId": "c7d199c6c7dfbb61952a440bde672928f56b51df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04c8e279_0de534bf",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-08-27T22:17:17Z",
+      "side": 1,
+      "message": "this doesn\u0027t explain that it is required because of ipv4\n~similar concern for L339",
+      "range": {
+        "startLine": 335,
+        "startChar": 49,
+        "endLine": 335,
+        "endChar": 91
+      },
+      "revId": "c7d199c6c7dfbb61952a440bde672928f56b51df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4ec71f9b_ef059e2d",
         "filename": "machine-db/appengine/rpc/physical_hosts.go",
         "patchSetId": 1
