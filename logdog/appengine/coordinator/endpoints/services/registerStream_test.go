@@ -155,6 +155,23 @@ func TestRegisterStream(t *testing.T) {
 							// TODO(hinoka): Fixme.
 							SkipSo(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 						})
+
+						Convey(`Skips archival completely after 3 weeks`, func() {
+							// Three weeks and an hour later
+							threeWeeks := (time.Hour * 24 * 7 * 3) + time.Hour
+							env.Clock.Set(created.Add(threeWeeks))
+							// Make it so that any 2s sleep timers progress.
+							env.Clock.SetTimerCallback(func(d time.Duration, tmr clock.Timer) {
+								env.Clock.Add(3 * time.Second)
+							})
+							env.IterateTumbleAll(c)
+
+							tls.WithProjectNamespace(c, func(c context.Context) {
+								So(ds.Get(c, tls.State), ShouldBeNil)
+							})
+							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+							SkipSo(tls.State.ArchivedTime.After(created.Add(threeWeeks)), ShouldBeTrue)
+						})
 					})
 
 					Convey(`Will not re-register if secrets don't match.`, func() {
