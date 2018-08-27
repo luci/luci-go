@@ -49,6 +49,7 @@ func (t *Testing) UpdateSettings(c context.Context, cfg *Config) {
 	if cfg == nil {
 		dflt := defaultConfig
 		dflt.DustSettleTimeout = 0
+		dflt.MaxNoWorkDelay = 0
 		cfg = &dflt
 	}
 	settings.Set(c, baseName, cfg, "tumble.Testing", "for testing")
