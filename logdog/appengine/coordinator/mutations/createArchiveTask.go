@@ -18,11 +18,14 @@ import (
 	"fmt"
 	"time"
 
+	"go.chromium.org/luci/common/tsmon/metric"
+
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
+	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/tumble"
 
@@ -50,6 +53,14 @@ type CreateArchiveTask struct {
 
 var _ tumble.DelayedMutation = (*CreateArchiveTask)(nil)
 
+var (
+	abandonedTasks = metric.NewCounter(
+		"logdog/collector/archive/abandoned_tasks",
+		("The number of abandoned archival tasks. (may be double-counted due " +
+			"to transaction replay)"),
+		nil)
+)
+
 // RollForward implements tumble.DelayedMutation.
 func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, error) {
 	c = log.SetField(c, "id", m.ID)
@@ -68,6 +79,25 @@ func (m *CreateArchiveTask) RollForward(c context.Context) ([]tumble.Mutation, e
 
 	// Get the log stream.
 	state := m.logStream().State(c)
+
+	// If archived already, we're done.
+	if state.ArchivalState().Archived() {
+		return nil, nil
+	}
+
+	now := clock.Now(c)
+
+	// If this was created more than three weeks ago, then abandon it. Issuing
+	// a pubsub task won't help because the underlying data in bigtable is gone.
+	threeWeeks := time.Hour * 24 * 7 * 3
+	if now.After(state.Created.Add(threeWeeks)) {
+		log.Warningf(c, "Abandoning old log stream: %q", m.ID)
+		abandonedTasks.Add(c, 1)
+		state.Updated = now
+		state.ArchivedTime = now
+		state.ArchivalKey = nil
+		return nil, ds.Put(c, state)
+	}
 
 	if err := ds.Get(c, state); err != nil {
 		if err == ds.ErrNoSuchEntity {
