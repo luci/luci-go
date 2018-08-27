@@ -148,6 +148,19 @@ func TestRegisterStream(t *testing.T) {
 
 							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{string(tls.Stream.ID)})
 						})
+
+						Convey(`Skips archival completely after 3 weeks`, func() {
+							// Three weeks and an hour later
+							threeWeeks := (time.Hour * 24 * 7 * 3) + time.Hour
+							env.Clock.Set(created.Add(threeWeeks))
+							env.IterateTumbleAll(c)
+
+							tls.WithProjectNamespace(c, func(c context.Context) {
+								So(ds.Get(c, tls.State), ShouldBeNil)
+							})
+							So(env.ArchivalPublisher.Hashes(), ShouldResemble, []string{})
+							So(tls.State.ArchivedTime, ShouldResemble, created.Add(threeWeeks))
+						})
 					})
 
 					Convey(`Will not re-register if secrets don't match.`, func() {
