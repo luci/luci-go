@@ -19,10 +19,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/gs"
 	log "go.chromium.org/luci/common/logging"
@@ -252,7 +255,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 			// this case, we will continue retrying the task until datastore registers
 			// that some key is associated with it.
 			log.Infof(c, "Archival request received before log stream has its key.")
-			return statusErr(errors.New("premature archival request"))
+			// If this was dispatched:
+			// Less than 5 minutes ago: try again later.
+			// More than 5 minutes ago: drop it.
+			if dt, err := ptypes.Timestamp(at.DispatchedAt); err == nil && clock.Now(c).Before(dt.Add(5*time.Minute)) {
+				return statusErr(errors.New("premature archival request"))
+			}
 		}
 
 		// This can happen if a Pub/Sub message is dispatched during a transaction,
