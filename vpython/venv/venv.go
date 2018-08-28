@@ -114,7 +114,7 @@ func withTempDir(l logging.Logger, dir, prefix string, fn func(string) error) er
 func EnvRootFromStampPath(path string) (string, error) {
 	if err := filesystem.AbsPath(&path); err != nil {
 		return "", errors.Annotate(err,
-			"failed to get absolute path for specification file path: %(path)s", path).Err()
+			"failed to get absolute path for specification file path: %s", path).Err()
 	}
 	return filepath.Dir(filepath.Dir(path)), nil
 }
@@ -660,7 +660,7 @@ func (e *Env) getPEP425Tags(c context.Context, env []string) ([]*vpython.PEP425T
 
 	var tagEntries []pep425TagEntry
 	if err := json.Unmarshal(stdout.Bytes(), &tagEntries); err != nil {
-		return nil, errors.Annotate(err, "failed to unmarshal PEP425 tag output: %s", stdout).Err()
+		return nil, errors.Annotate(err, "failed to unmarshal PEP425 tag output: %s", stdout.String()).Err()
 	}
 
 	tags := make([]*vpython.PEP425Tag, len(tagEntries))

@@ -56,7 +56,7 @@ func (c *schemaConverter) schema(messageName string) (schema bigquery.Schema, de
 	for _, field := range msg.Field {
 		switch s, err := c.field(file, field); {
 		case err != nil:
-			return nil, "", errors.Annotate(err, "failed to derive schema for field %q in message %q", field.Name, msg.Name).Err()
+			return nil, "", errors.Annotate(err, "failed to derive schema for field %q in message %q", field.GetName(), msg.GetName()).Err()
 		case s != nil:
 			schema = append(schema, s)
 		}

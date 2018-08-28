@@ -16,6 +16,7 @@ package signingtest
 
 import (
 	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -23,7 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"math/big"
-	"math/rand"
 	"time"
 
 	"golang.org/x/net/context"
@@ -41,13 +41,11 @@ type Signer struct {
 
 var _ signing.Signer = (*Signer)(nil)
 
-// NewSigner returns Signer instance deterministically deriving the key from
-// the given seed. Panics on errors.
-func NewSigner(seed int64, serviceInfo *signing.ServiceInfo) *Signer {
-	src := notRandom{rand.New(rand.NewSource(seed))}
-
-	// Generate deterministic key from the seed.
-	priv, err := rsa.GenerateKey(src, 512)
+// NewSigner returns Signer instance that use small random key.
+//
+// Panics on errors.
+func NewSigner(serviceInfo *signing.ServiceInfo) *Signer {
+	priv, err := rsa.GenerateKey(rand.Reader, 512)
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +58,7 @@ func NewSigner(seed int64, serviceInfo *signing.ServiceInfo) *Signer {
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: true,
 	}
-	der, err := x509.CreateCertificate(src, &template, &template, &priv.PublicKey, priv)
+	der, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
 		panic(err)
 	}
@@ -123,15 +121,7 @@ func (s *Signer) KeyForTest() *rsa.PrivateKey {
 	return s.priv
 }
 
-////
-
-type notRandom struct {
-	*rand.Rand
-}
-
-func (r notRandom) Read(p []byte) (n int, err error) {
-	for i := range p {
-		p[i] = byte(r.Intn(256))
-	}
-	return len(p), nil
+// KeyNameForTest returns an ID of the signing key.
+func (s *Signer) KeyNameForTest() string {
+	return s.certs.Certificates[0].KeyName
 }

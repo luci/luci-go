@@ -327,7 +327,7 @@ func (si *googleStorage) GetSignedURLs(c context.Context, req *coordinator.URLSi
 		url, err := gcst.SignedURL(path.Bucket(), path.Filename(), &opts)
 		if err != nil {
 			return "", errors.Annotate(err, "").InternalReason(
-				"failed to sign URL: bucket(%s)/filename(%s)", path.Bucket(), path.Filename).Err()
+				"failed to sign URL: bucket(%s)/filename(%s)", path.Bucket(), path.Filename()).Err()
 		}
 		return url, nil
 	}

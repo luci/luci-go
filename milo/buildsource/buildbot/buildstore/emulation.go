@@ -82,7 +82,7 @@ func BucketOf(c context.Context, master string) (string, error) {
 				Bucket string
 			}
 			if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-				return errors.Reason("could not decode migration app's response body", err).Err()
+				return errors.Annotate(err, "could not decode migration app's response body").Err()
 			}
 
 			bucket = body.Bucket

@@ -93,7 +93,7 @@ func run() error {
 	if filepath.Base(bin) == bin {
 		path, err := exec.LookPath(bin)
 		if err != nil {
-			return errors.Annotate(err, "can't find %q in PATH").Err()
+			return errors.Annotate(err, "can't find %q in PATH", bin).Err()
 		}
 		bin = path
 	}

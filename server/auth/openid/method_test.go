@@ -53,7 +53,7 @@ func TestFullFlow(t *testing.T) {
 		// Prepare the the signing keys and the ID token.
 		const signingKeyID = "signing-key"
 		const clientID = "client_id"
-		signer := signingtest.NewSigner(0, nil)
+		signer := signingtest.NewSigner(nil)
 		idToken := idTokenForTest(ctx, &IDToken{
 			Iss:           "https://issuer.example.com",
 			EmailVerified: true,

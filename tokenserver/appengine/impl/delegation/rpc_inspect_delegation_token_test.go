@@ -38,10 +38,11 @@ func TestInspectDelegationToken(t *testing.T) {
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
+	signer := signingtest.NewSigner(&signing.ServiceInfo{
+		ServiceAccountName: "service@example.com",
+	})
 	rpc := InspectDelegationTokenRPC{
-		Signer: signingtest.NewSigner(0, &signing.ServiceInfo{
-			ServiceAccountName: "service@example.com",
-		}),
+		Signer: signer,
 	}
 
 	original := &messages.Subtoken{
@@ -69,7 +70,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			NonExpired: true,
 			Envelope: &messages.DelegationToken{
 				SignerId:     "user:service@example.com",
-				SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
 		})
@@ -115,7 +116,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			NonExpired:       true,
 			Envelope: &messages.DelegationToken{
 				SignerId:     "user:service@example.com",
-				SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
 		})
@@ -138,7 +139,7 @@ func TestInspectDelegationToken(t *testing.T) {
 			NonExpired:       false,
 			Envelope: &messages.DelegationToken{
 				SignerId:     "user:service@example.com",
-				SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId: signer.KeyNameForTest(),
 			},
 			Subtoken: original,
 		})

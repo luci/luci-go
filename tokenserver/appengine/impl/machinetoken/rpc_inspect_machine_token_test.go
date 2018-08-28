@@ -33,10 +33,9 @@ import (
 func TestInspectMachineTokenRPC(t *testing.T) {
 	Convey("with mocked context", t, func() {
 		ctx := testingContext(testingCA)
-		impl := InspectMachineTokenRPC{
-			Signer: testingSigner(),
-		}
-		tok := expectedLuciMachineToken
+		signer := testingSigner()
+		impl := InspectMachineTokenRPC{Signer: signer}
+		tok := testingMachineToken(ctx, signer)
 
 		Convey("Good token", func() {
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{
@@ -49,7 +48,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Signed:       true,
 				NonExpired:   true,
 				NonRevoked:   true,
-				SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId: signer.KeyNameForTest(),
 				CertCaName:   "Fake CA: fake.ca",
 				TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
@@ -77,7 +76,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				NonExpired:       true,
 				NonRevoked:       true,
 				CertCaName:       "Fake CA: fake.ca",
-				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId:     signer.KeyNameForTest(),
 				TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
 						MachineFqdn: "luci-token-server-test-1.fake.domain",
@@ -104,7 +103,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Signed:           true,
 				NonExpired:       false,
 				NonRevoked:       true,
-				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId:     signer.KeyNameForTest(),
 				CertCaName:       "Fake CA: fake.ca",
 				TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{
@@ -142,7 +141,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 				Signed:           true,
 				NonExpired:       false,
 				NonRevoked:       false, // revoked now!
-				SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+				SigningKeyId:     signer.KeyNameForTest(),
 				CertCaName:       "Fake CA: fake.ca",
 				TokenType: &admin.InspectMachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &tokenserver.MachineTokenBody{

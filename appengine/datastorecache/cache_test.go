@@ -237,9 +237,8 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				var v Value
 				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
-					v, err = cache.Get(te, []byte("foo"))
+					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
 				So(err, ShouldBeNil)
@@ -252,9 +251,8 @@ func TestCache(t *testing.T) {
 
 				// Hold the entity's refresh lock. Our cache will not be able to acquire
 				// it.
-				var v Value
 				err := otherLocker.TryWithLock(cache.withNamespace(te), e.lockKey(), func(c context.Context) (err error) {
-					v, err = cache.Get(te, []byte("foo"))
+					_, err = cache.Get(te, []byte("foo"))
 					return
 				})
 				So(err, ShouldBeNil)

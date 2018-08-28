@@ -38,7 +38,7 @@ func TestInspectToken(t *testing.T) {
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
 
-	signer := signingtest.NewSigner(0, &signing.ServiceInfo{
+	signer := signingtest.NewSigner(&signing.ServiceInfo{
 		ServiceAccountName: "service@example.com",
 	})
 	inspector := inspectorForTest(signer, "")

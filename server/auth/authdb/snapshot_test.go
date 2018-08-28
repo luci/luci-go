@@ -153,7 +153,7 @@ func TestSnapshotDB(t *testing.T) {
 	})
 
 	Convey("GetCertificates works", t, func(c C) {
-		tokenService := signingtest.NewSigner(1, &signing.ServiceInfo{
+		tokenService := signingtest.NewSigner(&signing.ServiceInfo{
 			AppID:              "token-server",
 			ServiceAccountName: "token-server-account@example.com",
 		})

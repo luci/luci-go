@@ -258,7 +258,7 @@ func fetchTags(c context.Context, tagEnts []*Tag, expectedTag func(idx int) *api
 			case datastore.ErrNoSuchEntity:
 				missCount++
 			default:
-				return nil, nil, errors.Annotate(err, "failed to fetch tag with ID", tagEnts[i].ID).Tag(transient.Tag).Err()
+				return nil, nil, errors.Annotate(err, "failed to fetch tag with ID %q", tagEnts[i].ID).Tag(transient.Tag).Err()
 			}
 		}
 	} else {
