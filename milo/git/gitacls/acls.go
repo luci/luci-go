@@ -247,7 +247,7 @@ func validateURL(ctx *validation.Context, s string) (*url.URL, bool) {
 	}
 	valid := true
 	if !strings.HasSuffix(u.Host, ".googlesource.com") {
-		ctx.Errorf("isn't at *.googlesource.com %q %q", u.Host)
+		ctx.Errorf("isn't at *.googlesource.com %q", u.Host)
 		valid = false
 	}
 	if u.Scheme != "" && u.Scheme != "https" {

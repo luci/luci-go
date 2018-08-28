@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package signingtest implements signing.Signer interface using fake keys.
+// Package signingtest implements signing.Signer interface using small random
+// keys.
+//
 // Useful in unit tests.
 package signingtest

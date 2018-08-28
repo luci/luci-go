@@ -121,7 +121,7 @@ func TestVerifyJWT(t *testing.T) {
 
 	ctx := context.Background()
 
-	signer := signingtest.NewSigner(0, nil)
+	signer := signingtest.NewSigner(nil)
 	keys := JSONWebKeySet{
 		keys: map[string]rsa.PublicKey{
 			"key-1": signer.KeyForTest().PublicKey,

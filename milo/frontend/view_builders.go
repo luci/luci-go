@@ -181,7 +181,7 @@ func getBuildersForProject(c context.Context, project, console string) ([]string
 		q := datastore.NewQuery("Console").Ancestor(projKey)
 		if err := datastore.GetAll(c, q, &cons); err != nil {
 			return nil, errors.Annotate(
-				err, "error getting consoles for project %s: %v", project).Err()
+				err, "error getting consoles for project %s", project).Err()
 		}
 	} else {
 		con := common.Console{Parent: projKey, ID: console}

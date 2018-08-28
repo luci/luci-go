@@ -32,7 +32,7 @@ import (
 func TestSignGrant(t *testing.T) {
 	Convey("Works", t, func() {
 		ctx := context.Background()
-		signer := signingtest.NewSigner(0, nil)
+		signer := signingtest.NewSigner(nil)
 
 		original := &tokenserver.OAuthTokenGrantBody{
 			TokenId:        123,
@@ -43,15 +43,12 @@ func TestSignGrant(t *testing.T) {
 
 		tok, err := SignGrant(ctx, signer, original)
 		So(err, ShouldBeNil)
-		So(tok, ShouldEqual, `Ck4IexIRZW1haWxAZXhhbXBsZS5jb20aGHVzZXI6c29tZW9uZUB`+
-			`leGFtcGxlLmNvbSIddXNlcjpzb21lb25lLWVsc2VAZXhhbXBsZS5jb20SKGY5ZGE1YTBkM`+
-			`DkwM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkaQIuW0EtCsdP3xNRgnQcWb5DkTvb`+
-			`8Y6xwJLJAQ04PflFeCdBXBxvqVgHbGflYD9OZlNGhUeE40pFpGBPOt4KGxCI`)
+		So(tok, ShouldHaveLength, 251)
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		So(err, ShouldBeNil)
 		So(back, ShouldResembleProto, original)
-		So(envelope.KeyId, ShouldEqual, "f9da5a0d0903bda58c6d664e3852a89c283d7fe9")
+		So(envelope.KeyId, ShouldEqual, signer.KeyNameForTest())
 	})
 }
 

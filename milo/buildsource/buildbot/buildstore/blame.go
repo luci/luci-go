@@ -126,7 +126,7 @@ func fetchChanges(c context.Context, b *buildbot.Build) error {
 	prevRev, err := getPrevRev(c, b, 100)
 	switch {
 	case err != nil:
-		return errors.Annotate(err, "failed to get prev revision for build %q", b).Err()
+		return errors.Annotate(err, "failed to get prev revision for build %q", b.ID()).Err()
 	case prevRev == "":
 		logging.Warningf(c, "prev rev of build %q is unknown. Skipping blamelist computation", b.ID())
 		return nil
