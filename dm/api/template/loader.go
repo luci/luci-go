@@ -56,6 +56,6 @@ func (f *File) Render(spec *templateproto.Specifier) (*dm.Quest_Desc, error) {
 		DistributorConfigName: t.DistributorConfigName,
 		Parameters:            params,
 		DistributorParameters: distribParams,
-		Meta: t.Meta,
+		Meta:                  t.Meta,
 	}, nil
 }

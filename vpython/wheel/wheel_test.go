@@ -142,8 +142,8 @@ func TestScanDir(t *testing.T) {
 		}
 
 		mustBuild(map[string]string{
-			"junk.bin": "",
-			"junk":     "",
+			"junk.bin":                       "",
+			"junk":                           "",
 			wheelMarkupSafe.String():         "",
 			wheelSimpleJSON.String():         "",
 			wheelCryptography.String() + "/": "", // Directories should be ignored.

@@ -169,8 +169,8 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 	s := &store.Fake{}
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S: s,
-		M: m,
+		S:                            s,
+		M:                            m,
 		InvokeGlobalCallbacksOnFlush: true,
 	}), s, m
 }
@@ -180,8 +180,8 @@ func WithFakes(c context.Context) (context.Context, *store.Fake, *monitor.Fake) 
 func WithDummyInMemory(c context.Context) (context.Context, *monitor.Fake) {
 	m := &monitor.Fake{}
 	return WithState(c, &State{
-		S: store.NewInMemory(&target.Task{}),
-		M: m,
+		S:                            store.NewInMemory(&target.Task{}),
+		M:                            m,
 		InvokeGlobalCallbacksOnFlush: true,
 	}), m
 }
@@ -197,8 +197,8 @@ var (
 // Monitor.
 func NewState() *State {
 	return &State{
-		S: store.NewNilStore(),
-		M: monitor.NewNilMonitor(),
+		S:                            store.NewNilStore(),
+		M:                            monitor.NewNilMonitor(),
 		InvokeGlobalCallbacksOnFlush: true,
 	}
 }
