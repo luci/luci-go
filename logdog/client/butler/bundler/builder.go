@@ -125,7 +125,7 @@ func (b *builder) getCreateBuilderStream(template *logpb.ButlerLogBundle_Entry) 
 
 	bs := builderStream{
 		ButlerLogBundle_Entry: *template,
-		size: protoSize(template),
+		size:                  protoSize(template),
 	}
 	b.streams[template.Desc.Name] = &bs
 	return &bs
