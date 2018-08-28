@@ -98,13 +98,6 @@ func processShardQuery(c context.Context, cfg *Config, shard uint64) *ds.Query {
 		Gte("ExpandedShard", low).Lte("ExpandedShard", high).
 		Project("TargetRoot").Distinct(true)
 
-	batchSize := cfg.ProcessMaxBatchSize
-	if batchSize > 0 {
-		if batchSize > math.MaxInt32 {
-			batchSize = math.MaxInt32
-		}
-		q = q.Limit(int32(batchSize))
-	}
 	return q
 }
 
