@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -389,6 +390,7 @@ func TestHandleArchive(t *testing.T) {
 		Convey(`Will return task if the log stream doesn't have an archival key yet.`, func() {
 			stream.Age = google.NewDuration(expired)
 			stream.ArchivalKey = nil
+			task.task.DispatchedAt, _ = ptypes.TimestampProto(testclock.TestTimeUTC.Add(-1 * time.Minute))
 
 			So(ar.archiveTaskImpl(c, task), ShouldErrLike, "premature archival request")
 			So(task.consumed, ShouldBeFalse)
