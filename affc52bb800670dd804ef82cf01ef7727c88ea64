@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0f547564_cf773376",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-28T18:25:12Z",
+      "side": 1,
+      "message": "wow, that\u0027s not trivial to accomplish.",
+      "range": {
+        "startLine": 9,
+        "startChar": 51,
+        "endLine": 10,
+        "endChar": 37
+      },
+      "revId": "affc52bb800670dd804ef82cf01ef7727c88ea64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cabec969_031bd6be",
+        "filename": "server/auth/signing/signingtest/signer_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-28T18:25:12Z",
+      "side": 1,
+      "message": "this has actually gotten better :)",
+      "revId": "affc52bb800670dd804ef82cf01ef7727c88ea64",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
