@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6c739fd5_ca67f69b",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 262,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-28T22:57:13Z",
+      "side": 1,
+      "message": "clock.Now().After(dt.add(5*time.Minute)) might be easier to comprehend.",
+      "range": {
+        "startLine": 262,
+        "startChar": 66,
+        "endLine": 262,
+        "endChar": 87
+      },
+      "revId": "0526b6c4a274a8ebc16001d931035bc298bd7bd3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
