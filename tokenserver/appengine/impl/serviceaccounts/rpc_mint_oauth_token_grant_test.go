@@ -54,8 +54,8 @@ func testingContext(caller identity.Identity) context.Context {
 	})
 }
 
-func testingSigner() signing.Signer {
-	return signingtest.NewSigner(0, &signing.ServiceInfo{
+func testingSigner() *signingtest.Signer {
+	return signingtest.NewSigner(&signing.ServiceInfo{
 		ServiceAccountName: "signer@testing.host",
 		AppID:              "unit-tests",
 		AppVersion:         "mocked-ver",

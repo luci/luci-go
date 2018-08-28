@@ -40,7 +40,7 @@ func TestVerifyIDToken(t *testing.T) {
 	const signingKeyID = "signing-key"
 	const audience = "client_id"
 
-	signer := signingtest.NewSigner(0, nil)
+	signer := signingtest.NewSigner(nil)
 	jwks, _ := NewJSONWebKeySet(jwksForTest(signingKeyID, &signer.KeyForTest().PublicKey))
 
 	newToken := func() *IDToken {

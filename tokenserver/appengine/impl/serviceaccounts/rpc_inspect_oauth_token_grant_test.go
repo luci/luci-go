@@ -37,9 +37,10 @@ import (
 func TestInspectOAuthTokenGrant(t *testing.T) {
 	ctx := context.Background()
 	ctx, tc := testclock.UseTime(ctx, testclock.TestTimeUTC)
+	signer := signingtest.NewSigner(nil)
 
 	rpc := InspectOAuthTokenGrantRPC{
-		Signer: signingtest.NewSigner(0, nil),
+		Signer: signer,
 		Rules: func(context.Context) (*Rules, error) {
 			return loadConfig(ctx, `rules {
 				name: "rule 1"
@@ -79,7 +80,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Valid:          true,
 			Signed:         true,
 			NonExpired:     true,
-			SigningKeyId:   "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			SigningKeyId:   signer.KeyNameForTest(),
 			TokenBody:      original,
 			AllowedByRules: true,
 			MatchingRule:   matchingRule,
@@ -122,7 +123,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Signed:           false,
 			NonExpired:       true,
 			InvalidityReason: "bad signature - crypto/rsa: verification error",
-			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			SigningKeyId:     signer.KeyNameForTest(),
 			TokenBody:        original,
 			AllowedByRules:   true,
 			MatchingRule:     matchingRule,
@@ -143,7 +144,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Signed:           true,
 			NonExpired:       true,
 			InvalidityReason: "the service account is not specified in the rules (rev fake-revision)",
-			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			SigningKeyId:     signer.KeyNameForTest(),
 			TokenBody:        &another,
 		})
 	})
@@ -161,7 +162,7 @@ func TestInspectOAuthTokenGrant(t *testing.T) {
 			Signed:           true,
 			NonExpired:       false,
 			InvalidityReason: "expired",
-			SigningKeyId:     "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			SigningKeyId:     signer.KeyNameForTest(),
 			TokenBody:        original,
 			AllowedByRules:   true,
 			MatchingRule:     matchingRule,

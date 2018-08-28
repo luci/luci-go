@@ -41,18 +41,14 @@ func TestSignToken(t *testing.T) {
 		Audience:          []string{"*"},
 		Services:          []string{"*"},
 	}
-	signer := signingtest.NewSigner(0, &signing.ServiceInfo{
+	signer := signingtest.NewSigner(&signing.ServiceInfo{
 		ServiceAccountName: "service@example.com",
 	})
 
 	Convey("Works", t, func() {
 		tok, err := signerForTest(signer, "").SignToken(ctx, original)
 		So(err, ShouldBeNil)
-		So(tok, ShouldEqual, `Ehh1c2VyOnNlcnZpY2VAZXhhbXBsZS5jb20aKGY5ZGE1YTBkMDk`+
-			`wM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkiQG9oF6Zxi5yxVWdSjR_hKmxFqc51J`+
-			`KfPeUeRmyUs3g79nOKLdg6b36WM9CB2BLhcumQSqv45e7rqNmkeFUfzCjsqRwoadXNlcjp`+
-			`kZWxlZ2F0ZWRAZXhhbXBsZS5jb20QhonLwAUYkBwqASoyASo6GnVzZXI6cmVxdWVzdG9yQ`+
-			`GV4YW1wbGUuY29t`)
+		So(tok, ShouldHaveLength, 276)
 
 		envelope, back, err := deserializeForTest(ctx, tok, signer)
 		So(err, ShouldBeNil)
@@ -62,7 +58,7 @@ func TestSignToken(t *testing.T) {
 		envelope.SerializedSubtoken = nil
 		So(envelope, ShouldResemble, &messages.DelegationToken{
 			SignerId:     "user:service@example.com",
-			SigningKeyId: "f9da5a0d0903bda58c6d664e3852a89c283d7fe9",
+			SigningKeyId: signer.KeyNameForTest(),
 		})
 	})
 
@@ -72,11 +68,7 @@ func TestSignToken(t *testing.T) {
 		signer := &capturingSigner{signer, nil}
 		tok, err := signerForTest(signer, contextString).SignToken(ctx, original)
 		So(err, ShouldBeNil)
-		So(tok, ShouldEqual, `Ehh1c2VyOnNlcnZpY2VAZXhhbXBsZS5jb20aKGY5ZGE1YTBkMDk`+
-			`wM2JkYTU4YzZkNjY0ZTM4NTJhODljMjgzZDdmZTkiQJVC-EIxuU--b_kKhL2K84QM8JYsP`+
-			`ojBEpcECIOowaDqA7X2i_1fhIQyIDvIAJtscp6TYVVQUCyXPkY_y9X94EwqRwoadXNlcjp`+
-			`kZWxlZ2F0ZWRAZXhhbXBsZS5jb20QhonLwAUYkBwqASoyASo6GnVzZXI6cmVxdWVzdG9yQ`+
-			`GV4YW1wbGUuY29t`)
+		So(tok, ShouldHaveLength, 276)
 
 		ctxPart := signer.blobs[0][:len(contextString)+1]
 		So(string(ctxPart), ShouldEqual, contextString+"\x00")

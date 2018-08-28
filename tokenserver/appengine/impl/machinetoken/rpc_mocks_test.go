@@ -135,11 +135,6 @@ q07s6UiAqamPwRd1A5OffPEvchkbKSaOOLPICpYu5Qg2LrZ0IAFS3r5y+5EXOJLV
 3SsvIZgCBTBX8gzpcssCjvBiJSPUTTiowPE4+MA=
 -----END CERTIFICATE-----`
 
-const expectedLuciMachineToken = `CkkKJGx1Y2ktdG9rZW4tc2VydmVyLXRlc3QtMS5mYWtlLmRvbW` +
-	`FpbhITc2lnbmVyQHRlc3RpbmcuaG9zdBjykcGmBSCQHCh7MIAgEihmOWRhNWEwZDA5MDN` +
-	`iZGE1OGM2ZDY2NGUzODUyYTg5YzI4M2Q3ZmU5GkCrjVagpGYIIVo/OsbQD4Jg8Jbp1l/6` +
-	`Q+9t+jHpBXcennnPVb0tKWojPYN3195lZ1ESofXz8rDnXoYF4/2X2pDn`
-
 var testingTime = time.Date(2015, time.February, 3, 4, 5, 6, 0, time.UTC)
 
 var testingCA = certconfig.CA{
@@ -172,8 +167,8 @@ func testingContext(ca certconfig.CA) context.Context {
 	return ctx
 }
 
-func testingSigner() signing.Signer {
-	return signingtest.NewSigner(0, &signing.ServiceInfo{
+func testingSigner() *signingtest.Signer {
+	return signingtest.NewSigner(&signing.ServiceInfo{
 		ServiceAccountName: "signer@testing.host",
 		AppID:              "unit-tests",
 		AppVersion:         "mocked-ver",
@@ -192,8 +187,6 @@ func testingRawRequest(ctx context.Context) *minter.MachineTokenRequest {
 }
 
 // testingMachineTokenRequest is canned request to MintMachineToken RPC.
-//
-// The service is expected to reply with expectedLuciMachineToken.
 func testingMachineTokenRequest(ctx context.Context) *minter.MintMachineTokenRequest {
 	serialized, err := proto.Marshal(testingRawRequest(ctx))
 	if err != nil {
@@ -208,6 +201,18 @@ func testingMachineTokenRequest(ctx context.Context) *minter.MintMachineTokenReq
 		SerializedTokenRequest: serialized,
 		Signature:              signature,
 	}
+}
+
+func testingMachineToken(ctx context.Context, signer signing.Signer) string {
+	_, tok, err := Mint(ctx, &MintParams{
+		Cert:   getTestCert(certWithCN),
+		Config: testingCA.ParsedConfig,
+		Signer: signer,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return tok
 }
 
 func getTestPrivateKey() *rsa.PrivateKey {

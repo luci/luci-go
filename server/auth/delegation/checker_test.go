@@ -207,7 +207,7 @@ type fakeTokenMinter struct {
 
 func newFakeTokenMinter() *fakeTokenMinter {
 	return &fakeTokenMinter{
-		signer:   signingtest.NewSigner(0, nil),
+		signer:   signingtest.NewSigner(nil),
 		signerID: "service:fake-signer",
 	}
 }

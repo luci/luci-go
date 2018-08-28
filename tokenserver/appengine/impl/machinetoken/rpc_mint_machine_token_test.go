@@ -43,10 +43,11 @@ func TestMintMachineTokenRPC(t *testing.T) {
 		ctx := auth.WithState(testingContext(testingCA), &authtest.FakeState{
 			PeerIPOverride: net.ParseIP("127.10.10.10"),
 		})
+		signer := testingSigner()
 
 		var loggedInfo *MintedTokenInfo
 		impl := MintMachineTokenRPC{
-			Signer: testingSigner(),
+			Signer: signer,
 			CheckCertificate: func(_ context.Context, cert *x509.Certificate) (*certconfig.CA, error) {
 				return &testingCA, nil
 			},
@@ -64,7 +65,7 @@ func TestMintMachineTokenRPC(t *testing.T) {
 				ServiceVersion: "unit-tests/mocked-ver",
 				TokenType: &minter.MachineTokenResponse_LuciMachineToken{
 					LuciMachineToken: &minter.LuciMachineToken{
-						MachineToken: expectedLuciMachineToken,
+						MachineToken: testingMachineToken(ctx, signer),
 						Expiry:       google.NewTimestamp(clock.Now(ctx).Add(time.Hour)),
 					},
 				},

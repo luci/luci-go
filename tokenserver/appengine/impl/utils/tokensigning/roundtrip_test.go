@@ -39,7 +39,7 @@ func TestRoundtrip(t *testing.T) {
 		Audience:          []string{"*"},
 		Services:          []string{"*"},
 	}
-	signer := signingtest.NewSigner(0, &signing.ServiceInfo{
+	signer := signingtest.NewSigner(&signing.ServiceInfo{
 		ServiceAccountName: "service@example.com",
 	})
 
