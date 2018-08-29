@@ -220,6 +220,12 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		return fmt.Errorf("invalid project name %q: %s", at.Project, err)
 	}
 
+	// TODO(hinoka): Remove this once v8-restricted is fixed.
+	if at.Project == "v8-restricted" {
+		task.Consume()
+		return fmt.Errorf("v8-restricted is currently disabled")
+	}
+
 	// Load the log stream's current state. If it is already archived, we will
 	// return an immediate success.
 	ls, err := a.Service.LoadStream(c, &logdog.LoadStreamRequest{
