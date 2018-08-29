@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f9f37982_53726208",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-29T01:53:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbea5ae4_037cc50a",
+      "range": {
+        "startLine": 170,
+        "startChar": 4,
+        "endLine": 170,
+        "endChar": 16
+      },
+      "revId": "c7d199c6c7dfbb61952a440bde672928f56b51df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04c8e279_0de534bf",
         "filename": "machine-db/appengine/rpc/nics.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "c7d199c6c7dfbb61952a440bde672928f56b51df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ae7387d_1d35b9de",
+        "filename": "machine-db/appengine/rpc/nics.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-29T01:53:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04c8e279_0de534bf",
+      "range": {
+        "startLine": 335,
+        "startChar": 49,
+        "endLine": 335,
+        "endChar": 91
+      },
+      "revId": "c7d199c6c7dfbb61952a440bde672928f56b51df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
