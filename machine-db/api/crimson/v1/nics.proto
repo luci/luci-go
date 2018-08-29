@@ -20,6 +20,10 @@ message NIC {
   string switch = 4;
   // The switchport this NIC is connected to.
   int32 switchport = 5;
+  // The name of this NIC on the network.
+  string hostname = 6;
+  // The IPv4 address associated with this NIC.
+  string ipv4 = 7;
 }
 
 // A request to create a new NIC in the database.
@@ -38,7 +42,7 @@ message DeleteNICRequest {
 
 // A request to list NICs in the database.
 message ListNICsRequest {
-  // The names of NICs to get.
+  // The names of NICs to filter retrieved NICs on.
   repeated string names = 1;
   // The machines to filter retrieved NICs on.
   repeated string machines = 2;
@@ -46,6 +50,10 @@ message ListNICsRequest {
   repeated string mac_addresses = 3;
   // The switches to filter retrieved NICs on.
   repeated string switches = 4;
+  // The hostnames of NICs to filter retrieved NICs on.
+  repeated string hostnames = 5;
+  // The IPv4 addresses of NICs to filter retrieved NICs on.
+  repeated string ipv4s = 6;
 }
 
 // A response containing a list of NICs in the database.

@@ -57,7 +57,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			VALUES \(
 				\?,
 				\(SELECT id FROM machines WHERE name = \?\),
-				\(SELECT n.id FROM machines m, nics n WHERE n.machine_id = m.id AND m.name = \? AND n.name = \?\),
+				\(SELECT n.id FROM machines m, nics n WHERE n.machine_id = m.id AND m.name = \? AND n.name = \? AND n.hostname_id IS NULL\),
 				\(SELECT id FROM oses WHERE name = \?\),
 				\?,
 				\?,
@@ -223,7 +223,7 @@ func TestCreatePhysicalHost(t *testing.T) {
 			m.ExpectExec(insertHostStmt).WithArgs(10, host.Machine, host.Machine, host.Nic, host.Os, host.VmSlots, host.VirtualDatacenter, host.Description, host.DeploymentTicket).WillReturnError(&mysql.MySQLError{Number: mysqlerr.ER_BAD_NULL_ERROR, Message: "'nic_id' is null"})
 			m.ExpectRollback()
 			res, err := createPhysicalHost(c, host)
-			So(err, ShouldErrLike, "does not exist")
+			So(err, ShouldErrLike, "does not exist or already has a hostname")
 			So(res, ShouldBeNil)
 		})
 
