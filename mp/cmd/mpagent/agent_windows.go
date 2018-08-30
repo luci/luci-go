@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 )
 
@@ -34,6 +35,14 @@ func (WindowsStrategy) chown(ctx context.Context, username, path string) error {
 // enableSwarming enables installed service.
 func (WindowsStrategy) enableSwarming(ctx context.Context) error {
 	return nil
+}
+
+// configureAutoMount mounts the specified disk and configures mount on startup.
+//
+// Assumes the disk is already formatted as ntfs.
+func (WindowsStrategy) configureAutoMount(ctx context.Context, disk string) error {
+	// TODO(smut): Mount the specified disk.
+	return errors.New("mounting disks is unsupported on Windows")
 }
 
 // reboot reboots the machine.
