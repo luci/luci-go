@@ -46,6 +46,30 @@
       "revId": "d5c487481dddc6e4e3f10d16b4ba5e6b8ddc5b2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "83aa3f8d_049134c5",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-30T01:45:09Z",
+      "side": 1,
+      "message": "👍",
+      "parentUuid": "a033999f_7f904342",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "d5c487481dddc6e4e3f10d16b4ba5e6b8ddc5b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
