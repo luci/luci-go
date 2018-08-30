@@ -16,6 +16,24 @@
       "revId": "5fffcbe40f4bf5ac21931c2c4f41ef2c6b9e6c27",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "870766fb_0516965e",
+        "filename": "logdog/server/cmd/logdog_archivist/main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-08-30T22:09:02Z",
+      "side": 1,
+      "message": "Documentation implies it\u0027ll attach itself to the default http handler by virtue of importing, and it appears to be the case.",
+      "parentUuid": "d351731f_76a23e8b",
+      "revId": "5fffcbe40f4bf5ac21931c2c4f41ef2c6b9e6c27",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
