@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7cca35a9_9b6d121f",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-08-30T01:34:18Z",
+      "side": 1,
+      "message": "do you have to worry about this method being called more than once?",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "d5c487481dddc6e4e3f10d16b4ba5e6b8ddc5b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
