@@ -40,6 +40,9 @@ import (
 	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -65,6 +68,12 @@ type application struct {
 // run is the main execution function.
 func (a *application) runArchivist(c context.Context) error {
 	cfg := a.ServiceConfig()
+
+	// Starting a webserver for pprof.
+	// TODO(hinoka): Checking for memory leaks, Remove me when 795156 is fixed.
+	go func() {
+		log.WithError(http.ListenAndServe("localhost:6060", nil)).Errorf(c, "failed to start webserver")
+	}()
 
 	coordCfg, acfg := cfg.GetCoordinator(), cfg.GetArchivist()
 	switch {
