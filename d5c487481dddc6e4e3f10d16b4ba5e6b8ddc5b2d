@@ -22,6 +22,30 @@
       "revId": "d5c487481dddc6e4e3f10d16b4ba5e6b8ddc5b2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a033999f_7f904342",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-08-30T01:37:31Z",
+      "side": 1,
+      "message": "I intend for the binary to be invoked as:\nmpagent -install -disk \u003cwhatever\u003e\n\n-install will set up the mpagent command to run later, but it doesn\u0027t carry over the -disk argument, so on subsequent runs and this won\u0027t be called.\n\nHowever, I already verified that duplicate entries in /etc/fstab and redundant calls to mount -a don\u0027t return errors.",
+      "parentUuid": "7cca35a9_9b6d121f",
+      "range": {
+        "startLine": 60,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 2
+      },
+      "revId": "d5c487481dddc6e4e3f10d16b4ba5e6b8ddc5b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
