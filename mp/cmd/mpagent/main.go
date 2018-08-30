@@ -44,6 +44,8 @@ import (
 type Strategy interface {
 	// chown changes ownership of a path.
 	chown(ctx context.Context, username, path string) error
+	// configureAutoMount mounts the specified disk and configures mount on startup.
+	configureAutoMount(ctx context.Context, disk string) error
 	// enableSwarming enables installed service.
 	enableSwarming(ctx context.Context) error
 	// start starts the agent.
@@ -81,6 +83,13 @@ type Agent struct {
 	swarmingUser string
 	// strategy is the platform-specific implementation for this agent.
 	strategy Strategy
+}
+
+// configureAutoMount mounts the specified disk and configures mount on startup.
+//
+// Assumes the disk is already formatted correctly.
+func (agent *Agent) configureAutoMount(ctx context.Context, disk string) error {
+	return agent.strategy.configureAutoMount(ctx, disk)
 }
 
 // configureLogging configures logging to a file, in addition to any other logging.
@@ -340,7 +349,8 @@ func Main(args []string) int {
 	var err error
 
 	var install bool
-	var server, serviceAccount, user string
+	var disk, server, serviceAccount, user string
+	flag.StringVar(&disk, "disk", "", "Disk to use for Swarming.")
 	flag.BoolVar(&install, "install", false, "Install the agent and exit.")
 	flag.StringVar(&server, "server", "", "Machine Provider server URL.")
 	flag.StringVar(&serviceAccount, "gce-service-account", "", "GCE service account name to authenticate with.")
@@ -370,6 +380,13 @@ func Main(args []string) int {
 	if err != nil {
 		logging.Errorf(ctx, "%s", err.Error())
 		return 1
+	}
+
+	if disk != "" {
+		if err = agent.configureAutoMount(ctx, disk); err != nil {
+			logging.Errorf(ctx, "%s", err.Error())
+			return 1
+		}
 	}
 
 	if install {
