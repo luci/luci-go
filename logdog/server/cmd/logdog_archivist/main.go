@@ -115,8 +115,7 @@ func (a *application) runArchivist(c context.Context) error {
 		MaxExtension:        -1,
 		MaxOutstandingBytes: -1,
 
-		MaxOutstandingMessages: 16,
-		NumGoroutines:          8,
+		MaxOutstandingMessages: 64,
 	}
 
 	// Initialize our Storage.
