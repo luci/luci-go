@@ -4,11 +4,11 @@
 
 description "machine provider agent"
 
-start on net-device-up IFACE!=lo
+start on (filesystem and net-device-up IFACE!=lo)
 stop on shutdown
 
 script
-	{{.Agent}} -gce-service-account {{.ServiceAccount}} -server {{.Server}} -user {{.User}}
+  {{.Agent}} -gce-service-account {{.ServiceAccount}} -server {{.Server}} -user {{.User}}
 end script
 
 respawn
