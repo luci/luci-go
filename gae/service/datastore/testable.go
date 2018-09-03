@@ -84,6 +84,14 @@ type Testable interface {
 	// to the user code.
 	DisableSpecialEntities(bool)
 
+	// ShowSpecialProperties disables stripping of special properties added by
+	// the datastore internally (like __scatter__) from result of Get calls.
+	//
+	// Normally such properties are used internally by the datastore or only for
+	// queries. Returning them explicitly is useful for assertions in tests that
+	// rely on queries over special properties.
+	ShowSpecialProperties(bool)
+
 	// SetConstraints sets this instance's constraints. If the supplied
 	// constraints are invalid, an error will be returned.
 	//

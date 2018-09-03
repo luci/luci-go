@@ -101,6 +101,7 @@ func (d *dsImpl) DecodeCursor(s string) (ds.Cursor, error) {
 }
 
 func (d *dsImpl) Run(fq *ds.FinalizedQuery, cb ds.RawRunCB) error {
+	cb = d.data.stripSpecialPropsRunCB(cb)
 	idx, head := d.data.getQuerySnaps(!fq.EventuallyConsistent())
 	err := executeQuery(fq, d.kc, false, idx, head, cb)
 	if d.data.maybeAutoIndex(err) {
@@ -171,6 +172,10 @@ func (d *dsImpl) DisableSpecialEntities(disabled bool) {
 	d.data.setDisableSpecialEntities(disabled)
 }
 
+func (d *dsImpl) ShowSpecialProperties(show bool) {
+	d.data.setShowSpecialProperties(show)
+}
+
 func (d *dsImpl) SetConstraints(c *ds.Constraints) error {
 	if c == nil {
 		c = &ds.Constraints{}
@@ -227,6 +232,7 @@ func (d *txnDsImpl) Run(q *ds.FinalizedQuery, cb ds.RawRunCB) error {
 	// It's possible that if you have full-consistency and also auto index enabled
 	// that this would make sense... but at that point you should probably just
 	// add the index up front.
+	cb = d.data.parent.stripSpecialPropsRunCB(cb)
 	return executeQuery(q, d.kc, true, d.data.snap, d.data.snap, cb)
 }
 

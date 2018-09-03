@@ -16,6 +16,8 @@ package memory
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"strings"
 	"sync"
@@ -63,6 +65,11 @@ type dataStoreData struct {
 	// maintained will be omitted. This also means that Put with an incomplete
 	// key will become an error.
 	disableSpecialEntities bool
+
+	// true means __scatter__ and other internal special properties won't be
+	// stripped off from getMutli results. Note that in real datastore there's
+	// no way to expose them.
+	showSpecialProps bool
 
 	// constraints is the fake datastore constraints. By default, this will match
 	// the Constraints of the "impl/prod" datastore.
@@ -140,6 +147,40 @@ func (d *dataStoreData) getDisableSpecialEntities() bool {
 	d.rwlock.RLock()
 	defer d.rwlock.RUnlock()
 	return d.disableSpecialEntities
+}
+
+func (d *dataStoreData) setShowSpecialProperties(show bool) {
+	d.rwlock.Lock()
+	defer d.rwlock.Unlock()
+	d.showSpecialProps = show
+}
+
+func (d *dataStoreData) stripSpecialPropsGetCB(cb ds.GetMultiCB) ds.GetMultiCB {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+
+	if d.showSpecialProps {
+		return cb
+	}
+
+	return func(idx int, val ds.PropertyMap, err error) error {
+		stripSpecialProps(val)
+		return cb(idx, val, err)
+	}
+}
+
+func (d *dataStoreData) stripSpecialPropsRunCB(cb ds.RawRunCB) ds.RawRunCB {
+	d.rwlock.RLock()
+	defer d.rwlock.RUnlock()
+
+	if d.showSpecialProps {
+		return cb
+	}
+
+	return func(key *ds.Key, val ds.PropertyMap, getCursor ds.CursorCB) error {
+		stripSpecialProps(val)
+		return cb(key, val, getCursor)
+	}
 }
 
 func (d *dataStoreData) getQuerySnaps(consistent bool) (idx, head memStore) {
@@ -331,7 +372,6 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 
 	for i, k := range keys {
 		newPM, _ := vals[i].Save(false)
-		entityBlob := serialize.ToBytesWithContext(newPM)
 
 		k, err := func() (key *ds.Key, err error) {
 			if !lockedAlready {
@@ -350,13 +390,23 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 			}
 			keyBlob := keyBytes(key)
 
+			// Now that we have the complete key, we can use it to generate special
+			// __scatter__ property, which is a function of the key. We can't
+			// serialize newPM to bytes until we've done this step. Thus we do the
+			// serialization under the lock.
+			//
+			// If this is undesirable, this code can be restructured to grab the lock
+			// twice: once to generate the key, and the second time to actually store
+			// the entity and update indexes.
+			ensureSpecialProps(keyBlob, newPM)
+
 			var oldPM ds.PropertyMap
 			if old := ents.Get(keyBlob); old != nil {
 				if oldPM, err = readPropMap(old); err != nil {
 					return
 				}
 			}
-			ents.Set(keyBlob, entityBlob)
+			ents.Set(keyBlob, serialize.ToBytesWithContext(newPM))
 			updateIndexes(d.head, key, oldPM, newPM)
 			return
 		}()
@@ -390,7 +440,7 @@ func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, ents memCollection) {
 
 func (d *dataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 	ents := d.takeSnapshot().GetCollection("ents:" + keys[0].Namespace())
-	getMultiInner(keys, cb, ents)
+	getMultiInner(keys, d.stripSpecialPropsGetCB(cb), ents)
 	return nil
 }
 
@@ -627,7 +677,7 @@ func (td *txnDataStoreData) getMulti(keys []*ds.Key, cb ds.GetMultiCB) error {
 		}
 	}
 	ents := td.snap.GetCollection("ents:" + keys[0].Namespace())
-	getMultiInner(keys, cb, ents)
+	getMultiInner(keys, td.parent.stripSpecialPropsGetCB(cb), ents)
 	return nil
 }
 
@@ -670,4 +720,35 @@ func trimPrefix(v, p string) (string, bool) {
 		return v[len(p):], true
 	}
 	return v, false
+}
+
+// __scatter__ is a "hidden" indexed byte string property containing a hash of
+// the key (of some unspecified nature). It is added to a small percentage of
+// the datastore entities (0.78% in prod), to be used in .order(__scatter__)
+// queries, to aid mapper frameworks to partition the key space into
+// approximately even ranges. Here we use 50% percentage instead, as also does
+// dev_appserver.
+//
+// See https://github.com/GoogleCloudPlatform/appengine-mapreduce/wiki/ScatterPropertyImplementation
+
+func isSpecialProp(prop string) bool {
+	return prop == "__scatter__"
+}
+
+func ensureSpecialProps(keyBlob []byte, pm ds.PropertyMap) {
+	h := sha256.Sum256(keyBlob)
+	i := binary.BigEndian.Uint16(h[:2])
+	if i >= 32768 {
+		pm["__scatter__"] = ds.MkProperty(h[:])
+	} else {
+		// This is for the case when the entity struct has "output only" __scatter__
+		// field. We don't want to store and index empty strings. This is possible
+		// only in testing code, since real datastore never accepts nor returns
+		// __scatter__.
+		delete(pm, "__scatter__")
+	}
+}
+
+func stripSpecialProps(pm ds.PropertyMap) {
+	delete(pm, "__scatter__")
 }

@@ -271,7 +271,7 @@ func getRelevantIndexes(q *reducedQuery, s memStore) (indexDefinitionSortableSli
 		props.Add(col.Property)
 	}
 	for _, prop := range props.ToSlice() {
-		if strings.HasPrefix(prop, "__") && strings.HasSuffix(prop, "__") {
+		if !isSpecialProp(prop) && (strings.HasPrefix(prop, "__") && strings.HasSuffix(prop, "__")) {
 			continue
 		}
 		if idxs.maybeAddDefinition(q, s, missingTerms, &ds.IndexDefinition{
@@ -303,7 +303,7 @@ func getRelevantIndexes(q *reducedQuery, s memStore) (indexDefinitionSortableSli
 		return !idxs.maybeAddDefinition(q, s, missingTerms, def)
 	})
 
-	// this query is impossible to fulfil with the current indexes. Not all the
+	// this query is impossible to fulfill with the current indexes. Not all the
 	// terms (equality + projection) are satisfied.
 	if missingTerms.Len() > 0 || len(idxs) == 0 {
 		remains := &ds.IndexDefinition{

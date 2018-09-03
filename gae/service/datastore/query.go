@@ -315,7 +315,7 @@ func (q *Query) Eq(field string, values ...interface{}) *Query {
 }
 
 func (q *Query) reserved(field string) bool {
-	if field == "__key__" {
+	if field == "__key__" || field == "__scatter__" {
 		return false
 	}
 	if field == "" {

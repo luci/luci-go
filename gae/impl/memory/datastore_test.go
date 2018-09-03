@@ -15,6 +15,7 @@
 package memory
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -58,6 +59,8 @@ type Foo struct {
 	Name  string
 	Multi []string
 	Key   *ds.Key
+
+	Scatter []byte `gae:"__scatter__"` // this is normally invisible
 }
 
 func TestDatastoreSingleReadWriter(t *testing.T) {
@@ -667,6 +670,53 @@ func TestDatastoreSingleReadWriter(t *testing.T) {
 					})
 				})
 			}
+		})
+
+		Convey("Testable.ShowSpecialProperties", func() {
+			ds.GetTestable(c).ShowSpecialProperties(true)
+
+			var ents []Foo
+			for i := 0; i < 10; i++ {
+				ent := &Foo{}
+				So(ds.Put(c, ent), ShouldBeNil)
+				ents = append(ents, *ent)
+			}
+			So(ds.Get(c, ents), ShouldBeNil)
+
+			// Some of these entities (~50%) should have __scatter__ property
+			// populated. The algorithm is deterministic.
+			scatter := make([]string, len(ents))
+			for i, e := range ents {
+				scatter[i] = hex.EncodeToString(e.Scatter)
+			}
+			So(scatter, ShouldResemble, []string{
+				"d77e219d0669b1808f236ca5b25127bf8e865e3f0e68b792374526251c873c61",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"b592c9de652ffc3f458910247fc16690ba2ceeef20a8566fda5dd989a5fc160e",
+				"bcefad8a2212ee1cfa3636e94264b8c73c90eaded9f429e27c7384830c1e381c",
+				"d2358c1d9e5951be7117e06eaec96a6a63090f181615e2c51afaf7f214e4d873",
+				"b29a46a6c01adb88d7001fe399d6346d5d2725b190f4fb025c9cb7c73c4ffb15",
+			})
+		})
+
+		Convey("Query by __scatter__", func() {
+			for i := 0; i < 100; i++ {
+				So(ds.Put(c, &Foo{}), ShouldBeNil)
+			}
+			ds.GetTestable(c).CatchupIndexes()
+
+			var ids []int64
+			So(ds.Run(c, ds.NewQuery("Foo").Order("__scatter__").Limit(5), func(f *Foo) {
+				So(f.Scatter, ShouldEqual, nil) // it is "invisible"
+				ids = append(ids, f.ID)
+			}), ShouldBeNil)
+
+			// Approximately "even" distribution within [1, 100] range.
+			So(ids, ShouldResemble, []int64{43, 55, 99, 23, 17})
 		})
 	})
 }
