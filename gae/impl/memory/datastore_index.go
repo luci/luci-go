@@ -256,7 +256,7 @@ func addIndexes(store memStore, aid string, compIdx []*ds.IndexDefinition) {
 		kctx := ds.MkKeyContext(aid, ns)
 		if allEnts := store.Snapshot().GetCollection("ents:" + ns); allEnts != nil {
 			allEnts.ForEachItem(func(ik, iv []byte) bool {
-				pm, err := rpm(iv)
+				pm, err := readPropMap(iv)
 				memoryCorruption(err)
 
 				prop, err := serialize.ReadProperty(bytes.NewBuffer(ik), serialize.WithoutContext, kctx)

@@ -51,11 +51,14 @@ type dataStoreData struct {
 	// if snap is nil, that means that this is always-consistent, and
 	// getQuerySnaps will return (head, head)
 	snap memStore
+
 	// For testing, see SetTransactionRetryCount.
 	txnFakeRetry int
+
 	// true means that queries with insufficent indexes will pause to add them
 	// and then continue instead of failing.
 	autoIndex bool
+
 	// true means that all of the __...__ keys which are normally automatically
 	// maintained will be omitted. This also means that Put with an incomplete
 	// key will become an error.
@@ -127,10 +130,10 @@ func (d *dataStoreData) maybeAutoIndex(err error) bool {
 	return true
 }
 
-func (d *dataStoreData) setDisableSpecialEntities(enabled bool) {
+func (d *dataStoreData) setDisableSpecialEntities(disabled bool) {
 	d.rwlock.Lock()
 	defer d.rwlock.Unlock()
-	d.disableSpecialEntities = true
+	d.disableSpecialEntities = disabled
 }
 
 func (d *dataStoreData) getDisableSpecialEntities() bool {
@@ -219,7 +222,7 @@ func rootIDsKey(kind string) []byte {
 func curVersion(ents memCollection, key []byte) int64 {
 	if ents != nil {
 		if v := ents.Get(key); v != nil {
-			pm, err := rpm(v)
+			pm, err := readPropMap(v)
 			memoryCorruption(err)
 
 			pl := pm.Slice("__version__")
@@ -327,10 +330,10 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 	ns := keys[0].Namespace()
 
 	for i, k := range keys {
-		pmap, _ := vals[i].Save(false)
-		dataBytes := serialize.ToBytesWithContext(pmap)
+		newPM, _ := vals[i].Save(false)
+		entityBlob := serialize.ToBytesWithContext(newPM)
 
-		k, err := func() (ret *ds.Key, err error) {
+		k, err := func() (key *ds.Key, err error) {
 			if !lockedAlready {
 				d.rwlock.Lock()
 				defer d.rwlock.Unlock()
@@ -338,23 +341,23 @@ func (d *dataStoreData) putMulti(keys []*ds.Key, vals []ds.PropertyMap, cb ds.Ne
 
 			ents := d.head.GetOrCreateCollection("ents:" + ns)
 
-			ret, err = d.fixKeyLocked(ents, k)
+			key, err = d.fixKeyLocked(ents, k)
 			if err != nil {
 				return
 			}
 			if !d.disableSpecialEntities {
-				incrementLocked(ents, groupMetaKey(ret), 1)
+				incrementLocked(ents, groupMetaKey(key), 1)
 			}
+			keyBlob := keyBytes(key)
 
-			old := ents.Get(keyBytes(ret))
-			oldPM := ds.PropertyMap(nil)
-			if old != nil {
-				if oldPM, err = rpm(old); err != nil {
+			var oldPM ds.PropertyMap
+			if old := ents.Get(keyBlob); old != nil {
+				if oldPM, err = readPropMap(old); err != nil {
 					return
 				}
 			}
-			ents.Set(keyBytes(ret), dataBytes)
-			updateIndexes(d.head, ret, oldPM, pmap)
+			ents.Set(keyBlob, entityBlob)
+			updateIndexes(d.head, key, oldPM, newPM)
 			return
 		}()
 		if cb != nil {
@@ -379,7 +382,7 @@ func getMultiInner(keys []*ds.Key, cb ds.GetMultiCB, ents memCollection) {
 		if pdata == nil {
 			cb(i, nil, ds.ErrNoSuchEntity)
 		} else {
-			pm, err := rpm(pdata)
+			pm, err := readPropMap(pdata)
 			cb(i, pm, err)
 		}
 	}
@@ -418,7 +421,7 @@ func (d *dataStoreData) delMulti(keys []*ds.Key, cb ds.DeleteMultiCB, lockedAlre
 					incrementLocked(ents, groupMetaKey(k), 1)
 				}
 				if old := ents.Get(kb); old != nil {
-					oldPM, err := rpm(old)
+					oldPM, err := readPropMap(old)
 					if err != nil {
 						return err
 					}
@@ -642,7 +645,7 @@ func keyBytes(key *ds.Key) []byte {
 	return serialize.ToBytes(ds.MkProperty(key))
 }
 
-func rpm(data []byte) (ds.PropertyMap, error) {
+func readPropMap(data []byte) (ds.PropertyMap, error) {
 	return serialize.ReadPropertyMap(bytes.NewBuffer(data),
 		serialize.WithContext, ds.MkKeyContext("", ""))
 }

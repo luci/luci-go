@@ -52,7 +52,7 @@ func TestFlakyErrors(t *testing.T) {
 			ConcurrentTransactionProbability: 0.1,
 		}
 		So(sample(Errors(params), "CommitTransaction"), ShouldResemble, map[error]int{
-			nil: 853,
+			nil:                                853,
 			datastore.ErrConcurrentTransaction: 95,
 			ErrFlakyRPCDeadline:                52,
 		})

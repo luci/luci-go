@@ -167,8 +167,8 @@ func (d *dsImpl) AutoIndex(enable bool) {
 	d.data.setAutoIndex(enable)
 }
 
-func (d *dsImpl) DisableSpecialEntities(enabled bool) {
-	d.data.setDisableSpecialEntities(enabled)
+func (d *dsImpl) DisableSpecialEntities(disabled bool) {
+	d.data.setDisableSpecialEntities(disabled)
 }
 
 func (d *dsImpl) SetConstraints(c *ds.Constraints) error {
