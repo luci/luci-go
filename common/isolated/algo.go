@@ -37,7 +37,7 @@ func GetHash() hash.Hash {
 //
 // It is currently hardcoded to RFC 1950 (zlib).
 func GetDecompressor(in io.Reader) (io.ReadCloser, error) {
-	return newZlibReader(in)
+	return zlib.NewReader(in)
 }
 
 // GetCompressor returns a fresh instance of the compression algorithm.
@@ -47,7 +47,7 @@ func GetDecompressor(in io.Reader) (io.ReadCloser, error) {
 // It is currently hardcoded to RFC 1950 (zlib).
 func GetCompressor(out io.Writer) (io.WriteCloser, error) {
 	// Higher compression level uses cpu resources more than we want.
-	return newZlibWriterLevel(out, zlib.BestSpeed)
+	return zlib.NewWriterLevel(out, zlib.BestSpeed)
 }
 
 // HexDigest is the hash of a file that is hex-encoded. Only lower case letters
