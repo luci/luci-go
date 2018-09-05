@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "407090bd_9b67c080",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-05T22:35:08Z",
+      "side": 1,
+      "message": "scanner.Scan has exhausted the file if we reach this point, but I\u0027ve added an explicit seek.",
+      "parentUuid": "a3bfef61_baed8e17",
+      "range": {
+        "startLine": 70,
+        "startChar": 14,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9ee19dd_23134b15",
         "filename": "mp/cmd/mpagent/agent_linux.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2018-09-05T22:21:59Z",
       "side": 1,
       "message": "shouldn\u0027t this be in deferred?",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 9
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3188acdc_cca68a6d",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-05T22:35:08Z",
+      "side": 1,
+      "message": "defer f.Close() on line 60 ensures f.Close() is called if we return early. Here f.Close() is called so that the file is closed before calling exec.Command() below, then the deferred f.Close() becomes a no op.\n\nI\u0027m not 100% sure it\u0027s necessary to close /etc/fstab before calling mount -a but it seems safer. Without this line, the deferred f.Close() would only be called after mount -a.",
+      "parentUuid": "c9ee19dd_23134b15",
       "range": {
         "startLine": 73,
         "startChar": 1,
