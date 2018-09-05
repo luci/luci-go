@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "0497b90f_43204b50",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-05T22:47:23Z",
+      "side": 1,
+      "message": "\u003e scanner.Scan has exhausted the file\n\nthat\u0027s true, but i\u0027m personally never sure if there is 1 cursor (shared RW) or 2 cursors (1 for R, 1 for W) in different standard libraries.",
+      "parentUuid": "407090bd_9b67c080",
+      "range": {
+        "startLine": 70,
+        "startChar": 14,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c9ee19dd_23134b15",
         "filename": "mp/cmd/mpagent/agent_linux.go",
         "patchSetId": 1
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "defer f.Close() on line 60 ensures f.Close() is called if we return early. Here f.Close() is called so that the file is closed before calling exec.Command() below, then the deferred f.Close() becomes a no op.\n\nI\u0027m not 100% sure it\u0027s necessary to close /etc/fstab before calling mount -a but it seems safer. Without this line, the deferred f.Close() would only be called after mount -a.",
       "parentUuid": "c9ee19dd_23134b15",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 9
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c92fc246_14ac5f62",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-05T22:47:23Z",
+      "side": 1,
+      "message": "oops, missed that. Consider adding a comment :) \n\nwrt to necessity to close, i\u0027m pretty certain flush will suffice on linux, but there is nothing wrong in closing file.",
+      "parentUuid": "3188acdc_cca68a6d",
       "range": {
         "startLine": 73,
         "startChar": 1,
