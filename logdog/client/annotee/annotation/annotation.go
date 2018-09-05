@@ -215,7 +215,7 @@ func (s *State) Append(annotation string) error {
 		s.SetCurrentStep(step)
 		updatedIf(step, UpdateStructural, true)
 
-	//  @@@SEED_STEP <stepname>@@@
+	// @@@SEED_STEP <stepname>@@@
 	case "SEED_STEP":
 		step := s.LookupStep(params)
 		if step == nil {
@@ -251,12 +251,12 @@ func (s *State) Append(annotation string) error {
 		}
 		updatedIf(step, UpdateIterative, true)
 
-	//  @@@STEP_STARTED@@@
+	// @@@STEP_STARTED@@@
 	case "STEP_STARTED":
 		step := s.CurrentStep()
 		updatedIf(step, UpdateIterative, step.Start(annotatedNow))
 
-	//  @@@STEP_WARNINGS@@@
+	// @@@STEP_WARNINGS@@@
 	case "BUILD_WARNINGS":
 		fallthrough
 	case "STEP_WARNINGS":
@@ -285,7 +285,7 @@ func (s *State) Append(annotation string) error {
 			Type: milo.FailureDetails_EXCEPTION,
 		}))
 
-		// @@@STEP_CLOSED@@@
+	// @@@STEP_CLOSED@@@
 	case "STEP_CLOSED":
 		step := s.CurrentStep()
 		updatedIf(step, UpdateStructural, step.Close(annotatedNow))
@@ -301,32 +301,32 @@ func (s *State) Append(annotation string) error {
 		}
 		updatedIf(step, UpdateIterative, step.LogLine(label, line))
 
-		// @@@STEP_LOG_END@<label>@@@
+	// @@@STEP_LOG_END@<label>@@@
 	case "STEP_LOG_END":
 		s.CurrentStep().LogEnd(params)
 
-		// @@@STEP_LOG_END_PERF@<label>@@@
+	// @@@STEP_LOG_END_PERF@<label>@@@
 	case "STEP_LOG_END_PERF":
 		// Ignore for now. Ideally would emit a link to the perf dashboard.
 		break
 
-		// @@@STEP_CLEAR@@@
+	// @@@STEP_CLEAR@@@
 	case "STEP_CLEAR":
 		step := s.CurrentStep()
 		updatedIf(step, UpdateIterative, step.ClearText())
 
-		// @@@STEP_SUMMARY_CLEAR@@@
+	// @@@STEP_SUMMARY_CLEAR@@@
 	case "STEP_SUMMARY_CLEAR":
 		step := s.CurrentStep()
 		step.ClearSummary()
 		updatedIf(step, UpdateIterative, true)
 
-		// @@@STEP_TEXT@<msg>@@@
+	// @@@STEP_TEXT@<msg>@@@
 	case "STEP_TEXT":
 		step := s.CurrentStep()
 		updatedIf(step, UpdateIterative, step.AddText(params))
 
-		// @@@SEED_STEP_TEXT@step@<msg>@@@
+	// @@@SEED_STEP_TEXT@step@<msg>@@@
 	case "SEED_STEP_TEXT":
 		parts := strings.SplitN(params, "@", 2)
 		if len(parts) < 2 {
@@ -338,12 +338,12 @@ func (s *State) Append(annotation string) error {
 		}
 		updatedIf(step, UpdateIterative, step.AddText(parts[1]))
 
-		// @@@STEP_SUMMARY_TEXT@<msg>@@@
+	// @@@STEP_SUMMARY_TEXT@<msg>@@@
 	case "STEP_SUMMARY_TEXT":
 		step := s.CurrentStep()
 		updatedIf(step, UpdateIterative, step.SetSummary(params))
 
-		// @@@STEP_NEST_LEVEL@<level>@@@
+	// @@@STEP_NEST_LEVEL@<level>@@@
 	case "STEP_NEST_LEVEL":
 		level, err := strconv.Atoi(params)
 		if err != nil {
@@ -357,11 +357,11 @@ func (s *State) Append(annotation string) error {
 		updatedIf(step, UpdateStructural, step.SetNestLevel(level))
 		break
 
-		// @@@HALT_ON_FAILURE@@@
+	// @@@HALT_ON_FAILURE@@@
 	case "HALT_ON_FAILURE":
 		s.haltOnFailure = true
 
-		// @@@HONOR_ZERO_RETURN_CODE@@@
+	// @@@HONOR_ZERO_RETURN_CODE@@@
 	case "HONOR_ZERO_RETURN_CODE":
 		// We don't capture the step return code, so not much we can do here.
 		break
