@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3bfef61_baed8e17",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-05T22:21:59Z",
+      "side": 1,
+      "message": "are you sure writing cursor is at the end of file? In C++, I normally set cursor myself to end of file just to be sure...",
+      "range": {
+        "startLine": 70,
+        "startChar": 14,
+        "endLine": 70,
+        "endChar": 28
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c9ee19dd_23134b15",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-05T22:21:59Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be in deferred?",
+      "range": {
+        "startLine": 73,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 9
+      },
+      "revId": "90b5f7557375ca376570b2eedd0d1e8e96c4b92c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
