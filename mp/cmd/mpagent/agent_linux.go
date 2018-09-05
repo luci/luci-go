@@ -51,7 +51,7 @@ func (LinuxStrategy) chown(ctx context.Context, username, path string) error {
 // Assumes the disk is already formatted as ext4.
 func (LinuxStrategy) configureAutoMount(ctx context.Context, disk string) error {
 	// Configure auto-mount using fstab.
-	line := []byte(fmt.Sprintf("%s /b ext4 defaults,nofail 0 2\n", disk))
+	line := []byte(fmt.Sprintf("%s /b ext4 defaults,nobootwait,nofail 0 2\n", disk))
 	f, err := os.OpenFile("/etc/fstab", os.O_APPEND|os.O_WRONLY, 0)
 	if err != nil {
 		return err
