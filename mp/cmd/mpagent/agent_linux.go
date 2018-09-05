@@ -15,12 +15,14 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/user"
 	"strconv"
+	"strings"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -51,12 +53,20 @@ func (LinuxStrategy) chown(ctx context.Context, username, path string) error {
 // Assumes the disk is already formatted as ext4.
 func (LinuxStrategy) configureAutoMount(ctx context.Context, disk string) error {
 	// Configure auto-mount using fstab.
-	line := []byte(fmt.Sprintf("%s /b ext4 defaults,nobootwait,nofail 0 2\n", disk))
-	f, err := os.OpenFile("/etc/fstab", os.O_APPEND|os.O_WRONLY, 0)
+	f, err := os.OpenFile("/etc/fstab", os.O_RDWR, 0)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), disk) {
+			logging.Infof(ctx, "Already mounted: %s.", disk)
+			return nil
+		}
+	}
+	logging.Infof(ctx, "Mounting: %s.", disk)
+	line := []byte(fmt.Sprintf("%s /b ext4 defaults,nobootwait,nofail 0 2\n", disk))
 	if _, err := f.Write(line); err != nil {
 		return err
 	}
