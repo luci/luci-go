@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2db50816_41836c8f",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1157909
+      },
+      "writtenOn": "2018-09-06T17:43:42Z",
+      "side": 1,
+      "message": "To double check, the \u003cname\u003e here is actually stream name rather than the log name above, right?",
+      "range": {
+        "startLine": 39,
+        "startChar": 46,
+        "endLine": 39,
+        "endChar": 50
+      },
+      "revId": "4a1d2c7589c5a05b27d9ae652b42b91f09c2e233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
