@@ -32,6 +32,14 @@ message Step {
 
     // URL of a human-oriented page that displays log contents.
     string view_url = 2;
+
+    // URL of the log content.
+    // As of 2018-09-06, the only supported scheme is "logdog".
+    // Typically it has form
+    // "logdog://<host>/<project>/<prefix>/+/<stream_name>".
+    // See also
+    // https://godoc.org/go.chromium.org/luci/logdog/common/types#ParseURL
+    string url = 3;
   }
 
   // Name of the step, unique within the build.
