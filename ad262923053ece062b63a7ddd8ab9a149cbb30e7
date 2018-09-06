@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c3a5a833_6717f365",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-06T20:52:17Z",
+      "side": 1,
+      "message": "This test is potentially flaky, as it doesn\u0027t revert its change.",
+      "revId": "ad262923053ece062b63a7ddd8ab9a149cbb30e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
