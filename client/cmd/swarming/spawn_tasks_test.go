@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -52,13 +53,24 @@ func TestSpawnTasksParse_NoInput(t *testing.T) {
 }
 
 func TestProcessTasksStream(t *testing.T) {
-	t.Parallel()
-
 	Convey(`Test disallow unknown fields`, t, func() {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
 		_, err := processTasksStream(r)
 		So(err, ShouldNotBeNil)
 	})
+
+	mockEnv := func(env map[string]string, f func()) {
+		for k, v := range env {
+			if orig, ok := os.LookupEnv(k); ok {
+				os.Setenv(k, v)
+				defer os.Setenv(k, orig)
+			} else {
+				os.Setenv(k, v)
+				defer os.Unsetenv(k)
+			}
+		}
+		f()
+	}
 
 	Convey(`Test success`, t, func() {
 		r := bytes.NewReader([]byte(`{
@@ -72,11 +84,22 @@ func TestProcessTasksStream(t *testing.T) {
 				}
 			]
 		}`))
-		result, err := processTasksStream(r)
+		// Set environment variables to ensure they get picked up.
+		env := map[string]string{
+			"USER":             "test",
+			"SWARMING_TASK_ID": "293109284abc",
+		}
+		var result []*swarming.SwarmingRpcsNewTaskRequest
+		var err error
+		mockEnv(env, func() {
+			result, err = processTasksStream(r)
+		})
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
-			Name: "foo",
+			Name:         "foo",
+			User:         "test",
+			ParentTaskId: "293109284abc",
 			Properties: &swarming.SwarmingRpcsTaskProperties{
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
