@@ -52,10 +52,12 @@ steps: <
   logs: <
     name: "stdout"
     view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+    url: "logdog://logdog.example.com/project/prefix/+/steps/setup_build/0/stdout"
   >
   logs: <
     name: "stderr"
     view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstderr"
+    url: "logdog://logdog.example.com/project/prefix/+/steps/setup_build/0/stderr"
   >
   status: STARTED
 >
@@ -65,6 +67,7 @@ steps: <
   logs: <
     name: "run_recipe"
     view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+    url: "logdog://logdog.example.com/project/prefix/+/steps/setup_build/0/logs/run_recipe/0"
   >
   status: STARTED
 >
