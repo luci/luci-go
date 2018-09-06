@@ -16,3 +16,4 @@ package buildbucketpb
 
 //go:generate cproto
 //go:generate mockgen -source rpc.pb.go -destination rpc.mock.pb.go -package buildbucketpb -write_package_comment=false
+//go:generate goimports -w rpc.mock.pb.go
