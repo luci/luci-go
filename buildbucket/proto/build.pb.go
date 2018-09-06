@@ -133,27 +133,6 @@ func (m *Build) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Build proto.InternalMessageInfo
 
-type isBuild_StatusReason interface {
-	isBuild_StatusReason()
-}
-
-type Build_InfraFailureReason struct {
-	InfraFailureReason *InfraFailureReason `protobuf:"bytes,13,opt,name=infra_failure_reason,json=infraFailureReason,proto3,oneof"`
-}
-type Build_CancelReason struct {
-	CancelReason *CancelReason `protobuf:"bytes,14,opt,name=cancel_reason,json=cancelReason,proto3,oneof"`
-}
-
-func (*Build_InfraFailureReason) isBuild_StatusReason() {}
-func (*Build_CancelReason) isBuild_StatusReason()       {}
-
-func (m *Build) GetStatusReason() isBuild_StatusReason {
-	if m != nil {
-		return m.StatusReason
-	}
-	return nil
-}
-
 func (m *Build) GetId() int64 {
 	if m != nil {
 		return m.Id
@@ -215,6 +194,29 @@ func (m *Build) GetStatus() Status {
 		return m.Status
 	}
 	return Status_STATUS_UNSPECIFIED
+}
+
+type isBuild_StatusReason interface {
+	isBuild_StatusReason()
+}
+
+type Build_InfraFailureReason struct {
+	InfraFailureReason *InfraFailureReason `protobuf:"bytes,13,opt,name=infra_failure_reason,json=infraFailureReason,proto3,oneof"`
+}
+
+type Build_CancelReason struct {
+	CancelReason *CancelReason `protobuf:"bytes,14,opt,name=cancel_reason,json=cancelReason,proto3,oneof"`
+}
+
+func (*Build_InfraFailureReason) isBuild_StatusReason() {}
+
+func (*Build_CancelReason) isBuild_StatusReason() {}
+
+func (m *Build) GetStatusReason() isBuild_StatusReason {
+	if m != nil {
+		return m.StatusReason
+	}
+	return nil
 }
 
 func (m *Build) GetInfraFailureReason() *InfraFailureReason {

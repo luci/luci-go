@@ -4,10 +4,11 @@
 package buildbucketpb
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
-	reflect "reflect"
 )
 
 // MockisBatchRequest_Request_Request is a mock of isBatchRequest_Request_Request interface

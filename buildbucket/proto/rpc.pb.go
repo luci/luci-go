@@ -315,11 +315,13 @@ type isBatchRequest_Request_Request interface {
 type BatchRequest_Request_GetBuild struct {
 	GetBuild *GetBuildRequest `protobuf:"bytes,1,opt,name=get_build,json=getBuild,proto3,oneof"`
 }
+
 type BatchRequest_Request_SearchBuilds struct {
 	SearchBuilds *SearchBuildsRequest `protobuf:"bytes,2,opt,name=search_builds,json=searchBuilds,proto3,oneof"`
 }
 
-func (*BatchRequest_Request_GetBuild) isBatchRequest_Request_Request()     {}
+func (*BatchRequest_Request_GetBuild) isBatchRequest_Request_Request() {}
+
 func (*BatchRequest_Request_SearchBuilds) isBatchRequest_Request_Request() {}
 
 func (m *BatchRequest_Request) GetRequest() isBatchRequest_Request_Request {
@@ -500,16 +502,20 @@ type isBatchResponse_Response_Response interface {
 type BatchResponse_Response_GetBuild struct {
 	GetBuild *Build `protobuf:"bytes,1,opt,name=get_build,json=getBuild,proto3,oneof"`
 }
+
 type BatchResponse_Response_SearchBuilds struct {
 	SearchBuilds *SearchBuildsResponse `protobuf:"bytes,2,opt,name=search_builds,json=searchBuilds,proto3,oneof"`
 }
+
 type BatchResponse_Response_Error struct {
 	Error *status.Status `protobuf:"bytes,100,opt,name=error,proto3,oneof"`
 }
 
-func (*BatchResponse_Response_GetBuild) isBatchResponse_Response_Response()     {}
+func (*BatchResponse_Response_GetBuild) isBatchResponse_Response_Response() {}
+
 func (*BatchResponse_Response_SearchBuilds) isBatchResponse_Response_Response() {}
-func (*BatchResponse_Response_Error) isBatchResponse_Response_Response()        {}
+
+func (*BatchResponse_Response_Error) isBatchResponse_Response_Response() {}
 
 func (m *BatchResponse_Response) GetResponse() isBatchResponse_Response_Response {
 	if m != nil {
