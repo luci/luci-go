@@ -45,6 +45,29 @@
       "revId": "bcb9f85eff34504a18ab9c2ecb4d5b414c5462ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "541bffd6_bd467b61",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-06T18:58:26Z",
+      "side": 1,
+      "message": "👍 cool",
+      "range": {
+        "startLine": 29,
+        "startChar": 56,
+        "endLine": 32,
+        "endChar": 75
+      },
+      "revId": "bcb9f85eff34504a18ab9c2ecb4d5b414c5462ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
