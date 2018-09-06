@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6d45607_989a531c",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-06T23:25:07Z",
+      "side": 1,
+      "message": "A simpler way (IMHO, that\u0027s debatable but that\u0027s what I generally do for this pattern) is to define a global function that return a function closure that reverts the change:\n\nfunc mockEnv(e map[string]string) func() {\n  .. changes the env ...\n  return func() {\n    .. reverts the env ...\n  }\n}\n\n\nthen below do:\n\n  defer mockEnv(env)()",
+      "revId": "5d56c88f885ca47a925459fcb8b1bda52601fc1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
