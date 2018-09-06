@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -61,6 +62,9 @@ func TestProcessTasksStream(t *testing.T) {
 	})
 
 	Convey(`Test success`, t, func() {
+		// Set environment variables to ensure they get picked up.
+		os.Setenv("USER", "test")
+		os.Setenv("SWARMING_TASK_ID", "293109284abc")
 		r := bytes.NewReader([]byte(`{
 			"requests": [
 				{
@@ -76,7 +80,9 @@ func TestProcessTasksStream(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
-			Name: "foo",
+			Name:         "foo",
+			User:         "test",
+			ParentTaskId: "293109284abc",
 			Properties: &swarming.SwarmingRpcsTaskProperties{
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
