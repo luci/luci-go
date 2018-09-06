@@ -200,7 +200,8 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 			bbLogs = append(bbLogs,
 				&buildbucketpb.Step_Log{
 					Name:    l.Label,
-					ViewUrl: p.convertLogdogLink(l.GetLogdogStream()),
+					ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
+					Url:     p.convertLogdogLink(l.GetLogdogStream(), false),
 				},
 			)
 		case l.GetUrl() != "":
@@ -217,7 +218,7 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 	return bbLogs, summary
 }
 
-func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream) string {
+func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewUrl bool) string {
 	host, prefix := p.defaultLogdogHost, p.defaultLogdogPrefix
 	if log.GetServer() != "" {
 		host = log.Server
@@ -226,5 +227,8 @@ func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream) string {
 		prefix = log.Prefix
 	}
 	path := fmt.Sprintf("%s/+/%s", prefix, log.Name)
-	return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(path))
+	if viewUrl {
+		return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(path))
+	}
+	return fmt.Sprintf("logdog://%s/%s", host, path)
 }
