@@ -16,6 +16,7 @@ package main
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"golang.org/x/net/context"
@@ -28,6 +29,27 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func mockEnv(env map[string]string) func() {
+	unset := make([]string, 0, len(env))
+	fixup := make(map[string]string)
+	for k, v := range env {
+		if orig, ok := os.LookupEnv(k); ok {
+			fixup[k] = orig
+		} else {
+			unset = append(unset, k)
+		}
+		os.Setenv(k, v)
+	}
+	return func() {
+		for _, k := range unset {
+			os.Unsetenv(k)
+		}
+		for k, v := range fixup {
+			os.Setenv(k, v)
+		}
+	}
+}
 
 func TestSpawnTasksParse_NoArgs(t *testing.T) {
 	Convey(`Make sure that Parse works with no arguments.`, t, func() {
@@ -52,8 +74,6 @@ func TestSpawnTasksParse_NoInput(t *testing.T) {
 }
 
 func TestProcessTasksStream(t *testing.T) {
-	t.Parallel()
-
 	Convey(`Test disallow unknown fields`, t, func() {
 		r := bytes.NewReader([]byte(`{"requests": [{"thing": "does not exist"}]}`))
 		_, err := processTasksStream(r)
@@ -72,11 +92,18 @@ func TestProcessTasksStream(t *testing.T) {
 				}
 			]
 		}`))
+		// Set environment variables to ensure they get picked up.
+		defer mockEnv(map[string]string{
+			"USER":             "test",
+			"SWARMING_TASK_ID": "293109284abc",
+		})()
 		result, err := processTasksStream(r)
 		So(err, ShouldBeNil)
 		So(result, ShouldHaveLength, 1)
 		So(result[0], ShouldResemble, &swarming.SwarmingRpcsNewTaskRequest{
-			Name: "foo",
+			Name:         "foo",
+			User:         "test",
+			ParentTaskId: "293109284abc",
 			Properties: &swarming.SwarmingRpcsTaskProperties{
 				Command: []string{"/bin/ls"},
 				Outputs: []string{"my_output.bin"},
