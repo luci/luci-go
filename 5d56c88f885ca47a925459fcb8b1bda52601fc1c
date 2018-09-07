@@ -34,6 +34,24 @@
       "revId": "5d56c88f885ca47a925459fcb8b1bda52601fc1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4ef06ce0_2a66b6cc",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-07T00:51:05Z",
+      "side": 1,
+      "message": "It is because function closure is a first-class value. you could also do\n\na :\u003d mockEnv(...)\n\ndefer a()\n\na is a value, which contains a function closure.",
+      "parentUuid": "4d16384f_e1724522",
+      "revId": "5d56c88f885ca47a925459fcb8b1bda52601fc1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
