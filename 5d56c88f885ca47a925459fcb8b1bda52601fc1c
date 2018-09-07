@@ -16,6 +16,24 @@
       "revId": "5d56c88f885ca47a925459fcb8b1bda52601fc1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d16384f_e1724522",
+        "filename": "client/cmd/swarming/spawn_tasks_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-07T00:45:59Z",
+      "side": 1,
+      "message": "Done, though it\u0027s a little surprising to me that the whole expression isn\u0027t deferred, just the function call. neat!",
+      "parentUuid": "e6d45607_989a531c",
+      "revId": "5d56c88f885ca47a925459fcb8b1bda52601fc1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
