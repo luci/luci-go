@@ -22,6 +22,30 @@
       "revId": "e7e7a1596cd30a4f5e8b1781f83d0b800e99e6bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6865b341_cdc4b67c",
+        "filename": "auth/integration/firebase/firebase.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1271098
+      },
+      "writtenOn": "2018-09-10T19:59:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c773902_1d12eeaf",
+      "range": {
+        "startLine": 18,
+        "startChar": 27,
+        "endLine": 18,
+        "endChar": 93
+      },
+      "revId": "e7e7a1596cd30a4f5e8b1781f83d0b800e99e6bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
