@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cab179b4_29f259ab",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-11T19:51:25Z",
+      "side": 1,
+      "message": "this allocates memory each time this runs and it is linear. Let\u0027s make it a global map. Code would become simpler too",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 1
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1ca4431_4ec8c39b",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-11T19:51:25Z",
+      "side": 1,
+      "message": "this top-bottom approach is linear with number of descendants, as opposed to number of direct children, so across entire build, status conversion is quadratic. Also, this function duplicates the logic in convertSubsteps\n\nLet\u0027s do bottom-top: pass sub-steps as []*buildbucket.Step after converting them in L139. After that, we can compute the final status of the parent step. This function will become simpler.",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 163,
+        "endChar": 43
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01cff4af_96815da7",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-11T19:51:25Z",
+      "side": 1,
+      "message": "what if there another child step is about to be created? Then step status would blink between completed and started. I think it would be confusing to users.\n\nlet\u0027s keep the parent status STARTED until we are sure it is completed. Then do the logic above.",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 2
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
