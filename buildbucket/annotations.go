@@ -139,7 +139,42 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	return p.convertSubsteps(c, bbSteps, ann.Substep, bb.Name+StepSep)
 }
 
+func statusPrecedence(val buildbucketpb.Status) int {
+	statusPrecedence := []buildbucketpb.Status{
+		buildbucketpb.Status_STARTED, buildbucketpb.Status_INFRA_FAILURE,
+		buildbucketpb.Status_FAILURE, buildbucketpb.Status_SUCCESS}
+	for idx, el := range statusPrecedence {
+		if el == val {
+			return idx
+		}
+	}
+	return -1
+}
+
 func (p *stepConverter) convertStatus(ann *annotpb.Step) buildbucketpb.Status {
+	// Handle composite steps and derive their status from substeps.
+	compositeStatus := buildbucketpb.Status_STATUS_UNSPECIFIED
+	for _, annSubstep := range ann.Substep {
+		annStep := annSubstep.GetStep()
+		if annStep == nil {
+			continue
+		}
+
+		substepStatus := p.convertStatus(annStep)
+		substepStatusPrecedence := statusPrecedence(substepStatus)
+		switch {
+		case substepStatusPrecedence == -1:
+			continue
+		case compositeStatus == buildbucketpb.Status_STATUS_UNSPECIFIED:
+			compositeStatus = substepStatus
+		case substepStatusPrecedence < statusPrecedence(compositeStatus):
+			compositeStatus = substepStatus
+		}
+	}
+	if compositeStatus != buildbucketpb.Status_STATUS_UNSPECIFIED {
+		return compositeStatus
+	}
+
 	switch ann.Status {
 	case annotpb.Status_RUNNING:
 		return buildbucketpb.Status_STARTED

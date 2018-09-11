@@ -109,11 +109,32 @@ substep: <
         name: "child"
 
         substep: <
-          step: < name: "descendant0" >
+          step: <
+            name: "descendant0"
+            status: FAILURE
+          >
         >
         substep: <
-          step: < name: "descendant1" >
+          step: <
+            name: "descendant1"
+            status: FAILURE
+            failure_details: < type: EXCEPTION >
+          >
         >
+      >
+    >
+
+    substep: <
+      step: <
+        name: "child2"
+        status: SUCCESS
+      >
+    >
+
+    substep: <
+      step: <
+        name: "child3"
+        status: RUNNING
       >
     >
   >
