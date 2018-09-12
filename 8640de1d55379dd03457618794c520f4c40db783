@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "f4ca37bc_7b8a6752",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-12T18:54:30Z",
+      "side": 1,
+      "message": "done https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1222230",
+      "parentUuid": "cb43d491_35f9bdd7",
+      "revId": "8640de1d55379dd03457618794c520f4c40db783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07fd3af8_6c618a93",
         "filename": "buildbucket/proto/step.proto",
         "patchSetId": 5
@@ -33,6 +51,24 @@
       "revId": "8640de1d55379dd03457618794c520f4c40db783",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f10c03c5_728ee454",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-12T18:54:30Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1222230",
+      "parentUuid": "07fd3af8_6c618a93",
+      "revId": "8640de1d55379dd03457618794c520f4c40db783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
