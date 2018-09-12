@@ -34,13 +34,13 @@ type Step struct {
 	// Current status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
 	//
-	// A status MUST NOT be "better" than statuses of its
-	// children,
+	// A status MUST NOT be "better" than statuses of its children,
 	// where parent-child relation is defined by name (see its comment)
 	// and "better" relation is defined by the following order, from good to bad:
 	//   SUCCESS
 	//   FAILURE
 	//   INFRA_FAILURE
+	//   CANCELED
 	// Note that this defines "better" relation only for some statuses.
 	// For those status where "better" is not defined, this rule does not apply.
 	Status Status `protobuf:"varint,4,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
@@ -62,7 +62,7 @@ func (m *Step) Reset()         { *m = Step{} }
 func (m *Step) String() string { return proto.CompactTextString(m) }
 func (*Step) ProtoMessage()    {}
 func (*Step) Descriptor() ([]byte, []int) {
-	return fileDescriptor_step_18c4d200aaaea367, []int{0}
+	return fileDescriptor_step_51d43500337aab4c, []int{0}
 }
 func (m *Step) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step.Unmarshal(m, b)
@@ -147,7 +147,7 @@ func (m *Step_Log) Reset()         { *m = Step_Log{} }
 func (m *Step_Log) String() string { return proto.CompactTextString(m) }
 func (*Step_Log) ProtoMessage()    {}
 func (*Step_Log) Descriptor() ([]byte, []int) {
-	return fileDescriptor_step_18c4d200aaaea367, []int{0, 0}
+	return fileDescriptor_step_51d43500337aab4c, []int{0, 0}
 }
 func (m *Step_Log) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Log.Unmarshal(m, b)
@@ -194,10 +194,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/step.proto", fileDescriptor_step_18c4d200aaaea367)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/step.proto", fileDescriptor_step_51d43500337aab4c)
 }
 
-var fileDescriptor_step_18c4d200aaaea367 = []byte{
+var fileDescriptor_step_51d43500337aab4c = []byte{
 	// 322 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x4d, 0x4b, 0xfb, 0x40,
 	0x10, 0xc6, 0x49, 0x93, 0x7f, 0x5f, 0xb6, 0xd0, 0x7f, 0xd9, 0x83, 0xc4, 0x5c, 0x0c, 0x9e, 0x22,
