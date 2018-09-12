@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "03a89f44_1d9c42a1",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-12T09:05:04Z",
+      "side": 1,
+      "message": "Yeah, that was a poor translation from Python code, where I mostly cared about readability than speed. Global map is definitely better here.",
+      "parentUuid": "cab179b4_29f259ab",
+      "range": {
+        "startLine": 142,
+        "startChar": 0,
+        "endLine": 152,
+        "endChar": 1
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a1ca4431_4ec8c39b",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "afaa7b8c_3ed3458d",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-12T09:05:04Z",
+      "side": 1,
+      "message": "Done, but this requires allocating and passing list of created buildbucket substeps from convertSubsteps and convertSteps. Otherwise, due to the flat structure of the bbSteps array it is hard to check whether newly added steps are direct children or grandchildren.",
+      "parentUuid": "a1ca4431_4ec8c39b",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 163,
+        "endChar": 43
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01cff4af_96815da7",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "debc87d1_dc90478c",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-12T09:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01cff4af_96815da7",
+      "range": {
+        "startLine": 174,
+        "startChar": 0,
+        "endLine": 176,
+        "endChar": 2
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
