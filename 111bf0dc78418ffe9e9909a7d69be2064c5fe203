@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1a9c2b15_97038b4b",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-12T18:45:00Z",
+      "side": 1,
+      "message": "adding to the spec https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1222230",
+      "revId": "111bf0dc78418ffe9e9909a7d69be2064c5fe203",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c764b20a_3675aa1e",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-12T18:45:00Z",
+      "side": 1,
+      "message": "bbStatus.Ended()",
+      "range": {
+        "startLine": 184,
+        "startChar": 4,
+        "endLine": 184,
+        "endChar": 48
+      },
+      "revId": "111bf0dc78418ffe9e9909a7d69be2064c5fe203",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
