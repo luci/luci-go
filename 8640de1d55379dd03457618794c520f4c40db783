@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb43d491_35f9bdd7",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-12T18:20:52Z",
+      "side": 1,
+      "message": "nit: These two lines can probably fit on one line.",
+      "revId": "8640de1d55379dd03457618794c520f4c40db783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07fd3af8_6c618a93",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-12T18:20:52Z",
+      "side": 1,
+      "message": "Please add \"CANCELLED\" to the bottom to reflect my changes in https://crrev.com/c/1219548.",
+      "revId": "8640de1d55379dd03457618794c520f4c40db783",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
