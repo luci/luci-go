@@ -57,6 +57,16 @@ message Step {
 
   // Current status of the step.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.
+  //
+  // A status MUST NOT be "better" than statuses of its
+  // children,
+  // where parent-child relation is defined by name (see its comment)
+  // and "better" relation is defined by the following order, from good to bad:
+  //   SUCCESS
+  //   FAILURE
+  //   INFRA_FAILURE
+  // Note that this defines "better" relation only for some statuses.
+  // For those status where "better" is not defined, this rule does not apply.
   Status status = 4;
 
   // Logs produced by the step.
