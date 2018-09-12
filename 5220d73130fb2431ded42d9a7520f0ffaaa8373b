@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "7881ddcf_42a60ff0",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-12T15:46:04Z",
+      "side": 1,
+      "message": "i don\u0027t think it does. The rule that are establishing here (parent status depends on its children) is recursive, so there is no need to consult all descendants. It is sufficient to only consult direct children, which means we can just pass bbSteps in L146.",
+      "parentUuid": "afaa7b8c_3ed3458d",
+      "range": {
+        "startLine": 163,
+        "startChar": 2,
+        "endLine": 163,
+        "endChar": 43
+      },
+      "revId": "5220d73130fb2431ded42d9a7520f0ffaaa8373b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "01cff4af_96815da7",
         "filename": "buildbucket/annotations.go",
         "patchSetId": 2
