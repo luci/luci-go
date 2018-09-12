@@ -47,6 +47,7 @@ message Step {
   //
   // Pipe character ("|") is reserved to separate parent and child step names.
   // For example, value "a|b" indicates step "b" under step "a".
+  // A parent step MUST exist and MUST precede this step.
   string name = 1;
 
   // The timestamp when the step started.
