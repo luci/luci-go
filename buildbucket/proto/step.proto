@@ -65,6 +65,7 @@ message Step {
   //   SUCCESS
   //   FAILURE
   //   INFRA_FAILURE
+  //   CANCELED
   // Note that this defines "better" relation only for some statuses.
   // For those status where "better" is not defined, this rule does not apply.
   Status status = 4;
