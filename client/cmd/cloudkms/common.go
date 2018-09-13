@@ -76,20 +76,24 @@ var kmsPathComponents = []string{
 	"cryptoKeyVersions",
 }
 
-func parseKMSPath(path string) (string, error) {
+func validateKMSPath(path string) error {
 	components := strings.Split(path, "/")
-	if len(components) < 2 {
-		return "", errors.New("a KMS path needs at least a project and a location")
+	if len(components) < 4 {
+		return errors.New("a KMS path needs at least a project and a location")
 	}
-	if len(components) > 5 {
-		return "", errors.New("a KMS path will never have more than 5 components")
+	if len(components) > 10 {
+		return errors.New("a KMS path will never have more than 10 components")
 	}
-	full := make([]string, 0, 2*len(components))
 	for i, c := range components {
-		full = append(full, kmsPathComponents[i])
-		full = append(full, c)
+		if i%2 == 1 {
+			continue
+		}
+		expect := kmsPathComponents[i/2]
+		if c != expect {
+			return errors.Reason("expected component %d to be %s, got %s", i, expect, c).Err()
+		}
 	}
-	return strings.Join(full, "/"), nil
+	return nil
 }
 
 type cryptRun struct {
@@ -115,11 +119,10 @@ func (c *cryptRun) Parse(ctx context.Context, args []string) error {
 	if c.output == "" {
 		return errors.New("output location is required")
 	}
-	keyPath, err := parseKMSPath(args[0])
-	if err != nil {
+	if err := validateKMSPath(args[0]); err != nil {
 		return err
 	}
-	c.keyPath = keyPath
+	c.keyPath = args[0]
 	return nil
 }
 
