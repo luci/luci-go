@@ -84,14 +84,20 @@ END
 steps: <
   name: "substeps"
   status: STARTED
+  start_time: < seconds: 1500000000 >
+  end_time: < seconds: 1500001000 >
 >
 steps: <
   name: "substeps|child"
   status: INFRA_FAILURE
+  start_time: < seconds: 1500000000 >
+  end_time: < seconds: 1500001000 >
 >
 steps: <
   name: "substeps|child|descendant0"
   status: FAILURE
+  start_time: < seconds: 1500000000 >
+  end_time: < seconds: 1500001000 >
 >
 steps: <
   name: "substeps|child|descendant1"
