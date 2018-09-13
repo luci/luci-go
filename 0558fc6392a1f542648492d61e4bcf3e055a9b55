@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fea8fb2a_d74c1770",
+        "filename": "mp/cmd/mpagent/agent_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-13T00:50:53Z",
+      "side": 1,
+      "message": "I enjoyed this code, cool, but harder to read than mundane:\n\nfor{\n  err :\u003d exec.Command(\"blkid\", disk).Run()\n  if err \u003d\u003d nil {\n    break\n  } \n  ...",
+      "revId": "0558fc6392a1f542648492d61e4bcf3e055a9b55",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
