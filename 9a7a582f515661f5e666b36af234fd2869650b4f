@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73377c7d_bbb340ef",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T21:27:13Z",
+      "side": 1,
+      "message": "Do we also require it not to be before the *start_time* of any of the children?\n\nConsider:\n+ parent: INFRA_FAILED (start: X, end: X+1) \u003c- propagated from child2\n+ child1: SCHEDULED (start: X+2)\n+ child2: INFRA_FAILED(start: X, end: X+1)\n\nIs this valid?",
+      "range": {
+        "startLine": 65,
+        "startChar": 24,
+        "endLine": 65,
+        "endChar": 32
+      },
+      "revId": "9a7a582f515661f5e666b36af234fd2869650b4f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
