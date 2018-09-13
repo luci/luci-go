@@ -49,7 +49,7 @@ func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annU
 	}
 
 	var bbSteps []*buildbucketpb.Step
-	if err = sc.convertSubsteps(c, &bbSteps, annSteps, ""); err != nil {
+	if _, err = sc.convertSubsteps(c, &bbSteps, annSteps, ""); err != nil {
 		return nil, err
 	}
 	return bbSteps, nil
@@ -75,28 +75,30 @@ type stepConverter struct {
 
 // convertSubsteps converts substeps, which we expect to be Steps, not Logdog
 // annotation streams.
-func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*buildbucketpb.Step, annSubsteps []*annotpb.Step_Substep, stepPrefix string) error {
+func (p *stepConverter) convertSubsteps(c context.Context, bbSteps *[]*buildbucketpb.Step, annSubsteps []*annotpb.Step_Substep, stepPrefix string) ([]*buildbucketpb.Step, error) {
+	bbSubsteps := make([]*buildbucketpb.Step, 0, len(annSubsteps))
 	for _, annSubstep := range annSubsteps {
 		annStep := annSubstep.GetStep()
 		if annStep == nil {
-			return errors.Reason("unexpected non-Step substep %v", annSubstep).Err()
+			return nil, errors.Reason("unexpected non-Step substep %v", annSubstep).Err()
 		}
 
-		err := p.convertSteps(c, bbSteps, annStep, stepPrefix)
+		bbSubstep, err := p.convertSteps(c, bbSteps, annStep, stepPrefix)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		bbSubsteps = append(bbSubsteps, bbSubstep)
 	}
 
-	return nil
+	return bbSubsteps, nil
 }
 
 // convertSteps converts [non-root] steps.
-func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketpb.Step, ann *annotpb.Step, stepPrefix string) error {
+func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketpb.Step, ann *annotpb.Step, stepPrefix string) (*buildbucketpb.Step, error) {
 	// Set up Buildbucket v2 step.
 	bb := &buildbucketpb.Step{
 		Name:      stepPrefix + ann.Name,
-		Status:    p.convertStatus(ann),
 		StartTime: ann.Started,
 		EndTime:   ann.Ended,
 	}
@@ -136,32 +138,59 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	*bbSteps = append(*bbSteps, bb)
 
 	// Handle substeps.
-	return p.convertSubsteps(c, bbSteps, ann.Substep, bb.Name+StepSep)
+	bbSubsteps, err := p.convertSubsteps(c, bbSteps, ann.Substep, bb.Name+StepSep)
+	if err != nil {
+		return nil, err
+	}
+
+	bb.Status = p.convertStatus(ann, bbSubsteps)
+	return bb, nil
 }
 
-func (p *stepConverter) convertStatus(ann *annotpb.Step) buildbucketpb.Status {
+var statusPrecedence = map[buildbucketpb.Status]int{
+	buildbucketpb.Status_CANCELED:      0,
+	buildbucketpb.Status_INFRA_FAILURE: 1,
+	buildbucketpb.Status_FAILURE:       2,
+	buildbucketpb.Status_SUCCESS:       3,
+}
+
+func (p *stepConverter) convertStatus(ann *annotpb.Step, bbSubsteps []*buildbucketpb.Step) buildbucketpb.Status {
+	var bbStatus buildbucketpb.Status
 	switch ann.Status {
 	case annotpb.Status_RUNNING:
 		return buildbucketpb.Status_STARTED
 
 	case annotpb.Status_SUCCESS:
-		return buildbucketpb.Status_SUCCESS
+		bbStatus = buildbucketpb.Status_SUCCESS
 
 	case annotpb.Status_FAILURE:
 		if fd := ann.GetFailureDetails(); fd != nil {
 			switch fd.Type {
 			case annotpb.FailureDetails_GENERAL:
-				return buildbucketpb.Status_FAILURE
+				bbStatus = buildbucketpb.Status_FAILURE
 			case annotpb.FailureDetails_CANCELLED:
-				return buildbucketpb.Status_CANCELED
+				bbStatus = buildbucketpb.Status_CANCELED
 			default:
-				return buildbucketpb.Status_INFRA_FAILURE
+				bbStatus = buildbucketpb.Status_INFRA_FAILURE
 			}
+		} else {
+			bbStatus = buildbucketpb.Status_FAILURE
 		}
-		return buildbucketpb.Status_FAILURE
 	}
 
-	return buildbucketpb.Status_STATUS_UNSPECIFIED
+	// When parent step finishes running, compute its final status as worst
+	// status, as determined by statusPrecedence map above, among direct children
+	// and its own status.
+	if bbStatus.Ended() {
+		for _, bbSubstep := range bbSubsteps {
+			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
+			if ok && substepStatusPrecedence < statusPrecedence[bbStatus] {
+				bbStatus = bbSubstep.Status
+			}
+		}
+	}
+
+	return bbStatus
 }
 
 func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*buildbucketpb.Step_Log, []string) {
