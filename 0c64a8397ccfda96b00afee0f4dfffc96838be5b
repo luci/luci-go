@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b6e7e880_fc0b692a",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-13T23:24:09Z",
+      "side": 1,
+      "message": "\u003e len(kmsPathComponents) * 2 ?",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "456db758_84c046ec",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-13T23:24:09Z",
+      "side": 1,
+      "message": "you can merge with following line.",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
