@@ -19,6 +19,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
@@ -36,6 +38,9 @@ const StepSep = "|"
 // ConvertBuildSteps converts a build given the root step's substeps, which must
 // be the actual steps of the build, and the Logdog URL for links conversion.
 // The provided context is used only for logging.
+//
+// Does not verify that the returned build satisfies all the constraints
+// described in the proto files.
 //
 // Unsupported fields:
 //   * Substep.annotation_stream,
@@ -144,7 +149,33 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	}
 
 	bb.Status = p.convertStatus(ann, bbSubsteps)
+
+	// Ensure parent step start/end time is not after/before of its children.
+	for _, ss := range bbSubsteps {
+		if ss.StartTime != nil && (bb.StartTime == nil || cmpTs(bb.StartTime, ss.StartTime) > 0) {
+			bb.StartTime = ss.StartTime
+		}
+		if ss.EndTime != nil && (bb.EndTime == nil || cmpTs(bb.EndTime, ss.EndTime) < 0) {
+			bb.EndTime = ss.EndTime
+		}
+	}
+
+	maybeCloneTimestamp(&bb.StartTime)
+	maybeCloneTimestamp(&bb.EndTime)
 	return bb, nil
+}
+
+func maybeCloneTimestamp(ts **timestamp.Timestamp) {
+	if *ts != nil {
+		*ts = proto.Clone(*ts).(*timestamp.Timestamp)
+	}
+}
+
+func cmpTs(a, b *timestamp.Timestamp) int {
+	if a.Seconds != b.Seconds {
+		return int(a.Seconds - b.Seconds)
+	}
+	return int(a.Nanos - b.Nanos)
 }
 
 var statusPrecedence = map[buildbucketpb.Status]int{
