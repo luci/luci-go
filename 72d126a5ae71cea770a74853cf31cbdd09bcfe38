@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c78cf407_9ccc89fc",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T20:48:56Z",
+      "side": 1,
+      "message": "iff",
+      "range": {
+        "startLine": 134,
+        "startChar": 14,
+        "endLine": 134,
+        "endChar": 16
+      },
+      "revId": "72d126a5ae71cea770a74853cf31cbdd09bcfe38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a26cd62d_b9a9dd06",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T20:48:56Z",
+      "side": 1,
+      "message": "iff",
+      "range": {
+        "startLine": 137,
+        "startChar": 14,
+        "endLine": 137,
+        "endChar": 16
+      },
+      "revId": "72d126a5ae71cea770a74853cf31cbdd09bcfe38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d830fffc_377e42cb",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T20:48:56Z",
+      "side": 1,
+      "message": "Does this mean we might have an INFRA_FAILED build/step that has a \"future\" start_time (relative to end_time), or that we might have an INFRA_FAILED build/step that does not have a start_time?\n\n(If the latter, that would be sad because INFRA_FAILED is a terminal step, meaning it has an end_time, and end_times must follow start_times)",
+      "range": {
+        "startLine": 46,
+        "startChar": 37,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "72d126a5ae71cea770a74853cf31cbdd09bcfe38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82850ea2_d2c83f7d",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T20:48:56Z",
+      "side": 1,
+      "message": "\"If this step is a child, a parent...\"?",
+      "range": {
+        "startLine": 52,
+        "startChar": 5,
+        "endLine": 52,
+        "endChar": 13
+      },
+      "revId": "72d126a5ae71cea770a74853cf31cbdd09bcfe38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
