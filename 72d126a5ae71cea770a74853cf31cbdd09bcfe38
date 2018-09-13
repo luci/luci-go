@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "38222081_cb8aa6e4",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T21:29:40Z",
+      "side": 1,
+      "message": "Oh, so basically we\u0027re saying we can have end_time without start_time. A bit unintuitive at first, but makes sense. SGTM, thanks!",
+      "parentUuid": "396dfe48_e19d09bb",
+      "range": {
+        "startLine": 46,
+        "startChar": 37,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "72d126a5ae71cea770a74853cf31cbdd09bcfe38",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "82850ea2_d2c83f7d",
         "filename": "buildbucket/proto/step.proto",
         "patchSetId": 2
