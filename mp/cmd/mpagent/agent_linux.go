@@ -24,6 +24,8 @@ import (
 	"os/user"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
@@ -53,6 +55,22 @@ func (LinuxStrategy) chown(ctx context.Context, username, path string) error {
 //
 // Assumes the disk is already formatted as ext4.
 func (LinuxStrategy) configureAutoMount(ctx context.Context, disk string) error {
+	// Wait for the disk to be attached.
+	for {
+		err := exec.Command("blkid", disk).Run()
+		if err == nil {
+			logging.Infof(ctx, "Attached: %s.", disk)
+			break
+		}
+		s := err.(*exec.ExitError).Sys().(syscall.WaitStatus)
+		if s.ExitStatus() != 2 {
+			// 2 means the specified device wasn't found.
+			// Keep waiting if 2, otherwise return an error.
+			return err
+		}
+		time.Sleep(60 * time.Second)
+		logging.Infof(ctx, "Waiting for disk to be attached...")
+	}
 	// Configure auto-mount using fstab.
 	f, err := os.OpenFile("/etc/fstab", os.O_RDWR, 0)
 	if err != nil {
