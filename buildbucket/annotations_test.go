@@ -60,7 +60,7 @@ func TestAnnotations(t *testing.T) {
 		c := context.Background()
 		p := stepConverter{"logdog.example.com", "project/prefix"}
 		var got []*buildbucketpb.Step
-		err = p.convertSubsteps(c, &got, ann.Substep, "")
+		_, err = p.convertSubsteps(c, &got, ann.Substep, "")
 		So(err, ShouldBeNil)
 
 		So(len(got), ShouldEqual, len(want.Steps))

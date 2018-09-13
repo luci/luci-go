@@ -87,13 +87,17 @@ steps: <
 >
 steps: <
   name: "substeps|child"
-  status: STARTED
+  status: INFRA_FAILURE
 >
 steps: <
   name: "substeps|child|descendant0"
-  status: STARTED
+  status: FAILURE
 >
 steps: <
   name: "substeps|child|descendant1"
-  status: STARTED
+  status: INFRA_FAILURE
+>
+steps: <
+  name: "substeps|child2"
+  status: SUCCESS
 >
