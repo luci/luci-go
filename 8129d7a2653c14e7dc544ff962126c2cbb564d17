@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c376807_0bd39327",
+        "filename": "buildbucket/proto/common.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T23:02:11Z",
+      "side": 1,
+      "message": "How about \"start_time is not required for this status\", or \"Such a build can lack start_time\"?",
+      "range": {
+        "startLine": 46,
+        "startChar": 5,
+        "endLine": 46,
+        "endChar": 71
+      },
+      "revId": "8129d7a2653c14e7dc544ff962126c2cbb564d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f1bd5330_bc6352e9",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-09-13T23:02:11Z",
+      "side": 1,
+      "message": "If? Otherwise CANCELED and INFRA_FAILED steps *cannot* have start times.",
+      "range": {
+        "startLine": 57,
+        "startChar": 14,
+        "endLine": 57,
+        "endChar": 17
+      },
+      "revId": "8129d7a2653c14e7dc544ff962126c2cbb564d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
