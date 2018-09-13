@@ -131,8 +131,10 @@ message Build {
   // When the build was created.
   google.protobuf.Timestamp create_time = 6;
   // When the build started.
+  // Required if status is STARTED, SUCCESS or FAILURE.
   google.protobuf.Timestamp start_time = 7;
   // When the build ended.
+  // Required if status is terminal.
   google.protobuf.Timestamp end_time = 8;
   // When the build was most recently updated.
   //
