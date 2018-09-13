@@ -51,9 +51,13 @@ message Step {
   string name = 1;
 
   // The timestamp when the step started.
+  //
+  // MUST NOT be before start_time of the parent.
   google.protobuf.Timestamp start_time = 2;
 
   // The timestamp when the step ended.
+  //
+  // MUST NOT be after end_time of the parent.
   google.protobuf.Timestamp end_time = 3;
 
   // Current status of the step.
