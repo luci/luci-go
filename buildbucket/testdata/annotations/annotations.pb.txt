@@ -103,6 +103,9 @@ substep: <
 substep: <
   step: <
     name: "substeps"
+    # This time will be overridden by children.
+    started: < seconds: 1500000500 >
+    ended: < seconds: 1500000501 >
 
     substep: <
       step: <
@@ -113,6 +116,8 @@ substep: <
           step: <
             name: "descendant0"
             status: FAILURE
+            started: < seconds: 1500000000 >
+            ended: < seconds: 1500001000 >
           >
         >
         substep: <
