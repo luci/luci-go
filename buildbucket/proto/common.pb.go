@@ -31,18 +31,24 @@ const (
 	Status_STARTED Status = 2
 	// A union of all terminal statuses.
 	// Can be used in BuildPredicate.status.
-	// A concrete build cannot have this status.
-	// Can be used as a bitmask to check that a build ended.
+	// A concrete build/step cannot have this status.
+	// Can be used as a bitmask to check that a build/step ended.
 	Status_ENDED_MASK Status = 4
 	// A build/step ended successfully.
+	// This is a terminal status. It may not transition to another status.
 	Status_SUCCESS Status = 12
 	// A build/step ended unsuccessfully due to its Build.Input,
 	// e.g. tests failed, and NOT due to a build infrastructure failure.
+	// This is a terminal status. It may not transition to another status.
 	Status_FAILURE Status = 20
-	// A build/step ended unsuccessfully due to a failure independent of the input,
-	// e.g. swarming failed, or the recipe was unable to read the patch from gerrit..
+	// A build/step ended unsuccessfully due to a failure independent of the
+	// input, e.g. swarming failed, not enough capacity or the recipe was unable
+	// to read the patch from gerrit.
+	// This status does not imply that build/step was started in the past.
+	// This is a terminal status. It may not transition to another status.
 	Status_INFRA_FAILURE Status = 36
 	// A build was cancelled explicitly, e.g. via an RPC.
+	// This is a terminal status. It may not transition to another status.
 	Status_CANCELED Status = 68
 )
 
@@ -71,7 +77,7 @@ func (x Status) String() string {
 	return proto.EnumName(Status_name, int32(x))
 }
 func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{0}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{0}
 }
 
 // A boolean with an undefined value.
@@ -98,7 +104,7 @@ func (x Trinary) String() string {
 	return proto.EnumName(Trinary_name, int32(x))
 }
 func (Trinary) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{1}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{1}
 }
 
 // A Gerrit patchset.
@@ -120,7 +126,7 @@ func (m *GerritChange) Reset()         { *m = GerritChange{} }
 func (m *GerritChange) String() string { return proto.CompactTextString(m) }
 func (*GerritChange) ProtoMessage()    {}
 func (*GerritChange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{0}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{0}
 }
 func (m *GerritChange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GerritChange.Unmarshal(m, b)
@@ -193,7 +199,7 @@ func (m *GitilesCommit) Reset()         { *m = GitilesCommit{} }
 func (m *GitilesCommit) String() string { return proto.CompactTextString(m) }
 func (*GitilesCommit) ProtoMessage()    {}
 func (*GitilesCommit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{1}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{1}
 }
 func (m *GitilesCommit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesCommit.Unmarshal(m, b)
@@ -261,7 +267,7 @@ func (m *StringPair) Reset()         { *m = StringPair{} }
 func (m *StringPair) String() string { return proto.CompactTextString(m) }
 func (*StringPair) ProtoMessage()    {}
 func (*StringPair) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{2}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{2}
 }
 func (m *StringPair) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StringPair.Unmarshal(m, b)
@@ -310,7 +316,7 @@ func (m *TimeRange) Reset()         { *m = TimeRange{} }
 func (m *TimeRange) String() string { return proto.CompactTextString(m) }
 func (*TimeRange) ProtoMessage()    {}
 func (*TimeRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_eb5e1044e5456296, []int{3}
+	return fileDescriptor_common_0fc4901d3fc76497, []int{3}
 }
 func (m *TimeRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimeRange.Unmarshal(m, b)
@@ -354,10 +360,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/common.proto", fileDescriptor_common_eb5e1044e5456296)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/common.proto", fileDescriptor_common_0fc4901d3fc76497)
 }
 
-var fileDescriptor_common_eb5e1044e5456296 = []byte{
+var fileDescriptor_common_0fc4901d3fc76497 = []byte{
 	// 480 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0x4f, 0x6b, 0xdb, 0x4a,
 	0x14, 0xc5, 0x23, 0xf9, 0xaf, 0x6e, 0x6c, 0xa3, 0x37, 0x84, 0x20, 0xbc, 0x79, 0xc6, 0xb4, 0x60,

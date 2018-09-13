@@ -62,8 +62,10 @@ type Build struct {
 	// When the build was created.
 	CreateTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// When the build started.
+	// Required if status is STARTED, SUCCESS or FAILURE.
 	StartTime *timestamp.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// When the build ended.
+	// Required if status is terminal.
 	EndTime *timestamp.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// When the build was most recently updated.
 	//
@@ -113,7 +115,7 @@ func (m *Build) Reset()         { *m = Build{} }
 func (m *Build) String() string { return proto.CompactTextString(m) }
 func (*Build) ProtoMessage()    {}
 func (*Build) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{0}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{0}
 }
 func (m *Build) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Build.Unmarshal(m, b)
@@ -381,7 +383,7 @@ func (m *Build_Input) Reset()         { *m = Build_Input{} }
 func (m *Build_Input) String() string { return proto.CompactTextString(m) }
 func (*Build_Input) ProtoMessage()    {}
 func (*Build_Input) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{0, 0}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{0, 0}
 }
 func (m *Build_Input) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Build_Input.Unmarshal(m, b)
@@ -459,7 +461,7 @@ func (m *Build_Output) Reset()         { *m = Build_Output{} }
 func (m *Build_Output) String() string { return proto.CompactTextString(m) }
 func (*Build_Output) ProtoMessage()    {}
 func (*Build_Output) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{0, 1}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{0, 1}
 }
 func (m *Build_Output) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Build_Output.Unmarshal(m, b)
@@ -515,7 +517,7 @@ func (m *CancelReason) Reset()         { *m = CancelReason{} }
 func (m *CancelReason) String() string { return proto.CompactTextString(m) }
 func (*CancelReason) ProtoMessage()    {}
 func (*CancelReason) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{1}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{1}
 }
 func (m *CancelReason) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CancelReason.Unmarshal(m, b)
@@ -564,7 +566,7 @@ func (m *InfraFailureReason) Reset()         { *m = InfraFailureReason{} }
 func (m *InfraFailureReason) String() string { return proto.CompactTextString(m) }
 func (*InfraFailureReason) ProtoMessage()    {}
 func (*InfraFailureReason) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{2}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{2}
 }
 func (m *InfraFailureReason) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InfraFailureReason.Unmarshal(m, b)
@@ -612,7 +614,7 @@ func (m *BuildInfra) Reset()         { *m = BuildInfra{} }
 func (m *BuildInfra) String() string { return proto.CompactTextString(m) }
 func (*BuildInfra) ProtoMessage()    {}
 func (*BuildInfra) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{3}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{3}
 }
 func (m *BuildInfra) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfra.Unmarshal(m, b)
@@ -670,7 +672,7 @@ func (m *BuildInfra_Buildbucket) Reset()         { *m = BuildInfra_Buildbucket{}
 func (m *BuildInfra_Buildbucket) String() string { return proto.CompactTextString(m) }
 func (*BuildInfra_Buildbucket) ProtoMessage()    {}
 func (*BuildInfra_Buildbucket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{3, 0}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{3, 0}
 }
 func (m *BuildInfra_Buildbucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfra_Buildbucket.Unmarshal(m, b)
@@ -732,7 +734,7 @@ func (m *BuildInfra_Swarming) Reset()         { *m = BuildInfra_Swarming{} }
 func (m *BuildInfra_Swarming) String() string { return proto.CompactTextString(m) }
 func (*BuildInfra_Swarming) ProtoMessage()    {}
 func (*BuildInfra_Swarming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{3, 1}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{3, 1}
 }
 func (m *BuildInfra_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfra_Swarming.Unmarshal(m, b)
@@ -821,7 +823,7 @@ func (m *BuildInfra_LogDog) Reset()         { *m = BuildInfra_LogDog{} }
 func (m *BuildInfra_LogDog) String() string { return proto.CompactTextString(m) }
 func (*BuildInfra_LogDog) ProtoMessage()    {}
 func (*BuildInfra_LogDog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{3, 2}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{3, 2}
 }
 func (m *BuildInfra_LogDog) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfra_LogDog.Unmarshal(m, b)
@@ -881,7 +883,7 @@ func (m *BuilderID) Reset()         { *m = BuilderID{} }
 func (m *BuilderID) String() string { return proto.CompactTextString(m) }
 func (*BuilderID) ProtoMessage()    {}
 func (*BuilderID) Descriptor() ([]byte, []int) {
-	return fileDescriptor_build_1c0d0479f476fec3, []int{4}
+	return fileDescriptor_build_6841c13c3724d4bc, []int{4}
 }
 func (m *BuilderID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuilderID.Unmarshal(m, b)
@@ -936,10 +938,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/build.proto", fileDescriptor_build_1c0d0479f476fec3)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/build.proto", fileDescriptor_build_6841c13c3724d4bc)
 }
 
-var fileDescriptor_build_1c0d0479f476fec3 = []byte{
+var fileDescriptor_build_6841c13c3724d4bc = []byte{
 	// 996 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xd1, 0x6e, 0xe3, 0x44,
 	0x14, 0x25, 0xed, 0xda, 0x89, 0x6f, 0x9a, 0xb4, 0xcc, 0x96, 0xad, 0x31, 0xbb, 0xda, 0x10, 0x24,
