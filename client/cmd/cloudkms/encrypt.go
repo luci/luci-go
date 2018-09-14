@@ -59,7 +59,9 @@ func cmdEncrypt(authOpts auth.Options) *subcommands.Command {
 		ShortDesc: "encrypts some plaintext",
 		LongDesc: `Uploads a plaintext for encryption by cloudkms.
 
-<path> refers to the path to the crypto key. e.g. <project>/<location>/<keyRing>/<cryptoKey>`,
+<path> refers to the path to the crypto key. e.g.
+
+projects/<project>/locations/<location>/keyRings/<keyRing>/cryptoKeys/<cryptoKey>`,
 		CommandRun: func() subcommands.CommandRun {
 			c := cryptRun{doRequest: doEncrypt}
 			c.commonFlags.Init(authOpts)
