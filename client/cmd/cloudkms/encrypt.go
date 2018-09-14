@@ -50,7 +50,7 @@ func doEncrypt(ctx context.Context, service *cloudkms.Service, input []byte, key
 	if err != nil {
 		return nil, err
 	}
-	return []byte(resp.Ciphertext), nil
+	return base64.StdEncoding.DecodeString(resp.Ciphertext)
 }
 
 func cmdEncrypt(authOpts auth.Options) *subcommands.Command {

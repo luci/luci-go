@@ -31,7 +31,7 @@ import (
 func doDecrypt(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error) {
 	// Set up request, using the ciphertext directly (should already be base64 encoded).
 	req := cloudkms.DecryptRequest{
-		Ciphertext: string(input),
+		Ciphertext: base64.StdEncoding.EncodeToString(input),
 	}
 
 	var resp *cloudkms.DecryptResponse
