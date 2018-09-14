@@ -68,28 +68,41 @@ func writeOutput(file string, data []byte) error {
 	return ioutil.WriteFile(file, data, 0664)
 }
 
-var kmsPathComponents = []string{
+// cryptoKeysPathComponents are the path components necessary for API calls related to
+// crypto keys.
+//
+// This structure represents the following path format:
+// projects/.../locations/.../keyRings/.../cryptoKeys/...
+var cryptoKeysPathComponents = []string{
 	"projects",
 	"locations",
 	"keyRings",
 	"cryptoKeys",
-	"cryptoKeyVersions",
 }
 
-func parseKMSPath(path string) (string, error) {
+// validateCryptoKeysKMSPath validates a cloudkms path used for the API calls currently
+// supported by this client.
+//
+// What this means is we only care about paths that look exactly like the ones
+// constructed from kmsPathComponents.
+func validateCryptoKeysKMSPath(path string) error {
+	if path[0] == '/' {
+		path = path[1:]
+	}
 	components := strings.Split(path, "/")
-	if len(components) < 2 {
-		return "", errors.New("a KMS path needs at least a project and a location")
+	if len(components) < (len(cryptoKeysPathComponents)-1)*2 || len(components) > len(cryptoKeysPathComponents)*2 {
+		return errors.Reason("path should have the form %s", strings.Join(cryptoKeysPathComponents, "/.../")+"/...").Err()
 	}
-	if len(components) > 5 {
-		return "", errors.New("a KMS path will never have more than 5 components")
-	}
-	full := make([]string, 0, 2*len(components))
 	for i, c := range components {
-		full = append(full, kmsPathComponents[i])
-		full = append(full, c)
+		if i%2 == 1 {
+			continue
+		}
+		expect := cryptoKeysPathComponents[i/2]
+		if c != expect {
+			return errors.Reason("expected component %d to be %s, got %s", i+1, expect, c).Err()
+		}
 	}
-	return strings.Join(full, "/"), nil
+	return nil
 }
 
 type cryptRun struct {
@@ -97,6 +110,11 @@ type cryptRun struct {
 	keyPath   string
 	input     string
 	doRequest func(ctx context.Context, service *cloudkms.Service, input []byte, keyPath string) ([]byte, error)
+}
+
+func (c *cryptRun) Init(authOpts auth.Options) {
+	c.commonFlags.Init(authOpts)
+	c.Flags.StringVar(&c.input, "input", "", "Path to file with data to operate on (use '-' for stdin). Data cannot be larger than 64KiB.")
 }
 
 func (c *cryptRun) Parse(ctx context.Context, args []string) error {
@@ -107,7 +125,7 @@ func (c *cryptRun) Parse(ctx context.Context, args []string) error {
 		return errors.New("positional arguments missing")
 	}
 	if len(args) > 1 {
-		return errors.New("positional arguments not expected")
+		return errors.New("unexpected positional arguments")
 	}
 	if c.input == "" {
 		return errors.New("input file is required")
@@ -115,11 +133,10 @@ func (c *cryptRun) Parse(ctx context.Context, args []string) error {
 	if c.output == "" {
 		return errors.New("output location is required")
 	}
-	keyPath, err := parseKMSPath(args[0])
-	if err != nil {
+	if err := validateCryptoKeysKMSPath(args[0]); err != nil {
 		return err
 	}
-	c.keyPath = keyPath
+	c.keyPath = args[0]
 	return nil
 }
 
