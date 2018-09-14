@@ -52,6 +52,11 @@ func TestClientDigestsFile(t *testing.T) {
 		So(df.ClientRef("linux-amd64"), ShouldResemble, sha256("b"))
 		So(df.ClientRef("windows-amd64"), ShouldResemble, sha1("c"))
 		So(df.ClientRef("unknown"), ShouldBeNil)
+
+		So(df.Contains("linux-amd64", sha1("a")), ShouldBeTrue)
+		So(df.Contains("linux-amd64", sha256("b")), ShouldBeTrue)
+		So(df.Contains("linux-amd64", sha1("c")), ShouldBeFalse)
+		So(df.Contains("unknown", sha1("a")), ShouldBeFalse)
 	})
 
 	Convey("Errors in AddClientRef", t, func() {
