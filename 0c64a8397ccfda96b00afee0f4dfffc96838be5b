@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "de0fceef_e44f593a",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-14T18:04:11Z",
+      "side": 1,
+      "message": "hm, how would it know what key to use? I\u0027d assume keyRings and cryptoKeys are also required?",
+      "range": {
+        "startLine": 82,
+        "startChar": 21,
+        "endLine": 82,
+        "endChar": 71
+      },
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b6e7e880_fc0b692a",
         "filename": "client/cmd/cloudkms/common.go",
         "patchSetId": 1
@@ -13,6 +36,47 @@
       "writtenOn": "2018-09-13T23:24:09Z",
       "side": 1,
       "message": "\u003e len(kmsPathComponents) * 2 ?",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14119c48_c0aac0ab",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-14T18:04:11Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "b6e7e880_fc0b692a",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b583ecf_3b96f72d",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-14T18:04:11Z",
+      "side": 1,
+      "message": "nit: can combine both errors into single\n\n\"a KSM path should have form projects/.../locations/.../keyRings/.../cryptoKeys/...[/cryptoKeyVersions/...]\"",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 71
+      },
       "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
