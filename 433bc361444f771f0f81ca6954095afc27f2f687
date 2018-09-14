@@ -22,6 +22,30 @@
       "revId": "433bc361444f771f0f81ca6954095afc27f2f687",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f4aa2f9_3e542b77",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-14T20:58:54Z",
+      "side": 1,
+      "message": "Done, made it more general",
+      "parentUuid": "a3fe081e_951c3bca",
+      "range": {
+        "startLine": 117,
+        "startChar": 51,
+        "endLine": 117,
+        "endChar": 73
+      },
+      "revId": "433bc361444f771f0f81ca6954095afc27f2f687",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
