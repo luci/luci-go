@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "d9e1f16a_9b5db6a8",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-14T03:46:14Z",
+      "side": 1,
+      "message": "good point",
+      "parentUuid": "d4975ca6_d6b11e51",
+      "range": {
+        "startLine": 57,
+        "startChar": 14,
+        "endLine": 57,
+        "endChar": 17
+      },
+      "revId": "8129d7a2653c14e7dc544ff962126c2cbb564d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "770b524f_81c64bf0",
         "filename": "buildbucket/proto/step.proto",
         "patchSetId": 4
@@ -140,6 +164,30 @@
       "revId": "8129d7a2653c14e7dc544ff962126c2cbb564d17",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4de4cfd3_f6bad649",
+        "filename": "buildbucket/proto/step.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-14T03:46:14Z",
+      "side": 1,
+      "message": "done here and in build.proto",
+      "parentUuid": "770b524f_81c64bf0",
+      "range": {
+        "startLine": 63,
+        "startChar": 5,
+        "endLine": 63,
+        "endChar": 13
+      },
+      "revId": "8129d7a2653c14e7dc544ff962126c2cbb564d17",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
