@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b2de6679_6c0717cf",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-14T19:20:51Z",
+      "side": 1,
+      "message": "for everything supported right now, it should only be up to cryptoKeys. the original seemed to be setting up for more API calls being supported, but I\u0027ll scale this back to only support paths that go up to cryptoKeys.",
+      "parentUuid": "de0fceef_e44f593a",
+      "range": {
+        "startLine": 82,
+        "startChar": 21,
+        "endLine": 82,
+        "endChar": 71
+      },
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b6e7e880_fc0b692a",
         "filename": "client/cmd/cloudkms/common.go",
         "patchSetId": 1
@@ -60,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "5c42bc96_5e207710",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-14T19:20:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14119c48_c0aac0ab",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6b583ecf_3b96f72d",
         "filename": "client/cmd/cloudkms/common.go",
         "patchSetId": 1
@@ -83,6 +125,30 @@
     },
     {
       "key": {
+        "uuid": "015dfc3f_29f4eeec",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-14T19:20:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b583ecf_3b96f72d",
+      "range": {
+        "startLine": 85,
+        "startChar": 21,
+        "endLine": 85,
+        "endChar": 71
+      },
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "456db758_84c046ec",
         "filename": "client/cmd/cloudkms/common.go",
         "patchSetId": 1
@@ -94,6 +160,24 @@
       "writtenOn": "2018-09-13T23:24:09Z",
       "side": 1,
       "message": "you can merge with following line.",
+      "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "430e37b6_3b0f28f0",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-14T19:20:51Z",
+      "side": 1,
+      "message": "separated because it\u0027s used again in the error message. maybe not a great reason, but I think it helps a little in terms of maintenance? feel free to disagree",
+      "parentUuid": "456db758_84c046ec",
       "revId": "0c64a8397ccfda96b00afee0f4dfffc96838be5b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
