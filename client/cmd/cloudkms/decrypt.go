@@ -59,11 +59,12 @@ func cmdDecrypt(authOpts auth.Options) *subcommands.Command {
 		ShortDesc: "decrypts some ciphertext that was previously encrypted using a key in cloudkms",
 		LongDesc: `Uploads a ciphertext for decryption by cloudkms.
 
-<path> refers to the path to the crypto key. e.g. <project>/<location>/<keyRing>/<cryptoKey>`,
+<path> refers to the path to the crypto key. e.g.
+
+projects/<project>/locations/<location>/keyRings/<keyRing>/cryptoKeys/<cryptoKey>`,
 		CommandRun: func() subcommands.CommandRun {
 			c := cryptRun{doRequest: doDecrypt}
-			c.commonFlags.Init(authOpts)
-			c.Flags.StringVar(&c.input, "input", "", "Path to read in ciphertext from (use '-' for stdin).")
+			c.Init(authOpts)
 			return &c
 		},
 	}
