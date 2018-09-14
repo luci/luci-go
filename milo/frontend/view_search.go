@@ -57,11 +57,16 @@ func searchHandler(c *router.Context) {
 	if err != nil {
 		errMsg = err.Error()
 	}
+	services := make([]ui.CIService, 0, 2)
+	if buildbucketService != nil {
+		services = append(services, *buildbucketService)
+	}
+	if buildbotService != nil {
+		services = append(services, *buildbotService)
+	}
 	templates.MustRender(c.Context, c.Writer, "pages/search.html", templates.Args{
-		"search": &ui.Search{
-			CIServices: []ui.CIService{*buildbucketService, *buildbotService},
-		},
-		"error": errMsg,
+		"search": &ui.Search{CIServices: services},
+		"error":  errMsg,
 	})
 }
 
