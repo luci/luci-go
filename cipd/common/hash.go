@@ -27,11 +27,8 @@ import (
 )
 
 // DefaultHashAlgo is a hash algorithm to use for deriving IDs of new package
-// instances.
-//
-// Currently SHA1, but will change to SHA256 soon. Older existing instances are
-// allowed to use some other hash algo.
-const DefaultHashAlgo = api.HashAlgo_SHA1
+// instances. Older existing instances are allowed to use some other hash algo.
+const DefaultHashAlgo = api.HashAlgo_SHA256
 
 // Supported algo => its digest length (in hex encoding) + factory function.
 var supportedAlgos = []struct {
