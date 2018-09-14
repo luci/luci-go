@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3fe081e_951c3bca",
+        "filename": "client/cmd/cloudkms/common.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-14T19:58:15Z",
+      "side": 1,
+      "message": "This is not true when cryptRun is used in cmdDecrypt.",
+      "range": {
+        "startLine": 117,
+        "startChar": 51,
+        "endLine": 117,
+        "endChar": 73
+      },
+      "revId": "433bc361444f771f0f81ca6954095afc27f2f687",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
