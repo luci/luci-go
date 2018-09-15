@@ -99,6 +99,18 @@ func (d *ClientDigestsFile) ClientRef(plat string) (ref *api.ObjectRef) {
 	return
 }
 
+// Contains returns true if the given ref is among refs for the given platform.
+//
+// Compares 'ref' to all hashes corresponding to 'plat', not only the best one.
+func (d *ClientDigestsFile) Contains(plat string, ref *api.ObjectRef) bool {
+	for _, e := range d.entries {
+		if e.plat == plat && proto.Equal(ref, e.ref) {
+			return true
+		}
+	}
+	return false
+}
+
 // Sort orders the entries by (platform, -hashAlgo).
 func (d *ClientDigestsFile) Sort() {
 	sort.Slice(d.entries, func(i, j int) bool {
