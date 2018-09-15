@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "963e8fc5_21027ae2",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-09-15T01:25:14Z",
+      "side": 1,
+      "message": "Is this a correct thing to do? Do we need the server address for anything?",
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
