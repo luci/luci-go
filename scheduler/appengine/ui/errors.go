@@ -46,6 +46,12 @@ var (
 		Message:        "No permission to execute the attempted action.",
 		ReloginMayHelp: true,
 	}
+
+	uiErrCannotTriggerPausedJob = presentableError{
+		Status:         http.StatusConflict,
+		Message:        "Cannot trigger a paused job. Resume it first.",
+		ReloginMayHelp: false,
+	}
 )
 
 // presentableError defines an error message we render as a pretty HTML page.

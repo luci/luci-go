@@ -15,6 +15,8 @@
 package policy
 
 import (
+	"go.chromium.org/luci/auth/identity"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
@@ -70,6 +72,18 @@ func basePolicy(maxConcurrentInvs, maxBatchSize int, reducer func([]*internal.Tr
 			req := RequestBuilder{env: env}
 			req.FromTrigger(batch[len(batch)-1])
 			req.IncomingTriggers = batch
+
+			// If all triggers were submitted by the same single identity (perhaps the
+			// scheduler service itself as indicated by empty EmittedByUser),
+			// attribute the invocation to this identity. This is mostly for UI,
+			// nothing really depends on TriggeredBy field.
+			idents := stringset.New(1)
+			for _, t := range batch {
+				idents.Add(t.EmittedByUser)
+			}
+			if idents.Len() == 1 {
+				req.TriggeredBy = identity.Identity(idents.ToSlice()[0])
+			}
 
 			out.Requests = append(out.Requests, req.Request)
 			slots--
