@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a33222d7_f2bd43a7",
+        "filename": "scheduler/appengine/ui/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-17T23:30:52Z",
+      "side": 1,
+      "message": "IMHO this is a lesser evil than silently ignoring the trigger.\n\nI can also just return an error message if the job is paused. Should I do this?",
+      "range": {
+        "startLine": 192,
+        "startChar": 2,
+        "endLine": 193,
+        "endChar": 13
+      },
+      "revId": "a199f9976031938ae02ae0346966984b0aa9968d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
