@@ -278,6 +278,8 @@ func internalTrigger(t *scheduler.Trigger, now time.Time, who identity.Identity,
 		switch v := t.Payload.(type) {
 		case *scheduler.Trigger_Cron:
 			return nil, errors.New("emitting cron triggers through API is not allowed")
+		case *scheduler.Trigger_Webui:
+			return nil, errors.New("emitting web UI triggers through API is not allowed")
 		case *scheduler.Trigger_Noop:
 			out.Payload = &internal.Trigger_Noop{Noop: v.Noop}
 		case *scheduler.Trigger_Gitiles:

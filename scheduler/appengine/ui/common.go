@@ -63,6 +63,7 @@ func InstallHandlers(r *router.Router, base router.MiddlewareChain, cfg Config) 
 
 	// All POST forms must be protected with XSRF token.
 	mxsrf := m.Extend(xsrf.WithTokenCheck)
+	r.POST("/actions/triggerJob/:ProjectID/:JobName", mxsrf, triggerJobAction)
 	r.POST("/actions/pauseJob/:ProjectID/:JobName", mxsrf, pauseJobAction)
 	r.POST("/actions/resumeJob/:ProjectID/:JobName", mxsrf, resumeJobAction)
 	r.POST("/actions/abortJob/:ProjectID/:JobName", mxsrf, abortJobAction)
