@@ -3,10 +3,12 @@
 
 package tasks
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/cipd/api/cipd/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/cipd/api/cipd/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // RunProcessors task runs a processing step on an uploaded package instance.
 type RunProcessors struct {
-	Instance             *v1.Instance `protobuf:"bytes,1,opt,name=instance" json:"instance,omitempty"`
+	Instance             *v1.Instance `protobuf:"bytes,1,opt,name=instance,proto3" json:"instance,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -31,7 +33,7 @@ func (m *RunProcessors) Reset()         { *m = RunProcessors{} }
 func (m *RunProcessors) String() string { return proto.CompactTextString(m) }
 func (*RunProcessors) ProtoMessage()    {}
 func (*RunProcessors) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tasks_51c61eb3008036a3, []int{0}
+	return fileDescriptor_d2aa67c95ad0b65e, []int{0}
 }
 func (m *RunProcessors) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RunProcessors.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *RunProcessors) XXX_Unmarshal(b []byte) error {
 func (m *RunProcessors) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RunProcessors.Marshal(b, m, deterministic)
 }
-func (dst *RunProcessors) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RunProcessors.Merge(dst, src)
+func (m *RunProcessors) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RunProcessors.Merge(m, src)
 }
 func (m *RunProcessors) XXX_Size() int {
 	return xxx_messageInfo_RunProcessors.Size(m)
@@ -63,10 +65,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/repo/tasks/tasks.proto", fileDescriptor_tasks_51c61eb3008036a3)
+	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/repo/tasks/tasks.proto", fileDescriptor_d2aa67c95ad0b65e)
 }
 
-var fileDescriptor_tasks_51c61eb3008036a3 = []byte{
+var fileDescriptor_d2aa67c95ad0b65e = []byte{
 	// 153 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4f, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

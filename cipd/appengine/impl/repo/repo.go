@@ -490,6 +490,14 @@ func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Package deletion.
+
+// DeletePackage implements the corresponding RPC method, see the proto doc.
+func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Package instance registration and post-registration processing.
 
 // RegisterInstance implements the corresponding RPC method, see the proto doc.

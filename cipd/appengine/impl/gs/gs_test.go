@@ -78,8 +78,11 @@ func TestImpl(t *testing.T) {
 			}
 			lock.Unlock()
 
+			q := r.URL.Query()
+			q.Del("prettyPrint") // not really relevant to anything
+
 			c.So(r.Method+" "+r.URL.Path, ShouldEqual, next.Method+" "+next.Path)
-			c.So(r.URL.Query(), ShouldResemble, next.Query)
+			c.So(q, ShouldResemble, next.Query)
 			c.So(r.Header.Get("Range"), ShouldEqual, next.Range)
 
 			var response []byte
