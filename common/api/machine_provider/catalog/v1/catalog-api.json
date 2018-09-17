@@ -155,6 +155,17 @@
           "format": "int64",
           "type": "string"
         },
+        "disk_type": {
+          "enum": [
+            "HDD",
+            "SSD"
+          ],
+          "enumDescriptions": [
+            "",
+            ""
+          ],
+          "type": "string"
+        },
         "hostname": {
           "type": "string"
         },
@@ -342,6 +353,9 @@
         "lease_expiration_ts": {
           "format": "int64",
           "type": "string"
+        },
+        "leased_indefinitely": {
+          "type": "boolean"
         },
         "policies": {
           "$ref": "ComponentsMachineProviderPoliciesPolicies",

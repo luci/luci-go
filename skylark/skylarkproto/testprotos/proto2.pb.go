@@ -3,9 +3,11 @@
 
 package testprotos
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,7 +32,7 @@ func (m *Proto2Message) Reset()         { *m = Proto2Message{} }
 func (m *Proto2Message) String() string { return proto.CompactTextString(m) }
 func (*Proto2Message) ProtoMessage()    {}
 func (*Proto2Message) Descriptor() ([]byte, []int) {
-	return fileDescriptor_proto2_6d6553b53ff44cc1, []int{0}
+	return fileDescriptor_347f1d0a7375b00c, []int{0}
 }
 func (m *Proto2Message) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Proto2Message.Unmarshal(m, b)
@@ -38,8 +40,8 @@ func (m *Proto2Message) XXX_Unmarshal(b []byte) error {
 func (m *Proto2Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Proto2Message.Marshal(b, m, deterministic)
 }
-func (dst *Proto2Message) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Proto2Message.Merge(dst, src)
+func (m *Proto2Message) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Proto2Message.Merge(m, src)
 }
 func (m *Proto2Message) XXX_Size() int {
 	return xxx_messageInfo_Proto2Message.Size(m)
@@ -69,10 +71,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/proto2.proto", fileDescriptor_proto2_6d6553b53ff44cc1)
+	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/proto2.proto", fileDescriptor_347f1d0a7375b00c)
 }
 
-var fileDescriptor_proto2_6d6553b53ff44cc1 = []byte{
+var fileDescriptor_347f1d0a7375b00c = []byte{
 	// 127 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x72, 0x4c, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -39,7 +41,7 @@ func (m *FindVMSlotsRequest) Reset()         { *m = FindVMSlotsRequest{} }
 func (m *FindVMSlotsRequest) String() string { return proto.CompactTextString(m) }
 func (*FindVMSlotsRequest) ProtoMessage()    {}
 func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vm_slots_662f95937f97989f, []int{0}
+	return fileDescriptor_620049fabde60637, []int{0}
 }
 func (m *FindVMSlotsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FindVMSlotsRequest.Unmarshal(m, b)
@@ -47,8 +49,8 @@ func (m *FindVMSlotsRequest) XXX_Unmarshal(b []byte) error {
 func (m *FindVMSlotsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FindVMSlotsRequest.Marshal(b, m, deterministic)
 }
-func (dst *FindVMSlotsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FindVMSlotsRequest.Merge(dst, src)
+func (m *FindVMSlotsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FindVMSlotsRequest.Merge(m, src)
 }
 func (m *FindVMSlotsRequest) XXX_Size() int {
 	return xxx_messageInfo_FindVMSlotsRequest.Size(m)
@@ -102,7 +104,7 @@ func (m *FindVMSlotsResponse) Reset()         { *m = FindVMSlotsResponse{} }
 func (m *FindVMSlotsResponse) String() string { return proto.CompactTextString(m) }
 func (*FindVMSlotsResponse) ProtoMessage()    {}
 func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vm_slots_662f95937f97989f, []int{1}
+	return fileDescriptor_620049fabde60637, []int{1}
 }
 func (m *FindVMSlotsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FindVMSlotsResponse.Unmarshal(m, b)
@@ -110,8 +112,8 @@ func (m *FindVMSlotsResponse) XXX_Unmarshal(b []byte) error {
 func (m *FindVMSlotsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FindVMSlotsResponse.Marshal(b, m, deterministic)
 }
-func (dst *FindVMSlotsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FindVMSlotsResponse.Merge(dst, src)
+func (m *FindVMSlotsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FindVMSlotsResponse.Merge(m, src)
 }
 func (m *FindVMSlotsResponse) XXX_Size() int {
 	return xxx_messageInfo_FindVMSlotsResponse.Size(m)
@@ -135,10 +137,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor_vm_slots_662f95937f97989f)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vm_slots.proto", fileDescriptor_620049fabde60637)
 }
 
-var fileDescriptor_vm_slots_662f95937f97989f = []byte{
+var fileDescriptor_620049fabde60637 = []byte{
 	// 277 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x90, 0xc1, 0x4b, 0xc3, 0x30,
 	0x18, 0xc5, 0xa9, 0x65, 0x13, 0x23, 0xf3, 0x90, 0x29, 0x94, 0x9d, 0xca, 0x50, 0x28, 0x88, 0x09,

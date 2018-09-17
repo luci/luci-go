@@ -3,9 +3,11 @@
 
 package admin
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // TokenServerConfig is read from tokenserver.cfg in luci-config.
 type TokenServerConfig struct {
 	// List of CAs we trust.
-	CertificateAuthority []*CertificateAuthorityConfig `protobuf:"bytes,1,rep,name=certificate_authority,json=certificateAuthority" json:"certificate_authority,omitempty"`
+	CertificateAuthority []*CertificateAuthorityConfig `protobuf:"bytes,1,rep,name=certificate_authority,json=certificateAuthority,proto3" json:"certificate_authority,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -31,7 +33,7 @@ func (m *TokenServerConfig) Reset()         { *m = TokenServerConfig{} }
 func (m *TokenServerConfig) String() string { return proto.CompactTextString(m) }
 func (*TokenServerConfig) ProtoMessage()    {}
 func (*TokenServerConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{0}
+	return fileDescriptor_aeb7d66bba60fd47, []int{0}
 }
 func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TokenServerConfig.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
 func (m *TokenServerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TokenServerConfig.Marshal(b, m, deterministic)
 }
-func (dst *TokenServerConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TokenServerConfig.Merge(dst, src)
+func (m *TokenServerConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenServerConfig.Merge(m, src)
 }
 func (m *TokenServerConfig) XXX_Size() int {
 	return xxx_messageInfo_TokenServerConfig.Size(m)
@@ -71,14 +73,14 @@ func (m *TokenServerConfig) GetCertificateAuthority() []*CertificateAuthorityCon
 // for generating a token that contains machine's FQDN and certificate serial
 // number (among other things, see MachineTokenBody in machine_token.proto).
 type CertificateAuthorityConfig struct {
-	UniqueId    int64    `protobuf:"varint,6,opt,name=unique_id,json=uniqueId" json:"unique_id,omitempty"`
-	Cn          string   `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
-	CertPath    string   `protobuf:"bytes,2,opt,name=cert_path,json=certPath" json:"cert_path,omitempty"`
-	CrlUrl      string   `protobuf:"bytes,3,opt,name=crl_url,json=crlUrl" json:"crl_url,omitempty"`
-	UseOauth    bool     `protobuf:"varint,4,opt,name=use_oauth,json=useOauth" json:"use_oauth,omitempty"`
-	OauthScopes []string `protobuf:"bytes,7,rep,name=oauth_scopes,json=oauthScopes" json:"oauth_scopes,omitempty"`
+	UniqueId    int64    `protobuf:"varint,6,opt,name=unique_id,json=uniqueId,proto3" json:"unique_id,omitempty"`
+	Cn          string   `protobuf:"bytes,1,opt,name=cn,proto3" json:"cn,omitempty"`
+	CertPath    string   `protobuf:"bytes,2,opt,name=cert_path,json=certPath,proto3" json:"cert_path,omitempty"`
+	CrlUrl      string   `protobuf:"bytes,3,opt,name=crl_url,json=crlUrl,proto3" json:"crl_url,omitempty"`
+	UseOauth    bool     `protobuf:"varint,4,opt,name=use_oauth,json=useOauth,proto3" json:"use_oauth,omitempty"`
+	OauthScopes []string `protobuf:"bytes,7,rep,name=oauth_scopes,json=oauthScopes,proto3" json:"oauth_scopes,omitempty"`
 	// KnownDomains describes parameters to use for each particular domain.
-	KnownDomains         []*DomainConfig `protobuf:"bytes,5,rep,name=known_domains,json=knownDomains" json:"known_domains,omitempty"`
+	KnownDomains         []*DomainConfig `protobuf:"bytes,5,rep,name=known_domains,json=knownDomains,proto3" json:"known_domains,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -88,7 +90,7 @@ func (m *CertificateAuthorityConfig) Reset()         { *m = CertificateAuthority
 func (m *CertificateAuthorityConfig) String() string { return proto.CompactTextString(m) }
 func (*CertificateAuthorityConfig) ProtoMessage()    {}
 func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{1}
+	return fileDescriptor_aeb7d66bba60fd47, []int{1}
 }
 func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CertificateAuthorityConfig.Unmarshal(m, b)
@@ -96,8 +98,8 @@ func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
 func (m *CertificateAuthorityConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CertificateAuthorityConfig.Marshal(b, m, deterministic)
 }
-func (dst *CertificateAuthorityConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CertificateAuthorityConfig.Merge(dst, src)
+func (m *CertificateAuthorityConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CertificateAuthorityConfig.Merge(m, src)
 }
 func (m *CertificateAuthorityConfig) XXX_Size() int {
 	return xxx_messageInfo_CertificateAuthorityConfig.Size(m)
@@ -164,11 +166,11 @@ type DomainConfig struct {
 	// Machines that reside in a subdomain of given domain are also considered
 	// part of it, e.g. both FQDNs "host.example.com" and "host.abc.example.com"
 	// match domain "example.com".
-	Domain []string `protobuf:"bytes,1,rep,name=domain" json:"domain,omitempty"`
+	Domain []string `protobuf:"bytes,1,rep,name=domain,proto3" json:"domain,omitempty"`
 	// MachineTokenLifetime is how long generated machine tokens live, in seconds.
 	//
 	// If 0, machine tokens are not allowed.
-	MachineTokenLifetime int64    `protobuf:"varint,5,opt,name=machine_token_lifetime,json=machineTokenLifetime" json:"machine_token_lifetime,omitempty"`
+	MachineTokenLifetime int64    `protobuf:"varint,5,opt,name=machine_token_lifetime,json=machineTokenLifetime,proto3" json:"machine_token_lifetime,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -178,7 +180,7 @@ func (m *DomainConfig) Reset()         { *m = DomainConfig{} }
 func (m *DomainConfig) String() string { return proto.CompactTextString(m) }
 func (*DomainConfig) ProtoMessage()    {}
 func (*DomainConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{2}
+	return fileDescriptor_aeb7d66bba60fd47, []int{2}
 }
 func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DomainConfig.Unmarshal(m, b)
@@ -186,8 +188,8 @@ func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
 func (m *DomainConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DomainConfig.Marshal(b, m, deterministic)
 }
-func (dst *DomainConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DomainConfig.Merge(dst, src)
+func (m *DomainConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DomainConfig.Merge(m, src)
 }
 func (m *DomainConfig) XXX_Size() int {
 	return xxx_messageInfo_DomainConfig.Size(m)
@@ -221,7 +223,7 @@ type DelegationPermissions struct {
 	// the request will be denied.
 	//
 	// See DelegationRule comments for more details.
-	Rules                []*DelegationRule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
+	Rules                []*DelegationRule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -231,7 +233,7 @@ func (m *DelegationPermissions) Reset()         { *m = DelegationPermissions{} }
 func (m *DelegationPermissions) String() string { return proto.CompactTextString(m) }
 func (*DelegationPermissions) ProtoMessage()    {}
 func (*DelegationPermissions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{3}
+	return fileDescriptor_aeb7d66bba60fd47, []int{3}
 }
 func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationPermissions.Unmarshal(m, b)
@@ -239,8 +241,8 @@ func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
 func (m *DelegationPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DelegationPermissions.Marshal(b, m, deterministic)
 }
-func (dst *DelegationPermissions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelegationPermissions.Merge(dst, src)
+func (m *DelegationPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationPermissions.Merge(m, src)
 }
 func (m *DelegationPermissions) XXX_Size() int {
 	return xxx_messageInfo_DelegationPermissions.Size(m)
@@ -277,9 +279,9 @@ func (m *DelegationPermissions) GetRules() []*DelegationRule {
 // is logged in the audit trail.
 type DelegationRule struct {
 	// A descriptive name of this rule, for the audit log.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Email of developers that own this rule, to know who to contact.
-	Owner []string `protobuf:"bytes,2,rep,name=owner" json:"owner,omitempty"`
+	Owner []string `protobuf:"bytes,2,rep,name=owner,proto3" json:"owner,omitempty"`
 	// A set of callers to which this rule applies.
 	//
 	// Matched against verified credentials of a caller of MintDelegationToken.
@@ -290,7 +292,7 @@ type DelegationRule struct {
 	//
 	// The groups specified here are expanded when MintDelegationTokenRequest is
 	// evaluated.
-	Requestor []string `protobuf:"bytes,3,rep,name=requestor" json:"requestor,omitempty"`
+	Requestor []string `protobuf:"bytes,3,rep,name=requestor,proto3" json:"requestor,omitempty"`
 	// Identities that are allowed to be delegated/impersonated by the requestor.
 	//
 	// Matched against 'delegated_identity' field of MintDelegationTokenRequest.
@@ -306,7 +308,7 @@ type DelegationRule struct {
 	//
 	// The groups specified here are expanded when MintDelegationTokenRequest is
 	// evaluated.
-	AllowedToImpersonate []string `protobuf:"bytes,4,rep,name=allowed_to_impersonate,json=allowedToImpersonate" json:"allowed_to_impersonate,omitempty"`
+	AllowedToImpersonate []string `protobuf:"bytes,4,rep,name=allowed_to_impersonate,json=allowedToImpersonate,proto3" json:"allowed_to_impersonate,omitempty"`
 	// A set of identities that should be able to use the new token.
 	//
 	// Matched against 'audience' field of MintDelegationTokenRequest.
@@ -326,7 +328,7 @@ type DelegationRule struct {
 	// The groups specified here are NOT expanded when MintDelegationTokenRequest
 	// is evaluated. To match the rule, MintDelegationTokenRequest must specify
 	// subset of 'allowed_audience' groups explicitly in 'audience' field.
-	AllowedAudience []string `protobuf:"bytes,5,rep,name=allowed_audience,json=allowedAudience" json:"allowed_audience,omitempty"`
+	AllowedAudience []string `protobuf:"bytes,5,rep,name=allowed_audience,json=allowedAudience,proto3" json:"allowed_audience,omitempty"`
 	// A set of services that should be able to accept the new token.
 	//
 	// Matched against 'services' field of MintDelegationTokenRequest.
@@ -335,11 +337,11 @@ type DelegationRule struct {
 	//  * A service identity string ("service:<id>").
 	//  * A special token "*" that mean "any LUCI service should accept the
 	//    token".
-	TargetService []string `protobuf:"bytes,6,rep,name=target_service,json=targetService" json:"target_service,omitempty"`
+	TargetService []string `protobuf:"bytes,6,rep,name=target_service,json=targetService,proto3" json:"target_service,omitempty"`
 	// Maximum allowed validity duration (sec) of minted delegation tokens.
 	//
 	// Default is 12 hours.
-	MaxValidityDuration  int64    `protobuf:"varint,7,opt,name=max_validity_duration,json=maxValidityDuration" json:"max_validity_duration,omitempty"`
+	MaxValidityDuration  int64    `protobuf:"varint,7,opt,name=max_validity_duration,json=maxValidityDuration,proto3" json:"max_validity_duration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -349,7 +351,7 @@ func (m *DelegationRule) Reset()         { *m = DelegationRule{} }
 func (m *DelegationRule) String() string { return proto.CompactTextString(m) }
 func (*DelegationRule) ProtoMessage()    {}
 func (*DelegationRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{4}
+	return fileDescriptor_aeb7d66bba60fd47, []int{4}
 }
 func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationRule.Unmarshal(m, b)
@@ -357,8 +359,8 @@ func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
 func (m *DelegationRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DelegationRule.Marshal(b, m, deterministic)
 }
-func (dst *DelegationRule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelegationRule.Merge(dst, src)
+func (m *DelegationRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationRule.Merge(m, src)
 }
 func (m *DelegationRule) XXX_Size() int {
 	return xxx_messageInfo_DelegationRule.Size(m)
@@ -432,13 +434,13 @@ type ServiceAccountsPermissions struct {
 	// different groups, an error will be returned. Ambiguity is not allowed.
 	//
 	// See ServiceAccountRule comments for more details.
-	Rules []*ServiceAccountRule `protobuf:"bytes,1,rep,name=rules" json:"rules,omitempty"`
+	Rules []*ServiceAccountRule `protobuf:"bytes,1,rep,name=rules,proto3" json:"rules,omitempty"`
 	// Defaults specifies some default values applied to all rules, to reduce
 	// duplication.
 	//
 	// See docs for individual fields to figure out how defaults are merged into
 	// the rules.
-	Defaults             *ServiceAccountRuleDefaults `protobuf:"bytes,2,opt,name=defaults" json:"defaults,omitempty"`
+	Defaults             *ServiceAccountRuleDefaults `protobuf:"bytes,2,opt,name=defaults,proto3" json:"defaults,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -448,7 +450,7 @@ func (m *ServiceAccountsPermissions) Reset()         { *m = ServiceAccountsPermi
 func (m *ServiceAccountsPermissions) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountsPermissions) ProtoMessage()    {}
 func (*ServiceAccountsPermissions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{5}
+	return fileDescriptor_aeb7d66bba60fd47, []int{5}
 }
 func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountsPermissions.Unmarshal(m, b)
@@ -456,8 +458,8 @@ func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountsPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountsPermissions.Marshal(b, m, deterministic)
 }
-func (dst *ServiceAccountsPermissions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountsPermissions.Merge(dst, src)
+func (m *ServiceAccountsPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountsPermissions.Merge(m, src)
 }
 func (m *ServiceAccountsPermissions) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountsPermissions.Size(m)
@@ -496,17 +498,17 @@ func (m *ServiceAccountsPermissions) GetDefaults() *ServiceAccountRuleDefaults {
 // use any service account declared by the rule, regardless of an end user.
 type ServiceAccountRule struct {
 	// A descriptive name of this rule, for the audit log.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Email of developers that own this rule, to know who to contact.
-	Owner []string `protobuf:"bytes,2,rep,name=owner" json:"owner,omitempty"`
+	Owner []string `protobuf:"bytes,2,rep,name=owner,proto3" json:"owner,omitempty"`
 	// Email of service accounts that this rule applies to.
 	//
 	// Can be used to explicitly list service accounts in the config.
-	ServiceAccount []string `protobuf:"bytes,3,rep,name=service_account,json=serviceAccount" json:"service_account,omitempty"`
+	ServiceAccount []string `protobuf:"bytes,3,rep,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"`
 	// Name of a group with service account emails this rules applies to.
 	//
 	// Works in addition to the explicit service account listing.
-	ServiceAccountGroup []string `protobuf:"bytes,9,rep,name=service_account_group,json=serviceAccountGroup" json:"service_account_group,omitempty"`
+	ServiceAccountGroup []string `protobuf:"bytes,9,rep,name=service_account_group,json=serviceAccountGroup,proto3" json:"service_account_group,omitempty"`
 	// OAuth scopes we allow to be granted to the OAuth token.
 	//
 	// Any subset of given scopes is allowed. This field is evaluated in
@@ -514,7 +516,7 @@ type ServiceAccountRule struct {
 	// token.
 	//
 	// Merged with corresponding list from ServiceAccountRuleDefaults.
-	AllowedScope []string `protobuf:"bytes,4,rep,name=allowed_scope,json=allowedScope" json:"allowed_scope,omitempty"`
+	AllowedScope []string `protobuf:"bytes,4,rep,name=allowed_scope,json=allowedScope,proto3" json:"allowed_scope,omitempty"`
 	// A set of identities that are allowed to act as the service account (perhaps
 	// indirectly through some other intermediary "proxy" service like Swarming).
 	//
@@ -524,7 +526,7 @@ type ServiceAccountRule struct {
 	// Each element is either:
 	//  * An identity string ("user:<email>").
 	//  * A group reference ("group:<name>").
-	EndUser []string `protobuf:"bytes,5,rep,name=end_user,json=endUser" json:"end_user,omitempty"`
+	EndUser []string `protobuf:"bytes,5,rep,name=end_user,json=endUser,proto3" json:"end_user,omitempty"`
 	// A set of identities that are allowed to act on behalf of end users when
 	// grabbing an OAuth token for the service account.
 	//
@@ -535,14 +537,14 @@ type ServiceAccountRule struct {
 	// Each element is either:
 	//  * An identity string ("user:<email>").
 	//  * A group reference ("group:<name>").
-	Proxy []string `protobuf:"bytes,6,rep,name=proxy" json:"proxy,omitempty"`
+	Proxy []string `protobuf:"bytes,6,rep,name=proxy,proto3" json:"proxy,omitempty"`
 	// Same as 'proxy', except for proxies specified here the end_user check is
 	// skipped: these proxies can grab a token for _any_ service account listed
 	// in the rule, regardless of who the end user is.
 	//
 	// The trusted proxies are assumed to authorize the end user already and
 	// the token server trusts this decision (thus the name of the field).
-	TrustedProxy []string `protobuf:"bytes,8,rep,name=trusted_proxy,json=trustedProxy" json:"trusted_proxy,omitempty"`
+	TrustedProxy []string `protobuf:"bytes,8,rep,name=trusted_proxy,json=trustedProxy,proto3" json:"trusted_proxy,omitempty"`
 	// Maximum allowed validity duration (sec) of OAuth token grants.
 	//
 	// The grant is minted by MintOAuthTokenGrant RPC (called, for example, when
@@ -556,7 +558,7 @@ type ServiceAccountRule struct {
 	//
 	// Default is taken from ServiceAccountRuleDefaults or 48 hours if not
 	// specified there.
-	MaxGrantValidityDuration int64    `protobuf:"varint,7,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	MaxGrantValidityDuration int64    `protobuf:"varint,7,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration,proto3" json:"max_grant_validity_duration,omitempty"`
 	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
 	XXX_unrecognized         []byte   `json:"-"`
 	XXX_sizecache            int32    `json:"-"`
@@ -566,7 +568,7 @@ func (m *ServiceAccountRule) Reset()         { *m = ServiceAccountRule{} }
 func (m *ServiceAccountRule) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountRule) ProtoMessage()    {}
 func (*ServiceAccountRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{6}
+	return fileDescriptor_aeb7d66bba60fd47, []int{6}
 }
 func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRule.Unmarshal(m, b)
@@ -574,8 +576,8 @@ func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountRule.Marshal(b, m, deterministic)
 }
-func (dst *ServiceAccountRule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountRule.Merge(dst, src)
+func (m *ServiceAccountRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRule.Merge(m, src)
 }
 func (m *ServiceAccountRule) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountRule.Size(m)
@@ -656,12 +658,12 @@ type ServiceAccountRuleDefaults struct {
 	//
 	// Always merged with 'allowed_scope' fields of ServiceAccountRule rule to
 	// get the final list of scopes.
-	AllowedScope []string `protobuf:"bytes,1,rep,name=allowed_scope,json=allowedScope" json:"allowed_scope,omitempty"`
+	AllowedScope []string `protobuf:"bytes,1,rep,name=allowed_scope,json=allowedScope,proto3" json:"allowed_scope,omitempty"`
 	// Default value for corresponding ServiceAccountRule field, if not specified
 	// there.
 	//
 	// Default is 48 hours.
-	MaxGrantValidityDuration int64    `protobuf:"varint,2,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration" json:"max_grant_validity_duration,omitempty"`
+	MaxGrantValidityDuration int64    `protobuf:"varint,2,opt,name=max_grant_validity_duration,json=maxGrantValidityDuration,proto3" json:"max_grant_validity_duration,omitempty"`
 	XXX_NoUnkeyedLiteral     struct{} `json:"-"`
 	XXX_unrecognized         []byte   `json:"-"`
 	XXX_sizecache            int32    `json:"-"`
@@ -671,7 +673,7 @@ func (m *ServiceAccountRuleDefaults) Reset()         { *m = ServiceAccountRuleDe
 func (m *ServiceAccountRuleDefaults) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountRuleDefaults) ProtoMessage()    {}
 func (*ServiceAccountRuleDefaults) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_b36d6463a87a68ec, []int{7}
+	return fileDescriptor_aeb7d66bba60fd47, []int{7}
 }
 func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Unmarshal(m, b)
@@ -679,8 +681,8 @@ func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountRuleDefaults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Marshal(b, m, deterministic)
 }
-func (dst *ServiceAccountRuleDefaults) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountRuleDefaults.Merge(dst, src)
+func (m *ServiceAccountRuleDefaults) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRuleDefaults.Merge(m, src)
 }
 func (m *ServiceAccountRuleDefaults) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Size(m)
@@ -717,10 +719,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor_config_b36d6463a87a68ec)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor_aeb7d66bba60fd47)
 }
 
-var fileDescriptor_config_b36d6463a87a68ec = []byte{
+var fileDescriptor_aeb7d66bba60fd47 = []byte{
 	// 755 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x4d, 0x8f, 0x22, 0x45,
 	0x18, 0x0e, 0x4d, 0x03, 0x4d, 0x2d, 0xc3, 0xb2, 0xb5, 0xcc, 0x5a, 0xee, 0x9a, 0xc8, 0x62, 0x36,

@@ -5,10 +5,12 @@ package milo
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import milo "go.chromium.org/luci/common/proto/milo"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	milo "go.chromium.org/luci/common/proto/milo"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -37,7 +39,7 @@ type BuildInfoRequest struct {
 	// project. Resolution may succeed if this hint is provided and correct.
 	//
 	// This field is optional, and its use is discouraged unless necessary.
-	ProjectHint          string   `protobuf:"bytes,11,opt,name=project_hint,json=projectHint" json:"project_hint,omitempty"`
+	ProjectHint          string   `protobuf:"bytes,11,opt,name=project_hint,json=projectHint,proto3" json:"project_hint,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -47,7 +49,7 @@ func (m *BuildInfoRequest) Reset()         { *m = BuildInfoRequest{} }
 func (m *BuildInfoRequest) String() string { return proto.CompactTextString(m) }
 func (*BuildInfoRequest) ProtoMessage()    {}
 func (*BuildInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildinfo_902f3bade8babac9, []int{0}
+	return fileDescriptor_98f9739304de6fa6, []int{0}
 }
 func (m *BuildInfoRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfoRequest.Unmarshal(m, b)
@@ -55,8 +57,8 @@ func (m *BuildInfoRequest) XXX_Unmarshal(b []byte) error {
 func (m *BuildInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildInfoRequest.Marshal(b, m, deterministic)
 }
-func (dst *BuildInfoRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildInfoRequest.Merge(dst, src)
+func (m *BuildInfoRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildInfoRequest.Merge(m, src)
 }
 func (m *BuildInfoRequest) XXX_Size() int {
 	return xxx_messageInfo_BuildInfoRequest.Size(m)
@@ -72,17 +74,21 @@ type isBuildInfoRequest_Build interface {
 }
 
 type BuildInfoRequest_Buildbot struct {
-	Buildbot *BuildInfoRequest_BuildBot `protobuf:"bytes,1,opt,name=buildbot,oneof"`
-}
-type BuildInfoRequest_Swarming_ struct {
-	Swarming *BuildInfoRequest_Swarming `protobuf:"bytes,2,opt,name=swarming,oneof"`
-}
-type BuildInfoRequest_Buildbucket_ struct {
-	Buildbucket *BuildInfoRequest_Buildbucket `protobuf:"bytes,3,opt,name=buildbucket,oneof"`
+	Buildbot *BuildInfoRequest_BuildBot `protobuf:"bytes,1,opt,name=buildbot,proto3,oneof"`
 }
 
-func (*BuildInfoRequest_Buildbot) isBuildInfoRequest_Build()     {}
-func (*BuildInfoRequest_Swarming_) isBuildInfoRequest_Build()    {}
+type BuildInfoRequest_Swarming_ struct {
+	Swarming *BuildInfoRequest_Swarming `protobuf:"bytes,2,opt,name=swarming,proto3,oneof"`
+}
+
+type BuildInfoRequest_Buildbucket_ struct {
+	Buildbucket *BuildInfoRequest_Buildbucket `protobuf:"bytes,3,opt,name=buildbucket,proto3,oneof"`
+}
+
+func (*BuildInfoRequest_Buildbot) isBuildInfoRequest_Build() {}
+
+func (*BuildInfoRequest_Swarming_) isBuildInfoRequest_Build() {}
+
 func (*BuildInfoRequest_Buildbucket_) isBuildInfoRequest_Build() {}
 
 func (m *BuildInfoRequest) GetBuild() isBuildInfoRequest_Build {
@@ -216,11 +222,11 @@ func _BuildInfoRequest_OneofSizer(msg proto.Message) (n int) {
 // The request for the name of a BuildBot built.
 type BuildInfoRequest_BuildBot struct {
 	// The master name.
-	MasterName string `protobuf:"bytes,1,opt,name=master_name,json=masterName" json:"master_name,omitempty"`
+	MasterName string `protobuf:"bytes,1,opt,name=master_name,json=masterName,proto3" json:"master_name,omitempty"`
 	// The builder name server.
-	BuilderName string `protobuf:"bytes,2,opt,name=builder_name,json=builderName" json:"builder_name,omitempty"`
+	BuilderName string `protobuf:"bytes,2,opt,name=builder_name,json=builderName,proto3" json:"builder_name,omitempty"`
 	// The build number.
-	BuildNumber          int64    `protobuf:"varint,3,opt,name=build_number,json=buildNumber" json:"build_number,omitempty"`
+	BuildNumber          int64    `protobuf:"varint,3,opt,name=build_number,json=buildNumber,proto3" json:"build_number,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -230,7 +236,7 @@ func (m *BuildInfoRequest_BuildBot) Reset()         { *m = BuildInfoRequest_Buil
 func (m *BuildInfoRequest_BuildBot) String() string { return proto.CompactTextString(m) }
 func (*BuildInfoRequest_BuildBot) ProtoMessage()    {}
 func (*BuildInfoRequest_BuildBot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildinfo_902f3bade8babac9, []int{0, 0}
+	return fileDescriptor_98f9739304de6fa6, []int{0, 0}
 }
 func (m *BuildInfoRequest_BuildBot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfoRequest_BuildBot.Unmarshal(m, b)
@@ -238,8 +244,8 @@ func (m *BuildInfoRequest_BuildBot) XXX_Unmarshal(b []byte) error {
 func (m *BuildInfoRequest_BuildBot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildInfoRequest_BuildBot.Marshal(b, m, deterministic)
 }
-func (dst *BuildInfoRequest_BuildBot) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildInfoRequest_BuildBot.Merge(dst, src)
+func (m *BuildInfoRequest_BuildBot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildInfoRequest_BuildBot.Merge(m, src)
 }
 func (m *BuildInfoRequest_BuildBot) XXX_Size() int {
 	return xxx_messageInfo_BuildInfoRequest_BuildBot.Size(m)
@@ -278,9 +284,9 @@ type BuildInfoRequest_Swarming struct {
 	//
 	// This is optional. If omitted or empty, Milo's default Swarming server
 	// will be used.
-	Host string `protobuf:"bytes,1,opt,name=host" json:"host,omitempty"`
+	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// The Swarming task name.
-	Task                 string   `protobuf:"bytes,2,opt,name=task" json:"task,omitempty"`
+	Task                 string   `protobuf:"bytes,2,opt,name=task,proto3" json:"task,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -290,7 +296,7 @@ func (m *BuildInfoRequest_Swarming) Reset()         { *m = BuildInfoRequest_Swar
 func (m *BuildInfoRequest_Swarming) String() string { return proto.CompactTextString(m) }
 func (*BuildInfoRequest_Swarming) ProtoMessage()    {}
 func (*BuildInfoRequest_Swarming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildinfo_902f3bade8babac9, []int{0, 1}
+	return fileDescriptor_98f9739304de6fa6, []int{0, 1}
 }
 func (m *BuildInfoRequest_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfoRequest_Swarming.Unmarshal(m, b)
@@ -298,8 +304,8 @@ func (m *BuildInfoRequest_Swarming) XXX_Unmarshal(b []byte) error {
 func (m *BuildInfoRequest_Swarming) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildInfoRequest_Swarming.Marshal(b, m, deterministic)
 }
-func (dst *BuildInfoRequest_Swarming) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildInfoRequest_Swarming.Merge(dst, src)
+func (m *BuildInfoRequest_Swarming) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildInfoRequest_Swarming.Merge(m, src)
 }
 func (m *BuildInfoRequest_Swarming) XXX_Size() int {
 	return xxx_messageInfo_BuildInfoRequest_Swarming.Size(m)
@@ -327,7 +333,7 @@ func (m *BuildInfoRequest_Swarming) GetTask() string {
 // The request containing a BuildBucket build.
 type BuildInfoRequest_Buildbucket struct {
 	// The build ID of the buildbucket build.
-	Id                   int64    `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	Id                   int64    `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -337,7 +343,7 @@ func (m *BuildInfoRequest_Buildbucket) Reset()         { *m = BuildInfoRequest_B
 func (m *BuildInfoRequest_Buildbucket) String() string { return proto.CompactTextString(m) }
 func (*BuildInfoRequest_Buildbucket) ProtoMessage()    {}
 func (*BuildInfoRequest_Buildbucket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildinfo_902f3bade8babac9, []int{0, 2}
+	return fileDescriptor_98f9739304de6fa6, []int{0, 2}
 }
 func (m *BuildInfoRequest_Buildbucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfoRequest_Buildbucket.Unmarshal(m, b)
@@ -345,8 +351,8 @@ func (m *BuildInfoRequest_Buildbucket) XXX_Unmarshal(b []byte) error {
 func (m *BuildInfoRequest_Buildbucket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildInfoRequest_Buildbucket.Marshal(b, m, deterministic)
 }
-func (dst *BuildInfoRequest_Buildbucket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildInfoRequest_Buildbucket.Merge(dst, src)
+func (m *BuildInfoRequest_Buildbucket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildInfoRequest_Buildbucket.Merge(m, src)
 }
 func (m *BuildInfoRequest_Buildbucket) XXX_Size() int {
 	return xxx_messageInfo_BuildInfoRequest_Buildbucket.Size(m)
@@ -367,12 +373,12 @@ func (m *BuildInfoRequest_Buildbucket) GetId() int64 {
 // The request containing the name of the master.
 type BuildInfoResponse struct {
 	// The LUCI project that this build belongs to.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The main build step.
-	Step *milo.Step `protobuf:"bytes,2,opt,name=step" json:"step,omitempty"`
+	Step *milo.Step `protobuf:"bytes,2,opt,name=step,proto3" json:"step,omitempty"`
 	// The LogDog annotation stream for this build. The Prefix will be populated
 	// and can be used as the prefix for any un-prefixed LogdogStream in "step".
-	AnnotationStream     *milo.LogdogStream `protobuf:"bytes,3,opt,name=annotation_stream,json=annotationStream" json:"annotation_stream,omitempty"`
+	AnnotationStream     *milo.LogdogStream `protobuf:"bytes,3,opt,name=annotation_stream,json=annotationStream,proto3" json:"annotation_stream,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -382,7 +388,7 @@ func (m *BuildInfoResponse) Reset()         { *m = BuildInfoResponse{} }
 func (m *BuildInfoResponse) String() string { return proto.CompactTextString(m) }
 func (*BuildInfoResponse) ProtoMessage()    {}
 func (*BuildInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildinfo_902f3bade8babac9, []int{1}
+	return fileDescriptor_98f9739304de6fa6, []int{1}
 }
 func (m *BuildInfoResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildInfoResponse.Unmarshal(m, b)
@@ -390,8 +396,8 @@ func (m *BuildInfoResponse) XXX_Unmarshal(b []byte) error {
 func (m *BuildInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildInfoResponse.Marshal(b, m, deterministic)
 }
-func (dst *BuildInfoResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildInfoResponse.Merge(dst, src)
+func (m *BuildInfoResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildInfoResponse.Merge(m, src)
 }
 func (m *BuildInfoResponse) XXX_Size() int {
 	return xxx_messageInfo_BuildInfoResponse.Size(m)
@@ -520,10 +526,10 @@ var _BuildInfo_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/proto/buildinfo.proto", fileDescriptor_buildinfo_902f3bade8babac9)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/proto/buildinfo.proto", fileDescriptor_98f9739304de6fa6)
 }
 
-var fileDescriptor_buildinfo_902f3bade8babac9 = []byte{
+var fileDescriptor_98f9739304de6fa6 = []byte{
 	// 418 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x92, 0xd1, 0x6e, 0xd3, 0x30,
 	0x14, 0x86, 0xd7, 0xa6, 0xb0, 0xf6, 0x04, 0xa1, 0xcd, 0x17, 0x10, 0x45, 0x82, 0x8d, 0x5e, 0xed,

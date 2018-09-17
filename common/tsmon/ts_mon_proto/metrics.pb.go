@@ -3,9 +3,11 @@
 
 package ts_mon_proto
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -31,6 +33,7 @@ var StreamKind_name = map[int32]string{
 	1: "CUMULATIVE",
 	2: "DELTA",
 }
+
 var StreamKind_value = map[string]int32{
 	"GAUGE":      0,
 	"CUMULATIVE": 1,
@@ -42,9 +45,11 @@ func (x StreamKind) Enum() *StreamKind {
 	*p = x
 	return p
 }
+
 func (x StreamKind) String() string {
 	return proto.EnumName(StreamKind_name, int32(x))
 }
+
 func (x *StreamKind) UnmarshalJSON(data []byte) error {
 	value, err := proto.UnmarshalJSONEnum(StreamKind_value, data, "StreamKind")
 	if err != nil {
@@ -53,8 +58,9 @@ func (x *StreamKind) UnmarshalJSON(data []byte) error {
 	*x = StreamKind(value)
 	return nil
 }
+
 func (StreamKind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{0}
+	return fileDescriptor_5a1f5514585a4442, []int{0}
 }
 
 type ValueType int32
@@ -74,6 +80,7 @@ var ValueType_name = map[int32]string{
 	3: "DOUBLE",
 	4: "DISTRIBUTION",
 }
+
 var ValueType_value = map[string]int32{
 	"BOOL":         0,
 	"STRING":       1,
@@ -87,9 +94,11 @@ func (x ValueType) Enum() *ValueType {
 	*p = x
 	return p
 }
+
 func (x ValueType) String() string {
 	return proto.EnumName(ValueType_name, int32(x))
 }
+
 func (x *ValueType) UnmarshalJSON(data []byte) error {
 	value, err := proto.UnmarshalJSONEnum(ValueType_value, data, "ValueType")
 	if err != nil {
@@ -98,8 +107,9 @@ func (x *ValueType) UnmarshalJSON(data []byte) error {
 	*x = ValueType(value)
 	return nil
 }
+
 func (ValueType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{1}
+	return fileDescriptor_5a1f5514585a4442, []int{1}
 }
 
 type MetricsDataSet_MetricFieldDescriptor_FieldType int32
@@ -115,6 +125,7 @@ var MetricsDataSet_MetricFieldDescriptor_FieldType_name = map[int32]string{
 	1: "INT64",
 	2: "BOOL",
 }
+
 var MetricsDataSet_MetricFieldDescriptor_FieldType_value = map[string]int32{
 	"STRING": 0,
 	"INT64":  1,
@@ -126,9 +137,11 @@ func (x MetricsDataSet_MetricFieldDescriptor_FieldType) Enum() *MetricsDataSet_M
 	*p = x
 	return p
 }
+
 func (x MetricsDataSet_MetricFieldDescriptor_FieldType) String() string {
 	return proto.EnumName(MetricsDataSet_MetricFieldDescriptor_FieldType_name, int32(x))
 }
+
 func (x *MetricsDataSet_MetricFieldDescriptor_FieldType) UnmarshalJSON(data []byte) error {
 	value, err := proto.UnmarshalJSONEnum(MetricsDataSet_MetricFieldDescriptor_FieldType_value, data, "MetricsDataSet_MetricFieldDescriptor_FieldType")
 	if err != nil {
@@ -137,8 +150,9 @@ func (x *MetricsDataSet_MetricFieldDescriptor_FieldType) UnmarshalJSON(data []by
 	*x = MetricsDataSet_MetricFieldDescriptor_FieldType(value)
 	return nil
 }
+
 func (MetricsDataSet_MetricFieldDescriptor_FieldType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{2, 0, 0}
+	return fileDescriptor_5a1f5514585a4442, []int{2, 0, 0}
 }
 
 type MetricsPayload struct {
@@ -152,7 +166,7 @@ func (m *MetricsPayload) Reset()         { *m = MetricsPayload{} }
 func (m *MetricsPayload) String() string { return proto.CompactTextString(m) }
 func (*MetricsPayload) ProtoMessage()    {}
 func (*MetricsPayload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{0}
+	return fileDescriptor_5a1f5514585a4442, []int{0}
 }
 func (m *MetricsPayload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsPayload.Unmarshal(m, b)
@@ -160,8 +174,8 @@ func (m *MetricsPayload) XXX_Unmarshal(b []byte) error {
 func (m *MetricsPayload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsPayload.Marshal(b, m, deterministic)
 }
-func (dst *MetricsPayload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsPayload.Merge(dst, src)
+func (m *MetricsPayload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsPayload.Merge(m, src)
 }
 func (m *MetricsPayload) XXX_Size() int {
 	return xxx_messageInfo_MetricsPayload.Size(m)
@@ -194,7 +208,7 @@ func (m *MetricsCollection) Reset()         { *m = MetricsCollection{} }
 func (m *MetricsCollection) String() string { return proto.CompactTextString(m) }
 func (*MetricsCollection) ProtoMessage()    {}
 func (*MetricsCollection) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{1}
+	return fileDescriptor_5a1f5514585a4442, []int{1}
 }
 func (m *MetricsCollection) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsCollection.Unmarshal(m, b)
@@ -202,8 +216,8 @@ func (m *MetricsCollection) XXX_Unmarshal(b []byte) error {
 func (m *MetricsCollection) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsCollection.Marshal(b, m, deterministic)
 }
-func (dst *MetricsCollection) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsCollection.Merge(dst, src)
+func (m *MetricsCollection) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsCollection.Merge(m, src)
 }
 func (m *MetricsCollection) XXX_Size() int {
 	return xxx_messageInfo_MetricsCollection.Size(m)
@@ -214,6 +228,13 @@ func (m *MetricsCollection) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MetricsCollection proto.InternalMessageInfo
 
+func (m *MetricsCollection) GetMetricsDataSet() []*MetricsDataSet {
+	if m != nil {
+		return m.MetricsDataSet
+	}
+	return nil
+}
+
 type isMetricsCollection_TargetSchema interface {
 	isMetricsCollection_TargetSchema()
 }
@@ -221,23 +242,18 @@ type isMetricsCollection_TargetSchema interface {
 type MetricsCollection_NetworkDevice struct {
 	NetworkDevice *NetworkDevice `protobuf:"bytes,11,opt,name=network_device,json=networkDevice,oneof"`
 }
+
 type MetricsCollection_Task struct {
 	Task *Task `protobuf:"bytes,12,opt,name=task,oneof"`
 }
 
 func (*MetricsCollection_NetworkDevice) isMetricsCollection_TargetSchema() {}
-func (*MetricsCollection_Task) isMetricsCollection_TargetSchema()          {}
+
+func (*MetricsCollection_Task) isMetricsCollection_TargetSchema() {}
 
 func (m *MetricsCollection) GetTargetSchema() isMetricsCollection_TargetSchema {
 	if m != nil {
 		return m.TargetSchema
-	}
-	return nil
-}
-
-func (m *MetricsCollection) GetMetricsDataSet() []*MetricsDataSet {
-	if m != nil {
-		return m.MetricsDataSet
 	}
 	return nil
 }
@@ -347,7 +363,7 @@ func (m *MetricsDataSet) Reset()         { *m = MetricsDataSet{} }
 func (m *MetricsDataSet) String() string { return proto.CompactTextString(m) }
 func (*MetricsDataSet) ProtoMessage()    {}
 func (*MetricsDataSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{2}
+	return fileDescriptor_5a1f5514585a4442, []int{2}
 }
 func (m *MetricsDataSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsDataSet.Unmarshal(m, b)
@@ -355,8 +371,8 @@ func (m *MetricsDataSet) XXX_Unmarshal(b []byte) error {
 func (m *MetricsDataSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsDataSet.Marshal(b, m, deterministic)
 }
-func (dst *MetricsDataSet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsDataSet.Merge(dst, src)
+func (m *MetricsDataSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsDataSet.Merge(m, src)
 }
 func (m *MetricsDataSet) XXX_Size() int {
 	return xxx_messageInfo_MetricsDataSet.Size(m)
@@ -428,7 +444,7 @@ func (m *MetricsDataSet_MetricFieldDescriptor) Reset()         { *m = MetricsDat
 func (m *MetricsDataSet_MetricFieldDescriptor) String() string { return proto.CompactTextString(m) }
 func (*MetricsDataSet_MetricFieldDescriptor) ProtoMessage()    {}
 func (*MetricsDataSet_MetricFieldDescriptor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{2, 0}
+	return fileDescriptor_5a1f5514585a4442, []int{2, 0}
 }
 func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Unmarshal(m, b)
@@ -436,8 +452,8 @@ func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Unmarshal(b []byte) error {
 func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Marshal(b, m, deterministic)
 }
-func (dst *MetricsDataSet_MetricFieldDescriptor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Merge(dst, src)
+func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Merge(m, src)
 }
 func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Size() int {
 	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Size(m)
@@ -482,7 +498,7 @@ func (m *MetricsData) Reset()         { *m = MetricsData{} }
 func (m *MetricsData) String() string { return proto.CompactTextString(m) }
 func (*MetricsData) ProtoMessage()    {}
 func (*MetricsData) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3}
+	return fileDescriptor_5a1f5514585a4442, []int{3}
 }
 func (m *MetricsData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData.Unmarshal(m, b)
@@ -490,8 +506,8 @@ func (m *MetricsData) XXX_Unmarshal(b []byte) error {
 func (m *MetricsData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData.Merge(dst, src)
+func (m *MetricsData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData.Merge(m, src)
 }
 func (m *MetricsData) XXX_Size() int {
 	return xxx_messageInfo_MetricsData.Size(m)
@@ -509,23 +525,31 @@ type isMetricsData_Value interface {
 type MetricsData_BoolValue struct {
 	BoolValue bool `protobuf:"varint,1,opt,name=bool_value,json=boolValue,oneof"`
 }
+
 type MetricsData_StringValue struct {
 	StringValue string `protobuf:"bytes,2,opt,name=string_value,json=stringValue,oneof"`
 }
+
 type MetricsData_Int64Value struct {
 	Int64Value int64 `protobuf:"varint,3,opt,name=int64_value,json=int64Value,oneof"`
 }
+
 type MetricsData_DoubleValue struct {
 	DoubleValue float64 `protobuf:"fixed64,4,opt,name=double_value,json=doubleValue,oneof"`
 }
+
 type MetricsData_DistributionValue struct {
 	DistributionValue *MetricsData_Distribution `protobuf:"bytes,5,opt,name=distribution_value,json=distributionValue,oneof"`
 }
 
-func (*MetricsData_BoolValue) isMetricsData_Value()         {}
-func (*MetricsData_StringValue) isMetricsData_Value()       {}
-func (*MetricsData_Int64Value) isMetricsData_Value()        {}
-func (*MetricsData_DoubleValue) isMetricsData_Value()       {}
+func (*MetricsData_BoolValue) isMetricsData_Value() {}
+
+func (*MetricsData_StringValue) isMetricsData_Value() {}
+
+func (*MetricsData_Int64Value) isMetricsData_Value() {}
+
+func (*MetricsData_DoubleValue) isMetricsData_Value() {}
+
 func (*MetricsData_DistributionValue) isMetricsData_Value() {}
 
 func (m *MetricsData) GetValue() isMetricsData_Value {
@@ -723,7 +747,7 @@ func (m *MetricsData_MetricField) Reset()         { *m = MetricsData_MetricField
 func (m *MetricsData_MetricField) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_MetricField) ProtoMessage()    {}
 func (*MetricsData_MetricField) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 0}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 0}
 }
 func (m *MetricsData_MetricField) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_MetricField.Unmarshal(m, b)
@@ -731,8 +755,8 @@ func (m *MetricsData_MetricField) XXX_Unmarshal(b []byte) error {
 func (m *MetricsData_MetricField) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_MetricField.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_MetricField) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_MetricField.Merge(dst, src)
+func (m *MetricsData_MetricField) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_MetricField.Merge(m, src)
 }
 func (m *MetricsData_MetricField) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_MetricField.Size(m)
@@ -743,6 +767,13 @@ func (m *MetricsData_MetricField) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MetricsData_MetricField proto.InternalMessageInfo
 
+func (m *MetricsData_MetricField) GetName() string {
+	if m != nil && m.Name != nil {
+		return *m.Name
+	}
+	return ""
+}
+
 type isMetricsData_MetricField_Value interface {
 	isMetricsData_MetricField_Value()
 }
@@ -750,29 +781,26 @@ type isMetricsData_MetricField_Value interface {
 type MetricsData_MetricField_StringValue struct {
 	StringValue string `protobuf:"bytes,2,opt,name=string_value,json=stringValue,oneof"`
 }
+
 type MetricsData_MetricField_Int64Value struct {
 	Int64Value int64 `protobuf:"varint,3,opt,name=int64_value,json=int64Value,oneof"`
 }
+
 type MetricsData_MetricField_BoolValue struct {
 	BoolValue bool `protobuf:"varint,4,opt,name=bool_value,json=boolValue,oneof"`
 }
 
 func (*MetricsData_MetricField_StringValue) isMetricsData_MetricField_Value() {}
-func (*MetricsData_MetricField_Int64Value) isMetricsData_MetricField_Value()  {}
-func (*MetricsData_MetricField_BoolValue) isMetricsData_MetricField_Value()   {}
+
+func (*MetricsData_MetricField_Int64Value) isMetricsData_MetricField_Value() {}
+
+func (*MetricsData_MetricField_BoolValue) isMetricsData_MetricField_Value() {}
 
 func (m *MetricsData_MetricField) GetValue() isMetricsData_MetricField_Value {
 	if m != nil {
 		return m.Value
 	}
 	return nil
-}
-
-func (m *MetricsData_MetricField) GetName() string {
-	if m != nil && m.Name != nil {
-		return *m.Name
-	}
-	return ""
 }
 
 func (m *MetricsData_MetricField) GetStringValue() string {
@@ -901,7 +929,7 @@ func (m *MetricsData_Distribution) Reset()         { *m = MetricsData_Distributi
 func (m *MetricsData_Distribution) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution) ProtoMessage()    {}
 func (*MetricsData_Distribution) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 1}
 }
 func (m *MetricsData_Distribution) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution.Unmarshal(m, b)
@@ -909,8 +937,8 @@ func (m *MetricsData_Distribution) XXX_Unmarshal(b []byte) error {
 func (m *MetricsData_Distribution) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_Distribution.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_Distribution) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_Distribution.Merge(dst, src)
+func (m *MetricsData_Distribution) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution.Merge(m, src)
 }
 func (m *MetricsData_Distribution) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_Distribution.Size(m)
@@ -920,31 +948,6 @@ func (m *MetricsData_Distribution) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_MetricsData_Distribution proto.InternalMessageInfo
-
-type isMetricsData_Distribution_BucketOptions interface {
-	isMetricsData_Distribution_BucketOptions()
-}
-
-type MetricsData_Distribution_LinearBuckets struct {
-	LinearBuckets *MetricsData_Distribution_LinearOptions `protobuf:"bytes,6,opt,name=linear_buckets,json=linearBuckets,oneof"`
-}
-type MetricsData_Distribution_ExponentialBuckets struct {
-	ExponentialBuckets *MetricsData_Distribution_ExponentialOptions `protobuf:"bytes,7,opt,name=exponential_buckets,json=exponentialBuckets,oneof"`
-}
-type MetricsData_Distribution_ExplicitBuckets struct {
-	ExplicitBuckets *MetricsData_Distribution_ExplicitOptions `protobuf:"bytes,8,opt,name=explicit_buckets,json=explicitBuckets,oneof"`
-}
-
-func (*MetricsData_Distribution_LinearBuckets) isMetricsData_Distribution_BucketOptions()      {}
-func (*MetricsData_Distribution_ExponentialBuckets) isMetricsData_Distribution_BucketOptions() {}
-func (*MetricsData_Distribution_ExplicitBuckets) isMetricsData_Distribution_BucketOptions()    {}
-
-func (m *MetricsData_Distribution) GetBucketOptions() isMetricsData_Distribution_BucketOptions {
-	if m != nil {
-		return m.BucketOptions
-	}
-	return nil
-}
 
 func (m *MetricsData_Distribution) GetCount() int64 {
 	if m != nil && m.Count != nil {
@@ -979,6 +982,35 @@ func (m *MetricsData_Distribution) GetMaximum() float64 {
 		return *m.Maximum
 	}
 	return 0
+}
+
+type isMetricsData_Distribution_BucketOptions interface {
+	isMetricsData_Distribution_BucketOptions()
+}
+
+type MetricsData_Distribution_LinearBuckets struct {
+	LinearBuckets *MetricsData_Distribution_LinearOptions `protobuf:"bytes,6,opt,name=linear_buckets,json=linearBuckets,oneof"`
+}
+
+type MetricsData_Distribution_ExponentialBuckets struct {
+	ExponentialBuckets *MetricsData_Distribution_ExponentialOptions `protobuf:"bytes,7,opt,name=exponential_buckets,json=exponentialBuckets,oneof"`
+}
+
+type MetricsData_Distribution_ExplicitBuckets struct {
+	ExplicitBuckets *MetricsData_Distribution_ExplicitOptions `protobuf:"bytes,8,opt,name=explicit_buckets,json=explicitBuckets,oneof"`
+}
+
+func (*MetricsData_Distribution_LinearBuckets) isMetricsData_Distribution_BucketOptions() {}
+
+func (*MetricsData_Distribution_ExponentialBuckets) isMetricsData_Distribution_BucketOptions() {}
+
+func (*MetricsData_Distribution_ExplicitBuckets) isMetricsData_Distribution_BucketOptions() {}
+
+func (m *MetricsData_Distribution) GetBucketOptions() isMetricsData_Distribution_BucketOptions {
+	if m != nil {
+		return m.BucketOptions
+	}
+	return nil
 }
 
 func (m *MetricsData_Distribution) GetLinearBuckets() *MetricsData_Distribution_LinearOptions {
@@ -1124,7 +1156,7 @@ func (m *MetricsData_Distribution_LinearOptions) Reset() {
 func (m *MetricsData_Distribution_LinearOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_LinearOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_LinearOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 0}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 0}
 }
 func (m *MetricsData_Distribution_LinearOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Unmarshal(m, b)
@@ -1132,8 +1164,8 @@ func (m *MetricsData_Distribution_LinearOptions) XXX_Unmarshal(b []byte) error {
 func (m *MetricsData_Distribution_LinearOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_Distribution_LinearOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_Distribution_LinearOptions.Merge(dst, src)
+func (m *MetricsData_Distribution_LinearOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_LinearOptions.Merge(m, src)
 }
 func (m *MetricsData_Distribution_LinearOptions) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Size(m)
@@ -1182,7 +1214,7 @@ func (m *MetricsData_Distribution_ExponentialOptions) String() string {
 }
 func (*MetricsData_Distribution_ExponentialOptions) ProtoMessage() {}
 func (*MetricsData_Distribution_ExponentialOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 1}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 1}
 }
 func (m *MetricsData_Distribution_ExponentialOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Unmarshal(m, b)
@@ -1190,8 +1222,8 @@ func (m *MetricsData_Distribution_ExponentialOptions) XXX_Unmarshal(b []byte) er
 func (m *MetricsData_Distribution_ExponentialOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_Distribution_ExponentialOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Merge(dst, src)
+func (m *MetricsData_Distribution_ExponentialOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Merge(m, src)
 }
 func (m *MetricsData_Distribution_ExponentialOptions) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Size(m)
@@ -1236,7 +1268,7 @@ func (m *MetricsData_Distribution_ExplicitOptions) Reset() {
 func (m *MetricsData_Distribution_ExplicitOptions) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_ExplicitOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_ExplicitOptions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 2}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 2}
 }
 func (m *MetricsData_Distribution_ExplicitOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Unmarshal(m, b)
@@ -1244,8 +1276,8 @@ func (m *MetricsData_Distribution_ExplicitOptions) XXX_Unmarshal(b []byte) error
 func (m *MetricsData_Distribution_ExplicitOptions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_Distribution_ExplicitOptions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Merge(dst, src)
+func (m *MetricsData_Distribution_ExplicitOptions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Merge(m, src)
 }
 func (m *MetricsData_Distribution_ExplicitOptions) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Size(m)
@@ -1276,7 +1308,7 @@ func (m *MetricsData_Distribution_Exemplar) Reset()         { *m = MetricsData_D
 func (m *MetricsData_Distribution_Exemplar) String() string { return proto.CompactTextString(m) }
 func (*MetricsData_Distribution_Exemplar) ProtoMessage()    {}
 func (*MetricsData_Distribution_Exemplar) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{3, 1, 3}
+	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 3}
 }
 func (m *MetricsData_Distribution_Exemplar) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Unmarshal(m, b)
@@ -1284,8 +1316,8 @@ func (m *MetricsData_Distribution_Exemplar) XXX_Unmarshal(b []byte) error {
 func (m *MetricsData_Distribution_Exemplar) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Marshal(b, m, deterministic)
 }
-func (dst *MetricsData_Distribution_Exemplar) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MetricsData_Distribution_Exemplar.Merge(dst, src)
+func (m *MetricsData_Distribution_Exemplar) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MetricsData_Distribution_Exemplar.Merge(m, src)
 }
 func (m *MetricsData_Distribution_Exemplar) XXX_Size() int {
 	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Size(m)
@@ -1331,7 +1363,7 @@ func (m *Annotations) Reset()         { *m = Annotations{} }
 func (m *Annotations) String() string { return proto.CompactTextString(m) }
 func (*Annotations) ProtoMessage()    {}
 func (*Annotations) Descriptor() ([]byte, []int) {
-	return fileDescriptor_metrics_8b185898353ce4c5, []int{4}
+	return fileDescriptor_5a1f5514585a4442, []int{4}
 }
 func (m *Annotations) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Annotations.Unmarshal(m, b)
@@ -1339,8 +1371,8 @@ func (m *Annotations) XXX_Unmarshal(b []byte) error {
 func (m *Annotations) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Annotations.Marshal(b, m, deterministic)
 }
-func (dst *Annotations) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Annotations.Merge(dst, src)
+func (m *Annotations) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Annotations.Merge(m, src)
 }
 func (m *Annotations) XXX_Size() int {
 	return xxx_messageInfo_Annotations.Size(m)
@@ -1398,10 +1430,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto", fileDescriptor_metrics_8b185898353ce4c5)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/metrics.proto", fileDescriptor_5a1f5514585a4442)
 }
 
-var fileDescriptor_metrics_8b185898353ce4c5 = []byte{
+var fileDescriptor_5a1f5514585a4442 = []byte{
 	// 1236 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x6e, 0xdb, 0xb6,
 	0x17, 0xb7, 0xfc, 0x91, 0xd8, 0x47, 0x8e, 0xa3, 0xf0, 0xdf, 0xfe, 0xa7, 0x7a, 0x05, 0x9a, 0xa5,

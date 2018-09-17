@@ -3,9 +3,11 @@
 
 package vpython
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -32,20 +34,20 @@ type Spec struct {
 	//   interpreter.
 	//
 	// If empty, the default Python interpreter ("python") will be used.
-	PythonVersion string          `protobuf:"bytes,1,opt,name=python_version,json=pythonVersion" json:"python_version,omitempty"`
-	Wheel         []*Spec_Package `protobuf:"bytes,2,rep,name=wheel" json:"wheel,omitempty"`
+	PythonVersion string          `protobuf:"bytes,1,opt,name=python_version,json=pythonVersion,proto3" json:"python_version,omitempty"`
+	Wheel         []*Spec_Package `protobuf:"bytes,2,rep,name=wheel,proto3" json:"wheel,omitempty"`
 	// The VirtualEnv package.
 	//
 	// This should be left empty to use the `vpython` default package
 	// (recommended).
-	Virtualenv *Spec_Package `protobuf:"bytes,3,opt,name=virtualenv" json:"virtualenv,omitempty"`
+	Virtualenv *Spec_Package `protobuf:"bytes,3,opt,name=virtualenv,proto3" json:"virtualenv,omitempty"`
 	// Specification-provided PEP425 verification tags.
 	//
 	// By default, verification will be performed against a default set of
 	// environment parameters. However, a given specification may offer its own
 	// set of PEP425 tags representing the systems that it wants to be verified
 	// against.
-	VerifyPep425Tag      []*PEP425Tag `protobuf:"bytes,4,rep,name=verify_pep425_tag,json=verifyPep425Tag" json:"verify_pep425_tag,omitempty"`
+	VerifyPep425Tag      []*PEP425Tag `protobuf:"bytes,4,rep,name=verify_pep425_tag,json=verifyPep425Tag,proto3" json:"verify_pep425_tag,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -55,7 +57,7 @@ func (m *Spec) Reset()         { *m = Spec{} }
 func (m *Spec) String() string { return proto.CompactTextString(m) }
 func (*Spec) ProtoMessage()    {}
 func (*Spec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_spec_3f7e364ce64c2759, []int{0}
+	return fileDescriptor_12b41745b49e8c72, []int{0}
 }
 func (m *Spec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec.Unmarshal(m, b)
@@ -63,8 +65,8 @@ func (m *Spec) XXX_Unmarshal(b []byte) error {
 func (m *Spec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Spec.Marshal(b, m, deterministic)
 }
-func (dst *Spec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Spec.Merge(dst, src)
+func (m *Spec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec.Merge(m, src)
 }
 func (m *Spec) XXX_Size() int {
 	return xxx_messageInfo_Spec.Size(m)
@@ -109,12 +111,12 @@ type Spec_Package struct {
 	// The name of the package.
 	//
 	// - For CIPD, this is the package name.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The package version.
 	//
 	// - For CIPD, this will be any recognized CIPD version (i.e., ID, tag, or
 	//   ref).
-	Version string `protobuf:"bytes,2,opt,name=version" json:"version,omitempty"`
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
 	// Optional PEP425 tags to determine whether this package is included on the
 	// target system. If no match tags are specified, this package will always
 	// be included. If match tags are specified, the package will be included if
@@ -125,7 +127,7 @@ type Spec_Package struct {
 	// (partial), that field will not be considered. For example, if a match
 	// tag specifies just an ABI field, any system PEP425 tag with that ABI will
 	// be considered a successful match, regardless of other field values.
-	MatchTag []*PEP425Tag `protobuf:"bytes,3,rep,name=match_tag,json=matchTag" json:"match_tag,omitempty"`
+	MatchTag []*PEP425Tag `protobuf:"bytes,3,rep,name=match_tag,json=matchTag,proto3" json:"match_tag,omitempty"`
 	// Optional PEP425 tags to determine whether this package is NOT included on
 	// the target system. This has the opposite behavior as "match_tag": if any
 	// host tags match any tags in this list, the package will not be installed
@@ -133,7 +135,7 @@ type Spec_Package struct {
 	//
 	// A "not_match_tag" overrides a "match_tag", so if a host has tags that
 	// match entries in both, the package will be not considered a match.
-	NotMatchTag          []*PEP425Tag `protobuf:"bytes,4,rep,name=not_match_tag,json=notMatchTag" json:"not_match_tag,omitempty"`
+	NotMatchTag          []*PEP425Tag `protobuf:"bytes,4,rep,name=not_match_tag,json=notMatchTag,proto3" json:"not_match_tag,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -143,7 +145,7 @@ func (m *Spec_Package) Reset()         { *m = Spec_Package{} }
 func (m *Spec_Package) String() string { return proto.CompactTextString(m) }
 func (*Spec_Package) ProtoMessage()    {}
 func (*Spec_Package) Descriptor() ([]byte, []int) {
-	return fileDescriptor_spec_3f7e364ce64c2759, []int{0, 0}
+	return fileDescriptor_12b41745b49e8c72, []int{0, 0}
 }
 func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec_Package.Unmarshal(m, b)
@@ -151,8 +153,8 @@ func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
 func (m *Spec_Package) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Spec_Package.Marshal(b, m, deterministic)
 }
-func (dst *Spec_Package) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Spec_Package.Merge(dst, src)
+func (m *Spec_Package) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec_Package.Merge(m, src)
 }
 func (m *Spec_Package) XXX_Size() int {
 	return xxx_messageInfo_Spec_Package.Size(m)
@@ -197,10 +199,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor_spec_3f7e364ce64c2759)
+	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor_12b41745b49e8c72)
 }
 
-var fileDescriptor_spec_3f7e364ce64c2759 = []byte{
+var fileDescriptor_12b41745b49e8c72 = []byte{
 	// 287 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xcf, 0x4a, 0xf4, 0x30,
 	0x14, 0xc5, 0xe9, 0x9f, 0xef, 0xab, 0x73, 0x87, 0x51, 0x0c, 0x08, 0x65, 0x56, 0x45, 0x10, 0x06,

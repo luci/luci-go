@@ -5,11 +5,13 @@ package internal
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
-import v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -31,14 +33,14 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 //
 // See the engine implementation for details.
 type DebugJobState struct {
-	Enabled              bool                     `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	Paused               bool                     `protobuf:"varint,2,opt,name=paused" json:"paused,omitempty"`
-	LastTriage           *timestamp.Timestamp     `protobuf:"bytes,3,opt,name=last_triage,json=lastTriage" json:"last_triage,omitempty"`
-	CronState            *DebugJobState_CronState `protobuf:"bytes,4,opt,name=cron_state,json=cronState" json:"cron_state,omitempty"`
-	ActiveInvocations    []int64                  `protobuf:"varint,5,rep,packed,name=active_invocations,json=activeInvocations" json:"active_invocations,omitempty"`
-	FinishedInvocations  []*FinishedInvocation    `protobuf:"bytes,6,rep,name=finished_invocations,json=finishedInvocations" json:"finished_invocations,omitempty"`
-	RecentlyFinishedSet  []int64                  `protobuf:"varint,7,rep,packed,name=recently_finished_set,json=recentlyFinishedSet" json:"recently_finished_set,omitempty"`
-	PendingTriggersSet   []*Trigger               `protobuf:"bytes,8,rep,name=pending_triggers_set,json=pendingTriggersSet" json:"pending_triggers_set,omitempty"`
+	Enabled              bool                     `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Paused               bool                     `protobuf:"varint,2,opt,name=paused,proto3" json:"paused,omitempty"`
+	LastTriage           *timestamp.Timestamp     `protobuf:"bytes,3,opt,name=last_triage,json=lastTriage,proto3" json:"last_triage,omitempty"`
+	CronState            *DebugJobState_CronState `protobuf:"bytes,4,opt,name=cron_state,json=cronState,proto3" json:"cron_state,omitempty"`
+	ActiveInvocations    []int64                  `protobuf:"varint,5,rep,packed,name=active_invocations,json=activeInvocations,proto3" json:"active_invocations,omitempty"`
+	FinishedInvocations  []*FinishedInvocation    `protobuf:"bytes,6,rep,name=finished_invocations,json=finishedInvocations,proto3" json:"finished_invocations,omitempty"`
+	RecentlyFinishedSet  []int64                  `protobuf:"varint,7,rep,packed,name=recently_finished_set,json=recentlyFinishedSet,proto3" json:"recently_finished_set,omitempty"`
+	PendingTriggersSet   []*Trigger               `protobuf:"bytes,8,rep,name=pending_triggers_set,json=pendingTriggersSet,proto3" json:"pending_triggers_set,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -48,7 +50,7 @@ func (m *DebugJobState) Reset()         { *m = DebugJobState{} }
 func (m *DebugJobState) String() string { return proto.CompactTextString(m) }
 func (*DebugJobState) ProtoMessage()    {}
 func (*DebugJobState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0}
+	return fileDescriptor_44f1f51de3cab948, []int{0}
 }
 func (m *DebugJobState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DebugJobState.Unmarshal(m, b)
@@ -56,8 +58,8 @@ func (m *DebugJobState) XXX_Unmarshal(b []byte) error {
 func (m *DebugJobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DebugJobState.Marshal(b, m, deterministic)
 }
-func (dst *DebugJobState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DebugJobState.Merge(dst, src)
+func (m *DebugJobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState.Merge(m, src)
 }
 func (m *DebugJobState) XXX_Size() int {
 	return xxx_messageInfo_DebugJobState.Size(m)
@@ -125,11 +127,11 @@ func (m *DebugJobState) GetPendingTriggersSet() []*Trigger {
 }
 
 type DebugJobState_CronState struct {
-	Enabled              bool                 `protobuf:"varint,1,opt,name=enabled" json:"enabled,omitempty"`
-	Generation           int64                `protobuf:"varint,2,opt,name=generation" json:"generation,omitempty"`
-	LastRewind           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=last_rewind,json=lastRewind" json:"last_rewind,omitempty"`
-	LastTickWhen         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=last_tick_when,json=lastTickWhen" json:"last_tick_when,omitempty"`
-	LastTickNonce        int64                `protobuf:"varint,5,opt,name=last_tick_nonce,json=lastTickNonce" json:"last_tick_nonce,omitempty"`
+	Enabled              bool                 `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Generation           int64                `protobuf:"varint,2,opt,name=generation,proto3" json:"generation,omitempty"`
+	LastRewind           *timestamp.Timestamp `protobuf:"bytes,3,opt,name=last_rewind,json=lastRewind,proto3" json:"last_rewind,omitempty"`
+	LastTickWhen         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=last_tick_when,json=lastTickWhen,proto3" json:"last_tick_when,omitempty"`
+	LastTickNonce        int64                `protobuf:"varint,5,opt,name=last_tick_nonce,json=lastTickNonce,proto3" json:"last_tick_nonce,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -139,7 +141,7 @@ func (m *DebugJobState_CronState) Reset()         { *m = DebugJobState_CronState
 func (m *DebugJobState_CronState) String() string { return proto.CompactTextString(m) }
 func (*DebugJobState_CronState) ProtoMessage()    {}
 func (*DebugJobState_CronState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0, 0}
+	return fileDescriptor_44f1f51de3cab948, []int{0, 0}
 }
 func (m *DebugJobState_CronState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DebugJobState_CronState.Unmarshal(m, b)
@@ -147,8 +149,8 @@ func (m *DebugJobState_CronState) XXX_Unmarshal(b []byte) error {
 func (m *DebugJobState_CronState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DebugJobState_CronState.Marshal(b, m, deterministic)
 }
-func (dst *DebugJobState_CronState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DebugJobState_CronState.Merge(dst, src)
+func (m *DebugJobState_CronState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState_CronState.Merge(m, src)
 }
 func (m *DebugJobState_CronState) XXX_Size() int {
 	return xxx_messageInfo_DebugJobState_CronState.Size(m)
@@ -294,10 +296,10 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_admin_60def8e8ab45c2a0)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_44f1f51de3cab948)
 }
 
-var fileDescriptor_admin_60def8e8ab45c2a0 = []byte{
+var fileDescriptor_44f1f51de3cab948 = []byte{
 	// 505 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x51, 0x6f, 0xd3, 0x30,
 	0x10, 0x56, 0x29, 0xed, 0x3a, 0x97, 0x0d, 0xe6, 0x0d, 0x14, 0x45, 0x82, 0x55, 0x3c, 0x40, 0x5f,

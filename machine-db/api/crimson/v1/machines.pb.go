@@ -3,11 +3,13 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
-import field_mask "google.golang.org/genproto/protobuf/field_mask"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -52,7 +54,7 @@ func (m *Machine) Reset()         { *m = Machine{} }
 func (m *Machine) String() string { return proto.CompactTextString(m) }
 func (*Machine) ProtoMessage()    {}
 func (*Machine) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{0}
+	return fileDescriptor_17aa8e73038b4213, []int{0}
 }
 func (m *Machine) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Machine.Unmarshal(m, b)
@@ -60,8 +62,8 @@ func (m *Machine) XXX_Unmarshal(b []byte) error {
 func (m *Machine) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Machine.Marshal(b, m, deterministic)
 }
-func (dst *Machine) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Machine.Merge(dst, src)
+func (m *Machine) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Machine.Merge(m, src)
 }
 func (m *Machine) XXX_Size() int {
 	return xxx_messageInfo_Machine.Size(m)
@@ -155,7 +157,7 @@ func (m *CreateMachineRequest) Reset()         { *m = CreateMachineRequest{} }
 func (m *CreateMachineRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateMachineRequest) ProtoMessage()    {}
 func (*CreateMachineRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{1}
+	return fileDescriptor_17aa8e73038b4213, []int{1}
 }
 func (m *CreateMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateMachineRequest.Unmarshal(m, b)
@@ -163,8 +165,8 @@ func (m *CreateMachineRequest) XXX_Unmarshal(b []byte) error {
 func (m *CreateMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateMachineRequest.Marshal(b, m, deterministic)
 }
-func (dst *CreateMachineRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateMachineRequest.Merge(dst, src)
+func (m *CreateMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateMachineRequest.Merge(m, src)
 }
 func (m *CreateMachineRequest) XXX_Size() int {
 	return xxx_messageInfo_CreateMachineRequest.Size(m)
@@ -195,7 +197,7 @@ func (m *DeleteMachineRequest) Reset()         { *m = DeleteMachineRequest{} }
 func (m *DeleteMachineRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteMachineRequest) ProtoMessage()    {}
 func (*DeleteMachineRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{2}
+	return fileDescriptor_17aa8e73038b4213, []int{2}
 }
 func (m *DeleteMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteMachineRequest.Unmarshal(m, b)
@@ -203,8 +205,8 @@ func (m *DeleteMachineRequest) XXX_Unmarshal(b []byte) error {
 func (m *DeleteMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeleteMachineRequest.Marshal(b, m, deterministic)
 }
-func (dst *DeleteMachineRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteMachineRequest.Merge(dst, src)
+func (m *DeleteMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteMachineRequest.Merge(m, src)
 }
 func (m *DeleteMachineRequest) XXX_Size() int {
 	return xxx_messageInfo_DeleteMachineRequest.Size(m)
@@ -243,7 +245,7 @@ func (m *ListMachinesRequest) Reset()         { *m = ListMachinesRequest{} }
 func (m *ListMachinesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListMachinesRequest) ProtoMessage()    {}
 func (*ListMachinesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{3}
+	return fileDescriptor_17aa8e73038b4213, []int{3}
 }
 func (m *ListMachinesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMachinesRequest.Unmarshal(m, b)
@@ -251,8 +253,8 @@ func (m *ListMachinesRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListMachinesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListMachinesRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListMachinesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListMachinesRequest.Merge(dst, src)
+func (m *ListMachinesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListMachinesRequest.Merge(m, src)
 }
 func (m *ListMachinesRequest) XXX_Size() int {
 	return xxx_messageInfo_ListMachinesRequest.Size(m)
@@ -311,7 +313,7 @@ func (m *ListMachinesResponse) Reset()         { *m = ListMachinesResponse{} }
 func (m *ListMachinesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListMachinesResponse) ProtoMessage()    {}
 func (*ListMachinesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{4}
+	return fileDescriptor_17aa8e73038b4213, []int{4}
 }
 func (m *ListMachinesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMachinesResponse.Unmarshal(m, b)
@@ -319,8 +321,8 @@ func (m *ListMachinesResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListMachinesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListMachinesResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListMachinesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListMachinesResponse.Merge(dst, src)
+func (m *ListMachinesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListMachinesResponse.Merge(m, src)
 }
 func (m *ListMachinesResponse) XXX_Size() int {
 	return xxx_messageInfo_ListMachinesResponse.Size(m)
@@ -353,7 +355,7 @@ func (m *RenameMachineRequest) Reset()         { *m = RenameMachineRequest{} }
 func (m *RenameMachineRequest) String() string { return proto.CompactTextString(m) }
 func (*RenameMachineRequest) ProtoMessage()    {}
 func (*RenameMachineRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{5}
+	return fileDescriptor_17aa8e73038b4213, []int{5}
 }
 func (m *RenameMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RenameMachineRequest.Unmarshal(m, b)
@@ -361,8 +363,8 @@ func (m *RenameMachineRequest) XXX_Unmarshal(b []byte) error {
 func (m *RenameMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RenameMachineRequest.Marshal(b, m, deterministic)
 }
-func (dst *RenameMachineRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RenameMachineRequest.Merge(dst, src)
+func (m *RenameMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RenameMachineRequest.Merge(m, src)
 }
 func (m *RenameMachineRequest) XXX_Size() int {
 	return xxx_messageInfo_RenameMachineRequest.Size(m)
@@ -402,7 +404,7 @@ func (m *UpdateMachineRequest) Reset()         { *m = UpdateMachineRequest{} }
 func (m *UpdateMachineRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateMachineRequest) ProtoMessage()    {}
 func (*UpdateMachineRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machines_0a7af8d8d63e43a7, []int{6}
+	return fileDescriptor_17aa8e73038b4213, []int{6}
 }
 func (m *UpdateMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateMachineRequest.Unmarshal(m, b)
@@ -410,8 +412,8 @@ func (m *UpdateMachineRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateMachineRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateMachineRequest.Marshal(b, m, deterministic)
 }
-func (dst *UpdateMachineRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateMachineRequest.Merge(dst, src)
+func (m *UpdateMachineRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateMachineRequest.Merge(m, src)
 }
 func (m *UpdateMachineRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdateMachineRequest.Size(m)
@@ -447,10 +449,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor_machines_0a7af8d8d63e43a7)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/machines.proto", fileDescriptor_17aa8e73038b4213)
 }
 
-var fileDescriptor_machines_0a7af8d8d63e43a7 = []byte{
+var fileDescriptor_17aa8e73038b4213 = []byte{
 	// 526 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x55, 0xd7, 0xf5, 0xdf, 0xed, 0x6f, 0x3f, 0x0d, 0x93, 0x07, 0x53, 0x10, 0x44, 0x99, 0x90,

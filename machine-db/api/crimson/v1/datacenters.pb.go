@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,7 +38,7 @@ func (m *Datacenter) Reset()         { *m = Datacenter{} }
 func (m *Datacenter) String() string { return proto.CompactTextString(m) }
 func (*Datacenter) ProtoMessage()    {}
 func (*Datacenter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_e066802756d06571, []int{0}
+	return fileDescriptor_7a7700e9dfb0b4ca, []int{0}
 }
 func (m *Datacenter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datacenter.Unmarshal(m, b)
@@ -44,8 +46,8 @@ func (m *Datacenter) XXX_Unmarshal(b []byte) error {
 func (m *Datacenter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Datacenter.Marshal(b, m, deterministic)
 }
-func (dst *Datacenter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Datacenter.Merge(dst, src)
+func (m *Datacenter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datacenter.Merge(m, src)
 }
 func (m *Datacenter) XXX_Size() int {
 	return xxx_messageInfo_Datacenter.Size(m)
@@ -90,7 +92,7 @@ func (m *ListDatacentersRequest) Reset()         { *m = ListDatacentersRequest{}
 func (m *ListDatacentersRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDatacentersRequest) ProtoMessage()    {}
 func (*ListDatacentersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_e066802756d06571, []int{1}
+	return fileDescriptor_7a7700e9dfb0b4ca, []int{1}
 }
 func (m *ListDatacentersRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDatacentersRequest.Unmarshal(m, b)
@@ -98,8 +100,8 @@ func (m *ListDatacentersRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListDatacentersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListDatacentersRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListDatacentersRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListDatacentersRequest.Merge(dst, src)
+func (m *ListDatacentersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDatacentersRequest.Merge(m, src)
 }
 func (m *ListDatacentersRequest) XXX_Size() int {
 	return xxx_messageInfo_ListDatacentersRequest.Size(m)
@@ -130,7 +132,7 @@ func (m *ListDatacentersResponse) Reset()         { *m = ListDatacentersResponse
 func (m *ListDatacentersResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDatacentersResponse) ProtoMessage()    {}
 func (*ListDatacentersResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_e066802756d06571, []int{2}
+	return fileDescriptor_7a7700e9dfb0b4ca, []int{2}
 }
 func (m *ListDatacentersResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDatacentersResponse.Unmarshal(m, b)
@@ -138,8 +140,8 @@ func (m *ListDatacentersResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListDatacentersResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListDatacentersResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListDatacentersResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListDatacentersResponse.Merge(dst, src)
+func (m *ListDatacentersResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDatacentersResponse.Merge(m, src)
 }
 func (m *ListDatacentersResponse) XXX_Size() int {
 	return xxx_messageInfo_ListDatacentersResponse.Size(m)
@@ -164,10 +166,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto", fileDescriptor_datacenters_e066802756d06571)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/datacenters.proto", fileDescriptor_7a7700e9dfb0b4ca)
 }
 
-var fileDescriptor_datacenters_e066802756d06571 = []byte{
+var fileDescriptor_7a7700e9dfb0b4ca = []byte{
 	// 243 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xb1, 0x4e, 0xf4, 0x30,
 	0x10, 0x84, 0x95, 0xff, 0xfe, 0x03, 0xdd, 0x46, 0x50, 0x18, 0x04, 0x11, 0x55, 0x14, 0x9a, 0x34,

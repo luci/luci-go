@@ -5,9 +5,11 @@ package api
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -42,6 +44,7 @@ var HashAlgo_name = map[int32]string{
 	1: "SHA1",
 	2: "SHA256",
 }
+
 var HashAlgo_value = map[string]int32{
 	"HASH_ALGO_UNSPECIFIED": 0,
 	"SHA1":                  1,
@@ -51,8 +54,9 @@ var HashAlgo_value = map[string]int32{
 func (x HashAlgo) String() string {
 	return proto.EnumName(HashAlgo_name, int32(x))
 }
+
 func (HashAlgo) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{0}
+	return fileDescriptor_df64270f060b5e81, []int{0}
 }
 
 type UploadStatus int32
@@ -74,6 +78,7 @@ var UploadStatus_name = map[int32]string{
 	4: "ERRORED",
 	5: "CANCELED",
 }
+
 var UploadStatus_value = map[string]int32{
 	"UPLOAD_STATUS_UNSPECIFIED": 0,
 	"UPLOADING":                 1,
@@ -86,8 +91,9 @@ var UploadStatus_value = map[string]int32{
 func (x UploadStatus) String() string {
 	return proto.EnumName(UploadStatus_name, int32(x))
 }
+
 func (UploadStatus) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{1}
+	return fileDescriptor_df64270f060b5e81, []int{1}
 }
 
 // A reference to an object in the content-addressable storage.
@@ -103,7 +109,7 @@ func (m *ObjectRef) Reset()         { *m = ObjectRef{} }
 func (m *ObjectRef) String() string { return proto.CompactTextString(m) }
 func (*ObjectRef) ProtoMessage()    {}
 func (*ObjectRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{0}
+	return fileDescriptor_df64270f060b5e81, []int{0}
 }
 func (m *ObjectRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ObjectRef.Unmarshal(m, b)
@@ -111,8 +117,8 @@ func (m *ObjectRef) XXX_Unmarshal(b []byte) error {
 func (m *ObjectRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ObjectRef.Marshal(b, m, deterministic)
 }
-func (dst *ObjectRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ObjectRef.Merge(dst, src)
+func (m *ObjectRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObjectRef.Merge(m, src)
 }
 func (m *ObjectRef) XXX_Size() int {
 	return xxx_messageInfo_ObjectRef.Size(m)
@@ -153,7 +159,7 @@ func (m *GetObjectURLRequest) Reset()         { *m = GetObjectURLRequest{} }
 func (m *GetObjectURLRequest) String() string { return proto.CompactTextString(m) }
 func (*GetObjectURLRequest) ProtoMessage()    {}
 func (*GetObjectURLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{1}
+	return fileDescriptor_df64270f060b5e81, []int{1}
 }
 func (m *GetObjectURLRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetObjectURLRequest.Unmarshal(m, b)
@@ -161,8 +167,8 @@ func (m *GetObjectURLRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetObjectURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetObjectURLRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetObjectURLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetObjectURLRequest.Merge(dst, src)
+func (m *GetObjectURLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetObjectURLRequest.Merge(m, src)
 }
 func (m *GetObjectURLRequest) XXX_Size() int {
 	return xxx_messageInfo_GetObjectURLRequest.Size(m)
@@ -205,7 +211,7 @@ func (m *ObjectURL) Reset()         { *m = ObjectURL{} }
 func (m *ObjectURL) String() string { return proto.CompactTextString(m) }
 func (*ObjectURL) ProtoMessage()    {}
 func (*ObjectURL) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{2}
+	return fileDescriptor_df64270f060b5e81, []int{2}
 }
 func (m *ObjectURL) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ObjectURL.Unmarshal(m, b)
@@ -213,8 +219,8 @@ func (m *ObjectURL) XXX_Unmarshal(b []byte) error {
 func (m *ObjectURL) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ObjectURL.Marshal(b, m, deterministic)
 }
-func (dst *ObjectURL) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ObjectURL.Merge(dst, src)
+func (m *ObjectURL) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObjectURL.Merge(m, src)
 }
 func (m *ObjectURL) XXX_Size() int {
 	return xxx_messageInfo_ObjectURL.Size(m)
@@ -262,7 +268,7 @@ func (m *BeginUploadRequest) Reset()         { *m = BeginUploadRequest{} }
 func (m *BeginUploadRequest) String() string { return proto.CompactTextString(m) }
 func (*BeginUploadRequest) ProtoMessage()    {}
 func (*BeginUploadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{3}
+	return fileDescriptor_df64270f060b5e81, []int{3}
 }
 func (m *BeginUploadRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BeginUploadRequest.Unmarshal(m, b)
@@ -270,8 +276,8 @@ func (m *BeginUploadRequest) XXX_Unmarshal(b []byte) error {
 func (m *BeginUploadRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BeginUploadRequest.Marshal(b, m, deterministic)
 }
-func (dst *BeginUploadRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BeginUploadRequest.Merge(dst, src)
+func (m *BeginUploadRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BeginUploadRequest.Merge(m, src)
 }
 func (m *BeginUploadRequest) XXX_Size() int {
 	return xxx_messageInfo_BeginUploadRequest.Size(m)
@@ -317,7 +323,7 @@ func (m *FinishUploadRequest) Reset()         { *m = FinishUploadRequest{} }
 func (m *FinishUploadRequest) String() string { return proto.CompactTextString(m) }
 func (*FinishUploadRequest) ProtoMessage()    {}
 func (*FinishUploadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{4}
+	return fileDescriptor_df64270f060b5e81, []int{4}
 }
 func (m *FinishUploadRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FinishUploadRequest.Unmarshal(m, b)
@@ -325,8 +331,8 @@ func (m *FinishUploadRequest) XXX_Unmarshal(b []byte) error {
 func (m *FinishUploadRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FinishUploadRequest.Marshal(b, m, deterministic)
 }
-func (dst *FinishUploadRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FinishUploadRequest.Merge(dst, src)
+func (m *FinishUploadRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FinishUploadRequest.Merge(m, src)
 }
 func (m *FinishUploadRequest) XXX_Size() int {
 	return xxx_messageInfo_FinishUploadRequest.Size(m)
@@ -363,7 +369,7 @@ func (m *CancelUploadRequest) Reset()         { *m = CancelUploadRequest{} }
 func (m *CancelUploadRequest) String() string { return proto.CompactTextString(m) }
 func (*CancelUploadRequest) ProtoMessage()    {}
 func (*CancelUploadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{5}
+	return fileDescriptor_df64270f060b5e81, []int{5}
 }
 func (m *CancelUploadRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CancelUploadRequest.Unmarshal(m, b)
@@ -371,8 +377,8 @@ func (m *CancelUploadRequest) XXX_Unmarshal(b []byte) error {
 func (m *CancelUploadRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CancelUploadRequest.Marshal(b, m, deterministic)
 }
-func (dst *CancelUploadRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CancelUploadRequest.Merge(dst, src)
+func (m *CancelUploadRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CancelUploadRequest.Merge(m, src)
 }
 func (m *CancelUploadRequest) XXX_Size() int {
 	return xxx_messageInfo_CancelUploadRequest.Size(m)
@@ -420,7 +426,7 @@ func (m *UploadOperation) Reset()         { *m = UploadOperation{} }
 func (m *UploadOperation) String() string { return proto.CompactTextString(m) }
 func (*UploadOperation) ProtoMessage()    {}
 func (*UploadOperation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cas_0de48afefaa086d6, []int{6}
+	return fileDescriptor_df64270f060b5e81, []int{6}
 }
 func (m *UploadOperation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UploadOperation.Unmarshal(m, b)
@@ -428,8 +434,8 @@ func (m *UploadOperation) XXX_Unmarshal(b []byte) error {
 func (m *UploadOperation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UploadOperation.Marshal(b, m, deterministic)
 }
-func (dst *UploadOperation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UploadOperation.Merge(dst, src)
+func (m *UploadOperation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UploadOperation.Merge(m, src)
 }
 func (m *UploadOperation) XXX_Size() int {
 	return xxx_messageInfo_UploadOperation.Size(m)
@@ -804,10 +810,10 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/cas.proto", fileDescriptor_cas_0de48afefaa086d6)
+	proto.RegisterFile("go.chromium.org/luci/cipd/api/cipd/v1/cas.proto", fileDescriptor_df64270f060b5e81)
 }
 
-var fileDescriptor_cas_0de48afefaa086d6 = []byte{
+var fileDescriptor_df64270f060b5e81 = []byte{
 	// 610 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xd1, 0x6e, 0xd3, 0x30,
 	0x14, 0xa5, 0x5d, 0xd7, 0x35, 0xb7, 0xdd, 0x96, 0xb9, 0x9a, 0xd4, 0x4d, 0x9a, 0x34, 0xc2, 0x03,

@@ -3,10 +3,12 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -38,7 +40,7 @@ func (m *VLAN) Reset()         { *m = VLAN{} }
 func (m *VLAN) String() string { return proto.CompactTextString(m) }
 func (*VLAN) ProtoMessage()    {}
 func (*VLAN) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vlans_bee7e5b545f8c7cd, []int{0}
+	return fileDescriptor_bb654d86333e52aa, []int{0}
 }
 func (m *VLAN) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VLAN.Unmarshal(m, b)
@@ -46,8 +48,8 @@ func (m *VLAN) XXX_Unmarshal(b []byte) error {
 func (m *VLAN) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_VLAN.Marshal(b, m, deterministic)
 }
-func (dst *VLAN) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VLAN.Merge(dst, src)
+func (m *VLAN) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VLAN.Merge(m, src)
 }
 func (m *VLAN) XXX_Size() int {
 	return xxx_messageInfo_VLAN.Size(m)
@@ -99,7 +101,7 @@ func (m *VLANs) Reset()         { *m = VLANs{} }
 func (m *VLANs) String() string { return proto.CompactTextString(m) }
 func (*VLANs) ProtoMessage()    {}
 func (*VLANs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_vlans_bee7e5b545f8c7cd, []int{1}
+	return fileDescriptor_bb654d86333e52aa, []int{1}
 }
 func (m *VLANs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VLANs.Unmarshal(m, b)
@@ -107,8 +109,8 @@ func (m *VLANs) XXX_Unmarshal(b []byte) error {
 func (m *VLANs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_VLANs.Marshal(b, m, deterministic)
 }
-func (dst *VLANs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VLANs.Merge(dst, src)
+func (m *VLANs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VLANs.Merge(m, src)
 }
 func (m *VLANs) XXX_Size() int {
 	return xxx_messageInfo_VLANs.Size(m)
@@ -132,10 +134,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/vlans.proto", fileDescriptor_vlans_bee7e5b545f8c7cd)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/vlans.proto", fileDescriptor_bb654d86333e52aa)
 }
 
-var fileDescriptor_vlans_bee7e5b545f8c7cd = []byte{
+var fileDescriptor_bb654d86333e52aa = []byte{
 	// 224 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x8f, 0x3f, 0x4b, 0x04, 0x31,
 	0x10, 0x47, 0xc9, 0xfe, 0x39, 0xb8, 0x51, 0xaf, 0x08, 0x16, 0x41, 0x10, 0xc2, 0xd9, 0xac, 0x85,

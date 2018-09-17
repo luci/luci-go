@@ -3,10 +3,12 @@
 
 package internal
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import milo "go.chromium.org/luci/common/proto/milo"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	milo "go.chromium.org/luci/common/proto/milo"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -23,9 +25,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // deserialize Step and associated fetch data into memcache.
 type CachedStep struct {
 	// Step is the root annotation step.
-	Step *milo.Step `protobuf:"bytes,1,opt,name=step" json:"step,omitempty"`
+	Step *milo.Step `protobuf:"bytes,1,opt,name=step,proto3" json:"step,omitempty"`
 	// Finished is true if this is the last annotation protobuf in the stream.
-	Finished             bool     `protobuf:"varint,2,opt,name=finished" json:"finished,omitempty"`
+	Finished             bool     `protobuf:"varint,2,opt,name=finished,proto3" json:"finished,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -35,7 +37,7 @@ func (m *CachedStep) Reset()         { *m = CachedStep{} }
 func (m *CachedStep) String() string { return proto.CompactTextString(m) }
 func (*CachedStep) ProtoMessage()    {}
 func (*CachedStep) Descriptor() ([]byte, []int) {
-	return fileDescriptor_stream_48dd3ce49f63ae00, []int{0}
+	return fileDescriptor_cb0610adfc09d59c, []int{0}
 }
 func (m *CachedStep) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CachedStep.Unmarshal(m, b)
@@ -43,8 +45,8 @@ func (m *CachedStep) XXX_Unmarshal(b []byte) error {
 func (m *CachedStep) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CachedStep.Marshal(b, m, deterministic)
 }
-func (dst *CachedStep) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CachedStep.Merge(dst, src)
+func (m *CachedStep) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CachedStep.Merge(m, src)
 }
 func (m *CachedStep) XXX_Size() int {
 	return xxx_messageInfo_CachedStep.Size(m)
@@ -74,10 +76,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/buildsource/rawpresentation/internal/stream.proto", fileDescriptor_stream_48dd3ce49f63ae00)
+	proto.RegisterFile("go.chromium.org/luci/milo/buildsource/rawpresentation/internal/stream.proto", fileDescriptor_cb0610adfc09d59c)
 }
 
-var fileDescriptor_stream_48dd3ce49f63ae00 = []byte{
+var fileDescriptor_cb0610adfc09d59c = []byte{
 	// 186 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0xcd, 0xb1, 0x6a, 0xc3, 0x30,
 	0x10, 0x06, 0x60, 0x5c, 0x4a, 0x31, 0xea, 0xe6, 0xc9, 0x78, 0x28, 0xa6, 0x93, 0x27, 0x09, 0xda,

@@ -5,9 +5,11 @@ package test_helloworld
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -37,7 +39,7 @@ func (m *HelloRequest) Reset()         { *m = HelloRequest{} }
 func (m *HelloRequest) String() string { return proto.CompactTextString(m) }
 func (*HelloRequest) ProtoMessage()    {}
 func (*HelloRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_d181e37a09fb082f, []int{0}
+	return fileDescriptor_c13593f9227294d1, []int{0}
 }
 func (m *HelloRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HelloRequest.Unmarshal(m, b)
@@ -45,8 +47,8 @@ func (m *HelloRequest) XXX_Unmarshal(b []byte) error {
 func (m *HelloRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HelloRequest.Marshal(b, m, deterministic)
 }
-func (dst *HelloRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HelloRequest.Merge(dst, src)
+func (m *HelloRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HelloRequest.Merge(m, src)
 }
 func (m *HelloRequest) XXX_Size() int {
 	return xxx_messageInfo_HelloRequest.Size(m)
@@ -76,7 +78,7 @@ func (m *HelloReply) Reset()         { *m = HelloReply{} }
 func (m *HelloReply) String() string { return proto.CompactTextString(m) }
 func (*HelloReply) ProtoMessage()    {}
 func (*HelloReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_d181e37a09fb082f, []int{1}
+	return fileDescriptor_c13593f9227294d1, []int{1}
 }
 func (m *HelloReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HelloReply.Unmarshal(m, b)
@@ -84,8 +86,8 @@ func (m *HelloReply) XXX_Unmarshal(b []byte) error {
 func (m *HelloReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HelloReply.Marshal(b, m, deterministic)
 }
-func (dst *HelloReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HelloReply.Merge(dst, src)
+func (m *HelloReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HelloReply.Merge(m, src)
 }
 func (m *HelloReply) XXX_Size() int {
 	return xxx_messageInfo_HelloReply.Size(m)
@@ -198,9 +200,9 @@ var _Greeter_serviceDesc = grpc.ServiceDesc{
 	Metadata: "tmp/test.proto",
 }
 
-func init() { proto.RegisterFile("tmp/test.proto", fileDescriptor_test_d181e37a09fb082f) }
+func init() { proto.RegisterFile("tmp/test.proto", fileDescriptor_c13593f9227294d1) }
 
-var fileDescriptor_test_d181e37a09fb082f = []byte{
+var fileDescriptor_c13593f9227294d1 = []byte{
 	// 150 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2b, 0xc9, 0x2d, 0xd0,
 	0x2f, 0x49, 0x2d, 0x2e, 0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0x07, 0xb3, 0x33, 0x52,

@@ -5,9 +5,11 @@ package gerrit
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -130,6 +132,7 @@ var QueryOption_name = map[int32]string{
 	1048576: "TRACKING_IDS",
 	2097152: "DOWNLOAD_COMMANDS",
 }
+
 var QueryOption_value = map[string]int32{
 	"OPTION_UNSPECIFIED": 0,
 	"LABELS":             1,
@@ -159,8 +162,9 @@ var QueryOption_value = map[string]int32{
 func (x QueryOption) String() string {
 	return proto.EnumName(QueryOption_name, int32(x))
 }
+
 func (QueryOption) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{0}
+	return fileDescriptor_3c6e096860f6adc3, []int{0}
 }
 
 type CheckAccessResponse_Status int32
@@ -179,6 +183,7 @@ var CheckAccessResponse_Status_name = map[int32]string{
 	1: "FORBIDDEN",
 	2: "PROJECT_NOT_FOUND",
 }
+
 var CheckAccessResponse_Status_value = map[string]int32{
 	"ALLOWED":           0,
 	"FORBIDDEN":         1,
@@ -188,15 +193,16 @@ var CheckAccessResponse_Status_value = map[string]int32{
 func (x CheckAccessResponse_Status) String() string {
 	return proto.EnumName(CheckAccessResponse_Status_name, int32(x))
 }
+
 func (CheckAccessResponse_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{2, 0}
+	return fileDescriptor_3c6e096860f6adc3, []int{2, 0}
 }
 
 type GetChangeRequest struct {
 	// Change number.
-	Number int64 `protobuf:"varint,1,opt,name=number" json:"number,omitempty"`
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
 	// What to include in the response.
-	Options              []QueryOption `protobuf:"varint,2,rep,packed,name=options,enum=gerrit.QueryOption" json:"options,omitempty"`
+	Options              []QueryOption `protobuf:"varint,2,rep,packed,name=options,proto3,enum=gerrit.QueryOption" json:"options,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`
@@ -206,7 +212,7 @@ func (m *GetChangeRequest) Reset()         { *m = GetChangeRequest{} }
 func (m *GetChangeRequest) String() string { return proto.CompactTextString(m) }
 func (*GetChangeRequest) ProtoMessage()    {}
 func (*GetChangeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{0}
+	return fileDescriptor_3c6e096860f6adc3, []int{0}
 }
 func (m *GetChangeRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetChangeRequest.Unmarshal(m, b)
@@ -214,8 +220,8 @@ func (m *GetChangeRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetChangeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetChangeRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetChangeRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetChangeRequest.Merge(dst, src)
+func (m *GetChangeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetChangeRequest.Merge(m, src)
 }
 func (m *GetChangeRequest) XXX_Size() int {
 	return xxx_messageInfo_GetChangeRequest.Size(m)
@@ -245,10 +251,10 @@ type CheckAccessRequest struct {
 	// Gerrit project, e.g. "chromium/src" part in
 	// https://chromium.googlesource.com/chromium/src/+/master
 	// Required.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The ref for which to check access.
 	// Required for most permissions.
-	Ref string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
+	Ref string `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
 	// Gerrit permission.
 	//
 	// Frequently checked permissions are:
@@ -260,9 +266,9 @@ type CheckAccessRequest struct {
 	// https://gerrit-review.googlesource.com/Documentation/access-control.html#access_categories
 	//
 	// Required.
-	Permission string `protobuf:"bytes,3,opt,name=permission" json:"permission,omitempty"`
+	Permission string `protobuf:"bytes,3,opt,name=permission,proto3" json:"permission,omitempty"`
 	// Gerrit account identifier such as email or account_id.
-	Account              string   `protobuf:"bytes,4,opt,name=account" json:"account,omitempty"`
+	Account              string   `protobuf:"bytes,4,opt,name=account,proto3" json:"account,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -272,7 +278,7 @@ func (m *CheckAccessRequest) Reset()         { *m = CheckAccessRequest{} }
 func (m *CheckAccessRequest) String() string { return proto.CompactTextString(m) }
 func (*CheckAccessRequest) ProtoMessage()    {}
 func (*CheckAccessRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{1}
+	return fileDescriptor_3c6e096860f6adc3, []int{1}
 }
 func (m *CheckAccessRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckAccessRequest.Unmarshal(m, b)
@@ -280,8 +286,8 @@ func (m *CheckAccessRequest) XXX_Unmarshal(b []byte) error {
 func (m *CheckAccessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckAccessRequest.Marshal(b, m, deterministic)
 }
-func (dst *CheckAccessRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckAccessRequest.Merge(dst, src)
+func (m *CheckAccessRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckAccessRequest.Merge(m, src)
 }
 func (m *CheckAccessRequest) XXX_Size() int {
 	return xxx_messageInfo_CheckAccessRequest.Size(m)
@@ -323,9 +329,9 @@ func (m *CheckAccessRequest) GetAccount() string {
 // Response message for gerrit.CheckAccess.
 type CheckAccessResponse struct {
 	// Status is the status of the inquery.
-	Status CheckAccessResponse_Status `protobuf:"varint,1,opt,name=status,enum=gerrit.CheckAccessResponse_Status" json:"status,omitempty"`
+	Status CheckAccessResponse_Status `protobuf:"varint,1,opt,name=status,proto3,enum=gerrit.CheckAccessResponse_Status" json:"status,omitempty"`
 	// Reason is human readable clarifying message if not allowed.
-	Reason               string   `protobuf:"bytes,2,opt,name=reason" json:"reason,omitempty"`
+	Reason               string   `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -335,7 +341,7 @@ func (m *CheckAccessResponse) Reset()         { *m = CheckAccessResponse{} }
 func (m *CheckAccessResponse) String() string { return proto.CompactTextString(m) }
 func (*CheckAccessResponse) ProtoMessage()    {}
 func (*CheckAccessResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{2}
+	return fileDescriptor_3c6e096860f6adc3, []int{2}
 }
 func (m *CheckAccessResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckAccessResponse.Unmarshal(m, b)
@@ -343,8 +349,8 @@ func (m *CheckAccessResponse) XXX_Unmarshal(b []byte) error {
 func (m *CheckAccessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckAccessResponse.Marshal(b, m, deterministic)
 }
-func (dst *CheckAccessResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckAccessResponse.Merge(dst, src)
+func (m *CheckAccessResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckAccessResponse.Merge(m, src)
 }
 func (m *CheckAccessResponse) XXX_Size() int {
 	return xxx_messageInfo_CheckAccessResponse.Size(m)
@@ -376,23 +382,23 @@ type AccountInfo struct {
 	// Only set if detailed account information is requested.
 	// See option DETAILED_ACCOUNTS for change queries
 	// and option DETAILS for account queries.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The email address the user prefers to be contacted through.
 	// Only set if detailed account information is requested.
 	// See option DETAILED_ACCOUNTS for change queries
 	// and options DETAILS and ALL_EMAILS for account queries.
-	Email string `protobuf:"bytes,2,opt,name=email" json:"email,omitempty"`
+	Email string `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	// A list of the secondary email addresses of the user.
 	// Only set for account queries when the ALL_EMAILS option or the suggest
 	// parameter is set. Secondary emails are only included if the calling user
 	// has the Modify Account, and hence is allowed to see secondary emails of
 	// other users.
-	SecondaryEmails []string `protobuf:"bytes,3,rep,name=secondary_emails,json=secondaryEmails" json:"secondary_emails,omitempty"`
+	SecondaryEmails []string `protobuf:"bytes,3,rep,name=secondary_emails,json=secondaryEmails,proto3" json:"secondary_emails,omitempty"`
 	// The username of the user.
 	// Only set if detailed account information is requested.
 	// See option DETAILED_ACCOUNTS for change queries
 	// and option DETAILS for account queries.
-	Username             string   `protobuf:"bytes,4,opt,name=username" json:"username,omitempty"`
+	Username             string   `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -402,7 +408,7 @@ func (m *AccountInfo) Reset()         { *m = AccountInfo{} }
 func (m *AccountInfo) String() string { return proto.CompactTextString(m) }
 func (*AccountInfo) ProtoMessage()    {}
 func (*AccountInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{3}
+	return fileDescriptor_3c6e096860f6adc3, []int{3}
 }
 func (m *AccountInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AccountInfo.Unmarshal(m, b)
@@ -410,8 +416,8 @@ func (m *AccountInfo) XXX_Unmarshal(b []byte) error {
 func (m *AccountInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AccountInfo.Marshal(b, m, deterministic)
 }
-func (dst *AccountInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AccountInfo.Merge(dst, src)
+func (m *AccountInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountInfo.Merge(m, src)
 }
 func (m *AccountInfo) XXX_Size() int {
 	return xxx_messageInfo_AccountInfo.Size(m)
@@ -454,11 +460,11 @@ func (m *AccountInfo) GetUsername() string {
 // Source of truth: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info
 type ChangeInfo struct {
 	// The change number.
-	Number int64 `protobuf:"varint,1,opt,name=number" json:"number,omitempty"`
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
 	// The owner of the change.
-	Owner *AccountInfo `protobuf:"bytes,2,opt,name=owner" json:"owner,omitempty"`
+	Owner *AccountInfo `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The project of this change. For example, "chromium/src".
-	Project              string   `protobuf:"bytes,3,opt,name=project" json:"project,omitempty"`
+	Project              string   `protobuf:"bytes,3,opt,name=project,proto3" json:"project,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -468,7 +474,7 @@ func (m *ChangeInfo) Reset()         { *m = ChangeInfo{} }
 func (m *ChangeInfo) String() string { return proto.CompactTextString(m) }
 func (*ChangeInfo) ProtoMessage()    {}
 func (*ChangeInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gerrit_577711b740588cbd, []int{4}
+	return fileDescriptor_3c6e096860f6adc3, []int{4}
 }
 func (m *ChangeInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChangeInfo.Unmarshal(m, b)
@@ -476,8 +482,8 @@ func (m *ChangeInfo) XXX_Unmarshal(b []byte) error {
 func (m *ChangeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ChangeInfo.Marshal(b, m, deterministic)
 }
-func (dst *ChangeInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChangeInfo.Merge(dst, src)
+func (m *ChangeInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangeInfo.Merge(m, src)
 }
 func (m *ChangeInfo) XXX_Size() int {
 	return xxx_messageInfo_ChangeInfo.Size(m)
@@ -668,10 +674,10 @@ var _Gerrit_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/gerrit/gerrit.proto", fileDescriptor_gerrit_577711b740588cbd)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/gerrit/gerrit.proto", fileDescriptor_3c6e096860f6adc3)
 }
 
-var fileDescriptor_gerrit_577711b740588cbd = []byte{
+var fileDescriptor_3c6e096860f6adc3 = []byte{
 	// 766 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xdd, 0x6e, 0xe3, 0x44,
 	0x14, 0x5e, 0x27, 0x69, 0xda, 0x9c, 0xd0, 0x64, 0x72, 0xda, 0x2d, 0x56, 0x91, 0x50, 0x94, 0xab,

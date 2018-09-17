@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import field_mask "google.golang.org/genproto/protobuf/field_mask"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -44,7 +46,7 @@ func (m *NIC) Reset()         { *m = NIC{} }
 func (m *NIC) String() string { return proto.CompactTextString(m) }
 func (*NIC) ProtoMessage()    {}
 func (*NIC) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{0}
+	return fileDescriptor_04c10592cdcb6ab3, []int{0}
 }
 func (m *NIC) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NIC.Unmarshal(m, b)
@@ -52,8 +54,8 @@ func (m *NIC) XXX_Unmarshal(b []byte) error {
 func (m *NIC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NIC.Marshal(b, m, deterministic)
 }
-func (dst *NIC) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NIC.Merge(dst, src)
+func (m *NIC) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NIC.Merge(m, src)
 }
 func (m *NIC) XXX_Size() int {
 	return xxx_messageInfo_NIC.Size(m)
@@ -126,7 +128,7 @@ func (m *CreateNICRequest) Reset()         { *m = CreateNICRequest{} }
 func (m *CreateNICRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateNICRequest) ProtoMessage()    {}
 func (*CreateNICRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{1}
+	return fileDescriptor_04c10592cdcb6ab3, []int{1}
 }
 func (m *CreateNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateNICRequest.Unmarshal(m, b)
@@ -134,8 +136,8 @@ func (m *CreateNICRequest) XXX_Unmarshal(b []byte) error {
 func (m *CreateNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateNICRequest.Marshal(b, m, deterministic)
 }
-func (dst *CreateNICRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateNICRequest.Merge(dst, src)
+func (m *CreateNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateNICRequest.Merge(m, src)
 }
 func (m *CreateNICRequest) XXX_Size() int {
 	return xxx_messageInfo_CreateNICRequest.Size(m)
@@ -168,7 +170,7 @@ func (m *DeleteNICRequest) Reset()         { *m = DeleteNICRequest{} }
 func (m *DeleteNICRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteNICRequest) ProtoMessage()    {}
 func (*DeleteNICRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{2}
+	return fileDescriptor_04c10592cdcb6ab3, []int{2}
 }
 func (m *DeleteNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteNICRequest.Unmarshal(m, b)
@@ -176,8 +178,8 @@ func (m *DeleteNICRequest) XXX_Unmarshal(b []byte) error {
 func (m *DeleteNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeleteNICRequest.Marshal(b, m, deterministic)
 }
-func (dst *DeleteNICRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteNICRequest.Merge(dst, src)
+func (m *DeleteNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteNICRequest.Merge(m, src)
 }
 func (m *DeleteNICRequest) XXX_Size() int {
 	return xxx_messageInfo_DeleteNICRequest.Size(m)
@@ -225,7 +227,7 @@ func (m *ListNICsRequest) Reset()         { *m = ListNICsRequest{} }
 func (m *ListNICsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListNICsRequest) ProtoMessage()    {}
 func (*ListNICsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{3}
+	return fileDescriptor_04c10592cdcb6ab3, []int{3}
 }
 func (m *ListNICsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListNICsRequest.Unmarshal(m, b)
@@ -233,8 +235,8 @@ func (m *ListNICsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListNICsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListNICsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListNICsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListNICsRequest.Merge(dst, src)
+func (m *ListNICsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNICsRequest.Merge(m, src)
 }
 func (m *ListNICsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListNICsRequest.Size(m)
@@ -300,7 +302,7 @@ func (m *ListNICsResponse) Reset()         { *m = ListNICsResponse{} }
 func (m *ListNICsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListNICsResponse) ProtoMessage()    {}
 func (*ListNICsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{4}
+	return fileDescriptor_04c10592cdcb6ab3, []int{4}
 }
 func (m *ListNICsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListNICsResponse.Unmarshal(m, b)
@@ -308,8 +310,8 @@ func (m *ListNICsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListNICsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListNICsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListNICsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListNICsResponse.Merge(dst, src)
+func (m *ListNICsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListNICsResponse.Merge(m, src)
 }
 func (m *ListNICsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListNICsResponse.Size(m)
@@ -342,7 +344,7 @@ func (m *UpdateNICRequest) Reset()         { *m = UpdateNICRequest{} }
 func (m *UpdateNICRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateNICRequest) ProtoMessage()    {}
 func (*UpdateNICRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nics_42c934507fcd8049, []int{5}
+	return fileDescriptor_04c10592cdcb6ab3, []int{5}
 }
 func (m *UpdateNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateNICRequest.Unmarshal(m, b)
@@ -350,8 +352,8 @@ func (m *UpdateNICRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateNICRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateNICRequest.Marshal(b, m, deterministic)
 }
-func (dst *UpdateNICRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateNICRequest.Merge(dst, src)
+func (m *UpdateNICRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateNICRequest.Merge(m, src)
 }
 func (m *UpdateNICRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdateNICRequest.Size(m)
@@ -386,10 +388,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor_nics_42c934507fcd8049)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/nics.proto", fileDescriptor_04c10592cdcb6ab3)
 }
 
-var fileDescriptor_nics_42c934507fcd8049 = []byte{
+var fileDescriptor_04c10592cdcb6ab3 = []byte{
 	// 420 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0x4d, 0x8f, 0xd3, 0x30,
 	0x10, 0x55, 0xb6, 0x5f, 0x74, 0xba, 0x88, 0xca, 0x42, 0xc8, 0xaa, 0xd0, 0x12, 0x85, 0x4b, 0x2f,

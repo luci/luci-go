@@ -5,10 +5,12 @@ package discovery
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import descriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	descriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -37,7 +39,7 @@ func (m *Void) Reset()         { *m = Void{} }
 func (m *Void) String() string { return proto.CompactTextString(m) }
 func (*Void) ProtoMessage()    {}
 func (*Void) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_47690044dd64b991, []int{0}
+	return fileDescriptor_4a913a37d47b1277, []int{0}
 }
 func (m *Void) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Void.Unmarshal(m, b)
@@ -45,8 +47,8 @@ func (m *Void) XXX_Unmarshal(b []byte) error {
 func (m *Void) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Void.Marshal(b, m, deterministic)
 }
-func (dst *Void) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Void.Merge(dst, src)
+func (m *Void) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Void.Merge(m, src)
 }
 func (m *Void) XXX_Size() int {
 	return xxx_messageInfo_Void.Size(m)
@@ -73,7 +75,7 @@ func (m *DescribeResponse) Reset()         { *m = DescribeResponse{} }
 func (m *DescribeResponse) String() string { return proto.CompactTextString(m) }
 func (*DescribeResponse) ProtoMessage()    {}
 func (*DescribeResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_47690044dd64b991, []int{1}
+	return fileDescriptor_4a913a37d47b1277, []int{1}
 }
 func (m *DescribeResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescribeResponse.Unmarshal(m, b)
@@ -81,8 +83,8 @@ func (m *DescribeResponse) XXX_Unmarshal(b []byte) error {
 func (m *DescribeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DescribeResponse.Marshal(b, m, deterministic)
 }
-func (dst *DescribeResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DescribeResponse.Merge(dst, src)
+func (m *DescribeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DescribeResponse.Merge(m, src)
 }
 func (m *DescribeResponse) XXX_Size() int {
 	return xxx_messageInfo_DescribeResponse.Size(m)
@@ -205,10 +207,10 @@ var _Discovery_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/grpc/discovery/service.proto", fileDescriptor_service_47690044dd64b991)
+	proto.RegisterFile("go.chromium.org/luci/grpc/discovery/service.proto", fileDescriptor_4a913a37d47b1277)
 }
 
-var fileDescriptor_service_47690044dd64b991 = []byte{
+var fileDescriptor_4a913a37d47b1277 = []byte{
 	// 212 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x8f, 0xb1, 0x4e, 0xc3, 0x30,
 	0x10, 0x86, 0x29, 0xa0, 0xaa, 0x71, 0x07, 0x90, 0xa7, 0x2a, 0x2c, 0x51, 0xa6, 0x4e, 0x67, 0x51,

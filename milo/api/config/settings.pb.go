@@ -3,9 +3,11 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -20,16 +22,16 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Settings represents the format for the global (service) config for Milo.
 type Settings struct {
-	Buildbot    *Settings_Buildbot    `protobuf:"bytes,1,opt,name=buildbot" json:"buildbot,omitempty"`
-	Buildbucket *Settings_Buildbucket `protobuf:"bytes,2,opt,name=buildbucket" json:"buildbucket,omitempty"`
-	Swarming    *Settings_Swarming    `protobuf:"bytes,3,opt,name=swarming" json:"swarming,omitempty"`
+	Buildbot    *Settings_Buildbot    `protobuf:"bytes,1,opt,name=buildbot,proto3" json:"buildbot,omitempty"`
+	Buildbucket *Settings_Buildbucket `protobuf:"bytes,2,opt,name=buildbucket,proto3" json:"buildbucket,omitempty"`
+	Swarming    *Settings_Swarming    `protobuf:"bytes,3,opt,name=swarming,proto3" json:"swarming,omitempty"`
 	// source_acls instructs Milo to provide Git/Gerrit data
 	// (e.g., blamelist) to some of its users on entire subdomains or individual
 	// repositories (Gerrit "projects").
 	//
 	// Multiple records are allowed, but each host and project must appear only in
 	// one record.
-	SourceAcls           []*Settings_SourceAcls `protobuf:"bytes,4,rep,name=source_acls,json=sourceAcls" json:"source_acls,omitempty"`
+	SourceAcls           []*Settings_SourceAcls `protobuf:"bytes,4,rep,name=source_acls,json=sourceAcls,proto3" json:"source_acls,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -39,7 +41,7 @@ func (m *Settings) Reset()         { *m = Settings{} }
 func (m *Settings) String() string { return proto.CompactTextString(m) }
 func (*Settings) ProtoMessage()    {}
 func (*Settings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0}
+	return fileDescriptor_98dd5cb9562385c0, []int{0}
 }
 func (m *Settings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings.Unmarshal(m, b)
@@ -47,8 +49,8 @@ func (m *Settings) XXX_Unmarshal(b []byte) error {
 func (m *Settings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings.Marshal(b, m, deterministic)
 }
-func (dst *Settings) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings.Merge(dst, src)
+func (m *Settings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings.Merge(m, src)
 }
 func (m *Settings) XXX_Size() int {
 	return xxx_messageInfo_Settings.Size(m)
@@ -90,13 +92,13 @@ func (m *Settings) GetSourceAcls() []*Settings_SourceAcls {
 type Settings_Buildbot struct {
 	// internal_reader is the infra-auth group that is allowed to read internal
 	// buildbot data.
-	InternalReader string `protobuf:"bytes,1,opt,name=internal_reader,json=internalReader" json:"internal_reader,omitempty"`
+	InternalReader string `protobuf:"bytes,1,opt,name=internal_reader,json=internalReader,proto3" json:"internal_reader,omitempty"`
 	// public_subscription is the name of the pubsub topic where public builds come in
 	// from
-	PublicSubscription string `protobuf:"bytes,2,opt,name=public_subscription,json=publicSubscription" json:"public_subscription,omitempty"`
+	PublicSubscription string `protobuf:"bytes,2,opt,name=public_subscription,json=publicSubscription,proto3" json:"public_subscription,omitempty"`
 	// internal_subscription is the name of the pubsub topic where internal builds
 	// come in from
-	InternalSubscription string   `protobuf:"bytes,3,opt,name=internal_subscription,json=internalSubscription" json:"internal_subscription,omitempty"`
+	InternalSubscription string   `protobuf:"bytes,3,opt,name=internal_subscription,json=internalSubscription,proto3" json:"internal_subscription,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -106,7 +108,7 @@ func (m *Settings_Buildbot) Reset()         { *m = Settings_Buildbot{} }
 func (m *Settings_Buildbot) String() string { return proto.CompactTextString(m) }
 func (*Settings_Buildbot) ProtoMessage()    {}
 func (*Settings_Buildbot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 0}
+	return fileDescriptor_98dd5cb9562385c0, []int{0, 0}
 }
 func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbot.Unmarshal(m, b)
@@ -114,8 +116,8 @@ func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Buildbot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Buildbot.Marshal(b, m, deterministic)
 }
-func (dst *Settings_Buildbot) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Buildbot.Merge(dst, src)
+func (m *Settings_Buildbot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbot.Merge(m, src)
 }
 func (m *Settings_Buildbot) XXX_Size() int {
 	return xxx_messageInfo_Settings_Buildbot.Size(m)
@@ -149,12 +151,12 @@ func (m *Settings_Buildbot) GetInternalSubscription() string {
 
 type Settings_Buildbucket struct {
 	// name is the user friendly name of the Buildbucket instance we're pointing to.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// host is the hostname of the buildbucket instance we're pointing to (sans schema).
-	Host string `protobuf:"bytes,2,opt,name=host" json:"host,omitempty"`
+	Host string `protobuf:"bytes,2,opt,name=host,proto3" json:"host,omitempty"`
 	// project is the name of the Google Cloud project that the pubsub topic
 	// belongs to.
-	Project              string   `protobuf:"bytes,3,opt,name=project" json:"project,omitempty"`
+	Project              string   `protobuf:"bytes,3,opt,name=project,proto3" json:"project,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -164,7 +166,7 @@ func (m *Settings_Buildbucket) Reset()         { *m = Settings_Buildbucket{} }
 func (m *Settings_Buildbucket) String() string { return proto.CompactTextString(m) }
 func (*Settings_Buildbucket) ProtoMessage()    {}
 func (*Settings_Buildbucket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 1}
+	return fileDescriptor_98dd5cb9562385c0, []int{0, 1}
 }
 func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbucket.Unmarshal(m, b)
@@ -172,8 +174,8 @@ func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Buildbucket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Buildbucket.Marshal(b, m, deterministic)
 }
-func (dst *Settings_Buildbucket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Buildbucket.Merge(dst, src)
+func (m *Settings_Buildbucket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbucket.Merge(m, src)
 }
 func (m *Settings_Buildbucket) XXX_Size() int {
 	return xxx_messageInfo_Settings_Buildbucket.Size(m)
@@ -208,11 +210,11 @@ func (m *Settings_Buildbucket) GetProject() string {
 type Settings_Swarming struct {
 	// default_host is the hostname of the swarming host Milo defaults to, if
 	// none is specified.  Default host is implicitly an allowed host.
-	DefaultHost string `protobuf:"bytes,1,opt,name=default_host,json=defaultHost" json:"default_host,omitempty"`
+	DefaultHost string `protobuf:"bytes,1,opt,name=default_host,json=defaultHost,proto3" json:"default_host,omitempty"`
 	// allowed_hosts is a whitelist of hostnames of swarming instances
 	// that Milo is allowed to talk to.  This is specified here for security
 	// reasons, because Milo will hand out its oauth2 token to a swarming host.
-	AllowedHosts         []string `protobuf:"bytes,2,rep,name=allowed_hosts,json=allowedHosts" json:"allowed_hosts,omitempty"`
+	AllowedHosts         []string `protobuf:"bytes,2,rep,name=allowed_hosts,json=allowedHosts,proto3" json:"allowed_hosts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -222,7 +224,7 @@ func (m *Settings_Swarming) Reset()         { *m = Settings_Swarming{} }
 func (m *Settings_Swarming) String() string { return proto.CompactTextString(m) }
 func (*Settings_Swarming) ProtoMessage()    {}
 func (*Settings_Swarming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 2}
+	return fileDescriptor_98dd5cb9562385c0, []int{0, 2}
 }
 func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Swarming.Unmarshal(m, b)
@@ -230,8 +232,8 @@ func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Swarming) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Swarming.Marshal(b, m, deterministic)
 }
-func (dst *Settings_Swarming) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Swarming.Merge(dst, src)
+func (m *Settings_Swarming) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Swarming.Merge(m, src)
 }
 func (m *Settings_Swarming) XXX_Size() int {
 	return xxx_messageInfo_Settings_Swarming.Size(m)
@@ -264,7 +266,7 @@ type Settings_SourceAcls struct {
 	//
 	// For *.googlesource.com domains, host should not be a Gerrit host,
 	// i.e.  it shouldn't be <subdomain>-review.googlesource.com.
-	Hosts []string `protobuf:"bytes,1,rep,name=hosts" json:"hosts,omitempty"`
+	Hosts []string `protobuf:"bytes,1,rep,name=hosts,proto3" json:"hosts,omitempty"`
 	// project is a URL to a Git repository.
 	//
 	// Read access is granted on both git data and Gerrit CLs of this project.
@@ -272,7 +274,7 @@ type Settings_SourceAcls struct {
 	// For *.googlesource.com Git repositories:
 	//   URL Path should not start with '/a/' (forced authentication).
 	//   URL Path should not end with '.git' (redundant).
-	Projects []string `protobuf:"bytes,2,rep,name=projects" json:"projects,omitempty"`
+	Projects []string `protobuf:"bytes,2,rep,name=projects,proto3" json:"projects,omitempty"`
 	// readers are allowed to read git/gerrit data from targets.
 	//
 	// Three types of identity strings are supported:
@@ -281,7 +283,7 @@ type Settings_SourceAcls struct {
 	//  * Auth service identities.  For example: "kind:name"
 	//
 	// Required.
-	Readers              []string `protobuf:"bytes,3,rep,name=readers" json:"readers,omitempty"`
+	Readers              []string `protobuf:"bytes,3,rep,name=readers,proto3" json:"readers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -291,7 +293,7 @@ func (m *Settings_SourceAcls) Reset()         { *m = Settings_SourceAcls{} }
 func (m *Settings_SourceAcls) String() string { return proto.CompactTextString(m) }
 func (*Settings_SourceAcls) ProtoMessage()    {}
 func (*Settings_SourceAcls) Descriptor() ([]byte, []int) {
-	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 3}
+	return fileDescriptor_98dd5cb9562385c0, []int{0, 3}
 }
 func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_SourceAcls.Unmarshal(m, b)
@@ -299,8 +301,8 @@ func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
 func (m *Settings_SourceAcls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_SourceAcls.Marshal(b, m, deterministic)
 }
-func (dst *Settings_SourceAcls) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_SourceAcls.Merge(dst, src)
+func (m *Settings_SourceAcls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_SourceAcls.Merge(m, src)
 }
 func (m *Settings_SourceAcls) XXX_Size() int {
 	return xxx_messageInfo_Settings_SourceAcls.Size(m)
@@ -341,10 +343,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor_settings_de1143cae3c9b2b5)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor_98dd5cb9562385c0)
 }
 
-var fileDescriptor_settings_de1143cae3c9b2b5 = []byte{
+var fileDescriptor_98dd5cb9562385c0 = []byte{
 	// 396 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0xbf, 0x8e, 0xd4, 0x30,
 	0x10, 0xc6, 0x95, 0xcb, 0xde, 0x91, 0x9d, 0x1c, 0x20, 0x99, 0x43, 0x84, 0x54, 0x0b, 0x14, 0x6c,

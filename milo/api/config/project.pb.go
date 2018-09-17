@@ -3,9 +3,11 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,13 +23,13 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Project is a project definition for Milo.
 type Project struct {
 	// Consoles is a list of consoles to define under /console/
-	Consoles []*Console `protobuf:"bytes,2,rep,name=consoles" json:"consoles,omitempty"`
+	Consoles []*Console `protobuf:"bytes,2,rep,name=consoles,proto3" json:"consoles,omitempty"`
 	// Headers is a list of defined headers that may be referenced by a console.
-	Headers []*Header `protobuf:"bytes,3,rep,name=headers" json:"headers,omitempty"`
+	Headers []*Header `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
 	// LogoUrl is the URL to the logo for this project.
 	// This field is optional. The logo URL must have a host of
 	// storage.googleapis.com.
-	LogoUrl              string   `protobuf:"bytes,4,opt,name=logo_url,json=logoUrl" json:"logo_url,omitempty"`
+	LogoUrl              string   `protobuf:"bytes,4,opt,name=logo_url,json=logoUrl,proto3" json:"logo_url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -37,7 +39,7 @@ func (m *Project) Reset()         { *m = Project{} }
 func (m *Project) String() string { return proto.CompactTextString(m) }
 func (*Project) ProtoMessage()    {}
 func (*Project) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{0}
+	return fileDescriptor_ed3e109f2242818b, []int{0}
 }
 func (m *Project) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Project.Unmarshal(m, b)
@@ -45,8 +47,8 @@ func (m *Project) XXX_Unmarshal(b []byte) error {
 func (m *Project) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Project.Marshal(b, m, deterministic)
 }
-func (dst *Project) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Project.Merge(dst, src)
+func (m *Project) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Project.Merge(m, src)
 }
 func (m *Project) XXX_Size() int {
 	return xxx_messageInfo_Project.Size(m)
@@ -82,11 +84,11 @@ func (m *Project) GetLogoUrl() string {
 // an anchor tag <a href="url" alt="alt">text</a>.
 type Link struct {
 	// Text is displayed as the text between the anchor tags.
-	Text string `protobuf:"bytes,1,opt,name=text" json:"text,omitempty"`
+	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	// Url is the URL to link to.
-	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
 	// Alt is the alt text displayed when hovering over the text.
-	Alt                  string   `protobuf:"bytes,3,opt,name=alt" json:"alt,omitempty"`
+	Alt                  string   `protobuf:"bytes,3,opt,name=alt,proto3" json:"alt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -96,7 +98,7 @@ func (m *Link) Reset()         { *m = Link{} }
 func (m *Link) String() string { return proto.CompactTextString(m) }
 func (*Link) ProtoMessage()    {}
 func (*Link) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{1}
+	return fileDescriptor_ed3e109f2242818b, []int{1}
 }
 func (m *Link) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Link.Unmarshal(m, b)
@@ -104,8 +106,8 @@ func (m *Link) XXX_Unmarshal(b []byte) error {
 func (m *Link) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Link.Marshal(b, m, deterministic)
 }
-func (dst *Link) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Link.Merge(dst, src)
+func (m *Link) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Link.Merge(m, src)
 }
 func (m *Link) XXX_Size() int {
 	return xxx_messageInfo_Link.Size(m)
@@ -141,7 +143,7 @@ func (m *Link) GetAlt() string {
 // oncall (Sheriff, trooper, etc) for certain rotations.
 type Oncall struct {
 	// Name is the name of the oncall rotation being displayed.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Url is an URL to a json endpoint with the following format:
 	// {
 	//   "updated_unix_timestamp": <int>,
@@ -150,7 +152,7 @@ type Oncall struct {
 	//     "email@nowhere.com
 	//   ]
 	// }
-	Url                  string   `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Url                  string   `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -160,7 +162,7 @@ func (m *Oncall) Reset()         { *m = Oncall{} }
 func (m *Oncall) String() string { return proto.CompactTextString(m) }
 func (*Oncall) ProtoMessage()    {}
 func (*Oncall) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{2}
+	return fileDescriptor_ed3e109f2242818b, []int{2}
 }
 func (m *Oncall) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Oncall.Unmarshal(m, b)
@@ -168,8 +170,8 @@ func (m *Oncall) XXX_Unmarshal(b []byte) error {
 func (m *Oncall) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Oncall.Marshal(b, m, deterministic)
 }
-func (dst *Oncall) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Oncall.Merge(dst, src)
+func (m *Oncall) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Oncall.Merge(m, src)
 }
 func (m *Oncall) XXX_Size() int {
 	return xxx_messageInfo_Oncall.Size(m)
@@ -197,9 +199,9 @@ func (m *Oncall) GetUrl() string {
 // LinkGroup is a list of links, optionally given a name.
 type LinkGroup struct {
 	// Name is the name of this list of links. This is optional.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Links is a list of links to display.
-	Links                []*Link  `protobuf:"bytes,2,rep,name=links" json:"links,omitempty"`
+	Links                []*Link  `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -209,7 +211,7 @@ func (m *LinkGroup) Reset()         { *m = LinkGroup{} }
 func (m *LinkGroup) String() string { return proto.CompactTextString(m) }
 func (*LinkGroup) ProtoMessage()    {}
 func (*LinkGroup) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{3}
+	return fileDescriptor_ed3e109f2242818b, []int{3}
 }
 func (m *LinkGroup) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LinkGroup.Unmarshal(m, b)
@@ -217,8 +219,8 @@ func (m *LinkGroup) XXX_Unmarshal(b []byte) error {
 func (m *LinkGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LinkGroup.Marshal(b, m, deterministic)
 }
-func (dst *LinkGroup) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LinkGroup.Merge(dst, src)
+func (m *LinkGroup) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LinkGroup.Merge(m, src)
 }
 func (m *LinkGroup) XXX_Size() int {
 	return xxx_messageInfo_LinkGroup.Size(m)
@@ -249,13 +251,13 @@ func (m *LinkGroup) GetLinks() []*Link {
 // (e.g. "Tree closers", "Experimental", etc)
 type ConsoleSummaryGroup struct {
 	// Title is a name or label for this group of consoles.  This is optional.
-	Title *Link `protobuf:"bytes,1,opt,name=title" json:"title,omitempty"`
+	Title *Link `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
 	// ConsoleIds is a list of console ids to display in this console group.
 	// Each console id must be prepended with its related project (e.g.
 	// chromium/main) because console ids are project-local.
 	// Only consoles from the same project are supported.
 	// TODO(hinoka): Allow cross-project consoles.
-	ConsoleIds           []string `protobuf:"bytes,2,rep,name=console_ids,json=consoleIds" json:"console_ids,omitempty"`
+	ConsoleIds           []string `protobuf:"bytes,2,rep,name=console_ids,json=consoleIds,proto3" json:"console_ids,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -265,7 +267,7 @@ func (m *ConsoleSummaryGroup) Reset()         { *m = ConsoleSummaryGroup{} }
 func (m *ConsoleSummaryGroup) String() string { return proto.CompactTextString(m) }
 func (*ConsoleSummaryGroup) ProtoMessage()    {}
 func (*ConsoleSummaryGroup) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{4}
+	return fileDescriptor_ed3e109f2242818b, []int{4}
 }
 func (m *ConsoleSummaryGroup) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConsoleSummaryGroup.Unmarshal(m, b)
@@ -273,8 +275,8 @@ func (m *ConsoleSummaryGroup) XXX_Unmarshal(b []byte) error {
 func (m *ConsoleSummaryGroup) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ConsoleSummaryGroup.Marshal(b, m, deterministic)
 }
-func (dst *ConsoleSummaryGroup) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConsoleSummaryGroup.Merge(dst, src)
+func (m *ConsoleSummaryGroup) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConsoleSummaryGroup.Merge(m, src)
 }
 func (m *ConsoleSummaryGroup) XXX_Size() int {
 	return xxx_messageInfo_ConsoleSummaryGroup.Size(m)
@@ -314,17 +316,17 @@ type Header struct {
 	//     "email@nowhere.com
 	//   ]
 	// }
-	Oncalls []*Oncall `protobuf:"bytes,1,rep,name=oncalls" json:"oncalls,omitempty"`
+	Oncalls []*Oncall `protobuf:"bytes,1,rep,name=oncalls,proto3" json:"oncalls,omitempty"`
 	// Links is a list of named groups of web links.
-	Links []*LinkGroup `protobuf:"bytes,2,rep,name=links" json:"links,omitempty"`
+	Links []*LinkGroup `protobuf:"bytes,2,rep,name=links,proto3" json:"links,omitempty"`
 	// ConsoleGroups are groups of console summaries, each optionally named.
-	ConsoleGroups []*ConsoleSummaryGroup `protobuf:"bytes,3,rep,name=console_groups,json=consoleGroups" json:"console_groups,omitempty"`
+	ConsoleGroups []*ConsoleSummaryGroup `protobuf:"bytes,3,rep,name=console_groups,json=consoleGroups,proto3" json:"console_groups,omitempty"`
 	// TreeStatusHost is the hostname of the chromium-status instance where
 	// the tree status of this console is hosted.  If provided, this will appear
 	// as the bar at the very top of the page.
-	TreeStatusHost string `protobuf:"bytes,4,opt,name=tree_status_host,json=treeStatusHost" json:"tree_status_host,omitempty"`
+	TreeStatusHost string `protobuf:"bytes,4,opt,name=tree_status_host,json=treeStatusHost,proto3" json:"tree_status_host,omitempty"`
 	// Id is a reference to the header.
-	Id                   string   `protobuf:"bytes,5,opt,name=id" json:"id,omitempty"`
+	Id                   string   `protobuf:"bytes,5,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -334,7 +336,7 @@ func (m *Header) Reset()         { *m = Header{} }
 func (m *Header) String() string { return proto.CompactTextString(m) }
 func (*Header) ProtoMessage()    {}
 func (*Header) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{5}
+	return fileDescriptor_ed3e109f2242818b, []int{5}
 }
 func (m *Header) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Header.Unmarshal(m, b)
@@ -342,8 +344,8 @@ func (m *Header) XXX_Unmarshal(b []byte) error {
 func (m *Header) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Header.Marshal(b, m, deterministic)
 }
-func (dst *Header) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Header.Merge(dst, src)
+func (m *Header) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Header.Merge(m, src)
 }
 func (m *Header) XXX_Size() int {
 	return xxx_messageInfo_Header.Size(m)
@@ -393,12 +395,12 @@ func (m *Header) GetId() string {
 type Console struct {
 	// Id is the reference to the console, and will be the address to make the
 	// console reachable from /console/<Project>/<ID>.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Name is the longform name of the waterfall, and will be used to be
 	// displayed in the title.
-	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// RepoUrl is the URL of the git repository to display as the rows of the console.
-	RepoUrl string `protobuf:"bytes,3,opt,name=repo_url,json=repoUrl" json:"repo_url,omitempty"`
+	RepoUrl string `protobuf:"bytes,3,opt,name=repo_url,json=repoUrl,proto3" json:"repo_url,omitempty"`
 	// Refs are the refs to pull commits from when displaying the console.
 	//
 	// Users can specify a regular expression to match several refs using
@@ -413,7 +415,7 @@ type Console struct {
 	// each commmit to go through Gerrit by prohibiting "git push" on these refs.
 	//
 	// Eg. refs/heads/master, regexp:refs/branch-heads/\d+\.\d+
-	Refs []string `protobuf:"bytes,14,rep,name=refs" json:"refs,omitempty"`
+	Refs []string `protobuf:"bytes,14,rep,name=refs,proto3" json:"refs,omitempty"`
 	// ExcludeRef is a ref, commits from which are ignored even when they are
 	// reachable from the ref specified above. This must be specified as a single
 	// fully-qualified ref, i.e. regexp syntax from above is not supported.
@@ -427,31 +429,31 @@ type Console struct {
 	// branches are branched off:
 	//   ref: "regexp:refs/branch-heads/\d+\.\d+"
 	//   exlude_ref: "refs/heads/master"
-	ExcludeRef string `protobuf:"bytes,13,opt,name=exclude_ref,json=excludeRef" json:"exclude_ref,omitempty"`
+	ExcludeRef string `protobuf:"bytes,13,opt,name=exclude_ref,json=excludeRef,proto3" json:"exclude_ref,omitempty"`
 	// ManifestName the name of the manifest the waterfall looks at.
 	// This should always be "REVISION".
 	// In the future, other manifest names can be supported.
 	// TODO(hinoka,iannucci): crbug/832893 - Support custom manifest names, such as "UNPATCHED" / "PATCHED".
-	ManifestName string `protobuf:"bytes,5,opt,name=manifest_name,json=manifestName" json:"manifest_name,omitempty"`
+	ManifestName string `protobuf:"bytes,5,opt,name=manifest_name,json=manifestName,proto3" json:"manifest_name,omitempty"`
 	// Builders is a list of builder configurations to display as the columns of the console.
-	Builders []*Builder `protobuf:"bytes,6,rep,name=builders" json:"builders,omitempty"`
+	Builders []*Builder `protobuf:"bytes,6,rep,name=builders,proto3" json:"builders,omitempty"`
 	// FaviconUrl is the URL to the favicon for this console page.
 	// This field is optional. The favicon URL must have a host of
 	// storage.googleapis.com.
-	FaviconUrl string `protobuf:"bytes,7,opt,name=favicon_url,json=faviconUrl" json:"favicon_url,omitempty"`
+	FaviconUrl string `protobuf:"bytes,7,opt,name=favicon_url,json=faviconUrl,proto3" json:"favicon_url,omitempty"`
 	// Header is a collection of links, rotation information, and console summaries
 	// displayed under the tree status but above the main console content.
-	Header *Header `protobuf:"bytes,9,opt,name=header" json:"header,omitempty"`
+	Header *Header `protobuf:"bytes,9,opt,name=header,proto3" json:"header,omitempty"`
 	// HeaderId is a reference to a header.  Only one of Header or HeaderId should
 	// be specified.
-	HeaderId string `protobuf:"bytes,10,opt,name=header_id,json=headerId" json:"header_id,omitempty"`
+	HeaderId string `protobuf:"bytes,10,opt,name=header_id,json=headerId,proto3" json:"header_id,omitempty"`
 	// If true, this console will not filter out builds marked as Experimental.
 	// This field is optional. By default Consoles only show production builds.
-	IncludeExperimentalBuilds bool `protobuf:"varint,11,opt,name=include_experimental_builds,json=includeExperimentalBuilds" json:"include_experimental_builds,omitempty"`
+	IncludeExperimentalBuilds bool `protobuf:"varint,11,opt,name=include_experimental_builds,json=includeExperimentalBuilds,proto3" json:"include_experimental_builds,omitempty"`
 	// If true, only builders view will be available. Console view (i.e. git log
 	// based view) will be disabled and users redirected to builder view.
 	// Defaults to false.
-	BuilderViewOnly      bool     `protobuf:"varint,12,opt,name=builder_view_only,json=builderViewOnly" json:"builder_view_only,omitempty"`
+	BuilderViewOnly      bool     `protobuf:"varint,12,opt,name=builder_view_only,json=builderViewOnly,proto3" json:"builder_view_only,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -461,7 +463,7 @@ func (m *Console) Reset()         { *m = Console{} }
 func (m *Console) String() string { return proto.CompactTextString(m) }
 func (*Console) ProtoMessage()    {}
 func (*Console) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{6}
+	return fileDescriptor_ed3e109f2242818b, []int{6}
 }
 func (m *Console) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Console.Unmarshal(m, b)
@@ -469,8 +471,8 @@ func (m *Console) XXX_Unmarshal(b []byte) error {
 func (m *Console) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Console.Marshal(b, m, deterministic)
 }
-func (dst *Console) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Console.Merge(dst, src)
+func (m *Console) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Console.Merge(m, src)
 }
 func (m *Console) XXX_Size() int {
 	return xxx_messageInfo_Console.Size(m)
@@ -574,13 +576,13 @@ type Builder struct {
 	//
 	// If multiple names are specified, the console will show the union of the
 	// builders.
-	Name []string `protobuf:"bytes,1,rep,name=name" json:"name,omitempty"`
+	Name []string `protobuf:"bytes,1,rep,name=name,proto3" json:"name,omitempty"`
 	// Category describes the hierarchy of the builder on the header of the
 	// console as a "|" delimited list.  Neighboring builders with common ancestors
 	// will be have their headers merged.
-	Category string `protobuf:"bytes,2,opt,name=category" json:"category,omitempty"`
+	Category string `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
 	// ShortName is the 1-3 character abbreviation of the builder.
-	ShortName            string   `protobuf:"bytes,3,opt,name=short_name,json=shortName" json:"short_name,omitempty"`
+	ShortName            string   `protobuf:"bytes,3,opt,name=short_name,json=shortName,proto3" json:"short_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -590,7 +592,7 @@ func (m *Builder) Reset()         { *m = Builder{} }
 func (m *Builder) String() string { return proto.CompactTextString(m) }
 func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_dfb8aca1bc6bfc84, []int{7}
+	return fileDescriptor_ed3e109f2242818b, []int{7}
 }
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
@@ -598,8 +600,8 @@ func (m *Builder) XXX_Unmarshal(b []byte) error {
 func (m *Builder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Builder.Marshal(b, m, deterministic)
 }
-func (dst *Builder) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Builder.Merge(dst, src)
+func (m *Builder) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Builder.Merge(m, src)
 }
 func (m *Builder) XXX_Size() int {
 	return xxx_messageInfo_Builder.Size(m)
@@ -643,10 +645,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/config/project.proto", fileDescriptor_project_dfb8aca1bc6bfc84)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/config/project.proto", fileDescriptor_ed3e109f2242818b)
 }
 
-var fileDescriptor_project_dfb8aca1bc6bfc84 = []byte{
+var fileDescriptor_ed3e109f2242818b = []byte{
 	// 641 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x54, 0xdd, 0x6e, 0xd3, 0x30,
 	0x18, 0x55, 0x9b, 0xb4, 0x49, 0xbe, 0xad, 0x5d, 0x31, 0x37, 0x2e, 0x13, 0xa2, 0x0a, 0x3f, 0xea,

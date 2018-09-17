@@ -3,9 +3,11 @@
 
 package messages
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -19,10 +21,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/cron.proto", fileDescriptor_cron_9602d1e44b638941)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/cron.proto", fileDescriptor_a8260ef1d4d0883d)
 }
 
-var fileDescriptor_cron_9602d1e44b638941 = []byte{
+var fileDescriptor_a8260ef1d4d0883d = []byte{
 	// 98 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0xca, 0x31, 0x0e, 0x85, 0x30,
 	0x08, 0x00, 0xd0, 0xed, 0x0f, 0x7f, 0x32, 0x1e, 0x04, 0x06, 0x57, 0x2f, 0x53, 0x11, 0x29, 0x49,

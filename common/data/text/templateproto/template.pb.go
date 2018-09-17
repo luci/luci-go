@@ -3,10 +3,12 @@
 
 package templateproto
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -42,7 +44,7 @@ func (m *Value) Reset()         { *m = Value{} }
 func (m *Value) String() string { return proto.CompactTextString(m) }
 func (*Value) ProtoMessage()    {}
 func (*Value) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{0}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{0}
 }
 func (m *Value) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Value.Unmarshal(m, b)
@@ -50,8 +52,8 @@ func (m *Value) XXX_Unmarshal(b []byte) error {
 func (m *Value) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Value.Marshal(b, m, deterministic)
 }
-func (dst *Value) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Value.Merge(dst, src)
+func (m *Value) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Value.Merge(m, src)
 }
 func (m *Value) XXX_Size() int {
 	return xxx_messageInfo_Value.Size(m)
@@ -67,42 +69,58 @@ type isValue_Value interface {
 }
 
 type Value_Int struct {
-	Int int64 `protobuf:"varint,1,opt,name=int,oneof"`
+	Int int64 `protobuf:"varint,1,opt,name=int,proto3,oneof"`
 }
+
 type Value_Uint struct {
-	Uint uint64 `protobuf:"varint,2,opt,name=uint,oneof"`
+	Uint uint64 `protobuf:"varint,2,opt,name=uint,proto3,oneof"`
 }
+
 type Value_Float struct {
-	Float float64 `protobuf:"fixed64,3,opt,name=float,oneof"`
+	Float float64 `protobuf:"fixed64,3,opt,name=float,proto3,oneof"`
 }
+
 type Value_Bool struct {
-	Bool bool `protobuf:"varint,4,opt,name=bool,oneof"`
+	Bool bool `protobuf:"varint,4,opt,name=bool,proto3,oneof"`
 }
+
 type Value_Str struct {
-	Str string `protobuf:"bytes,5,opt,name=str,oneof"`
+	Str string `protobuf:"bytes,5,opt,name=str,proto3,oneof"`
 }
+
 type Value_Bytes struct {
 	Bytes []byte `protobuf:"bytes,6,opt,name=bytes,proto3,oneof"`
 }
+
 type Value_Object struct {
-	Object string `protobuf:"bytes,7,opt,name=object,oneof"`
-}
-type Value_Array struct {
-	Array string `protobuf:"bytes,8,opt,name=array,oneof"`
-}
-type Value_Null struct {
-	Null *empty.Empty `protobuf:"bytes,9,opt,name=null,oneof"`
+	Object string `protobuf:"bytes,7,opt,name=object,proto3,oneof"`
 }
 
-func (*Value_Int) isValue_Value()    {}
-func (*Value_Uint) isValue_Value()   {}
-func (*Value_Float) isValue_Value()  {}
-func (*Value_Bool) isValue_Value()   {}
-func (*Value_Str) isValue_Value()    {}
-func (*Value_Bytes) isValue_Value()  {}
+type Value_Array struct {
+	Array string `protobuf:"bytes,8,opt,name=array,proto3,oneof"`
+}
+
+type Value_Null struct {
+	Null *empty.Empty `protobuf:"bytes,9,opt,name=null,proto3,oneof"`
+}
+
+func (*Value_Int) isValue_Value() {}
+
+func (*Value_Uint) isValue_Value() {}
+
+func (*Value_Float) isValue_Value() {}
+
+func (*Value_Bool) isValue_Value() {}
+
+func (*Value_Str) isValue_Value() {}
+
+func (*Value_Bytes) isValue_Value() {}
+
 func (*Value_Object) isValue_Value() {}
-func (*Value_Array) isValue_Value()  {}
-func (*Value_Null) isValue_Value()   {}
+
+func (*Value_Array) isValue_Value() {}
+
+func (*Value_Null) isValue_Value() {}
 
 func (m *Value) GetValue() isValue_Value {
 	if m != nil {
@@ -370,7 +388,7 @@ func (m *Schema) Reset()         { *m = Schema{} }
 func (m *Schema) String() string { return proto.CompactTextString(m) }
 func (*Schema) ProtoMessage()    {}
 func (*Schema) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1}
 }
 func (m *Schema) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema.Unmarshal(m, b)
@@ -378,8 +396,8 @@ func (m *Schema) XXX_Unmarshal(b []byte) error {
 func (m *Schema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema.Marshal(b, m, deterministic)
 }
-func (dst *Schema) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema.Merge(dst, src)
+func (m *Schema) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema.Merge(m, src)
 }
 func (m *Schema) XXX_Size() int {
 	return xxx_messageInfo_Schema.Size(m)
@@ -395,42 +413,58 @@ type isSchema_Schema interface {
 }
 
 type Schema_Int struct {
-	Int *Schema_Atom `protobuf:"bytes,1,opt,name=int,oneof"`
-}
-type Schema_Uint struct {
-	Uint *Schema_Atom `protobuf:"bytes,2,opt,name=uint,oneof"`
-}
-type Schema_Float struct {
-	Float *Schema_Atom `protobuf:"bytes,3,opt,name=float,oneof"`
-}
-type Schema_Bool struct {
-	Bool *Schema_Atom `protobuf:"bytes,4,opt,name=bool,oneof"`
-}
-type Schema_Str struct {
-	Str *Schema_Sequence `protobuf:"bytes,5,opt,name=str,oneof"`
-}
-type Schema_Bytes struct {
-	Bytes *Schema_Sequence `protobuf:"bytes,6,opt,name=bytes,oneof"`
-}
-type Schema_Enum struct {
-	Enum *Schema_Set `protobuf:"bytes,7,opt,name=enum,oneof"`
-}
-type Schema_Object struct {
-	Object *Schema_JSON `protobuf:"bytes,8,opt,name=object,oneof"`
-}
-type Schema_Array struct {
-	Array *Schema_JSON `protobuf:"bytes,9,opt,name=array,oneof"`
+	Int *Schema_Atom `protobuf:"bytes,1,opt,name=int,proto3,oneof"`
 }
 
-func (*Schema_Int) isSchema_Schema()    {}
-func (*Schema_Uint) isSchema_Schema()   {}
-func (*Schema_Float) isSchema_Schema()  {}
-func (*Schema_Bool) isSchema_Schema()   {}
-func (*Schema_Str) isSchema_Schema()    {}
-func (*Schema_Bytes) isSchema_Schema()  {}
-func (*Schema_Enum) isSchema_Schema()   {}
+type Schema_Uint struct {
+	Uint *Schema_Atom `protobuf:"bytes,2,opt,name=uint,proto3,oneof"`
+}
+
+type Schema_Float struct {
+	Float *Schema_Atom `protobuf:"bytes,3,opt,name=float,proto3,oneof"`
+}
+
+type Schema_Bool struct {
+	Bool *Schema_Atom `protobuf:"bytes,4,opt,name=bool,proto3,oneof"`
+}
+
+type Schema_Str struct {
+	Str *Schema_Sequence `protobuf:"bytes,5,opt,name=str,proto3,oneof"`
+}
+
+type Schema_Bytes struct {
+	Bytes *Schema_Sequence `protobuf:"bytes,6,opt,name=bytes,proto3,oneof"`
+}
+
+type Schema_Enum struct {
+	Enum *Schema_Set `protobuf:"bytes,7,opt,name=enum,proto3,oneof"`
+}
+
+type Schema_Object struct {
+	Object *Schema_JSON `protobuf:"bytes,8,opt,name=object,proto3,oneof"`
+}
+
+type Schema_Array struct {
+	Array *Schema_JSON `protobuf:"bytes,9,opt,name=array,proto3,oneof"`
+}
+
+func (*Schema_Int) isSchema_Schema() {}
+
+func (*Schema_Uint) isSchema_Schema() {}
+
+func (*Schema_Float) isSchema_Schema() {}
+
+func (*Schema_Bool) isSchema_Schema() {}
+
+func (*Schema_Str) isSchema_Schema() {}
+
+func (*Schema_Bytes) isSchema_Schema() {}
+
+func (*Schema_Enum) isSchema_Schema() {}
+
 func (*Schema_Object) isSchema_Schema() {}
-func (*Schema_Array) isSchema_Schema()  {}
+
+func (*Schema_Array) isSchema_Schema() {}
 
 func (m *Schema) GetSchema() isSchema_Schema {
 	if m != nil {
@@ -711,7 +745,7 @@ func _Schema_OneofSizer(msg proto.Message) (n int) {
 
 type Schema_Set struct {
 	// entry lists the possible tokens that this set can have.
-	Entry                []*Schema_Set_Entry `protobuf:"bytes,1,rep,name=entry" json:"entry,omitempty"`
+	Entry                []*Schema_Set_Entry `protobuf:"bytes,1,rep,name=entry,proto3" json:"entry,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -721,7 +755,7 @@ func (m *Schema_Set) Reset()         { *m = Schema_Set{} }
 func (m *Schema_Set) String() string { return proto.CompactTextString(m) }
 func (*Schema_Set) ProtoMessage()    {}
 func (*Schema_Set) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1, 0}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 0}
 }
 func (m *Schema_Set) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Set.Unmarshal(m, b)
@@ -729,8 +763,8 @@ func (m *Schema_Set) XXX_Unmarshal(b []byte) error {
 func (m *Schema_Set) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema_Set.Marshal(b, m, deterministic)
 }
-func (dst *Schema_Set) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema_Set.Merge(dst, src)
+func (m *Schema_Set) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema_Set.Merge(m, src)
 }
 func (m *Schema_Set) XXX_Size() int {
 	return xxx_messageInfo_Schema_Set.Size(m)
@@ -750,8 +784,8 @@ func (m *Schema_Set) GetEntry() []*Schema_Set_Entry {
 
 type Schema_Set_Entry struct {
 	// Markdown-formatted documentation for this schema entry.
-	Doc                  string   `protobuf:"bytes,1,opt,name=doc" json:"doc,omitempty"`
-	Token                string   `protobuf:"bytes,2,opt,name=token" json:"token,omitempty"`
+	Doc                  string   `protobuf:"bytes,1,opt,name=doc,proto3" json:"doc,omitempty"`
+	Token                string   `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -761,7 +795,7 @@ func (m *Schema_Set_Entry) Reset()         { *m = Schema_Set_Entry{} }
 func (m *Schema_Set_Entry) String() string { return proto.CompactTextString(m) }
 func (*Schema_Set_Entry) ProtoMessage()    {}
 func (*Schema_Set_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1, 0, 0}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 0, 0}
 }
 func (m *Schema_Set_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Set_Entry.Unmarshal(m, b)
@@ -769,8 +803,8 @@ func (m *Schema_Set_Entry) XXX_Unmarshal(b []byte) error {
 func (m *Schema_Set_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema_Set_Entry.Marshal(b, m, deterministic)
 }
-func (dst *Schema_Set_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema_Set_Entry.Merge(dst, src)
+func (m *Schema_Set_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema_Set_Entry.Merge(m, src)
 }
 func (m *Schema_Set_Entry) XXX_Size() int {
 	return xxx_messageInfo_Schema_Set_Entry.Size(m)
@@ -798,7 +832,7 @@ func (m *Schema_Set_Entry) GetToken() string {
 type Schema_JSON struct {
 	// restricts the maximum amount of bytes that a Value for this field may
 	// take.
-	MaxLength            uint32   `protobuf:"varint,1,opt,name=max_length,json=maxLength" json:"max_length,omitempty"`
+	MaxLength            uint32   `protobuf:"varint,1,opt,name=max_length,json=maxLength,proto3" json:"max_length,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -808,7 +842,7 @@ func (m *Schema_JSON) Reset()         { *m = Schema_JSON{} }
 func (m *Schema_JSON) String() string { return proto.CompactTextString(m) }
 func (*Schema_JSON) ProtoMessage()    {}
 func (*Schema_JSON) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1, 1}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 1}
 }
 func (m *Schema_JSON) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_JSON.Unmarshal(m, b)
@@ -816,8 +850,8 @@ func (m *Schema_JSON) XXX_Unmarshal(b []byte) error {
 func (m *Schema_JSON) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema_JSON.Marshal(b, m, deterministic)
 }
-func (dst *Schema_JSON) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema_JSON.Merge(dst, src)
+func (m *Schema_JSON) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema_JSON.Merge(m, src)
 }
 func (m *Schema_JSON) XXX_Size() int {
 	return xxx_messageInfo_Schema_JSON.Size(m)
@@ -838,7 +872,7 @@ func (m *Schema_JSON) GetMaxLength() uint32 {
 type Schema_Sequence struct {
 	// restricts the maximum amount of bytes that a Value for this field may
 	// take.
-	MaxLength            uint32   `protobuf:"varint,1,opt,name=max_length,json=maxLength" json:"max_length,omitempty"`
+	MaxLength            uint32   `protobuf:"varint,1,opt,name=max_length,json=maxLength,proto3" json:"max_length,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -848,7 +882,7 @@ func (m *Schema_Sequence) Reset()         { *m = Schema_Sequence{} }
 func (m *Schema_Sequence) String() string { return proto.CompactTextString(m) }
 func (*Schema_Sequence) ProtoMessage()    {}
 func (*Schema_Sequence) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1, 2}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 2}
 }
 func (m *Schema_Sequence) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Sequence.Unmarshal(m, b)
@@ -856,8 +890,8 @@ func (m *Schema_Sequence) XXX_Unmarshal(b []byte) error {
 func (m *Schema_Sequence) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema_Sequence.Marshal(b, m, deterministic)
 }
-func (dst *Schema_Sequence) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema_Sequence.Merge(dst, src)
+func (m *Schema_Sequence) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema_Sequence.Merge(m, src)
 }
 func (m *Schema_Sequence) XXX_Size() int {
 	return xxx_messageInfo_Schema_Sequence.Size(m)
@@ -885,7 +919,7 @@ func (m *Schema_Atom) Reset()         { *m = Schema_Atom{} }
 func (m *Schema_Atom) String() string { return proto.CompactTextString(m) }
 func (*Schema_Atom) ProtoMessage()    {}
 func (*Schema_Atom) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{1, 3}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 3}
 }
 func (m *Schema_Atom) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Atom.Unmarshal(m, b)
@@ -893,8 +927,8 @@ func (m *Schema_Atom) XXX_Unmarshal(b []byte) error {
 func (m *Schema_Atom) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Schema_Atom.Marshal(b, m, deterministic)
 }
-func (dst *Schema_Atom) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Schema_Atom.Merge(dst, src)
+func (m *Schema_Atom) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Schema_Atom.Merge(m, src)
 }
 func (m *Schema_Atom) XXX_Size() int {
 	return xxx_messageInfo_Schema_Atom.Size(m)
@@ -907,7 +941,7 @@ var xxx_messageInfo_Schema_Atom proto.InternalMessageInfo
 
 // File represents a file full of template definitions.
 type File struct {
-	Template             map[string]*File_Template `protobuf:"bytes,1,rep,name=template" json:"template,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Template             map[string]*File_Template `protobuf:"bytes,1,rep,name=template,proto3" json:"template,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
 	XXX_sizecache        int32                     `json:"-"`
@@ -917,7 +951,7 @@ func (m *File) Reset()         { *m = File{} }
 func (m *File) String() string { return proto.CompactTextString(m) }
 func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{2}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{2}
 }
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File.Unmarshal(m, b)
@@ -925,8 +959,8 @@ func (m *File) XXX_Unmarshal(b []byte) error {
 func (m *File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_File.Marshal(b, m, deterministic)
 }
-func (dst *File) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_File.Merge(dst, src)
+func (m *File) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_File.Merge(m, src)
 }
 func (m *File) XXX_Size() int {
 	return xxx_messageInfo_File.Size(m)
@@ -947,19 +981,19 @@ func (m *File) GetTemplate() map[string]*File_Template {
 // Template defines a single template.
 type File_Template struct {
 	// Markdown-formatted documentation for this schema entry.
-	Doc string `protobuf:"bytes,1,opt,name=doc" json:"doc,omitempty"`
+	Doc string `protobuf:"bytes,1,opt,name=doc,proto3" json:"doc,omitempty"`
 	// body is the main JSON output for this template. It must have the form
 	// of valid json, modulo the substitution parameters. In order for this
 	// Template to be valid, body must parse as valid JSON, after all
 	// substitutions have been applied.
-	Body string `protobuf:"bytes,2,opt,name=body" json:"body,omitempty"`
+	Body string `protobuf:"bytes,2,opt,name=body,proto3" json:"body,omitempty"`
 	// param is a listing of all of the parameterized bits in the Template body.
 	// The key must match the regex /\${[^}]+}/. So "${foo}" would be ok, but
 	// "foo", "$foo", or "${}" would not.
 	//
 	// params provided here must be present in Body at least once in order
 	// for the Template to be valid.
-	Param                map[string]*File_Template_Parameter `protobuf:"bytes,3,rep,name=param" json:"param,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Param                map[string]*File_Template_Parameter `protobuf:"bytes,3,rep,name=param,proto3" json:"param,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
 	XXX_unrecognized     []byte                              `json:"-"`
 	XXX_sizecache        int32                               `json:"-"`
@@ -969,7 +1003,7 @@ func (m *File_Template) Reset()         { *m = File_Template{} }
 func (m *File_Template) String() string { return proto.CompactTextString(m) }
 func (*File_Template) ProtoMessage()    {}
 func (*File_Template) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{2, 0}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{2, 0}
 }
 func (m *File_Template) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template.Unmarshal(m, b)
@@ -977,8 +1011,8 @@ func (m *File_Template) XXX_Unmarshal(b []byte) error {
 func (m *File_Template) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_File_Template.Marshal(b, m, deterministic)
 }
-func (dst *File_Template) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_File_Template.Merge(dst, src)
+func (m *File_Template) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_File_Template.Merge(m, src)
 }
 func (m *File_Template) XXX_Size() int {
 	return xxx_messageInfo_File_Template.Size(m)
@@ -1012,13 +1046,13 @@ func (m *File_Template) GetParam() map[string]*File_Template_Parameter {
 
 type File_Template_Parameter struct {
 	// Markdown-formatted documentation for this schema entry.
-	Doc     string `protobuf:"bytes,1,opt,name=doc" json:"doc,omitempty"`
-	Default *Value `protobuf:"bytes,2,opt,name=default" json:"default,omitempty"`
+	Doc     string `protobuf:"bytes,1,opt,name=doc,proto3" json:"doc,omitempty"`
+	Default *Value `protobuf:"bytes,2,opt,name=default,proto3" json:"default,omitempty"`
 	// nullable indicates if 'null' is a valid value for this parameter. This
 	// can be used to distinguish e.g. "" from not-supplied. If default is
 	// Value{null: {}}, this must be true.
-	Nullable             bool     `protobuf:"varint,3,opt,name=nullable" json:"nullable,omitempty"`
-	Schema               *Schema  `protobuf:"bytes,4,opt,name=schema" json:"schema,omitempty"`
+	Nullable             bool     `protobuf:"varint,3,opt,name=nullable,proto3" json:"nullable,omitempty"`
+	Schema               *Schema  `protobuf:"bytes,4,opt,name=schema,proto3" json:"schema,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1028,7 +1062,7 @@ func (m *File_Template_Parameter) Reset()         { *m = File_Template_Parameter
 func (m *File_Template_Parameter) String() string { return proto.CompactTextString(m) }
 func (*File_Template_Parameter) ProtoMessage()    {}
 func (*File_Template_Parameter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{2, 0, 0}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{2, 0, 0}
 }
 func (m *File_Template_Parameter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template_Parameter.Unmarshal(m, b)
@@ -1036,8 +1070,8 @@ func (m *File_Template_Parameter) XXX_Unmarshal(b []byte) error {
 func (m *File_Template_Parameter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_File_Template_Parameter.Marshal(b, m, deterministic)
 }
-func (dst *File_Template_Parameter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_File_Template_Parameter.Merge(dst, src)
+func (m *File_Template_Parameter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_File_Template_Parameter.Merge(m, src)
 }
 func (m *File_Template_Parameter) XXX_Size() int {
 	return xxx_messageInfo_File_Template_Parameter.Size(m)
@@ -1077,8 +1111,8 @@ func (m *File_Template_Parameter) GetSchema() *Schema {
 }
 
 type Specifier struct {
-	TemplateName         string            `protobuf:"bytes,1,opt,name=template_name,json=templateName" json:"template_name,omitempty"`
-	Params               map[string]*Value `protobuf:"bytes,2,rep,name=params" json:"params,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	TemplateName         string            `protobuf:"bytes,1,opt,name=template_name,json=templateName,proto3" json:"template_name,omitempty"`
+	Params               map[string]*Value `protobuf:"bytes,2,rep,name=params,proto3" json:"params,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -1088,7 +1122,7 @@ func (m *Specifier) Reset()         { *m = Specifier{} }
 func (m *Specifier) String() string { return proto.CompactTextString(m) }
 func (*Specifier) ProtoMessage()    {}
 func (*Specifier) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_5bd5e3c4a79963ec, []int{3}
+	return fileDescriptor_41b1a7e1a454e1ec, []int{3}
 }
 func (m *Specifier) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Specifier.Unmarshal(m, b)
@@ -1096,8 +1130,8 @@ func (m *Specifier) XXX_Unmarshal(b []byte) error {
 func (m *Specifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Specifier.Marshal(b, m, deterministic)
 }
-func (dst *Specifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Specifier.Merge(dst, src)
+func (m *Specifier) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Specifier.Merge(m, src)
 }
 func (m *Specifier) XXX_Size() int {
 	return xxx_messageInfo_Specifier.Size(m)
@@ -1140,10 +1174,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/data/text/templateproto/template.proto", fileDescriptor_template_5bd5e3c4a79963ec)
+	proto.RegisterFile("go.chromium.org/luci/common/data/text/templateproto/template.proto", fileDescriptor_41b1a7e1a454e1ec)
 }
 
-var fileDescriptor_template_5bd5e3c4a79963ec = []byte{
+var fileDescriptor_41b1a7e1a454e1ec = []byte{
 	// 733 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdb, 0x6e, 0xd3, 0x4a,
 	0x14, 0xad, 0x13, 0x3b, 0xb5, 0x77, 0x5a, 0xe9, 0x68, 0xd4, 0x53, 0xf9, 0xf8, 0x9c, 0x03, 0x26,

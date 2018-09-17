@@ -3,9 +3,11 @@
 
 package vpython
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,12 +23,12 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Represents a Python PEP425 tag.
 type PEP425Tag struct {
 	// Python is the PEP425 python tag (e.g., "cp27").
-	Python string `protobuf:"bytes,1,opt,name=python" json:"python,omitempty"`
+	Python string `protobuf:"bytes,1,opt,name=python,proto3" json:"python,omitempty"`
 	// ABI is the PEP425 "python ABI" tag (e.g., "cp27mu", "none").
-	Abi string `protobuf:"bytes,2,opt,name=abi" json:"abi,omitempty"`
+	Abi string `protobuf:"bytes,2,opt,name=abi,proto3" json:"abi,omitempty"`
 	// Platform is the PEP425 "python platform" tag (e.g., "linux_x86_64",
 	// "armv7l", "any").
-	Platform             string   `protobuf:"bytes,3,opt,name=platform" json:"platform,omitempty"`
+	Platform             string   `protobuf:"bytes,3,opt,name=platform,proto3" json:"platform,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -36,7 +38,7 @@ func (m *PEP425Tag) Reset()         { *m = PEP425Tag{} }
 func (m *PEP425Tag) String() string { return proto.CompactTextString(m) }
 func (*PEP425Tag) ProtoMessage()    {}
 func (*PEP425Tag) Descriptor() ([]byte, []int) {
-	return fileDescriptor_pep425_c81fb274792d30a1, []int{0}
+	return fileDescriptor_06702d5b59b98781, []int{0}
 }
 func (m *PEP425Tag) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PEP425Tag.Unmarshal(m, b)
@@ -44,8 +46,8 @@ func (m *PEP425Tag) XXX_Unmarshal(b []byte) error {
 func (m *PEP425Tag) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PEP425Tag.Marshal(b, m, deterministic)
 }
-func (dst *PEP425Tag) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PEP425Tag.Merge(dst, src)
+func (m *PEP425Tag) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PEP425Tag.Merge(m, src)
 }
 func (m *PEP425Tag) XXX_Size() int {
 	return xxx_messageInfo_PEP425Tag.Size(m)
@@ -82,10 +84,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/pep425.proto", fileDescriptor_pep425_c81fb274792d30a1)
+	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/pep425.proto", fileDescriptor_06702d5b59b98781)
 }
 
-var fileDescriptor_pep425_c81fb274792d30a1 = []byte{
+var fileDescriptor_06702d5b59b98781 = []byte{
 	// 138 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4d, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

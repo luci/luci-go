@@ -3,10 +3,12 @@
 
 package testprotos
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,6 +32,7 @@ var Enum_name = map[int32]string{
 	0: "ENUM_DEFAULT",
 	1: "ENUM_VAL_1",
 }
+
 var Enum_value = map[string]int32{
 	"ENUM_DEFAULT": 0,
 	"ENUM_VAL_1":   1,
@@ -38,8 +41,9 @@ var Enum_value = map[string]int32{
 func (x Enum) String() string {
 	return proto.EnumName(Enum_name, int32(x))
 }
+
 func (Enum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{0}
+	return fileDescriptor_13737774a66b07cd, []int{0}
 }
 
 type Complex_InnerEnum int32
@@ -53,6 +57,7 @@ var Complex_InnerEnum_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "ENUM_VAL_1",
 }
+
 var Complex_InnerEnum_value = map[string]int32{
 	"UNKNOWN":    0,
 	"ENUM_VAL_1": 1,
@@ -61,20 +66,21 @@ var Complex_InnerEnum_value = map[string]int32{
 func (x Complex_InnerEnum) String() string {
 	return proto.EnumName(Complex_InnerEnum_name, int32(x))
 }
+
 func (Complex_InnerEnum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{3, 0}
+	return fileDescriptor_13737774a66b07cd, []int{3, 0}
 }
 
 type SimpleFields struct {
-	I64                  int64    `protobuf:"varint,1,opt,name=i64" json:"i64,omitempty"`
-	I64Rep               []int64  `protobuf:"varint,2,rep,packed,name=i64_rep,json=i64Rep" json:"i64_rep,omitempty"`
-	I32                  int32    `protobuf:"varint,3,opt,name=i32" json:"i32,omitempty"`
-	Ui64                 uint64   `protobuf:"varint,4,opt,name=ui64" json:"ui64,omitempty"`
-	Ui32                 uint32   `protobuf:"varint,5,opt,name=ui32" json:"ui32,omitempty"`
-	B                    bool     `protobuf:"varint,6,opt,name=b" json:"b,omitempty"`
-	F32                  float32  `protobuf:"fixed32,7,opt,name=f32" json:"f32,omitempty"`
-	F64                  float64  `protobuf:"fixed64,8,opt,name=f64" json:"f64,omitempty"`
-	S                    string   `protobuf:"bytes,9,opt,name=s" json:"s,omitempty"`
+	I64                  int64    `protobuf:"varint,1,opt,name=i64,proto3" json:"i64,omitempty"`
+	I64Rep               []int64  `protobuf:"varint,2,rep,packed,name=i64_rep,json=i64Rep,proto3" json:"i64_rep,omitempty"`
+	I32                  int32    `protobuf:"varint,3,opt,name=i32,proto3" json:"i32,omitempty"`
+	Ui64                 uint64   `protobuf:"varint,4,opt,name=ui64,proto3" json:"ui64,omitempty"`
+	Ui32                 uint32   `protobuf:"varint,5,opt,name=ui32,proto3" json:"ui32,omitempty"`
+	B                    bool     `protobuf:"varint,6,opt,name=b,proto3" json:"b,omitempty"`
+	F32                  float32  `protobuf:"fixed32,7,opt,name=f32,proto3" json:"f32,omitempty"`
+	F64                  float64  `protobuf:"fixed64,8,opt,name=f64,proto3" json:"f64,omitempty"`
+	S                    string   `protobuf:"bytes,9,opt,name=s,proto3" json:"s,omitempty"`
 	Bs                   []byte   `protobuf:"bytes,10,opt,name=bs,proto3" json:"bs,omitempty"`
 	BsRep                [][]byte `protobuf:"bytes,11,rep,name=bs_rep,json=bsRep,proto3" json:"bs_rep,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -86,7 +92,7 @@ func (m *SimpleFields) Reset()         { *m = SimpleFields{} }
 func (m *SimpleFields) String() string { return proto.CompactTextString(m) }
 func (*SimpleFields) ProtoMessage()    {}
 func (*SimpleFields) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{0}
+	return fileDescriptor_13737774a66b07cd, []int{0}
 }
 func (m *SimpleFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SimpleFields.Unmarshal(m, b)
@@ -94,8 +100,8 @@ func (m *SimpleFields) XXX_Unmarshal(b []byte) error {
 func (m *SimpleFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SimpleFields.Marshal(b, m, deterministic)
 }
-func (dst *SimpleFields) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SimpleFields.Merge(dst, src)
+func (m *SimpleFields) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SimpleFields.Merge(m, src)
 }
 func (m *SimpleFields) XXX_Size() int {
 	return xxx_messageInfo_SimpleFields.Size(m)
@@ -184,8 +190,8 @@ func (m *SimpleFields) GetBsRep() [][]byte {
 }
 
 type MessageFields struct {
-	Single               *Simple   `protobuf:"bytes,1,opt,name=single" json:"single,omitempty"`
-	Rep                  []*Simple `protobuf:"bytes,2,rep,name=rep" json:"rep,omitempty"`
+	Single               *Simple   `protobuf:"bytes,1,opt,name=single,proto3" json:"single,omitempty"`
+	Rep                  []*Simple `protobuf:"bytes,2,rep,name=rep,proto3" json:"rep,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -195,7 +201,7 @@ func (m *MessageFields) Reset()         { *m = MessageFields{} }
 func (m *MessageFields) String() string { return proto.CompactTextString(m) }
 func (*MessageFields) ProtoMessage()    {}
 func (*MessageFields) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{1}
+	return fileDescriptor_13737774a66b07cd, []int{1}
 }
 func (m *MessageFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MessageFields.Unmarshal(m, b)
@@ -203,8 +209,8 @@ func (m *MessageFields) XXX_Unmarshal(b []byte) error {
 func (m *MessageFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MessageFields.Marshal(b, m, deterministic)
 }
-func (dst *MessageFields) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MessageFields.Merge(dst, src)
+func (m *MessageFields) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MessageFields.Merge(m, src)
 }
 func (m *MessageFields) XXX_Size() int {
 	return xxx_messageInfo_MessageFields.Size(m)
@@ -230,8 +236,8 @@ func (m *MessageFields) GetRep() []*Simple {
 }
 
 type Simple struct {
-	I                    int64    `protobuf:"varint,1,opt,name=i" json:"i,omitempty"`
-	ManyI                []int64  `protobuf:"varint,2,rep,packed,name=many_i,json=manyI" json:"many_i,omitempty"`
+	I                    int64    `protobuf:"varint,1,opt,name=i,proto3" json:"i,omitempty"`
+	ManyI                []int64  `protobuf:"varint,2,rep,packed,name=many_i,json=manyI,proto3" json:"many_i,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -241,7 +247,7 @@ func (m *Simple) Reset()         { *m = Simple{} }
 func (m *Simple) String() string { return proto.CompactTextString(m) }
 func (*Simple) ProtoMessage()    {}
 func (*Simple) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{2}
+	return fileDescriptor_13737774a66b07cd, []int{2}
 }
 func (m *Simple) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Simple.Unmarshal(m, b)
@@ -249,8 +255,8 @@ func (m *Simple) XXX_Unmarshal(b []byte) error {
 func (m *Simple) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Simple.Marshal(b, m, deterministic)
 }
-func (dst *Simple) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Simple.Merge(dst, src)
+func (m *Simple) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Simple.Merge(m, src)
 }
 func (m *Simple) XXX_Size() int {
 	return xxx_messageInfo_Simple.Size(m)
@@ -276,11 +282,11 @@ func (m *Simple) GetManyI() []int64 {
 }
 
 type Complex struct {
-	I64       int64                   `protobuf:"varint,1,opt,name=i64" json:"i64,omitempty"`
-	I64Rep    []int64                 `protobuf:"varint,2,rep,packed,name=i64_rep,json=i64Rep" json:"i64_rep,omitempty"`
-	EnumVal   Complex_InnerEnum       `protobuf:"varint,3,opt,name=enum_val,json=enumVal,enum=testprotos.Complex_InnerEnum" json:"enum_val,omitempty"`
-	MsgVal    *Complex_InnerMessage   `protobuf:"bytes,4,opt,name=msg_val,json=msgVal" json:"msg_val,omitempty"`
-	MsgValRep []*Complex_InnerMessage `protobuf:"bytes,5,rep,name=msg_val_rep,json=msgValRep" json:"msg_val_rep,omitempty"`
+	I64       int64                   `protobuf:"varint,1,opt,name=i64,proto3" json:"i64,omitempty"`
+	I64Rep    []int64                 `protobuf:"varint,2,rep,packed,name=i64_rep,json=i64Rep,proto3" json:"i64_rep,omitempty"`
+	EnumVal   Complex_InnerEnum       `protobuf:"varint,3,opt,name=enum_val,json=enumVal,proto3,enum=testprotos.Complex_InnerEnum" json:"enum_val,omitempty"`
+	MsgVal    *Complex_InnerMessage   `protobuf:"bytes,4,opt,name=msg_val,json=msgVal,proto3" json:"msg_val,omitempty"`
+	MsgValRep []*Complex_InnerMessage `protobuf:"bytes,5,rep,name=msg_val_rep,json=msgValRep,proto3" json:"msg_val_rep,omitempty"`
 	// Types that are valid to be assigned to OneofVal:
 	//	*Complex_Simple
 	//	*Complex_InnerMsg
@@ -294,7 +300,7 @@ func (m *Complex) Reset()         { *m = Complex{} }
 func (m *Complex) String() string { return proto.CompactTextString(m) }
 func (*Complex) ProtoMessage()    {}
 func (*Complex) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{3}
+	return fileDescriptor_13737774a66b07cd, []int{3}
 }
 func (m *Complex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex.Unmarshal(m, b)
@@ -302,8 +308,8 @@ func (m *Complex) XXX_Unmarshal(b []byte) error {
 func (m *Complex) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Complex.Marshal(b, m, deterministic)
 }
-func (dst *Complex) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Complex.Merge(dst, src)
+func (m *Complex) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Complex.Merge(m, src)
 }
 func (m *Complex) XXX_Size() int {
 	return xxx_messageInfo_Complex.Size(m)
@@ -313,27 +319,6 @@ func (m *Complex) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_Complex proto.InternalMessageInfo
-
-type isComplex_OneofVal interface {
-	isComplex_OneofVal()
-}
-
-type Complex_Simple struct {
-	Simple *Simple `protobuf:"bytes,6,opt,name=simple,oneof"`
-}
-type Complex_InnerMsg struct {
-	InnerMsg *Complex_InnerMessage `protobuf:"bytes,7,opt,name=inner_msg,json=innerMsg,oneof"`
-}
-
-func (*Complex_Simple) isComplex_OneofVal()   {}
-func (*Complex_InnerMsg) isComplex_OneofVal() {}
-
-func (m *Complex) GetOneofVal() isComplex_OneofVal {
-	if m != nil {
-		return m.OneofVal
-	}
-	return nil
-}
 
 func (m *Complex) GetI64() int64 {
 	if m != nil {
@@ -366,6 +351,29 @@ func (m *Complex) GetMsgVal() *Complex_InnerMessage {
 func (m *Complex) GetMsgValRep() []*Complex_InnerMessage {
 	if m != nil {
 		return m.MsgValRep
+	}
+	return nil
+}
+
+type isComplex_OneofVal interface {
+	isComplex_OneofVal()
+}
+
+type Complex_Simple struct {
+	Simple *Simple `protobuf:"bytes,6,opt,name=simple,proto3,oneof"`
+}
+
+type Complex_InnerMsg struct {
+	InnerMsg *Complex_InnerMessage `protobuf:"bytes,7,opt,name=inner_msg,json=innerMsg,proto3,oneof"`
+}
+
+func (*Complex_Simple) isComplex_OneofVal() {}
+
+func (*Complex_InnerMsg) isComplex_OneofVal() {}
+
+func (m *Complex) GetOneofVal() isComplex_OneofVal {
+	if m != nil {
+		return m.OneofVal
 	}
 	return nil
 }
@@ -459,7 +467,7 @@ func _Complex_OneofSizer(msg proto.Message) (n int) {
 }
 
 type Complex_InnerMessage struct {
-	I                    int64    `protobuf:"varint,1,opt,name=i" json:"i,omitempty"`
+	I                    int64    `protobuf:"varint,1,opt,name=i,proto3" json:"i,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -469,7 +477,7 @@ func (m *Complex_InnerMessage) Reset()         { *m = Complex_InnerMessage{} }
 func (m *Complex_InnerMessage) String() string { return proto.CompactTextString(m) }
 func (*Complex_InnerMessage) ProtoMessage()    {}
 func (*Complex_InnerMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{3, 0}
+	return fileDescriptor_13737774a66b07cd, []int{3, 0}
 }
 func (m *Complex_InnerMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex_InnerMessage.Unmarshal(m, b)
@@ -477,8 +485,8 @@ func (m *Complex_InnerMessage) XXX_Unmarshal(b []byte) error {
 func (m *Complex_InnerMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Complex_InnerMessage.Marshal(b, m, deterministic)
 }
-func (dst *Complex_InnerMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Complex_InnerMessage.Merge(dst, src)
+func (m *Complex_InnerMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Complex_InnerMessage.Merge(m, src)
 }
 func (m *Complex_InnerMessage) XXX_Size() int {
 	return xxx_messageInfo_Complex_InnerMessage.Size(m)
@@ -497,8 +505,8 @@ func (m *Complex_InnerMessage) GetI() int64 {
 }
 
 type RefsOtherProtos struct {
-	AnotherMsg           *AnotherMessage      `protobuf:"bytes,1,opt,name=another_msg,json=anotherMsg" json:"another_msg,omitempty"`
-	Ts                   *timestamp.Timestamp `protobuf:"bytes,2,opt,name=ts" json:"ts,omitempty"`
+	AnotherMsg           *AnotherMessage      `protobuf:"bytes,1,opt,name=another_msg,json=anotherMsg,proto3" json:"another_msg,omitempty"`
+	Ts                   *timestamp.Timestamp `protobuf:"bytes,2,opt,name=ts,proto3" json:"ts,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -508,7 +516,7 @@ func (m *RefsOtherProtos) Reset()         { *m = RefsOtherProtos{} }
 func (m *RefsOtherProtos) String() string { return proto.CompactTextString(m) }
 func (*RefsOtherProtos) ProtoMessage()    {}
 func (*RefsOtherProtos) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_eb81001deb9f9da7, []int{4}
+	return fileDescriptor_13737774a66b07cd, []int{4}
 }
 func (m *RefsOtherProtos) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsOtherProtos.Unmarshal(m, b)
@@ -516,8 +524,8 @@ func (m *RefsOtherProtos) XXX_Unmarshal(b []byte) error {
 func (m *RefsOtherProtos) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsOtherProtos.Marshal(b, m, deterministic)
 }
-func (dst *RefsOtherProtos) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsOtherProtos.Merge(dst, src)
+func (m *RefsOtherProtos) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsOtherProtos.Merge(m, src)
 }
 func (m *RefsOtherProtos) XXX_Size() int {
 	return xxx_messageInfo_RefsOtherProtos.Size(m)
@@ -554,10 +562,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor_test_eb81001deb9f9da7)
+	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor_13737774a66b07cd)
 }
 
-var fileDescriptor_test_eb81001deb9f9da7 = []byte{
+var fileDescriptor_13737774a66b07cd = []byte{
 	// 595 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x9d, 0x93, 0x36, 0x6d, 0x6f, 0xb3, 0xfd, 0x2a, 0x4b, 0x3f, 0x11, 0x55, 0x20, 0xac, 0x88,

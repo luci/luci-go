@@ -3,10 +3,12 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -38,7 +40,7 @@ func (m *Switch) Reset()         { *m = Switch{} }
 func (m *Switch) String() string { return proto.CompactTextString(m) }
 func (*Switch) ProtoMessage()    {}
 func (*Switch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_6cf2c57136ea78d2, []int{0}
+	return fileDescriptor_ddd85d9fa4d73ee0, []int{0}
 }
 func (m *Switch) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Switch.Unmarshal(m, b)
@@ -46,8 +48,8 @@ func (m *Switch) XXX_Unmarshal(b []byte) error {
 func (m *Switch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Switch.Marshal(b, m, deterministic)
 }
-func (dst *Switch) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Switch.Merge(dst, src)
+func (m *Switch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Switch.Merge(m, src)
 }
 func (m *Switch) XXX_Size() int {
 	return xxx_messageInfo_Switch.Size(m)
@@ -112,7 +114,7 @@ func (m *KVM) Reset()         { *m = KVM{} }
 func (m *KVM) String() string { return proto.CompactTextString(m) }
 func (*KVM) ProtoMessage()    {}
 func (*KVM) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_6cf2c57136ea78d2, []int{1}
+	return fileDescriptor_ddd85d9fa4d73ee0, []int{1}
 }
 func (m *KVM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KVM.Unmarshal(m, b)
@@ -120,8 +122,8 @@ func (m *KVM) XXX_Unmarshal(b []byte) error {
 func (m *KVM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_KVM.Marshal(b, m, deterministic)
 }
-func (dst *KVM) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KVM.Merge(dst, src)
+func (m *KVM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KVM.Merge(m, src)
 }
 func (m *KVM) XXX_Size() int {
 	return xxx_messageInfo_KVM.Size(m)
@@ -202,7 +204,7 @@ func (m *Rack) Reset()         { *m = Rack{} }
 func (m *Rack) String() string { return proto.CompactTextString(m) }
 func (*Rack) ProtoMessage()    {}
 func (*Rack) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_6cf2c57136ea78d2, []int{2}
+	return fileDescriptor_ddd85d9fa4d73ee0, []int{2}
 }
 func (m *Rack) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Rack.Unmarshal(m, b)
@@ -210,8 +212,8 @@ func (m *Rack) XXX_Unmarshal(b []byte) error {
 func (m *Rack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Rack.Marshal(b, m, deterministic)
 }
-func (dst *Rack) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Rack.Merge(dst, src)
+func (m *Rack) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Rack.Merge(m, src)
 }
 func (m *Rack) XXX_Size() int {
 	return xxx_messageInfo_Rack.Size(m)
@@ -278,7 +280,7 @@ func (m *Datacenter) Reset()         { *m = Datacenter{} }
 func (m *Datacenter) String() string { return proto.CompactTextString(m) }
 func (*Datacenter) ProtoMessage()    {}
 func (*Datacenter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_6cf2c57136ea78d2, []int{3}
+	return fileDescriptor_ddd85d9fa4d73ee0, []int{3}
 }
 func (m *Datacenter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datacenter.Unmarshal(m, b)
@@ -286,8 +288,8 @@ func (m *Datacenter) XXX_Unmarshal(b []byte) error {
 func (m *Datacenter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Datacenter.Marshal(b, m, deterministic)
 }
-func (dst *Datacenter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Datacenter.Merge(dst, src)
+func (m *Datacenter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datacenter.Merge(m, src)
 }
 func (m *Datacenter) XXX_Size() int {
 	return xxx_messageInfo_Datacenter.Size(m)
@@ -346,7 +348,7 @@ func (m *Datacenters) Reset()         { *m = Datacenters{} }
 func (m *Datacenters) String() string { return proto.CompactTextString(m) }
 func (*Datacenters) ProtoMessage()    {}
 func (*Datacenters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_datacenters_6cf2c57136ea78d2, []int{4}
+	return fileDescriptor_ddd85d9fa4d73ee0, []int{4}
 }
 func (m *Datacenters) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datacenters.Unmarshal(m, b)
@@ -354,8 +356,8 @@ func (m *Datacenters) XXX_Unmarshal(b []byte) error {
 func (m *Datacenters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Datacenters.Marshal(b, m, deterministic)
 }
-func (dst *Datacenters) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Datacenters.Merge(dst, src)
+func (m *Datacenters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datacenters.Merge(m, src)
 }
 func (m *Datacenters) XXX_Size() int {
 	return xxx_messageInfo_Datacenters.Size(m)
@@ -382,10 +384,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/datacenters.proto", fileDescriptor_datacenters_6cf2c57136ea78d2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/datacenters.proto", fileDescriptor_ddd85d9fa4d73ee0)
 }
 
-var fileDescriptor_datacenters_6cf2c57136ea78d2 = []byte{
+var fileDescriptor_ddd85d9fa4d73ee0 = []byte{
 	// 376 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x52, 0xcd, 0x6a, 0xe3, 0x30,
 	0x10, 0x46, 0xeb, 0xd8, 0xbb, 0x19, 0xef, 0x86, 0x45, 0xec, 0x41, 0x04, 0x76, 0xd7, 0x64, 0x61,

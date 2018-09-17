@@ -5,9 +5,11 @@ package buildbot
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -44,6 +46,7 @@ var BuildState_name = map[int32]string{
 	4: "FAILURE",
 	5: "EXCEPTION",
 }
+
 var BuildState_value = map[string]int32{
 	"UNSET":     0,
 	"PENDING":   1,
@@ -56,8 +59,9 @@ var BuildState_value = map[string]int32{
 func (x BuildState) String() string {
 	return proto.EnumName(BuildState_name, int32(x))
 }
+
 func (BuildState) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{0}
+	return fileDescriptor_64b66e62512000da, []int{0}
 }
 
 // SearchReqeust specifies a search criteria.
@@ -77,7 +81,7 @@ func (m *SearchRequest) Reset()         { *m = SearchRequest{} }
 func (m *SearchRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchRequest) ProtoMessage()    {}
 func (*SearchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{0}
+	return fileDescriptor_64b66e62512000da, []int{0}
 }
 func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchRequest.Unmarshal(m, b)
@@ -85,8 +89,8 @@ func (m *SearchRequest) XXX_Unmarshal(b []byte) error {
 func (m *SearchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SearchRequest.Marshal(b, m, deterministic)
 }
-func (dst *SearchRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchRequest.Merge(dst, src)
+func (m *SearchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchRequest.Merge(m, src)
 }
 func (m *SearchRequest) XXX_Size() int {
 	return xxx_messageInfo_SearchRequest.Size(m)
@@ -129,7 +133,7 @@ func (m *SearchResponse) Reset()         { *m = SearchResponse{} }
 func (m *SearchResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchResponse) ProtoMessage()    {}
 func (*SearchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{1}
+	return fileDescriptor_64b66e62512000da, []int{1}
 }
 func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchResponse.Unmarshal(m, b)
@@ -137,8 +141,8 @@ func (m *SearchResponse) XXX_Unmarshal(b []byte) error {
 func (m *SearchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SearchResponse.Marshal(b, m, deterministic)
 }
-func (dst *SearchResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchResponse.Merge(dst, src)
+func (m *SearchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchResponse.Merge(m, src)
 }
 func (m *SearchResponse) XXX_Size() int {
 	return xxx_messageInfo_SearchResponse.Size(m)
@@ -170,7 +174,7 @@ func (m *Build) Reset()         { *m = Build{} }
 func (m *Build) String() string { return proto.CompactTextString(m) }
 func (*Build) ProtoMessage()    {}
 func (*Build) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{2}
+	return fileDescriptor_64b66e62512000da, []int{2}
 }
 func (m *Build) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Build.Unmarshal(m, b)
@@ -178,8 +182,8 @@ func (m *Build) XXX_Unmarshal(b []byte) error {
 func (m *Build) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Build.Marshal(b, m, deterministic)
 }
-func (dst *Build) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Build.Merge(dst, src)
+func (m *Build) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Build.Merge(m, src)
 }
 func (m *Build) XXX_Size() int {
 	return xxx_messageInfo_Build.Size(m)
@@ -233,7 +237,7 @@ func (m *ScheduleRequest) Reset()         { *m = ScheduleRequest{} }
 func (m *ScheduleRequest) String() string { return proto.CompactTextString(m) }
 func (*ScheduleRequest) ProtoMessage()    {}
 func (*ScheduleRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{3}
+	return fileDescriptor_64b66e62512000da, []int{3}
 }
 func (m *ScheduleRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ScheduleRequest.Unmarshal(m, b)
@@ -241,8 +245,8 @@ func (m *ScheduleRequest) XXX_Unmarshal(b []byte) error {
 func (m *ScheduleRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ScheduleRequest.Marshal(b, m, deterministic)
 }
-func (dst *ScheduleRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScheduleRequest.Merge(dst, src)
+func (m *ScheduleRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduleRequest.Merge(m, src)
 }
 func (m *ScheduleRequest) XXX_Size() int {
 	return xxx_messageInfo_ScheduleRequest.Size(m)
@@ -289,7 +293,7 @@ func (m *ScheduleRequest_BuildDef) Reset()         { *m = ScheduleRequest_BuildD
 func (m *ScheduleRequest_BuildDef) String() string { return proto.CompactTextString(m) }
 func (*ScheduleRequest_BuildDef) ProtoMessage()    {}
 func (*ScheduleRequest_BuildDef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{3, 0}
+	return fileDescriptor_64b66e62512000da, []int{3, 0}
 }
 func (m *ScheduleRequest_BuildDef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ScheduleRequest_BuildDef.Unmarshal(m, b)
@@ -297,8 +301,8 @@ func (m *ScheduleRequest_BuildDef) XXX_Unmarshal(b []byte) error {
 func (m *ScheduleRequest_BuildDef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ScheduleRequest_BuildDef.Marshal(b, m, deterministic)
 }
-func (dst *ScheduleRequest_BuildDef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScheduleRequest_BuildDef.Merge(dst, src)
+func (m *ScheduleRequest_BuildDef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduleRequest_BuildDef.Merge(m, src)
 }
 func (m *ScheduleRequest_BuildDef) XXX_Size() int {
 	return xxx_messageInfo_ScheduleRequest_BuildDef.Size(m)
@@ -356,7 +360,7 @@ func (m *ScheduleResponse) Reset()         { *m = ScheduleResponse{} }
 func (m *ScheduleResponse) String() string { return proto.CompactTextString(m) }
 func (*ScheduleResponse) ProtoMessage()    {}
 func (*ScheduleResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_a1cbc2dc36e5eb0e, []int{4}
+	return fileDescriptor_64b66e62512000da, []int{4}
 }
 func (m *ScheduleResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ScheduleResponse.Unmarshal(m, b)
@@ -364,8 +368,8 @@ func (m *ScheduleResponse) XXX_Unmarshal(b []byte) error {
 func (m *ScheduleResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ScheduleResponse.Marshal(b, m, deterministic)
 }
-func (dst *ScheduleResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScheduleResponse.Merge(dst, src)
+func (m *ScheduleResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduleResponse.Merge(m, src)
 }
 func (m *ScheduleResponse) XXX_Size() int {
 	return xxx_messageInfo_ScheduleResponse.Size(m)
@@ -528,10 +532,10 @@ var _Buildbot_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/grpc/prpc/talk/buildbot/proto/buildbot.proto", fileDescriptor_buildbot_a1cbc2dc36e5eb0e)
+	proto.RegisterFile("go.chromium.org/luci/grpc/prpc/talk/buildbot/proto/buildbot.proto", fileDescriptor_64b66e62512000da)
 }
 
-var fileDescriptor_buildbot_a1cbc2dc36e5eb0e = []byte{
+var fileDescriptor_64b66e62512000da = []byte{
 	// 452 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x93, 0xc1, 0x6f, 0xd3, 0x30,
 	0x14, 0xc6, 0x97, 0xb6, 0xe9, 0x9a, 0x37, 0x6d, 0x8b, 0x2c, 0x04, 0x26, 0x42, 0xa8, 0xca, 0x85,

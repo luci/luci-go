@@ -95,6 +95,11 @@ type ComponentsMachineProviderDimensionsDimensions struct {
 
 	DiskGb int64 `json:"disk_gb,omitempty,string"`
 
+	// Possible values:
+	//   "HDD"
+	//   "SSD"
+	DiskType string `json:"disk_type,omitempty"`
+
 	Hostname string `json:"hostname,omitempty"`
 
 	// Possible values:
@@ -426,6 +431,8 @@ type ComponentsMachineProviderRpcMessagesCatalogMachineRetrievalResponse struct 
 
 	LeaseExpirationTs int64 `json:"lease_expiration_ts,omitempty,string"`
 
+	LeasedIndefinitely bool `json:"leased_indefinitely,omitempty"`
+
 	// Policies: Represents the policies for a machine. There are two
 	// Pub/Sub channels of communication for each machine. One is the
 	// backend-level channel which the Machine Provider will use to tell the
@@ -587,6 +594,7 @@ func (c *AddMachineCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "add_machine")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
@@ -710,6 +718,7 @@ func (c *AddMachinesCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "add_machines")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
@@ -831,6 +840,7 @@ func (c *DeleteMachineCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "delete_machine")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)
@@ -952,6 +962,7 @@ func (c *GetCall) doRequest(alt string) (*http.Response, error) {
 	}
 	reqHeaders.Set("Content-Type", "application/json")
 	c.urlParams_.Set("alt", alt)
+	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "get")
 	urls += "?" + c.urlParams_.Encode()
 	req, _ := http.NewRequest("POST", urls, body)

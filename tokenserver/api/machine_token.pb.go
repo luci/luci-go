@@ -3,9 +3,11 @@
 
 package tokenserver
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -34,6 +36,7 @@ var MachineTokenType_name = map[int32]string{
 	0: "UNKNOWN_TYPE",
 	2: "LUCI_MACHINE_TOKEN",
 }
+
 var MachineTokenType_value = map[string]int32{
 	"UNKNOWN_TYPE":       0,
 	"LUCI_MACHINE_TOKEN": 2,
@@ -42,8 +45,9 @@ var MachineTokenType_value = map[string]int32{
 func (x MachineTokenType) String() string {
 	return proto.EnumName(MachineTokenType_name, int32(x))
 }
+
 func (MachineTokenType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_machine_token_2e79f2307395f78d, []int{0}
+	return fileDescriptor_dff8dcc9d4458b55, []int{0}
 }
 
 // MachineTokenBody describes internal structure of the machine token.
@@ -57,29 +61,29 @@ type MachineTokenBody struct {
 	//
 	// It is extracted from a Common Name of a certificate used as a basis for
 	// the token.
-	MachineFqdn string `protobuf:"bytes,1,opt,name=machine_fqdn,json=machineFqdn" json:"machine_fqdn,omitempty"`
+	MachineFqdn string `protobuf:"bytes,1,opt,name=machine_fqdn,json=machineFqdn,proto3" json:"machine_fqdn,omitempty"`
 	// Service account email that signed this token.
 	//
 	// When verifying the token backends will check that the issuer is in
 	// "auth-token-servers" group.
-	IssuedBy string `protobuf:"bytes,2,opt,name=issued_by,json=issuedBy" json:"issued_by,omitempty"`
+	IssuedBy string `protobuf:"bytes,2,opt,name=issued_by,json=issuedBy,proto3" json:"issued_by,omitempty"`
 	// Unix timestamp in seconds when this token was issued. Required.
-	IssuedAt uint64 `protobuf:"varint,3,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
+	IssuedAt uint64 `protobuf:"varint,3,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
 	// Number of seconds the token is considered valid.
 	//
 	// Usually 3600. Set by the token server. Required.
-	Lifetime uint64 `protobuf:"varint,4,opt,name=lifetime" json:"lifetime,omitempty"`
+	Lifetime uint64 `protobuf:"varint,4,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
 	// Id of a CA that issued machine certificate used to make this token.
 	//
 	// These IDs are defined in token server config (via unique_id field).
-	CaId int64 `protobuf:"varint,5,opt,name=ca_id,json=caId" json:"ca_id,omitempty"`
+	CaId int64 `protobuf:"varint,5,opt,name=ca_id,json=caId,proto3" json:"ca_id,omitempty"`
 	// Serial number of the machine certificate used to make this token.
 	//
 	// ca_id and cert_sn together uniquely identify the certificate, and can be
 	// used to check for certificate revocation (by asking token server whether
 	// the given certificate is in CRL). Revocation checks are optional, most
 	// callers can rely on expiration checks only.
-	CertSn               uint64   `protobuf:"varint,6,opt,name=cert_sn,json=certSn" json:"cert_sn,omitempty"`
+	CertSn               uint64   `protobuf:"varint,6,opt,name=cert_sn,json=certSn,proto3" json:"cert_sn,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -89,7 +93,7 @@ func (m *MachineTokenBody) Reset()         { *m = MachineTokenBody{} }
 func (m *MachineTokenBody) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenBody) ProtoMessage()    {}
 func (*MachineTokenBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machine_token_2e79f2307395f78d, []int{0}
+	return fileDescriptor_dff8dcc9d4458b55, []int{0}
 }
 func (m *MachineTokenBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenBody.Unmarshal(m, b)
@@ -97,8 +101,8 @@ func (m *MachineTokenBody) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenBody.Marshal(b, m, deterministic)
 }
-func (dst *MachineTokenBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenBody.Merge(dst, src)
+func (m *MachineTokenBody) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenBody.Merge(m, src)
 }
 func (m *MachineTokenBody) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenBody.Size(m)
@@ -157,7 +161,7 @@ func (m *MachineTokenBody) GetCertSn() uint64 {
 // Resulting token (including base64 encoding) is usually ~500 bytes long.
 type MachineTokenEnvelope struct {
 	TokenBody            []byte   `protobuf:"bytes,1,opt,name=token_body,json=tokenBody,proto3" json:"token_body,omitempty"`
-	KeyId                string   `protobuf:"bytes,2,opt,name=key_id,json=keyId" json:"key_id,omitempty"`
+	KeyId                string   `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	RsaSha256            []byte   `protobuf:"bytes,3,opt,name=rsa_sha256,json=rsaSha256,proto3" json:"rsa_sha256,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -168,7 +172,7 @@ func (m *MachineTokenEnvelope) Reset()         { *m = MachineTokenEnvelope{} }
 func (m *MachineTokenEnvelope) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenEnvelope) ProtoMessage()    {}
 func (*MachineTokenEnvelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_machine_token_2e79f2307395f78d, []int{1}
+	return fileDescriptor_dff8dcc9d4458b55, []int{1}
 }
 func (m *MachineTokenEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenEnvelope.Unmarshal(m, b)
@@ -176,8 +180,8 @@ func (m *MachineTokenEnvelope) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenEnvelope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenEnvelope.Marshal(b, m, deterministic)
 }
-func (dst *MachineTokenEnvelope) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenEnvelope.Merge(dst, src)
+func (m *MachineTokenEnvelope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenEnvelope.Merge(m, src)
 }
 func (m *MachineTokenEnvelope) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenEnvelope.Size(m)
@@ -216,10 +220,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/machine_token.proto", fileDescriptor_machine_token_2e79f2307395f78d)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/machine_token.proto", fileDescriptor_dff8dcc9d4458b55)
 }
 
-var fileDescriptor_machine_token_2e79f2307395f78d = []byte{
+var fileDescriptor_dff8dcc9d4458b55 = []byte{
 	// 332 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0x4d, 0x4f, 0xf2, 0x40,
 	0x14, 0x85, 0xdf, 0xf2, 0xd1, 0x97, 0x0e, 0x5d, 0x34, 0xe3, 0x57, 0xa3, 0x31, 0x41, 0x56, 0xc4,

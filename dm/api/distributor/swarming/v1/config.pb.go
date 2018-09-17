@@ -3,10 +3,12 @@
 
 package swarmingV1
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -20,8 +22,8 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Config struct {
-	Swarming             *Config_Swarming `protobuf:"bytes,1,opt,name=swarming" json:"swarming,omitempty"`
-	Isolate              *Config_Isolate  `protobuf:"bytes,2,opt,name=isolate" json:"isolate,omitempty"`
+	Swarming             *Config_Swarming `protobuf:"bytes,1,opt,name=swarming,proto3" json:"swarming,omitempty"`
+	Isolate              *Config_Isolate  `protobuf:"bytes,2,opt,name=isolate,proto3" json:"isolate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -31,7 +33,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_3d59b7350e033bff, []int{0}
+	return fileDescriptor_b41471e838ddca44, []int{0}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *Config) XXX_Unmarshal(b []byte) error {
 func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 }
-func (dst *Config) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config.Merge(dst, src)
+func (m *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(m, src)
 }
 func (m *Config) XXX_Size() int {
 	return xxx_messageInfo_Config.Size(m)
@@ -66,7 +68,7 @@ func (m *Config) GetIsolate() *Config_Isolate {
 }
 
 type Config_Swarming struct {
-	Url                  string   `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
+	Url                  string   `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -76,7 +78,7 @@ func (m *Config_Swarming) Reset()         { *m = Config_Swarming{} }
 func (m *Config_Swarming) String() string { return proto.CompactTextString(m) }
 func (*Config_Swarming) ProtoMessage()    {}
 func (*Config_Swarming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_3d59b7350e033bff, []int{0, 0}
+	return fileDescriptor_b41471e838ddca44, []int{0, 0}
 }
 func (m *Config_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config_Swarming.Unmarshal(m, b)
@@ -84,8 +86,8 @@ func (m *Config_Swarming) XXX_Unmarshal(b []byte) error {
 func (m *Config_Swarming) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config_Swarming.Marshal(b, m, deterministic)
 }
-func (dst *Config_Swarming) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config_Swarming.Merge(dst, src)
+func (m *Config_Swarming) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config_Swarming.Merge(m, src)
 }
 func (m *Config_Swarming) XXX_Size() int {
 	return xxx_messageInfo_Config_Swarming.Size(m)
@@ -105,9 +107,9 @@ func (m *Config_Swarming) GetUrl() string {
 
 type Config_Isolate struct {
 	// The host of the isolate service, e.g. isolateserver.appspot.com.
-	Url string `protobuf:"bytes,1,opt,name=url" json:"url,omitempty"`
+	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	// The default assumed expiration period for execution results.
-	Expiration           *duration.Duration `protobuf:"bytes,2,opt,name=expiration" json:"expiration,omitempty"`
+	Expiration           *duration.Duration `protobuf:"bytes,2,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -117,7 +119,7 @@ func (m *Config_Isolate) Reset()         { *m = Config_Isolate{} }
 func (m *Config_Isolate) String() string { return proto.CompactTextString(m) }
 func (*Config_Isolate) ProtoMessage()    {}
 func (*Config_Isolate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_3d59b7350e033bff, []int{0, 1}
+	return fileDescriptor_b41471e838ddca44, []int{0, 1}
 }
 func (m *Config_Isolate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config_Isolate.Unmarshal(m, b)
@@ -125,8 +127,8 @@ func (m *Config_Isolate) XXX_Unmarshal(b []byte) error {
 func (m *Config_Isolate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config_Isolate.Marshal(b, m, deterministic)
 }
-func (dst *Config_Isolate) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config_Isolate.Merge(dst, src)
+func (m *Config_Isolate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config_Isolate.Merge(m, src)
 }
 func (m *Config_Isolate) XXX_Size() int {
 	return xxx_messageInfo_Config_Isolate.Size(m)
@@ -158,10 +160,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/config.proto", fileDescriptor_config_3d59b7350e033bff)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/config.proto", fileDescriptor_b41471e838ddca44)
 }
 
-var fileDescriptor_config_3d59b7350e033bff = []byte{
+var fileDescriptor_b41471e838ddca44 = []byte{
 	// 231 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x8f, 0x3f, 0x4b, 0xc4, 0x40,
 	0x10, 0xc5, 0x89, 0xc2, 0xdd, 0x39, 0x36, 0xb2, 0xd5, 0x19, 0x45, 0xc4, 0xca, 0x6a, 0x86, 0x53,

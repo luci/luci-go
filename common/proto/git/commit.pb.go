@@ -3,10 +3,12 @@
 
 package git
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,6 +38,7 @@ var Commit_TreeDiff_ChangeType_name = map[int32]string{
 	3: "MODIFY",
 	4: "RENAME",
 }
+
 var Commit_TreeDiff_ChangeType_value = map[string]int32{
 	"ADD":    0,
 	"COPY":   1,
@@ -47,24 +50,25 @@ var Commit_TreeDiff_ChangeType_value = map[string]int32{
 func (x Commit_TreeDiff_ChangeType) String() string {
 	return proto.EnumName(Commit_TreeDiff_ChangeType_name, int32(x))
 }
+
 func (Commit_TreeDiff_ChangeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 1, 0}
+	return fileDescriptor_9d74b2aaad703343, []int{0, 1, 0}
 }
 
 // Commit is a single parsed commit as represented in a git log or git show
 // expression.
 type Commit struct {
 	// The hex sha1 of the commit.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The hex sha1 of the tree for this commit.
-	Tree string `protobuf:"bytes,2,opt,name=tree" json:"tree,omitempty"`
+	Tree string `protobuf:"bytes,2,opt,name=tree,proto3" json:"tree,omitempty"`
 	// The hex sha1's of each of this commits' parents.
-	Parents   []string     `protobuf:"bytes,3,rep,name=parents" json:"parents,omitempty"`
-	Author    *Commit_User `protobuf:"bytes,4,opt,name=author" json:"author,omitempty"`
-	Committer *Commit_User `protobuf:"bytes,5,opt,name=committer" json:"committer,omitempty"`
+	Parents   []string     `protobuf:"bytes,3,rep,name=parents,proto3" json:"parents,omitempty"`
+	Author    *Commit_User `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
+	Committer *Commit_User `protobuf:"bytes,5,opt,name=committer,proto3" json:"committer,omitempty"`
 	// This is the entire unaltered message body.
-	Message              string             `protobuf:"bytes,6,opt,name=message" json:"message,omitempty"`
-	TreeDiff             []*Commit_TreeDiff `protobuf:"bytes,7,rep,name=tree_diff,json=treeDiff" json:"tree_diff,omitempty"`
+	Message              string             `protobuf:"bytes,6,opt,name=message,proto3" json:"message,omitempty"`
+	TreeDiff             []*Commit_TreeDiff `protobuf:"bytes,7,rep,name=tree_diff,json=treeDiff,proto3" json:"tree_diff,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -74,7 +78,7 @@ func (m *Commit) Reset()         { *m = Commit{} }
 func (m *Commit) String() string { return proto.CompactTextString(m) }
 func (*Commit) ProtoMessage()    {}
 func (*Commit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_commit_b1539bca6d9636bf, []int{0}
+	return fileDescriptor_9d74b2aaad703343, []int{0}
 }
 func (m *Commit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit.Unmarshal(m, b)
@@ -82,8 +86,8 @@ func (m *Commit) XXX_Unmarshal(b []byte) error {
 func (m *Commit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit.Marshal(b, m, deterministic)
 }
-func (dst *Commit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit.Merge(dst, src)
+func (m *Commit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit.Merge(m, src)
 }
 func (m *Commit) XXX_Size() int {
 	return xxx_messageInfo_Commit.Size(m)
@@ -146,9 +150,9 @@ func (m *Commit) GetTreeDiff() []*Commit_TreeDiff {
 // User represents the (name, email, timestamp) Commit header for author and/or
 // commtter.
 type Commit_User struct {
-	Name                 string               `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
-	Email                string               `protobuf:"bytes,2,opt,name=email" json:"email,omitempty"`
-	Time                 *timestamp.Timestamp `protobuf:"bytes,3,opt,name=time" json:"time,omitempty"`
+	Name                 string               `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Email                string               `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	Time                 *timestamp.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -158,7 +162,7 @@ func (m *Commit_User) Reset()         { *m = Commit_User{} }
 func (m *Commit_User) String() string { return proto.CompactTextString(m) }
 func (*Commit_User) ProtoMessage()    {}
 func (*Commit_User) Descriptor() ([]byte, []int) {
-	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 0}
+	return fileDescriptor_9d74b2aaad703343, []int{0, 0}
 }
 func (m *Commit_User) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_User.Unmarshal(m, b)
@@ -166,8 +170,8 @@ func (m *Commit_User) XXX_Unmarshal(b []byte) error {
 func (m *Commit_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit_User.Marshal(b, m, deterministic)
 }
-func (dst *Commit_User) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit_User.Merge(dst, src)
+func (m *Commit_User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit_User.Merge(m, src)
 }
 func (m *Commit_User) XXX_Size() int {
 	return xxx_messageInfo_Commit_User.Size(m)
@@ -219,13 +223,13 @@ func (m *Commit_User) GetTime() *timestamp.Timestamp {
 // name.
 type Commit_TreeDiff struct {
 	// How this file changed.
-	Type                 Commit_TreeDiff_ChangeType `protobuf:"varint,1,opt,name=type,enum=git.Commit_TreeDiff_ChangeType" json:"type,omitempty"`
-	OldId                string                     `protobuf:"bytes,2,opt,name=old_id,json=oldId" json:"old_id,omitempty"`
-	OldMode              uint32                     `protobuf:"varint,3,opt,name=old_mode,json=oldMode" json:"old_mode,omitempty"`
-	OldPath              string                     `protobuf:"bytes,4,opt,name=old_path,json=oldPath" json:"old_path,omitempty"`
-	NewId                string                     `protobuf:"bytes,5,opt,name=new_id,json=newId" json:"new_id,omitempty"`
-	NewMode              uint32                     `protobuf:"varint,6,opt,name=new_mode,json=newMode" json:"new_mode,omitempty"`
-	NewPath              string                     `protobuf:"bytes,7,opt,name=new_path,json=newPath" json:"new_path,omitempty"`
+	Type                 Commit_TreeDiff_ChangeType `protobuf:"varint,1,opt,name=type,proto3,enum=git.Commit_TreeDiff_ChangeType" json:"type,omitempty"`
+	OldId                string                     `protobuf:"bytes,2,opt,name=old_id,json=oldId,proto3" json:"old_id,omitempty"`
+	OldMode              uint32                     `protobuf:"varint,3,opt,name=old_mode,json=oldMode,proto3" json:"old_mode,omitempty"`
+	OldPath              string                     `protobuf:"bytes,4,opt,name=old_path,json=oldPath,proto3" json:"old_path,omitempty"`
+	NewId                string                     `protobuf:"bytes,5,opt,name=new_id,json=newId,proto3" json:"new_id,omitempty"`
+	NewMode              uint32                     `protobuf:"varint,6,opt,name=new_mode,json=newMode,proto3" json:"new_mode,omitempty"`
+	NewPath              string                     `protobuf:"bytes,7,opt,name=new_path,json=newPath,proto3" json:"new_path,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -235,7 +239,7 @@ func (m *Commit_TreeDiff) Reset()         { *m = Commit_TreeDiff{} }
 func (m *Commit_TreeDiff) String() string { return proto.CompactTextString(m) }
 func (*Commit_TreeDiff) ProtoMessage()    {}
 func (*Commit_TreeDiff) Descriptor() ([]byte, []int) {
-	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 1}
+	return fileDescriptor_9d74b2aaad703343, []int{0, 1}
 }
 func (m *Commit_TreeDiff) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_TreeDiff.Unmarshal(m, b)
@@ -243,8 +247,8 @@ func (m *Commit_TreeDiff) XXX_Unmarshal(b []byte) error {
 func (m *Commit_TreeDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit_TreeDiff.Marshal(b, m, deterministic)
 }
-func (dst *Commit_TreeDiff) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit_TreeDiff.Merge(dst, src)
+func (m *Commit_TreeDiff) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit_TreeDiff.Merge(m, src)
 }
 func (m *Commit_TreeDiff) XXX_Size() int {
 	return xxx_messageInfo_Commit_TreeDiff.Size(m)
@@ -312,10 +316,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/git/commit.proto", fileDescriptor_commit_b1539bca6d9636bf)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/git/commit.proto", fileDescriptor_9d74b2aaad703343)
 }
 
-var fileDescriptor_commit_b1539bca6d9636bf = []byte{
+var fileDescriptor_9d74b2aaad703343 = []byte{
 	// 447 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x90, 0xc1, 0x6e, 0x9c, 0x30,
 	0x10, 0x86, 0xbb, 0x40, 0x60, 0x99, 0xa8, 0x11, 0xb2, 0x52, 0x89, 0xee, 0x25, 0xab, 0x9c, 0x38,

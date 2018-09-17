@@ -3,9 +3,11 @@
 
 package ts_mon_proto
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -27,6 +29,7 @@ const (
 var Task_TypeId_name = map[int32]string{
 	34049749: "MESSAGE_TYPE_ID",
 }
+
 var Task_TypeId_value = map[string]int32{
 	"MESSAGE_TYPE_ID": 34049749,
 }
@@ -36,9 +39,11 @@ func (x Task_TypeId) Enum() *Task_TypeId {
 	*p = x
 	return p
 }
+
 func (x Task_TypeId) String() string {
 	return proto.EnumName(Task_TypeId_name, int32(x))
 }
+
 func (x *Task_TypeId) UnmarshalJSON(data []byte) error {
 	value, err := proto.UnmarshalJSONEnum(Task_TypeId_value, data, "Task_TypeId")
 	if err != nil {
@@ -47,8 +52,9 @@ func (x *Task_TypeId) UnmarshalJSON(data []byte) error {
 	*x = Task_TypeId(value)
 	return nil
 }
+
 func (Task_TypeId) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_acquisition_task_85a2e5727ab1a5ea, []int{0, 0}
+	return fileDescriptor_c9556040af6e102a, []int{0, 0}
 }
 
 type Task struct {
@@ -69,7 +75,7 @@ func (m *Task) Reset()         { *m = Task{} }
 func (m *Task) String() string { return proto.CompactTextString(m) }
 func (*Task) ProtoMessage()    {}
 func (*Task) Descriptor() ([]byte, []int) {
-	return fileDescriptor_acquisition_task_85a2e5727ab1a5ea, []int{0}
+	return fileDescriptor_c9556040af6e102a, []int{0}
 }
 func (m *Task) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Task.Unmarshal(m, b)
@@ -77,8 +83,8 @@ func (m *Task) XXX_Unmarshal(b []byte) error {
 func (m *Task) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Task.Marshal(b, m, deterministic)
 }
-func (dst *Task) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Task.Merge(dst, src)
+func (m *Task) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Task.Merge(m, src)
 }
 func (m *Task) XXX_Size() int {
 	return xxx_messageInfo_Task.Size(m)
@@ -151,10 +157,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto", fileDescriptor_acquisition_task_85a2e5727ab1a5ea)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_task.proto", fileDescriptor_c9556040af6e102a)
 }
 
-var fileDescriptor_acquisition_task_85a2e5727ab1a5ea = []byte{
+var fileDescriptor_c9556040af6e102a = []byte{
 	// 297 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0xd1, 0x4a, 0x32, 0x41,
 	0x14, 0x80, 0xf1, 0xe7, 0x37, 0xf5, 0x28, 0xb8, 0x0d, 0x11, 0x1b, 0x51, 0x99, 0x57, 0x46, 0xe0,

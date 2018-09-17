@@ -3,10 +3,12 @@
 
 package internal
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,19 +32,19 @@ type Timer struct {
 	// timers.
 	//
 	// Set by the engine, can't be overridden.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Timestamp when the timer was created.
 	//
 	// Set by the engine, can't be overridden.
-	Created *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created" json:"created,omitempty"`
+	Created *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created,proto3" json:"created,omitempty"`
 	// Target time when this timer activates.
 	//
 	// Should be provided by whoever emits the timer.
-	Eta *timestamp.Timestamp `protobuf:"bytes,3,opt,name=eta" json:"eta,omitempty"`
+	Eta *timestamp.Timestamp `protobuf:"bytes,3,opt,name=eta,proto3" json:"eta,omitempty"`
 	// User friendly name for this timer that shows up in UI.
 	//
 	// Can be provided by whoever emits the timer. Doesn't have to be unique.
-	Title string `protobuf:"bytes,4,opt,name=title" json:"title,omitempty"`
+	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// Arbitrary optional payload passed verbatim to the invocation.
 	Payload              []byte   `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -54,7 +56,7 @@ func (m *Timer) Reset()         { *m = Timer{} }
 func (m *Timer) String() string { return proto.CompactTextString(m) }
 func (*Timer) ProtoMessage()    {}
 func (*Timer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_timers_c1ef5b2ae56c7646, []int{0}
+	return fileDescriptor_5c542a10d7ff1dba, []int{0}
 }
 func (m *Timer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Timer.Unmarshal(m, b)
@@ -62,8 +64,8 @@ func (m *Timer) XXX_Unmarshal(b []byte) error {
 func (m *Timer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Timer.Marshal(b, m, deterministic)
 }
-func (dst *Timer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Timer.Merge(dst, src)
+func (m *Timer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Timer.Merge(m, src)
 }
 func (m *Timer) XXX_Size() int {
 	return xxx_messageInfo_Timer.Size(m)
@@ -111,7 +113,7 @@ func (m *Timer) GetPayload() []byte {
 
 // TimerList is what we store in datastore entities.
 type TimerList struct {
-	Timers               []*Timer `protobuf:"bytes,1,rep,name=timers" json:"timers,omitempty"`
+	Timers               []*Timer `protobuf:"bytes,1,rep,name=timers,proto3" json:"timers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -121,7 +123,7 @@ func (m *TimerList) Reset()         { *m = TimerList{} }
 func (m *TimerList) String() string { return proto.CompactTextString(m) }
 func (*TimerList) ProtoMessage()    {}
 func (*TimerList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_timers_c1ef5b2ae56c7646, []int{1}
+	return fileDescriptor_5c542a10d7ff1dba, []int{1}
 }
 func (m *TimerList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimerList.Unmarshal(m, b)
@@ -129,8 +131,8 @@ func (m *TimerList) XXX_Unmarshal(b []byte) error {
 func (m *TimerList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TimerList.Marshal(b, m, deterministic)
 }
-func (dst *TimerList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TimerList.Merge(dst, src)
+func (m *TimerList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TimerList.Merge(m, src)
 }
 func (m *TimerList) XXX_Size() int {
 	return xxx_messageInfo_TimerList.Size(m)
@@ -154,10 +156,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor_timers_c1ef5b2ae56c7646)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor_5c542a10d7ff1dba)
 }
 
-var fileDescriptor_timers_c1ef5b2ae56c7646 = []byte{
+var fileDescriptor_5c542a10d7ff1dba = []byte{
 	// 254 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x8f, 0x3d, 0x4f, 0xf3, 0x30,
 	0x10, 0xc7, 0xe5, 0xe4, 0x49, 0xfb, 0xf4, 0x8a, 0x40, 0xb2, 0x10, 0xb2, 0xba, 0x10, 0x75, 0xca,

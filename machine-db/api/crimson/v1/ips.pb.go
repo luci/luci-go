@@ -3,9 +3,11 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +37,7 @@ func (m *IP) Reset()         { *m = IP{} }
 func (m *IP) String() string { return proto.CompactTextString(m) }
 func (*IP) ProtoMessage()    {}
 func (*IP) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ips_15ccf5479b268b8b, []int{0}
+	return fileDescriptor_e1b68683c7632367, []int{0}
 }
 func (m *IP) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IP.Unmarshal(m, b)
@@ -43,8 +45,8 @@ func (m *IP) XXX_Unmarshal(b []byte) error {
 func (m *IP) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_IP.Marshal(b, m, deterministic)
 }
-func (dst *IP) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IP.Merge(dst, src)
+func (m *IP) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IP.Merge(m, src)
 }
 func (m *IP) XXX_Size() int {
 	return xxx_messageInfo_IP.Size(m)
@@ -91,7 +93,7 @@ func (m *ListFreeIPsRequest) Reset()         { *m = ListFreeIPsRequest{} }
 func (m *ListFreeIPsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListFreeIPsRequest) ProtoMessage()    {}
 func (*ListFreeIPsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ips_15ccf5479b268b8b, []int{1}
+	return fileDescriptor_e1b68683c7632367, []int{1}
 }
 func (m *ListFreeIPsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListFreeIPsRequest.Unmarshal(m, b)
@@ -99,8 +101,8 @@ func (m *ListFreeIPsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListFreeIPsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListFreeIPsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListFreeIPsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListFreeIPsRequest.Merge(dst, src)
+func (m *ListFreeIPsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListFreeIPsRequest.Merge(m, src)
 }
 func (m *ListFreeIPsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListFreeIPsRequest.Size(m)
@@ -138,7 +140,7 @@ func (m *ListIPsResponse) Reset()         { *m = ListIPsResponse{} }
 func (m *ListIPsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListIPsResponse) ProtoMessage()    {}
 func (*ListIPsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ips_15ccf5479b268b8b, []int{2}
+	return fileDescriptor_e1b68683c7632367, []int{2}
 }
 func (m *ListIPsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListIPsResponse.Unmarshal(m, b)
@@ -146,8 +148,8 @@ func (m *ListIPsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListIPsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListIPsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListIPsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListIPsResponse.Merge(dst, src)
+func (m *ListIPsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListIPsResponse.Merge(m, src)
 }
 func (m *ListIPsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListIPsResponse.Size(m)
@@ -172,10 +174,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor_ips_15ccf5479b268b8b)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/ips.proto", fileDescriptor_e1b68683c7632367)
 }
 
-var fileDescriptor_ips_15ccf5479b268b8b = []byte{
+var fileDescriptor_e1b68683c7632367 = []byte{
 	// 226 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8f, 0x4b, 0x6a, 0xc3, 0x30,
 	0x10, 0x40, 0x51, 0xdc, 0x4f, 0xa2, 0x2c, 0x0a, 0x5a, 0x99, 0x96, 0x82, 0xf1, 0xca, 0x9b, 0x4a,

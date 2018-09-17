@@ -3,10 +3,12 @@
 
 package tokenserver
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,28 +32,28 @@ type OAuthTokenGrantBody struct {
 	// Used for logging and tracking purposes.
 	//
 	// TODO(vadimsh): It may later be used for revocation purposes.
-	TokenId int64 `protobuf:"varint,1,opt,name=token_id,json=tokenId" json:"token_id,omitempty"`
+	TokenId int64 `protobuf:"varint,1,opt,name=token_id,json=tokenId,proto3" json:"token_id,omitempty"`
 	// Service account email the end user wants to act as.
-	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty"`
+	ServiceAccount string `protobuf:"bytes,2,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"`
 	// Who can pass this token to MintOAuthTokenViaGrant to get an OAuth token.
 	//
 	// A string of the form "user:<email>". On Swarming, this is Swarming's own
 	// service account name.
-	Proxy string `protobuf:"bytes,3,opt,name=proxy" json:"proxy,omitempty"`
+	Proxy string `protobuf:"bytes,3,opt,name=proxy,proto3" json:"proxy,omitempty"`
 	// An end user that wants to act as the service account (perhaps indirectly).
 	//
 	// A string of the form "user:<email>". On Swarming, this is an identity of
 	// a user that posted the task.
 	//
 	// Used by MintOAuthTokenViaGrant to recheck that the access is still allowed.
-	EndUser string `protobuf:"bytes,4,opt,name=end_user,json=endUser" json:"end_user,omitempty"`
+	EndUser string `protobuf:"bytes,4,opt,name=end_user,json=endUser,proto3" json:"end_user,omitempty"`
 	// When the token was generated (and when it becomes valid).
-	IssuedAt *timestamp.Timestamp `protobuf:"bytes,5,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
+	IssuedAt *timestamp.Timestamp `protobuf:"bytes,5,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
 	// How long the token is considered valid (in seconds).
 	//
 	// It may become invalid sooner if the token server policy changes and the
 	// new policy doesn't allow this token.
-	ValidityDuration     int64    `protobuf:"varint,6,opt,name=validity_duration,json=validityDuration" json:"validity_duration,omitempty"`
+	ValidityDuration     int64    `protobuf:"varint,6,opt,name=validity_duration,json=validityDuration,proto3" json:"validity_duration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -61,7 +63,7 @@ func (m *OAuthTokenGrantBody) Reset()         { *m = OAuthTokenGrantBody{} }
 func (m *OAuthTokenGrantBody) String() string { return proto.CompactTextString(m) }
 func (*OAuthTokenGrantBody) ProtoMessage()    {}
 func (*OAuthTokenGrantBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{0}
+	return fileDescriptor_2e508b3aaac47612, []int{0}
 }
 func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantBody.Unmarshal(m, b)
@@ -69,8 +71,8 @@ func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
 func (m *OAuthTokenGrantBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OAuthTokenGrantBody.Marshal(b, m, deterministic)
 }
-func (dst *OAuthTokenGrantBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OAuthTokenGrantBody.Merge(dst, src)
+func (m *OAuthTokenGrantBody) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantBody.Merge(m, src)
 }
 func (m *OAuthTokenGrantBody) XXX_Size() int {
 	return xxx_messageInfo_OAuthTokenGrantBody.Size(m)
@@ -128,7 +130,7 @@ func (m *OAuthTokenGrantBody) GetValidityDuration() int64 {
 // raw encoding).
 type OAuthTokenGrantEnvelope struct {
 	TokenBody            []byte   `protobuf:"bytes,1,opt,name=token_body,json=tokenBody,proto3" json:"token_body,omitempty"`
-	KeyId                string   `protobuf:"bytes,2,opt,name=key_id,json=keyId" json:"key_id,omitempty"`
+	KeyId                string   `protobuf:"bytes,2,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
 	Pkcs1Sha256Sig       []byte   `protobuf:"bytes,3,opt,name=pkcs1_sha256_sig,json=pkcs1Sha256Sig,proto3" json:"pkcs1_sha256_sig,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -139,7 +141,7 @@ func (m *OAuthTokenGrantEnvelope) Reset()         { *m = OAuthTokenGrantEnvelope
 func (m *OAuthTokenGrantEnvelope) String() string { return proto.CompactTextString(m) }
 func (*OAuthTokenGrantEnvelope) ProtoMessage()    {}
 func (*OAuthTokenGrantEnvelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{1}
+	return fileDescriptor_2e508b3aaac47612, []int{1}
 }
 func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Unmarshal(m, b)
@@ -147,8 +149,8 @@ func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
 func (m *OAuthTokenGrantEnvelope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Marshal(b, m, deterministic)
 }
-func (dst *OAuthTokenGrantEnvelope) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OAuthTokenGrantEnvelope.Merge(dst, src)
+func (m *OAuthTokenGrantEnvelope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantEnvelope.Merge(m, src)
 }
 func (m *OAuthTokenGrantEnvelope) XXX_Size() int {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Size(m)
@@ -186,10 +188,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor_oauth_token_grant_480c9516e875a2c8)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor_2e508b3aaac47612)
 }
 
-var fileDescriptor_oauth_token_grant_480c9516e875a2c8 = []byte{
+var fileDescriptor_2e508b3aaac47612 = []byte{
 	// 346 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4d, 0x4b, 0xeb, 0x40,
 	0x14, 0x86, 0xc9, 0xed, 0xed, 0xd7, 0xb4, 0xf4, 0xf6, 0xce, 0xbd, 0x62, 0x2c, 0x88, 0xa5, 0x1b,

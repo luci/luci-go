@@ -3,10 +3,12 @@
 
 package messages
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -37,7 +39,7 @@ func (m *BlobWithSHA1) Reset()         { *m = BlobWithSHA1{} }
 func (m *BlobWithSHA1) String() string { return proto.CompactTextString(m) }
 func (*BlobWithSHA1) ProtoMessage()    {}
 func (*BlobWithSHA1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{0}
+	return fileDescriptor_3c2431e10c52fd39, []int{0}
 }
 func (m *BlobWithSHA1) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BlobWithSHA1.Unmarshal(m, b)
@@ -45,8 +47,8 @@ func (m *BlobWithSHA1) XXX_Unmarshal(b []byte) error {
 func (m *BlobWithSHA1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BlobWithSHA1.Marshal(b, m, deterministic)
 }
-func (dst *BlobWithSHA1) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BlobWithSHA1.Merge(dst, src)
+func (m *BlobWithSHA1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BlobWithSHA1.Merge(m, src)
 }
 func (m *BlobWithSHA1) XXX_Size() int {
 	return xxx_messageInfo_BlobWithSHA1.Size(m)
@@ -93,7 +95,7 @@ func (m *TagCache) Reset()         { *m = TagCache{} }
 func (m *TagCache) String() string { return proto.CompactTextString(m) }
 func (*TagCache) ProtoMessage()    {}
 func (*TagCache) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{1}
+	return fileDescriptor_3c2431e10c52fd39, []int{1}
 }
 func (m *TagCache) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache.Unmarshal(m, b)
@@ -101,8 +103,8 @@ func (m *TagCache) XXX_Unmarshal(b []byte) error {
 func (m *TagCache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TagCache.Marshal(b, m, deterministic)
 }
-func (dst *TagCache) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TagCache.Merge(dst, src)
+func (m *TagCache) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TagCache.Merge(m, src)
 }
 func (m *TagCache) XXX_Size() int {
 	return xxx_messageInfo_TagCache.Size(m)
@@ -141,7 +143,7 @@ func (m *TagCache_Entry) Reset()         { *m = TagCache_Entry{} }
 func (m *TagCache_Entry) String() string { return proto.CompactTextString(m) }
 func (*TagCache_Entry) ProtoMessage()    {}
 func (*TagCache_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{1, 0}
+	return fileDescriptor_3c2431e10c52fd39, []int{1, 0}
 }
 func (m *TagCache_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache_Entry.Unmarshal(m, b)
@@ -149,8 +151,8 @@ func (m *TagCache_Entry) XXX_Unmarshal(b []byte) error {
 func (m *TagCache_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TagCache_Entry.Marshal(b, m, deterministic)
 }
-func (dst *TagCache_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TagCache_Entry.Merge(dst, src)
+func (m *TagCache_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TagCache_Entry.Merge(m, src)
 }
 func (m *TagCache_Entry) XXX_Size() int {
 	return xxx_messageInfo_TagCache_Entry.Size(m)
@@ -204,7 +206,7 @@ func (m *TagCache_FileEntry) Reset()         { *m = TagCache_FileEntry{} }
 func (m *TagCache_FileEntry) String() string { return proto.CompactTextString(m) }
 func (*TagCache_FileEntry) ProtoMessage()    {}
 func (*TagCache_FileEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{1, 1}
+	return fileDescriptor_3c2431e10c52fd39, []int{1, 1}
 }
 func (m *TagCache_FileEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache_FileEntry.Unmarshal(m, b)
@@ -212,8 +214,8 @@ func (m *TagCache_FileEntry) XXX_Unmarshal(b []byte) error {
 func (m *TagCache_FileEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TagCache_FileEntry.Marshal(b, m, deterministic)
 }
-func (dst *TagCache_FileEntry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TagCache_FileEntry.Merge(dst, src)
+func (m *TagCache_FileEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TagCache_FileEntry.Merge(m, src)
 }
 func (m *TagCache_FileEntry) XXX_Size() int {
 	return xxx_messageInfo_TagCache_FileEntry.Size(m)
@@ -278,7 +280,7 @@ func (m *InstanceCache) Reset()         { *m = InstanceCache{} }
 func (m *InstanceCache) String() string { return proto.CompactTextString(m) }
 func (*InstanceCache) ProtoMessage()    {}
 func (*InstanceCache) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{2}
+	return fileDescriptor_3c2431e10c52fd39, []int{2}
 }
 func (m *InstanceCache) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstanceCache.Unmarshal(m, b)
@@ -286,8 +288,8 @@ func (m *InstanceCache) XXX_Unmarshal(b []byte) error {
 func (m *InstanceCache) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InstanceCache.Marshal(b, m, deterministic)
 }
-func (dst *InstanceCache) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InstanceCache.Merge(dst, src)
+func (m *InstanceCache) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InstanceCache.Merge(m, src)
 }
 func (m *InstanceCache) XXX_Size() int {
 	return xxx_messageInfo_InstanceCache.Size(m)
@@ -326,7 +328,7 @@ func (m *InstanceCache_Entry) Reset()         { *m = InstanceCache_Entry{} }
 func (m *InstanceCache_Entry) String() string { return proto.CompactTextString(m) }
 func (*InstanceCache_Entry) ProtoMessage()    {}
 func (*InstanceCache_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_messages_66907c39fbdb59d1, []int{2, 0}
+	return fileDescriptor_3c2431e10c52fd39, []int{2, 0}
 }
 func (m *InstanceCache_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstanceCache_Entry.Unmarshal(m, b)
@@ -334,8 +336,8 @@ func (m *InstanceCache_Entry) XXX_Unmarshal(b []byte) error {
 func (m *InstanceCache_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InstanceCache_Entry.Marshal(b, m, deterministic)
 }
-func (dst *InstanceCache_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InstanceCache_Entry.Merge(dst, src)
+func (m *InstanceCache_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InstanceCache_Entry.Merge(m, src)
 }
 func (m *InstanceCache_Entry) XXX_Size() int {
 	return xxx_messageInfo_InstanceCache_Entry.Size(m)
@@ -364,10 +366,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/client/cipd/internal/messages/messages.proto", fileDescriptor_messages_66907c39fbdb59d1)
+	proto.RegisterFile("go.chromium.org/luci/cipd/client/cipd/internal/messages/messages.proto", fileDescriptor_3c2431e10c52fd39)
 }
 
-var fileDescriptor_messages_66907c39fbdb59d1 = []byte{
+var fileDescriptor_3c2431e10c52fd39 = []byte{
 	// 455 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xdd, 0x6a, 0xdb, 0x30,
 	0x14, 0xc6, 0x49, 0xb3, 0xc6, 0xc7, 0x19, 0x0c, 0x5d, 0x19, 0x6f, 0xa5, 0x21, 0xec, 0x22, 0x57,

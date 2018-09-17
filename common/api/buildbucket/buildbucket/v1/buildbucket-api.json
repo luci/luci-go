@@ -25,17 +25,10 @@
       "httpMethod": "POST",
       "id": "buildbucket.backfill_tag_index",
       "parameterOrder": [
-        "tag",
-        "shards"
+        "tag_key"
       ],
       "parameters": {
-        "shards": {
-          "format": "int64",
-          "location": "query",
-          "required": true,
-          "type": "string"
-        },
-        "tag": {
+        "tag_key": {
           "location": "query",
           "required": true,
           "type": "string"

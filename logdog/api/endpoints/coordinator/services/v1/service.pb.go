@@ -5,11 +5,13 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
-import empty "github.com/golang/protobuf/ptypes/empty"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -34,11 +36,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // useful.
 type Error struct {
 	// The gRPC code for this error.
-	GrpcCode int32 `protobuf:"varint,1,opt,name=grpc_code,json=grpcCode" json:"grpc_code,omitempty"`
+	GrpcCode int32 `protobuf:"varint,1,opt,name=grpc_code,json=grpcCode,proto3" json:"grpc_code,omitempty"`
 	// Transient is true if this is a transient error.
-	Transient bool `protobuf:"varint,2,opt,name=transient" json:"transient,omitempty"`
+	Transient bool `protobuf:"varint,2,opt,name=transient,proto3" json:"transient,omitempty"`
 	// An optional associated message.
-	Msg                  string   `protobuf:"bytes,3,opt,name=msg" json:"msg,omitempty"`
+	Msg                  string   `protobuf:"bytes,3,opt,name=msg,proto3" json:"msg,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -48,7 +50,7 @@ func (m *Error) Reset()         { *m = Error{} }
 func (m *Error) String() string { return proto.CompactTextString(m) }
 func (*Error) ProtoMessage()    {}
 func (*Error) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{0}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{0}
 }
 func (m *Error) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Error.Unmarshal(m, b)
@@ -56,8 +58,8 @@ func (m *Error) XXX_Unmarshal(b []byte) error {
 func (m *Error) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Error.Marshal(b, m, deterministic)
 }
-func (dst *Error) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Error.Merge(dst, src)
+func (m *Error) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Error.Merge(m, src)
 }
 func (m *Error) XXX_Size() int {
 	return xxx_messageInfo_Error.Size(m)
@@ -94,14 +96,14 @@ func (m *Error) GetMsg() string {
 type GetConfigResponse struct {
 	// The API URL of the base "luci-config" service. If empty, the default
 	// service URL will be used.
-	ConfigServiceUrl string `protobuf:"bytes,1,opt,name=config_service_url,json=configServiceUrl" json:"config_service_url,omitempty"`
+	ConfigServiceUrl string `protobuf:"bytes,1,opt,name=config_service_url,json=configServiceUrl,proto3" json:"config_service_url,omitempty"`
 	// The name of the configuration set to load from.
-	ConfigSet string `protobuf:"bytes,2,opt,name=config_set,json=configSet" json:"config_set,omitempty"`
+	ConfigSet string `protobuf:"bytes,2,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
 	// The path of the text-serialized service configuration protobuf.
-	ServiceConfigPath string `protobuf:"bytes,3,opt,name=service_config_path,json=serviceConfigPath" json:"service_config_path,omitempty"`
+	ServiceConfigPath string `protobuf:"bytes,3,opt,name=service_config_path,json=serviceConfigPath,proto3" json:"service_config_path,omitempty"`
 	// The host name of the configuration service. This is preferred to
 	// "config_service_url".
-	ConfigServiceHost    string   `protobuf:"bytes,4,opt,name=config_service_host,json=configServiceHost" json:"config_service_host,omitempty"`
+	ConfigServiceHost    string   `protobuf:"bytes,4,opt,name=config_service_host,json=configServiceHost,proto3" json:"config_service_host,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -111,7 +113,7 @@ func (m *GetConfigResponse) Reset()         { *m = GetConfigResponse{} }
 func (m *GetConfigResponse) String() string { return proto.CompactTextString(m) }
 func (*GetConfigResponse) ProtoMessage()    {}
 func (*GetConfigResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{1}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{1}
 }
 func (m *GetConfigResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetConfigResponse.Unmarshal(m, b)
@@ -119,8 +121,8 @@ func (m *GetConfigResponse) XXX_Unmarshal(b []byte) error {
 func (m *GetConfigResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetConfigResponse.Marshal(b, m, deterministic)
 }
-func (dst *GetConfigResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetConfigResponse.Merge(dst, src)
+func (m *GetConfigResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetConfigResponse.Merge(m, src)
 }
 func (m *GetConfigResponse) XXX_Size() int {
 	return xxx_messageInfo_GetConfigResponse.Size(m)
@@ -163,17 +165,17 @@ func (m *GetConfigResponse) GetConfigServiceHost() string {
 // RegisterStream Coordinator service endpoint.
 type RegisterStreamRequest struct {
 	// The log stream's project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The log stream's secret.
 	Secret []byte `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"`
 	// The protobuf version string for this stream.
-	ProtoVersion string `protobuf:"bytes,3,opt,name=proto_version,json=protoVersion" json:"proto_version,omitempty"`
+	ProtoVersion string `protobuf:"bytes,3,opt,name=proto_version,json=protoVersion,proto3" json:"proto_version,omitempty"`
 	// The serialized LogStreamDescriptor protobuf for this stream.
 	Desc []byte `protobuf:"bytes,4,opt,name=desc,proto3" json:"desc,omitempty"`
 	// The stream's terminal index. If >= 0, the terminal index will be set
 	// in the registration request, avoiding the need for an additional
 	// termination RPC.
-	TerminalIndex        int64    `protobuf:"varint,5,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
+	TerminalIndex        int64    `protobuf:"varint,5,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -183,7 +185,7 @@ func (m *RegisterStreamRequest) Reset()         { *m = RegisterStreamRequest{} }
 func (m *RegisterStreamRequest) String() string { return proto.CompactTextString(m) }
 func (*RegisterStreamRequest) ProtoMessage()    {}
 func (*RegisterStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{2}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{2}
 }
 func (m *RegisterStreamRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterStreamRequest.Unmarshal(m, b)
@@ -191,8 +193,8 @@ func (m *RegisterStreamRequest) XXX_Unmarshal(b []byte) error {
 func (m *RegisterStreamRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterStreamRequest.Marshal(b, m, deterministic)
 }
-func (dst *RegisterStreamRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterStreamRequest.Merge(dst, src)
+func (m *RegisterStreamRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterStreamRequest.Merge(m, src)
 }
 func (m *RegisterStreamRequest) XXX_Size() int {
 	return xxx_messageInfo_RegisterStreamRequest.Size(m)
@@ -241,11 +243,11 @@ func (m *RegisterStreamRequest) GetTerminalIndex() int64 {
 // The response message for the RegisterStream RPC.
 type RegisterStreamResponse struct {
 	// The Coordinator ID of the log stream.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// The state of the requested log stream.
-	State *LogStreamState `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	State *LogStreamState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	// Error is the error response.
-	Error                *Error   `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
+	Error                *Error   `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -255,7 +257,7 @@ func (m *RegisterStreamResponse) Reset()         { *m = RegisterStreamResponse{}
 func (m *RegisterStreamResponse) String() string { return proto.CompactTextString(m) }
 func (*RegisterStreamResponse) ProtoMessage()    {}
 func (*RegisterStreamResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{3}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{3}
 }
 func (m *RegisterStreamResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterStreamResponse.Unmarshal(m, b)
@@ -263,8 +265,8 @@ func (m *RegisterStreamResponse) XXX_Unmarshal(b []byte) error {
 func (m *RegisterStreamResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterStreamResponse.Marshal(b, m, deterministic)
 }
-func (dst *RegisterStreamResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterStreamResponse.Merge(dst, src)
+func (m *RegisterStreamResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterStreamResponse.Merge(m, src)
 }
 func (m *RegisterStreamResponse) XXX_Size() int {
 	return xxx_messageInfo_RegisterStreamResponse.Size(m)
@@ -299,11 +301,11 @@ func (m *RegisterStreamResponse) GetError() *Error {
 // LoadStreamRequest loads the current state of a log stream.
 type LoadStreamRequest struct {
 	// The log stream's project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The log stream's path Coordinator ID.
-	Id string `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// If true, include the log stream descriptor.
-	Desc                 bool     `protobuf:"varint,3,opt,name=desc" json:"desc,omitempty"`
+	Desc                 bool     `protobuf:"varint,3,opt,name=desc,proto3" json:"desc,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -313,7 +315,7 @@ func (m *LoadStreamRequest) Reset()         { *m = LoadStreamRequest{} }
 func (m *LoadStreamRequest) String() string { return proto.CompactTextString(m) }
 func (*LoadStreamRequest) ProtoMessage()    {}
 func (*LoadStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{4}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{4}
 }
 func (m *LoadStreamRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoadStreamRequest.Unmarshal(m, b)
@@ -321,8 +323,8 @@ func (m *LoadStreamRequest) XXX_Unmarshal(b []byte) error {
 func (m *LoadStreamRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LoadStreamRequest.Marshal(b, m, deterministic)
 }
-func (dst *LoadStreamRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LoadStreamRequest.Merge(dst, src)
+func (m *LoadStreamRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoadStreamRequest.Merge(m, src)
 }
 func (m *LoadStreamRequest) XXX_Size() int {
 	return xxx_messageInfo_LoadStreamRequest.Size(m)
@@ -357,12 +359,12 @@ func (m *LoadStreamRequest) GetDesc() bool {
 // The response message for the LoadStream RPC.
 type LoadStreamResponse struct {
 	// The state of the requested log stream.
-	State *LogStreamState `protobuf:"bytes,1,opt,name=state" json:"state,omitempty"`
+	State *LogStreamState `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
 	// If requested, the serialized log stream descriptor. The protobuf version
 	// of this descriptor will match the "proto_version" field in "state".
 	Desc []byte `protobuf:"bytes,2,opt,name=desc,proto3" json:"desc,omitempty"`
 	// The age of the log stream.
-	Age *duration.Duration `protobuf:"bytes,3,opt,name=age" json:"age,omitempty"`
+	Age *duration.Duration `protobuf:"bytes,3,opt,name=age,proto3" json:"age,omitempty"`
 	// The archival key of the log stream. If this key doesn't match the key in
 	// the archival request, the request is superfluous and should be deleted.
 	ArchivalKey          []byte   `protobuf:"bytes,4,opt,name=archival_key,json=archivalKey,proto3" json:"archival_key,omitempty"`
@@ -375,7 +377,7 @@ func (m *LoadStreamResponse) Reset()         { *m = LoadStreamResponse{} }
 func (m *LoadStreamResponse) String() string { return proto.CompactTextString(m) }
 func (*LoadStreamResponse) ProtoMessage()    {}
 func (*LoadStreamResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{5}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{5}
 }
 func (m *LoadStreamResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoadStreamResponse.Unmarshal(m, b)
@@ -383,8 +385,8 @@ func (m *LoadStreamResponse) XXX_Unmarshal(b []byte) error {
 func (m *LoadStreamResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LoadStreamResponse.Marshal(b, m, deterministic)
 }
-func (dst *LoadStreamResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LoadStreamResponse.Merge(dst, src)
+func (m *LoadStreamResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoadStreamResponse.Merge(m, src)
 }
 func (m *LoadStreamResponse) XXX_Size() int {
 	return xxx_messageInfo_LoadStreamResponse.Size(m)
@@ -427,13 +429,13 @@ func (m *LoadStreamResponse) GetArchivalKey() []byte {
 // TerminateStream service endpoint.
 type TerminateStreamRequest struct {
 	// The log stream's project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The log stream's path Coordinator ID.
-	Id string `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// The log stream's secret.
 	Secret []byte `protobuf:"bytes,3,opt,name=secret,proto3" json:"secret,omitempty"`
 	// The terminal index of the stream.
-	TerminalIndex        int64    `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
+	TerminalIndex        int64    `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -443,7 +445,7 @@ func (m *TerminateStreamRequest) Reset()         { *m = TerminateStreamRequest{}
 func (m *TerminateStreamRequest) String() string { return proto.CompactTextString(m) }
 func (*TerminateStreamRequest) ProtoMessage()    {}
 func (*TerminateStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{6}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{6}
 }
 func (m *TerminateStreamRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TerminateStreamRequest.Unmarshal(m, b)
@@ -451,8 +453,8 @@ func (m *TerminateStreamRequest) XXX_Unmarshal(b []byte) error {
 func (m *TerminateStreamRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TerminateStreamRequest.Marshal(b, m, deterministic)
 }
-func (dst *TerminateStreamRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TerminateStreamRequest.Merge(dst, src)
+func (m *TerminateStreamRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TerminateStreamRequest.Merge(m, src)
 }
 func (m *TerminateStreamRequest) XXX_Size() int {
 	return xxx_messageInfo_TerminateStreamRequest.Size(m)
@@ -495,31 +497,31 @@ func (m *TerminateStreamRequest) GetTerminalIndex() int64 {
 // service endpoint.
 type ArchiveStreamRequest struct {
 	// The log stream's project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The Coordinator ID of the log stream that was archived.
-	Id string `protobuf:"bytes,2,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	// The number of log entries that were archived.
-	LogEntryCount int64 `protobuf:"varint,3,opt,name=log_entry_count,json=logEntryCount" json:"log_entry_count,omitempty"`
+	LogEntryCount int64 `protobuf:"varint,3,opt,name=log_entry_count,json=logEntryCount,proto3" json:"log_entry_count,omitempty"`
 	// The highest log stream index that was archived.
-	TerminalIndex int64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
+	TerminalIndex int64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	// If not empty, there was an archival error.
 	//
 	// This field serves to indicate that an error occured (being non-empty) and
 	// to supply an value that will show up in the Coordinator ArchiveStream
 	// endpoint logs.
-	Error string `protobuf:"bytes,5,opt,name=error" json:"error,omitempty"`
+	Error string `protobuf:"bytes,5,opt,name=error,proto3" json:"error,omitempty"`
 	// The archive URL of the log stream's stream data.
-	StreamUrl string `protobuf:"bytes,10,opt,name=stream_url,json=streamUrl" json:"stream_url,omitempty"`
+	StreamUrl string `protobuf:"bytes,10,opt,name=stream_url,json=streamUrl,proto3" json:"stream_url,omitempty"`
 	// The size of the log stream's stream data.
-	StreamSize int64 `protobuf:"varint,11,opt,name=stream_size,json=streamSize" json:"stream_size,omitempty"`
+	StreamSize int64 `protobuf:"varint,11,opt,name=stream_size,json=streamSize,proto3" json:"stream_size,omitempty"`
 	// The archive URL of the log stream's index data.
-	IndexUrl string `protobuf:"bytes,20,opt,name=index_url,json=indexUrl" json:"index_url,omitempty"`
+	IndexUrl string `protobuf:"bytes,20,opt,name=index_url,json=indexUrl,proto3" json:"index_url,omitempty"`
 	// The size of the log stream's index data.
-	IndexSize int64 `protobuf:"varint,21,opt,name=index_size,json=indexSize" json:"index_size,omitempty"`
+	IndexSize int64 `protobuf:"varint,21,opt,name=index_size,json=indexSize,proto3" json:"index_size,omitempty"`
 	// The archive URL of the log stream's binary data.
-	DataUrl string `protobuf:"bytes,30,opt,name=data_url,json=dataUrl" json:"data_url,omitempty"`
+	DataUrl string `protobuf:"bytes,30,opt,name=data_url,json=dataUrl,proto3" json:"data_url,omitempty"`
 	// The size of the log stream's binary data.
-	DataSize             int64    `protobuf:"varint,31,opt,name=data_size,json=dataSize" json:"data_size,omitempty"`
+	DataSize             int64    `protobuf:"varint,31,opt,name=data_size,json=dataSize,proto3" json:"data_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -529,7 +531,7 @@ func (m *ArchiveStreamRequest) Reset()         { *m = ArchiveStreamRequest{} }
 func (m *ArchiveStreamRequest) String() string { return proto.CompactTextString(m) }
 func (*ArchiveStreamRequest) ProtoMessage()    {}
 func (*ArchiveStreamRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{7}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{7}
 }
 func (m *ArchiveStreamRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveStreamRequest.Unmarshal(m, b)
@@ -537,8 +539,8 @@ func (m *ArchiveStreamRequest) XXX_Unmarshal(b []byte) error {
 func (m *ArchiveStreamRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ArchiveStreamRequest.Marshal(b, m, deterministic)
 }
-func (dst *ArchiveStreamRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ArchiveStreamRequest.Merge(dst, src)
+func (m *ArchiveStreamRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveStreamRequest.Merge(m, src)
 }
 func (m *ArchiveStreamRequest) XXX_Size() int {
 	return xxx_messageInfo_ArchiveStreamRequest.Size(m)
@@ -628,7 +630,7 @@ func (m *ArchiveStreamRequest) GetDataSize() int64 {
 
 // BatchRequest is a batch of individual requests to make to the Coordinator.
 type BatchRequest struct {
-	Req                  []*BatchRequest_Entry `protobuf:"bytes,1,rep,name=req" json:"req,omitempty"`
+	Req                  []*BatchRequest_Entry `protobuf:"bytes,1,rep,name=req,proto3" json:"req,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -638,7 +640,7 @@ func (m *BatchRequest) Reset()         { *m = BatchRequest{} }
 func (m *BatchRequest) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest) ProtoMessage()    {}
 func (*BatchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{8}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{8}
 }
 func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest.Unmarshal(m, b)
@@ -646,8 +648,8 @@ func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
 func (m *BatchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchRequest.Marshal(b, m, deterministic)
 }
-func (dst *BatchRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchRequest.Merge(dst, src)
+func (m *BatchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest.Merge(m, src)
 }
 func (m *BatchRequest) XXX_Size() int {
 	return xxx_messageInfo_BatchRequest.Size(m)
@@ -682,7 +684,7 @@ func (m *BatchRequest_Entry) Reset()         { *m = BatchRequest_Entry{} }
 func (m *BatchRequest_Entry) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest_Entry) ProtoMessage()    {}
 func (*BatchRequest_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{8, 0}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{8, 0}
 }
 func (m *BatchRequest_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest_Entry.Unmarshal(m, b)
@@ -690,8 +692,8 @@ func (m *BatchRequest_Entry) XXX_Unmarshal(b []byte) error {
 func (m *BatchRequest_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchRequest_Entry.Marshal(b, m, deterministic)
 }
-func (dst *BatchRequest_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchRequest_Entry.Merge(dst, src)
+func (m *BatchRequest_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest_Entry.Merge(m, src)
 }
 func (m *BatchRequest_Entry) XXX_Size() int {
 	return xxx_messageInfo_BatchRequest_Entry.Size(m)
@@ -707,22 +709,28 @@ type isBatchRequest_Entry_Value interface {
 }
 
 type BatchRequest_Entry_RegisterStream struct {
-	RegisterStream *RegisterStreamRequest `protobuf:"bytes,1,opt,name=register_stream,json=registerStream,oneof"`
-}
-type BatchRequest_Entry_LoadStream struct {
-	LoadStream *LoadStreamRequest `protobuf:"bytes,2,opt,name=load_stream,json=loadStream,oneof"`
-}
-type BatchRequest_Entry_TerminateStream struct {
-	TerminateStream *TerminateStreamRequest `protobuf:"bytes,3,opt,name=terminate_stream,json=terminateStream,oneof"`
-}
-type BatchRequest_Entry_ArchiveStream struct {
-	ArchiveStream *ArchiveStreamRequest `protobuf:"bytes,4,opt,name=archive_stream,json=archiveStream,oneof"`
+	RegisterStream *RegisterStreamRequest `protobuf:"bytes,1,opt,name=register_stream,json=registerStream,proto3,oneof"`
 }
 
-func (*BatchRequest_Entry_RegisterStream) isBatchRequest_Entry_Value()  {}
-func (*BatchRequest_Entry_LoadStream) isBatchRequest_Entry_Value()      {}
+type BatchRequest_Entry_LoadStream struct {
+	LoadStream *LoadStreamRequest `protobuf:"bytes,2,opt,name=load_stream,json=loadStream,proto3,oneof"`
+}
+
+type BatchRequest_Entry_TerminateStream struct {
+	TerminateStream *TerminateStreamRequest `protobuf:"bytes,3,opt,name=terminate_stream,json=terminateStream,proto3,oneof"`
+}
+
+type BatchRequest_Entry_ArchiveStream struct {
+	ArchiveStream *ArchiveStreamRequest `protobuf:"bytes,4,opt,name=archive_stream,json=archiveStream,proto3,oneof"`
+}
+
+func (*BatchRequest_Entry_RegisterStream) isBatchRequest_Entry_Value() {}
+
+func (*BatchRequest_Entry_LoadStream) isBatchRequest_Entry_Value() {}
+
 func (*BatchRequest_Entry_TerminateStream) isBatchRequest_Entry_Value() {}
-func (*BatchRequest_Entry_ArchiveStream) isBatchRequest_Entry_Value()   {}
+
+func (*BatchRequest_Entry_ArchiveStream) isBatchRequest_Entry_Value() {}
 
 func (m *BatchRequest_Entry) GetValue() isBatchRequest_Entry_Value {
 	if m != nil {
@@ -873,7 +881,7 @@ func _BatchRequest_Entry_OneofSizer(msg proto.Message) (n int) {
 
 // BatchResponse is a response to a BatchRequest.
 type BatchResponse struct {
-	Resp                 []*BatchResponse_Entry `protobuf:"bytes,1,rep,name=resp" json:"resp,omitempty"`
+	Resp                 []*BatchResponse_Entry `protobuf:"bytes,1,rep,name=resp,proto3" json:"resp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -883,7 +891,7 @@ func (m *BatchResponse) Reset()         { *m = BatchResponse{} }
 func (m *BatchResponse) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse) ProtoMessage()    {}
 func (*BatchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{9}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{9}
 }
 func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse.Unmarshal(m, b)
@@ -891,8 +899,8 @@ func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
 func (m *BatchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchResponse.Marshal(b, m, deterministic)
 }
-func (dst *BatchResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchResponse.Merge(dst, src)
+func (m *BatchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse.Merge(m, src)
 }
 func (m *BatchResponse) XXX_Size() int {
 	return xxx_messageInfo_BatchResponse.Size(m)
@@ -919,7 +927,7 @@ func (m *BatchResponse) GetResp() []*BatchResponse_Entry {
 // due to constraints (e.g., size, time).
 type BatchResponse_Entry struct {
 	// The index in the BatchRequest for this entry.
-	Index int32 `protobuf:"varint,1,opt,name=index" json:"index,omitempty"`
+	Index int32 `protobuf:"varint,1,opt,name=index,proto3" json:"index,omitempty"`
 	// Types that are valid to be assigned to Value:
 	//	*BatchResponse_Entry_Err
 	//	*BatchResponse_Entry_RegisterStream
@@ -934,7 +942,7 @@ func (m *BatchResponse_Entry) Reset()         { *m = BatchResponse_Entry{} }
 func (m *BatchResponse_Entry) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse_Entry) ProtoMessage()    {}
 func (*BatchResponse_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_cca25b79d2f71148, []int{9, 0}
+	return fileDescriptor_42e88bcc2e6ba8be, []int{9, 0}
 }
 func (m *BatchResponse_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse_Entry.Unmarshal(m, b)
@@ -942,8 +950,8 @@ func (m *BatchResponse_Entry) XXX_Unmarshal(b []byte) error {
 func (m *BatchResponse_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchResponse_Entry.Marshal(b, m, deterministic)
 }
-func (dst *BatchResponse_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchResponse_Entry.Merge(dst, src)
+func (m *BatchResponse_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse_Entry.Merge(m, src)
 }
 func (m *BatchResponse_Entry) XXX_Size() int {
 	return xxx_messageInfo_BatchResponse_Entry.Size(m)
@@ -954,36 +962,40 @@ func (m *BatchResponse_Entry) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_BatchResponse_Entry proto.InternalMessageInfo
 
+func (m *BatchResponse_Entry) GetIndex() int32 {
+	if m != nil {
+		return m.Index
+	}
+	return 0
+}
+
 type isBatchResponse_Entry_Value interface {
 	isBatchResponse_Entry_Value()
 }
 
 type BatchResponse_Entry_Err struct {
-	Err *Error `protobuf:"bytes,2,opt,name=err,oneof"`
-}
-type BatchResponse_Entry_RegisterStream struct {
-	RegisterStream *RegisterStreamResponse `protobuf:"bytes,3,opt,name=register_stream,json=registerStream,oneof"`
-}
-type BatchResponse_Entry_LoadStream struct {
-	LoadStream *LoadStreamResponse `protobuf:"bytes,4,opt,name=load_stream,json=loadStream,oneof"`
+	Err *Error `protobuf:"bytes,2,opt,name=err,proto3,oneof"`
 }
 
-func (*BatchResponse_Entry_Err) isBatchResponse_Entry_Value()            {}
+type BatchResponse_Entry_RegisterStream struct {
+	RegisterStream *RegisterStreamResponse `protobuf:"bytes,3,opt,name=register_stream,json=registerStream,proto3,oneof"`
+}
+
+type BatchResponse_Entry_LoadStream struct {
+	LoadStream *LoadStreamResponse `protobuf:"bytes,4,opt,name=load_stream,json=loadStream,proto3,oneof"`
+}
+
+func (*BatchResponse_Entry_Err) isBatchResponse_Entry_Value() {}
+
 func (*BatchResponse_Entry_RegisterStream) isBatchResponse_Entry_Value() {}
-func (*BatchResponse_Entry_LoadStream) isBatchResponse_Entry_Value()     {}
+
+func (*BatchResponse_Entry_LoadStream) isBatchResponse_Entry_Value() {}
 
 func (m *BatchResponse_Entry) GetValue() isBatchResponse_Entry_Value {
 	if m != nil {
 		return m.Value
 	}
 	return nil
-}
-
-func (m *BatchResponse_Entry) GetIndex() int32 {
-	if m != nil {
-		return m.Index
-	}
-	return 0
 }
 
 func (m *BatchResponse_Entry) GetErr() *Error {
@@ -1438,10 +1450,10 @@ var _Services_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/service.proto", fileDescriptor_service_cca25b79d2f71148)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/service.proto", fileDescriptor_42e88bcc2e6ba8be)
 }
 
-var fileDescriptor_service_cca25b79d2f71148 = []byte{
+var fileDescriptor_42e88bcc2e6ba8be = []byte{
 	// 1002 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xdd, 0x6e, 0x1b, 0x45,
 	0x14, 0xce, 0xee, 0x66, 0xd3, 0xf8, 0xf8, 0x27, 0xc9, 0xe0, 0x58, 0xee, 0xa6, 0x4d, 0x5d, 0x57,

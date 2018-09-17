@@ -3,10 +3,12 @@
 
 package internal
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -23,8 +25,8 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 //
 // It is stored as part of Job entity inside FinishedInvocationsRaw field.
 type FinishedInvocation struct {
-	InvocationId         int64                `protobuf:"varint,1,opt,name=invocation_id,json=invocationId" json:"invocation_id,omitempty"`
-	Finished             *timestamp.Timestamp `protobuf:"bytes,2,opt,name=finished" json:"finished,omitempty"`
+	InvocationId         int64                `protobuf:"varint,1,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
+	Finished             *timestamp.Timestamp `protobuf:"bytes,2,opt,name=finished,proto3" json:"finished,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -34,7 +36,7 @@ func (m *FinishedInvocation) Reset()         { *m = FinishedInvocation{} }
 func (m *FinishedInvocation) String() string { return proto.CompactTextString(m) }
 func (*FinishedInvocation) ProtoMessage()    {}
 func (*FinishedInvocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_db_3a1f862127dbfbb8, []int{0}
+	return fileDescriptor_1cbb24b54b0d9994, []int{0}
 }
 func (m *FinishedInvocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FinishedInvocation.Unmarshal(m, b)
@@ -42,8 +44,8 @@ func (m *FinishedInvocation) XXX_Unmarshal(b []byte) error {
 func (m *FinishedInvocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FinishedInvocation.Marshal(b, m, deterministic)
 }
-func (dst *FinishedInvocation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FinishedInvocation.Merge(dst, src)
+func (m *FinishedInvocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FinishedInvocation.Merge(m, src)
 }
 func (m *FinishedInvocation) XXX_Size() int {
 	return xxx_messageInfo_FinishedInvocation.Size(m)
@@ -70,7 +72,7 @@ func (m *FinishedInvocation) GetFinished() *timestamp.Timestamp {
 
 // FinishedInvocationList is stored in Job entities as FinishedInvocationsRaw.
 type FinishedInvocationList struct {
-	Invocations          []*FinishedInvocation `protobuf:"bytes,1,rep,name=invocations" json:"invocations,omitempty"`
+	Invocations          []*FinishedInvocation `protobuf:"bytes,1,rep,name=invocations,proto3" json:"invocations,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}              `json:"-"`
 	XXX_unrecognized     []byte                `json:"-"`
 	XXX_sizecache        int32                 `json:"-"`
@@ -80,7 +82,7 @@ func (m *FinishedInvocationList) Reset()         { *m = FinishedInvocationList{}
 func (m *FinishedInvocationList) String() string { return proto.CompactTextString(m) }
 func (*FinishedInvocationList) ProtoMessage()    {}
 func (*FinishedInvocationList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_db_3a1f862127dbfbb8, []int{1}
+	return fileDescriptor_1cbb24b54b0d9994, []int{1}
 }
 func (m *FinishedInvocationList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FinishedInvocationList.Unmarshal(m, b)
@@ -88,8 +90,8 @@ func (m *FinishedInvocationList) XXX_Unmarshal(b []byte) error {
 func (m *FinishedInvocationList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FinishedInvocationList.Marshal(b, m, deterministic)
 }
-func (dst *FinishedInvocationList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FinishedInvocationList.Merge(dst, src)
+func (m *FinishedInvocationList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FinishedInvocationList.Merge(m, src)
 }
 func (m *FinishedInvocationList) XXX_Size() int {
 	return xxx_messageInfo_FinishedInvocationList.Size(m)
@@ -113,10 +115,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/db.proto", fileDescriptor_db_3a1f862127dbfbb8)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/db.proto", fileDescriptor_1cbb24b54b0d9994)
 }
 
-var fileDescriptor_db_3a1f862127dbfbb8 = []byte{
+var fileDescriptor_1cbb24b54b0d9994 = []byte{
 	// 229 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x8f, 0xcf, 0x4b, 0xc3, 0x40,
 	0x10, 0x85, 0x89, 0x05, 0x29, 0x1b, 0xbd, 0xec, 0x41, 0x42, 0x2f, 0x0d, 0xf5, 0x92, 0xd3, 0x2c,

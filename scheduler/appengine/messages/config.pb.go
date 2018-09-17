@@ -3,9 +3,11 @@
 
 package messages
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -40,6 +42,7 @@ var Acl_Role_name = map[int32]string{
 	2: "TRIGGERER",
 	1: "OWNER",
 }
+
 var Acl_Role_value = map[string]int32{
 	"READER":    0,
 	"TRIGGERER": 2,
@@ -49,8 +52,9 @@ var Acl_Role_value = map[string]int32{
 func (x Acl_Role) String() string {
 	return proto.EnumName(Acl_Role_name, int32(x))
 }
+
 func (Acl_Role) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{1, 0}
+	return fileDescriptor_3b38e5823bccf1c5, []int{1, 0}
 }
 
 type TriggeringPolicy_Kind int32
@@ -76,6 +80,7 @@ var TriggeringPolicy_Kind_name = map[int32]string{
 	1: "GREEDY_BATCHING",
 	2: "LOGARITHMIC_BATCHING",
 }
+
 var TriggeringPolicy_Kind_value = map[string]int32{
 	"UNDEFINED":            0,
 	"GREEDY_BATCHING":      1,
@@ -85,19 +90,20 @@ var TriggeringPolicy_Kind_value = map[string]int32{
 func (x TriggeringPolicy_Kind) String() string {
 	return proto.EnumName(TriggeringPolicy_Kind_name, int32(x))
 }
+
 func (TriggeringPolicy_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{3, 0}
+	return fileDescriptor_3b38e5823bccf1c5, []int{3, 0}
 }
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
 // to some project.
 type ProjectConfig struct {
 	// Job is a set of jobs defined in the project.
-	Job []*Job `protobuf:"bytes,1,rep,name=job" json:"job,omitempty"`
+	Job []*Job `protobuf:"bytes,1,rep,name=job,proto3" json:"job,omitempty"`
 	// Trigger is a set of triggering jobs defined in the project.
-	Trigger []*Trigger `protobuf:"bytes,2,rep,name=trigger" json:"trigger,omitempty"`
+	Trigger []*Trigger `protobuf:"bytes,2,rep,name=trigger,proto3" json:"trigger,omitempty"`
 	// A list of ACL sets. Names must be unique.
-	AclSets              []*AclSet `protobuf:"bytes,3,rep,name=acl_sets,json=aclSets" json:"acl_sets,omitempty"`
+	AclSets              []*AclSet `protobuf:"bytes,3,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -107,7 +113,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{0}
+	return fileDescriptor_3b38e5823bccf1c5, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -115,8 +121,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(dst, src)
+func (m *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(m, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -151,9 +157,9 @@ func (m *ProjectConfig) GetAclSets() []*AclSet {
 // A single access control rule.
 type Acl struct {
 	// Role denotes a list of actions that an identity can perform.
-	Role Acl_Role `protobuf:"varint,1,opt,name=role,enum=scheduler.config.Acl_Role" json:"role,omitempty"`
+	Role Acl_Role `protobuf:"varint,1,opt,name=role,proto3,enum=scheduler.config.Acl_Role" json:"role,omitempty"`
 	// Either email or "group:xyz" or auth service identity string "kind:name".
-	GrantedTo            string   `protobuf:"bytes,2,opt,name=granted_to,json=grantedTo" json:"granted_to,omitempty"`
+	GrantedTo            string   `protobuf:"bytes,2,opt,name=granted_to,json=grantedTo,proto3" json:"granted_to,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -163,7 +169,7 @@ func (m *Acl) Reset()         { *m = Acl{} }
 func (m *Acl) String() string { return proto.CompactTextString(m) }
 func (*Acl) ProtoMessage()    {}
 func (*Acl) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{1}
+	return fileDescriptor_3b38e5823bccf1c5, []int{1}
 }
 func (m *Acl) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acl.Unmarshal(m, b)
@@ -171,8 +177,8 @@ func (m *Acl) XXX_Unmarshal(b []byte) error {
 func (m *Acl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Acl.Marshal(b, m, deterministic)
 }
-func (dst *Acl) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Acl.Merge(dst, src)
+func (m *Acl) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Acl.Merge(m, src)
 }
 func (m *Acl) XXX_Size() int {
 	return xxx_messageInfo_Acl.Size(m)
@@ -201,10 +207,10 @@ func (m *Acl) GetGrantedTo() string {
 type AclSet struct {
 	// A name of the ACL set, unique for a project.
 	// Required. Must match regex '^[0-9A-Za-z_\-\.]{1,100}$'.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// List of access control rules.
 	// The order does not matter.
-	Acls                 []*Acl   `protobuf:"bytes,2,rep,name=acls" json:"acls,omitempty"`
+	Acls                 []*Acl   `protobuf:"bytes,2,rep,name=acls,proto3" json:"acls,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -214,7 +220,7 @@ func (m *AclSet) Reset()         { *m = AclSet{} }
 func (m *AclSet) String() string { return proto.CompactTextString(m) }
 func (*AclSet) ProtoMessage()    {}
 func (*AclSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{2}
+	return fileDescriptor_3b38e5823bccf1c5, []int{2}
 }
 func (m *AclSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclSet.Unmarshal(m, b)
@@ -222,8 +228,8 @@ func (m *AclSet) XXX_Unmarshal(b []byte) error {
 func (m *AclSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AclSet.Marshal(b, m, deterministic)
 }
-func (dst *AclSet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AclSet.Merge(dst, src)
+func (m *AclSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AclSet.Merge(m, src)
 }
 func (m *AclSet) XXX_Size() int {
 	return xxx_messageInfo_AclSet.Size(m)
@@ -256,7 +262,7 @@ type TriggeringPolicy struct {
 	// See comments for Kind enum field.
 	//
 	// Default is GREEDY_BATCHING.
-	Kind TriggeringPolicy_Kind `protobuf:"varint,1,opt,name=kind,enum=scheduler.config.TriggeringPolicy_Kind" json:"kind,omitempty"`
+	Kind TriggeringPolicy_Kind `protobuf:"varint,1,opt,name=kind,proto3,enum=scheduler.config.TriggeringPolicy_Kind" json:"kind,omitempty"`
 	// Limits number of job invocations running at the same time.
 	//
 	// If the number of current active invocations is more or equal to this
@@ -264,14 +270,14 @@ type TriggeringPolicy struct {
 	// allowed to trigger anything anyway.
 	//
 	// Default is 1.
-	MaxConcurrentInvocations int64 `protobuf:"varint,2,opt,name=max_concurrent_invocations,json=maxConcurrentInvocations" json:"max_concurrent_invocations,omitempty"`
+	MaxConcurrentInvocations int64 `protobuf:"varint,2,opt,name=max_concurrent_invocations,json=maxConcurrentInvocations,proto3" json:"max_concurrent_invocations,omitempty"`
 	// Limits how many triggers can be put into one invocation request.
 	//
 	// For example, setting this to 1 will make each trigger launch its own
 	// invocation.
 	//
 	// Default is 1000 (which is ~= unlimited).
-	MaxBatchSize int64 `protobuf:"varint,3,opt,name=max_batch_size,json=maxBatchSize" json:"max_batch_size,omitempty"`
+	MaxBatchSize int64 `protobuf:"varint,3,opt,name=max_batch_size,json=maxBatchSize,proto3" json:"max_batch_size,omitempty"`
 	// Base of the logarithm operation during logarithmic batching.
 	//
 	// For example, setting this to 2, will cause 3 out of 8 pending triggers to
@@ -280,7 +286,7 @@ type TriggeringPolicy struct {
 	// for numerical stability reasons.
 	//
 	// Required.
-	LogBase              float32  `protobuf:"fixed32,4,opt,name=log_base,json=logBase" json:"log_base,omitempty"`
+	LogBase              float32  `protobuf:"fixed32,4,opt,name=log_base,json=logBase,proto3" json:"log_base,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -290,7 +296,7 @@ func (m *TriggeringPolicy) Reset()         { *m = TriggeringPolicy{} }
 func (m *TriggeringPolicy) String() string { return proto.CompactTextString(m) }
 func (*TriggeringPolicy) ProtoMessage()    {}
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{3}
+	return fileDescriptor_3b38e5823bccf1c5, []int{3}
 }
 func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggeringPolicy.Unmarshal(m, b)
@@ -298,8 +304,8 @@ func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 func (m *TriggeringPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TriggeringPolicy.Marshal(b, m, deterministic)
 }
-func (dst *TriggeringPolicy) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TriggeringPolicy.Merge(dst, src)
+func (m *TriggeringPolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TriggeringPolicy.Merge(m, src)
 }
 func (m *TriggeringPolicy) XXX_Size() int {
 	return xxx_messageInfo_TriggeringPolicy.Size(m)
@@ -345,7 +351,7 @@ type Job struct {
 	// Id is a name of the job (unique for the project).
 	//
 	// Must match '^[0-9A-Za-z_\-\. \)\(]{1,100}$'.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Schedule describes when to run the job.
 	//
 	// A job with a schedule can still be triggered by other triggering jobs
@@ -372,7 +378,7 @@ type Job struct {
 	//     button or via a trigger.
 	//
 	// Default is "triggered".
-	Schedule string `protobuf:"bytes,2,opt,name=schedule" json:"schedule,omitempty"`
+	Schedule string `protobuf:"bytes,2,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	// Disabled is true to disable this job.
 	//
 	// Disabled job is equivalent to a deleted job: it can't be triggered, it
@@ -380,27 +386,27 @@ type Job struct {
 	//
 	// Use this instead of commenting out the definition in case you want to
 	// temporarily git rid of the job.
-	Disabled bool `protobuf:"varint,3,opt,name=disabled" json:"disabled,omitempty"`
+	Disabled bool `protobuf:"varint,3,opt,name=disabled,proto3" json:"disabled,omitempty"`
 	// List of access control rules for the Job.
 	// The order does not matter.
 	// There can be at most 32 different acls for a Job, including those from
 	// acl_sets.
-	Acls []*Acl `protobuf:"bytes,5,rep,name=acls" json:"acls,omitempty"`
+	Acls []*Acl `protobuf:"bytes,5,rep,name=acls,proto3" json:"acls,omitempty"`
 	// A list of ACL set names. Each ACL in each referenced ACL set will be
 	// included in this Job.
 	// The order does not matter.
-	AclSets []string `protobuf:"bytes,6,rep,name=acl_sets,json=aclSets" json:"acl_sets,omitempty"`
+	AclSets []string `protobuf:"bytes,6,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
 	// TriggeringPolicy defines how job handles incoming triggering events.
 	//
 	// If not specified defaults to GREEDY_BATCHING with 1 max concurrent
 	// invocation. See comments in TriggeringPolicy for more details.
-	TriggeringPolicy *TriggeringPolicy `protobuf:"bytes,7,opt,name=triggering_policy,json=triggeringPolicy" json:"triggering_policy,omitempty"`
+	TriggeringPolicy *TriggeringPolicy `protobuf:"bytes,7,opt,name=triggering_policy,json=triggeringPolicy,proto3" json:"triggering_policy,omitempty"`
 	// Noop is used for testing. It is "do nothing" task.
-	Noop *NoopTask `protobuf:"bytes,100,opt,name=noop" json:"noop,omitempty"`
+	Noop *NoopTask `protobuf:"bytes,100,opt,name=noop,proto3" json:"noop,omitempty"`
 	// UrlFetch can be used to make a simple HTTP call.
-	UrlFetch *UrlFetchTask `protobuf:"bytes,101,opt,name=url_fetch,json=urlFetch" json:"url_fetch,omitempty"`
+	UrlFetch *UrlFetchTask `protobuf:"bytes,101,opt,name=url_fetch,json=urlFetch,proto3" json:"url_fetch,omitempty"`
 	// BuildbucketTask can be used to schedule buildbucket job.
-	Buildbucket          *BuildbucketTask `protobuf:"bytes,103,opt,name=buildbucket" json:"buildbucket,omitempty"`
+	Buildbucket          *BuildbucketTask `protobuf:"bytes,103,opt,name=buildbucket,proto3" json:"buildbucket,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -410,7 +416,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{4}
+	return fileDescriptor_3b38e5823bccf1c5, []int{4}
 }
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
@@ -418,8 +424,8 @@ func (m *Job) XXX_Unmarshal(b []byte) error {
 func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
 }
-func (dst *Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Job.Merge(dst, src)
+func (m *Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Job.Merge(m, src)
 }
 func (m *Job) XXX_Size() int {
 	return xxx_messageInfo_Job.Size(m)
@@ -502,29 +508,29 @@ type Trigger struct {
 	//
 	// Must match '^[0-9A-Za-z_\-\. \)\(]{1,100}$'. It's in the same namespace as
 	// regular jobs.
-	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Schedule describes when to run this triggering job.
 	//
 	// See Job.schedule for more info. Default is "with 30s interval".
-	Schedule string `protobuf:"bytes,2,opt,name=schedule" json:"schedule,omitempty"`
+	Schedule string `protobuf:"bytes,2,opt,name=schedule,proto3" json:"schedule,omitempty"`
 	// Disabled is true to disable this job.
 	//
 	// Se Job.disabled for more info.
-	Disabled bool `protobuf:"varint,3,opt,name=disabled" json:"disabled,omitempty"`
+	Disabled bool `protobuf:"varint,3,opt,name=disabled,proto3" json:"disabled,omitempty"`
 	// ACLs, see Job.acls and Job.acl_sets.
-	Acls    []*Acl   `protobuf:"bytes,4,rep,name=acls" json:"acls,omitempty"`
-	AclSets []string `protobuf:"bytes,5,rep,name=acl_sets,json=aclSets" json:"acl_sets,omitempty"`
+	Acls    []*Acl   `protobuf:"bytes,4,rep,name=acls,proto3" json:"acls,omitempty"`
+	AclSets []string `protobuf:"bytes,5,rep,name=acl_sets,json=aclSets,proto3" json:"acl_sets,omitempty"`
 	// TriggeringPolicy defines how job handles incoming triggering events.
 	//
 	// It is rare for a trigger itself to have a non-default triggering policy,
 	// so most likely you should not touch this field.
-	TriggeringPolicy *TriggeringPolicy `protobuf:"bytes,6,opt,name=triggering_policy,json=triggeringPolicy" json:"triggering_policy,omitempty"`
+	TriggeringPolicy *TriggeringPolicy `protobuf:"bytes,6,opt,name=triggering_policy,json=triggeringPolicy,proto3" json:"triggering_policy,omitempty"`
 	// Triggers are IDs of jobs triggered by this trigger.
-	Triggers []string `protobuf:"bytes,200,rep,name=triggers" json:"triggers,omitempty"`
+	Triggers []string `protobuf:"bytes,200,rep,name=triggers,proto3" json:"triggers,omitempty"`
 	// Noop is used for testing. It is "do nothing" trigger.
-	Noop *NoopTask `protobuf:"bytes,100,opt,name=noop" json:"noop,omitempty"`
+	Noop *NoopTask `protobuf:"bytes,100,opt,name=noop,proto3" json:"noop,omitempty"`
 	// Gitiles is used to trigger jobs for new commits on Gitiles.
-	Gitiles              *GitilesTask `protobuf:"bytes,101,opt,name=gitiles" json:"gitiles,omitempty"`
+	Gitiles              *GitilesTask `protobuf:"bytes,101,opt,name=gitiles,proto3" json:"gitiles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}     `json:"-"`
 	XXX_unrecognized     []byte       `json:"-"`
 	XXX_sizecache        int32        `json:"-"`
@@ -534,7 +540,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{5}
+	return fileDescriptor_3b38e5823bccf1c5, []int{5}
 }
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
@@ -542,8 +548,8 @@ func (m *Trigger) XXX_Unmarshal(b []byte) error {
 func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
 }
-func (dst *Trigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Trigger.Merge(dst, src)
+func (m *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(m, src)
 }
 func (m *Trigger) XXX_Size() int {
 	return xxx_messageInfo_Trigger.Size(m)
@@ -620,8 +626,8 @@ func (m *Trigger) GetGitiles() *GitilesTask {
 // NoopTask is used for testing. It is a "do nothing" task that can emit fake
 // triggers.
 type NoopTask struct {
-	SleepMs              int64    `protobuf:"varint,1,opt,name=sleep_ms,json=sleepMs" json:"sleep_ms,omitempty"`
-	TriggersCount        int64    `protobuf:"varint,2,opt,name=triggers_count,json=triggersCount" json:"triggers_count,omitempty"`
+	SleepMs              int64    `protobuf:"varint,1,opt,name=sleep_ms,json=sleepMs,proto3" json:"sleep_ms,omitempty"`
+	TriggersCount        int64    `protobuf:"varint,2,opt,name=triggers_count,json=triggersCount,proto3" json:"triggers_count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -631,7 +637,7 @@ func (m *NoopTask) Reset()         { *m = NoopTask{} }
 func (m *NoopTask) String() string { return proto.CompactTextString(m) }
 func (*NoopTask) ProtoMessage()    {}
 func (*NoopTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{6}
+	return fileDescriptor_3b38e5823bccf1c5, []int{6}
 }
 func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTask.Unmarshal(m, b)
@@ -639,8 +645,8 @@ func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 func (m *NoopTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NoopTask.Marshal(b, m, deterministic)
 }
-func (dst *NoopTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NoopTask.Merge(dst, src)
+func (m *NoopTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NoopTask.Merge(m, src)
 }
 func (m *NoopTask) XXX_Size() int {
 	return xxx_messageInfo_NoopTask.Size(m)
@@ -673,7 +679,7 @@ func (m *NoopTask) GetTriggersCount() int64 {
 //  * a ref has just been created.
 type GitilesTask struct {
 	// Repo is the URL of the Gitiles repository.
-	Repo string `protobuf:"bytes,1,opt,name=repo" json:"repo,omitempty"`
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
 	// Refs is a list of Git references to track.
 	//
 	// Each ref can be either:
@@ -685,7 +691,7 @@ type GitilesTask struct {
 	//    the literal prefix "refs/release-" contains only one slash. The regexp
 	//    should not start with ^ or end with $ as they will be added
 	//    automatically.
-	Refs                 []string `protobuf:"bytes,2,rep,name=refs" json:"refs,omitempty"`
+	Refs                 []string `protobuf:"bytes,2,rep,name=refs,proto3" json:"refs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -695,7 +701,7 @@ func (m *GitilesTask) Reset()         { *m = GitilesTask{} }
 func (m *GitilesTask) String() string { return proto.CompactTextString(m) }
 func (*GitilesTask) ProtoMessage()    {}
 func (*GitilesTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{7}
+	return fileDescriptor_3b38e5823bccf1c5, []int{7}
 }
 func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTask.Unmarshal(m, b)
@@ -703,8 +709,8 @@ func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 func (m *GitilesTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GitilesTask.Marshal(b, m, deterministic)
 }
-func (dst *GitilesTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GitilesTask.Merge(dst, src)
+func (m *GitilesTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesTask.Merge(m, src)
 }
 func (m *GitilesTask) XXX_Size() int {
 	return xxx_messageInfo_GitilesTask.Size(m)
@@ -732,11 +738,11 @@ func (m *GitilesTask) GetRefs() []string {
 // UrlFetchTask specifies parameters for simple HTTP call.
 type UrlFetchTask struct {
 	// Method is HTTP method to use, such as "GET" or "POST". Default is "GET".
-	Method string `protobuf:"bytes,1,opt,name=method" json:"method,omitempty"`
+	Method string `protobuf:"bytes,1,opt,name=method,proto3" json:"method,omitempty"`
 	// Url to send the request to.
-	Url string `protobuf:"bytes,2,opt,name=url" json:"url,omitempty"`
+	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
 	// Timeout is how long to wait for request to complete. Default is 60 sec.
-	TimeoutSec           int32    `protobuf:"varint,3,opt,name=timeout_sec,json=timeoutSec" json:"timeout_sec,omitempty"`
+	TimeoutSec           int32    `protobuf:"varint,3,opt,name=timeout_sec,json=timeoutSec,proto3" json:"timeout_sec,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -746,7 +752,7 @@ func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()    {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{8}
+	return fileDescriptor_3b38e5823bccf1c5, []int{8}
 }
 func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UrlFetchTask.Unmarshal(m, b)
@@ -754,8 +760,8 @@ func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 func (m *UrlFetchTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UrlFetchTask.Marshal(b, m, deterministic)
 }
-func (dst *UrlFetchTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UrlFetchTask.Merge(dst, src)
+func (m *UrlFetchTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UrlFetchTask.Merge(m, src)
 }
 func (m *UrlFetchTask) XXX_Size() int {
 	return xxx_messageInfo_UrlFetchTask.Size(m)
@@ -791,16 +797,16 @@ func (m *UrlFetchTask) GetTimeoutSec() int32 {
 type BuildbucketTask struct {
 	// Server is hostname of the buildbucket service to use.
 	// Typically, "cr-buildbucket.appspot.com".
-	Server string `protobuf:"bytes,1,opt,name=server" json:"server,omitempty"`
+	Server string `protobuf:"bytes,1,opt,name=server,proto3" json:"server,omitempty"`
 	// Bucket defines what bucket to add the task to.
-	Bucket string `protobuf:"bytes,2,opt,name=bucket" json:"bucket,omitempty"`
+	Bucket string `protobuf:"bytes,2,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// Builder defines what to run.
-	Builder string `protobuf:"bytes,3,opt,name=builder" json:"builder,omitempty"`
+	Builder string `protobuf:"bytes,3,opt,name=builder,proto3" json:"builder,omitempty"`
 	// Properties is arbitrary "key:value" pairs describing the task.
 	// TODO(tandrii): which properties will be overridden if triggered?
-	Properties []string `protobuf:"bytes,4,rep,name=properties" json:"properties,omitempty"`
+	Properties []string `protobuf:"bytes,4,rep,name=properties,proto3" json:"properties,omitempty"`
 	// Tags is a list of tags (as "key:value" pairs) to assign to the task.
-	Tags                 []string `protobuf:"bytes,5,rep,name=tags" json:"tags,omitempty"`
+	Tags                 []string `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -810,7 +816,7 @@ func (m *BuildbucketTask) Reset()         { *m = BuildbucketTask{} }
 func (m *BuildbucketTask) String() string { return proto.CompactTextString(m) }
 func (*BuildbucketTask) ProtoMessage()    {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{9}
+	return fileDescriptor_3b38e5823bccf1c5, []int{9}
 }
 func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTask.Unmarshal(m, b)
@@ -818,8 +824,8 @@ func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 func (m *BuildbucketTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbucketTask.Marshal(b, m, deterministic)
 }
-func (dst *BuildbucketTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbucketTask.Merge(dst, src)
+func (m *BuildbucketTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbucketTask.Merge(m, src)
 }
 func (m *BuildbucketTask) XXX_Size() int {
 	return xxx_messageInfo_BuildbucketTask.Size(m)
@@ -869,10 +875,10 @@ func (m *BuildbucketTask) GetTags() []string {
 //
 // It is used internally when storing jobs in the datastore.
 type TaskDefWrapper struct {
-	Noop                 *NoopTask        `protobuf:"bytes,1,opt,name=noop" json:"noop,omitempty"`
-	UrlFetch             *UrlFetchTask    `protobuf:"bytes,2,opt,name=url_fetch,json=urlFetch" json:"url_fetch,omitempty"`
-	Buildbucket          *BuildbucketTask `protobuf:"bytes,4,opt,name=buildbucket" json:"buildbucket,omitempty"`
-	Gitiles              *GitilesTask     `protobuf:"bytes,5,opt,name=gitiles" json:"gitiles,omitempty"`
+	Noop                 *NoopTask        `protobuf:"bytes,1,opt,name=noop,proto3" json:"noop,omitempty"`
+	UrlFetch             *UrlFetchTask    `protobuf:"bytes,2,opt,name=url_fetch,json=urlFetch,proto3" json:"url_fetch,omitempty"`
+	Buildbucket          *BuildbucketTask `protobuf:"bytes,4,opt,name=buildbucket,proto3" json:"buildbucket,omitempty"`
+	Gitiles              *GitilesTask     `protobuf:"bytes,5,opt,name=gitiles,proto3" json:"gitiles,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -882,7 +888,7 @@ func (m *TaskDefWrapper) Reset()         { *m = TaskDefWrapper{} }
 func (m *TaskDefWrapper) String() string { return proto.CompactTextString(m) }
 func (*TaskDefWrapper) ProtoMessage()    {}
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_config_51531dfbd482858e, []int{10}
+	return fileDescriptor_3b38e5823bccf1c5, []int{10}
 }
 func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TaskDefWrapper.Unmarshal(m, b)
@@ -890,8 +896,8 @@ func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 func (m *TaskDefWrapper) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TaskDefWrapper.Marshal(b, m, deterministic)
 }
-func (dst *TaskDefWrapper) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TaskDefWrapper.Merge(dst, src)
+func (m *TaskDefWrapper) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TaskDefWrapper.Merge(m, src)
 }
 func (m *TaskDefWrapper) XXX_Size() int {
 	return xxx_messageInfo_TaskDefWrapper.Size(m)
@@ -947,10 +953,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_config_51531dfbd482858e)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_3b38e5823bccf1c5)
 }
 
-var fileDescriptor_config_51531dfbd482858e = []byte{
+var fileDescriptor_3b38e5823bccf1c5 = []byte{
 	// 924 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x6e, 0xdb, 0x36,
 	0x14, 0xae, 0x7e, 0x6c, 0xcb, 0x27, 0x4d, 0xaa, 0x71, 0xeb, 0xa0, 0x66, 0x68, 0xe7, 0x09, 0x1b,

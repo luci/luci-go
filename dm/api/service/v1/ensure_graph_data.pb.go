@@ -3,10 +3,12 @@
 
 package dm
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import templateproto "go.chromium.org/luci/common/data/text/templateproto"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	templateproto "go.chromium.org/luci/common/data/text/templateproto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,15 +23,15 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type TemplateInstantiation struct {
 	// project is the luci-config project which defines the template.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// ref is the git ref of the project that defined this template. If omitted,
 	// this will use the template definition from the project-wide configuration
 	// and not the configuration located on a particular ref (like
 	// 'refs/heads/master').
-	Ref string `protobuf:"bytes,2,opt,name=ref" json:"ref,omitempty"`
+	Ref string `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
 	// specifier specifies the actual template name, as well as any substitution
 	// parameters which that template might require.
-	Specifier            *templateproto.Specifier `protobuf:"bytes,4,opt,name=specifier" json:"specifier,omitempty"`
+	Specifier            *templateproto.Specifier `protobuf:"bytes,4,opt,name=specifier,proto3" json:"specifier,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -39,7 +41,7 @@ func (m *TemplateInstantiation) Reset()         { *m = TemplateInstantiation{} }
 func (m *TemplateInstantiation) String() string { return proto.CompactTextString(m) }
 func (*TemplateInstantiation) ProtoMessage()    {}
 func (*TemplateInstantiation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{0}
+	return fileDescriptor_d2be8364c35d3177, []int{0}
 }
 func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TemplateInstantiation.Unmarshal(m, b)
@@ -47,8 +49,8 @@ func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
 func (m *TemplateInstantiation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TemplateInstantiation.Marshal(b, m, deterministic)
 }
-func (dst *TemplateInstantiation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TemplateInstantiation.Merge(dst, src)
+func (m *TemplateInstantiation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TemplateInstantiation.Merge(m, src)
 }
 func (m *TemplateInstantiation) XXX_Size() int {
 	return xxx_messageInfo_TemplateInstantiation.Size(m)
@@ -108,23 +110,23 @@ func (m *TemplateInstantiation) GetSpecifier() *templateproto.Specifier {
 type EnsureGraphDataReq struct {
 	// Quest is a list of quest descriptors. DM will ensure that the
 	// corresponding Quests exist. If they don't, they'll be created.
-	Quest []*Quest_Desc `protobuf:"bytes,1,rep,name=quest" json:"quest,omitempty"`
+	Quest []*Quest_Desc `protobuf:"bytes,1,rep,name=quest,proto3" json:"quest,omitempty"`
 	// QuestAttempt allows the addition of attempts which are derived from
 	// the quest bodies provided above.
 	// Each entry here maps 1:1 with the equivalent quest.
-	QuestAttempt []*AttemptList_Nums `protobuf:"bytes,2,rep,name=quest_attempt,json=questAttempt" json:"quest_attempt,omitempty"`
+	QuestAttempt []*AttemptList_Nums `protobuf:"bytes,2,rep,name=quest_attempt,json=questAttempt,proto3" json:"quest_attempt,omitempty"`
 	// TemplateQuest allows the addition of quests which are derived from
 	// Templates, as defined on a per-project basis.
-	TemplateQuest []*TemplateInstantiation `protobuf:"bytes,3,rep,name=template_quest,json=templateQuest" json:"template_quest,omitempty"`
+	TemplateQuest []*TemplateInstantiation `protobuf:"bytes,3,rep,name=template_quest,json=templateQuest,proto3" json:"template_quest,omitempty"`
 	// TemplateAttempt allows the addition of attempts which are derived from
 	// Templates. This must be equal in length to template_quest.
 	// Each entry here maps 1:1 with the equivalent quest in template_quest.
-	TemplateAttempt []*AttemptList_Nums `protobuf:"bytes,4,rep,name=template_attempt,json=templateAttempt" json:"template_attempt,omitempty"`
+	TemplateAttempt []*AttemptList_Nums `protobuf:"bytes,4,rep,name=template_attempt,json=templateAttempt,proto3" json:"template_attempt,omitempty"`
 	// RawAttempts is a list that asserts that the following attempts should
 	// exist. The quest ids in this list must be already-known to DM, NOT
 	// included in the quest field above. This is useful when you know the ID of
 	// the Quest, but not the actual definition of the quest.
-	RawAttempts *AttemptList `protobuf:"bytes,5,opt,name=raw_attempts,json=rawAttempts" json:"raw_attempts,omitempty"`
+	RawAttempts *AttemptList `protobuf:"bytes,5,opt,name=raw_attempts,json=rawAttempts,proto3" json:"raw_attempts,omitempty"`
 	// ForExecution is an authentication pair (Execution_ID, Token).
 	//
 	// If this is provided then it will serve as authorization for the creation of
@@ -134,9 +136,9 @@ type EnsureGraphDataReq struct {
 	// If this omitted, then the request requires some user/bot authentication,
 	// and any quests/attempts provided will be made standalone (e.g. nothing will
 	// depend on them).
-	ForExecution         *Execution_Auth             `protobuf:"bytes,6,opt,name=for_execution,json=forExecution" json:"for_execution,omitempty"`
-	Limit                *EnsureGraphDataReq_Limit   `protobuf:"bytes,7,opt,name=limit" json:"limit,omitempty"`
-	Include              *EnsureGraphDataReq_Include `protobuf:"bytes,8,opt,name=include" json:"include,omitempty"`
+	ForExecution         *Execution_Auth             `protobuf:"bytes,6,opt,name=for_execution,json=forExecution,proto3" json:"for_execution,omitempty"`
+	Limit                *EnsureGraphDataReq_Limit   `protobuf:"bytes,7,opt,name=limit,proto3" json:"limit,omitempty"`
+	Include              *EnsureGraphDataReq_Include `protobuf:"bytes,8,opt,name=include,proto3" json:"include,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -146,7 +148,7 @@ func (m *EnsureGraphDataReq) Reset()         { *m = EnsureGraphDataReq{} }
 func (m *EnsureGraphDataReq) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq) ProtoMessage()    {}
 func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1}
+	return fileDescriptor_d2be8364c35d3177, []int{1}
 }
 func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq.Unmarshal(m, b)
@@ -154,8 +156,8 @@ func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq.Marshal(b, m, deterministic)
 }
-func (dst *EnsureGraphDataReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq.Merge(dst, src)
+func (m *EnsureGraphDataReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq.Merge(m, src)
 }
 func (m *EnsureGraphDataReq) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq.Size(m)
@@ -230,7 +232,7 @@ type EnsureGraphDataReq_Limit struct {
 	//
 	// If this limit is 0, a default limit of 16MB will be used. If this limit
 	// exceeds 30MB, it will be reduced to 30MB.
-	MaxDataSize          uint32   `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize" json:"max_data_size,omitempty"`
+	MaxDataSize          uint32   `protobuf:"varint,3,opt,name=max_data_size,json=maxDataSize,proto3" json:"max_data_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -240,7 +242,7 @@ func (m *EnsureGraphDataReq_Limit) Reset()         { *m = EnsureGraphDataReq_Lim
 func (m *EnsureGraphDataReq_Limit) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Limit) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 0}
+	return fileDescriptor_d2be8364c35d3177, []int{1, 0}
 }
 func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Unmarshal(m, b)
@@ -248,8 +250,8 @@ func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Limit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Marshal(b, m, deterministic)
 }
-func (dst *EnsureGraphDataReq_Limit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Limit.Merge(dst, src)
+func (m *EnsureGraphDataReq_Limit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Limit.Merge(m, src)
 }
 func (m *EnsureGraphDataReq_Limit) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Size(m)
@@ -268,7 +270,7 @@ func (m *EnsureGraphDataReq_Limit) GetMaxDataSize() uint32 {
 }
 
 type EnsureGraphDataReq_Include struct {
-	Attempt              *EnsureGraphDataReq_Include_Options `protobuf:"bytes,4,opt,name=attempt" json:"attempt,omitempty"`
+	Attempt              *EnsureGraphDataReq_Include_Options `protobuf:"bytes,4,opt,name=attempt,proto3" json:"attempt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                            `json:"-"`
 	XXX_unrecognized     []byte                              `json:"-"`
 	XXX_sizecache        int32                               `json:"-"`
@@ -278,7 +280,7 @@ func (m *EnsureGraphDataReq_Include) Reset()         { *m = EnsureGraphDataReq_I
 func (m *EnsureGraphDataReq_Include) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1}
+	return fileDescriptor_d2be8364c35d3177, []int{1, 1}
 }
 func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Unmarshal(m, b)
@@ -286,8 +288,8 @@ func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Include) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Marshal(b, m, deterministic)
 }
-func (dst *EnsureGraphDataReq_Include) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Include.Merge(dst, src)
+func (m *EnsureGraphDataReq_Include) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include.Merge(m, src)
 }
 func (m *EnsureGraphDataReq_Include) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Size(m)
@@ -307,7 +309,7 @@ func (m *EnsureGraphDataReq_Include) GetAttempt() *EnsureGraphDataReq_Include_Op
 
 type EnsureGraphDataReq_Include_Options struct {
 	// Instructs finished objects to include the Result field.
-	Result               bool     `protobuf:"varint,3,opt,name=result" json:"result,omitempty"`
+	Result               bool     `protobuf:"varint,3,opt,name=result,proto3" json:"result,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -317,7 +319,7 @@ func (m *EnsureGraphDataReq_Include_Options) Reset()         { *m = EnsureGraphD
 func (m *EnsureGraphDataReq_Include_Options) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include_Options) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1, 0}
+	return fileDescriptor_d2be8364c35d3177, []int{1, 1, 0}
 }
 func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Unmarshal(m, b)
@@ -325,8 +327,8 @@ func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Include_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Marshal(b, m, deterministic)
 }
-func (dst *EnsureGraphDataReq_Include_Options) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Include_Options.Merge(dst, src)
+func (m *EnsureGraphDataReq_Include_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include_Options.Merge(m, src)
 }
 func (m *EnsureGraphDataReq_Include_Options) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Size(m)
@@ -358,18 +360,18 @@ type EnsureGraphDataRsp struct {
 	// errors will be located in `template_error`. If all of the templates parsed
 	// successfully, the quest ids for those rendered `template_quest` will be in
 	// `template_ids`.
-	Accepted bool `protobuf:"varint,1,opt,name=accepted" json:"accepted,omitempty"`
+	Accepted bool `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
 	// quest_ids will be populated with the Quest.IDs of any quests defined
 	// by quest in the initial request. Its length is guaranteed to match
 	// the length of quest, if there were no errors.
-	QuestIds []*Quest_ID `protobuf:"bytes,2,rep,name=quest_ids,json=questIds" json:"quest_ids,omitempty"`
+	QuestIds []*Quest_ID `protobuf:"bytes,2,rep,name=quest_ids,json=questIds,proto3" json:"quest_ids,omitempty"`
 	// template_ids will be populated with the Quest.IDs of any templates defined
 	// by template_quest in the initial request. Its length is guaranteed to match
 	// the length of template_quest, if there were no errors.
-	TemplateIds []*Quest_ID `protobuf:"bytes,3,rep,name=template_ids,json=templateIds" json:"template_ids,omitempty"`
+	TemplateIds []*Quest_ID `protobuf:"bytes,3,rep,name=template_ids,json=templateIds,proto3" json:"template_ids,omitempty"`
 	// template_error is either empty if there were no template errors, or the
 	// length of template_quest. Non-empty strings are errors.
-	TemplateError []string `protobuf:"bytes,4,rep,name=template_error,json=templateError" json:"template_error,omitempty"`
+	TemplateError []string `protobuf:"bytes,4,rep,name=template_error,json=templateError,proto3" json:"template_error,omitempty"`
 	// result holds the graph data pertaining to the request, containing any
 	// graph state that already existed at the time of the call. Any new data
 	// that was added to the graph state (accepted==true) will appear with
@@ -387,7 +389,7 @@ type EnsureGraphDataRsp struct {
 	//     contain their current state. If Include.AttemptResult was true, the
 	//     results will be populated (with the size limit mentioned in the request
 	//     documentation).
-	Result *GraphData `protobuf:"bytes,5,opt,name=result" json:"result,omitempty"`
+	Result *GraphData `protobuf:"bytes,5,opt,name=result,proto3" json:"result,omitempty"`
 	// (if `for_execution` was specified) ShouldHalt indicates that the request
 	// was accepted by DM, and the execution should halt (DM will re-execute the
 	// Attempt when it becomes unblocked). If this is true, then the execution's
@@ -395,7 +397,7 @@ type EnsureGraphDataRsp struct {
 	//
 	// If `for_execution` was provided in the request and this is false, it means
 	// that the execution may continue executing.
-	ShouldHalt           bool     `protobuf:"varint,6,opt,name=should_halt,json=shouldHalt" json:"should_halt,omitempty"`
+	ShouldHalt           bool     `protobuf:"varint,6,opt,name=should_halt,json=shouldHalt,proto3" json:"should_halt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -405,7 +407,7 @@ func (m *EnsureGraphDataRsp) Reset()         { *m = EnsureGraphDataRsp{} }
 func (m *EnsureGraphDataRsp) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataRsp) ProtoMessage()    {}
 func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{2}
+	return fileDescriptor_d2be8364c35d3177, []int{2}
 }
 func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataRsp.Unmarshal(m, b)
@@ -413,8 +415,8 @@ func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataRsp.Marshal(b, m, deterministic)
 }
-func (dst *EnsureGraphDataRsp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataRsp.Merge(dst, src)
+func (m *EnsureGraphDataRsp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataRsp.Merge(m, src)
 }
 func (m *EnsureGraphDataRsp) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataRsp.Size(m)
@@ -477,10 +479,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor_ensure_graph_data_e53364bc98f83755)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor_d2be8364c35d3177)
 }
 
-var fileDescriptor_ensure_graph_data_e53364bc98f83755 = []byte{
+var fileDescriptor_d2be8364c35d3177 = []byte{
 	// 649 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x55, 0x9a, 0xa4, 0x49, 0xdd, 0x76, 0x8b, 0xac, 0xdf, 0x0f, 0x85, 0x08, 0xc1, 0x54, 0x31,

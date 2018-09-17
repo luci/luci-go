@@ -3,9 +3,11 @@
 
 package tokenserver
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -25,24 +27,24 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // of fancy protobuf ones).
 type TokenFile struct {
 	// Google OAuth2 access token of a machine service account.
-	AccessToken string `protobuf:"bytes,1,opt,name=access_token" json:"access_token,omitempty"`
+	AccessToken string `protobuf:"bytes,1,opt,name=access_token,proto3" json:"access_token,omitempty"`
 	// OAuth2 access token type, usually "Bearer".
-	TokenType string `protobuf:"bytes,2,opt,name=token_type" json:"token_type,omitempty"`
+	TokenType string `protobuf:"bytes,2,opt,name=token_type,proto3" json:"token_type,omitempty"`
 	// Machine token understood by LUCI backends (alternative to access_token).
-	LuciMachineToken string `protobuf:"bytes,3,opt,name=luci_machine_token" json:"luci_machine_token,omitempty"`
+	LuciMachineToken string `protobuf:"bytes,3,opt,name=luci_machine_token,proto3" json:"luci_machine_token,omitempty"`
 	// Unix timestamp (in seconds) when this token expires.
 	//
 	// The token file is expected to be updated before the token expires, see
 	// 'next_update' for next expected update time.
-	Expiry int64 `protobuf:"varint,4,opt,name=expiry" json:"expiry,omitempty"`
+	Expiry int64 `protobuf:"varint,4,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	// Unix timestamp of when this file was updated the last time.
-	LastUpdate int64 `protobuf:"varint,5,opt,name=last_update" json:"last_update,omitempty"`
+	LastUpdate int64 `protobuf:"varint,5,opt,name=last_update,proto3" json:"last_update,omitempty"`
 	// Unix timestamp of when this file is expected to be updated next time.
-	NextUpdate int64 `protobuf:"varint,6,opt,name=next_update" json:"next_update,omitempty"`
+	NextUpdate int64 `protobuf:"varint,6,opt,name=next_update,proto3" json:"next_update,omitempty"`
 	// Email of the associated service account.
-	ServiceAccountEmail string `protobuf:"bytes,7,opt,name=service_account_email" json:"service_account_email,omitempty"`
+	ServiceAccountEmail string `protobuf:"bytes,7,opt,name=service_account_email,proto3" json:"service_account_email,omitempty"`
 	// Unique stable ID of the associated service account.
-	ServiceAccountUniqueId string `protobuf:"bytes,8,opt,name=service_account_unique_id" json:"service_account_unique_id,omitempty"`
+	ServiceAccountUniqueId string `protobuf:"bytes,8,opt,name=service_account_unique_id,proto3" json:"service_account_unique_id,omitempty"`
 	// Any information tokend daemon wishes to associate with the token.
 	//
 	// Consumers of the token file should ignore this field. It is used
@@ -57,7 +59,7 @@ func (m *TokenFile) Reset()         { *m = TokenFile{} }
 func (m *TokenFile) String() string { return proto.CompactTextString(m) }
 func (*TokenFile) ProtoMessage()    {}
 func (*TokenFile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_file_ce0c8711b61c4342, []int{0}
+	return fileDescriptor_dd87c4ba28a039f0, []int{0}
 }
 func (m *TokenFile) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TokenFile.Unmarshal(m, b)
@@ -65,8 +67,8 @@ func (m *TokenFile) XXX_Unmarshal(b []byte) error {
 func (m *TokenFile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TokenFile.Marshal(b, m, deterministic)
 }
-func (dst *TokenFile) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TokenFile.Merge(dst, src)
+func (m *TokenFile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenFile.Merge(m, src)
 }
 func (m *TokenFile) XXX_Size() int {
 	return xxx_messageInfo_TokenFile.Size(m)
@@ -145,10 +147,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/token_file.proto", fileDescriptor_token_file_ce0c8711b61c4342)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/token_file.proto", fileDescriptor_dd87c4ba28a039f0)
 }
 
-var fileDescriptor_token_file_ce0c8711b61c4342 = []byte{
+var fileDescriptor_dd87c4ba28a039f0 = []byte{
 	// 260 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x91, 0xcd, 0x4e, 0xc3, 0x30,
 	0x10, 0x84, 0x95, 0x16, 0x02, 0xdd, 0xf6, 0x64, 0x09, 0x64, 0x2e, 0x28, 0xea, 0x29, 0xa7, 0x44,

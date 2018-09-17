@@ -3,9 +3,11 @@
 
 package logdog
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // LogStreamState is the log stream state value communicated to services.
 type LogStreamState struct {
 	// ProtoVersion is the protobuf version for this stream.
-	ProtoVersion string `protobuf:"bytes,1,opt,name=proto_version,json=protoVersion" json:"proto_version,omitempty"`
+	ProtoVersion string `protobuf:"bytes,1,opt,name=proto_version,json=protoVersion,proto3" json:"proto_version,omitempty"`
 	// The log stream's secret.
 	//
 	// Note that the secret is returned! This is okay, since this endpoint is only
@@ -31,11 +33,11 @@ type LogStreamState struct {
 	Secret []byte `protobuf:"bytes,2,opt,name=secret,proto3" json:"secret,omitempty"`
 	// The stream index of the log stream's terminal message. If the value is -1,
 	// the log is still streaming.
-	TerminalIndex int64 `protobuf:"varint,3,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
+	TerminalIndex int64 `protobuf:"varint,3,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	// If the log stream has been archived.
-	Archived bool `protobuf:"varint,4,opt,name=archived" json:"archived,omitempty"`
+	Archived bool `protobuf:"varint,4,opt,name=archived,proto3" json:"archived,omitempty"`
 	// If the log stream has been purged.
-	Purged               bool     `protobuf:"varint,5,opt,name=purged" json:"purged,omitempty"`
+	Purged               bool     `protobuf:"varint,5,opt,name=purged,proto3" json:"purged,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -45,7 +47,7 @@ func (m *LogStreamState) Reset()         { *m = LogStreamState{} }
 func (m *LogStreamState) String() string { return proto.CompactTextString(m) }
 func (*LogStreamState) ProtoMessage()    {}
 func (*LogStreamState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_state_a9d912265b015cb7, []int{0}
+	return fileDescriptor_aa585312e55e4e16, []int{0}
 }
 func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamState.Unmarshal(m, b)
@@ -53,8 +55,8 @@ func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
 func (m *LogStreamState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogStreamState.Marshal(b, m, deterministic)
 }
-func (dst *LogStreamState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogStreamState.Merge(dst, src)
+func (m *LogStreamState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState.Merge(m, src)
 }
 func (m *LogStreamState) XXX_Size() int {
 	return xxx_messageInfo_LogStreamState.Size(m)
@@ -105,10 +107,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.proto", fileDescriptor_state_a9d912265b015cb7)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/state.proto", fileDescriptor_aa585312e55e4e16)
 }
 
-var fileDescriptor_state_a9d912265b015cb7 = []byte{
+var fileDescriptor_aa585312e55e4e16 = []byte{
 	// 222 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xc1, 0x4a, 0xc4, 0x30,
 	0x10, 0x40, 0x89, 0xab, 0x65, 0x0d, 0xbb, 0x7b, 0xc8, 0x41, 0x82, 0xa7, 0xa2, 0x08, 0x3d, 0x35,

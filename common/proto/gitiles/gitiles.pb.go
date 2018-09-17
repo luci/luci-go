@@ -5,10 +5,12 @@ package gitiles
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import git "go.chromium.org/luci/common/proto/git"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	git "go.chromium.org/luci/common/proto/git"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -31,7 +33,7 @@ type LogRequest struct {
 	// Gitiles project, e.g. "chromium/src" part in
 	// https://chromium.googlesource.com/chromium/src/+/master
 	// Required.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The commit where to start the listing from.
 	// The value can be:
 	//   - a git revision as 40-char string or its prefix so long as its unique in repo.
@@ -39,7 +41,7 @@ type LogRequest struct {
 	//   - a ref defined as n-th parent of R in the form "R~n".
 	//     For example, "master~2" or "deadbeef~1".
 	// Required.
-	Committish string `protobuf:"bytes,3,opt,name=committish" json:"committish,omitempty"`
+	Committish string `protobuf:"bytes,3,opt,name=committish,proto3" json:"committish,omitempty"`
 	// If specified, only commits not reachable from this commit (inclusive)
 	// will be returned.
 	//
@@ -58,13 +60,13 @@ type LogRequest struct {
 	// calling Log(committish='refs/heads/release',
 	//             exclude_ancestors_of='refs/heads/master')
 	// will return ['Z', Y', 'X'].
-	ExcludeAncestorsOf string `protobuf:"bytes,2,opt,name=exclude_ancestors_of,json=excludeAncestorsOf" json:"exclude_ancestors_of,omitempty"`
+	ExcludeAncestorsOf string `protobuf:"bytes,2,opt,name=exclude_ancestors_of,json=excludeAncestorsOf,proto3" json:"exclude_ancestors_of,omitempty"`
 	// If true, include tree diff in commits.
-	TreeDiff bool `protobuf:"varint,4,opt,name=tree_diff,json=treeDiff" json:"tree_diff,omitempty"`
+	TreeDiff bool `protobuf:"varint,4,opt,name=tree_diff,json=treeDiff,proto3" json:"tree_diff,omitempty"`
 	// Value of next_page_token in LogResponse to continue.
-	PageToken string `protobuf:"bytes,10,opt,name=page_token,json=pageToken" json:"page_token,omitempty"`
+	PageToken string `protobuf:"bytes,10,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// If > 0, number of commits to retrieve.
-	PageSize             int32    `protobuf:"varint,11,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize             int32    `protobuf:"varint,11,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -74,7 +76,7 @@ func (m *LogRequest) Reset()         { *m = LogRequest{} }
 func (m *LogRequest) String() string { return proto.CompactTextString(m) }
 func (*LogRequest) ProtoMessage()    {}
 func (*LogRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{0}
+	return fileDescriptor_4cdf9f15dd6bc12a, []int{0}
 }
 func (m *LogRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogRequest.Unmarshal(m, b)
@@ -82,8 +84,8 @@ func (m *LogRequest) XXX_Unmarshal(b []byte) error {
 func (m *LogRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogRequest.Marshal(b, m, deterministic)
 }
-func (dst *LogRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogRequest.Merge(dst, src)
+func (m *LogRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogRequest.Merge(m, src)
 }
 func (m *LogRequest) XXX_Size() int {
 	return xxx_messageInfo_LogRequest.Size(m)
@@ -139,9 +141,9 @@ func (m *LogRequest) GetPageSize() int32 {
 // LogRequest is response message for Gitiles.Log rpc.
 type LogResponse struct {
 	// Retrieved commits.
-	Log []*git.Commit `protobuf:"bytes,1,rep,name=log" json:"log,omitempty"`
+	Log []*git.Commit `protobuf:"bytes,1,rep,name=log,proto3" json:"log,omitempty"`
 	// A page token for next LogRequest to fetch next page of commits.
-	NextPageToken        string   `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken" json:"next_page_token,omitempty"`
+	NextPageToken        string   `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -151,7 +153,7 @@ func (m *LogResponse) Reset()         { *m = LogResponse{} }
 func (m *LogResponse) String() string { return proto.CompactTextString(m) }
 func (*LogResponse) ProtoMessage()    {}
 func (*LogResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{1}
+	return fileDescriptor_4cdf9f15dd6bc12a, []int{1}
 }
 func (m *LogResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogResponse.Unmarshal(m, b)
@@ -159,8 +161,8 @@ func (m *LogResponse) XXX_Unmarshal(b []byte) error {
 func (m *LogResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogResponse.Marshal(b, m, deterministic)
 }
-func (dst *LogResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogResponse.Merge(dst, src)
+func (m *LogResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogResponse.Merge(m, src)
 }
 func (m *LogResponse) XXX_Size() int {
 	return xxx_messageInfo_LogResponse.Size(m)
@@ -190,7 +192,7 @@ type RefsRequest struct {
 	// Gitiles project, e.g. "chromium/src" part in
 	// https://chromium.googlesource.com/chromium/src/+/master
 	// Required.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// Limits which refs to resolve to only those matching {refsPath}/*.
 	//
 	// Must be "refs" or start with "refs/".
@@ -212,7 +214,7 @@ type RefsRequest struct {
 	// Since Gerrit allows per-ref ACLs, it is possible that some refs matching
 	// refPrefix would not be present in results because current user isn't granted
 	// read permission on them.
-	RefsPath             string   `protobuf:"bytes,2,opt,name=refs_path,json=refsPath" json:"refs_path,omitempty"`
+	RefsPath             string   `protobuf:"bytes,2,opt,name=refs_path,json=refsPath,proto3" json:"refs_path,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -222,7 +224,7 @@ func (m *RefsRequest) Reset()         { *m = RefsRequest{} }
 func (m *RefsRequest) String() string { return proto.CompactTextString(m) }
 func (*RefsRequest) ProtoMessage()    {}
 func (*RefsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{2}
+	return fileDescriptor_4cdf9f15dd6bc12a, []int{2}
 }
 func (m *RefsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsRequest.Unmarshal(m, b)
@@ -230,8 +232,8 @@ func (m *RefsRequest) XXX_Unmarshal(b []byte) error {
 func (m *RefsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsRequest.Marshal(b, m, deterministic)
 }
-func (dst *RefsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsRequest.Merge(dst, src)
+func (m *RefsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsRequest.Merge(m, src)
 }
 func (m *RefsRequest) XXX_Size() int {
 	return xxx_messageInfo_RefsRequest.Size(m)
@@ -260,7 +262,7 @@ func (m *RefsRequest) GetRefsPath() string {
 type RefsResponse struct {
 	// revisions maps a ref to a revision.
 	// Git branches have keys start with "refs/heads/".
-	Revisions            map[string]string `protobuf:"bytes,2,rep,name=revisions" json:"revisions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Revisions            map[string]string `protobuf:"bytes,2,rep,name=revisions,proto3" json:"revisions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -270,7 +272,7 @@ func (m *RefsResponse) Reset()         { *m = RefsResponse{} }
 func (m *RefsResponse) String() string { return proto.CompactTextString(m) }
 func (*RefsResponse) ProtoMessage()    {}
 func (*RefsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{3}
+	return fileDescriptor_4cdf9f15dd6bc12a, []int{3}
 }
 func (m *RefsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsResponse.Unmarshal(m, b)
@@ -278,8 +280,8 @@ func (m *RefsResponse) XXX_Unmarshal(b []byte) error {
 func (m *RefsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsResponse.Marshal(b, m, deterministic)
 }
-func (dst *RefsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsResponse.Merge(dst, src)
+func (m *RefsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsResponse.Merge(m, src)
 }
 func (m *RefsResponse) XXX_Size() int {
 	return xxx_messageInfo_RefsResponse.Size(m)
@@ -440,10 +442,10 @@ var _Gitiles_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/gitiles/gitiles.proto", fileDescriptor_gitiles_b221f3ba6f31d539)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/gitiles/gitiles.proto", fileDescriptor_4cdf9f15dd6bc12a)
 }
 
-var fileDescriptor_gitiles_b221f3ba6f31d539 = []byte{
+var fileDescriptor_4cdf9f15dd6bc12a = []byte{
 	// 427 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xdd, 0x6a, 0xd4, 0x40,
 	0x14, 0x80, 0x9b, 0x4d, 0xeb, 0xee, 0x9e, 0xf8, 0xc7, 0xb8, 0xc2, 0xb0, 0xa5, 0xb2, 0x04, 0x91,

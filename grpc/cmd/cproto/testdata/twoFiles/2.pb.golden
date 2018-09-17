@@ -5,9 +5,11 @@ package test
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -107,9 +109,9 @@ var _S2_1_serviceDesc = grpc.ServiceDesc{
 	Metadata:    "tmp/2.proto",
 }
 
-func init() { proto.RegisterFile("tmp/2.proto", fileDescriptor_2_f8bfaf21ee050d42) }
+func init() { proto.RegisterFile("tmp/2.proto", fileDescriptor_ff8f45238be6f422) }
 
-var fileDescriptor_2_f8bfaf21ee050d42 = []byte{
+var fileDescriptor_ff8f45238be6f422 = []byte{
 	// 59 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2e, 0xc9, 0x2d, 0xd0,
 	0x37, 0xd2, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x29, 0x49, 0x2d, 0x2e, 0x31, 0x62, 0xe3,
