@@ -677,6 +677,43 @@ func TestHideUnhidePackage(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Package deletion.
+
+func TestDeletePackage(t *testing.T) {
+	t.Parallel()
+
+	Convey("With fakes", t, func() {
+		ctx := gaetesting.TestingContext()
+
+		meta := testutil.MetadataStore{}
+		meta.Populate("", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:root@example.com"},
+				},
+			},
+		})
+		meta.Populate("a", &api.PrefixMetadata{
+			Acls: []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"user:non-root-owner@example.com"},
+				},
+			},
+		})
+
+		impl := repoImpl{meta: &meta}
+
+		Convey("Works", func() {
+			// TODO
+			_ = ctx
+			_ = impl
+		})
+	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
 // Package instance registration and post-registration processing.
 
 func TestRegisterInstance(t *testing.T) {
