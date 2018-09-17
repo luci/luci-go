@@ -493,8 +493,29 @@ func (impl *repoImpl) setPackageHidden(c context.Context, r *api.PackageRequest,
 // Package deletion.
 
 // DeletePackage implements the corresponding RPC method, see the proto doc.
-func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (*empty.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "not implemented yet")
+func (impl *repoImpl) DeletePackage(c context.Context, r *api.PackageRequest) (resp *empty.Empty, err error) {
+	defer func() { err = grpcutil.GRPCifyAndLogErr(c, err) }()
+
+	if err := common.ValidatePackageName(r.Package); err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "bad 'package' - %s", err)
+	}
+
+	// DeletePackage RPC, due to its potential severity, is limited only to
+	// administrators, i.e. OWNERs of the repository root (prefix ""). Before
+	// checking this, make sure the caller can otherwise modify the package at
+	// all, to give a nicer error message if they can't.
+	if _, err := impl.checkRole(c, r.Package, api.Role_OWNER); err != nil {
+		return nil, err
+	}
+	if _, err := impl.checkRole(c, "", api.Role_OWNER); err != nil {
+		if grpc.Code(err) == codes.PermissionDenied {
+			return nil, status.Errorf(codes.PermissionDenied,
+				"package deletion is allowed only to service administrators")
+		}
+		return nil, err
+	}
+
+	return &empty.Empty{}, model.DeletePackage(c, r.Package)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

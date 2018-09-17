@@ -685,6 +685,12 @@ func TestDeletePackage(t *testing.T) {
 	Convey("With fakes", t, func() {
 		ctx := gaetesting.TestingContext()
 
+		as := func(email string) context.Context {
+			return auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:" + email),
+			})
+		}
+
 		meta := testutil.MetadataStore{}
 		meta.Populate("", &api.PrefixMetadata{
 			Acls: []*api.PrefixMetadata_ACL{
@@ -703,12 +709,47 @@ func TestDeletePackage(t *testing.T) {
 			},
 		})
 
+		So(datastore.Put(ctx, &model.Package{Name: "a/b"}), ShouldBeNil)
+		So(model.CheckPackageExists(ctx, "a/b"), ShouldBeNil)
+
 		impl := repoImpl{meta: &meta}
 
 		Convey("Works", func() {
-			// TODO
-			_ = ctx
-			_ = impl
+			_, err := impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
+				Package: "a/b",
+			})
+			So(err, ShouldBeNil)
+
+			// Gone now.
+			So(model.CheckPackageExists(ctx, "a/b"), ShouldNotBeNil)
+
+			_, err = impl.DeletePackage(as("root@example.com"), &api.PackageRequest{
+				Package: "a/b",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			So(err, ShouldErrLike, "no such package")
+		})
+
+		Convey("Only reader or above can see", func() {
+			_, err := impl.DeletePackage(as("someone@example.com"), &api.PackageRequest{
+				Package: "a/b",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+		})
+
+		Convey("Only root owner can delete", func() {
+			_, err := impl.DeletePackage(as("non-root-owner@example.com"), &api.PackageRequest{
+				Package: "a/b",
+			})
+			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+			So(err, ShouldErrLike, "allowed only to service administrators")
+		})
+
+		Convey("Bad package name", func() {
+			_, err := impl.DeletePackage(ctx, &api.PackageRequest{Package: "///"})
+			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+			So(err, ShouldErrLike, "invalid package name")
 		})
 	})
 }
