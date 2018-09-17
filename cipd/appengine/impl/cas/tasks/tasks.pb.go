@@ -3,9 +3,11 @@
 
 package tasks
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // VerifyUpload task verifies data uploaded by a user and closes the upload
 // session based on the result.
 type VerifyUpload struct {
-	UploadOperationId    int64    `protobuf:"varint,1,opt,name=upload_operation_id,json=uploadOperationId" json:"upload_operation_id,omitempty"`
+	UploadOperationId    int64    `protobuf:"varint,1,opt,name=upload_operation_id,json=uploadOperationId,proto3" json:"upload_operation_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -31,7 +33,7 @@ func (m *VerifyUpload) Reset()         { *m = VerifyUpload{} }
 func (m *VerifyUpload) String() string { return proto.CompactTextString(m) }
 func (*VerifyUpload) ProtoMessage()    {}
 func (*VerifyUpload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tasks_8698bfc6090ba75f, []int{0}
+	return fileDescriptor_898f171f35cf6881, []int{0}
 }
 func (m *VerifyUpload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VerifyUpload.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *VerifyUpload) XXX_Unmarshal(b []byte) error {
 func (m *VerifyUpload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_VerifyUpload.Marshal(b, m, deterministic)
 }
-func (dst *VerifyUpload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VerifyUpload.Merge(dst, src)
+func (m *VerifyUpload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VerifyUpload.Merge(m, src)
 }
 func (m *VerifyUpload) XXX_Size() int {
 	return xxx_messageInfo_VerifyUpload.Size(m)
@@ -60,9 +62,9 @@ func (m *VerifyUpload) GetUploadOperationId() int64 {
 
 // CleanupUpload task cleans up garbage after canceled upload.
 type CleanupUpload struct {
-	UploadOperationId    int64    `protobuf:"varint,1,opt,name=upload_operation_id,json=uploadOperationId" json:"upload_operation_id,omitempty"`
-	UploadUrl            string   `protobuf:"bytes,2,opt,name=upload_url,json=uploadUrl" json:"upload_url,omitempty"`
-	PathToCleanup        string   `protobuf:"bytes,3,opt,name=path_to_cleanup,json=pathToCleanup" json:"path_to_cleanup,omitempty"`
+	UploadOperationId    int64    `protobuf:"varint,1,opt,name=upload_operation_id,json=uploadOperationId,proto3" json:"upload_operation_id,omitempty"`
+	UploadUrl            string   `protobuf:"bytes,2,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
+	PathToCleanup        string   `protobuf:"bytes,3,opt,name=path_to_cleanup,json=pathToCleanup,proto3" json:"path_to_cleanup,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -72,7 +74,7 @@ func (m *CleanupUpload) Reset()         { *m = CleanupUpload{} }
 func (m *CleanupUpload) String() string { return proto.CompactTextString(m) }
 func (*CleanupUpload) ProtoMessage()    {}
 func (*CleanupUpload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_tasks_8698bfc6090ba75f, []int{1}
+	return fileDescriptor_898f171f35cf6881, []int{1}
 }
 func (m *CleanupUpload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CleanupUpload.Unmarshal(m, b)
@@ -80,8 +82,8 @@ func (m *CleanupUpload) XXX_Unmarshal(b []byte) error {
 func (m *CleanupUpload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CleanupUpload.Marshal(b, m, deterministic)
 }
-func (dst *CleanupUpload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CleanupUpload.Merge(dst, src)
+func (m *CleanupUpload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CleanupUpload.Merge(m, src)
 }
 func (m *CleanupUpload) XXX_Size() int {
 	return xxx_messageInfo_CleanupUpload.Size(m)
@@ -119,10 +121,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/cas/tasks/tasks.proto", fileDescriptor_tasks_8698bfc6090ba75f)
+	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/cas/tasks/tasks.proto", fileDescriptor_898f171f35cf6881)
 }
 
-var fileDescriptor_tasks_8698bfc6090ba75f = []byte{
+var fileDescriptor_898f171f35cf6881 = []byte{
 	// 205 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4b, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
