@@ -3,20 +3,19 @@
     "oauth2": {
       "scopes": {
         "https://www.googleapis.com/auth/userinfo.email": {
-          "description": "View your email address"
+          "description": "https://www.googleapis.com/auth/userinfo.email"
         }
       }
     }
   },
-  "basePath": "/_ah/api/config/v1/",
-  "baseUrl": "https://luci-config.appspot.com/_ah/api/config/v1/",
+  "basePath": "/_ah/api/config/v1",
+  "baseUrl": "https://luci-config.appspot.com/_ah/api/config/v1",
   "batchPath": "batch",
   "description": "API to access configurations.",
   "discoveryVersion": "v1",
-  "etag": "\"hf84vk5HeqXKpApUTgMOcmfTP8c/MgZFSu1-nDtJHlnjTN4o9LuqeiM\"",
   "icons": {
-    "x16": "https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png",
-    "x32": "https://www.gstatic.com/images/branding/product/1x/googleg_32dp.png"
+    "x16": "https://www.google.com/images/icons/product/search-16.gif",
+    "x32": "https://www.google.com/images/icons/product/search-32.gif"
   },
   "id": "config:v1",
   "kind": "discovery#restDescription",
@@ -280,12 +279,12 @@
       "type": "boolean"
     },
     "quotaUser": {
-      "description": "An opaque string that represents a user for quota purposes. Must not exceed 40 characters.",
+      "description": "Available to use for quota purposes for server-side applications. Can be any arbitrary string assigned to a user, but should not exceed 40 characters. Overrides userIp if both are provided.",
       "location": "query",
       "type": "string"
     },
     "userIp": {
-      "description": "Deprecated. Please use quotaUser instead.",
+      "description": "IP address of the site where the request originates. Use this if you want to enforce per-user limits.",
       "location": "query",
       "type": "string"
     }
@@ -311,9 +310,11 @@
             "",
             ""
           ],
+          "required": true,
           "type": "string"
         },
         "text": {
+          "required": true,
           "type": "string"
         }
       },
@@ -324,6 +325,7 @@
       "id": "LuciConfigConfigSet",
       "properties": {
         "config_set": {
+          "required": true,
           "type": "string"
         },
         "files": {
@@ -385,6 +387,7 @@
       "properties": {
         "content": {
           "format": "byte",
+          "required": true,
           "type": "string"
         }
       },
@@ -406,6 +409,7 @@
       "id": "LuciConfigGetConfigMultiResponseMessageConfigEntry",
       "properties": {
         "config_set": {
+          "required": true,
           "type": "string"
         },
         "content": {
@@ -413,9 +417,11 @@
           "type": "string"
         },
         "content_hash": {
+          "required": true,
           "type": "string"
         },
         "revision": {
+          "required": true,
           "type": "string"
         },
         "url": {
@@ -432,9 +438,11 @@
           "type": "string"
         },
         "content_hash": {
+          "required": true,
           "type": "string"
         },
         "revision": {
+          "required": true,
           "type": "string"
         },
         "url": {
@@ -472,6 +480,7 @@
       "id": "LuciConfigGetMappingResponseMessageMapping",
       "properties": {
         "config_set": {
+          "required": true,
           "type": "string"
         },
         "location": {
@@ -517,6 +526,7 @@
       "id": "LuciConfigProject",
       "properties": {
         "id": {
+          "required": true,
           "type": "string"
         },
         "name": {
@@ -529,9 +539,11 @@
           "enumDescriptions": [
             ""
           ],
+          "required": true,
           "type": "string"
         },
         "repo_url": {
+          "required": true,
           "type": "string"
         }
       },

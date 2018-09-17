@@ -5,11 +5,13 @@ package admin
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -29,8 +31,8 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // FetchCRLRequest identifies a name of CA to fetch CRL for.
 type FetchCRLRequest struct {
-	Cn                   string   `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
-	Force                bool     `protobuf:"varint,2,opt,name=force" json:"force,omitempty"`
+	Cn                   string   `protobuf:"bytes,1,opt,name=cn,proto3" json:"cn,omitempty"`
+	Force                bool     `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -40,7 +42,7 @@ func (m *FetchCRLRequest) Reset()         { *m = FetchCRLRequest{} }
 func (m *FetchCRLRequest) String() string { return proto.CompactTextString(m) }
 func (*FetchCRLRequest) ProtoMessage()    {}
 func (*FetchCRLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{0}
+	return fileDescriptor_10a363ff389b1807, []int{0}
 }
 func (m *FetchCRLRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FetchCRLRequest.Unmarshal(m, b)
@@ -48,8 +50,8 @@ func (m *FetchCRLRequest) XXX_Unmarshal(b []byte) error {
 func (m *FetchCRLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FetchCRLRequest.Marshal(b, m, deterministic)
 }
-func (dst *FetchCRLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FetchCRLRequest.Merge(dst, src)
+func (m *FetchCRLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FetchCRLRequest.Merge(m, src)
 }
 func (m *FetchCRLRequest) XXX_Size() int {
 	return xxx_messageInfo_FetchCRLRequest.Size(m)
@@ -76,7 +78,7 @@ func (m *FetchCRLRequest) GetForce() bool {
 
 // FetchCRLResponse is returned by FetchCRL.
 type FetchCRLResponse struct {
-	CrlStatus            *CRLStatus `protobuf:"bytes,1,opt,name=crl_status,json=crlStatus" json:"crl_status,omitempty"`
+	CrlStatus            *CRLStatus `protobuf:"bytes,1,opt,name=crl_status,json=crlStatus,proto3" json:"crl_status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -86,7 +88,7 @@ func (m *FetchCRLResponse) Reset()         { *m = FetchCRLResponse{} }
 func (m *FetchCRLResponse) String() string { return proto.CompactTextString(m) }
 func (*FetchCRLResponse) ProtoMessage()    {}
 func (*FetchCRLResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{1}
+	return fileDescriptor_10a363ff389b1807, []int{1}
 }
 func (m *FetchCRLResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FetchCRLResponse.Unmarshal(m, b)
@@ -94,8 +96,8 @@ func (m *FetchCRLResponse) XXX_Unmarshal(b []byte) error {
 func (m *FetchCRLResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FetchCRLResponse.Marshal(b, m, deterministic)
 }
-func (dst *FetchCRLResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FetchCRLResponse.Merge(dst, src)
+func (m *FetchCRLResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FetchCRLResponse.Merge(m, src)
 }
 func (m *FetchCRLResponse) XXX_Size() int {
 	return xxx_messageInfo_FetchCRLResponse.Size(m)
@@ -115,7 +117,7 @@ func (m *FetchCRLResponse) GetCrlStatus() *CRLStatus {
 
 // ListCAsResponse is returned by ListCAs.
 type ListCAsResponse struct {
-	Cn                   []string `protobuf:"bytes,1,rep,name=cn" json:"cn,omitempty"`
+	Cn                   []string `protobuf:"bytes,1,rep,name=cn,proto3" json:"cn,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -125,7 +127,7 @@ func (m *ListCAsResponse) Reset()         { *m = ListCAsResponse{} }
 func (m *ListCAsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListCAsResponse) ProtoMessage()    {}
 func (*ListCAsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{2}
+	return fileDescriptor_10a363ff389b1807, []int{2}
 }
 func (m *ListCAsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListCAsResponse.Unmarshal(m, b)
@@ -133,8 +135,8 @@ func (m *ListCAsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListCAsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListCAsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListCAsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListCAsResponse.Merge(dst, src)
+func (m *ListCAsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListCAsResponse.Merge(m, src)
 }
 func (m *ListCAsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListCAsResponse.Size(m)
@@ -154,7 +156,7 @@ func (m *ListCAsResponse) GetCn() []string {
 
 // GetCAStatusRequest identifies a name of CA to fetch.
 type GetCAStatusRequest struct {
-	Cn                   string   `protobuf:"bytes,1,opt,name=cn" json:"cn,omitempty"`
+	Cn                   string   `protobuf:"bytes,1,opt,name=cn,proto3" json:"cn,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -164,7 +166,7 @@ func (m *GetCAStatusRequest) Reset()         { *m = GetCAStatusRequest{} }
 func (m *GetCAStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*GetCAStatusRequest) ProtoMessage()    {}
 func (*GetCAStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{3}
+	return fileDescriptor_10a363ff389b1807, []int{3}
 }
 func (m *GetCAStatusRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetCAStatusRequest.Unmarshal(m, b)
@@ -172,8 +174,8 @@ func (m *GetCAStatusRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetCAStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetCAStatusRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetCAStatusRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetCAStatusRequest.Merge(dst, src)
+func (m *GetCAStatusRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetCAStatusRequest.Merge(m, src)
 }
 func (m *GetCAStatusRequest) XXX_Size() int {
 	return xxx_messageInfo_GetCAStatusRequest.Size(m)
@@ -195,14 +197,14 @@ func (m *GetCAStatusRequest) GetCn() string {
 //
 // If requested CA doesn't exist, all fields are empty.
 type GetCAStatusResponse struct {
-	Config               *CertificateAuthorityConfig `protobuf:"bytes,1,opt,name=config" json:"config,omitempty"`
-	Cert                 string                      `protobuf:"bytes,2,opt,name=cert" json:"cert,omitempty"`
-	Removed              bool                        `protobuf:"varint,3,opt,name=removed" json:"removed,omitempty"`
-	Ready                bool                        `protobuf:"varint,4,opt,name=ready" json:"ready,omitempty"`
-	AddedRev             string                      `protobuf:"bytes,5,opt,name=added_rev,json=addedRev" json:"added_rev,omitempty"`
-	UpdatedRev           string                      `protobuf:"bytes,6,opt,name=updated_rev,json=updatedRev" json:"updated_rev,omitempty"`
-	RemovedRev           string                      `protobuf:"bytes,7,opt,name=removed_rev,json=removedRev" json:"removed_rev,omitempty"`
-	CrlStatus            *CRLStatus                  `protobuf:"bytes,8,opt,name=crl_status,json=crlStatus" json:"crl_status,omitempty"`
+	Config               *CertificateAuthorityConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	Cert                 string                      `protobuf:"bytes,2,opt,name=cert,proto3" json:"cert,omitempty"`
+	Removed              bool                        `protobuf:"varint,3,opt,name=removed,proto3" json:"removed,omitempty"`
+	Ready                bool                        `protobuf:"varint,4,opt,name=ready,proto3" json:"ready,omitempty"`
+	AddedRev             string                      `protobuf:"bytes,5,opt,name=added_rev,json=addedRev,proto3" json:"added_rev,omitempty"`
+	UpdatedRev           string                      `protobuf:"bytes,6,opt,name=updated_rev,json=updatedRev,proto3" json:"updated_rev,omitempty"`
+	RemovedRev           string                      `protobuf:"bytes,7,opt,name=removed_rev,json=removedRev,proto3" json:"removed_rev,omitempty"`
+	CrlStatus            *CRLStatus                  `protobuf:"bytes,8,opt,name=crl_status,json=crlStatus,proto3" json:"crl_status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`
@@ -212,7 +214,7 @@ func (m *GetCAStatusResponse) Reset()         { *m = GetCAStatusResponse{} }
 func (m *GetCAStatusResponse) String() string { return proto.CompactTextString(m) }
 func (*GetCAStatusResponse) ProtoMessage()    {}
 func (*GetCAStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{4}
+	return fileDescriptor_10a363ff389b1807, []int{4}
 }
 func (m *GetCAStatusResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetCAStatusResponse.Unmarshal(m, b)
@@ -220,8 +222,8 @@ func (m *GetCAStatusResponse) XXX_Unmarshal(b []byte) error {
 func (m *GetCAStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetCAStatusResponse.Marshal(b, m, deterministic)
 }
-func (dst *GetCAStatusResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetCAStatusResponse.Merge(dst, src)
+func (m *GetCAStatusResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetCAStatusResponse.Merge(m, src)
 }
 func (m *GetCAStatusResponse) XXX_Size() int {
 	return xxx_messageInfo_GetCAStatusResponse.Size(m)
@@ -290,8 +292,8 @@ func (m *GetCAStatusResponse) GetCrlStatus() *CRLStatus {
 
 // IsRevokedCertRequest contains a name of the CA and a cert serial number.
 type IsRevokedCertRequest struct {
-	Ca                   string   `protobuf:"bytes,1,opt,name=ca" json:"ca,omitempty"`
-	Sn                   string   `protobuf:"bytes,2,opt,name=sn" json:"sn,omitempty"`
+	Ca                   string   `protobuf:"bytes,1,opt,name=ca,proto3" json:"ca,omitempty"`
+	Sn                   string   `protobuf:"bytes,2,opt,name=sn,proto3" json:"sn,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -301,7 +303,7 @@ func (m *IsRevokedCertRequest) Reset()         { *m = IsRevokedCertRequest{} }
 func (m *IsRevokedCertRequest) String() string { return proto.CompactTextString(m) }
 func (*IsRevokedCertRequest) ProtoMessage()    {}
 func (*IsRevokedCertRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{5}
+	return fileDescriptor_10a363ff389b1807, []int{5}
 }
 func (m *IsRevokedCertRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsRevokedCertRequest.Unmarshal(m, b)
@@ -309,8 +311,8 @@ func (m *IsRevokedCertRequest) XXX_Unmarshal(b []byte) error {
 func (m *IsRevokedCertRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_IsRevokedCertRequest.Marshal(b, m, deterministic)
 }
-func (dst *IsRevokedCertRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IsRevokedCertRequest.Merge(dst, src)
+func (m *IsRevokedCertRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IsRevokedCertRequest.Merge(m, src)
 }
 func (m *IsRevokedCertRequest) XXX_Size() int {
 	return xxx_messageInfo_IsRevokedCertRequest.Size(m)
@@ -337,7 +339,7 @@ func (m *IsRevokedCertRequest) GetSn() string {
 
 // IsRevokedCertResponse is returned by IsRevokedCert
 type IsRevokedCertResponse struct {
-	Revoked              bool     `protobuf:"varint,1,opt,name=revoked" json:"revoked,omitempty"`
+	Revoked              bool     `protobuf:"varint,1,opt,name=revoked,proto3" json:"revoked,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -347,7 +349,7 @@ func (m *IsRevokedCertResponse) Reset()         { *m = IsRevokedCertResponse{} }
 func (m *IsRevokedCertResponse) String() string { return proto.CompactTextString(m) }
 func (*IsRevokedCertResponse) ProtoMessage()    {}
 func (*IsRevokedCertResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{6}
+	return fileDescriptor_10a363ff389b1807, []int{6}
 }
 func (m *IsRevokedCertResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsRevokedCertResponse.Unmarshal(m, b)
@@ -355,8 +357,8 @@ func (m *IsRevokedCertResponse) XXX_Unmarshal(b []byte) error {
 func (m *IsRevokedCertResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_IsRevokedCertResponse.Marshal(b, m, deterministic)
 }
-func (dst *IsRevokedCertResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IsRevokedCertResponse.Merge(dst, src)
+func (m *IsRevokedCertResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IsRevokedCertResponse.Merge(m, src)
 }
 func (m *IsRevokedCertResponse) XXX_Size() int {
 	return xxx_messageInfo_IsRevokedCertResponse.Size(m)
@@ -376,7 +378,7 @@ func (m *IsRevokedCertResponse) GetRevoked() bool {
 
 // CheckCertificateRequest contains a pem encoded certificate to check.
 type CheckCertificateRequest struct {
-	CertPem              string   `protobuf:"bytes,1,opt,name=cert_pem,json=certPem" json:"cert_pem,omitempty"`
+	CertPem              string   `protobuf:"bytes,1,opt,name=cert_pem,json=certPem,proto3" json:"cert_pem,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -386,7 +388,7 @@ func (m *CheckCertificateRequest) Reset()         { *m = CheckCertificateRequest
 func (m *CheckCertificateRequest) String() string { return proto.CompactTextString(m) }
 func (*CheckCertificateRequest) ProtoMessage()    {}
 func (*CheckCertificateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{7}
+	return fileDescriptor_10a363ff389b1807, []int{7}
 }
 func (m *CheckCertificateRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckCertificateRequest.Unmarshal(m, b)
@@ -394,8 +396,8 @@ func (m *CheckCertificateRequest) XXX_Unmarshal(b []byte) error {
 func (m *CheckCertificateRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckCertificateRequest.Marshal(b, m, deterministic)
 }
-func (dst *CheckCertificateRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckCertificateRequest.Merge(dst, src)
+func (m *CheckCertificateRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckCertificateRequest.Merge(m, src)
 }
 func (m *CheckCertificateRequest) XXX_Size() int {
 	return xxx_messageInfo_CheckCertificateRequest.Size(m)
@@ -415,8 +417,8 @@ func (m *CheckCertificateRequest) GetCertPem() string {
 
 // CheckCertificateResponse is returned by CheckCertificate.
 type CheckCertificateResponse struct {
-	IsValid              bool     `protobuf:"varint,1,opt,name=is_valid,json=isValid" json:"is_valid,omitempty"`
-	InvalidReason        string   `protobuf:"bytes,2,opt,name=invalid_reason,json=invalidReason" json:"invalid_reason,omitempty"`
+	IsValid              bool     `protobuf:"varint,1,opt,name=is_valid,json=isValid,proto3" json:"is_valid,omitempty"`
+	InvalidReason        string   `protobuf:"bytes,2,opt,name=invalid_reason,json=invalidReason,proto3" json:"invalid_reason,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -426,7 +428,7 @@ func (m *CheckCertificateResponse) Reset()         { *m = CheckCertificateRespon
 func (m *CheckCertificateResponse) String() string { return proto.CompactTextString(m) }
 func (*CheckCertificateResponse) ProtoMessage()    {}
 func (*CheckCertificateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{8}
+	return fileDescriptor_10a363ff389b1807, []int{8}
 }
 func (m *CheckCertificateResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckCertificateResponse.Unmarshal(m, b)
@@ -434,8 +436,8 @@ func (m *CheckCertificateResponse) XXX_Unmarshal(b []byte) error {
 func (m *CheckCertificateResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckCertificateResponse.Marshal(b, m, deterministic)
 }
-func (dst *CheckCertificateResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckCertificateResponse.Merge(dst, src)
+func (m *CheckCertificateResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckCertificateResponse.Merge(m, src)
 }
 func (m *CheckCertificateResponse) XXX_Size() int {
 	return xxx_messageInfo_CheckCertificateResponse.Size(m)
@@ -462,10 +464,10 @@ func (m *CheckCertificateResponse) GetInvalidReason() string {
 
 // CRLStatus describes the latest known state of imported CRL.
 type CRLStatus struct {
-	LastUpdateTime       *timestamp.Timestamp `protobuf:"bytes,1,opt,name=last_update_time,json=lastUpdateTime" json:"last_update_time,omitempty"`
-	LastFetchTime        *timestamp.Timestamp `protobuf:"bytes,2,opt,name=last_fetch_time,json=lastFetchTime" json:"last_fetch_time,omitempty"`
-	LastFetchEtag        string               `protobuf:"bytes,3,opt,name=last_fetch_etag,json=lastFetchEtag" json:"last_fetch_etag,omitempty"`
-	RevokedCertsCount    int64                `protobuf:"varint,4,opt,name=revoked_certs_count,json=revokedCertsCount" json:"revoked_certs_count,omitempty"`
+	LastUpdateTime       *timestamp.Timestamp `protobuf:"bytes,1,opt,name=last_update_time,json=lastUpdateTime,proto3" json:"last_update_time,omitempty"`
+	LastFetchTime        *timestamp.Timestamp `protobuf:"bytes,2,opt,name=last_fetch_time,json=lastFetchTime,proto3" json:"last_fetch_time,omitempty"`
+	LastFetchEtag        string               `protobuf:"bytes,3,opt,name=last_fetch_etag,json=lastFetchEtag,proto3" json:"last_fetch_etag,omitempty"`
+	RevokedCertsCount    int64                `protobuf:"varint,4,opt,name=revoked_certs_count,json=revokedCertsCount,proto3" json:"revoked_certs_count,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -475,7 +477,7 @@ func (m *CRLStatus) Reset()         { *m = CRLStatus{} }
 func (m *CRLStatus) String() string { return proto.CompactTextString(m) }
 func (*CRLStatus) ProtoMessage()    {}
 func (*CRLStatus) Descriptor() ([]byte, []int) {
-	return fileDescriptor_certificate_authorities_1f4757d102fbaf92, []int{9}
+	return fileDescriptor_10a363ff389b1807, []int{9}
 }
 func (m *CRLStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CRLStatus.Unmarshal(m, b)
@@ -483,8 +485,8 @@ func (m *CRLStatus) XXX_Unmarshal(b []byte) error {
 func (m *CRLStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CRLStatus.Marshal(b, m, deterministic)
 }
-func (dst *CRLStatus) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CRLStatus.Merge(dst, src)
+func (m *CRLStatus) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CRLStatus.Merge(m, src)
 }
 func (m *CRLStatus) XXX_Size() int {
 	return xxx_messageInfo_CRLStatus.Size(m)
@@ -803,10 +805,10 @@ var _CertificateAuthorities_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/certificate_authorities.proto", fileDescriptor_certificate_authorities_1f4757d102fbaf92)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/certificate_authorities.proto", fileDescriptor_10a363ff389b1807)
 }
 
-var fileDescriptor_certificate_authorities_1f4757d102fbaf92 = []byte{
+var fileDescriptor_10a363ff389b1807 = []byte{
 	// 709 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x5d, 0x6f, 0xd3, 0x4a,
 	0x10, 0x55, 0x92, 0xb6, 0x49, 0xa6, 0xea, 0xd7, 0xb6, 0xb7, 0x37, 0x75, 0xaf, 0xd4, 0x5e, 0x43,

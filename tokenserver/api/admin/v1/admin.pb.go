@@ -5,12 +5,14 @@ package admin
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
-import messages "go.chromium.org/luci/server/auth/delegation/messages"
-import api "go.chromium.org/luci/tokenserver/api"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	messages "go.chromium.org/luci/server/auth/delegation/messages"
+	api "go.chromium.org/luci/tokenserver/api"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -34,7 +36,7 @@ type ImportedConfigs struct {
 	//
 	// It's either the imported revision, if configs change, or a previously known
 	// revision, if configs at HEAD are same.
-	Revision             string   `protobuf:"bytes,1,opt,name=revision" json:"revision,omitempty"`
+	Revision             string   `protobuf:"bytes,1,opt,name=revision,proto3" json:"revision,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -44,7 +46,7 @@ func (m *ImportedConfigs) Reset()         { *m = ImportedConfigs{} }
 func (m *ImportedConfigs) String() string { return proto.CompactTextString(m) }
 func (*ImportedConfigs) ProtoMessage()    {}
 func (*ImportedConfigs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{0}
+	return fileDescriptor_303c2e4773396ed5, []int{0}
 }
 func (m *ImportedConfigs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportedConfigs.Unmarshal(m, b)
@@ -52,8 +54,8 @@ func (m *ImportedConfigs) XXX_Unmarshal(b []byte) error {
 func (m *ImportedConfigs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportedConfigs.Marshal(b, m, deterministic)
 }
-func (dst *ImportedConfigs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportedConfigs.Merge(dst, src)
+func (m *ImportedConfigs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportedConfigs.Merge(m, src)
 }
 func (m *ImportedConfigs) XXX_Size() int {
 	return xxx_messageInfo_ImportedConfigs.Size(m)
@@ -78,9 +80,9 @@ type InspectMachineTokenRequest struct {
 	// The type of token being checked.
 	//
 	// Currently only LUCI_MACHINE_TOKEN is supported. This is also the default.
-	TokenType api.MachineTokenType `protobuf:"varint,1,opt,name=token_type,json=tokenType,enum=tokenserver.MachineTokenType" json:"token_type,omitempty"`
+	TokenType api.MachineTokenType `protobuf:"varint,1,opt,name=token_type,json=tokenType,proto3,enum=tokenserver.MachineTokenType" json:"token_type,omitempty"`
 	// The token body. Exact meaning depends on token_type.
-	Token                string   `protobuf:"bytes,2,opt,name=token" json:"token,omitempty"`
+	Token                string   `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -90,7 +92,7 @@ func (m *InspectMachineTokenRequest) Reset()         { *m = InspectMachineTokenR
 func (m *InspectMachineTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*InspectMachineTokenRequest) ProtoMessage()    {}
 func (*InspectMachineTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{1}
+	return fileDescriptor_303c2e4773396ed5, []int{1}
 }
 func (m *InspectMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectMachineTokenRequest.Unmarshal(m, b)
@@ -98,8 +100,8 @@ func (m *InspectMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *InspectMachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectMachineTokenRequest.Marshal(b, m, deterministic)
 }
-func (dst *InspectMachineTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectMachineTokenRequest.Merge(dst, src)
+func (m *InspectMachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectMachineTokenRequest.Merge(m, src)
 }
 func (m *InspectMachineTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_InspectMachineTokenRequest.Size(m)
@@ -130,12 +132,12 @@ type InspectMachineTokenResponse struct {
 	//
 	// A token is valid if its signature is correct, it hasn't expired yet and
 	// the credentials it was built from (e.g. a certificate) wasn't revoked.
-	Valid bool `protobuf:"varint,1,opt,name=valid" json:"valid,omitempty"`
+	Valid bool `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
 	// Human readable summary of why token is invalid.
 	//
 	// Summarizes the rest of the fields of this struct. Set only if 'valid' is
 	// false.
-	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason" json:"invalidity_reason,omitempty"`
+	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason,proto3" json:"invalidity_reason,omitempty"`
 	// True if the token signature was verified.
 	//
 	// It means the token was generated by the token server and its body is not
@@ -150,24 +152,24 @@ type InspectMachineTokenResponse struct {
 	//
 	// If 'signed' is false, use the rest of the response only as FYI, possibly
 	// invalid or even maliciously constructed.
-	Signed bool `protobuf:"varint,3,opt,name=signed" json:"signed,omitempty"`
+	Signed bool `protobuf:"varint,3,opt,name=signed,proto3" json:"signed,omitempty"`
 	// True if the token signature was verified and token hasn't expired yet.
 	//
 	// We use "non_" prefix to make default 'false' value safer.
-	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired" json:"non_expired,omitempty"`
+	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired,proto3" json:"non_expired,omitempty"`
 	// True if the token signature was verified and the token wasn't revoked.
 	//
 	// It is possible for an expired token to be non revoked. They are independent
 	// properties.
 	//
 	// We use "non_" prefix to make default 'false' value safer.
-	NonRevoked bool `protobuf:"varint,5,opt,name=non_revoked,json=nonRevoked" json:"non_revoked,omitempty"`
+	NonRevoked bool `protobuf:"varint,5,opt,name=non_revoked,json=nonRevoked,proto3" json:"non_revoked,omitempty"`
 	// Id of a private key used to sign this token, if applicable.
-	SigningKeyId string `protobuf:"bytes,6,opt,name=signing_key_id,json=signingKeyId" json:"signing_key_id,omitempty"`
+	SigningKeyId string `protobuf:"bytes,6,opt,name=signing_key_id,json=signingKeyId,proto3" json:"signing_key_id,omitempty"`
 	// Name of a CA that issued the cert the token is based on, if applicable.
 	//
 	// Resolved from 'ca_id' field of the token body.
-	CertCaName string `protobuf:"bytes,7,opt,name=cert_ca_name,json=certCaName" json:"cert_ca_name,omitempty"`
+	CertCaName string `protobuf:"bytes,7,opt,name=cert_ca_name,json=certCaName,proto3" json:"cert_ca_name,omitempty"`
 	// The decoded token body (depends on token_type request parameter). Empty if
 	// token was malformed and couldn't be deserialized.
 	//
@@ -183,7 +185,7 @@ func (m *InspectMachineTokenResponse) Reset()         { *m = InspectMachineToken
 func (m *InspectMachineTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*InspectMachineTokenResponse) ProtoMessage()    {}
 func (*InspectMachineTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{2}
+	return fileDescriptor_303c2e4773396ed5, []int{2}
 }
 func (m *InspectMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectMachineTokenResponse.Unmarshal(m, b)
@@ -191,8 +193,8 @@ func (m *InspectMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *InspectMachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectMachineTokenResponse.Marshal(b, m, deterministic)
 }
-func (dst *InspectMachineTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectMachineTokenResponse.Merge(dst, src)
+func (m *InspectMachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectMachineTokenResponse.Merge(m, src)
 }
 func (m *InspectMachineTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_InspectMachineTokenResponse.Size(m)
@@ -202,23 +204,6 @@ func (m *InspectMachineTokenResponse) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_InspectMachineTokenResponse proto.InternalMessageInfo
-
-type isInspectMachineTokenResponse_TokenType interface {
-	isInspectMachineTokenResponse_TokenType()
-}
-
-type InspectMachineTokenResponse_LuciMachineToken struct {
-	LuciMachineToken *api.MachineTokenBody `protobuf:"bytes,20,opt,name=luci_machine_token,json=luciMachineToken,oneof"`
-}
-
-func (*InspectMachineTokenResponse_LuciMachineToken) isInspectMachineTokenResponse_TokenType() {}
-
-func (m *InspectMachineTokenResponse) GetTokenType() isInspectMachineTokenResponse_TokenType {
-	if m != nil {
-		return m.TokenType
-	}
-	return nil
-}
 
 func (m *InspectMachineTokenResponse) GetValid() bool {
 	if m != nil {
@@ -267,6 +252,23 @@ func (m *InspectMachineTokenResponse) GetCertCaName() string {
 		return m.CertCaName
 	}
 	return ""
+}
+
+type isInspectMachineTokenResponse_TokenType interface {
+	isInspectMachineTokenResponse_TokenType()
+}
+
+type InspectMachineTokenResponse_LuciMachineToken struct {
+	LuciMachineToken *api.MachineTokenBody `protobuf:"bytes,20,opt,name=luci_machine_token,json=luciMachineToken,proto3,oneof"`
+}
+
+func (*InspectMachineTokenResponse_LuciMachineToken) isInspectMachineTokenResponse_TokenType() {}
+
+func (m *InspectMachineTokenResponse) GetTokenType() isInspectMachineTokenResponse_TokenType {
+	if m != nil {
+		return m.TokenType
+	}
+	return nil
 }
 
 func (m *InspectMachineTokenResponse) GetLuciMachineToken() *api.MachineTokenBody {
@@ -334,7 +336,7 @@ func _InspectMachineTokenResponse_OneofSizer(msg proto.Message) (n int) {
 // InspectDelegationTokenRequest is body of InspectDelegationToken RPC call.
 type InspectDelegationTokenRequest struct {
 	// The token body.
-	Token                string   `protobuf:"bytes,1,opt,name=token" json:"token,omitempty"`
+	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -344,7 +346,7 @@ func (m *InspectDelegationTokenRequest) Reset()         { *m = InspectDelegation
 func (m *InspectDelegationTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*InspectDelegationTokenRequest) ProtoMessage()    {}
 func (*InspectDelegationTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{3}
+	return fileDescriptor_303c2e4773396ed5, []int{3}
 }
 func (m *InspectDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectDelegationTokenRequest.Unmarshal(m, b)
@@ -352,8 +354,8 @@ func (m *InspectDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *InspectDelegationTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectDelegationTokenRequest.Marshal(b, m, deterministic)
 }
-func (dst *InspectDelegationTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectDelegationTokenRequest.Merge(dst, src)
+func (m *InspectDelegationTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectDelegationTokenRequest.Merge(m, src)
 }
 func (m *InspectDelegationTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_InspectDelegationTokenRequest.Size(m)
@@ -376,12 +378,12 @@ type InspectDelegationTokenResponse struct {
 	// True if the token is valid.
 	//
 	// A token is valid if its signature is correct and it hasn't expired yet.
-	Valid bool `protobuf:"varint,1,opt,name=valid" json:"valid,omitempty"`
+	Valid bool `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
 	// Human readable summary of why token is invalid.
 	//
 	// Summarizes the rest of the fields of this struct. Set only if 'valid' is
 	// false.
-	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason" json:"invalidity_reason,omitempty"`
+	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason,proto3" json:"invalidity_reason,omitempty"`
 	// True if the token signature was verified.
 	//
 	// It means the token was generated by the token server and its body is not
@@ -396,19 +398,19 @@ type InspectDelegationTokenResponse struct {
 	//
 	// If 'signed' is false, use the rest of the response only as FYI, possibly
 	// invalid or even maliciously constructed.
-	Signed bool `protobuf:"varint,3,opt,name=signed" json:"signed,omitempty"`
+	Signed bool `protobuf:"varint,3,opt,name=signed,proto3" json:"signed,omitempty"`
 	// True if the token signature was verified and token hasn't expired yet.
 	//
 	// We use "non_" prefix to make default 'false' value safer.
-	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired" json:"non_expired,omitempty"`
+	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired,proto3" json:"non_expired,omitempty"`
 	// The deserialized token envelope.
 	//
 	// May be empty if token was malformed and couldn't be deserialized.
-	Envelope *messages.DelegationToken `protobuf:"bytes,5,opt,name=envelope" json:"envelope,omitempty"`
+	Envelope *messages.DelegationToken `protobuf:"bytes,5,opt,name=envelope,proto3" json:"envelope,omitempty"`
 	// The deserialized token body (deserialized 'envelope.serialized_subtoken').
 	//
 	// May be empty if token was malformed and couldn't be deserialized.
-	Subtoken             *messages.Subtoken `protobuf:"bytes,6,opt,name=subtoken" json:"subtoken,omitempty"`
+	Subtoken             *messages.Subtoken `protobuf:"bytes,6,opt,name=subtoken,proto3" json:"subtoken,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -418,7 +420,7 @@ func (m *InspectDelegationTokenResponse) Reset()         { *m = InspectDelegatio
 func (m *InspectDelegationTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*InspectDelegationTokenResponse) ProtoMessage()    {}
 func (*InspectDelegationTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{4}
+	return fileDescriptor_303c2e4773396ed5, []int{4}
 }
 func (m *InspectDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectDelegationTokenResponse.Unmarshal(m, b)
@@ -426,8 +428,8 @@ func (m *InspectDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *InspectDelegationTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectDelegationTokenResponse.Marshal(b, m, deterministic)
 }
-func (dst *InspectDelegationTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectDelegationTokenResponse.Merge(dst, src)
+func (m *InspectDelegationTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectDelegationTokenResponse.Merge(m, src)
 }
 func (m *InspectDelegationTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_InspectDelegationTokenResponse.Size(m)
@@ -483,7 +485,7 @@ func (m *InspectDelegationTokenResponse) GetSubtoken() *messages.Subtoken {
 // InspectOAuthTokenGrantRequest is body of InspectOAuthTokenGrant RPC call.
 type InspectOAuthTokenGrantRequest struct {
 	// The token body.
-	Token                string   `protobuf:"bytes,1,opt,name=token" json:"token,omitempty"`
+	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -493,7 +495,7 @@ func (m *InspectOAuthTokenGrantRequest) Reset()         { *m = InspectOAuthToken
 func (m *InspectOAuthTokenGrantRequest) String() string { return proto.CompactTextString(m) }
 func (*InspectOAuthTokenGrantRequest) ProtoMessage()    {}
 func (*InspectOAuthTokenGrantRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{5}
+	return fileDescriptor_303c2e4773396ed5, []int{5}
 }
 func (m *InspectOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectOAuthTokenGrantRequest.Unmarshal(m, b)
@@ -501,8 +503,8 @@ func (m *InspectOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 func (m *InspectOAuthTokenGrantRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectOAuthTokenGrantRequest.Marshal(b, m, deterministic)
 }
-func (dst *InspectOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectOAuthTokenGrantRequest.Merge(dst, src)
+func (m *InspectOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectOAuthTokenGrantRequest.Merge(m, src)
 }
 func (m *InspectOAuthTokenGrantRequest) XXX_Size() int {
 	return xxx_messageInfo_InspectOAuthTokenGrantRequest.Size(m)
@@ -526,12 +528,12 @@ type InspectOAuthTokenGrantResponse struct {
 	//
 	// A token is valid if its signature is correct, it hasn't expired yet and
 	// token server rules still allow it.
-	Valid bool `protobuf:"varint,1,opt,name=valid" json:"valid,omitempty"`
+	Valid bool `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
 	// Human readable summary of why token is invalid.
 	//
 	// Summarizes the rest of the fields of this struct. Set only if 'valid' is
 	// false.
-	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason" json:"invalidity_reason,omitempty"`
+	InvalidityReason string `protobuf:"bytes,2,opt,name=invalidity_reason,json=invalidityReason,proto3" json:"invalidity_reason,omitempty"`
 	// True if the token signature was verified.
 	//
 	// It means the token was generated by the token server and its body is not
@@ -546,23 +548,23 @@ type InspectOAuthTokenGrantResponse struct {
 	//
 	// If 'signed' is false, use the rest of the response only as FYI, possibly
 	// invalid or even maliciously constructed.
-	Signed bool `protobuf:"varint,3,opt,name=signed" json:"signed,omitempty"`
+	Signed bool `protobuf:"varint,3,opt,name=signed,proto3" json:"signed,omitempty"`
 	// True if the token signature was verified and token hasn't expired yet.
 	//
 	// We use "non_" prefix to make default 'false' value safer.
-	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired" json:"non_expired,omitempty"`
+	NonExpired bool `protobuf:"varint,4,opt,name=non_expired,json=nonExpired,proto3" json:"non_expired,omitempty"`
 	// ID of a token server private key used to sign the token.
-	SigningKeyId string `protobuf:"bytes,5,opt,name=signing_key_id,json=signingKeyId" json:"signing_key_id,omitempty"`
+	SigningKeyId string `protobuf:"bytes,5,opt,name=signing_key_id,json=signingKeyId,proto3" json:"signing_key_id,omitempty"`
 	// The deserialized token body.
 	//
 	// May be empty if token was malformed and couldn't be deserialized.
-	TokenBody *api.OAuthTokenGrantBody `protobuf:"bytes,6,opt,name=token_body,json=tokenBody" json:"token_body,omitempty"`
+	TokenBody *api.OAuthTokenGrantBody `protobuf:"bytes,6,opt,name=token_body,json=tokenBody,proto3" json:"token_body,omitempty"`
 	// The service_accounts.cfg rule that governs the service account usage.
 	//
 	// May be present even if the token is not allowed by it.
-	MatchingRule *ServiceAccountRule `protobuf:"bytes,7,opt,name=matching_rule,json=matchingRule" json:"matching_rule,omitempty"`
+	MatchingRule *ServiceAccountRule `protobuf:"bytes,7,opt,name=matching_rule,json=matchingRule,proto3" json:"matching_rule,omitempty"`
 	// True if current service_accounts.cfg rules allow this token.
-	AllowedByRules       bool     `protobuf:"varint,8,opt,name=allowed_by_rules,json=allowedByRules" json:"allowed_by_rules,omitempty"`
+	AllowedByRules       bool     `protobuf:"varint,8,opt,name=allowed_by_rules,json=allowedByRules,proto3" json:"allowed_by_rules,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -572,7 +574,7 @@ func (m *InspectOAuthTokenGrantResponse) Reset()         { *m = InspectOAuthToke
 func (m *InspectOAuthTokenGrantResponse) String() string { return proto.CompactTextString(m) }
 func (*InspectOAuthTokenGrantResponse) ProtoMessage()    {}
 func (*InspectOAuthTokenGrantResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_b533002f4d7a181d, []int{6}
+	return fileDescriptor_303c2e4773396ed5, []int{6}
 }
 func (m *InspectOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InspectOAuthTokenGrantResponse.Unmarshal(m, b)
@@ -580,8 +582,8 @@ func (m *InspectOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 func (m *InspectOAuthTokenGrantResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InspectOAuthTokenGrantResponse.Marshal(b, m, deterministic)
 }
-func (dst *InspectOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InspectOAuthTokenGrantResponse.Merge(dst, src)
+func (m *InspectOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InspectOAuthTokenGrantResponse.Merge(m, src)
 }
 func (m *InspectOAuthTokenGrantResponse) XXX_Size() int {
 	return xxx_messageInfo_InspectOAuthTokenGrantResponse.Size(m)
@@ -1053,10 +1055,10 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/admin.proto", fileDescriptor_admin_b533002f4d7a181d)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/admin.proto", fileDescriptor_303c2e4773396ed5)
 }
 
-var fileDescriptor_admin_b533002f4d7a181d = []byte{
+var fileDescriptor_303c2e4773396ed5 = []byte{
 	// 743 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x55, 0xdf, 0x6f, 0xd3, 0x30,
 	0x10, 0xa6, 0x63, 0xed, 0x3a, 0xb7, 0x8c, 0xcd, 0x4c, 0x23, 0x74, 0x0c, 0xaa, 0x0a, 0xa4, 0x49,

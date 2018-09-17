@@ -3,9 +3,11 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Schema for project.cfg
 type ProjectCfg struct {
 	// Full name of the project.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A list of identities that have read-only access to the project.
 	//
 	// An element is one of:
@@ -31,7 +33,7 @@ type ProjectCfg struct {
 	//
 	// If not specified, only admins and trusted services have access.
 	// Talk to admins to determine the group name appropriate for your project.
-	Access               []string `protobuf:"bytes,2,rep,name=access" json:"access,omitempty"`
+	Access               []string `protobuf:"bytes,2,rep,name=access,proto3" json:"access,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -41,7 +43,7 @@ func (m *ProjectCfg) Reset()         { *m = ProjectCfg{} }
 func (m *ProjectCfg) String() string { return proto.CompactTextString(m) }
 func (*ProjectCfg) ProtoMessage()    {}
 func (*ProjectCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_config_b6f226bcaddf5ab4, []int{0}
+	return fileDescriptor_3bbe7f657c95f8f6, []int{0}
 }
 func (m *ProjectCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectCfg.Unmarshal(m, b)
@@ -49,8 +51,8 @@ func (m *ProjectCfg) XXX_Unmarshal(b []byte) error {
 func (m *ProjectCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectCfg.Marshal(b, m, deterministic)
 }
-func (dst *ProjectCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectCfg.Merge(dst, src)
+func (m *ProjectCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectCfg.Merge(m, src)
 }
 func (m *ProjectCfg) XXX_Size() int {
 	return xxx_messageInfo_ProjectCfg.Size(m)
@@ -80,7 +82,7 @@ type RefsCfg struct {
 	// List of refs that have configuration files and need to be fetched into
 	// luci-config. Refs are accessible through get_refs() API endpoint.
 	// A CI service can read all refs of all projects and build them.
-	Refs                 []*RefsCfg_Ref `protobuf:"bytes,1,rep,name=refs" json:"refs,omitempty"`
+	Refs                 []*RefsCfg_Ref `protobuf:"bytes,1,rep,name=refs,proto3" json:"refs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -90,7 +92,7 @@ func (m *RefsCfg) Reset()         { *m = RefsCfg{} }
 func (m *RefsCfg) String() string { return proto.CompactTextString(m) }
 func (*RefsCfg) ProtoMessage()    {}
 func (*RefsCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_config_b6f226bcaddf5ab4, []int{1}
+	return fileDescriptor_3bbe7f657c95f8f6, []int{1}
 }
 func (m *RefsCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsCfg.Unmarshal(m, b)
@@ -98,8 +100,8 @@ func (m *RefsCfg) XXX_Unmarshal(b []byte) error {
 func (m *RefsCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsCfg.Marshal(b, m, deterministic)
 }
-func (dst *RefsCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsCfg.Merge(dst, src)
+func (m *RefsCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsCfg.Merge(m, src)
 }
 func (m *RefsCfg) XXX_Size() int {
 	return xxx_messageInfo_RefsCfg.Size(m)
@@ -119,9 +121,9 @@ func (m *RefsCfg) GetRefs() []*RefsCfg_Ref {
 
 type RefsCfg_Ref struct {
 	// Name of the ref. Must start with "refs/".
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Path to config directory for the ref. Defaults to "infra/config".
-	ConfigPath           string   `protobuf:"bytes,3,opt,name=config_path,json=configPath" json:"config_path,omitempty"`
+	ConfigPath           string   `protobuf:"bytes,3,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -131,7 +133,7 @@ func (m *RefsCfg_Ref) Reset()         { *m = RefsCfg_Ref{} }
 func (m *RefsCfg_Ref) String() string { return proto.CompactTextString(m) }
 func (*RefsCfg_Ref) ProtoMessage()    {}
 func (*RefsCfg_Ref) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_config_b6f226bcaddf5ab4, []int{1, 0}
+	return fileDescriptor_3bbe7f657c95f8f6, []int{1, 0}
 }
 func (m *RefsCfg_Ref) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsCfg_Ref.Unmarshal(m, b)
@@ -139,8 +141,8 @@ func (m *RefsCfg_Ref) XXX_Unmarshal(b []byte) error {
 func (m *RefsCfg_Ref) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsCfg_Ref.Marshal(b, m, deterministic)
 }
-func (dst *RefsCfg_Ref) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsCfg_Ref.Merge(dst, src)
+func (m *RefsCfg_Ref) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsCfg_Ref.Merge(m, src)
 }
 func (m *RefsCfg_Ref) XXX_Size() int {
 	return xxx_messageInfo_RefsCfg_Ref.Size(m)
@@ -172,10 +174,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/config/project_config.proto", fileDescriptor_project_config_b6f226bcaddf5ab4)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/config/project_config.proto", fileDescriptor_3bbe7f657c95f8f6)
 }
 
-var fileDescriptor_project_config_b6f226bcaddf5ab4 = []byte{
+var fileDescriptor_3bbe7f657c95f8f6 = []byte{
 	// 192 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x8e, 0xb1, 0x6a, 0xc7, 0x20,
 	0x10, 0xc6, 0x49, 0xfd, 0x93, 0x92, 0xcb, 0x66, 0xa1, 0x48, 0x97, 0x86, 0x2c, 0xcd, 0xa4, 0xd0,

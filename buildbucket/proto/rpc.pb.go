@@ -3,15 +3,16 @@
 
 package buildbucketpb
 
-import // import "go.chromium.org/luci/buildbucket/proto"
-prpc "go.chromium.org/luci/grpc/prpc"
+import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import _struct "github.com/golang/protobuf/ptypes/struct"
-import status "google.golang.org/genproto/googleapis/rpc/status"
-import field_mask "google.golang.org/genproto/protobuf/field_mask"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	_struct "github.com/golang/protobuf/ptypes/struct"
+	status "google.golang.org/genproto/googleapis/rpc/status"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -58,7 +59,7 @@ func (m *GetBuildRequest) Reset()         { *m = GetBuildRequest{} }
 func (m *GetBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*GetBuildRequest) ProtoMessage()    {}
 func (*GetBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{0}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{0}
 }
 func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetBuildRequest.Unmarshal(m, b)
@@ -66,8 +67,8 @@ func (m *GetBuildRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetBuildRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetBuildRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetBuildRequest.Merge(dst, src)
+func (m *GetBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetBuildRequest.Merge(m, src)
 }
 func (m *GetBuildRequest) XXX_Size() int {
 	return xxx_messageInfo_GetBuildRequest.Size(m)
@@ -130,7 +131,7 @@ func (m *SearchBuildsRequest) Reset()         { *m = SearchBuildsRequest{} }
 func (m *SearchBuildsRequest) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsRequest) ProtoMessage()    {}
 func (*SearchBuildsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{1}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{1}
 }
 func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsRequest.Unmarshal(m, b)
@@ -138,8 +139,8 @@ func (m *SearchBuildsRequest) XXX_Unmarshal(b []byte) error {
 func (m *SearchBuildsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SearchBuildsRequest.Marshal(b, m, deterministic)
 }
-func (dst *SearchBuildsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchBuildsRequest.Merge(dst, src)
+func (m *SearchBuildsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchBuildsRequest.Merge(m, src)
 }
 func (m *SearchBuildsRequest) XXX_Size() int {
 	return xxx_messageInfo_SearchBuildsRequest.Size(m)
@@ -196,7 +197,7 @@ func (m *SearchBuildsResponse) Reset()         { *m = SearchBuildsResponse{} }
 func (m *SearchBuildsResponse) String() string { return proto.CompactTextString(m) }
 func (*SearchBuildsResponse) ProtoMessage()    {}
 func (*SearchBuildsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{2}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{2}
 }
 func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SearchBuildsResponse.Unmarshal(m, b)
@@ -204,8 +205,8 @@ func (m *SearchBuildsResponse) XXX_Unmarshal(b []byte) error {
 func (m *SearchBuildsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SearchBuildsResponse.Marshal(b, m, deterministic)
 }
-func (dst *SearchBuildsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SearchBuildsResponse.Merge(dst, src)
+func (m *SearchBuildsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SearchBuildsResponse.Merge(m, src)
 }
 func (m *SearchBuildsResponse) XXX_Size() int {
 	return xxx_messageInfo_SearchBuildsResponse.Size(m)
@@ -246,7 +247,7 @@ func (m *BatchRequest) Reset()         { *m = BatchRequest{} }
 func (m *BatchRequest) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest) ProtoMessage()    {}
 func (*BatchRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{3}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{3}
 }
 func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest.Unmarshal(m, b)
@@ -254,8 +255,8 @@ func (m *BatchRequest) XXX_Unmarshal(b []byte) error {
 func (m *BatchRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchRequest.Marshal(b, m, deterministic)
 }
-func (dst *BatchRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchRequest.Merge(dst, src)
+func (m *BatchRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest.Merge(m, src)
 }
 func (m *BatchRequest) XXX_Size() int {
 	return xxx_messageInfo_BatchRequest.Size(m)
@@ -288,7 +289,7 @@ func (m *BatchRequest_Request) Reset()         { *m = BatchRequest_Request{} }
 func (m *BatchRequest_Request) String() string { return proto.CompactTextString(m) }
 func (*BatchRequest_Request) ProtoMessage()    {}
 func (*BatchRequest_Request) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{3, 0}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{3, 0}
 }
 func (m *BatchRequest_Request) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchRequest_Request.Unmarshal(m, b)
@@ -296,8 +297,8 @@ func (m *BatchRequest_Request) XXX_Unmarshal(b []byte) error {
 func (m *BatchRequest_Request) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchRequest_Request.Marshal(b, m, deterministic)
 }
-func (dst *BatchRequest_Request) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchRequest_Request.Merge(dst, src)
+func (m *BatchRequest_Request) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchRequest_Request.Merge(m, src)
 }
 func (m *BatchRequest_Request) XXX_Size() int {
 	return xxx_messageInfo_BatchRequest_Request.Size(m)
@@ -432,7 +433,7 @@ func (m *BatchResponse) Reset()         { *m = BatchResponse{} }
 func (m *BatchResponse) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse) ProtoMessage()    {}
 func (*BatchResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{4}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{4}
 }
 func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse.Unmarshal(m, b)
@@ -440,8 +441,8 @@ func (m *BatchResponse) XXX_Unmarshal(b []byte) error {
 func (m *BatchResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchResponse.Marshal(b, m, deterministic)
 }
-func (dst *BatchResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchResponse.Merge(dst, src)
+func (m *BatchResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse.Merge(m, src)
 }
 func (m *BatchResponse) XXX_Size() int {
 	return xxx_messageInfo_BatchResponse.Size(m)
@@ -475,7 +476,7 @@ func (m *BatchResponse_Response) Reset()         { *m = BatchResponse_Response{}
 func (m *BatchResponse_Response) String() string { return proto.CompactTextString(m) }
 func (*BatchResponse_Response) ProtoMessage()    {}
 func (*BatchResponse_Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{4, 0}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{4, 0}
 }
 func (m *BatchResponse_Response) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BatchResponse_Response.Unmarshal(m, b)
@@ -483,8 +484,8 @@ func (m *BatchResponse_Response) XXX_Unmarshal(b []byte) error {
 func (m *BatchResponse_Response) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BatchResponse_Response.Marshal(b, m, deterministic)
 }
-func (dst *BatchResponse_Response) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BatchResponse_Response.Merge(dst, src)
+func (m *BatchResponse_Response) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BatchResponse_Response.Merge(m, src)
 }
 func (m *BatchResponse_Response) XXX_Size() int {
 	return xxx_messageInfo_BatchResponse_Response.Size(m)
@@ -659,7 +660,7 @@ func (m *UpdateBuildRequest) Reset()         { *m = UpdateBuildRequest{} }
 func (m *UpdateBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateBuildRequest) ProtoMessage()    {}
 func (*UpdateBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{5}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{5}
 }
 func (m *UpdateBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateBuildRequest.Unmarshal(m, b)
@@ -667,8 +668,8 @@ func (m *UpdateBuildRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateBuildRequest.Marshal(b, m, deterministic)
 }
-func (dst *UpdateBuildRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateBuildRequest.Merge(dst, src)
+func (m *UpdateBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateBuildRequest.Merge(m, src)
 }
 func (m *UpdateBuildRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdateBuildRequest.Size(m)
@@ -788,7 +789,7 @@ func (m *ScheduleBuildRequest) Reset()         { *m = ScheduleBuildRequest{} }
 func (m *ScheduleBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*ScheduleBuildRequest) ProtoMessage()    {}
 func (*ScheduleBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{6}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{6}
 }
 func (m *ScheduleBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ScheduleBuildRequest.Unmarshal(m, b)
@@ -796,8 +797,8 @@ func (m *ScheduleBuildRequest) XXX_Unmarshal(b []byte) error {
 func (m *ScheduleBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ScheduleBuildRequest.Marshal(b, m, deterministic)
 }
-func (dst *ScheduleBuildRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ScheduleBuildRequest.Merge(dst, src)
+func (m *ScheduleBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ScheduleBuildRequest.Merge(m, src)
 }
 func (m *ScheduleBuildRequest) XXX_Size() int {
 	return xxx_messageInfo_ScheduleBuildRequest.Size(m)
@@ -916,7 +917,7 @@ func (m *CancelBuildRequest) Reset()         { *m = CancelBuildRequest{} }
 func (m *CancelBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*CancelBuildRequest) ProtoMessage()    {}
 func (*CancelBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{7}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{7}
 }
 func (m *CancelBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CancelBuildRequest.Unmarshal(m, b)
@@ -924,8 +925,8 @@ func (m *CancelBuildRequest) XXX_Unmarshal(b []byte) error {
 func (m *CancelBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CancelBuildRequest.Marshal(b, m, deterministic)
 }
-func (dst *CancelBuildRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CancelBuildRequest.Merge(dst, src)
+func (m *CancelBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CancelBuildRequest.Merge(m, src)
 }
 func (m *CancelBuildRequest) XXX_Size() int {
 	return xxx_messageInfo_CancelBuildRequest.Size(m)
@@ -999,7 +1000,7 @@ func (m *BuildPredicate) Reset()         { *m = BuildPredicate{} }
 func (m *BuildPredicate) String() string { return proto.CompactTextString(m) }
 func (*BuildPredicate) ProtoMessage()    {}
 func (*BuildPredicate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{8}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{8}
 }
 func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildPredicate.Unmarshal(m, b)
@@ -1007,8 +1008,8 @@ func (m *BuildPredicate) XXX_Unmarshal(b []byte) error {
 func (m *BuildPredicate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildPredicate.Marshal(b, m, deterministic)
 }
-func (dst *BuildPredicate) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildPredicate.Merge(dst, src)
+func (m *BuildPredicate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildPredicate.Merge(m, src)
 }
 func (m *BuildPredicate) XXX_Size() int {
 	return xxx_messageInfo_BuildPredicate.Size(m)
@@ -1100,7 +1101,7 @@ func (m *BuildRange) Reset()         { *m = BuildRange{} }
 func (m *BuildRange) String() string { return proto.CompactTextString(m) }
 func (*BuildRange) ProtoMessage()    {}
 func (*BuildRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_rpc_533c349ce39c6387, []int{9}
+	return fileDescriptor_6551d9ae29a9e5a9, []int{9}
 }
 func (m *BuildRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildRange.Unmarshal(m, b)
@@ -1108,8 +1109,8 @@ func (m *BuildRange) XXX_Unmarshal(b []byte) error {
 func (m *BuildRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildRange.Marshal(b, m, deterministic)
 }
-func (dst *BuildRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildRange.Merge(dst, src)
+func (m *BuildRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildRange.Merge(m, src)
 }
 func (m *BuildRange) XXX_Size() int {
 	return xxx_messageInfo_BuildRange.Size(m)
@@ -1530,10 +1531,10 @@ var _Builds_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_rpc_533c349ce39c6387)
+	proto.RegisterFile("go.chromium.org/luci/buildbucket/proto/rpc.proto", fileDescriptor_6551d9ae29a9e5a9)
 }
 
-var fileDescriptor_rpc_533c349ce39c6387 = []byte{
+var fileDescriptor_6551d9ae29a9e5a9 = []byte{
 	// 1172 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x57, 0xdd, 0x6e, 0xe3, 0x44,
 	0x14, 0x8e, 0x9b, 0x4d, 0x1a, 0x9f, 0xfc, 0xac, 0x98, 0x76, 0xa9, 0x09, 0x2d, 0x84, 0x50, 0xad,

@@ -3,9 +3,11 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +37,7 @@ func (m *Platform) Reset()         { *m = Platform{} }
 func (m *Platform) String() string { return proto.CompactTextString(m) }
 func (*Platform) ProtoMessage()    {}
 func (*Platform) Descriptor() ([]byte, []int) {
-	return fileDescriptor_platforms_91eb230287ccad6a, []int{0}
+	return fileDescriptor_764b10c00d1d2476, []int{0}
 }
 func (m *Platform) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Platform.Unmarshal(m, b)
@@ -43,8 +45,8 @@ func (m *Platform) XXX_Unmarshal(b []byte) error {
 func (m *Platform) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Platform.Marshal(b, m, deterministic)
 }
-func (dst *Platform) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Platform.Merge(dst, src)
+func (m *Platform) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platform.Merge(m, src)
 }
 func (m *Platform) XXX_Size() int {
 	return xxx_messageInfo_Platform.Size(m)
@@ -91,7 +93,7 @@ func (m *ListPlatformsRequest) Reset()         { *m = ListPlatformsRequest{} }
 func (m *ListPlatformsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListPlatformsRequest) ProtoMessage()    {}
 func (*ListPlatformsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_platforms_91eb230287ccad6a, []int{1}
+	return fileDescriptor_764b10c00d1d2476, []int{1}
 }
 func (m *ListPlatformsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPlatformsRequest.Unmarshal(m, b)
@@ -99,8 +101,8 @@ func (m *ListPlatformsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListPlatformsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListPlatformsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListPlatformsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListPlatformsRequest.Merge(dst, src)
+func (m *ListPlatformsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPlatformsRequest.Merge(m, src)
 }
 func (m *ListPlatformsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListPlatformsRequest.Size(m)
@@ -138,7 +140,7 @@ func (m *ListPlatformsResponse) Reset()         { *m = ListPlatformsResponse{} }
 func (m *ListPlatformsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListPlatformsResponse) ProtoMessage()    {}
 func (*ListPlatformsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_platforms_91eb230287ccad6a, []int{2}
+	return fileDescriptor_764b10c00d1d2476, []int{2}
 }
 func (m *ListPlatformsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPlatformsResponse.Unmarshal(m, b)
@@ -146,8 +148,8 @@ func (m *ListPlatformsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListPlatformsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListPlatformsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListPlatformsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListPlatformsResponse.Merge(dst, src)
+func (m *ListPlatformsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPlatformsResponse.Merge(m, src)
 }
 func (m *ListPlatformsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListPlatformsResponse.Size(m)
@@ -172,10 +174,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor_platforms_91eb230287ccad6a)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/platforms.proto", fileDescriptor_764b10c00d1d2476)
 }
 
-var fileDescriptor_platforms_91eb230287ccad6a = []byte{
+var fileDescriptor_764b10c00d1d2476 = []byte{
 	// 229 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4f, 0x4f, 0x03, 0x21,
 	0x14, 0xc4, 0xb3, 0xad, 0xff, 0xf6, 0x55, 0x0f, 0x92, 0x9a, 0x70, 0xdc, 0x10, 0x0f, 0xbd, 0x08,

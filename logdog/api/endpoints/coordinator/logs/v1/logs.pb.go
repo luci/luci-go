@@ -5,12 +5,14 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
-import logpb "go.chromium.org/luci/logdog/api/logpb"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	logpb "go.chromium.org/luci/logdog/api/logpb"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -45,6 +47,7 @@ var QueryRequest_Trinary_name = map[int32]string{
 	1: "YES",
 	2: "NO",
 }
+
 var QueryRequest_Trinary_value = map[string]int32{
 	"BOTH": 0,
 	"YES":  1,
@@ -54,8 +57,9 @@ var QueryRequest_Trinary_value = map[string]int32{
 func (x QueryRequest_Trinary) String() string {
 	return proto.EnumName(QueryRequest_Trinary_name, int32(x))
 }
+
 func (QueryRequest_Trinary) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3, 0}
+	return fileDescriptor_fc34668f0f01b99d, []int{3, 0}
 }
 
 // GetRequest is the request structure for the user Get endpoint.
@@ -67,7 +71,7 @@ func (QueryRequest_Trinary) EnumDescriptor() ([]byte, []int) {
 // availability or internal constraints.
 type GetRequest struct {
 	// The request project to request.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The path of the log stream to get.
 	//
 	// This can either be a LogDog stream path or the SHA256 hash of a LogDog
@@ -76,24 +80,24 @@ type GetRequest struct {
 	// Some utilities may find passing around a full LogDog path to be cumbersome
 	// due to its length. They can opt to pass around the hash instead and
 	// retrieve logs using it.
-	Path string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// If true, requests that the log stream's state is returned.
-	State bool `protobuf:"varint,3,opt,name=state" json:"state,omitempty"`
+	State bool `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"`
 	// The initial log stream index to retrieve.
-	Index int64 `protobuf:"varint,4,opt,name=index" json:"index,omitempty"`
+	Index int64 `protobuf:"varint,4,opt,name=index,proto3" json:"index,omitempty"`
 	// The maximum number of bytes to return. If non-zero, it is applied as a
 	// constraint to limit the number of logs that are returned.
 	//
 	// This only returns complete logs. Assuming logs are available, it will
 	// return at least one log (even if it violates the size constraint) and as
 	// many additional logs as it can without exceeding this constraint.
-	ByteCount int32 `protobuf:"varint,5,opt,name=byte_count,json=byteCount" json:"byte_count,omitempty"`
+	ByteCount int32 `protobuf:"varint,5,opt,name=byte_count,json=byteCount,proto3" json:"byte_count,omitempty"`
 	// The maximum number of log records to request.
 	//
 	// If this value is zero, no count constraint will be applied. If this value
 	// is less than zero, no log entries will be returned. This can be used to
 	// fetch log stream descriptors without fetching any log records.
-	LogCount int32 `protobuf:"varint,6,opt,name=log_count,json=logCount" json:"log_count,omitempty"`
+	LogCount int32 `protobuf:"varint,6,opt,name=log_count,json=logCount,proto3" json:"log_count,omitempty"`
 	// If true, allows the range request to return non-contiguous records.
 	//
 	// A contiguous request (default) will iterate forwards from the supplied
@@ -106,8 +110,8 @@ type GetRequest struct {
 	//
 	// A contiguous request with Index 3 will return: [3, 4], stopping because
 	// 5 is missing. A non-contiguous request will return [3, 4, 6, 7].
-	NonContiguous        bool                       `protobuf:"varint,7,opt,name=non_contiguous,json=nonContiguous" json:"non_contiguous,omitempty"`
-	GetSignedUrls        *GetRequest_SignURLRequest `protobuf:"bytes,8,opt,name=get_signed_urls,json=getSignedUrls" json:"get_signed_urls,omitempty"`
+	NonContiguous        bool                       `protobuf:"varint,7,opt,name=non_contiguous,json=nonContiguous,proto3" json:"non_contiguous,omitempty"`
+	GetSignedUrls        *GetRequest_SignURLRequest `protobuf:"bytes,8,opt,name=get_signed_urls,json=getSignedUrls,proto3" json:"get_signed_urls,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -117,7 +121,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{0}
+	return fileDescriptor_fc34668f0f01b99d, []int{0}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
@@ -125,8 +129,8 @@ func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetRequest.Merge(dst, src)
+func (m *GetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest.Merge(m, src)
 }
 func (m *GetRequest) XXX_Size() int {
 	return xxx_messageInfo_GetRequest.Size(m)
@@ -198,11 +202,11 @@ func (m *GetRequest) GetGetSignedUrls() *GetRequest_SignURLRequest {
 // current storage system, the response message will be empty.
 type GetRequest_SignURLRequest struct {
 	// The lifetime that the signed URL will be bound to.. The
-	Lifetime *duration.Duration `protobuf:"bytes,1,opt,name=lifetime" json:"lifetime,omitempty"`
+	Lifetime *duration.Duration `protobuf:"bytes,1,opt,name=lifetime,proto3" json:"lifetime,omitempty"`
 	// Return a signed URL for the log's RecordIO protobuf data.
-	Stream bool `protobuf:"varint,2,opt,name=stream" json:"stream,omitempty"`
+	Stream bool `protobuf:"varint,2,opt,name=stream,proto3" json:"stream,omitempty"`
 	// Return a signed URL for the log's LogIndex protobuf.
-	Index                bool     `protobuf:"varint,3,opt,name=index" json:"index,omitempty"`
+	Index                bool     `protobuf:"varint,3,opt,name=index,proto3" json:"index,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -212,7 +216,7 @@ func (m *GetRequest_SignURLRequest) Reset()         { *m = GetRequest_SignURLReq
 func (m *GetRequest_SignURLRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest_SignURLRequest) ProtoMessage()    {}
 func (*GetRequest_SignURLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{0, 0}
+	return fileDescriptor_fc34668f0f01b99d, []int{0, 0}
 }
 func (m *GetRequest_SignURLRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Unmarshal(m, b)
@@ -220,8 +224,8 @@ func (m *GetRequest_SignURLRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetRequest_SignURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Marshal(b, m, deterministic)
 }
-func (dst *GetRequest_SignURLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetRequest_SignURLRequest.Merge(dst, src)
+func (m *GetRequest_SignURLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest_SignURLRequest.Merge(m, src)
 }
 func (m *GetRequest_SignURLRequest) XXX_Size() int {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Size(m)
@@ -257,7 +261,7 @@ func (m *GetRequest_SignURLRequest) GetIndex() bool {
 // the last log in a given log stream at the time of the request.
 type TailRequest struct {
 	// The request project to request.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The path of the log stream to get.
 	//
 	// This can either be a LogDog stream path or the SHA256 hash of a LogDog
@@ -266,9 +270,9 @@ type TailRequest struct {
 	// Some utilities may find passing around a full LogDog path to be cumbersome
 	// due to its length. They can opt to pass around the hash instead and
 	// retrieve logs using it.
-	Path string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// If true, requests that the log stream's state is returned.
-	State                bool     `protobuf:"varint,3,opt,name=state" json:"state,omitempty"`
+	State                bool     `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -278,7 +282,7 @@ func (m *TailRequest) Reset()         { *m = TailRequest{} }
 func (m *TailRequest) String() string { return proto.CompactTextString(m) }
 func (*TailRequest) ProtoMessage()    {}
 func (*TailRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{1}
+	return fileDescriptor_fc34668f0f01b99d, []int{1}
 }
 func (m *TailRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TailRequest.Unmarshal(m, b)
@@ -286,8 +290,8 @@ func (m *TailRequest) XXX_Unmarshal(b []byte) error {
 func (m *TailRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TailRequest.Marshal(b, m, deterministic)
 }
-func (dst *TailRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TailRequest.Merge(dst, src)
+func (m *TailRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TailRequest.Merge(m, src)
 }
 func (m *TailRequest) XXX_Size() int {
 	return xxx_messageInfo_TailRequest.Size(m)
@@ -322,24 +326,24 @@ func (m *TailRequest) GetState() bool {
 // GetResponse is the response structure for the user Get endpoint.
 type GetResponse struct {
 	// Project is the project name that these logs belong to.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The log stream descriptor and state for this stream.
 	//
 	// It can be requested by setting the request's State field to true. If the
 	// Proto field is true, the State's Descriptor field will not be included.
-	State *LogStreamState `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	State *LogStreamState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	// The expanded LogStreamDescriptor protobuf. It is intended for JSON
 	// consumption.
 	//
 	// If the GetRequest's Proto field is false, this will be populated;
 	// otherwise, the serialized protobuf will be written to the DescriptorProto
 	// field.
-	Desc *logpb.LogStreamDescriptor `protobuf:"bytes,3,opt,name=desc" json:"desc,omitempty"`
+	Desc *logpb.LogStreamDescriptor `protobuf:"bytes,3,opt,name=desc,proto3" json:"desc,omitempty"`
 	// Log represents the set of retrieved log records.
-	Logs []*logpb.LogEntry `protobuf:"bytes,4,rep,name=logs" json:"logs,omitempty"`
+	Logs []*logpb.LogEntry `protobuf:"bytes,4,rep,name=logs,proto3" json:"logs,omitempty"`
 	// An optional signed log entry RecordIO protobuf URL, if requested via
 	// "sign_entry_url_lifetime".
-	SignedUrls           *GetResponse_SignedUrls `protobuf:"bytes,5,opt,name=signed_urls,json=signedUrls" json:"signed_urls,omitempty"`
+	SignedUrls           *GetResponse_SignedUrls `protobuf:"bytes,5,opt,name=signed_urls,json=signedUrls,proto3" json:"signed_urls,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -349,7 +353,7 @@ func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{2}
+	return fileDescriptor_fc34668f0f01b99d, []int{2}
 }
 func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
@@ -357,8 +361,8 @@ func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 func (m *GetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetResponse.Marshal(b, m, deterministic)
 }
-func (dst *GetResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetResponse.Merge(dst, src)
+func (m *GetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse.Merge(m, src)
 }
 func (m *GetResponse) XXX_Size() int {
 	return xxx_messageInfo_GetResponse.Size(m)
@@ -407,11 +411,11 @@ func (m *GetResponse) GetSignedUrls() *GetResponse_SignedUrls {
 // Holds information about the log stream's signed entry URL.
 type GetResponse_SignedUrls struct {
 	// The time when this signed URL will expire.
-	Expiration *timestamp.Timestamp `protobuf:"bytes,1,opt,name=expiration" json:"expiration,omitempty"`
+	Expiration *timestamp.Timestamp `protobuf:"bytes,1,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	// The signed log stream URL, if requested.
-	Stream string `protobuf:"bytes,2,opt,name=stream" json:"stream,omitempty"`
+	Stream string `protobuf:"bytes,2,opt,name=stream,proto3" json:"stream,omitempty"`
 	// The signed log index URL, if requested.
-	Index                string   `protobuf:"bytes,3,opt,name=index" json:"index,omitempty"`
+	Index                string   `protobuf:"bytes,3,opt,name=index,proto3" json:"index,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -421,7 +425,7 @@ func (m *GetResponse_SignedUrls) Reset()         { *m = GetResponse_SignedUrls{}
 func (m *GetResponse_SignedUrls) String() string { return proto.CompactTextString(m) }
 func (*GetResponse_SignedUrls) ProtoMessage()    {}
 func (*GetResponse_SignedUrls) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{2, 0}
+	return fileDescriptor_fc34668f0f01b99d, []int{2, 0}
 }
 func (m *GetResponse_SignedUrls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResponse_SignedUrls.Unmarshal(m, b)
@@ -429,8 +433,8 @@ func (m *GetResponse_SignedUrls) XXX_Unmarshal(b []byte) error {
 func (m *GetResponse_SignedUrls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetResponse_SignedUrls.Marshal(b, m, deterministic)
 }
-func (dst *GetResponse_SignedUrls) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetResponse_SignedUrls.Merge(dst, src)
+func (m *GetResponse_SignedUrls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse_SignedUrls.Merge(m, src)
 }
 func (m *GetResponse_SignedUrls) XXX_Size() int {
 	return xxx_messageInfo_GetResponse_SignedUrls.Size(m)
@@ -465,7 +469,7 @@ func (m *GetResponse_SignedUrls) GetIndex() string {
 // QueryRequest is the request structure for the user Query endpoint.
 type QueryRequest struct {
 	// The request project to request.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The query parameter.
 	//
 	// The path expression may substitute a glob ("*") for a specific path
@@ -489,32 +493,32 @@ type QueryRequest struct {
 	//     first value is "foo" and whose name is "baz".
 	//   - foo/bar will return all streams whose name is "foo/bar".
 	//   - */* will return all streams with two-component names.
-	Path string `protobuf:"bytes,2,opt,name=path" json:"path,omitempty"`
+	Path string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	// If true, returns that the streams' full state is returned instead of just
 	// its Path.
-	State bool `protobuf:"varint,3,opt,name=state" json:"state,omitempty"`
+	State bool `protobuf:"varint,3,opt,name=state,proto3" json:"state,omitempty"`
 	// If true, causes the requested state to be returned as serialized protobuf
 	// data instead of deserialized JSON structures.
-	Proto bool `protobuf:"varint,4,opt,name=proto" json:"proto,omitempty"`
+	Proto bool `protobuf:"varint,4,opt,name=proto,proto3" json:"proto,omitempty"`
 	// Next, if not empty, indicates that this query should continue at the point
 	// where the previous query left off.
-	Next string `protobuf:"bytes,5,opt,name=next" json:"next,omitempty"`
+	Next string `protobuf:"bytes,5,opt,name=next,proto3" json:"next,omitempty"`
 	// MaxResults is the maximum number of query results to return.
 	//
 	// If MaxResults is zero, no upper bound will be indicated. However, the
 	// returned result count is still be subject to internal constraints.
-	MaxResults int32 `protobuf:"varint,6,opt,name=max_results,json=maxResults" json:"max_results,omitempty"`
+	MaxResults int32 `protobuf:"varint,6,opt,name=max_results,json=maxResults,proto3" json:"max_results,omitempty"`
 	// ContentType, if not empty, restricts results to streams with the supplied
 	// content type.
-	ContentType string                         `protobuf:"bytes,10,opt,name=content_type,json=contentType" json:"content_type,omitempty"`
-	StreamType  *QueryRequest_StreamTypeFilter `protobuf:"bytes,11,opt,name=stream_type,json=streamType" json:"stream_type,omitempty"`
+	ContentType string                         `protobuf:"bytes,10,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	StreamType  *QueryRequest_StreamTypeFilter `protobuf:"bytes,11,opt,name=stream_type,json=streamType,proto3" json:"stream_type,omitempty"`
 	// Newer restricts results to streams created after the specified date.
-	Newer *timestamp.Timestamp `protobuf:"bytes,12,opt,name=newer" json:"newer,omitempty"`
+	Newer *timestamp.Timestamp `protobuf:"bytes,12,opt,name=newer,proto3" json:"newer,omitempty"`
 	// Older restricts results to streams created before the specified date.
-	Older *timestamp.Timestamp `protobuf:"bytes,13,opt,name=older" json:"older,omitempty"`
+	Older *timestamp.Timestamp `protobuf:"bytes,13,opt,name=older,proto3" json:"older,omitempty"`
 	// If not empty, constrains the results to those whose protobuf version string
 	// matches the supplied version.
-	ProtoVersion string `protobuf:"bytes,14,opt,name=proto_version,json=protoVersion" json:"proto_version,omitempty"`
+	ProtoVersion string `protobuf:"bytes,14,opt,name=proto_version,json=protoVersion,proto3" json:"proto_version,omitempty"`
 	// Tags is the set of tags to constrain the query with.
 	//
 	// A Tag entry may either be:
@@ -522,9 +526,9 @@ type QueryRequest struct {
 	//   whose tag includes that key/value pair.
 	// - A key with an missing (nil) value, in which case the results are
 	//   constraints by logs that have that tag key, regardless of its value.
-	Tags map[string]string `protobuf:"bytes,15,rep,name=tags" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Tags map[string]string `protobuf:"bytes,15,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Purged restricts the query to streams that have or haven't been purged.
-	Purged               QueryRequest_Trinary `protobuf:"varint,16,opt,name=purged,enum=logdog.QueryRequest_Trinary" json:"purged,omitempty"`
+	Purged               QueryRequest_Trinary `protobuf:"varint,16,opt,name=purged,proto3,enum=logdog.QueryRequest_Trinary" json:"purged,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -534,7 +538,7 @@ func (m *QueryRequest) Reset()         { *m = QueryRequest{} }
 func (m *QueryRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryRequest) ProtoMessage()    {}
 func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3}
+	return fileDescriptor_fc34668f0f01b99d, []int{3}
 }
 func (m *QueryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryRequest.Unmarshal(m, b)
@@ -542,8 +546,8 @@ func (m *QueryRequest) XXX_Unmarshal(b []byte) error {
 func (m *QueryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryRequest.Marshal(b, m, deterministic)
 }
-func (dst *QueryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryRequest.Merge(dst, src)
+func (m *QueryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRequest.Merge(m, src)
 }
 func (m *QueryRequest) XXX_Size() int {
 	return xxx_messageInfo_QueryRequest.Size(m)
@@ -648,7 +652,7 @@ func (m *QueryRequest) GetPurged() QueryRequest_Trinary {
 // The stream type to filter on.
 type QueryRequest_StreamTypeFilter struct {
 	// The StreamType value to filter on.
-	Value                logpb.StreamType `protobuf:"varint,1,opt,name=value,enum=logpb.StreamType" json:"value,omitempty"`
+	Value                logpb.StreamType `protobuf:"varint,1,opt,name=value,proto3,enum=logpb.StreamType" json:"value,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -658,7 +662,7 @@ func (m *QueryRequest_StreamTypeFilter) Reset()         { *m = QueryRequest_Stre
 func (m *QueryRequest_StreamTypeFilter) String() string { return proto.CompactTextString(m) }
 func (*QueryRequest_StreamTypeFilter) ProtoMessage()    {}
 func (*QueryRequest_StreamTypeFilter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3, 0}
+	return fileDescriptor_fc34668f0f01b99d, []int{3, 0}
 }
 func (m *QueryRequest_StreamTypeFilter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Unmarshal(m, b)
@@ -666,8 +670,8 @@ func (m *QueryRequest_StreamTypeFilter) XXX_Unmarshal(b []byte) error {
 func (m *QueryRequest_StreamTypeFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Marshal(b, m, deterministic)
 }
-func (dst *QueryRequest_StreamTypeFilter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryRequest_StreamTypeFilter.Merge(dst, src)
+func (m *QueryRequest_StreamTypeFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRequest_StreamTypeFilter.Merge(m, src)
 }
 func (m *QueryRequest_StreamTypeFilter) XXX_Size() int {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Size(m)
@@ -688,13 +692,13 @@ func (m *QueryRequest_StreamTypeFilter) GetValue() logpb.StreamType {
 // QueryResponse is the response structure for the user Query endpoint.
 type QueryResponse struct {
 	// Project is the project name that all responses belong to.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The list of streams that were identified as the result of the query.
-	Streams []*QueryResponse_Stream `protobuf:"bytes,2,rep,name=streams" json:"streams,omitempty"`
+	Streams []*QueryResponse_Stream `protobuf:"bytes,2,rep,name=streams,proto3" json:"streams,omitempty"`
 	// If not empty, indicates that there are more query results available.
 	// These results can be requested by repeating the Query request with the
 	// same Path field and supplying this value in the Next field.
-	Next                 string   `protobuf:"bytes,3,opt,name=next" json:"next,omitempty"`
+	Next                 string   `protobuf:"bytes,3,opt,name=next,proto3" json:"next,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -704,7 +708,7 @@ func (m *QueryResponse) Reset()         { *m = QueryResponse{} }
 func (m *QueryResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryResponse) ProtoMessage()    {}
 func (*QueryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{4}
+	return fileDescriptor_fc34668f0f01b99d, []int{4}
 }
 func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryResponse.Unmarshal(m, b)
@@ -712,8 +716,8 @@ func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
 func (m *QueryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryResponse.Marshal(b, m, deterministic)
 }
-func (dst *QueryResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResponse.Merge(dst, src)
+func (m *QueryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResponse.Merge(m, src)
 }
 func (m *QueryResponse) XXX_Size() int {
 	return xxx_messageInfo_QueryResponse.Size(m)
@@ -748,12 +752,12 @@ func (m *QueryResponse) GetNext() string {
 // Stream represents a single query response stream.
 type QueryResponse_Stream struct {
 	// Path is the log stream path.
-	Path string `protobuf:"bytes,1,opt,name=path" json:"path,omitempty"`
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// State is the log stream descriptor and state for this stream.
 	//
 	// It can be requested by setting the request's State field to true. If the
 	// Proto field is true, the State's Descriptor field will not be included.
-	State *LogStreamState `protobuf:"bytes,2,opt,name=state" json:"state,omitempty"`
+	State *LogStreamState `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	// The JSON-packed log stream descriptor protobuf.
 	//
 	// A Descriptor entry corresponds to the Path with the same index.
@@ -762,7 +766,7 @@ type QueryResponse_Stream struct {
 	// populated. If the Proto field is false, Descriptor will be populated;
 	// otherwise, DescriptorProto will be populated with the serialized descriptor
 	// protobuf.
-	Desc *logpb.LogStreamDescriptor `protobuf:"bytes,3,opt,name=desc" json:"desc,omitempty"`
+	Desc *logpb.LogStreamDescriptor `protobuf:"bytes,3,opt,name=desc,proto3" json:"desc,omitempty"`
 	// The serialized log stream Descriptor protobuf.
 	DescProto            []byte   `protobuf:"bytes,4,opt,name=desc_proto,json=descProto,proto3" json:"desc_proto,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -774,7 +778,7 @@ func (m *QueryResponse_Stream) Reset()         { *m = QueryResponse_Stream{} }
 func (m *QueryResponse_Stream) String() string { return proto.CompactTextString(m) }
 func (*QueryResponse_Stream) ProtoMessage()    {}
 func (*QueryResponse_Stream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{4, 0}
+	return fileDescriptor_fc34668f0f01b99d, []int{4, 0}
 }
 func (m *QueryResponse_Stream) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryResponse_Stream.Unmarshal(m, b)
@@ -782,8 +786,8 @@ func (m *QueryResponse_Stream) XXX_Unmarshal(b []byte) error {
 func (m *QueryResponse_Stream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryResponse_Stream.Marshal(b, m, deterministic)
 }
-func (dst *QueryResponse_Stream) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResponse_Stream.Merge(dst, src)
+func (m *QueryResponse_Stream) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResponse_Stream.Merge(m, src)
 }
 func (m *QueryResponse_Stream) XXX_Size() int {
 	return xxx_messageInfo_QueryResponse_Stream.Size(m)
@@ -1015,10 +1019,10 @@ var _Logs_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/logs.proto", fileDescriptor_logs_4b2aab2ce8da1cd7)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/logs.proto", fileDescriptor_fc34668f0f01b99d)
 }
 
-var fileDescriptor_logs_4b2aab2ce8da1cd7 = []byte{
+var fileDescriptor_fc34668f0f01b99d = []byte{
 	// 911 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0xdd, 0xae, 0xdb, 0x44,
 	0x10, 0xc6, 0x89, 0xf3, 0x37, 0x4e, 0x72, 0xc2, 0x52, 0x2a, 0x63, 0xe8, 0x69, 0x9a, 0x52, 0x91,

@@ -5,10 +5,12 @@ package crimson
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -1305,10 +1307,10 @@ var _Crimson_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/crimson.proto", fileDescriptor_crimson_455992e9edddba93)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/crimson.proto", fileDescriptor_46e41eaf4c273b9a)
 }
 
-var fileDescriptor_crimson_455992e9edddba93 = []byte{
+var fileDescriptor_46e41eaf4c273b9a = []byte{
 	// 710 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xdd, 0x4f, 0xdb, 0x3e,
 	0x14, 0x7d, 0xfb, 0x41, 0x2f, 0xf4, 0xb7, 0xcd, 0xd2, 0xbe, 0x0a, 0xec, 0x83, 0xf7, 0x25, 0x62,

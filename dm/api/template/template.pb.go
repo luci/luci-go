@@ -3,11 +3,13 @@
 
 package dmTemplate
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import templateproto "go.chromium.org/luci/common/data/text/templateproto"
-import v1 "go.chromium.org/luci/dm/api/service/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	templateproto "go.chromium.org/luci/common/data/text/templateproto"
+	v1 "go.chromium.org/luci/dm/api/service/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -22,7 +24,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // File represents a file full of DM template definitions.
 type File struct {
-	Template             map[string]*File_Template `protobuf:"bytes,1,rep,name=template" json:"template,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Template             map[string]*File_Template `protobuf:"bytes,1,rep,name=template,proto3" json:"template,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
 	XXX_sizecache        int32                     `json:"-"`
@@ -32,7 +34,7 @@ func (m *File) Reset()         { *m = File{} }
 func (m *File) String() string { return proto.CompactTextString(m) }
 func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_7fe384d69d73f1f3, []int{0}
+	return fileDescriptor_374a6f94bcadcedb, []int{0}
 }
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File.Unmarshal(m, b)
@@ -40,8 +42,8 @@ func (m *File) XXX_Unmarshal(b []byte) error {
 func (m *File) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_File.Marshal(b, m, deterministic)
 }
-func (dst *File) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_File.Merge(dst, src)
+func (m *File) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_File.Merge(m, src)
 }
 func (m *File) XXX_Size() int {
 	return xxx_messageInfo_File.Size(m)
@@ -61,10 +63,10 @@ func (m *File) GetTemplate() map[string]*File_Template {
 
 // Template defines a single template.
 type File_Template struct {
-	DistributorConfigName string                       `protobuf:"bytes,1,opt,name=distributor_config_name,json=distributorConfigName" json:"distributor_config_name,omitempty"`
-	Parameters            *templateproto.File_Template `protobuf:"bytes,2,opt,name=parameters" json:"parameters,omitempty"`
-	DistributorParameters *templateproto.File_Template `protobuf:"bytes,3,opt,name=distributor_parameters,json=distributorParameters" json:"distributor_parameters,omitempty"`
-	Meta                  *v1.Quest_Desc_Meta          `protobuf:"bytes,4,opt,name=meta" json:"meta,omitempty"`
+	DistributorConfigName string                       `protobuf:"bytes,1,opt,name=distributor_config_name,json=distributorConfigName,proto3" json:"distributor_config_name,omitempty"`
+	Parameters            *templateproto.File_Template `protobuf:"bytes,2,opt,name=parameters,proto3" json:"parameters,omitempty"`
+	DistributorParameters *templateproto.File_Template `protobuf:"bytes,3,opt,name=distributor_parameters,json=distributorParameters,proto3" json:"distributor_parameters,omitempty"`
+	Meta                  *v1.Quest_Desc_Meta          `protobuf:"bytes,4,opt,name=meta,proto3" json:"meta,omitempty"`
 	XXX_NoUnkeyedLiteral  struct{}                     `json:"-"`
 	XXX_unrecognized      []byte                       `json:"-"`
 	XXX_sizecache         int32                        `json:"-"`
@@ -74,7 +76,7 @@ func (m *File_Template) Reset()         { *m = File_Template{} }
 func (m *File_Template) String() string { return proto.CompactTextString(m) }
 func (*File_Template) ProtoMessage()    {}
 func (*File_Template) Descriptor() ([]byte, []int) {
-	return fileDescriptor_template_7fe384d69d73f1f3, []int{0, 0}
+	return fileDescriptor_374a6f94bcadcedb, []int{0, 0}
 }
 func (m *File_Template) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template.Unmarshal(m, b)
@@ -82,8 +84,8 @@ func (m *File_Template) XXX_Unmarshal(b []byte) error {
 func (m *File_Template) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_File_Template.Marshal(b, m, deterministic)
 }
-func (dst *File_Template) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_File_Template.Merge(dst, src)
+func (m *File_Template) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_File_Template.Merge(m, src)
 }
 func (m *File_Template) XXX_Size() int {
 	return xxx_messageInfo_File_Template.Size(m)
@@ -129,10 +131,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/template/template.proto", fileDescriptor_template_7fe384d69d73f1f3)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/template/template.proto", fileDescriptor_374a6f94bcadcedb)
 }
 
-var fileDescriptor_template_7fe384d69d73f1f3 = []byte{
+var fileDescriptor_374a6f94bcadcedb = []byte{
 	// 326 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x5f, 0x4b, 0xc3, 0x30,
 	0x14, 0xc5, 0xe9, 0x3a, 0x65, 0xde, 0x21, 0x48, 0x44, 0x9d, 0x45, 0x64, 0xf8, 0xe2, 0x9e, 0x12,

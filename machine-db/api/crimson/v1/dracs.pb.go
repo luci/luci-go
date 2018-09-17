@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import field_mask "google.golang.org/genproto/protobuf/field_mask"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -45,7 +47,7 @@ func (m *DRAC) Reset()         { *m = DRAC{} }
 func (m *DRAC) String() string { return proto.CompactTextString(m) }
 func (*DRAC) ProtoMessage()    {}
 func (*DRAC) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{0}
+	return fileDescriptor_0e7c5f5f1ce4adfa, []int{0}
 }
 func (m *DRAC) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DRAC.Unmarshal(m, b)
@@ -53,8 +55,8 @@ func (m *DRAC) XXX_Unmarshal(b []byte) error {
 func (m *DRAC) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DRAC.Marshal(b, m, deterministic)
 }
-func (dst *DRAC) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DRAC.Merge(dst, src)
+func (m *DRAC) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DRAC.Merge(m, src)
 }
 func (m *DRAC) XXX_Size() int {
 	return xxx_messageInfo_DRAC.Size(m)
@@ -127,7 +129,7 @@ func (m *CreateDRACRequest) Reset()         { *m = CreateDRACRequest{} }
 func (m *CreateDRACRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDRACRequest) ProtoMessage()    {}
 func (*CreateDRACRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{1}
+	return fileDescriptor_0e7c5f5f1ce4adfa, []int{1}
 }
 func (m *CreateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDRACRequest.Unmarshal(m, b)
@@ -135,8 +137,8 @@ func (m *CreateDRACRequest) XXX_Unmarshal(b []byte) error {
 func (m *CreateDRACRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateDRACRequest.Marshal(b, m, deterministic)
 }
-func (dst *CreateDRACRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateDRACRequest.Merge(dst, src)
+func (m *CreateDRACRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDRACRequest.Merge(m, src)
 }
 func (m *CreateDRACRequest) XXX_Size() int {
 	return xxx_messageInfo_CreateDRACRequest.Size(m)
@@ -177,7 +179,7 @@ func (m *ListDRACsRequest) Reset()         { *m = ListDRACsRequest{} }
 func (m *ListDRACsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListDRACsRequest) ProtoMessage()    {}
 func (*ListDRACsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{2}
+	return fileDescriptor_0e7c5f5f1ce4adfa, []int{2}
 }
 func (m *ListDRACsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsRequest.Unmarshal(m, b)
@@ -185,8 +187,8 @@ func (m *ListDRACsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListDRACsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListDRACsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListDRACsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListDRACsRequest.Merge(dst, src)
+func (m *ListDRACsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDRACsRequest.Merge(m, src)
 }
 func (m *ListDRACsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListDRACsRequest.Size(m)
@@ -252,7 +254,7 @@ func (m *ListDRACsResponse) Reset()         { *m = ListDRACsResponse{} }
 func (m *ListDRACsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListDRACsResponse) ProtoMessage()    {}
 func (*ListDRACsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{3}
+	return fileDescriptor_0e7c5f5f1ce4adfa, []int{3}
 }
 func (m *ListDRACsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsResponse.Unmarshal(m, b)
@@ -260,8 +262,8 @@ func (m *ListDRACsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListDRACsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListDRACsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListDRACsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListDRACsResponse.Merge(dst, src)
+func (m *ListDRACsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListDRACsResponse.Merge(m, src)
 }
 func (m *ListDRACsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListDRACsResponse.Size(m)
@@ -294,7 +296,7 @@ func (m *UpdateDRACRequest) Reset()         { *m = UpdateDRACRequest{} }
 func (m *UpdateDRACRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDRACRequest) ProtoMessage()    {}
 func (*UpdateDRACRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dracs_f1e61d595af6d8f0, []int{4}
+	return fileDescriptor_0e7c5f5f1ce4adfa, []int{4}
 }
 func (m *UpdateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDRACRequest.Unmarshal(m, b)
@@ -302,8 +304,8 @@ func (m *UpdateDRACRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateDRACRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateDRACRequest.Marshal(b, m, deterministic)
 }
-func (dst *UpdateDRACRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateDRACRequest.Merge(dst, src)
+func (m *UpdateDRACRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDRACRequest.Merge(m, src)
 }
 func (m *UpdateDRACRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdateDRACRequest.Size(m)
@@ -337,10 +339,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor_dracs_f1e61d595af6d8f0)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/dracs.proto", fileDescriptor_0e7c5f5f1ce4adfa)
 }
 
-var fileDescriptor_dracs_f1e61d595af6d8f0 = []byte{
+var fileDescriptor_0e7c5f5f1ce4adfa = []byte{
 	// 407 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0xc1, 0x8e, 0xd3, 0x30,
 	0x10, 0x55, 0x36, 0x69, 0xcb, 0x4e, 0x59, 0x89, 0x5a, 0x08, 0x59, 0x3d, 0x40, 0xc8, 0x5e, 0x72,

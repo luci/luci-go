@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -40,7 +42,7 @@ func (m *Rack) Reset()         { *m = Rack{} }
 func (m *Rack) String() string { return proto.CompactTextString(m) }
 func (*Rack) ProtoMessage()    {}
 func (*Rack) Descriptor() ([]byte, []int) {
-	return fileDescriptor_racks_c2c44a3b56347bdb, []int{0}
+	return fileDescriptor_5e7bc6de9b3dbb6d, []int{0}
 }
 func (m *Rack) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Rack.Unmarshal(m, b)
@@ -48,8 +50,8 @@ func (m *Rack) XXX_Unmarshal(b []byte) error {
 func (m *Rack) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Rack.Marshal(b, m, deterministic)
 }
-func (dst *Rack) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Rack.Merge(dst, src)
+func (m *Rack) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Rack.Merge(m, src)
 }
 func (m *Rack) XXX_Size() int {
 	return xxx_messageInfo_Rack.Size(m)
@@ -112,7 +114,7 @@ func (m *ListRacksRequest) Reset()         { *m = ListRacksRequest{} }
 func (m *ListRacksRequest) String() string { return proto.CompactTextString(m) }
 func (*ListRacksRequest) ProtoMessage()    {}
 func (*ListRacksRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_racks_c2c44a3b56347bdb, []int{1}
+	return fileDescriptor_5e7bc6de9b3dbb6d, []int{1}
 }
 func (m *ListRacksRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListRacksRequest.Unmarshal(m, b)
@@ -120,8 +122,8 @@ func (m *ListRacksRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListRacksRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListRacksRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListRacksRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListRacksRequest.Merge(dst, src)
+func (m *ListRacksRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListRacksRequest.Merge(m, src)
 }
 func (m *ListRacksRequest) XXX_Size() int {
 	return xxx_messageInfo_ListRacksRequest.Size(m)
@@ -166,7 +168,7 @@ func (m *ListRacksResponse) Reset()         { *m = ListRacksResponse{} }
 func (m *ListRacksResponse) String() string { return proto.CompactTextString(m) }
 func (*ListRacksResponse) ProtoMessage()    {}
 func (*ListRacksResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_racks_c2c44a3b56347bdb, []int{2}
+	return fileDescriptor_5e7bc6de9b3dbb6d, []int{2}
 }
 func (m *ListRacksResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListRacksResponse.Unmarshal(m, b)
@@ -174,8 +176,8 @@ func (m *ListRacksResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListRacksResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListRacksResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListRacksResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListRacksResponse.Merge(dst, src)
+func (m *ListRacksResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListRacksResponse.Merge(m, src)
 }
 func (m *ListRacksResponse) XXX_Size() int {
 	return xxx_messageInfo_ListRacksResponse.Size(m)
@@ -200,10 +202,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor_racks_c2c44a3b56347bdb)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/racks.proto", fileDescriptor_5e7bc6de9b3dbb6d)
 }
 
-var fileDescriptor_racks_c2c44a3b56347bdb = []byte{
+var fileDescriptor_5e7bc6de9b3dbb6d = []byte{
 	// 277 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0x31, 0x4f, 0xc3, 0x30,
 	0x10, 0x85, 0x95, 0xa6, 0x05, 0xd5, 0x15, 0xa8, 0x58, 0x0c, 0x16, 0x03, 0x8a, 0xc2, 0x92, 0x05,

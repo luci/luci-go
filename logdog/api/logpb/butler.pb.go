@@ -3,10 +3,12 @@
 
 package logpb
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -34,6 +36,7 @@ var ButlerMetadata_ContentType_name = map[int32]string{
 	0: "Invalid",
 	1: "ButlerLogBundle",
 }
+
 var ButlerMetadata_ContentType_value = map[string]int32{
 	"Invalid":         0,
 	"ButlerLogBundle": 1,
@@ -42,8 +45,9 @@ var ButlerMetadata_ContentType_value = map[string]int32{
 func (x ButlerMetadata_ContentType) String() string {
 	return proto.EnumName(ButlerMetadata_ContentType_name, int32(x))
 }
+
 func (ButlerMetadata_ContentType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_butler_b31ee24866c731ed, []int{0, 0}
+	return fileDescriptor_25f3936477fa1e93, []int{0, 0}
 }
 
 // Compression scheme of attached data.
@@ -58,6 +62,7 @@ var ButlerMetadata_Compression_name = map[int32]string{
 	0: "NONE",
 	1: "ZLIB",
 }
+
 var ButlerMetadata_Compression_value = map[string]int32{
 	"NONE": 0,
 	"ZLIB": 1,
@@ -66,8 +71,9 @@ var ButlerMetadata_Compression_value = map[string]int32{
 func (x ButlerMetadata_Compression) String() string {
 	return proto.EnumName(ButlerMetadata_Compression_name, int32(x))
 }
+
 func (ButlerMetadata_Compression) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_butler_b31ee24866c731ed, []int{0, 1}
+	return fileDescriptor_25f3936477fa1e93, []int{0, 1}
 }
 
 //
@@ -75,10 +81,10 @@ func (ButlerMetadata_Compression) EnumDescriptor() ([]byte, []int) {
 // to describe the remainder of the contents.
 type ButlerMetadata struct {
 	// This is the type of data in the subsequent frame.
-	Type        ButlerMetadata_ContentType `protobuf:"varint,1,opt,name=type,enum=logpb.ButlerMetadata_ContentType" json:"type,omitempty"`
-	Compression ButlerMetadata_Compression `protobuf:"varint,2,opt,name=compression,enum=logpb.ButlerMetadata_Compression" json:"compression,omitempty"`
+	Type        ButlerMetadata_ContentType `protobuf:"varint,1,opt,name=type,proto3,enum=logpb.ButlerMetadata_ContentType" json:"type,omitempty"`
+	Compression ButlerMetadata_Compression `protobuf:"varint,2,opt,name=compression,proto3,enum=logpb.ButlerMetadata_Compression" json:"compression,omitempty"`
 	// The protobuf version string (see version.go).
-	ProtoVersion         string   `protobuf:"bytes,3,opt,name=proto_version,json=protoVersion" json:"proto_version,omitempty"`
+	ProtoVersion         string   `protobuf:"bytes,3,opt,name=proto_version,json=protoVersion,proto3" json:"proto_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -88,7 +94,7 @@ func (m *ButlerMetadata) Reset()         { *m = ButlerMetadata{} }
 func (m *ButlerMetadata) String() string { return proto.CompactTextString(m) }
 func (*ButlerMetadata) ProtoMessage()    {}
 func (*ButlerMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_butler_b31ee24866c731ed, []int{0}
+	return fileDescriptor_25f3936477fa1e93, []int{0}
 }
 func (m *ButlerMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerMetadata.Unmarshal(m, b)
@@ -96,8 +102,8 @@ func (m *ButlerMetadata) XXX_Unmarshal(b []byte) error {
 func (m *ButlerMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerMetadata.Marshal(b, m, deterministic)
 }
-func (dst *ButlerMetadata) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerMetadata.Merge(dst, src)
+func (m *ButlerMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerMetadata.Merge(m, src)
 }
 func (m *ButlerMetadata) XXX_Size() int {
 	return xxx_messageInfo_ButlerMetadata.Size(m)
@@ -144,21 +150,21 @@ type ButlerLogBundle struct {
 	//
 	// (DEPRECATED) Stream source information. Now supplied during prefix
 	// registration.
-	DeprecatedSource string `protobuf:"bytes,1,opt,name=deprecated_source,json=deprecatedSource" json:"deprecated_source,omitempty"`
+	DeprecatedSource string `protobuf:"bytes,1,opt,name=deprecated_source,json=deprecatedSource,proto3" json:"deprecated_source,omitempty"`
 	// The timestamp when this bundle was generated.
 	//
 	// This field will be used for debugging and internal accounting.
-	Timestamp *timestamp.Timestamp `protobuf:"bytes,2,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp *timestamp.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// *
 	// Each Entry is an individual set of log records for a given log stream.
-	Entries []*ButlerLogBundle_Entry `protobuf:"bytes,3,rep,name=entries" json:"entries,omitempty"`
+	Entries []*ButlerLogBundle_Entry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
 	// * Project specifies which luci-config project this stream belongs to.
-	Project string `protobuf:"bytes,4,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,4,opt,name=project,proto3" json:"project,omitempty"`
 	// *
 	// The log stream prefix that is shared by all bundled streams.
 	//
 	// This prefix is valid within the supplied project scope.
-	Prefix string `protobuf:"bytes,5,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,5,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	//
 	// The log prefix's secret value (required).
 	//
@@ -183,7 +189,7 @@ func (m *ButlerLogBundle) Reset()         { *m = ButlerLogBundle{} }
 func (m *ButlerLogBundle) String() string { return proto.CompactTextString(m) }
 func (*ButlerLogBundle) ProtoMessage()    {}
 func (*ButlerLogBundle) Descriptor() ([]byte, []int) {
-	return fileDescriptor_butler_b31ee24866c731ed, []int{1}
+	return fileDescriptor_25f3936477fa1e93, []int{1}
 }
 func (m *ButlerLogBundle) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle.Unmarshal(m, b)
@@ -191,8 +197,8 @@ func (m *ButlerLogBundle) XXX_Unmarshal(b []byte) error {
 func (m *ButlerLogBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerLogBundle.Marshal(b, m, deterministic)
 }
-func (dst *ButlerLogBundle) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerLogBundle.Merge(dst, src)
+func (m *ButlerLogBundle) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerLogBundle.Merge(m, src)
 }
 func (m *ButlerLogBundle) XXX_Size() int {
 	return xxx_messageInfo_ButlerLogBundle.Size(m)
@@ -253,7 +259,7 @@ type ButlerLogBundle_Entry struct {
 	// The descriptor for this entry's log stream.
 	//
 	// Each LogEntry in the "logs" field is shares this common descriptor.
-	Desc *LogStreamDescriptor `protobuf:"bytes,1,opt,name=desc" json:"desc,omitempty"`
+	Desc *LogStreamDescriptor `protobuf:"bytes,1,opt,name=desc,proto3" json:"desc,omitempty"`
 	// (DEPRECATED) Per-entry secret replaced with Butler-wide secret.
 	DeprecatedEntrySecret []byte `protobuf:"bytes,2,opt,name=deprecated_entry_secret,json=deprecatedEntrySecret,proto3" json:"deprecated_entry_secret,omitempty"`
 	//
@@ -267,16 +273,16 @@ type ButlerLogBundle_Entry struct {
 	//
 	// Further log entries belonging to this stream with stream indices
 	// exceeding the terminal log's index will be discarded.
-	Terminal bool `protobuf:"varint,3,opt,name=terminal" json:"terminal,omitempty"`
+	Terminal bool `protobuf:"varint,3,opt,name=terminal,proto3" json:"terminal,omitempty"`
 	//
 	// If terminal is true, this is the terminal stream index; that is, the last
 	// message index in the stream.
-	TerminalIndex uint64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex" json:"terminal_index,omitempty"`
+	TerminalIndex uint64 `protobuf:"varint,4,opt,name=terminal_index,json=terminalIndex,proto3" json:"terminal_index,omitempty"`
 	//
 	// Log entries attached to this record. These MUST be sequential.
 	//
 	// This is the main log entry content.
-	Logs                 []*LogEntry `protobuf:"bytes,5,rep,name=logs" json:"logs,omitempty"`
+	Logs                 []*LogEntry `protobuf:"bytes,5,rep,name=logs,proto3" json:"logs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -286,7 +292,7 @@ func (m *ButlerLogBundle_Entry) Reset()         { *m = ButlerLogBundle_Entry{} }
 func (m *ButlerLogBundle_Entry) String() string { return proto.CompactTextString(m) }
 func (*ButlerLogBundle_Entry) ProtoMessage()    {}
 func (*ButlerLogBundle_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_butler_b31ee24866c731ed, []int{1, 0}
+	return fileDescriptor_25f3936477fa1e93, []int{1, 0}
 }
 func (m *ButlerLogBundle_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Unmarshal(m, b)
@@ -294,8 +300,8 @@ func (m *ButlerLogBundle_Entry) XXX_Unmarshal(b []byte) error {
 func (m *ButlerLogBundle_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Marshal(b, m, deterministic)
 }
-func (dst *ButlerLogBundle_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerLogBundle_Entry.Merge(dst, src)
+func (m *ButlerLogBundle_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerLogBundle_Entry.Merge(m, src)
 }
 func (m *ButlerLogBundle_Entry) XXX_Size() int {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Size(m)
@@ -350,10 +356,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/butler.proto", fileDescriptor_butler_b31ee24866c731ed)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/butler.proto", fileDescriptor_25f3936477fa1e93)
 }
 
-var fileDescriptor_butler_b31ee24866c731ed = []byte{
+var fileDescriptor_25f3936477fa1e93 = []byte{
 	// 496 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0x4d, 0x6b, 0xdb, 0x40,
 	0x10, 0x8d, 0x6c, 0xf9, 0x6b, 0x9c, 0x38, 0xee, 0x96, 0xb6, 0xc2, 0x14, 0xea, 0x38, 0x14, 0x0c,

@@ -5,10 +5,12 @@ package scheduler
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -28,10 +30,10 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type JobsRequest struct {
 	// If not specified or "", all projects' jobs are returned.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
-	Cursor  string `protobuf:"bytes,2,opt,name=cursor" json:"cursor,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	Cursor  string `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	// page_size is currently not implemented and is ignored.
-	PageSize             int32    `protobuf:"varint,3,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize             int32    `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -41,7 +43,7 @@ func (m *JobsRequest) Reset()         { *m = JobsRequest{} }
 func (m *JobsRequest) String() string { return proto.CompactTextString(m) }
 func (*JobsRequest) ProtoMessage()    {}
 func (*JobsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{0}
+	return fileDescriptor_e96332fbbddc17fa, []int{0}
 }
 func (m *JobsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobsRequest.Unmarshal(m, b)
@@ -49,8 +51,8 @@ func (m *JobsRequest) XXX_Unmarshal(b []byte) error {
 func (m *JobsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobsRequest.Marshal(b, m, deterministic)
 }
-func (dst *JobsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobsRequest.Merge(dst, src)
+func (m *JobsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobsRequest.Merge(m, src)
 }
 func (m *JobsRequest) XXX_Size() int {
 	return xxx_messageInfo_JobsRequest.Size(m)
@@ -83,8 +85,8 @@ func (m *JobsRequest) GetPageSize() int32 {
 }
 
 type JobsReply struct {
-	Jobs                 []*Job   `protobuf:"bytes,1,rep,name=jobs" json:"jobs,omitempty"`
-	NextCursor           string   `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor" json:"next_cursor,omitempty"`
+	Jobs                 []*Job   `protobuf:"bytes,1,rep,name=jobs,proto3" json:"jobs,omitempty"`
+	NextCursor           string   `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -94,7 +96,7 @@ func (m *JobsReply) Reset()         { *m = JobsReply{} }
 func (m *JobsReply) String() string { return proto.CompactTextString(m) }
 func (*JobsReply) ProtoMessage()    {}
 func (*JobsReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{1}
+	return fileDescriptor_e96332fbbddc17fa, []int{1}
 }
 func (m *JobsReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobsReply.Unmarshal(m, b)
@@ -102,8 +104,8 @@ func (m *JobsReply) XXX_Unmarshal(b []byte) error {
 func (m *JobsReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobsReply.Marshal(b, m, deterministic)
 }
-func (dst *JobsReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobsReply.Merge(dst, src)
+func (m *JobsReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobsReply.Merge(m, src)
 }
 func (m *JobsReply) XXX_Size() int {
 	return xxx_messageInfo_JobsReply.Size(m)
@@ -129,10 +131,10 @@ func (m *JobsReply) GetNextCursor() string {
 }
 
 type InvocationsRequest struct {
-	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
-	Cursor string  `protobuf:"bytes,2,opt,name=cursor" json:"cursor,omitempty"`
+	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef,proto3" json:"job_ref,omitempty"`
+	Cursor string  `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	// page_size defaults to 50 which is maximum.
-	PageSize             int32    `protobuf:"varint,3,opt,name=page_size,json=pageSize" json:"page_size,omitempty"`
+	PageSize             int32    `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -142,7 +144,7 @@ func (m *InvocationsRequest) Reset()         { *m = InvocationsRequest{} }
 func (m *InvocationsRequest) String() string { return proto.CompactTextString(m) }
 func (*InvocationsRequest) ProtoMessage()    {}
 func (*InvocationsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{2}
+	return fileDescriptor_e96332fbbddc17fa, []int{2}
 }
 func (m *InvocationsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsRequest.Unmarshal(m, b)
@@ -150,8 +152,8 @@ func (m *InvocationsRequest) XXX_Unmarshal(b []byte) error {
 func (m *InvocationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationsRequest.Marshal(b, m, deterministic)
 }
-func (dst *InvocationsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationsRequest.Merge(dst, src)
+func (m *InvocationsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationsRequest.Merge(m, src)
 }
 func (m *InvocationsRequest) XXX_Size() int {
 	return xxx_messageInfo_InvocationsRequest.Size(m)
@@ -184,8 +186,8 @@ func (m *InvocationsRequest) GetPageSize() int32 {
 }
 
 type InvocationsReply struct {
-	Invocations          []*Invocation `protobuf:"bytes,1,rep,name=invocations" json:"invocations,omitempty"`
-	NextCursor           string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor" json:"next_cursor,omitempty"`
+	Invocations          []*Invocation `protobuf:"bytes,1,rep,name=invocations,proto3" json:"invocations,omitempty"`
+	NextCursor           string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`
@@ -195,7 +197,7 @@ func (m *InvocationsReply) Reset()         { *m = InvocationsReply{} }
 func (m *InvocationsReply) String() string { return proto.CompactTextString(m) }
 func (*InvocationsReply) ProtoMessage()    {}
 func (*InvocationsReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{3}
+	return fileDescriptor_e96332fbbddc17fa, []int{3}
 }
 func (m *InvocationsReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsReply.Unmarshal(m, b)
@@ -203,8 +205,8 @@ func (m *InvocationsReply) XXX_Unmarshal(b []byte) error {
 func (m *InvocationsReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationsReply.Marshal(b, m, deterministic)
 }
-func (dst *InvocationsReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationsReply.Merge(dst, src)
+func (m *InvocationsReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationsReply.Merge(m, src)
 }
 func (m *InvocationsReply) XXX_Size() int {
 	return xxx_messageInfo_InvocationsReply.Size(m)
@@ -233,7 +235,7 @@ type EmitTriggersRequest struct {
 	// A trigger and jobs it should be delivered to.
 	//
 	// Order is important. Triggers that are listed earlier are considered older.
-	Batches []*EmitTriggersRequest_Batch `protobuf:"bytes,1,rep,name=batches" json:"batches,omitempty"`
+	Batches []*EmitTriggersRequest_Batch `protobuf:"bytes,1,rep,name=batches,proto3" json:"batches,omitempty"`
 	// An optional timestamp to use as trigger creation time, as unix timestamp in
 	// microseconds. Assigned by the server by default. If given, must be within
 	// +-15 min of the current time.
@@ -243,7 +245,7 @@ type EmitTriggersRequest struct {
 	// EmitTrigger RPC idempotent: if EmitTrigger call fails midway, the caller
 	// can retry it providing exact same timestamp to get the correct final order
 	// of the triggers.
-	Timestamp            int64    `protobuf:"varint,2,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp            int64    `protobuf:"varint,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -253,7 +255,7 @@ func (m *EmitTriggersRequest) Reset()         { *m = EmitTriggersRequest{} }
 func (m *EmitTriggersRequest) String() string { return proto.CompactTextString(m) }
 func (*EmitTriggersRequest) ProtoMessage()    {}
 func (*EmitTriggersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{4}
+	return fileDescriptor_e96332fbbddc17fa, []int{4}
 }
 func (m *EmitTriggersRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EmitTriggersRequest.Unmarshal(m, b)
@@ -261,8 +263,8 @@ func (m *EmitTriggersRequest) XXX_Unmarshal(b []byte) error {
 func (m *EmitTriggersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EmitTriggersRequest.Marshal(b, m, deterministic)
 }
-func (dst *EmitTriggersRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EmitTriggersRequest.Merge(dst, src)
+func (m *EmitTriggersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmitTriggersRequest.Merge(m, src)
 }
 func (m *EmitTriggersRequest) XXX_Size() int {
 	return xxx_messageInfo_EmitTriggersRequest.Size(m)
@@ -288,8 +290,8 @@ func (m *EmitTriggersRequest) GetTimestamp() int64 {
 }
 
 type EmitTriggersRequest_Batch struct {
-	Trigger              *Trigger  `protobuf:"bytes,1,opt,name=trigger" json:"trigger,omitempty"`
-	Jobs                 []*JobRef `protobuf:"bytes,2,rep,name=jobs" json:"jobs,omitempty"`
+	Trigger              *Trigger  `protobuf:"bytes,1,opt,name=trigger,proto3" json:"trigger,omitempty"`
+	Jobs                 []*JobRef `protobuf:"bytes,2,rep,name=jobs,proto3" json:"jobs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -299,7 +301,7 @@ func (m *EmitTriggersRequest_Batch) Reset()         { *m = EmitTriggersRequest_B
 func (m *EmitTriggersRequest_Batch) String() string { return proto.CompactTextString(m) }
 func (*EmitTriggersRequest_Batch) ProtoMessage()    {}
 func (*EmitTriggersRequest_Batch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{4, 0}
+	return fileDescriptor_e96332fbbddc17fa, []int{4, 0}
 }
 func (m *EmitTriggersRequest_Batch) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Unmarshal(m, b)
@@ -307,8 +309,8 @@ func (m *EmitTriggersRequest_Batch) XXX_Unmarshal(b []byte) error {
 func (m *EmitTriggersRequest_Batch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Marshal(b, m, deterministic)
 }
-func (dst *EmitTriggersRequest_Batch) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EmitTriggersRequest_Batch.Merge(dst, src)
+func (m *EmitTriggersRequest_Batch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmitTriggersRequest_Batch.Merge(m, src)
 }
 func (m *EmitTriggersRequest_Batch) XXX_Size() int {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Size(m)
@@ -335,8 +337,8 @@ func (m *EmitTriggersRequest_Batch) GetJobs() []*JobRef {
 
 // JobRef uniquely identifies a job.
 type JobRef struct {
-	Project              string   `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
-	Job                  string   `protobuf:"bytes,2,opt,name=job" json:"job,omitempty"`
+	Project              string   `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	Job                  string   `protobuf:"bytes,2,opt,name=job,proto3" json:"job,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -346,7 +348,7 @@ func (m *JobRef) Reset()         { *m = JobRef{} }
 func (m *JobRef) String() string { return proto.CompactTextString(m) }
 func (*JobRef) ProtoMessage()    {}
 func (*JobRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{5}
+	return fileDescriptor_e96332fbbddc17fa, []int{5}
 }
 func (m *JobRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobRef.Unmarshal(m, b)
@@ -354,8 +356,8 @@ func (m *JobRef) XXX_Unmarshal(b []byte) error {
 func (m *JobRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobRef.Marshal(b, m, deterministic)
 }
-func (dst *JobRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobRef.Merge(dst, src)
+func (m *JobRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobRef.Merge(m, src)
 }
 func (m *JobRef) XXX_Size() int {
 	return xxx_messageInfo_JobRef.Size(m)
@@ -382,11 +384,11 @@ func (m *JobRef) GetJob() string {
 
 // InvocationRef uniquely identifies an invocation of a job.
 type InvocationRef struct {
-	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
+	JobRef *JobRef `protobuf:"bytes,1,opt,name=job_ref,json=jobRef,proto3" json:"job_ref,omitempty"`
 	// invocation_id is a unique integer among all invocations for a given job.
 	// However, there could be invocations with the same invocation_id but
 	// belonging to different jobs.
-	InvocationId         int64    `protobuf:"varint,2,opt,name=invocation_id,json=invocationId" json:"invocation_id,omitempty"`
+	InvocationId         int64    `protobuf:"varint,2,opt,name=invocation_id,json=invocationId,proto3" json:"invocation_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -396,7 +398,7 @@ func (m *InvocationRef) Reset()         { *m = InvocationRef{} }
 func (m *InvocationRef) String() string { return proto.CompactTextString(m) }
 func (*InvocationRef) ProtoMessage()    {}
 func (*InvocationRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{6}
+	return fileDescriptor_e96332fbbddc17fa, []int{6}
 }
 func (m *InvocationRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationRef.Unmarshal(m, b)
@@ -404,8 +406,8 @@ func (m *InvocationRef) XXX_Unmarshal(b []byte) error {
 func (m *InvocationRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationRef.Marshal(b, m, deterministic)
 }
-func (dst *InvocationRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationRef.Merge(dst, src)
+func (m *InvocationRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationRef.Merge(m, src)
 }
 func (m *InvocationRef) XXX_Size() int {
 	return xxx_messageInfo_InvocationRef.Size(m)
@@ -432,10 +434,10 @@ func (m *InvocationRef) GetInvocationId() int64 {
 
 // Job descibes currently configured job.
 type Job struct {
-	JobRef               *JobRef   `protobuf:"bytes,1,opt,name=job_ref,json=jobRef" json:"job_ref,omitempty"`
-	Schedule             string    `protobuf:"bytes,2,opt,name=schedule" json:"schedule,omitempty"`
-	State                *JobState `protobuf:"bytes,3,opt,name=state" json:"state,omitempty"`
-	Paused               bool      `protobuf:"varint,4,opt,name=paused" json:"paused,omitempty"`
+	JobRef               *JobRef   `protobuf:"bytes,1,opt,name=job_ref,json=jobRef,proto3" json:"job_ref,omitempty"`
+	Schedule             string    `protobuf:"bytes,2,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	State                *JobState `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
+	Paused               bool      `protobuf:"varint,4,opt,name=paused,proto3" json:"paused,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -445,7 +447,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{7}
+	return fileDescriptor_e96332fbbddc17fa, []int{7}
 }
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
@@ -453,8 +455,8 @@ func (m *Job) XXX_Unmarshal(b []byte) error {
 func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
 }
-func (dst *Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Job.Merge(dst, src)
+func (m *Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Job.Merge(m, src)
 }
 func (m *Job) XXX_Size() int {
 	return xxx_messageInfo_Job.Size(m)
@@ -500,7 +502,7 @@ func (m *Job) GetPaused() bool {
 //   "SCHEDULED"
 //   "WAITING"
 type JobState struct {
-	UiStatus             string   `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus" json:"ui_status,omitempty"`
+	UiStatus             string   `protobuf:"bytes,1,opt,name=ui_status,json=uiStatus,proto3" json:"ui_status,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -510,7 +512,7 @@ func (m *JobState) Reset()         { *m = JobState{} }
 func (m *JobState) String() string { return proto.CompactTextString(m) }
 func (*JobState) ProtoMessage()    {}
 func (*JobState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{8}
+	return fileDescriptor_e96332fbbddc17fa, []int{8}
 }
 func (m *JobState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobState.Unmarshal(m, b)
@@ -518,8 +520,8 @@ func (m *JobState) XXX_Unmarshal(b []byte) error {
 func (m *JobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobState.Marshal(b, m, deterministic)
 }
-func (dst *JobState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobState.Merge(dst, src)
+func (m *JobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobState.Merge(m, src)
 }
 func (m *JobState) XXX_Size() int {
 	return xxx_messageInfo_JobState.Size(m)
@@ -539,23 +541,23 @@ func (m *JobState) GetUiStatus() string {
 
 // Invocation describes properties of one job execution.
 type Invocation struct {
-	InvocationRef *InvocationRef `protobuf:"bytes,1,opt,name=invocation_ref,json=invocationRef" json:"invocation_ref,omitempty"`
+	InvocationRef *InvocationRef `protobuf:"bytes,1,opt,name=invocation_ref,json=invocationRef,proto3" json:"invocation_ref,omitempty"`
 	// start_ts is unix timestamp in microseconds.
-	StartedTs int64 `protobuf:"varint,2,opt,name=started_ts,json=startedTs" json:"started_ts,omitempty"`
+	StartedTs int64 `protobuf:"varint,2,opt,name=started_ts,json=startedTs,proto3" json:"started_ts,omitempty"`
 	// finished_ts is unix timestamp in microseconds. Set only if final is true.
-	FinishedTs int64 `protobuf:"varint,3,opt,name=finished_ts,json=finishedTs" json:"finished_ts,omitempty"`
+	FinishedTs int64 `protobuf:"varint,3,opt,name=finished_ts,json=finishedTs,proto3" json:"finished_ts,omitempty"`
 	// triggered_by is an identity ("kind:value") which is specified only if
 	// invocation was triggered by not the scheduler service itself.
-	TriggeredBy string `protobuf:"bytes,4,opt,name=triggered_by,json=triggeredBy" json:"triggered_by,omitempty"`
+	TriggeredBy string `protobuf:"bytes,4,opt,name=triggered_by,json=triggeredBy,proto3" json:"triggered_by,omitempty"`
 	// Latest status of a job.
-	Status string `protobuf:"bytes,5,opt,name=status" json:"status,omitempty"`
+	Status string `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	// If true, this invocation properties are final and won't be changed.
-	Final bool `protobuf:"varint,6,opt,name=final" json:"final,omitempty"`
+	Final bool `protobuf:"varint,6,opt,name=final,proto3" json:"final,omitempty"`
 	// config_revision pins project/job config version according to which this
 	// invocation was created.
-	ConfigRevision string `protobuf:"bytes,7,opt,name=config_revision,json=configRevision" json:"config_revision,omitempty"`
+	ConfigRevision string `protobuf:"bytes,7,opt,name=config_revision,json=configRevision,proto3" json:"config_revision,omitempty"`
 	// view_url points to human readable page for a given invocation if available.
-	ViewUrl              string   `protobuf:"bytes,8,opt,name=view_url,json=viewUrl" json:"view_url,omitempty"`
+	ViewUrl              string   `protobuf:"bytes,8,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -565,7 +567,7 @@ func (m *Invocation) Reset()         { *m = Invocation{} }
 func (m *Invocation) String() string { return proto.CompactTextString(m) }
 func (*Invocation) ProtoMessage()    {}
 func (*Invocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_scheduler_05a392c43529eec9, []int{9}
+	return fileDescriptor_e96332fbbddc17fa, []int{9}
 }
 func (m *Invocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Invocation.Unmarshal(m, b)
@@ -573,8 +575,8 @@ func (m *Invocation) XXX_Unmarshal(b []byte) error {
 func (m *Invocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Invocation.Marshal(b, m, deterministic)
 }
-func (dst *Invocation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Invocation.Merge(dst, src)
+func (m *Invocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Invocation.Merge(m, src)
 }
 func (m *Invocation) XXX_Size() int {
 	return xxx_messageInfo_Invocation.Size(m)
@@ -1124,10 +1126,10 @@ var _Scheduler_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto", fileDescriptor_scheduler_05a392c43529eec9)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto", fileDescriptor_e96332fbbddc17fa)
 }
 
-var fileDescriptor_scheduler_05a392c43529eec9 = []byte{
+var fileDescriptor_e96332fbbddc17fa = []byte{
 	// 753 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xdf, 0x52, 0xeb, 0x44,
 	0x1c, 0x9e, 0x52, 0xda, 0x26, 0xbf, 0x42, 0xc1, 0x05, 0x99, 0x58, 0x44, 0x6b, 0xd4, 0xa1, 0x3a,

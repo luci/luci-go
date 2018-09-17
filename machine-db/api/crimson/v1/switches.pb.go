@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -42,7 +44,7 @@ func (m *Switch) Reset()         { *m = Switch{} }
 func (m *Switch) String() string { return proto.CompactTextString(m) }
 func (*Switch) ProtoMessage()    {}
 func (*Switch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_switches_19a1da2c527957f2, []int{0}
+	return fileDescriptor_535029af2494c6cd, []int{0}
 }
 func (m *Switch) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Switch.Unmarshal(m, b)
@@ -50,8 +52,8 @@ func (m *Switch) XXX_Unmarshal(b []byte) error {
 func (m *Switch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Switch.Marshal(b, m, deterministic)
 }
-func (dst *Switch) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Switch.Merge(dst, src)
+func (m *Switch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Switch.Merge(m, src)
 }
 func (m *Switch) XXX_Size() int {
 	return xxx_messageInfo_Switch.Size(m)
@@ -121,7 +123,7 @@ func (m *ListSwitchesRequest) Reset()         { *m = ListSwitchesRequest{} }
 func (m *ListSwitchesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListSwitchesRequest) ProtoMessage()    {}
 func (*ListSwitchesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_switches_19a1da2c527957f2, []int{1}
+	return fileDescriptor_535029af2494c6cd, []int{1}
 }
 func (m *ListSwitchesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListSwitchesRequest.Unmarshal(m, b)
@@ -129,8 +131,8 @@ func (m *ListSwitchesRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListSwitchesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListSwitchesRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListSwitchesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListSwitchesRequest.Merge(dst, src)
+func (m *ListSwitchesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwitchesRequest.Merge(m, src)
 }
 func (m *ListSwitchesRequest) XXX_Size() int {
 	return xxx_messageInfo_ListSwitchesRequest.Size(m)
@@ -175,7 +177,7 @@ func (m *ListSwitchesResponse) Reset()         { *m = ListSwitchesResponse{} }
 func (m *ListSwitchesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListSwitchesResponse) ProtoMessage()    {}
 func (*ListSwitchesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_switches_19a1da2c527957f2, []int{2}
+	return fileDescriptor_535029af2494c6cd, []int{2}
 }
 func (m *ListSwitchesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListSwitchesResponse.Unmarshal(m, b)
@@ -183,8 +185,8 @@ func (m *ListSwitchesResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListSwitchesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListSwitchesResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListSwitchesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListSwitchesResponse.Merge(dst, src)
+func (m *ListSwitchesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListSwitchesResponse.Merge(m, src)
 }
 func (m *ListSwitchesResponse) XXX_Size() int {
 	return xxx_messageInfo_ListSwitchesResponse.Size(m)
@@ -209,10 +211,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor_switches_19a1da2c527957f2)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/switches.proto", fileDescriptor_535029af2494c6cd)
 }
 
-var fileDescriptor_switches_19a1da2c527957f2 = []byte{
+var fileDescriptor_535029af2494c6cd = []byte{
 	// 294 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0xc1, 0x4e, 0xc4, 0x20,
 	0x10, 0x0d, 0xbb, 0xdb, 0xea, 0xb2, 0x51, 0x13, 0xdc, 0x03, 0xf1, 0x60, 0x9a, 0x7a, 0x69, 0x62,

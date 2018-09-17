@@ -3,9 +3,11 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +37,7 @@ func (m *Platform) Reset()         { *m = Platform{} }
 func (m *Platform) String() string { return proto.CompactTextString(m) }
 func (*Platform) ProtoMessage()    {}
 func (*Platform) Descriptor() ([]byte, []int) {
-	return fileDescriptor_platforms_6088d7eae4835437, []int{0}
+	return fileDescriptor_c2715c7520a49a12, []int{0}
 }
 func (m *Platform) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Platform.Unmarshal(m, b)
@@ -43,8 +45,8 @@ func (m *Platform) XXX_Unmarshal(b []byte) error {
 func (m *Platform) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Platform.Marshal(b, m, deterministic)
 }
-func (dst *Platform) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Platform.Merge(dst, src)
+func (m *Platform) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platform.Merge(m, src)
 }
 func (m *Platform) XXX_Size() int {
 	return xxx_messageInfo_Platform.Size(m)
@@ -89,7 +91,7 @@ func (m *Platforms) Reset()         { *m = Platforms{} }
 func (m *Platforms) String() string { return proto.CompactTextString(m) }
 func (*Platforms) ProtoMessage()    {}
 func (*Platforms) Descriptor() ([]byte, []int) {
-	return fileDescriptor_platforms_6088d7eae4835437, []int{1}
+	return fileDescriptor_c2715c7520a49a12, []int{1}
 }
 func (m *Platforms) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Platforms.Unmarshal(m, b)
@@ -97,8 +99,8 @@ func (m *Platforms) XXX_Unmarshal(b []byte) error {
 func (m *Platforms) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Platforms.Marshal(b, m, deterministic)
 }
-func (dst *Platforms) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Platforms.Merge(dst, src)
+func (m *Platforms) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Platforms.Merge(m, src)
 }
 func (m *Platforms) XXX_Size() int {
 	return xxx_messageInfo_Platforms.Size(m)
@@ -122,10 +124,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/platforms.proto", fileDescriptor_platforms_6088d7eae4835437)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/platforms.proto", fileDescriptor_c2715c7520a49a12)
 }
 
-var fileDescriptor_platforms_6088d7eae4835437 = []byte{
+var fileDescriptor_c2715c7520a49a12 = []byte{
 	// 185 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x8e, 0xb1, 0x0e, 0x82, 0x30,
 	0x14, 0x45, 0x83, 0x18, 0x02, 0xc5, 0xc1, 0x74, 0xea, 0x48, 0x98, 0x18, 0xb4, 0x8d, 0x3a, 0x39,

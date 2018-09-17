@@ -3,9 +3,11 @@
 
 package prpc
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -35,7 +37,7 @@ func (m *HelloRequest) Reset()         { *m = HelloRequest{} }
 func (m *HelloRequest) String() string { return proto.CompactTextString(m) }
 func (*HelloRequest) ProtoMessage()    {}
 func (*HelloRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_helloworld_test_bec4f827704cd02b, []int{0}
+	return fileDescriptor_a601d72b9fd9e561, []int{0}
 }
 func (m *HelloRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HelloRequest.Unmarshal(m, b)
@@ -43,8 +45,8 @@ func (m *HelloRequest) XXX_Unmarshal(b []byte) error {
 func (m *HelloRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HelloRequest.Marshal(b, m, deterministic)
 }
-func (dst *HelloRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HelloRequest.Merge(dst, src)
+func (m *HelloRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HelloRequest.Merge(m, src)
 }
 func (m *HelloRequest) XXX_Size() int {
 	return xxx_messageInfo_HelloRequest.Size(m)
@@ -74,7 +76,7 @@ func (m *HelloReply) Reset()         { *m = HelloReply{} }
 func (m *HelloReply) String() string { return proto.CompactTextString(m) }
 func (*HelloReply) ProtoMessage()    {}
 func (*HelloReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_helloworld_test_bec4f827704cd02b, []int{1}
+	return fileDescriptor_a601d72b9fd9e561, []int{1}
 }
 func (m *HelloReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HelloReply.Unmarshal(m, b)
@@ -82,8 +84,8 @@ func (m *HelloReply) XXX_Unmarshal(b []byte) error {
 func (m *HelloReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_HelloReply.Marshal(b, m, deterministic)
 }
-func (dst *HelloReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HelloReply.Merge(dst, src)
+func (m *HelloReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_HelloReply.Merge(m, src)
 }
 func (m *HelloReply) XXX_Size() int {
 	return xxx_messageInfo_HelloReply.Size(m)
@@ -113,7 +115,7 @@ func (m *MultiplyRequest) Reset()         { *m = MultiplyRequest{} }
 func (m *MultiplyRequest) String() string { return proto.CompactTextString(m) }
 func (*MultiplyRequest) ProtoMessage()    {}
 func (*MultiplyRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_helloworld_test_bec4f827704cd02b, []int{2}
+	return fileDescriptor_a601d72b9fd9e561, []int{2}
 }
 func (m *MultiplyRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiplyRequest.Unmarshal(m, b)
@@ -121,8 +123,8 @@ func (m *MultiplyRequest) XXX_Unmarshal(b []byte) error {
 func (m *MultiplyRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MultiplyRequest.Marshal(b, m, deterministic)
 }
-func (dst *MultiplyRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MultiplyRequest.Merge(dst, src)
+func (m *MultiplyRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultiplyRequest.Merge(m, src)
 }
 func (m *MultiplyRequest) XXX_Size() int {
 	return xxx_messageInfo_MultiplyRequest.Size(m)
@@ -158,7 +160,7 @@ func (m *MultiplyResponse) Reset()         { *m = MultiplyResponse{} }
 func (m *MultiplyResponse) String() string { return proto.CompactTextString(m) }
 func (*MultiplyResponse) ProtoMessage()    {}
 func (*MultiplyResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_helloworld_test_bec4f827704cd02b, []int{3}
+	return fileDescriptor_a601d72b9fd9e561, []int{3}
 }
 func (m *MultiplyResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiplyResponse.Unmarshal(m, b)
@@ -166,8 +168,8 @@ func (m *MultiplyResponse) XXX_Unmarshal(b []byte) error {
 func (m *MultiplyResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MultiplyResponse.Marshal(b, m, deterministic)
 }
-func (dst *MultiplyResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MultiplyResponse.Merge(dst, src)
+func (m *MultiplyResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultiplyResponse.Merge(m, src)
 }
 func (m *MultiplyResponse) XXX_Size() int {
 	return xxx_messageInfo_MultiplyResponse.Size(m)
@@ -363,10 +365,10 @@ var _Calc_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/grpc/prpc/helloworld_test.proto", fileDescriptor_helloworld_test_bec4f827704cd02b)
+	proto.RegisterFile("go.chromium.org/luci/grpc/prpc/helloworld_test.proto", fileDescriptor_a601d72b9fd9e561)
 }
 
-var fileDescriptor_helloworld_test_bec4f827704cd02b = []byte{
+var fileDescriptor_a601d72b9fd9e561 = []byte{
 	// 246 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x41, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0x57, 0xa9, 0x6e, 0x3e, 0x06, 0x8e, 0x07, 0x4a, 0xd9, 0x69, 0xe4, 0x20, 0x5e, 0x4c,

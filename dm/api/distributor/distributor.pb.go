@@ -3,11 +3,13 @@
 
 package distributor
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
-import v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
+	v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -21,7 +23,7 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type Alias struct {
-	OtherConfig          string   `protobuf:"bytes,1,opt,name=other_config,json=otherConfig" json:"other_config,omitempty"`
+	OtherConfig          string   `protobuf:"bytes,1,opt,name=other_config,json=otherConfig,proto3" json:"other_config,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -31,7 +33,7 @@ func (m *Alias) Reset()         { *m = Alias{} }
 func (m *Alias) String() string { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()    {}
 func (*Alias) Descriptor() ([]byte, []int) {
-	return fileDescriptor_distributor_1d5579459576239f, []int{0}
+	return fileDescriptor_ae589283bac413cb, []int{0}
 }
 func (m *Alias) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Alias.Unmarshal(m, b)
@@ -39,8 +41,8 @@ func (m *Alias) XXX_Unmarshal(b []byte) error {
 func (m *Alias) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Alias.Marshal(b, m, deterministic)
 }
-func (dst *Alias) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Alias.Merge(dst, src)
+func (m *Alias) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Alias.Merge(m, src)
 }
 func (m *Alias) XXX_Size() int {
 	return xxx_messageInfo_Alias.Size(m)
@@ -79,7 +81,7 @@ func (m *Distributor) Reset()         { *m = Distributor{} }
 func (m *Distributor) String() string { return proto.CompactTextString(m) }
 func (*Distributor) ProtoMessage()    {}
 func (*Distributor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_distributor_1d5579459576239f, []int{1}
+	return fileDescriptor_ae589283bac413cb, []int{1}
 }
 func (m *Distributor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Distributor.Unmarshal(m, b)
@@ -87,8 +89,8 @@ func (m *Distributor) XXX_Unmarshal(b []byte) error {
 func (m *Distributor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Distributor.Marshal(b, m, deterministic)
 }
-func (dst *Distributor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Distributor.Merge(dst, src)
+func (m *Distributor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Distributor.Merge(m, src)
 }
 func (m *Distributor) XXX_Size() int {
 	return xxx_messageInfo_Distributor.Size(m)
@@ -104,18 +106,22 @@ type isDistributor_DistributorType interface {
 }
 
 type Distributor_Alias struct {
-	Alias *Alias `protobuf:"bytes,1,opt,name=alias,oneof"`
-}
-type Distributor_SwarmingV1 struct {
-	SwarmingV1 *v1.Config `protobuf:"bytes,4,opt,name=swarming_v1,json=swarmingV1,oneof"`
-}
-type Distributor_Jobsim struct {
-	Jobsim *jobsim.Config `protobuf:"bytes,2048,opt,name=jobsim,oneof"`
+	Alias *Alias `protobuf:"bytes,1,opt,name=alias,proto3,oneof"`
 }
 
-func (*Distributor_Alias) isDistributor_DistributorType()      {}
+type Distributor_SwarmingV1 struct {
+	SwarmingV1 *v1.Config `protobuf:"bytes,4,opt,name=swarming_v1,json=swarmingV1,proto3,oneof"`
+}
+
+type Distributor_Jobsim struct {
+	Jobsim *jobsim.Config `protobuf:"bytes,2048,opt,name=jobsim,proto3,oneof"`
+}
+
+func (*Distributor_Alias) isDistributor_DistributorType() {}
+
 func (*Distributor_SwarmingV1) isDistributor_DistributorType() {}
-func (*Distributor_Jobsim) isDistributor_DistributorType()     {}
+
+func (*Distributor_Jobsim) isDistributor_DistributorType() {}
 
 func (m *Distributor) GetDistributorType() isDistributor_DistributorType {
 	if m != nil {
@@ -239,7 +245,7 @@ func _Distributor_OneofSizer(msg proto.Message) (n int) {
 }
 
 type Config struct {
-	DistributorConfigs   map[string]*Distributor `protobuf:"bytes,1,rep,name=distributor_configs,json=distributorConfigs" json:"distributor_configs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	DistributorConfigs   map[string]*Distributor `protobuf:"bytes,1,rep,name=distributor_configs,json=distributorConfigs,proto3" json:"distributor_configs,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -249,7 +255,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_distributor_1d5579459576239f, []int{2}
+	return fileDescriptor_ae589283bac413cb, []int{2}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
@@ -257,8 +263,8 @@ func (m *Config) XXX_Unmarshal(b []byte) error {
 func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 }
-func (dst *Config) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config.Merge(dst, src)
+func (m *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(m, src)
 }
 func (m *Config) XXX_Size() int {
 	return xxx_messageInfo_Config.Size(m)
@@ -284,10 +290,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/distributor.proto", fileDescriptor_distributor_1d5579459576239f)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/distributor.proto", fileDescriptor_ae589283bac413cb)
 }
 
-var fileDescriptor_distributor_1d5579459576239f = []byte{
+var fileDescriptor_ae589283bac413cb = []byte{
 	// 334 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x4f, 0x4b, 0xc3, 0x30,
 	0x18, 0xc6, 0xd7, 0xb5, 0x1b, 0xf3, 0x8d, 0x48, 0x89, 0x07, 0xcb, 0x4e, 0xba, 0xd3, 0x9c, 0x90,

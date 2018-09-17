@@ -5,10 +5,12 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import empty "github.com/golang/protobuf/ptypes/empty"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -33,11 +35,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type SetConfigRequest struct {
 	// ConfigServiceURL is the API URL of the base "luci-config" service. If
 	// empty, the defualt service URL will be used.
-	ConfigServiceUrl string `protobuf:"bytes,1,opt,name=config_service_url,json=configServiceUrl" json:"config_service_url,omitempty"`
+	ConfigServiceUrl string `protobuf:"bytes,1,opt,name=config_service_url,json=configServiceUrl,proto3" json:"config_service_url,omitempty"`
 	// ConfigSet is the name of the configuration set to load from.
-	ConfigSet string `protobuf:"bytes,2,opt,name=config_set,json=configSet" json:"config_set,omitempty"`
+	ConfigSet string `protobuf:"bytes,2,opt,name=config_set,json=configSet,proto3" json:"config_set,omitempty"`
 	// ConfigPath is the path of the text-serialized configuration protobuf.
-	ConfigPath string `protobuf:"bytes,3,opt,name=config_path,json=configPath" json:"config_path,omitempty"`
+	ConfigPath string `protobuf:"bytes,3,opt,name=config_path,json=configPath,proto3" json:"config_path,omitempty"`
 	// If not empty, is the service account JSON file data that will be used for
 	// Storage access.
 	//
@@ -52,7 +54,7 @@ func (m *SetConfigRequest) Reset()         { *m = SetConfigRequest{} }
 func (m *SetConfigRequest) String() string { return proto.CompactTextString(m) }
 func (*SetConfigRequest) ProtoMessage()    {}
 func (*SetConfigRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_admin_9cd479968fb30fe1, []int{0}
+	return fileDescriptor_ae14c1e85e2b805e, []int{0}
 }
 func (m *SetConfigRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetConfigRequest.Unmarshal(m, b)
@@ -60,8 +62,8 @@ func (m *SetConfigRequest) XXX_Unmarshal(b []byte) error {
 func (m *SetConfigRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SetConfigRequest.Marshal(b, m, deterministic)
 }
-func (dst *SetConfigRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetConfigRequest.Merge(dst, src)
+func (m *SetConfigRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetConfigRequest.Merge(m, src)
 }
 func (m *SetConfigRequest) XXX_Size() int {
 	return xxx_messageInfo_SetConfigRequest.Size(m)
@@ -197,10 +199,10 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1/admin.proto", fileDescriptor_admin_9cd479968fb30fe1)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1/admin.proto", fileDescriptor_ae14c1e85e2b805e)
 }
 
-var fileDescriptor_admin_9cd479968fb30fe1 = []byte{
+var fileDescriptor_ae14c1e85e2b805e = []byte{
 	// 275 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x41, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0xa9, 0xe2, 0xa0, 0xd1, 0xc3, 0xc8, 0x41, 0xea, 0x54, 0x1c, 0x9e, 0x76, 0x90, 0x04,

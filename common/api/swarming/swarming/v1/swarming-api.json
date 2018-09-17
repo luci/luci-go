@@ -693,8 +693,27 @@
             "https://www.googleapis.com/auth/userinfo.email"
           ]
         },
+        "get_states": {
+          "description": "Returns task state for a specific set of tasks.",
+          "httpMethod": "GET",
+          "id": "swarming.tasks.get_states",
+          "parameters": {
+            "task_id": {
+              "location": "query",
+              "repeated": true,
+              "type": "string"
+            }
+          },
+          "path": "tasks/get_states",
+          "response": {
+            "$ref": "SwarmingRpcsTaskStates"
+          },
+          "scopes": [
+            "https://www.googleapis.com/auth/userinfo.email"
+          ]
+        },
         "list": {
-          "description": "Returns tasks results based on the filters. This endpoint is significantly slower than 'count'. Use 'count' when possible.",
+          "description": "Returns full task results based on the filters. This endpoint is significantly slower than 'count'. Use 'count' when possible. If you just want the state of tasks, use 'get_states'.",
           "httpMethod": "GET",
           "id": "swarming.tasks.list",
           "parameters": {
@@ -1034,6 +1053,9 @@
         "lease_id": {
           "type": "string"
         },
+        "leased_indefinitely": {
+          "type": "boolean"
+        },
         "machine_lease": {
           "type": "string"
         },
@@ -1325,6 +1347,22 @@
           "type": "string"
         },
         "parent_task_id": {
+          "type": "string"
+        },
+        "pool_task_template": {
+          "default": "AUTO",
+          "enum": [
+            "AUTO",
+            "CANARY_NEVER",
+            "CANARY_PREFER",
+            "SKIP"
+          ],
+          "enumDescriptions": [
+            "",
+            "",
+            "",
+            ""
+          ],
           "type": "string"
         },
         "priority": {
@@ -1892,6 +1930,41 @@
         },
         "wait_for_capacity": {
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "SwarmingRpcsTaskStates": {
+      "description": "Only holds states. Used in the 'get_states' RPC.",
+      "id": "SwarmingRpcsTaskStates",
+      "properties": {
+        "states": {
+          "items": {
+            "enum": [
+              "BOT_DIED",
+              "CANCELED",
+              "COMPLETED",
+              "EXPIRED",
+              "KILLED",
+              "NO_RESOURCE",
+              "PENDING",
+              "RUNNING",
+              "TIMED_OUT"
+            ],
+            "enumDescriptions": [
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              "",
+              ""
+            ],
+            "type": "string"
+          },
+          "type": "array"
         }
       },
       "type": "object"

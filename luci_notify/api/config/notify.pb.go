@@ -3,10 +3,12 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import proto1 "go.chromium.org/luci/buildbucket/proto"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	proto1 "go.chromium.org/luci/buildbucket/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -23,7 +25,7 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type ProjectConfig struct {
 	// Notifiers is a list of Notifiers which watch builders and send
 	// notifications for this project.
-	Notifiers            []*Notifier `protobuf:"bytes,1,rep,name=notifiers" json:"notifiers,omitempty"`
+	Notifiers            []*Notifier `protobuf:"bytes,1,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
 	XXX_unrecognized     []byte      `json:"-"`
 	XXX_sizecache        int32       `json:"-"`
@@ -33,7 +35,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{0}
+	return fileDescriptor_9a6945a7af0ec43b, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -41,8 +43,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(dst, src)
+func (m *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(m, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -71,11 +73,11 @@ type Notifier struct {
 	// use an alphabet of lowercase characters and hyphens.
 	//
 	// Required.
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Notifications is a list of notification configurations.
-	Notifications []*Notification `protobuf:"bytes,2,rep,name=notifications" json:"notifications,omitempty"`
+	Notifications []*Notification `protobuf:"bytes,2,rep,name=notifications,proto3" json:"notifications,omitempty"`
 	// Builders is a list of buildbucket builders this Notifier should watch.
-	Builders             []*Builder `protobuf:"bytes,3,rep,name=builders" json:"builders,omitempty"`
+	Builders             []*Builder `protobuf:"bytes,3,rep,name=builders,proto3" json:"builders,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -85,7 +87,7 @@ func (m *Notifier) Reset()         { *m = Notifier{} }
 func (m *Notifier) String() string { return proto.CompactTextString(m) }
 func (*Notifier) ProtoMessage()    {}
 func (*Notifier) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{1}
+	return fileDescriptor_9a6945a7af0ec43b, []int{1}
 }
 func (m *Notifier) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifier.Unmarshal(m, b)
@@ -93,8 +95,8 @@ func (m *Notifier) XXX_Unmarshal(b []byte) error {
 func (m *Notifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notifier.Marshal(b, m, deterministic)
 }
-func (dst *Notifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notifier.Merge(dst, src)
+func (m *Notifier) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notifier.Merge(m, src)
 }
 func (m *Notifier) XXX_Size() int {
 	return xxx_messageInfo_Notifier.Size(m)
@@ -132,25 +134,25 @@ type Notification struct {
 	// OnSuccess specifies a trigger to notify recipients on each build success.
 	//
 	// Optional.
-	OnSuccess bool `protobuf:"varint,1,opt,name=on_success,json=onSuccess" json:"on_success,omitempty"`
+	OnSuccess bool `protobuf:"varint,1,opt,name=on_success,json=onSuccess,proto3" json:"on_success,omitempty"`
 	// OnFailure specifies a trigger to notify recipients on each build failure.
 	//
 	// Optional.
-	OnFailure bool `protobuf:"varint,2,opt,name=on_failure,json=onFailure" json:"on_failure,omitempty"`
+	OnFailure bool `protobuf:"varint,2,opt,name=on_failure,json=onFailure,proto3" json:"on_failure,omitempty"`
 	// OnChange specifies a trigger to notify recipients if the builder's
 	// previous build had a different result than the most recent build.
 	//
 	// Optional.
-	OnChange bool `protobuf:"varint,3,opt,name=on_change,json=onChange" json:"on_change,omitempty"`
+	OnChange bool `protobuf:"varint,3,opt,name=on_change,json=onChange,proto3" json:"on_change,omitempty"`
 	// Email is the set of email addresses to notify.
 	//
 	// Optional.
-	Email *Notification_Email `protobuf:"bytes,4,opt,name=email" json:"email,omitempty"`
+	Email *Notification_Email `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
 	// Refers to which project template name to use to format this email.
 	// If not present, "default" will be used.
 	//
 	// Optional.
-	Template string `protobuf:"bytes,5,opt,name=template" json:"template,omitempty"`
+	Template string `protobuf:"bytes,5,opt,name=template,proto3" json:"template,omitempty"`
 	// NotifyBlamelist specifies whether to notify the computed blamelist for a
 	// given build.
 	//
@@ -159,7 +161,7 @@ type Notification struct {
 	// builder, the blamelist may recieve multiple emails.
 	//
 	// Optional.
-	NotifyBlamelist      *Notification_Blamelist `protobuf:"bytes,6,opt,name=notify_blamelist,json=notifyBlamelist" json:"notify_blamelist,omitempty"`
+	NotifyBlamelist      *Notification_Blamelist `protobuf:"bytes,6,opt,name=notify_blamelist,json=notifyBlamelist,proto3" json:"notify_blamelist,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -169,7 +171,7 @@ func (m *Notification) Reset()         { *m = Notification{} }
 func (m *Notification) String() string { return proto.CompactTextString(m) }
 func (*Notification) ProtoMessage()    {}
 func (*Notification) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{2}
+	return fileDescriptor_9a6945a7af0ec43b, []int{2}
 }
 func (m *Notification) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification.Unmarshal(m, b)
@@ -177,8 +179,8 @@ func (m *Notification) XXX_Unmarshal(b []byte) error {
 func (m *Notification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification.Marshal(b, m, deterministic)
 }
-func (dst *Notification) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification.Merge(dst, src)
+func (m *Notification) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification.Merge(m, src)
 }
 func (m *Notification) XXX_Size() int {
 	return xxx_messageInfo_Notification.Size(m)
@@ -235,7 +237,7 @@ func (m *Notification) GetNotifyBlamelist() *Notification_Blamelist {
 // addresses).
 type Notification_Email struct {
 	// Recipients is a list of email addresses to notify.
-	Recipients           []string `protobuf:"bytes,1,rep,name=recipients" json:"recipients,omitempty"`
+	Recipients           []string `protobuf:"bytes,1,rep,name=recipients,proto3" json:"recipients,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -245,7 +247,7 @@ func (m *Notification_Email) Reset()         { *m = Notification_Email{} }
 func (m *Notification_Email) String() string { return proto.CompactTextString(m) }
 func (*Notification_Email) ProtoMessage()    {}
 func (*Notification_Email) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{2, 0}
+	return fileDescriptor_9a6945a7af0ec43b, []int{2, 0}
 }
 func (m *Notification_Email) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Email.Unmarshal(m, b)
@@ -253,8 +255,8 @@ func (m *Notification_Email) XXX_Unmarshal(b []byte) error {
 func (m *Notification_Email) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification_Email.Marshal(b, m, deterministic)
 }
-func (dst *Notification_Email) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification_Email.Merge(dst, src)
+func (m *Notification_Email) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification_Email.Merge(m, src)
 }
 func (m *Notification_Email) XXX_Size() int {
 	return xxx_messageInfo_Notification_Email.Size(m)
@@ -284,7 +286,7 @@ type Notification_Blamelist struct {
 	// https://chromium.googlesource.com/chromium/src
 	//
 	// Optional.
-	RepositoryWhitelist  []string `protobuf:"bytes,1,rep,name=repository_whitelist,json=repositoryWhitelist" json:"repository_whitelist,omitempty"`
+	RepositoryWhitelist  []string `protobuf:"bytes,1,rep,name=repository_whitelist,json=repositoryWhitelist,proto3" json:"repository_whitelist,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -294,7 +296,7 @@ func (m *Notification_Blamelist) Reset()         { *m = Notification_Blamelist{}
 func (m *Notification_Blamelist) String() string { return proto.CompactTextString(m) }
 func (*Notification_Blamelist) ProtoMessage()    {}
 func (*Notification_Blamelist) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{2, 1}
+	return fileDescriptor_9a6945a7af0ec43b, []int{2, 1}
 }
 func (m *Notification_Blamelist) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Blamelist.Unmarshal(m, b)
@@ -302,8 +304,8 @@ func (m *Notification_Blamelist) XXX_Unmarshal(b []byte) error {
 func (m *Notification_Blamelist) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification_Blamelist.Marshal(b, m, deterministic)
 }
-func (dst *Notification_Blamelist) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification_Blamelist.Merge(dst, src)
+func (m *Notification_Blamelist) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification_Blamelist.Merge(m, src)
 }
 func (m *Notification_Blamelist) XXX_Size() int {
 	return xxx_messageInfo_Notification_Blamelist.Size(m)
@@ -326,11 +328,11 @@ type Builder struct {
 	// Bucket is the buildbucket bucket that the builder is a part of.
 	//
 	// Required.
-	Bucket string `protobuf:"bytes,1,opt,name=bucket" json:"bucket,omitempty"`
+	Bucket string `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	// Name is the name of the buildbucket builder.
 	//
 	// Required.
-	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Repository is the git repository associated with this particular builder.
 	//
 	// The repository should look like a URL, e.g. https://chromium.googlesource.com/src
@@ -348,7 +350,7 @@ type Builder struct {
 	// If not set, OnChange notifications will derive their notion of
 	// "previous" build solely from build creation time, which is potentially
 	// less reliable.
-	Repository           string   `protobuf:"bytes,3,opt,name=repository" json:"repository,omitempty"`
+	Repository           string   `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -358,7 +360,7 @@ func (m *Builder) Reset()         { *m = Builder{} }
 func (m *Builder) String() string { return proto.CompactTextString(m) }
 func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{3}
+	return fileDescriptor_9a6945a7af0ec43b, []int{3}
 }
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
@@ -366,8 +368,8 @@ func (m *Builder) XXX_Unmarshal(b []byte) error {
 func (m *Builder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Builder.Marshal(b, m, deterministic)
 }
-func (dst *Builder) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Builder.Merge(dst, src)
+func (m *Builder) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Builder.Merge(m, src)
 }
 func (m *Builder) XXX_Size() int {
 	return xxx_messageInfo_Builder.Size(m)
@@ -403,7 +405,7 @@ func (m *Builder) GetRepository() string {
 // storing it in the datastore may be generated.
 type Notifications struct {
 	// Notifications is a list of notification configurations.
-	Notifications        []*Notification `protobuf:"bytes,1,rep,name=notifications" json:"notifications,omitempty"`
+	Notifications        []*Notification `protobuf:"bytes,1,rep,name=notifications,proto3" json:"notifications,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -413,7 +415,7 @@ func (m *Notifications) Reset()         { *m = Notifications{} }
 func (m *Notifications) String() string { return proto.CompactTextString(m) }
 func (*Notifications) ProtoMessage()    {}
 func (*Notifications) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{4}
+	return fileDescriptor_9a6945a7af0ec43b, []int{4}
 }
 func (m *Notifications) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifications.Unmarshal(m, b)
@@ -421,8 +423,8 @@ func (m *Notifications) XXX_Unmarshal(b []byte) error {
 func (m *Notifications) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notifications.Marshal(b, m, deterministic)
 }
-func (dst *Notifications) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notifications.Merge(dst, src)
+func (m *Notifications) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notifications.Merge(m, src)
 }
 func (m *Notifications) XXX_Size() int {
 	return xxx_messageInfo_Notifications.Size(m)
@@ -443,7 +445,7 @@ func (m *Notifications) GetNotifications() []*Notification {
 // A collection of landed Git commits hosted on Gitiles.
 type GitilesCommits struct {
 	// The Gitiles commits in this collection.
-	Commits              []*proto1.GitilesCommit `protobuf:"bytes,1,rep,name=commits" json:"commits,omitempty"`
+	Commits              []*proto1.GitilesCommit `protobuf:"bytes,1,rep,name=commits,proto3" json:"commits,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
 	XXX_unrecognized     []byte                  `json:"-"`
 	XXX_sizecache        int32                   `json:"-"`
@@ -453,7 +455,7 @@ func (m *GitilesCommits) Reset()         { *m = GitilesCommits{} }
 func (m *GitilesCommits) String() string { return proto.CompactTextString(m) }
 func (*GitilesCommits) ProtoMessage()    {}
 func (*GitilesCommits) Descriptor() ([]byte, []int) {
-	return fileDescriptor_notify_f36c9c4797e16074, []int{5}
+	return fileDescriptor_9a6945a7af0ec43b, []int{5}
 }
 func (m *GitilesCommits) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesCommits.Unmarshal(m, b)
@@ -461,8 +463,8 @@ func (m *GitilesCommits) XXX_Unmarshal(b []byte) error {
 func (m *GitilesCommits) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GitilesCommits.Marshal(b, m, deterministic)
 }
-func (dst *GitilesCommits) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GitilesCommits.Merge(dst, src)
+func (m *GitilesCommits) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesCommits.Merge(m, src)
 }
 func (m *GitilesCommits) XXX_Size() int {
 	return xxx_messageInfo_GitilesCommits.Size(m)
@@ -492,10 +494,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/notify.proto", fileDescriptor_notify_f36c9c4797e16074)
+	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/notify.proto", fileDescriptor_9a6945a7af0ec43b)
 }
 
-var fileDescriptor_notify_f36c9c4797e16074 = []byte{
+var fileDescriptor_9a6945a7af0ec43b = []byte{
 	// 479 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x4f, 0x8b, 0xd3, 0x40,
 	0x14, 0x27, 0xed, 0x36, 0x9b, 0xbc, 0xb5, 0xee, 0x32, 0x2e, 0x12, 0x22, 0xbb, 0x94, 0x5c, 0x2c,

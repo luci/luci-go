@@ -3,9 +3,11 @@
 
 package dm
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,6 +31,7 @@ var GraphQuery_Search_Domain_name = map[int32]string{
 	0: "QUEST",
 	1: "ATTEMPT",
 }
+
 var GraphQuery_Search_Domain_value = map[string]int32{
 	"QUEST":   0,
 	"ATTEMPT": 1,
@@ -37,8 +40,9 @@ var GraphQuery_Search_Domain_value = map[string]int32{
 func (x GraphQuery_Search_Domain) String() string {
 	return proto.EnumName(GraphQuery_Search_Domain_name, int32(x))
 }
+
 func (GraphQuery_Search_Domain) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 1, 0}
+	return fileDescriptor_922ae0b01ed267cc, []int{0, 1, 0}
 }
 
 // GraphQuery represents a single query into the state of DM's dependency graph.
@@ -47,13 +51,13 @@ type GraphQuery struct {
 	// AttemptList allows you to list one or more specific attempts as the result
 	// of the query. If a quest contains the attempt number 0, or is empty, it
 	// means 'all attempts for this quest'.
-	AttemptList *AttemptList `protobuf:"bytes,1,opt,name=attempt_list,json=attemptList" json:"attempt_list,omitempty"`
+	AttemptList *AttemptList `protobuf:"bytes,1,opt,name=attempt_list,json=attemptList,proto3" json:"attempt_list,omitempty"`
 	// attempt_range allows you to list a range of attempts in a single quest.
 	// low must be > 0, and high must be > low. The range is [low, high). High may
 	// be higher than the highest attempt, and low may be lower than the lowest
 	// attempt (but not 0).
-	AttemptRange         []*GraphQuery_AttemptRange `protobuf:"bytes,2,rep,name=attempt_range,json=attemptRange" json:"attempt_range,omitempty"`
-	Search               []*GraphQuery_Search       `protobuf:"bytes,3,rep,name=search" json:"search,omitempty"`
+	AttemptRange         []*GraphQuery_AttemptRange `protobuf:"bytes,2,rep,name=attempt_range,json=attemptRange,proto3" json:"attempt_range,omitempty"`
+	Search               []*GraphQuery_Search       `protobuf:"bytes,3,rep,name=search,proto3" json:"search,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
 	XXX_unrecognized     []byte                     `json:"-"`
 	XXX_sizecache        int32                      `json:"-"`
@@ -63,7 +67,7 @@ func (m *GraphQuery) Reset()         { *m = GraphQuery{} }
 func (m *GraphQuery) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery) ProtoMessage()    {}
 func (*GraphQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0}
+	return fileDescriptor_922ae0b01ed267cc, []int{0}
 }
 func (m *GraphQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery.Unmarshal(m, b)
@@ -71,8 +75,8 @@ func (m *GraphQuery) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery.Marshal(b, m, deterministic)
 }
-func (dst *GraphQuery) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery.Merge(dst, src)
+func (m *GraphQuery) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery.Merge(m, src)
 }
 func (m *GraphQuery) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery.Size(m)
@@ -105,9 +109,9 @@ func (m *GraphQuery) GetSearch() []*GraphQuery_Search {
 }
 
 type GraphQuery_AttemptRange struct {
-	Quest                string   `protobuf:"bytes,1,opt,name=quest" json:"quest,omitempty"`
-	Low                  uint32   `protobuf:"varint,2,opt,name=low" json:"low,omitempty"`
-	High                 uint32   `protobuf:"varint,3,opt,name=high" json:"high,omitempty"`
+	Quest                string   `protobuf:"bytes,1,opt,name=quest,proto3" json:"quest,omitempty"`
+	Low                  uint32   `protobuf:"varint,2,opt,name=low,proto3" json:"low,omitempty"`
+	High                 uint32   `protobuf:"varint,3,opt,name=high,proto3" json:"high,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -117,7 +121,7 @@ func (m *GraphQuery_AttemptRange) Reset()         { *m = GraphQuery_AttemptRange
 func (m *GraphQuery_AttemptRange) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery_AttemptRange) ProtoMessage()    {}
 func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 0}
+	return fileDescriptor_922ae0b01ed267cc, []int{0, 0}
 }
 func (m *GraphQuery_AttemptRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Unmarshal(m, b)
@@ -125,8 +129,8 @@ func (m *GraphQuery_AttemptRange) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery_AttemptRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Marshal(b, m, deterministic)
 }
-func (dst *GraphQuery_AttemptRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery_AttemptRange.Merge(dst, src)
+func (m *GraphQuery_AttemptRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery_AttemptRange.Merge(m, src)
 }
 func (m *GraphQuery_AttemptRange) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Size(m)
@@ -205,12 +209,12 @@ type GraphQuery_Search struct {
 	//
 	// Additionally `Attempt` has a special field $quest whose subfields are
 	// queriable in the exact same way that a search in a Quest domain works.
-	Domain GraphQuery_Search_Domain `protobuf:"varint,1,opt,name=domain,enum=dm.GraphQuery_Search_Domain" json:"domain,omitempty"`
+	Domain GraphQuery_Search_Domain `protobuf:"varint,1,opt,name=domain,proto3,enum=dm.GraphQuery_Search_Domain" json:"domain,omitempty"`
 	// Start and End are optional restrictions on the first sort property. For
 	// now, these are just restrictions on the 'created' timestamp for either
 	// the Quest or Attempt, depending on the SearchDomain.
-	Start *PropertyValue `protobuf:"bytes,3,opt,name=start" json:"start,omitempty"`
-	End   *PropertyValue `protobuf:"bytes,4,opt,name=end" json:"end,omitempty"`
+	Start *PropertyValue `protobuf:"bytes,3,opt,name=start,proto3" json:"start,omitempty"`
+	End   *PropertyValue `protobuf:"bytes,4,opt,name=end,proto3" json:"end,omitempty"`
 	// ApproxFilters allows you to filter on 'approximate' fields. Approximate
 	// fields are the json path to the value, without any array subscripts. For
 	// example, if your document looked like:
@@ -229,7 +233,7 @@ type GraphQuery_Search struct {
 	//
 	// This is useful for filtering documents where the order of parameters
 	// in a list or sublist isn't known, or doesn't matter.
-	ApproxFilters map[string]*MultiPropertyValue `protobuf:"bytes,5,rep,name=approx_filters,json=approxFilters" json:"approx_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ApproxFilters map[string]*MultiPropertyValue `protobuf:"bytes,5,rep,name=approx_filters,json=approxFilters,proto3" json:"approx_filters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// ExactFilters allows you to filter on 'exact' fields. Exact fields are the
 	// json path to the value, including array subscripts. For example if your
 	// document looked like:
@@ -246,7 +250,7 @@ type GraphQuery_Search struct {
 	//
 	// This is useful for filtering documents where the order of parameters
 	// in a list or sublist matters.
-	ExactFilters         map[string]*PropertyValue `protobuf:"bytes,6,rep,name=exact_filters,json=exactFilters" json:"exact_filters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ExactFilters         map[string]*PropertyValue `protobuf:"bytes,6,rep,name=exact_filters,json=exactFilters,proto3" json:"exact_filters,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}                  `json:"-"`
 	XXX_unrecognized     []byte                    `json:"-"`
 	XXX_sizecache        int32                     `json:"-"`
@@ -256,7 +260,7 @@ func (m *GraphQuery_Search) Reset()         { *m = GraphQuery_Search{} }
 func (m *GraphQuery_Search) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery_Search) ProtoMessage()    {}
 func (*GraphQuery_Search) Descriptor() ([]byte, []int) {
-	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 1}
+	return fileDescriptor_922ae0b01ed267cc, []int{0, 1}
 }
 func (m *GraphQuery_Search) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_Search.Unmarshal(m, b)
@@ -264,8 +268,8 @@ func (m *GraphQuery_Search) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery_Search) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery_Search.Marshal(b, m, deterministic)
 }
-func (dst *GraphQuery_Search) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery_Search.Merge(dst, src)
+func (m *GraphQuery_Search) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery_Search.Merge(m, src)
 }
 func (m *GraphQuery_Search) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery_Search.Size(m)
@@ -321,10 +325,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_query.proto", fileDescriptor_graph_query_98d0dcff1c01949d)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_query.proto", fileDescriptor_922ae0b01ed267cc)
 }
 
-var fileDescriptor_graph_query_98d0dcff1c01949d = []byte{
+var fileDescriptor_922ae0b01ed267cc = []byte{
 	// 473 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0x41, 0x6f, 0xd3, 0x40,
 	0x10, 0x85, 0xb1, 0x1d, 0xbb, 0x74, 0x9c, 0x94, 0x74, 0x05, 0xc8, 0x32, 0x1c, 0xa2, 0x72, 0x48,

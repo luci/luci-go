@@ -3,9 +3,11 @@
 
 package ts_mon_proto
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,7 +32,7 @@ func (m *Any) Reset()         { *m = Any{} }
 func (m *Any) String() string { return proto.CompactTextString(m) }
 func (*Any) ProtoMessage()    {}
 func (*Any) Descriptor() ([]byte, []int) {
-	return fileDescriptor_any_8b58d4b8064e31d9, []int{0}
+	return fileDescriptor_58f91f4e40f17744, []int{0}
 }
 func (m *Any) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Any.Unmarshal(m, b)
@@ -38,8 +40,8 @@ func (m *Any) XXX_Unmarshal(b []byte) error {
 func (m *Any) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Any.Marshal(b, m, deterministic)
 }
-func (dst *Any) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Any.Merge(dst, src)
+func (m *Any) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Any.Merge(m, src)
 }
 func (m *Any) XXX_Size() int {
 	return xxx_messageInfo_Any.Size(m)
@@ -69,10 +71,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/any.proto", fileDescriptor_any_8b58d4b8064e31d9)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/any.proto", fileDescriptor_58f91f4e40f17744)
 }
 
-var fileDescriptor_any_8b58d4b8064e31d9 = []byte{
+var fileDescriptor_58f91f4e40f17744 = []byte{
 	// 138 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x48, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

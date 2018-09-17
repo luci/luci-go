@@ -3,11 +3,13 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
-import field_mask "google.golang.org/genproto/protobuf/field_mask"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -56,7 +58,7 @@ func (m *PhysicalHost) Reset()         { *m = PhysicalHost{} }
 func (m *PhysicalHost) String() string { return proto.CompactTextString(m) }
 func (*PhysicalHost) ProtoMessage()    {}
 func (*PhysicalHost) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_1c486a130640ac96, []int{0}
+	return fileDescriptor_fc4ca5e2610d2a30, []int{0}
 }
 func (m *PhysicalHost) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PhysicalHost.Unmarshal(m, b)
@@ -64,8 +66,8 @@ func (m *PhysicalHost) XXX_Unmarshal(b []byte) error {
 func (m *PhysicalHost) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PhysicalHost.Marshal(b, m, deterministic)
 }
-func (dst *PhysicalHost) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PhysicalHost.Merge(dst, src)
+func (m *PhysicalHost) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PhysicalHost.Merge(m, src)
 }
 func (m *PhysicalHost) XXX_Size() int {
 	return xxx_messageInfo_PhysicalHost.Size(m)
@@ -173,7 +175,7 @@ func (m *CreatePhysicalHostRequest) Reset()         { *m = CreatePhysicalHostReq
 func (m *CreatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
 func (*CreatePhysicalHostRequest) ProtoMessage()    {}
 func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_1c486a130640ac96, []int{1}
+	return fileDescriptor_fc4ca5e2610d2a30, []int{1}
 }
 func (m *CreatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreatePhysicalHostRequest.Unmarshal(m, b)
@@ -181,8 +183,8 @@ func (m *CreatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 func (m *CreatePhysicalHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreatePhysicalHostRequest.Marshal(b, m, deterministic)
 }
-func (dst *CreatePhysicalHostRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreatePhysicalHostRequest.Merge(dst, src)
+func (m *CreatePhysicalHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreatePhysicalHostRequest.Merge(m, src)
 }
 func (m *CreatePhysicalHostRequest) XXX_Size() int {
 	return xxx_messageInfo_CreatePhysicalHostRequest.Size(m)
@@ -235,7 +237,7 @@ func (m *ListPhysicalHostsRequest) Reset()         { *m = ListPhysicalHostsReque
 func (m *ListPhysicalHostsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsRequest) ProtoMessage()    {}
 func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_1c486a130640ac96, []int{2}
+	return fileDescriptor_fc4ca5e2610d2a30, []int{2}
 }
 func (m *ListPhysicalHostsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsRequest.Unmarshal(m, b)
@@ -243,8 +245,8 @@ func (m *ListPhysicalHostsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListPhysicalHostsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListPhysicalHostsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListPhysicalHostsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListPhysicalHostsRequest.Merge(dst, src)
+func (m *ListPhysicalHostsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPhysicalHostsRequest.Merge(m, src)
 }
 func (m *ListPhysicalHostsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListPhysicalHostsRequest.Size(m)
@@ -352,7 +354,7 @@ func (m *ListPhysicalHostsResponse) Reset()         { *m = ListPhysicalHostsResp
 func (m *ListPhysicalHostsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListPhysicalHostsResponse) ProtoMessage()    {}
 func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_1c486a130640ac96, []int{3}
+	return fileDescriptor_fc4ca5e2610d2a30, []int{3}
 }
 func (m *ListPhysicalHostsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsResponse.Unmarshal(m, b)
@@ -360,8 +362,8 @@ func (m *ListPhysicalHostsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListPhysicalHostsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListPhysicalHostsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListPhysicalHostsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListPhysicalHostsResponse.Merge(dst, src)
+func (m *ListPhysicalHostsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListPhysicalHostsResponse.Merge(m, src)
 }
 func (m *ListPhysicalHostsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListPhysicalHostsResponse.Size(m)
@@ -394,7 +396,7 @@ func (m *UpdatePhysicalHostRequest) Reset()         { *m = UpdatePhysicalHostReq
 func (m *UpdatePhysicalHostRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdatePhysicalHostRequest) ProtoMessage()    {}
 func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_physical_hosts_1c486a130640ac96, []int{4}
+	return fileDescriptor_fc4ca5e2610d2a30, []int{4}
 }
 func (m *UpdatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdatePhysicalHostRequest.Unmarshal(m, b)
@@ -402,8 +404,8 @@ func (m *UpdatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdatePhysicalHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdatePhysicalHostRequest.Marshal(b, m, deterministic)
 }
-func (dst *UpdatePhysicalHostRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdatePhysicalHostRequest.Merge(dst, src)
+func (m *UpdatePhysicalHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdatePhysicalHostRequest.Merge(m, src)
 }
 func (m *UpdatePhysicalHostRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdatePhysicalHostRequest.Size(m)
@@ -437,10 +439,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor_physical_hosts_1c486a130640ac96)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/physical_hosts.proto", fileDescriptor_fc4ca5e2610d2a30)
 }
 
-var fileDescriptor_physical_hosts_1c486a130640ac96 = []byte{
+var fileDescriptor_fc4ca5e2610d2a30 = []byte{
 	// 607 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x4d, 0x6b, 0xdc, 0x3a,
 	0x14, 0xc5, 0xe3, 0xcc, 0xd7, 0x75, 0x12, 0x12, 0xbd, 0xf7, 0x40, 0x33, 0x3c, 0x78, 0x66, 0xc2,

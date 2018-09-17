@@ -3,9 +3,11 @@
 
 package common
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -49,6 +51,7 @@ var State_name = map[int32]string{
 	5: "REPAIR",
 	6: "DECOMMISSIONED",
 }
+
 var State_value = map[string]int32{
 	"STATE_UNSPECIFIED": 0,
 	"FREE":              1,
@@ -62,8 +65,9 @@ var State_value = map[string]int32{
 func (x State) String() string {
 	return proto.EnumName(State_name, int32(x))
 }
+
 func (State) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_states_fd76a3edb64328ea, []int{0}
+	return fileDescriptor_f170d7ecb0c39b98, []int{0}
 }
 
 func init() {
@@ -71,10 +75,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/common/v1/states.proto", fileDescriptor_states_fd76a3edb64328ea)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/common/v1/states.proto", fileDescriptor_f170d7ecb0c39b98)
 }
 
-var fileDescriptor_states_fd76a3edb64328ea = []byte{
+var fileDescriptor_f170d7ecb0c39b98 = []byte{
 	// 194 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x24, 0xcd, 0x5d, 0x4b, 0xc3, 0x30,
 	0x14, 0x80, 0x61, 0x3f, 0xb6, 0x28, 0x47, 0x18, 0xf1, 0x80, 0x7f, 0x42, 0xb0, 0x41, 0xbc, 0xf3,

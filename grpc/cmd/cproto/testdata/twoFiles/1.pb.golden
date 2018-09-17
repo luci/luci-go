@@ -5,9 +5,11 @@ package test
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -36,7 +38,7 @@ func (m *Req) Reset()         { *m = Req{} }
 func (m *Req) String() string { return proto.CompactTextString(m) }
 func (*Req) ProtoMessage()    {}
 func (*Req) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1_e6e25998df5e2bb4, []int{0}
+	return fileDescriptor_d0e39272302ae304, []int{0}
 }
 func (m *Req) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Req.Unmarshal(m, b)
@@ -44,8 +46,8 @@ func (m *Req) XXX_Unmarshal(b []byte) error {
 func (m *Req) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Req.Marshal(b, m, deterministic)
 }
-func (dst *Req) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Req.Merge(dst, src)
+func (m *Req) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Req.Merge(m, src)
 }
 func (m *Req) XXX_Size() int {
 	return xxx_messageInfo_Req.Size(m)
@@ -74,7 +76,7 @@ func (m *Res) Reset()         { *m = Res{} }
 func (m *Res) String() string { return proto.CompactTextString(m) }
 func (*Res) ProtoMessage()    {}
 func (*Res) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1_e6e25998df5e2bb4, []int{1}
+	return fileDescriptor_d0e39272302ae304, []int{1}
 }
 func (m *Res) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Res.Unmarshal(m, b)
@@ -82,8 +84,8 @@ func (m *Res) XXX_Unmarshal(b []byte) error {
 func (m *Res) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Res.Marshal(b, m, deterministic)
 }
-func (dst *Res) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Res.Merge(dst, src)
+func (m *Res) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Res.Merge(m, src)
 }
 func (m *Res) XXX_Size() int {
 	return xxx_messageInfo_Res.Size(m)
@@ -194,9 +196,9 @@ var _S1_serviceDesc = grpc.ServiceDesc{
 	Metadata: "tmp/1.proto",
 }
 
-func init() { proto.RegisterFile("tmp/1.proto", fileDescriptor_1_e6e25998df5e2bb4) }
+func init() { proto.RegisterFile("tmp/1.proto", fileDescriptor_d0e39272302ae304) }
 
-var fileDescriptor_1_e6e25998df5e2bb4 = []byte{
+var fileDescriptor_d0e39272302ae304 = []byte{
 	// 100 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2e, 0xc9, 0x2d, 0xd0,
 	0x37, 0xd4, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x29, 0x49, 0x2d, 0x2e, 0x51, 0x12, 0xe6,

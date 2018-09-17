@@ -3,10 +3,12 @@
 
 package svcconfig
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -39,7 +41,7 @@ type Storage struct {
 	// good because a user may be streaming logs from intermediate storage as they
 	// become archived. Waiting a *lot* longer is useful to prevent data loss in
 	// the event of issues with the archival process.
-	MaxLogAge            *duration.Duration `protobuf:"bytes,2,opt,name=max_log_age,json=maxLogAge" json:"max_log_age,omitempty"`
+	MaxLogAge            *duration.Duration `protobuf:"bytes,2,opt,name=max_log_age,json=maxLogAge,proto3" json:"max_log_age,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -49,7 +51,7 @@ func (m *Storage) Reset()         { *m = Storage{} }
 func (m *Storage) String() string { return proto.CompactTextString(m) }
 func (*Storage) ProtoMessage()    {}
 func (*Storage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0}
+	return fileDescriptor_955b461662b6fa9d, []int{0}
 }
 func (m *Storage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage.Unmarshal(m, b)
@@ -57,8 +59,8 @@ func (m *Storage) XXX_Unmarshal(b []byte) error {
 func (m *Storage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Storage.Marshal(b, m, deterministic)
 }
-func (dst *Storage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Storage.Merge(dst, src)
+func (m *Storage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage.Merge(m, src)
 }
 func (m *Storage) XXX_Size() int {
 	return xxx_messageInfo_Storage.Size(m)
@@ -74,7 +76,7 @@ type isStorage_Type interface {
 }
 
 type Storage_Bigtable struct {
-	Bigtable *Storage_BigTable `protobuf:"bytes,1,opt,name=bigtable,oneof"`
+	Bigtable *Storage_BigTable `protobuf:"bytes,1,opt,name=bigtable,proto3,oneof"`
 }
 
 func (*Storage_Bigtable) isStorage_Type() {}
@@ -158,11 +160,11 @@ func _Storage_OneofSizer(msg proto.Message) (n int) {
 // BigTable is the set of BigTable configuration parameters.
 type Storage_BigTable struct {
 	// The name of the BigTable instance project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The name of the BigTable instance.
-	Instance string `protobuf:"bytes,2,opt,name=instance" json:"instance,omitempty"`
+	Instance string `protobuf:"bytes,2,opt,name=instance,proto3" json:"instance,omitempty"`
 	// The name of the BigTable instance's log table.
-	LogTableName         string   `protobuf:"bytes,3,opt,name=log_table_name,json=logTableName" json:"log_table_name,omitempty"`
+	LogTableName         string   `protobuf:"bytes,3,opt,name=log_table_name,json=logTableName,proto3" json:"log_table_name,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -172,7 +174,7 @@ func (m *Storage_BigTable) Reset()         { *m = Storage_BigTable{} }
 func (m *Storage_BigTable) String() string { return proto.CompactTextString(m) }
 func (*Storage_BigTable) ProtoMessage()    {}
 func (*Storage_BigTable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0, 0}
+	return fileDescriptor_955b461662b6fa9d, []int{0, 0}
 }
 func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage_BigTable.Unmarshal(m, b)
@@ -180,8 +182,8 @@ func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
 func (m *Storage_BigTable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Storage_BigTable.Marshal(b, m, deterministic)
 }
-func (dst *Storage_BigTable) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Storage_BigTable.Merge(dst, src)
+func (m *Storage_BigTable) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage_BigTable.Merge(m, src)
 }
 func (m *Storage_BigTable) XXX_Size() int {
 	return xxx_messageInfo_Storage_BigTable.Size(m)
@@ -219,10 +221,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor_storage_e0fe2006e05c8c73)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor_955b461662b6fa9d)
 }
 
-var fileDescriptor_storage_e0fe2006e05c8c73 = []byte{
+var fileDescriptor_955b461662b6fa9d = []byte{
 	// 260 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xb1, 0x4e, 0xc3, 0x30,
 	0x10, 0x86, 0x29, 0xa0, 0x36, 0x71, 0x11, 0x83, 0xa7, 0x10, 0x24, 0x84, 0x10, 0x03, 0x93, 0x2d,

@@ -5,10 +5,12 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -29,11 +31,11 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // RegisterPrefixRequest registers a new Prefix with the Coordinator.
 type RegisterPrefixRequest struct {
 	// The log stream's project.
-	Project string `protobuf:"bytes,1,opt,name=project" json:"project,omitempty"`
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
 	// The log stream prefix to register.
-	Prefix string `protobuf:"bytes,2,opt,name=prefix" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	// Optional information about the registering agent.
-	SourceInfo []string `protobuf:"bytes,3,rep,name=source_info,json=sourceInfo" json:"source_info,omitempty"`
+	SourceInfo []string `protobuf:"bytes,3,rep,name=source_info,json=sourceInfo,proto3" json:"source_info,omitempty"`
 	// Optional nonce to allow retries of this RPC. ALL CLIENTS SHOULD PROVIDE
 	// THIS. The client should generate the nonce once while preparing the request
 	// message, and then re-use the same nonce for retries of the request.
@@ -56,7 +58,7 @@ type RegisterPrefixRequest struct {
 	//
 	// If supplied, this value should exceed the timeout of the local task, else
 	// some of the task's streams may be dropped due to failing registration.
-	Expiration           *duration.Duration `protobuf:"bytes,10,opt,name=expiration" json:"expiration,omitempty"`
+	Expiration           *duration.Duration `protobuf:"bytes,10,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -66,7 +68,7 @@ func (m *RegisterPrefixRequest) Reset()         { *m = RegisterPrefixRequest{} }
 func (m *RegisterPrefixRequest) String() string { return proto.CompactTextString(m) }
 func (*RegisterPrefixRequest) ProtoMessage()    {}
 func (*RegisterPrefixRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_fb57996e01a7c29f, []int{0}
+	return fileDescriptor_317a8d00c4420d83, []int{0}
 }
 func (m *RegisterPrefixRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterPrefixRequest.Unmarshal(m, b)
@@ -74,8 +76,8 @@ func (m *RegisterPrefixRequest) XXX_Unmarshal(b []byte) error {
 func (m *RegisterPrefixRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterPrefixRequest.Marshal(b, m, deterministic)
 }
-func (dst *RegisterPrefixRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterPrefixRequest.Merge(dst, src)
+func (m *RegisterPrefixRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterPrefixRequest.Merge(m, src)
 }
 func (m *RegisterPrefixRequest) XXX_Size() int {
 	return xxx_messageInfo_RegisterPrefixRequest.Size(m)
@@ -128,7 +130,7 @@ type RegisterPrefixResponse struct {
 	Secret []byte `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"`
 	// The name of the Pub/Sub topic to publish butlerproto-formatted Butler log
 	// bundles to.
-	LogBundleTopic       string   `protobuf:"bytes,2,opt,name=log_bundle_topic,json=logBundleTopic" json:"log_bundle_topic,omitempty"`
+	LogBundleTopic       string   `protobuf:"bytes,2,opt,name=log_bundle_topic,json=logBundleTopic,proto3" json:"log_bundle_topic,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -138,7 +140,7 @@ func (m *RegisterPrefixResponse) Reset()         { *m = RegisterPrefixResponse{}
 func (m *RegisterPrefixResponse) String() string { return proto.CompactTextString(m) }
 func (*RegisterPrefixResponse) ProtoMessage()    {}
 func (*RegisterPrefixResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_service_fb57996e01a7c29f, []int{1}
+	return fileDescriptor_317a8d00c4420d83, []int{1}
 }
 func (m *RegisterPrefixResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterPrefixResponse.Unmarshal(m, b)
@@ -146,8 +148,8 @@ func (m *RegisterPrefixResponse) XXX_Unmarshal(b []byte) error {
 func (m *RegisterPrefixResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterPrefixResponse.Marshal(b, m, deterministic)
 }
-func (dst *RegisterPrefixResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterPrefixResponse.Merge(dst, src)
+func (m *RegisterPrefixResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterPrefixResponse.Merge(m, src)
 }
 func (m *RegisterPrefixResponse) XXX_Size() int {
 	return xxx_messageInfo_RegisterPrefixResponse.Size(m)
@@ -288,10 +290,10 @@ var _Registration_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1/service.proto", fileDescriptor_service_fb57996e01a7c29f)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1/service.proto", fileDescriptor_317a8d00c4420d83)
 }
 
-var fileDescriptor_service_fb57996e01a7c29f = []byte{
+var fileDescriptor_317a8d00c4420d83 = []byte{
 	// 331 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x90, 0x41, 0x4f, 0x2a, 0x31,
 	0x14, 0x85, 0x33, 0x8f, 0x17, 0x78, 0x14, 0x42, 0x5e, 0x9a, 0x48, 0x06, 0x12, 0x71, 0xc2, 0x6a,

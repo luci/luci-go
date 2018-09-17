@@ -3,10 +3,12 @@
 
 package svcconfig
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -30,22 +32,22 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type ProjectConfig struct {
 	// The set of auth service groups that are permitted READ access to this
 	// project's log streams.
-	ReaderAuthGroups []string `protobuf:"bytes,2,rep,name=reader_auth_groups,json=readerAuthGroups" json:"reader_auth_groups,omitempty"`
+	ReaderAuthGroups []string `protobuf:"bytes,2,rep,name=reader_auth_groups,json=readerAuthGroups,proto3" json:"reader_auth_groups,omitempty"`
 	// The set of chrome-infra-auth groups that are permitted WRITE access to this
 	// project's log streams.
-	WriterAuthGroups []string `protobuf:"bytes,3,rep,name=writer_auth_groups,json=writerAuthGroups" json:"writer_auth_groups,omitempty"`
+	WriterAuthGroups []string `protobuf:"bytes,3,rep,name=writer_auth_groups,json=writerAuthGroups,proto3" json:"writer_auth_groups,omitempty"`
 	// The maximum lifetime of a log stream.
 	//
 	// If a stream has not terminated after this period of time, it will be
 	// forcefully archived, and additional stream data will be discarded.
 	//
 	// This is upper-bounded by the global "archive_delay_max" parameter.
-	MaxStreamAge *duration.Duration `protobuf:"bytes,4,opt,name=max_stream_age,json=maxStreamAge" json:"max_stream_age,omitempty"`
+	MaxStreamAge *duration.Duration `protobuf:"bytes,4,opt,name=max_stream_age,json=maxStreamAge,proto3" json:"max_stream_age,omitempty"`
 	// The maximum amount of time after a prefix has been registered when log
 	// streams may also be registered under that prefix.
 	//
 	// See Config's "prefix_expiration" for more information.
-	PrefixExpiration *duration.Duration `protobuf:"bytes,5,opt,name=prefix_expiration,json=prefixExpiration" json:"prefix_expiration,omitempty"`
+	PrefixExpiration *duration.Duration `protobuf:"bytes,5,opt,name=prefix_expiration,json=prefixExpiration,proto3" json:"prefix_expiration,omitempty"`
 	// The archival Google Storage bucket name.
 	//
 	// Log streams artifacts will be stored in a subdirectory of this bucket:
@@ -56,18 +58,18 @@ type ProjectConfig struct {
 	//
 	// If this is not set, the logs will be archived in a project-named
 	// subdirectory in the global "archive_gs_base" location.
-	ArchiveGsBucket string `protobuf:"bytes,10,opt,name=archive_gs_bucket,json=archiveGsBucket" json:"archive_gs_bucket,omitempty"`
+	ArchiveGsBucket string `protobuf:"bytes,10,opt,name=archive_gs_bucket,json=archiveGsBucket,proto3" json:"archive_gs_bucket,omitempty"`
 	// If true, always create an additional data file that is the rendered content
 	// of the stream data. By default, only streams that explicitly register a
 	// binary file extension must be rendered.
 	//
 	// See Config's "always_create_binary" for more information.
-	RenderAllStreams bool `protobuf:"varint,11,opt,name=render_all_streams,json=renderAllStreams" json:"render_all_streams,omitempty"`
+	RenderAllStreams bool `protobuf:"varint,11,opt,name=render_all_streams,json=renderAllStreams,proto3" json:"render_all_streams,omitempty"`
 	// Project-specific archive index configuration.
 	//
 	// Any unspecified index configuration will default to the service archival
 	// config.
-	ArchiveIndexConfig   *ArchiveIndexConfig `protobuf:"bytes,12,opt,name=archive_index_config,json=archiveIndexConfig" json:"archive_index_config,omitempty"`
+	ArchiveIndexConfig   *ArchiveIndexConfig `protobuf:"bytes,12,opt,name=archive_index_config,json=archiveIndexConfig,proto3" json:"archive_index_config,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -77,7 +79,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_project_fe097ae8484075f9, []int{0}
+	return fileDescriptor_4b481a5cd36b270f, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -85,8 +87,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(dst, src)
+func (m *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(m, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -151,10 +153,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor_project_fe097ae8484075f9)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor_4b481a5cd36b270f)
 }
 
-var fileDescriptor_project_fe097ae8484075f9 = []byte{
+var fileDescriptor_4b481a5cd36b270f = []byte{
 	// 344 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0xcd, 0x4e, 0xe3, 0x30,
 	0x14, 0x85, 0xd5, 0xe9, 0xcc, 0x68, 0xea, 0x76, 0xa0, 0x8d, 0x58, 0x84, 0x4a, 0xa0, 0x88, 0x55,

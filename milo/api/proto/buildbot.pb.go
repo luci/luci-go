@@ -5,10 +5,12 @@ package milo
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -28,13 +30,13 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // The request containing the name of the master.
 type MasterRequest struct {
-	Name string `protobuf:"bytes,1,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// if true, exclude response data that the foundation team is actively trying
 	// to deprecate:
 	// - slave info
-	ExcludeDeprecated bool `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated" json:"exclude_deprecated,omitempty"`
+	ExcludeDeprecated bool `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated,proto3" json:"exclude_deprecated,omitempty"`
 	// If true, turn off emulation mode.
-	NoEmulation          bool     `protobuf:"varint,11,opt,name=no_emulation,json=noEmulation" json:"no_emulation,omitempty"`
+	NoEmulation          bool     `protobuf:"varint,11,opt,name=no_emulation,json=noEmulation,proto3" json:"no_emulation,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -44,7 +46,7 @@ func (m *MasterRequest) Reset()         { *m = MasterRequest{} }
 func (m *MasterRequest) String() string { return proto.CompactTextString(m) }
 func (*MasterRequest) ProtoMessage()    {}
 func (*MasterRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{0}
+	return fileDescriptor_42752ec01fa9d3bf, []int{0}
 }
 func (m *MasterRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MasterRequest.Unmarshal(m, b)
@@ -52,8 +54,8 @@ func (m *MasterRequest) XXX_Unmarshal(b []byte) error {
 func (m *MasterRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MasterRequest.Marshal(b, m, deterministic)
 }
-func (dst *MasterRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MasterRequest.Merge(dst, src)
+func (m *MasterRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MasterRequest.Merge(m, src)
 }
 func (m *MasterRequest) XXX_Size() int {
 	return xxx_messageInfo_MasterRequest.Size(m)
@@ -88,9 +90,9 @@ func (m *MasterRequest) GetNoEmulation() bool {
 // The response message containing master information.
 type CompressedMasterJSON struct {
 	// Whether the master is internal or not.
-	Internal bool `protobuf:"varint,1,opt,name=internal" json:"internal,omitempty"`
+	Internal bool `protobuf:"varint,1,opt,name=internal,proto3" json:"internal,omitempty"`
 	// Timestamp of the freshness of the master data.
-	Modified *timestamp.Timestamp `protobuf:"bytes,2,opt,name=modified" json:"modified,omitempty"`
+	Modified *timestamp.Timestamp `protobuf:"bytes,2,opt,name=modified,proto3" json:"modified,omitempty"`
 	// Gzipped json data of the master.
 	Data                 []byte   `protobuf:"bytes,3,opt,name=data,proto3" json:"data,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -102,7 +104,7 @@ func (m *CompressedMasterJSON) Reset()         { *m = CompressedMasterJSON{} }
 func (m *CompressedMasterJSON) String() string { return proto.CompactTextString(m) }
 func (*CompressedMasterJSON) ProtoMessage()    {}
 func (*CompressedMasterJSON) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{1}
+	return fileDescriptor_42752ec01fa9d3bf, []int{1}
 }
 func (m *CompressedMasterJSON) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CompressedMasterJSON.Unmarshal(m, b)
@@ -110,8 +112,8 @@ func (m *CompressedMasterJSON) XXX_Unmarshal(b []byte) error {
 func (m *CompressedMasterJSON) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CompressedMasterJSON.Marshal(b, m, deterministic)
 }
-func (dst *CompressedMasterJSON) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CompressedMasterJSON.Merge(dst, src)
+func (m *CompressedMasterJSON) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CompressedMasterJSON.Merge(m, src)
 }
 func (m *CompressedMasterJSON) XXX_Size() int {
 	return xxx_messageInfo_CompressedMasterJSON.Size(m)
@@ -145,13 +147,13 @@ func (m *CompressedMasterJSON) GetData() []byte {
 
 // The request for a specific build.
 type BuildbotBuildRequest struct {
-	Master   string `protobuf:"bytes,1,opt,name=master" json:"master,omitempty"`
-	Builder  string `protobuf:"bytes,2,opt,name=builder" json:"builder,omitempty"`
-	BuildNum int64  `protobuf:"varint,3,opt,name=build_num,json=buildNum" json:"build_num,omitempty"`
+	Master   string `protobuf:"bytes,1,opt,name=master,proto3" json:"master,omitempty"`
+	Builder  string `protobuf:"bytes,2,opt,name=builder,proto3" json:"builder,omitempty"`
+	BuildNum int64  `protobuf:"varint,3,opt,name=build_num,json=buildNum,proto3" json:"build_num,omitempty"`
 	// if true, exclude response data that the foundation team is actively trying
 	// to deprecate:
 	// - slave info
-	ExcludeDeprecated    bool     `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated" json:"exclude_deprecated,omitempty"`
+	ExcludeDeprecated    bool     `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated,proto3" json:"exclude_deprecated,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -161,7 +163,7 @@ func (m *BuildbotBuildRequest) Reset()         { *m = BuildbotBuildRequest{} }
 func (m *BuildbotBuildRequest) String() string { return proto.CompactTextString(m) }
 func (*BuildbotBuildRequest) ProtoMessage()    {}
 func (*BuildbotBuildRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{2}
+	return fileDescriptor_42752ec01fa9d3bf, []int{2}
 }
 func (m *BuildbotBuildRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbotBuildRequest.Unmarshal(m, b)
@@ -169,8 +171,8 @@ func (m *BuildbotBuildRequest) XXX_Unmarshal(b []byte) error {
 func (m *BuildbotBuildRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbotBuildRequest.Marshal(b, m, deterministic)
 }
-func (dst *BuildbotBuildRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbotBuildRequest.Merge(dst, src)
+func (m *BuildbotBuildRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbotBuildRequest.Merge(m, src)
 }
 func (m *BuildbotBuildRequest) XXX_Size() int {
 	return xxx_messageInfo_BuildbotBuildRequest.Size(m)
@@ -222,7 +224,7 @@ func (m *BuildbotBuildJSON) Reset()         { *m = BuildbotBuildJSON{} }
 func (m *BuildbotBuildJSON) String() string { return proto.CompactTextString(m) }
 func (*BuildbotBuildJSON) ProtoMessage()    {}
 func (*BuildbotBuildJSON) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{3}
+	return fileDescriptor_42752ec01fa9d3bf, []int{3}
 }
 func (m *BuildbotBuildJSON) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbotBuildJSON.Unmarshal(m, b)
@@ -230,8 +232,8 @@ func (m *BuildbotBuildJSON) XXX_Unmarshal(b []byte) error {
 func (m *BuildbotBuildJSON) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbotBuildJSON.Marshal(b, m, deterministic)
 }
-func (dst *BuildbotBuildJSON) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbotBuildJSON.Merge(dst, src)
+func (m *BuildbotBuildJSON) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbotBuildJSON.Merge(m, src)
 }
 func (m *BuildbotBuildJSON) XXX_Size() int {
 	return xxx_messageInfo_BuildbotBuildJSON.Size(m)
@@ -251,16 +253,16 @@ func (m *BuildbotBuildJSON) GetData() []byte {
 
 // The request for multiple build on a builder.
 type BuildbotBuildsRequest struct {
-	Master  string `protobuf:"bytes,1,opt,name=master" json:"master,omitempty"`
-	Builder string `protobuf:"bytes,2,opt,name=builder" json:"builder,omitempty"`
+	Master  string `protobuf:"bytes,1,opt,name=master,proto3" json:"master,omitempty"`
+	Builder string `protobuf:"bytes,2,opt,name=builder,proto3" json:"builder,omitempty"`
 	// Limit to the number of builds to return (default: 20).
-	Limit int32 `protobuf:"varint,3,opt,name=limit" json:"limit,omitempty"`
+	Limit int32 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	// Include ongoing builds (default: false).
-	IncludeCurrent bool `protobuf:"varint,4,opt,name=include_current,json=includeCurrent" json:"include_current,omitempty"`
+	IncludeCurrent bool `protobuf:"varint,4,opt,name=include_current,json=includeCurrent,proto3" json:"include_current,omitempty"`
 	// if true, exclude response data that the foundation team is actively trying
 	// to deprecate:
 	// - slave info
-	ExcludeDeprecated    bool     `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated" json:"exclude_deprecated,omitempty"`
+	ExcludeDeprecated    bool     `protobuf:"varint,10,opt,name=exclude_deprecated,json=excludeDeprecated,proto3" json:"exclude_deprecated,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -270,7 +272,7 @@ func (m *BuildbotBuildsRequest) Reset()         { *m = BuildbotBuildsRequest{} }
 func (m *BuildbotBuildsRequest) String() string { return proto.CompactTextString(m) }
 func (*BuildbotBuildsRequest) ProtoMessage()    {}
 func (*BuildbotBuildsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{4}
+	return fileDescriptor_42752ec01fa9d3bf, []int{4}
 }
 func (m *BuildbotBuildsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbotBuildsRequest.Unmarshal(m, b)
@@ -278,8 +280,8 @@ func (m *BuildbotBuildsRequest) XXX_Unmarshal(b []byte) error {
 func (m *BuildbotBuildsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbotBuildsRequest.Marshal(b, m, deterministic)
 }
-func (dst *BuildbotBuildsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbotBuildsRequest.Merge(dst, src)
+func (m *BuildbotBuildsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbotBuildsRequest.Merge(m, src)
 }
 func (m *BuildbotBuildsRequest) XXX_Size() int {
 	return xxx_messageInfo_BuildbotBuildsRequest.Size(m)
@@ -328,7 +330,7 @@ func (m *BuildbotBuildsRequest) GetExcludeDeprecated() bool {
 // The response message for multiple builds in a builder.
 type BuildbotBuildsJSON struct {
 	// builds is the list of builds resulting from the builds request.
-	Builds               []*BuildbotBuildJSON `protobuf:"bytes,1,rep,name=builds" json:"builds,omitempty"`
+	Builds               []*BuildbotBuildJSON `protobuf:"bytes,1,rep,name=builds,proto3" json:"builds,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -338,7 +340,7 @@ func (m *BuildbotBuildsJSON) Reset()         { *m = BuildbotBuildsJSON{} }
 func (m *BuildbotBuildsJSON) String() string { return proto.CompactTextString(m) }
 func (*BuildbotBuildsJSON) ProtoMessage()    {}
 func (*BuildbotBuildsJSON) Descriptor() ([]byte, []int) {
-	return fileDescriptor_buildbot_5a188ab22e18a6aa, []int{5}
+	return fileDescriptor_42752ec01fa9d3bf, []int{5}
 }
 func (m *BuildbotBuildsJSON) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbotBuildsJSON.Unmarshal(m, b)
@@ -346,8 +348,8 @@ func (m *BuildbotBuildsJSON) XXX_Unmarshal(b []byte) error {
 func (m *BuildbotBuildsJSON) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbotBuildsJSON.Marshal(b, m, deterministic)
 }
-func (dst *BuildbotBuildsJSON) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbotBuildsJSON.Merge(dst, src)
+func (m *BuildbotBuildsJSON) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbotBuildsJSON.Merge(m, src)
 }
 func (m *BuildbotBuildsJSON) XXX_Size() int {
 	return xxx_messageInfo_BuildbotBuildsJSON.Size(m)
@@ -547,10 +549,10 @@ var _Buildbot_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/proto/buildbot.proto", fileDescriptor_buildbot_5a188ab22e18a6aa)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/proto/buildbot.proto", fileDescriptor_42752ec01fa9d3bf)
 }
 
-var fileDescriptor_buildbot_5a188ab22e18a6aa = []byte{
+var fileDescriptor_42752ec01fa9d3bf = []byte{
 	// 484 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x92, 0xc1, 0x6e, 0xd3, 0x40,
 	0x10, 0x86, 0xbb, 0x8d, 0x13, 0x9c, 0x49, 0x81, 0x76, 0x49, 0xa9, 0xe5, 0x1e, 0x30, 0xbe, 0xd4,

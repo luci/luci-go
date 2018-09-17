@@ -5,12 +5,14 @@ package minter
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import timestamp "github.com/golang/protobuf/ptypes/timestamp"
-import messages "go.chromium.org/luci/server/auth/delegation/messages"
-import api "go.chromium.org/luci/tokenserver/api"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	messages "go.chromium.org/luci/server/auth/delegation/messages"
+	api "go.chromium.org/luci/tokenserver/api"
+	math "math"
+)
 
 import (
 	context "golang.org/x/net/context"
@@ -40,6 +42,7 @@ var SignatureAlgorithm_name = map[int32]string{
 	0: "UNKNOWN_ALGO",
 	1: "SHA256_RSA_ALGO",
 }
+
 var SignatureAlgorithm_value = map[string]int32{
 	"UNKNOWN_ALGO":    0,
 	"SHA256_RSA_ALGO": 1,
@@ -48,8 +51,9 @@ var SignatureAlgorithm_value = map[string]int32{
 func (x SignatureAlgorithm) String() string {
 	return proto.EnumName(SignatureAlgorithm_name, int32(x))
 }
+
 func (SignatureAlgorithm) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{0}
+	return fileDescriptor_f6e01e20f1811b60, []int{0}
 }
 
 // Possible kinds of fatal errors.
@@ -80,6 +84,7 @@ var ErrorCode_name = map[int32]string{
 	7: "BAD_TOKEN_ARGUMENTS",
 	8: "MACHINE_TOKEN_MINTING_ERROR",
 }
+
 var ErrorCode_value = map[string]int32{
 	"SUCCESS":                     0,
 	"UNSUPPORTED_SIGNATURE":       1,
@@ -95,8 +100,9 @@ var ErrorCode_value = map[string]int32{
 func (x ErrorCode) String() string {
 	return proto.EnumName(ErrorCode_name, int32(x))
 }
+
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{1}
+	return fileDescriptor_f6e01e20f1811b60, []int{1}
 }
 
 // MintMachineTokenRequest wraps a serialized and signed MachineTokenRequest
@@ -121,7 +127,7 @@ func (m *MintMachineTokenRequest) Reset()         { *m = MintMachineTokenRequest
 func (m *MintMachineTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MintMachineTokenRequest) ProtoMessage()    {}
 func (*MintMachineTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{0}
+	return fileDescriptor_f6e01e20f1811b60, []int{0}
 }
 func (m *MintMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintMachineTokenRequest.Unmarshal(m, b)
@@ -129,8 +135,8 @@ func (m *MintMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintMachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintMachineTokenRequest.Marshal(b, m, deterministic)
 }
-func (dst *MintMachineTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintMachineTokenRequest.Merge(dst, src)
+func (m *MintMachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintMachineTokenRequest.Merge(m, src)
 }
 func (m *MintMachineTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MintMachineTokenRequest.Size(m)
@@ -165,13 +171,13 @@ type MachineTokenRequest struct {
 	// The signature algorithm used to sign this request.
 	//
 	// Defines what's in MintMachineTokenRequest.signature field.
-	SignatureAlgorithm SignatureAlgorithm `protobuf:"varint,2,opt,name=signature_algorithm,json=signatureAlgorithm,enum=tokenserver.minter.SignatureAlgorithm" json:"signature_algorithm,omitempty"`
+	SignatureAlgorithm SignatureAlgorithm `protobuf:"varint,2,opt,name=signature_algorithm,json=signatureAlgorithm,proto3,enum=tokenserver.minter.SignatureAlgorithm" json:"signature_algorithm,omitempty"`
 	// Timestamp when this request was created, by the issuer clock.
-	IssuedAt *timestamp.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt" json:"issued_at,omitempty"`
+	IssuedAt *timestamp.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
 	// The token type being requested.
 	//
 	// Defines what fields of the response are set.
-	TokenType            api.MachineTokenType `protobuf:"varint,4,opt,name=token_type,json=tokenType,enum=tokenserver.MachineTokenType" json:"token_type,omitempty"`
+	TokenType            api.MachineTokenType `protobuf:"varint,4,opt,name=token_type,json=tokenType,proto3,enum=tokenserver.MachineTokenType" json:"token_type,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -181,7 +187,7 @@ func (m *MachineTokenRequest) Reset()         { *m = MachineTokenRequest{} }
 func (m *MachineTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenRequest) ProtoMessage()    {}
 func (*MachineTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{1}
+	return fileDescriptor_f6e01e20f1811b60, []int{1}
 }
 func (m *MachineTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenRequest.Unmarshal(m, b)
@@ -189,8 +195,8 @@ func (m *MachineTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenRequest.Marshal(b, m, deterministic)
 }
-func (dst *MachineTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenRequest.Merge(dst, src)
+func (m *MachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenRequest.Merge(m, src)
 }
 func (m *MachineTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenRequest.Size(m)
@@ -238,16 +244,16 @@ type MintMachineTokenResponse struct {
 	// Possible kinds of fatal errors.
 	//
 	// Non fatal errors are returned as grpc.Internal errors instead.
-	ErrorCode ErrorCode `protobuf:"varint,1,opt,name=error_code,json=errorCode,enum=tokenserver.minter.ErrorCode" json:"error_code,omitempty"`
+	ErrorCode ErrorCode `protobuf:"varint,1,opt,name=error_code,json=errorCode,proto3,enum=tokenserver.minter.ErrorCode" json:"error_code,omitempty"`
 	// Optional detailed error message.
-	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage" json:"error_message,omitempty"`
+	ErrorMessage string `protobuf:"bytes,2,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	// On success (SUCCESS error code) contains the produced token.
-	TokenResponse *MachineTokenResponse `protobuf:"bytes,3,opt,name=token_response,json=tokenResponse" json:"token_response,omitempty"`
+	TokenResponse *MachineTokenResponse `protobuf:"bytes,3,opt,name=token_response,json=tokenResponse,proto3" json:"token_response,omitempty"`
 	// Identifier of the service and its version that produced the response.
 	//
 	// Set for both successful responses and errors. On success, it is identical
 	// to token_response.service_version.
-	ServiceVersion       string   `protobuf:"bytes,4,opt,name=service_version,json=serviceVersion" json:"service_version,omitempty"`
+	ServiceVersion       string   `protobuf:"bytes,4,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -257,7 +263,7 @@ func (m *MintMachineTokenResponse) Reset()         { *m = MintMachineTokenRespon
 func (m *MintMachineTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MintMachineTokenResponse) ProtoMessage()    {}
 func (*MintMachineTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{2}
+	return fileDescriptor_f6e01e20f1811b60, []int{2}
 }
 func (m *MintMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintMachineTokenResponse.Unmarshal(m, b)
@@ -265,8 +271,8 @@ func (m *MintMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintMachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintMachineTokenResponse.Marshal(b, m, deterministic)
 }
-func (dst *MintMachineTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintMachineTokenResponse.Merge(dst, src)
+func (m *MintMachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintMachineTokenResponse.Merge(m, src)
 }
 func (m *MintMachineTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MintMachineTokenResponse.Size(m)
@@ -311,7 +317,7 @@ type MachineTokenResponse struct {
 	//
 	// Has the form "<app-id>/<module-version>". Reported to the monitoring by
 	// the client. This is _not_ a part of the token.
-	ServiceVersion string `protobuf:"bytes,2,opt,name=service_version,json=serviceVersion" json:"service_version,omitempty"`
+	ServiceVersion string `protobuf:"bytes,2,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
 	// The generated token.
 	//
 	// The exact field set here depends on a requested type of the token, see
@@ -329,7 +335,7 @@ func (m *MachineTokenResponse) Reset()         { *m = MachineTokenResponse{} }
 func (m *MachineTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenResponse) ProtoMessage()    {}
 func (*MachineTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{3}
+	return fileDescriptor_f6e01e20f1811b60, []int{3}
 }
 func (m *MachineTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenResponse.Unmarshal(m, b)
@@ -337,8 +343,8 @@ func (m *MachineTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenResponse.Marshal(b, m, deterministic)
 }
-func (dst *MachineTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenResponse.Merge(dst, src)
+func (m *MachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenResponse.Merge(m, src)
 }
 func (m *MachineTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenResponse.Size(m)
@@ -349,12 +355,19 @@ func (m *MachineTokenResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MachineTokenResponse proto.InternalMessageInfo
 
+func (m *MachineTokenResponse) GetServiceVersion() string {
+	if m != nil {
+		return m.ServiceVersion
+	}
+	return ""
+}
+
 type isMachineTokenResponse_TokenType interface {
 	isMachineTokenResponse_TokenType()
 }
 
 type MachineTokenResponse_LuciMachineToken struct {
-	LuciMachineToken *LuciMachineToken `protobuf:"bytes,21,opt,name=luci_machine_token,json=luciMachineToken,oneof"`
+	LuciMachineToken *LuciMachineToken `protobuf:"bytes,21,opt,name=luci_machine_token,json=luciMachineToken,proto3,oneof"`
 }
 
 func (*MachineTokenResponse_LuciMachineToken) isMachineTokenResponse_TokenType() {}
@@ -364,13 +377,6 @@ func (m *MachineTokenResponse) GetTokenType() isMachineTokenResponse_TokenType {
 		return m.TokenType
 	}
 	return nil
-}
-
-func (m *MachineTokenResponse) GetServiceVersion() string {
-	if m != nil {
-		return m.ServiceVersion
-	}
-	return ""
 }
 
 func (m *MachineTokenResponse) GetLuciMachineToken() *LuciMachineToken {
@@ -447,8 +453,8 @@ func _MachineTokenResponse_OneofSizer(msg proto.Message) (n int) {
 // but in reality it is serialized MachineTokenEnvelope, see machine_token.proto
 // and read the comment there for more info about the token format.
 type LuciMachineToken struct {
-	MachineToken         string               `protobuf:"bytes,1,opt,name=machine_token,json=machineToken" json:"machine_token,omitempty"`
-	Expiry               *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty"`
+	MachineToken         string               `protobuf:"bytes,1,opt,name=machine_token,json=machineToken,proto3" json:"machine_token,omitempty"`
+	Expiry               *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
 	XXX_unrecognized     []byte               `json:"-"`
 	XXX_sizecache        int32                `json:"-"`
@@ -458,7 +464,7 @@ func (m *LuciMachineToken) Reset()         { *m = LuciMachineToken{} }
 func (m *LuciMachineToken) String() string { return proto.CompactTextString(m) }
 func (*LuciMachineToken) ProtoMessage()    {}
 func (*LuciMachineToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{4}
+	return fileDescriptor_f6e01e20f1811b60, []int{4}
 }
 func (m *LuciMachineToken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LuciMachineToken.Unmarshal(m, b)
@@ -466,8 +472,8 @@ func (m *LuciMachineToken) XXX_Unmarshal(b []byte) error {
 func (m *LuciMachineToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LuciMachineToken.Marshal(b, m, deterministic)
 }
-func (dst *LuciMachineToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LuciMachineToken.Merge(dst, src)
+func (m *LuciMachineToken) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LuciMachineToken.Merge(m, src)
 }
 func (m *LuciMachineToken) XXX_Size() int {
 	return xxx_messageInfo_LuciMachineToken.Size(m)
@@ -501,11 +507,11 @@ type MintDelegationTokenRequest struct {
 	// ACLs to make sure the caller is authorized to impersonate this identity.
 	//
 	// Required.
-	DelegatedIdentity string `protobuf:"bytes,1,opt,name=delegated_identity,json=delegatedIdentity" json:"delegated_identity,omitempty"`
+	DelegatedIdentity string `protobuf:"bytes,1,opt,name=delegated_identity,json=delegatedIdentity,proto3" json:"delegated_identity,omitempty"`
 	// How long the token should be considered valid (in seconds).
 	//
 	// Default is 3600 sec.
-	ValidityDuration int64 `protobuf:"varint,2,opt,name=validity_duration,json=validityDuration" json:"validity_duration,omitempty"`
+	ValidityDuration int64 `protobuf:"varint,2,opt,name=validity_duration,json=validityDuration,proto3" json:"validity_duration,omitempty"`
 	// Who will be able to use the new token.
 	//
 	// Each item can be an identity string (e.g. "user:<email>"), a "group:<name>"
@@ -516,7 +522,7 @@ type MintDelegationTokenRequest struct {
 	// This is semantically is a set, the order of elements doesn't matter.
 	//
 	// Required.
-	Audience []string `protobuf:"bytes,3,rep,name=audience" json:"audience,omitempty"`
+	Audience []string `protobuf:"bytes,3,rep,name=audience,proto3" json:"audience,omitempty"`
 	// What services should accept the new token.
 	//
 	// List of LUCI services (specified as service identities, e.g.
@@ -527,12 +533,12 @@ type MintDelegationTokenRequest struct {
 	// This is semantically is a set, the order of elements doesn't matter.
 	//
 	// Required.
-	Services []string `protobuf:"bytes,4,rep,name=services" json:"services,omitempty"`
+	Services []string `protobuf:"bytes,4,rep,name=services,proto3" json:"services,omitempty"`
 	// Optional reason why the token is created.
 	//
 	// Used only for logging and auditing purposes. Doesn't become part of the
 	// token.
-	Intent string `protobuf:"bytes,5,opt,name=intent" json:"intent,omitempty"`
+	Intent string `protobuf:"bytes,5,opt,name=intent,proto3" json:"intent,omitempty"`
 	// Arbitrary key:value pairs embedded into the token by whoever requested it.
 	// Convey circumstance of why the token is created.
 	//
@@ -540,7 +546,7 @@ type MintDelegationTokenRequest struct {
 	// decisions. Please use extremely carefully, only when you control both sides
 	// of the delegation link and can guarantee that services involved understand
 	// the tags.
-	Tags                 []string `protobuf:"bytes,6,rep,name=tags" json:"tags,omitempty"`
+	Tags                 []string `protobuf:"bytes,6,rep,name=tags,proto3" json:"tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -550,7 +556,7 @@ func (m *MintDelegationTokenRequest) Reset()         { *m = MintDelegationTokenR
 func (m *MintDelegationTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MintDelegationTokenRequest) ProtoMessage()    {}
 func (*MintDelegationTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{5}
+	return fileDescriptor_f6e01e20f1811b60, []int{5}
 }
 func (m *MintDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintDelegationTokenRequest.Unmarshal(m, b)
@@ -558,8 +564,8 @@ func (m *MintDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintDelegationTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintDelegationTokenRequest.Marshal(b, m, deterministic)
 }
-func (dst *MintDelegationTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintDelegationTokenRequest.Merge(dst, src)
+func (m *MintDelegationTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintDelegationTokenRequest.Merge(m, src)
 }
 func (m *MintDelegationTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MintDelegationTokenRequest.Size(m)
@@ -617,17 +623,17 @@ func (m *MintDelegationTokenRequest) GetTags() []string {
 // Errors are returned via standard gRPC codes.
 type MintDelegationTokenResponse struct {
 	// The actual base64-encoded signed token.
-	Token string `protobuf:"bytes,1,opt,name=token" json:"token,omitempty"`
+	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	// Same data as in 'token' in deserialized form, just for convenience.
 	//
 	// Mostly for JSON encoding users, since they may not understand proto-encoded
 	// tokens.
-	DelegationSubtoken *messages.Subtoken `protobuf:"bytes,2,opt,name=delegation_subtoken,json=delegationSubtoken" json:"delegation_subtoken,omitempty"`
+	DelegationSubtoken *messages.Subtoken `protobuf:"bytes,2,opt,name=delegation_subtoken,json=delegationSubtoken,proto3" json:"delegation_subtoken,omitempty"`
 	// Identifier of the service and its version that produced the token.
 	//
 	// Has the form "<app-id>/<module-version>". This is _not_ part of the token.
 	// Used only for logging and monitoring.
-	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion" json:"service_version,omitempty"`
+	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -637,7 +643,7 @@ func (m *MintDelegationTokenResponse) Reset()         { *m = MintDelegationToken
 func (m *MintDelegationTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MintDelegationTokenResponse) ProtoMessage()    {}
 func (*MintDelegationTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{6}
+	return fileDescriptor_f6e01e20f1811b60, []int{6}
 }
 func (m *MintDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintDelegationTokenResponse.Unmarshal(m, b)
@@ -645,8 +651,8 @@ func (m *MintDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintDelegationTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintDelegationTokenResponse.Marshal(b, m, deterministic)
 }
-func (dst *MintDelegationTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintDelegationTokenResponse.Merge(dst, src)
+func (m *MintDelegationTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintDelegationTokenResponse.Merge(m, src)
 }
 func (m *MintDelegationTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MintDelegationTokenResponse.Size(m)
@@ -688,11 +694,11 @@ type MintOAuthTokenGrantRequest struct {
 	// A string of the form "user:<email>".
 	//
 	// Required.
-	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount" json:"service_account,omitempty"`
+	ServiceAccount string `protobuf:"bytes,1,opt,name=service_account,json=serviceAccount,proto3" json:"service_account,omitempty"`
 	// How long the generated grant should be considered valid (in seconds).
 	//
 	// Default is 3600 sec.
-	ValidityDuration int64 `protobuf:"varint,2,opt,name=validity_duration,json=validityDuration" json:"validity_duration,omitempty"`
+	ValidityDuration int64 `protobuf:"varint,2,opt,name=validity_duration,json=validityDuration,proto3" json:"validity_duration,omitempty"`
 	// An end user that wants to act as the service account (perhaps indirectly).
 	//
 	// A string of the form "user:<email>". On Swarming, this is an identity of
@@ -703,12 +709,12 @@ type MintOAuthTokenGrantRequest struct {
 	// user's OAuth token to the token server, where it can be validated.
 	//
 	// Required.
-	EndUser string `protobuf:"bytes,3,opt,name=end_user,json=endUser" json:"end_user,omitempty"`
+	EndUser string `protobuf:"bytes,3,opt,name=end_user,json=endUser,proto3" json:"end_user,omitempty"`
 	// Arbitrary key:value pairs describing circumstances of this call.
 	//
 	// Used only for logging and auditing purposes. Not involved in authorization
 	// and don't become part of the grant.
-	AuditTags            []string `protobuf:"bytes,4,rep,name=audit_tags,json=auditTags" json:"audit_tags,omitempty"`
+	AuditTags            []string `protobuf:"bytes,4,rep,name=audit_tags,json=auditTags,proto3" json:"audit_tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -718,7 +724,7 @@ func (m *MintOAuthTokenGrantRequest) Reset()         { *m = MintOAuthTokenGrantR
 func (m *MintOAuthTokenGrantRequest) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenGrantRequest) ProtoMessage()    {}
 func (*MintOAuthTokenGrantRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{7}
+	return fileDescriptor_f6e01e20f1811b60, []int{7}
 }
 func (m *MintOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Unmarshal(m, b)
@@ -726,8 +732,8 @@ func (m *MintOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenGrantRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Marshal(b, m, deterministic)
 }
-func (dst *MintOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenGrantRequest.Merge(dst, src)
+func (m *MintOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenGrantRequest.Merge(m, src)
 }
 func (m *MintOAuthTokenGrantRequest) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Size(m)
@@ -768,13 +774,13 @@ func (m *MintOAuthTokenGrantRequest) GetAuditTags() []string {
 
 // MintOAuthTokenGrantResponse is returned by MintOAuthTokenGrant.
 type MintOAuthTokenGrantResponse struct {
-	GrantToken string               `protobuf:"bytes,1,opt,name=grant_token,json=grantToken" json:"grant_token,omitempty"`
-	Expiry     *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty"`
+	GrantToken string               `protobuf:"bytes,1,opt,name=grant_token,json=grantToken,proto3" json:"grant_token,omitempty"`
+	Expiry     *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	// Identifier of the service and its version that produced the token.
 	//
 	// Has the form "<app-id>/<module-version>". This is _not_ part of the token.
 	// Used only for logging and monitoring.
-	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion" json:"service_version,omitempty"`
+	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -784,7 +790,7 @@ func (m *MintOAuthTokenGrantResponse) Reset()         { *m = MintOAuthTokenGrant
 func (m *MintOAuthTokenGrantResponse) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenGrantResponse) ProtoMessage()    {}
 func (*MintOAuthTokenGrantResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{8}
+	return fileDescriptor_f6e01e20f1811b60, []int{8}
 }
 func (m *MintOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Unmarshal(m, b)
@@ -792,8 +798,8 @@ func (m *MintOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenGrantResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Marshal(b, m, deterministic)
 }
-func (dst *MintOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenGrantResponse.Merge(dst, src)
+func (m *MintOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenGrantResponse.Merge(m, src)
 }
 func (m *MintOAuthTokenGrantResponse) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Size(m)
@@ -831,11 +837,11 @@ func (m *MintOAuthTokenGrantResponse) GetServiceVersion() string {
 // compared against 'wielder_identity' inside the token.
 type MintOAuthTokenViaGrantRequest struct {
 	// A previously generated grant, as returned by MintOAuthTokenGrant.
-	GrantToken string `protobuf:"bytes,1,opt,name=grant_token,json=grantToken" json:"grant_token,omitempty"`
+	GrantToken string `protobuf:"bytes,1,opt,name=grant_token,json=grantToken,proto3" json:"grant_token,omitempty"`
 	// The list of OAuth scopes the access token should have.
 	//
 	// The server may reject the request if some scopes are not allowed.
-	OauthScope []string `protobuf:"bytes,2,rep,name=oauth_scope,json=oauthScope" json:"oauth_scope,omitempty"`
+	OauthScope []string `protobuf:"bytes,2,rep,name=oauth_scope,json=oauthScope,proto3" json:"oauth_scope,omitempty"`
 	// Minimally accepted validity duration of the returned OAuth token (seconds).
 	//
 	// The server may return a token that lives longer than this. The maximum is
@@ -847,11 +853,11 @@ type MintOAuthTokenViaGrantRequest struct {
 	// access token that lives for 1h.
 	//
 	// Default is 300 sec.
-	MinValidityDuration int64 `protobuf:"varint,3,opt,name=min_validity_duration,json=minValidityDuration" json:"min_validity_duration,omitempty"`
+	MinValidityDuration int64 `protobuf:"varint,3,opt,name=min_validity_duration,json=minValidityDuration,proto3" json:"min_validity_duration,omitempty"`
 	// Arbitrary key:value pairs describing circumstances of this call.
 	//
 	// Used only for logging and auditing purposes. Not involved in authorization.
-	AuditTags            []string `protobuf:"bytes,4,rep,name=audit_tags,json=auditTags" json:"audit_tags,omitempty"`
+	AuditTags            []string `protobuf:"bytes,4,rep,name=audit_tags,json=auditTags,proto3" json:"audit_tags,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -861,7 +867,7 @@ func (m *MintOAuthTokenViaGrantRequest) Reset()         { *m = MintOAuthTokenVia
 func (m *MintOAuthTokenViaGrantRequest) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenViaGrantRequest) ProtoMessage()    {}
 func (*MintOAuthTokenViaGrantRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{9}
+	return fileDescriptor_f6e01e20f1811b60, []int{9}
 }
 func (m *MintOAuthTokenViaGrantRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Unmarshal(m, b)
@@ -869,8 +875,8 @@ func (m *MintOAuthTokenViaGrantRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenViaGrantRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Marshal(b, m, deterministic)
 }
-func (dst *MintOAuthTokenViaGrantRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenViaGrantRequest.Merge(dst, src)
+func (m *MintOAuthTokenViaGrantRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenViaGrantRequest.Merge(m, src)
 }
 func (m *MintOAuthTokenViaGrantRequest) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Size(m)
@@ -911,13 +917,13 @@ func (m *MintOAuthTokenViaGrantRequest) GetAuditTags() []string {
 
 // MintOAuthTokenViaGrantResponse is returned by MintOAuthTokenViaGrant.
 type MintOAuthTokenViaGrantResponse struct {
-	AccessToken string               `protobuf:"bytes,1,opt,name=access_token,json=accessToken" json:"access_token,omitempty"`
-	Expiry      *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry" json:"expiry,omitempty"`
+	AccessToken string               `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	Expiry      *timestamp.Timestamp `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	// Identifier of the service and its version that produced the token.
 	//
 	// Has the form "<app-id>/<module-version>". Used only for logging and
 	// monitoring.
-	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion" json:"service_version,omitempty"`
+	ServiceVersion       string   `protobuf:"bytes,3,opt,name=service_version,json=serviceVersion,proto3" json:"service_version,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -927,7 +933,7 @@ func (m *MintOAuthTokenViaGrantResponse) Reset()         { *m = MintOAuthTokenVi
 func (m *MintOAuthTokenViaGrantResponse) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenViaGrantResponse) ProtoMessage()    {}
 func (*MintOAuthTokenViaGrantResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_token_minter_0e1c31d02b315259, []int{10}
+	return fileDescriptor_f6e01e20f1811b60, []int{10}
 }
 func (m *MintOAuthTokenViaGrantResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Unmarshal(m, b)
@@ -935,8 +941,8 @@ func (m *MintOAuthTokenViaGrantResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenViaGrantResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Marshal(b, m, deterministic)
 }
-func (dst *MintOAuthTokenViaGrantResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenViaGrantResponse.Merge(dst, src)
+func (m *MintOAuthTokenViaGrantResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenViaGrantResponse.Merge(m, src)
 }
 func (m *MintOAuthTokenViaGrantResponse) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Size(m)
@@ -1321,10 +1327,10 @@ var _TokenMinter_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/minter/v1/token_minter.proto", fileDescriptor_token_minter_0e1c31d02b315259)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/minter/v1/token_minter.proto", fileDescriptor_f6e01e20f1811b60)
 }
 
-var fileDescriptor_token_minter_0e1c31d02b315259 = []byte{
+var fileDescriptor_f6e01e20f1811b60 = []byte{
 	// 1134 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4f, 0x73, 0xdb, 0x44,
 	0x14, 0x8f, 0x62, 0xc7, 0xb1, 0x9f, 0x93, 0x54, 0x59, 0x27, 0xa9, 0xeb, 0x12, 0x12, 0x0c, 0x03,

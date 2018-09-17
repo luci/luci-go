@@ -3,10 +3,12 @@
 
 package crimson
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	v1 "go.chromium.org/luci/machine-db/api/common/v1"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -48,7 +50,7 @@ func (m *KVM) Reset()         { *m = KVM{} }
 func (m *KVM) String() string { return proto.CompactTextString(m) }
 func (*KVM) ProtoMessage()    {}
 func (*KVM) Descriptor() ([]byte, []int) {
-	return fileDescriptor_kvms_68a0366c21e53baa, []int{0}
+	return fileDescriptor_1ff02130521e1400, []int{0}
 }
 func (m *KVM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KVM.Unmarshal(m, b)
@@ -56,8 +58,8 @@ func (m *KVM) XXX_Unmarshal(b []byte) error {
 func (m *KVM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_KVM.Marshal(b, m, deterministic)
 }
-func (dst *KVM) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_KVM.Merge(dst, src)
+func (m *KVM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KVM.Merge(m, src)
 }
 func (m *KVM) XXX_Size() int {
 	return xxx_messageInfo_KVM.Size(m)
@@ -158,7 +160,7 @@ func (m *ListKVMsRequest) Reset()         { *m = ListKVMsRequest{} }
 func (m *ListKVMsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListKVMsRequest) ProtoMessage()    {}
 func (*ListKVMsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_kvms_68a0366c21e53baa, []int{1}
+	return fileDescriptor_1ff02130521e1400, []int{1}
 }
 func (m *ListKVMsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListKVMsRequest.Unmarshal(m, b)
@@ -166,8 +168,8 @@ func (m *ListKVMsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListKVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListKVMsRequest.Marshal(b, m, deterministic)
 }
-func (dst *ListKVMsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListKVMsRequest.Merge(dst, src)
+func (m *ListKVMsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListKVMsRequest.Merge(m, src)
 }
 func (m *ListKVMsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListKVMsRequest.Size(m)
@@ -247,7 +249,7 @@ func (m *ListKVMsResponse) Reset()         { *m = ListKVMsResponse{} }
 func (m *ListKVMsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListKVMsResponse) ProtoMessage()    {}
 func (*ListKVMsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_kvms_68a0366c21e53baa, []int{2}
+	return fileDescriptor_1ff02130521e1400, []int{2}
 }
 func (m *ListKVMsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListKVMsResponse.Unmarshal(m, b)
@@ -255,8 +257,8 @@ func (m *ListKVMsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListKVMsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListKVMsResponse.Marshal(b, m, deterministic)
 }
-func (dst *ListKVMsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListKVMsResponse.Merge(dst, src)
+func (m *ListKVMsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListKVMsResponse.Merge(m, src)
 }
 func (m *ListKVMsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListKVMsResponse.Size(m)
@@ -281,10 +283,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/kvms.proto", fileDescriptor_kvms_68a0366c21e53baa)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/kvms.proto", fileDescriptor_1ff02130521e1400)
 }
 
-var fileDescriptor_kvms_68a0366c21e53baa = []byte{
+var fileDescriptor_1ff02130521e1400 = []byte{
 	// 398 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x41, 0x6f, 0x13, 0x31,
 	0x10, 0x85, 0xb5, 0xdd, 0x24, 0x4d, 0x26, 0x2d, 0x20, 0x8b, 0xc3, 0xa8, 0x42, 0x60, 0xa5, 0x42,

@@ -3,9 +3,11 @@
 
 package flagpb
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,6 +31,7 @@ var E_name = map[int32]string{
 	0: "V0",
 	1: "V1",
 }
+
 var E_value = map[string]int32{
 	"V0": 0,
 	"V1": 1,
@@ -37,16 +40,17 @@ var E_value = map[string]int32{
 func (x E) String() string {
 	return proto.EnumName(E_name, int32(x))
 }
+
 func (E) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_unmarshal_test_ececfc0fb90e7847, []int{0}
+	return fileDescriptor_7e62106924695bf0, []int{0}
 }
 
 type M1 struct {
-	S                    string   `protobuf:"bytes,1,opt,name=s" json:"s,omitempty"`
-	I                    int32    `protobuf:"varint,2,opt,name=i" json:"i,omitempty"`
-	Ri                   []int32  `protobuf:"varint,3,rep,packed,name=ri" json:"ri,omitempty"`
-	B                    bool     `protobuf:"varint,4,opt,name=b" json:"b,omitempty"`
-	Rb                   []bool   `protobuf:"varint,6,rep,packed,name=rb" json:"rb,omitempty"`
+	S                    string   `protobuf:"bytes,1,opt,name=s,proto3" json:"s,omitempty"`
+	I                    int32    `protobuf:"varint,2,opt,name=i,proto3" json:"i,omitempty"`
+	Ri                   []int32  `protobuf:"varint,3,rep,packed,name=ri,proto3" json:"ri,omitempty"`
+	B                    bool     `protobuf:"varint,4,opt,name=b,proto3" json:"b,omitempty"`
+	Rb                   []bool   `protobuf:"varint,6,rep,packed,name=rb,proto3" json:"rb,omitempty"`
 	Bb                   []byte   `protobuf:"bytes,5,opt,name=bb,proto3" json:"bb,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -57,7 +61,7 @@ func (m *M1) Reset()         { *m = M1{} }
 func (m *M1) String() string { return proto.CompactTextString(m) }
 func (*M1) ProtoMessage()    {}
 func (*M1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_unmarshal_test_ececfc0fb90e7847, []int{0}
+	return fileDescriptor_7e62106924695bf0, []int{0}
 }
 func (m *M1) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M1.Unmarshal(m, b)
@@ -65,8 +69,8 @@ func (m *M1) XXX_Unmarshal(b []byte) error {
 func (m *M1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M1.Marshal(b, m, deterministic)
 }
-func (dst *M1) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M1.Merge(dst, src)
+func (m *M1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M1.Merge(m, src)
 }
 func (m *M1) XXX_Size() int {
 	return xxx_messageInfo_M1.Size(m)
@@ -120,8 +124,8 @@ func (m *M1) GetBb() []byte {
 }
 
 type M2 struct {
-	M1                   *M1      `protobuf:"bytes,1,opt,name=m1" json:"m1,omitempty"`
-	E                    E        `protobuf:"varint,2,opt,name=e,enum=flagpb.E" json:"e,omitempty"`
+	M1                   *M1      `protobuf:"bytes,1,opt,name=m1,proto3" json:"m1,omitempty"`
+	E                    E        `protobuf:"varint,2,opt,name=e,proto3,enum=flagpb.E" json:"e,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -131,7 +135,7 @@ func (m *M2) Reset()         { *m = M2{} }
 func (m *M2) String() string { return proto.CompactTextString(m) }
 func (*M2) ProtoMessage()    {}
 func (*M2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_unmarshal_test_ececfc0fb90e7847, []int{1}
+	return fileDescriptor_7e62106924695bf0, []int{1}
 }
 func (m *M2) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M2.Unmarshal(m, b)
@@ -139,8 +143,8 @@ func (m *M2) XXX_Unmarshal(b []byte) error {
 func (m *M2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M2.Marshal(b, m, deterministic)
 }
-func (dst *M2) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M2.Merge(dst, src)
+func (m *M2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M2.Merge(m, src)
 }
 func (m *M2) XXX_Size() int {
 	return xxx_messageInfo_M2.Size(m)
@@ -166,10 +170,10 @@ func (m *M2) GetE() E {
 }
 
 type M3 struct {
-	M1                   []*M1    `protobuf:"bytes,1,rep,name=m1" json:"m1,omitempty"`
-	M2                   *M2      `protobuf:"bytes,2,opt,name=m2" json:"m2,omitempty"`
-	B                    bool     `protobuf:"varint,3,opt,name=b" json:"b,omitempty"`
-	S                    string   `protobuf:"bytes,4,opt,name=s" json:"s,omitempty"`
+	M1                   []*M1    `protobuf:"bytes,1,rep,name=m1,proto3" json:"m1,omitempty"`
+	M2                   *M2      `protobuf:"bytes,2,opt,name=m2,proto3" json:"m2,omitempty"`
+	B                    bool     `protobuf:"varint,3,opt,name=b,proto3" json:"b,omitempty"`
+	S                    string   `protobuf:"bytes,4,opt,name=s,proto3" json:"s,omitempty"`
 	Bt                   []byte   `protobuf:"bytes,5,opt,name=bt,proto3" json:"bt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -180,7 +184,7 @@ func (m *M3) Reset()         { *m = M3{} }
 func (m *M3) String() string { return proto.CompactTextString(m) }
 func (*M3) ProtoMessage()    {}
 func (*M3) Descriptor() ([]byte, []int) {
-	return fileDescriptor_unmarshal_test_ececfc0fb90e7847, []int{2}
+	return fileDescriptor_7e62106924695bf0, []int{2}
 }
 func (m *M3) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M3.Unmarshal(m, b)
@@ -188,8 +192,8 @@ func (m *M3) XXX_Unmarshal(b []byte) error {
 func (m *M3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M3.Marshal(b, m, deterministic)
 }
-func (dst *M3) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M3.Merge(dst, src)
+func (m *M3) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M3.Merge(m, src)
 }
 func (m *M3) XXX_Size() int {
 	return xxx_messageInfo_M3.Size(m)
@@ -236,9 +240,9 @@ func (m *M3) GetBt() []byte {
 }
 
 type MapContainer struct {
-	Ss                   map[string]string `protobuf:"bytes,1,rep,name=ss" json:"ss,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Ii                   map[int32]int32   `protobuf:"bytes,2,rep,name=ii" json:"ii,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
-	Sm1                  map[string]*M1    `protobuf:"bytes,3,rep,name=sm1" json:"sm1,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Ss                   map[string]string `protobuf:"bytes,1,rep,name=ss,proto3" json:"ss,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Ii                   map[int32]int32   `protobuf:"bytes,2,rep,name=ii,proto3" json:"ii,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
+	Sm1                  map[string]*M1    `protobuf:"bytes,3,rep,name=sm1,proto3" json:"sm1,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -248,7 +252,7 @@ func (m *MapContainer) Reset()         { *m = MapContainer{} }
 func (m *MapContainer) String() string { return proto.CompactTextString(m) }
 func (*MapContainer) ProtoMessage()    {}
 func (*MapContainer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_unmarshal_test_ececfc0fb90e7847, []int{3}
+	return fileDescriptor_7e62106924695bf0, []int{3}
 }
 func (m *MapContainer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MapContainer.Unmarshal(m, b)
@@ -256,8 +260,8 @@ func (m *MapContainer) XXX_Unmarshal(b []byte) error {
 func (m *MapContainer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MapContainer.Marshal(b, m, deterministic)
 }
-func (dst *MapContainer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MapContainer.Merge(dst, src)
+func (m *MapContainer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MapContainer.Merge(m, src)
 }
 func (m *MapContainer) XXX_Size() int {
 	return xxx_messageInfo_MapContainer.Size(m)
@@ -301,10 +305,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/client/flagpb/unmarshal_test.proto", fileDescriptor_unmarshal_test_ececfc0fb90e7847)
+	proto.RegisterFile("go.chromium.org/luci/client/flagpb/unmarshal_test.proto", fileDescriptor_7e62106924695bf0)
 }
 
-var fileDescriptor_unmarshal_test_ececfc0fb90e7847 = []byte{
+var fileDescriptor_7e62106924695bf0 = []byte{
 	// 385 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x92, 0x5f, 0xcb, 0xd3, 0x30,
 	0x14, 0xc6, 0xcd, 0xe9, 0xdb, 0xba, 0x9d, 0x77, 0xbc, 0x8c, 0x28, 0x58, 0x86, 0x42, 0xe9, 0x55,

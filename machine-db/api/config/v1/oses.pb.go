@@ -3,9 +3,11 @@
 
 package config
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +35,7 @@ func (m *OS) Reset()         { *m = OS{} }
 func (m *OS) String() string { return proto.CompactTextString(m) }
 func (*OS) ProtoMessage()    {}
 func (*OS) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oses_f5f81609645a8d7a, []int{0}
+	return fileDescriptor_f0809eab694e34b5, []int{0}
 }
 func (m *OS) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OS.Unmarshal(m, b)
@@ -41,8 +43,8 @@ func (m *OS) XXX_Unmarshal(b []byte) error {
 func (m *OS) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OS.Marshal(b, m, deterministic)
 }
-func (dst *OS) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OS.Merge(dst, src)
+func (m *OS) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OS.Merge(m, src)
 }
 func (m *OS) XXX_Size() int {
 	return xxx_messageInfo_OS.Size(m)
@@ -80,7 +82,7 @@ func (m *OSes) Reset()         { *m = OSes{} }
 func (m *OSes) String() string { return proto.CompactTextString(m) }
 func (*OSes) ProtoMessage()    {}
 func (*OSes) Descriptor() ([]byte, []int) {
-	return fileDescriptor_oses_f5f81609645a8d7a, []int{1}
+	return fileDescriptor_f0809eab694e34b5, []int{1}
 }
 func (m *OSes) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OSes.Unmarshal(m, b)
@@ -88,8 +90,8 @@ func (m *OSes) XXX_Unmarshal(b []byte) error {
 func (m *OSes) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OSes.Marshal(b, m, deterministic)
 }
-func (dst *OSes) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OSes.Merge(dst, src)
+func (m *OSes) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OSes.Merge(m, src)
 }
 func (m *OSes) XXX_Size() int {
 	return xxx_messageInfo_OSes.Size(m)
@@ -113,10 +115,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/oses.proto", fileDescriptor_oses_f5f81609645a8d7a)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/config/v1/oses.proto", fileDescriptor_f0809eab694e34b5)
 }
 
-var fileDescriptor_oses_f5f81609645a8d7a = []byte{
+var fileDescriptor_f0809eab694e34b5 = []byte{
 	// 182 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0xc1, 0x8a, 0x83, 0x30,
 	0x18, 0x84, 0xd1, 0x15, 0x61, 0xe3, 0x61, 0x97, 0x9c, 0x3c, 0x8a, 0x27, 0x2f, 0x9b, 0xb0, 0xbb,

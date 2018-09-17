@@ -3,15 +3,23 @@
 
 package srcman
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import git "go.chromium.org/luci/common/proto/git"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	git "go.chromium.org/luci/common/proto/git"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // Stat indicates how a given item has changed.
 type ManifestDiff_Stat int32
@@ -42,6 +50,7 @@ var ManifestDiff_Stat_name = map[int32]string{
 	4:  "MODIFIED",
 	12: "DIFF",
 }
+
 var ManifestDiff_Stat_value = map[string]int32{
 	"EQUAL":    0,
 	"ADDED":    1,
@@ -53,23 +62,48 @@ var ManifestDiff_Stat_value = map[string]int32{
 func (x ManifestDiff_Stat) String() string {
 	return proto.EnumName(ManifestDiff_Stat_name, int32(x))
 }
-func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+
+func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_36818c0267d64e2d, []int{0, 0}
+}
 
 // ManifestDiff holds basic difference information between two source manifests.
 type ManifestDiff struct {
 	// The older of the two manifests.
-	Old *Manifest `protobuf:"bytes,1,opt,name=old" json:"old,omitempty"`
+	Old *Manifest `protobuf:"bytes,1,opt,name=old,proto3" json:"old,omitempty"`
 	// The newer of the two manifests.
-	New *Manifest `protobuf:"bytes,2,opt,name=new" json:"new,omitempty"`
+	New *Manifest `protobuf:"bytes,2,opt,name=new,proto3" json:"new,omitempty"`
 	// Indicates if there is some overall difference between old and new.
-	Overall     ManifestDiff_Stat                  `protobuf:"varint,3,opt,name=overall,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
-	Directories map[string]*ManifestDiff_Directory `protobuf:"bytes,4,rep,name=directories" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Overall              ManifestDiff_Stat                  `protobuf:"varint,3,opt,name=overall,proto3,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
+	Directories          map[string]*ManifestDiff_Directory `protobuf:"bytes,4,rep,name=directories,proto3" json:"directories,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	XXX_NoUnkeyedLiteral struct{}                           `json:"-"`
+	XXX_unrecognized     []byte                             `json:"-"`
+	XXX_sizecache        int32                              `json:"-"`
 }
 
-func (m *ManifestDiff) Reset()                    { *m = ManifestDiff{} }
-func (m *ManifestDiff) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff) ProtoMessage()               {}
-func (*ManifestDiff) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (m *ManifestDiff) Reset()         { *m = ManifestDiff{} }
+func (m *ManifestDiff) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff) ProtoMessage()    {}
+func (*ManifestDiff) Descriptor() ([]byte, []int) {
+	return fileDescriptor_36818c0267d64e2d, []int{0}
+}
+func (m *ManifestDiff) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff.Unmarshal(m, b)
+}
+func (m *ManifestDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff.Marshal(b, m, deterministic)
+}
+func (m *ManifestDiff) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff.Merge(m, src)
+}
+func (m *ManifestDiff) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff.Size(m)
+}
+func (m *ManifestDiff) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff proto.InternalMessageInfo
 
 func (m *ManifestDiff) GetOld() *Manifest {
 	if m != nil {
@@ -101,32 +135,54 @@ func (m *ManifestDiff) GetDirectories() map[string]*ManifestDiff_Directory {
 
 type ManifestDiff_GitCheckout struct {
 	// Indicates if there is some overall difference between old and new.
-	Overall ManifestDiff_Stat `protobuf:"varint,1,opt,name=overall,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
+	Overall ManifestDiff_Stat `protobuf:"varint,1,opt,name=overall,proto3,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
 	// Indicates the status for the `revision` field.
 	//
 	// If this is DIFF, it is sensible to compute
 	//   `git log repo_url old.revision new.revision`
-	Revision ManifestDiff_Stat `protobuf:"varint,2,opt,name=revision,enum=srcman.ManifestDiff_Stat" json:"revision,omitempty"`
+	Revision ManifestDiff_Stat `protobuf:"varint,2,opt,name=revision,proto3,enum=srcman.ManifestDiff_Stat" json:"revision,omitempty"`
 	// Indicates the status for the `patch_revision` field. It evaluates
 	// the patch_fetch_ref values to ensure that old and new are different
 	// patches from the same CL.
 	//
 	// If this is DIFF, it is sensible to compute
 	//   `git log repo_url old.patch_revision new.patch_revision`
-	PatchRevision ManifestDiff_Stat `protobuf:"varint,3,opt,name=patch_revision,json=patchRevision,enum=srcman.ManifestDiff_Stat" json:"patch_revision,omitempty"`
+	PatchRevision ManifestDiff_Stat `protobuf:"varint,3,opt,name=patch_revision,json=patchRevision,proto3,enum=srcman.ManifestDiff_Stat" json:"patch_revision,omitempty"`
 	// The URL that should be used for RPCs. It may differ from the url in old
 	// or new if the service computing this ManifestDiff knows of e.g. a repo
 	// URL migration.
-	RepoUrl string `protobuf:"bytes,4,opt,name=repo_url,json=repoUrl" json:"repo_url,omitempty"`
+	RepoUrl string `protobuf:"bytes,4,opt,name=repo_url,json=repoUrl,proto3" json:"repo_url,omitempty"`
 	// If revision==DIFF, this may be populated with git history occuring
 	// between the two base revisions.
-	History []*git.Commit `protobuf:"bytes,5,rep,name=history" json:"history,omitempty"`
+	History              []*git.Commit `protobuf:"bytes,5,rep,name=history,proto3" json:"history,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *ManifestDiff_GitCheckout) Reset()                    { *m = ManifestDiff_GitCheckout{} }
-func (m *ManifestDiff_GitCheckout) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff_GitCheckout) ProtoMessage()               {}
-func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
+func (m *ManifestDiff_GitCheckout) Reset()         { *m = ManifestDiff_GitCheckout{} }
+func (m *ManifestDiff_GitCheckout) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff_GitCheckout) ProtoMessage()    {}
+func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) {
+	return fileDescriptor_36818c0267d64e2d, []int{0, 0}
+}
+func (m *ManifestDiff_GitCheckout) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Unmarshal(m, b)
+}
+func (m *ManifestDiff_GitCheckout) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Marshal(b, m, deterministic)
+}
+func (m *ManifestDiff_GitCheckout) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_GitCheckout.Merge(m, src)
+}
+func (m *ManifestDiff_GitCheckout) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff_GitCheckout.Size(m)
+}
+func (m *ManifestDiff_GitCheckout) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff_GitCheckout.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff_GitCheckout proto.InternalMessageInfo
 
 func (m *ManifestDiff_GitCheckout) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -165,26 +221,48 @@ func (m *ManifestDiff_GitCheckout) GetHistory() []*git.Commit {
 
 type ManifestDiff_Directory struct {
 	// This is the overall status for this Directory.
-	Overall        ManifestDiff_Stat         `protobuf:"varint,1,opt,name=overall,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
-	GitCheckout    *ManifestDiff_GitCheckout `protobuf:"bytes,2,opt,name=git_checkout,json=gitCheckout" json:"git_checkout,omitempty"`
-	CipdServerHost ManifestDiff_Stat         `protobuf:"varint,3,opt,name=cipd_server_host,json=cipdServerHost,enum=srcman.ManifestDiff_Stat" json:"cipd_server_host,omitempty"`
+	Overall        ManifestDiff_Stat         `protobuf:"varint,1,opt,name=overall,proto3,enum=srcman.ManifestDiff_Stat" json:"overall,omitempty"`
+	GitCheckout    *ManifestDiff_GitCheckout `protobuf:"bytes,2,opt,name=git_checkout,json=gitCheckout,proto3" json:"git_checkout,omitempty"`
+	CipdServerHost ManifestDiff_Stat         `protobuf:"varint,3,opt,name=cipd_server_host,json=cipdServerHost,proto3,enum=srcman.ManifestDiff_Stat" json:"cipd_server_host,omitempty"`
 	// Note: this will only ever be MODIFIED, because we cannot (yet) determine
 	// if two versions of a cipd package are diffable. We may later implement
 	// DIFF detection (i.e. if both packages use `version:<sha1>` tags).
-	CipdPackage        map[string]ManifestDiff_Stat `protobuf:"bytes,4,rep,name=cipd_package,json=cipdPackage" json:"cipd_package,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value,enum=srcman.ManifestDiff_Stat"`
-	IsolatedServerHost ManifestDiff_Stat            `protobuf:"varint,5,opt,name=isolated_server_host,json=isolatedServerHost,enum=srcman.ManifestDiff_Stat" json:"isolated_server_host,omitempty"`
+	CipdPackage        map[string]ManifestDiff_Stat `protobuf:"bytes,4,rep,name=cipd_package,json=cipdPackage,proto3" json:"cipd_package,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3,enum=srcman.ManifestDiff_Stat"`
+	IsolatedServerHost ManifestDiff_Stat            `protobuf:"varint,5,opt,name=isolated_server_host,json=isolatedServerHost,proto3,enum=srcman.ManifestDiff_Stat" json:"isolated_server_host,omitempty"`
 	// This merely indicates if the list of isolated hashes was the same or not;
 	// there's not a good way to register the two lists.
 	//
 	// Since order-of-application for isolateds matters, this will indicate
 	// MODIFIED if the order of isolated hashes changes.
-	Isolated ManifestDiff_Stat `protobuf:"varint,6,opt,name=isolated,enum=srcman.ManifestDiff_Stat" json:"isolated,omitempty"`
+	Isolated             ManifestDiff_Stat `protobuf:"varint,6,opt,name=isolated,proto3,enum=srcman.ManifestDiff_Stat" json:"isolated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
-func (m *ManifestDiff_Directory) Reset()                    { *m = ManifestDiff_Directory{} }
-func (m *ManifestDiff_Directory) String() string            { return proto.CompactTextString(m) }
-func (*ManifestDiff_Directory) ProtoMessage()               {}
-func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 1} }
+func (m *ManifestDiff_Directory) Reset()         { *m = ManifestDiff_Directory{} }
+func (m *ManifestDiff_Directory) String() string { return proto.CompactTextString(m) }
+func (*ManifestDiff_Directory) ProtoMessage()    {}
+func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) {
+	return fileDescriptor_36818c0267d64e2d, []int{0, 1}
+}
+func (m *ManifestDiff_Directory) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ManifestDiff_Directory.Unmarshal(m, b)
+}
+func (m *ManifestDiff_Directory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ManifestDiff_Directory.Marshal(b, m, deterministic)
+}
+func (m *ManifestDiff_Directory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_Directory.Merge(m, src)
+}
+func (m *ManifestDiff_Directory) XXX_Size() int {
+	return xxx_messageInfo_ManifestDiff_Directory.Size(m)
+}
+func (m *ManifestDiff_Directory) XXX_DiscardUnknown() {
+	xxx_messageInfo_ManifestDiff_Directory.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ManifestDiff_Directory proto.InternalMessageInfo
 
 func (m *ManifestDiff_Directory) GetOverall() ManifestDiff_Stat {
 	if m != nil {
@@ -230,16 +308,18 @@ func (m *ManifestDiff_Directory) GetIsolated() ManifestDiff_Stat {
 
 func init() {
 	proto.RegisterType((*ManifestDiff)(nil), "srcman.ManifestDiff")
+	proto.RegisterMapType((map[string]*ManifestDiff_Directory)(nil), "srcman.ManifestDiff.DirectoriesEntry")
 	proto.RegisterType((*ManifestDiff_GitCheckout)(nil), "srcman.ManifestDiff.GitCheckout")
 	proto.RegisterType((*ManifestDiff_Directory)(nil), "srcman.ManifestDiff.Directory")
+	proto.RegisterMapType((map[string]ManifestDiff_Stat)(nil), "srcman.ManifestDiff.Directory.CipdPackageEntry")
 	proto.RegisterEnum("srcman.ManifestDiff_Stat", ManifestDiff_Stat_name, ManifestDiff_Stat_value)
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/srcman/manifest_diff.proto", fileDescriptor1)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/srcman/manifest_diff.proto", fileDescriptor_36818c0267d64e2d)
 }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_36818c0267d64e2d = []byte{
 	// 546 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0xcf, 0x8b, 0xd3, 0x40,
 	0x14, 0xc7, 0xcd, 0xf6, 0xf7, 0x4b, 0x2d, 0x61, 0xf0, 0x90, 0xcd, 0x41, 0x4a, 0x61, 0xa1, 0xa7,

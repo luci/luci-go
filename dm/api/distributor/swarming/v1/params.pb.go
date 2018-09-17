@@ -3,10 +3,12 @@
 
 package swarmingV1
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import duration "github.com/golang/protobuf/ptypes/duration"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	duration "github.com/golang/protobuf/ptypes/duration"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -22,9 +24,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 // Parameters represents the set of swarming parameters that the Swarming v1
 // distributor can interpret for use with a Swarming v1 compatible service.
 type Parameters struct {
-	Scheduling           *Parameters_Scheduling `protobuf:"bytes,1,opt,name=scheduling" json:"scheduling,omitempty"`
-	Meta                 *Parameters_Meta       `protobuf:"bytes,2,opt,name=meta" json:"meta,omitempty"`
-	Job                  *Parameters_Job        `protobuf:"bytes,3,opt,name=job" json:"job,omitempty"`
+	Scheduling           *Parameters_Scheduling `protobuf:"bytes,1,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
+	Meta                 *Parameters_Meta       `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
+	Job                  *Parameters_Job        `protobuf:"bytes,3,opt,name=job,proto3" json:"job,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}               `json:"-"`
 	XXX_unrecognized     []byte                 `json:"-"`
 	XXX_sizecache        int32                  `json:"-"`
@@ -34,7 +36,7 @@ func (m *Parameters) Reset()         { *m = Parameters{} }
 func (m *Parameters) String() string { return proto.CompactTextString(m) }
 func (*Parameters) ProtoMessage()    {}
 func (*Parameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_params_7b134476c4c1eb9c, []int{0}
+	return fileDescriptor_a392a071be03ce1c, []int{0}
 }
 func (m *Parameters) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters.Unmarshal(m, b)
@@ -42,8 +44,8 @@ func (m *Parameters) XXX_Unmarshal(b []byte) error {
 func (m *Parameters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters.Marshal(b, m, deterministic)
 }
-func (dst *Parameters) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters.Merge(dst, src)
+func (m *Parameters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters.Merge(m, src)
 }
 func (m *Parameters) XXX_Size() int {
 	return xxx_messageInfo_Parameters.Size(m)
@@ -88,21 +90,21 @@ type Parameters_Scheduling struct {
 	// 1 instead.
 	//
 	// This must be <= 255.
-	Priority uint32 `protobuf:"varint,1,opt,name=priority" json:"priority,omitempty"`
+	Priority uint32 `protobuf:"varint,1,opt,name=priority,proto3" json:"priority,omitempty"`
 	// These specifiy the profile of the machine to use for Execuions of this
 	// quest. These can indicate OS, number of cores, amount of ram, GPU type,
 	// pool, etc. See the swarming service instance for available dimensions.
-	Dimensions map[string]string `protobuf:"bytes,2,rep,name=dimensions" json:"dimensions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Dimensions map[string]string `protobuf:"bytes,2,rep,name=dimensions,proto3" json:"dimensions,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// These dimensions will be snapshotted from the first execution of each
 	// attempt, and will be subsequently re-used for all following executions of
 	// that attempt.
 	//
 	// The most-specific value for these dimensions will be taken for tasks
 	// where a given dimension has multiple values.
-	SnapshotDimensions []string `protobuf:"bytes,3,rep,name=snapshot_dimensions,json=snapshotDimensions" json:"snapshot_dimensions,omitempty"`
+	SnapshotDimensions []string `protobuf:"bytes,3,rep,name=snapshot_dimensions,json=snapshotDimensions,proto3" json:"snapshot_dimensions,omitempty"`
 	// This indicates the maximum amount of time that an Execution may run
 	// without emitting IO on stdout/err. 0 means 'no timeout'.
-	IoTimeout            *duration.Duration `protobuf:"bytes,4,opt,name=io_timeout,json=ioTimeout" json:"io_timeout,omitempty"`
+	IoTimeout            *duration.Duration `protobuf:"bytes,4,opt,name=io_timeout,json=ioTimeout,proto3" json:"io_timeout,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -112,7 +114,7 @@ func (m *Parameters_Scheduling) Reset()         { *m = Parameters_Scheduling{} }
 func (m *Parameters_Scheduling) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Scheduling) ProtoMessage()    {}
 func (*Parameters_Scheduling) Descriptor() ([]byte, []int) {
-	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 0}
+	return fileDescriptor_a392a071be03ce1c, []int{0, 0}
 }
 func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Scheduling.Unmarshal(m, b)
@@ -120,8 +122,8 @@ func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Scheduling) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Scheduling.Marshal(b, m, deterministic)
 }
-func (dst *Parameters_Scheduling) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Scheduling.Merge(dst, src)
+func (m *Parameters_Scheduling) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Scheduling.Merge(m, src)
 }
 func (m *Parameters_Scheduling) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Scheduling.Size(m)
@@ -165,7 +167,7 @@ type Parameters_Meta struct {
 	// automatically prepend this to the execution ID. So if this was "cool
 	// job", the swarming task name would be
 	//   "cool job / <quest_ID>|<attempt>|<execution>"
-	NamePrefix           string   `protobuf:"bytes,1,opt,name=name_prefix,json=namePrefix" json:"name_prefix,omitempty"`
+	NamePrefix           string   `protobuf:"bytes,1,opt,name=name_prefix,json=namePrefix,proto3" json:"name_prefix,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -175,7 +177,7 @@ func (m *Parameters_Meta) Reset()         { *m = Parameters_Meta{} }
 func (m *Parameters_Meta) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Meta) ProtoMessage()    {}
 func (*Parameters_Meta) Descriptor() ([]byte, []int) {
-	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 1}
+	return fileDescriptor_a392a071be03ce1c, []int{0, 1}
 }
 func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Meta.Unmarshal(m, b)
@@ -183,8 +185,8 @@ func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Meta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Meta.Marshal(b, m, deterministic)
 }
-func (dst *Parameters_Meta) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Meta.Merge(dst, src)
+func (m *Parameters_Meta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Meta.Merge(m, src)
 }
 func (m *Parameters_Meta) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Meta.Size(m)
@@ -203,7 +205,7 @@ func (m *Parameters_Meta) GetNamePrefix() string {
 }
 
 type Parameters_Job struct {
-	Inputs *Parameters_Job_Inputs `protobuf:"bytes,1,opt,name=inputs" json:"inputs,omitempty"`
+	Inputs *Parameters_Job_Inputs `protobuf:"bytes,1,opt,name=inputs,proto3" json:"inputs,omitempty"`
 	// This is the "argv" to run with this job. This includes substitution
 	// paramters defined by swarming's run_isolated.py script:
 	//   https://github.com/luci/luci-py/blob/master/client/run_isolated.py
@@ -222,9 +224,9 @@ type Parameters_Job struct {
 	//
 	// Command MUST be specified; specifying a command in any of the isolated
 	// inputs WILL NOT DO ANYTHING.
-	Command []string `protobuf:"bytes,2,rep,name=command" json:"command,omitempty"`
+	Command []string `protobuf:"bytes,2,rep,name=command,proto3" json:"command,omitempty"`
 	// Environment variables for the executions.
-	Env                  map[string]string `protobuf:"bytes,3,rep,name=env" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Env                  map[string]string `protobuf:"bytes,3,rep,name=env,proto3" json:"env,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
 	XXX_unrecognized     []byte            `json:"-"`
 	XXX_sizecache        int32             `json:"-"`
@@ -234,7 +236,7 @@ func (m *Parameters_Job) Reset()         { *m = Parameters_Job{} }
 func (m *Parameters_Job) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Job) ProtoMessage()    {}
 func (*Parameters_Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2}
+	return fileDescriptor_a392a071be03ce1c, []int{0, 2}
 }
 func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job.Unmarshal(m, b)
@@ -242,8 +244,8 @@ func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Job.Marshal(b, m, deterministic)
 }
-func (dst *Parameters_Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Job.Merge(dst, src)
+func (m *Parameters_Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job.Merge(m, src)
 }
 func (m *Parameters_Job) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Job.Size(m)
@@ -282,14 +284,14 @@ type Parameters_Job_Inputs struct {
 	// The "server" value must either be omitted, or equal the isolate server
 	// defined by this distributor's config (the `isolate.host` field,
 	// prepended with "https://").
-	Isolated []*IsolatedRef `protobuf:"bytes,1,rep,name=isolated" json:"isolated,omitempty"`
+	Isolated []*IsolatedRef `protobuf:"bytes,1,rep,name=isolated,proto3" json:"isolated,omitempty"`
 	// CIPD packages to use for the job. These specs may contain templated
 	// parameters for package names or non-instance_ids for the package
 	// versions. The first successful execution for each attempt will
 	// resolve+snapshot all package names and versions. These package names
 	// and versions will be used for all subsequent executions of that
 	// attempt.
-	Cipd                 *CipdSpec `protobuf:"bytes,2,opt,name=cipd" json:"cipd,omitempty"`
+	Cipd                 *CipdSpec `protobuf:"bytes,2,opt,name=cipd,proto3" json:"cipd,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -299,7 +301,7 @@ func (m *Parameters_Job_Inputs) Reset()         { *m = Parameters_Job_Inputs{} }
 func (m *Parameters_Job_Inputs) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Job_Inputs) ProtoMessage()    {}
 func (*Parameters_Job_Inputs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2, 0}
+	return fileDescriptor_a392a071be03ce1c, []int{0, 2, 0}
 }
 func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job_Inputs.Unmarshal(m, b)
@@ -307,8 +309,8 @@ func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Job_Inputs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Job_Inputs.Marshal(b, m, deterministic)
 }
-func (dst *Parameters_Job_Inputs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Job_Inputs.Merge(dst, src)
+func (m *Parameters_Job_Inputs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job_Inputs.Merge(m, src)
 }
 func (m *Parameters_Job_Inputs) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Job_Inputs.Size(m)
@@ -344,10 +346,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor_params_7b134476c4c1eb9c)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor_a392a071be03ce1c)
 }
 
-var fileDescriptor_params_7b134476c4c1eb9c = []byte{
+var fileDescriptor_a392a071be03ce1c = []byte{
 	// 513 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x8b, 0x13, 0x31,
 	0x10, 0xc7, 0x69, 0xb7, 0xd6, 0xeb, 0x14, 0x51, 0xe2, 0x81, 0xeb, 0x0a, 0x7a, 0xea, 0x83, 0x7d,
