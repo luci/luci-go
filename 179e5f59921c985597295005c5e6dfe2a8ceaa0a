@@ -69,6 +69,30 @@
       "revId": "179e5f59921c985597295005c5e6dfe2a8ceaa0a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "835b3682_5b0cdd99",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-17T21:58:16Z",
+      "side": 1,
+      "message": "Nah, don\u0027t want to inflate next CL size with unnecessary regenerated pb2 code.",
+      "parentUuid": "09b3511b_980f348d",
+      "range": {
+        "startLine": 140,
+        "startChar": 13,
+        "endLine": 140,
+        "endChar": 40
+      },
+      "revId": "179e5f59921c985597295005c5e6dfe2a8ceaa0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
