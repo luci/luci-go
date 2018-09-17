@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ff950cf_be049e09",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-17T21:35:47Z",
+      "side": 1,
+      "message": "why does it matter here? \nIs this to ensure that given the number of keys inserted between lines 57 and 75 is higher than batch size? If so, maybe add this to comment on L57.",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 22
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5a1c500_b7542d47",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-17T21:35:47Z",
+      "side": 1,
+      "message": "del",
+      "range": {
+        "startLine": 48,
+        "startChar": 50,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "81aaab2f_fd35a78e",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-17T21:35:47Z",
+      "side": 1,
+      "message": "are",
+      "range": {
+        "startLine": 90,
+        "startChar": 26,
+        "endLine": 90,
+        "endChar": 27
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
