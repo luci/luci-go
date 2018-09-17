@@ -33,18 +33,24 @@ const (
 	Status_STARTED Status = 2
 	// A union of all terminal statuses.
 	// Can be used in BuildPredicate.status.
-	// A concrete build cannot have this status.
-	// Can be used as a bitmask to check that a build ended.
+	// A concrete build/step cannot have this status.
+	// Can be used as a bitmask to check that a build/step ended.
 	Status_ENDED_MASK Status = 4
 	// A build/step ended successfully.
+	// This is a terminal status. It may not transition to another status.
 	Status_SUCCESS Status = 12
 	// A build/step ended unsuccessfully due to its Build.Input,
 	// e.g. tests failed, and NOT due to a build infrastructure failure.
+	// This is a terminal status. It may not transition to another status.
 	Status_FAILURE Status = 20
-	// A build/step ended unsuccessfully due to a failure independent of the input,
-	// e.g. swarming failed, or the recipe was unable to read the patch from gerrit..
+	// A build/step ended unsuccessfully due to a failure independent of the
+	// input, e.g. swarming failed, not enough capacity or the recipe was unable
+	// to read the patch from gerrit.
+	// start_time is not required for this status.
+	// This is a terminal status. It may not transition to another status.
 	Status_INFRA_FAILURE Status = 36
 	// A build was cancelled explicitly, e.g. via an RPC.
+	// This is a terminal status. It may not transition to another status.
 	Status_CANCELED Status = 68
 )
 

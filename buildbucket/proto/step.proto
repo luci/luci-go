@@ -22,6 +22,8 @@ import "google/protobuf/timestamp.proto";
 import "go.chromium.org/luci/buildbucket/proto/common.proto";
 
 // A build step.
+//
+// A step may have children, see name field.
 message Step {
 
   // A named log of a step.
@@ -47,31 +49,39 @@ message Step {
   //
   // Pipe character ("|") is reserved to separate parent and child step names.
   // For example, value "a|b" indicates step "b" under step "a".
-  // A parent step MUST exist and MUST precede this step.
+  // If this is a child step, a parent MUST exist and MUST precede this step in
+  // the list of steps.
   string name = 1;
 
   // The timestamp when the step started.
-  //
-  // MUST NOT be before start_time of the parent.
+  // Required iff status is STARTED, SUCCESS or FAILURE, or if the step has
+  // children.
+  // MUST NOT be after start_time/end_time of any of the children.
   google.protobuf.Timestamp start_time = 2;
 
   // The timestamp when the step ended.
-  //
-  // MUST NOT be after end_time of the parent.
+  // Present iff status is terminal.
+  // MUST NOT be before start_time.
+  // MUST NOT be before start/end_time of any of the children.
   google.protobuf.Timestamp end_time = 3;
 
-  // Current status of the step.
+  // Status of the step.
   // Must be specified, i.e. not STATUS_UNSPECIFIED.
   //
-  // A status MUST NOT be "better" than statuses of its children,
-  // where parent-child relation is defined by name (see its comment)
-  // and "better" relation is defined by the following order, from good to bad:
-  //   SUCCESS
-  //   FAILURE
-  //   INFRA_FAILURE
-  //   CANCELED
-  // Note that this defines "better" relation only for some statuses.
-  // For those status where "better" is not defined, this rule does not apply.
+  // If the step has children
+  //   status MUST NOT be SCHEDULED.
+  //   status MUST be STARTED if status of any child is not terminal.
+  //
+  //   status MUST NOT be "better" than statuses of its children,
+  //   where "better" relation is defined by the following order,
+  //   from good to bad:
+  //     SUCCESS
+  //     FAILURE
+  //     INFRA_FAILURE
+  //     CANCELED
+  //   Note that this defines "better" relation only for some statuses.
+  //   For those statuses where "better" is not defined, this rule does not
+  //   apply.
   Status status = 4;
 
   // Logs produced by the step.

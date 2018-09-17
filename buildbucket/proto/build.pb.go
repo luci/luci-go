@@ -64,8 +64,11 @@ type Build struct {
 	// When the build was created.
 	CreateTime *timestamp.Timestamp `protobuf:"bytes,6,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	// When the build started.
+	// Required iff status is STARTED, SUCCESS or FAILURE.
 	StartTime *timestamp.Timestamp `protobuf:"bytes,7,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// When the build ended.
+	// Present iff status is terminal.
+	// MUST NOT be before start_time.
 	EndTime *timestamp.Timestamp `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
 	// When the build was most recently updated.
 	//
