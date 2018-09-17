@@ -15,18 +15,24 @@
 package ui
 
 import (
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
 	mc "go.chromium.org/gae/service/memcache"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
 
+	api "go.chromium.org/luci/scheduler/api/scheduler/v1"
 	"go.chromium.org/luci/scheduler/appengine/engine"
 	"go.chromium.org/luci/scheduler/appengine/internal"
 )
@@ -177,6 +183,48 @@ func jobPage(ctx *router.Context) {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Actions.
+
+func triggerJobAction(c *router.Context) {
+	handleJobAction(c, func(job *engine.Job) error {
+		ctx := c.Context
+		eng := config(ctx).Engine
+
+		// Unpause the job first, otherwise the trigger will just be silently
+		// ignored.
+		if job.Paused {
+			if err := eng.ResumeJob(ctx, job); err != nil {
+				return err
+			}
+		}
+
+		// Generate random ID for the trigger, since we need one. They are usually
+		// used to guarantee idempotency, and thus should be provided by the
+		// triggering side (which in this case is end-user's browser). We could
+		// potentially generate the ID in Javascript and submit the trigger via URL
+		// fetch,  and retry on transient errors until success, but this looks like
+		// too much hassle for little gains.
+		buf := make([]byte, 8)
+		if _, err := rand.Read(buf); err != nil {
+			return err
+		}
+		id := hex.EncodeToString(buf)
+
+		// This will check the ACL and submit the trigger.
+		return eng.EmitTriggers(ctx, map[*engine.Job][]*internal.Trigger{
+			job: {
+				{
+					Id:            id,
+					Created:       google.NewTimestamp(clock.Now(ctx)),
+					Title:         "Triggered via web UI",
+					EmittedByUser: string(auth.CurrentIdentity(ctx)),
+					Payload: &internal.Trigger_Webui{
+						Webui: &api.WebUITrigger{},
+					},
+				},
+			},
+		})
+	})
+}
 
 func pauseJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {

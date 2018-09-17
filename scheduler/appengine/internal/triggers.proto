@@ -86,13 +86,16 @@ message Trigger {
   // Can be provided by whoever emits the trigger. Doesn't have to be unique.
   string url = 6;
 
-  // For triggers emitted through public API contains identity of a user who
-  // posted this trigger. Empty for triggers emitted by invocations.
+  // For triggers emitted through public API or "Trigger" button, contains
+  // identity of a user who submitted this trigger.
+  //
+  // Empty for triggers emitted by the service itself.
   string emitted_by_user = 8;
 
   // Actual trigger data that depends on type of the trigger.
   oneof payload {
     scheduler.CronTrigger cron = 40;
+    scheduler.WebUITrigger webui = 41;
     scheduler.NoopTrigger noop = 50;
     scheduler.GitilesTrigger gitiles = 51;
     scheduler.BuildbucketTrigger buildbucket = 52;
