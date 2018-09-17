@@ -22,6 +22,53 @@
       "revId": "179e5f59921c985597295005c5e6dfe2a8ceaa0a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a540067_8b4cc2c1",
+        "filename": "scheduler/appengine/engine/engine_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1749,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-17T21:55:52Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "25fd6d26_69e28c82",
+      "range": {
+        "startLine": 1749,
+        "startChar": 5,
+        "endLine": 1749,
+        "endChar": 20
+      },
+      "revId": "179e5f59921c985597295005c5e6dfe2a8ceaa0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "09b3511b_980f348d",
+        "filename": "scheduler/appengine/messages/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 140,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-17T21:55:52Z",
+      "side": 1,
+      "message": "i assume this one will come in the next CL, perhaps worth stating so inside the code? Otherwise, unlucky chap who fetched scheduler at exactly this revision might be puzzled.",
+      "range": {
+        "startLine": 140,
+        "startChar": 13,
+        "endLine": 140,
+        "endChar": 40
+      },
+      "revId": "179e5f59921c985597295005c5e6dfe2a8ceaa0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
