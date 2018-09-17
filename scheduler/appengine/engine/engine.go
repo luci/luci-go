@@ -135,9 +135,8 @@ type Engine interface {
 	// For cron jobs it also replaces job's schedule with "triggered", effectively
 	// preventing them from running automatically (until unpaused).
 	//
-	// Manual invocations (via ForceInvocation) are still allowed. Does nothing if
-	// the job is already paused. Any pending or running invocations are still
-	// executed.
+	// Does nothing if the job is already paused. Any pending or running
+	// invocations are still executed.
 	PauseJob(c context.Context, job *Job) error
 
 	// ResumeJob resumes paused job. Does nothing if the job is not paused.
@@ -157,14 +156,6 @@ type Engine interface {
 	//
 	// Does nothing if the invocation is already in some final state.
 	AbortInvocation(c context.Context, job *Job, invID int64) error
-
-	// ForceInvocation launches an invocation right now.
-	//
-	// Used by "Run now" UI button. Totally ignores triggering policies (e.g.
-	// launches the invocation even if some is already running) and paused state.
-	//
-	// Returns the new invocation object in its initial state.
-	ForceInvocation(c context.Context, job *Job) (*Invocation, error)
 
 	// EmitTriggers puts one or more triggers into pending trigger queues of the
 	// specified jobs.
@@ -483,41 +474,6 @@ func (e *engineImpl) AbortInvocation(c context.Context, job *Job, invID int64) e
 		return err
 	}
 	return e.abortInvocation(c, job.JobID, invID)
-}
-
-// ForceInvocation launches job invocation right now.
-//
-// Part of the public interface, checks ACLs.
-func (e *engineImpl) ForceInvocation(c context.Context, job *Job) (*Invocation, error) {
-	if err := job.CheckRole(c, acl.Triggerer); err != nil {
-		return nil, err
-	}
-
-	var noSuchJob bool
-	var newInv *Invocation
-	err := e.jobTxn(c, job.JobID, func(c context.Context, job *Job, isNew bool) (err error) {
-		if isNew || !job.Enabled {
-			noSuchJob = true
-			return errSkipPut
-		}
-		invs, err := e.enqueueInvocations(c, job, []task.Request{
-			{TriggeredBy: auth.CurrentIdentity(c)},
-		})
-		if err != nil {
-			return err
-		}
-		newInv = invs[0]
-		return nil
-	})
-
-	switch {
-	case noSuchJob:
-		return nil, ErrNoSuchJob
-	case err != nil:
-		return nil, err
-	}
-
-	return newInv, nil
 }
 
 // EmitTriggers puts one or more triggers into pending trigger queues of the

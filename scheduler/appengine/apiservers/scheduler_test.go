@@ -534,10 +534,6 @@ func (f *fakeEngine) GetInvocation(c context.Context, job *engine.Job, invID int
 	return f.getInvocation(job.JobID, invID)
 }
 
-func (f *fakeEngine) ForceInvocation(c context.Context, job *engine.Job) (*engine.Invocation, error) {
-	panic("not implemented")
-}
-
 func (f *fakeEngine) InternalAPI() engine.EngineInternal {
 	panic("not implemented")
 }
