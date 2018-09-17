@@ -22,34 +22,44 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 // A build step.
+//
+// A step may have children, see name field.
 type Step struct {
 	// Name of the step, unique within the build.
 	// Identifies the step.
 	//
 	// Pipe character ("|") is reserved to separate parent and child step names.
 	// For example, value "a|b" indicates step "b" under step "a".
-	// A parent step MUST exist and MUST precede this step.
+	// If this is a child step, a parent MUST exist and MUST precede this step in
+	// the list of steps.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// The timestamp when the step started.
-	//
-	// MUST NOT be before start_time of the parent.
+	// Required iff status is STARTED, SUCCESS or FAILURE, or if the step has
+	// children.
+	// MUST NOT be after start_time/end_time of any of the children.
 	StartTime *timestamp.Timestamp `protobuf:"bytes,2,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
 	// The timestamp when the step ended.
-	//
-	// MUST NOT be after end_time of the parent.
+	// Present iff status is terminal.
+	// MUST NOT be before start_time.
+	// MUST NOT be before start/end_time of any of the children.
 	EndTime *timestamp.Timestamp `protobuf:"bytes,3,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
-	// Current status of the step.
+	// Status of the step.
 	// Must be specified, i.e. not STATUS_UNSPECIFIED.
 	//
-	// A status MUST NOT be "better" than statuses of its children,
-	// where parent-child relation is defined by name (see its comment)
-	// and "better" relation is defined by the following order, from good to bad:
-	//   SUCCESS
-	//   FAILURE
-	//   INFRA_FAILURE
-	//   CANCELED
-	// Note that this defines "better" relation only for some statuses.
-	// For those status where "better" is not defined, this rule does not apply.
+	// If the step has children
+	//   status MUST NOT be SCHEDULED.
+	//   status MUST be STARTED if status of any child is not terminal.
+	//
+	//   status MUST NOT be "better" than statuses of its children,
+	//   where "better" relation is defined by the following order,
+	//   from good to bad:
+	//     SUCCESS
+	//     FAILURE
+	//     INFRA_FAILURE
+	//     CANCELED
+	//   Note that this defines "better" relation only for some statuses.
+	//   For those statuses where "better" is not defined, this rule does not
+	//   apply.
 	Status Status `protobuf:"varint,4,opt,name=status,proto3,enum=buildbucket.v2.Status" json:"status,omitempty"`
 	// Logs produced by the step.
 	// Log order is up to the step.
