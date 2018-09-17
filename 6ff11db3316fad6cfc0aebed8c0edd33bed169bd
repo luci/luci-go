@@ -16,6 +16,70 @@
       "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5e4c596_f492ebe5",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-17T16:43:23Z",
+      "side": 1,
+      "message": "Strictly speaking we can check that server URL matches Google Container Registry and refuse to return OAuth token if it\u0027s not, since I suspect only gcr.io supports Google OAuth tokens (but I\u0027m not sure).\n\nIt\u0027s not necessary though. So can leave as is.",
+      "parentUuid": "963e8fc5_21027ae2",
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "92d5ef3d_42476c75",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-17T16:43:23Z",
+      "side": 1,
+      "message": "nit:\n\nresponse :\u003d map[string]string{\n  \"Username\": ...,\n  \"Secret\": \"...,\n}",
+      "range": {
+        "startLine": 90,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 3
+      },
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "77a8af1d_2ebcf6ae",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-17T16:43:23Z",
+      "side": 1,
+      "message": "os.Exit(1) here too",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 98,
+        "endChar": 41
+      },
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
