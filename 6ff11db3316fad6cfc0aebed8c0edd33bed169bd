@@ -60,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "958ba696_15d4de3c",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-09-17T20:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "92d5ef3d_42476c75",
+      "range": {
+        "startLine": 90,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 3
+      },
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "77a8af1d_2ebcf6ae",
         "filename": "client/cmd/docker-credential-luci/main.go",
         "patchSetId": 1
@@ -80,6 +104,30 @@
       "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e8fc9fe9_8180756e",
+        "filename": "client/cmd/docker-credential-luci/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002225
+      },
+      "writtenOn": "2018-09-17T20:05:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77a8af1d_2ebcf6ae",
+      "range": {
+        "startLine": 98,
+        "startChar": 3,
+        "endLine": 98,
+        "endChar": 41
+      },
+      "revId": "6ff11db3316fad6cfc0aebed8c0edd33bed169bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
