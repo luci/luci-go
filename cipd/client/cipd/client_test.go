@@ -1055,7 +1055,7 @@ func TestMaybeUpdateClient(t *testing.T) {
 
 		writeFile(clientBin, "outdated")
 
-		expectRPCs := func() {
+		expectResolveVersion := func() {
 			repo.expect(rpcCall{
 				method: "ResolveVersion",
 				in: &api.ResolveVersionRequest{
@@ -1067,6 +1067,16 @@ func TestMaybeUpdateClient(t *testing.T) {
 					Instance: clientPkgRef,
 				},
 			})
+		}
+
+		expectDescribeClient := func(refs ...*api.ObjectRef) {
+			if len(refs) == 0 {
+				refs = []*api.ObjectRef{
+					upToDateSHA256Ref,
+					upToDateSHA1Ref,
+					{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)},
+				}
+			}
 			repo.expect(rpcCall{
 				method: "DescribeClient",
 				in: &api.DescribeClientRequest{
@@ -1078,22 +1088,23 @@ func TestMaybeUpdateClient(t *testing.T) {
 						Package:  clientPackage,
 						Instance: clientPkgRef,
 					},
-					ClientRef: upToDateSHA256Ref,
+					ClientRef: refs[0],
 					ClientBinary: &api.ObjectURL{
 						SignedUrl: "http://example.com/client_bin",
 					},
-					ClientSize: 10000,
-					LegacySha1: upToDateSHA1Ref.HexDigest,
-					ClientRefAliases: []*api.ObjectRef{
-						upToDateSHA1Ref,
-						upToDateSHA256Ref,
-						{HashAlgo: 555, HexDigest: strings.Repeat("f", 66)},
-					},
+					ClientSize:       10000,
+					LegacySha1:       upToDateSHA1Ref.HexDigest,
+					ClientRefAliases: refs,
 				},
 			})
 		}
 
-		Convey("Updates outdated client, warming caches", func() {
+		expectRPCs := func(refs ...*api.ObjectRef) {
+			expectResolveVersion()
+			expectDescribeClient(refs...)
+		}
+
+		Convey("Updates outdated client, warming cold caches", func() {
 			// Should update 'outdated' to 'up-to-date' and warm up the tag cache.
 			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
@@ -1113,6 +1124,21 @@ func TestMaybeUpdateClient(t *testing.T) {
 			pin, err = MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
 			So(err, ShouldBeNil)
 			So(pin, ShouldResemble, clientPin)
+
+			Convey("Updates outdated client using warm cache", func() {
+				writeFile(clientBin, "outdated")
+
+				// Should update 'outdated' to 'up-to-date'. It skips ResolveVersion,
+				// since the tag cache is warm. Still needs DescribeClient to grab
+				// the download URL.
+				expectDescribeClient()
+				pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, nil)
+				So(err, ShouldBeNil)
+				So(pin, ShouldResemble, clientPin)
+
+				// Yep, updated.
+				So(readFile(clientBin), ShouldEqual, "up-to-date")
+			})
 		})
 
 		Convey("Skips updating up-to-date client, warming the cache", func() {
@@ -1156,12 +1182,28 @@ func TestMaybeUpdateClient(t *testing.T) {
 			So(pin, ShouldResemble, clientPin)
 		})
 
-		Convey("Refuses to update on hash mismatch", func() {
+		Convey("Refuses to update if *.digests doesn't match what backend says", func() {
 			dig := digests.ClientDigestsFile{}
 			dig.AddClientRef(platform, caclObjRef("something-else", api.HashAlgo_SHA256))
 
 			// Should refuse the update.
 			expectRPCs()
+			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
+			So(err, ShouldErrLike, "is not in *.digests file")
+			So(pin, ShouldResemble, common.Pin{})
+
+			// The client file wasn't replaced.
+			So(readFile(clientBin), ShouldEqual, "outdated")
+		})
+
+		Convey("Refuses to update on hash mismatch", func() {
+			expectedRef := caclObjRef("something-else", api.HashAlgo_SHA256)
+
+			dig := digests.ClientDigestsFile{}
+			dig.AddClientRef(platform, expectedRef)
+
+			// Should refuse the update.
+			expectRPCs(expectedRef)
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			So(err, ShouldErrLike, "file hash mismatch")
 			So(pin, ShouldResemble, common.Pin{})
@@ -1170,10 +1212,11 @@ func TestMaybeUpdateClient(t *testing.T) {
 			So(readFile(clientBin), ShouldEqual, "outdated")
 		})
 
-		Convey("Refuses to fetched unknown unpinned platform", func() {
+		Convey("Refuses to fetch unknown unpinned platform", func() {
 			dig := digests.ClientDigestsFile{}
 
 			// Should refuse the update.
+			expectRPCs()
 			pin, err := MaybeUpdateClient(ctx, clientOpts, "git:deadbeef", clientBin, &dig)
 			So(err, ShouldErrLike, "there's no supported hash for")
 			So(pin, ShouldResemble, common.Pin{})
