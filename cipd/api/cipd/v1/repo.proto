@@ -163,6 +163,24 @@ service Repository {
   // otherwise.
   rpc UnhidePackage(PackageRequest) returns (google.protobuf.Empty);
 
+  // DeletePackage removes the package (along with all its instances, tags, refs
+  // etc) from the repository.
+  //
+  // There's no undo. Once the package is deleted, it is gone forever.
+  //
+  // This operation has a potential to break various pinned historical CIPD
+  // ensure files and thus should not be used casually, only in extreme cases.
+  // Consider just hiding the package instead of deleting it.
+  //
+  // For the reasons above, the operation requires admin access: only owners of
+  // the repository root can delete packages.
+  //
+  // Returns:
+  //   PERMISSION_DENIED if the caller is not a root owner.
+  //   INVALID_ARGUMENT if the request is malformed.
+  //   NOT_FOUND if the package doesn't exist.
+  rpc DeletePackage(PackageRequest) returns (google.protobuf.Empty);
+
   // Registers a package instance in the repository (if it was uploaded to the
   // storage already and wasn't registered yet) or initiates a new upload
   // operation.
