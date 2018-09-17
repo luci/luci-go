@@ -902,117 +902,6 @@ func TestLaunchInvocationTask(t *testing.T) {
 	})
 }
 
-func TestForceInvocation(t *testing.T) {
-	t.Parallel()
-
-	Convey("with fake env", t, func() {
-		c := newTestContext(epoch)
-		e, mgr := newTestEngine()
-
-		tq := tqtesting.GetTestable(c, e.cfg.Dispatcher)
-		tq.CreateQueues()
-
-		So(e.UpdateProjectJobs(c, "project", []catalog.Definition{
-			{
-				JobID:    "project/job",
-				Revision: "rev1",
-				Schedule: "triggered",
-				Task:     noopTaskBytes(),
-				Acls:     aclOne,
-			},
-		}), ShouldBeNil)
-
-		Convey("happy path", func() {
-			const expectedInvID int64 = 9200093523825193008
-
-			job, err := e.getJob(c, "project/job")
-			So(err, ShouldBeNil)
-			inv, err := e.ForceInvocation(auth.WithState(c, asUserOne), job)
-			So(err, ShouldBeNil)
-
-			// New invocation looks good.
-			So(inv, ShouldResemble, &Invocation{
-				ID:          expectedInvID,
-				JobID:       "project/job",
-				Started:     epoch,
-				TriggeredBy: "user:one@example.com",
-				Revision:    "rev1",
-				Task:        noopTaskBytes(),
-				Status:      task.StatusStarting,
-				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
-					"[22:42:00.000] Triggered by user:one@example.com\n",
-			})
-
-			// It is now marked as active in the job state, refetch it to check.
-			job, err = e.getJob(c, "project/job")
-			So(err, ShouldBeNil)
-			So(job.ActiveInvocations, ShouldResemble, []int64{inv.ID})
-
-			// Eventually it runs the task, which then cleans up job state.
-			mgr.launchTask = func(ctx context.Context, ctl task.Controller) error {
-				ctl.DebugLog("Started!")
-				ctl.State().Status = task.StatusSucceeded
-				return nil
-			}
-			tasks, _, err := tq.RunSimulation(c, nil)
-			So(err, ShouldBeNil)
-
-			// The sequence of tasks we've just performed.
-			So(tasks.Payloads(), ShouldResembleProto, []proto.Message{
-				&internal.LaunchInvocationsBatchTask{
-					Tasks: []*internal.LaunchInvocationTask{{JobId: "project/job", InvId: expectedInvID}},
-				},
-				&internal.LaunchInvocationTask{
-					JobId: "project/job", InvId: expectedInvID,
-				},
-				&internal.InvocationFinishedTask{
-					JobId: "project/job", InvId: expectedInvID,
-				},
-				&internal.TriageJobStateTask{JobId: "project/job"},
-			})
-
-			// The invocation is in finished state.
-			inv, err = e.getInvocation(c, "project/job", inv.ID)
-			So(err, ShouldBeNil)
-			So(inv, ShouldResemble, &Invocation{
-				ID:             expectedInvID,
-				JobID:          "project/job",
-				IndexedJobID:   "project/job", // set for finished tasks!
-				Started:        epoch,
-				Finished:       epoch.Add(time.Second),
-				TriggeredBy:    "user:one@example.com",
-				Revision:       "rev1",
-				Task:           noopTaskBytes(),
-				Status:         task.StatusSucceeded,
-				MutationsCount: 2,
-				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
-					"[22:42:00.000] Triggered by user:one@example.com\n" +
-					"[22:42:01.000] Starting the invocation (attempt 1)\n" +
-					"[22:42:01.000] Started!\n" +
-					"[22:42:01.000] Invocation finished in 1s with status SUCCEEDED\n",
-			})
-
-			// The job state is updated (the invocation is no longer active).
-			job, err = e.getJob(c, "project/job")
-			So(err, ShouldBeNil)
-			So(job.ActiveInvocations, ShouldBeNil)
-
-			// The invocation is now in the list of finish invocations.
-			datastore.GetTestable(c).CatchupIndexes()
-			invs, _, _ := e.ListInvocations(auth.WithState(c, asUserOne), job, ListInvocationsOpts{
-				PageSize: 100,
-			})
-			So(invs, ShouldResemble, []*Invocation{inv})
-
-			// The triage log from the last triage is available.
-			log, err := e.GetJobTriageLog(c, job)
-			So(err, ShouldBeNil)
-			So(log, ShouldNotBeNil)
-			So(log.Stale(), ShouldBeFalse)
-		})
-	})
-}
-
 func TestAbortJob(t *testing.T) {
 	t.Parallel()
 
@@ -1038,11 +927,10 @@ func TestAbortJob(t *testing.T) {
 			},
 		}), ShouldBeNil)
 
-		// Force launch a new invocation.
+		// Launch a new invocation.
 		job, err := e.getJob(c, jobID)
 		So(err, ShouldBeNil)
-		inv, err := e.ForceInvocation(asOne, job)
-		So(err, ShouldBeNil)
+		inv := forceInvocation(c, e, jobID)
 		invID := inv.ID
 		So(invID, ShouldEqual, expectedInvID)
 
@@ -1059,13 +947,11 @@ func TestAbortJob(t *testing.T) {
 				IndexedJobID:   jobID,
 				Started:        epoch,
 				Finished:       epoch,
-				TriggeredBy:    "user:one@example.com",
 				Revision:       "rev1",
 				Task:           noopTaskBytes(),
 				Status:         task.StatusAborted,
 				MutationsCount: 1,
 				DebugLog: "[22:42:00.000] New invocation is queued and will start shortly\n" +
-					"[22:42:00.000] Triggered by user:one@example.com\n" +
 					"[22:42:00.000] Invocation is manually aborted by user:one@example.com\n" +
 					"[22:42:00.000] Invocation finished in 0s with status ABORTED\n",
 			})
@@ -1340,10 +1226,7 @@ func TestOneJobTriggersAnother(t *testing.T) {
 			const triggeredInvID int64 = 9200093521728457040
 
 			// Force launch the triggering job.
-			job, err := e.getJob(c, triggeringJob)
-			So(err, ShouldBeNil)
-			_, err = e.ForceInvocation(auth.WithState(c, asUserOne), job)
-			So(err, ShouldBeNil)
+			forceInvocation(c, e, triggeringJob)
 
 			// Eventually it runs the task which emits a bunch of triggers, which
 			// causes the triggered job triage. We stop right before it and examine
@@ -1503,10 +1386,7 @@ func TestInvocationTimers(t *testing.T) {
 			const testInvID int64 = 9200093523825193008
 
 			// Force launch the job.
-			job, err := e.getJob(c, testJobID)
-			So(err, ShouldBeNil)
-			_, err = e.ForceInvocation(auth.WithState(c, asUserOne), job)
-			So(err, ShouldBeNil)
+			forceInvocation(c, e, testJobID)
 
 			// See handelTimer. Name of the timer => time since epoch.
 			callTimes := map[string]time.Duration{}
@@ -1862,6 +1742,25 @@ func TestCron(t *testing.T) {
 func noopTaskBytes() []byte {
 	buf, _ := proto.Marshal(&messages.TaskDefWrapper{Noop: &messages.NoopTask{}})
 	return buf
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func forceInvocation(c context.Context, e *engineImpl, jobID string) (inv *Invocation) {
+	err := e.jobTxn(c, jobID, func(c context.Context, job *Job, isNew bool) (err error) {
+		invs, err := e.enqueueInvocations(c, job, []task.Request{
+			{},
+		})
+		if err != nil {
+			return err
+		}
+		inv = invs[0]
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////

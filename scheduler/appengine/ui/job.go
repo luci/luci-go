@@ -178,40 +178,6 @@ func jobPage(ctx *router.Context) {
 ////////////////////////////////////////////////////////////////////////////////
 // Actions.
 
-func runJobAction(ctx *router.Context) {
-	c, w, r, p := ctx.Context, ctx.Writer, ctx.Request, ctx.Params
-	e := config(c).Engine
-
-	projectID := p.ByName("ProjectID")
-	jobName := p.ByName("JobName")
-
-	job := jobFromEngine(ctx, projectID, jobName)
-	if job == nil {
-		return
-	}
-
-	// genericReply renders "we did something (or we failed to do something)"
-	// page, shown on error or if invocation is starting for too long.
-	genericReply := func(err error) {
-		templates.MustRender(c, w, "pages/run_job_result.html", map[string]interface{}{
-			"ProjectID": projectID,
-			"JobName":   jobName,
-			"Error":     err,
-		})
-	}
-
-	// Start the new invocation and redirect the user to its page.
-	inv, err := e.ForceInvocation(c, job)
-	switch {
-	case err == engine.ErrNoPermission:
-		uiErrActionForbidden.render(ctx)
-	case err != nil:
-		genericReply(err)
-	default:
-		http.Redirect(w, r, fmt.Sprintf("/jobs/%s/%s/%d", projectID, jobName, inv.ID), http.StatusFound)
-	}
-}
-
 func pauseJobAction(c *router.Context) {
 	handleJobAction(c, func(job *engine.Job) error {
 		return config(c.Context).Engine.PauseJob(c.Context, job)

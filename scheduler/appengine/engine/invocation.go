@@ -160,7 +160,8 @@ type Invocation struct {
 	Finished time.Time `gae:",noindex"`
 
 	// TriggeredBy is identity of whoever triggered the invocation, if it was
-	// triggered via ForceInvocation ("Run now" button).
+	// triggered via a single trigger submitted by some external user (not by the
+	// service itself).
 	//
 	// Empty identity string if it was triggered by the service itself.
 	TriggeredBy identity.Identity

@@ -70,11 +70,11 @@ type Job struct {
 	// datastore though, for audit purposes).
 	Enabled bool
 
-	// Paused is true if job's schedule is ignored and job can only be started
-	// manually via "Run now" button.
+	// Paused is true if no new invocations of the job should be started.
 	//
-	// Paused jobs ignore incoming triggers. They are completely skipped (not even
-	// enqueued). Pausing a job clears the pending triggers set.
+	// Paused jobs ignore the cron scheduler and incoming triggers. Triggers are
+	// completely skipped (not even enqueued). Pausing a job clears the pending
+	// triggers set.
 	Paused bool `gae:",noindex"`
 
 	// Revision is last seen job definition revision.

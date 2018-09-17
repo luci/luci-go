@@ -355,7 +355,7 @@ type Job struct {
 	// Schedule describes when to run the job.
 	//
 	// A job with a schedule can still be triggered by other triggering jobs
-	// and via "Run now" button in UI.
+	// and via "Trigger now" button in UI.
 	//
 	// Supported kinds of schedules (illustrated by examples):
 	//   - "* 0 * * * *": cron-like expression, in a syntax supported by
@@ -374,8 +374,7 @@ type Job struct {
 	//     possible.
 	//   - "continuously" is alias for "with 0s interval", meaning the job will
 	//     run in a loop without any pauses.
-	//   - "triggered" schedule indicates that job is only started via "Run now"
-	//     button or via a trigger.
+	//   - "triggered" schedule indicates that job is only started via a trigger.
 	//
 	// Default is "triggered".
 	Schedule string `protobuf:"bytes,2,opt,name=schedule,proto3" json:"schedule,omitempty"`

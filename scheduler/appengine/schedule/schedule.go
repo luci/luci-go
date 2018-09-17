@@ -110,8 +110,8 @@ func (s *Schedule) String() string {
 //     schedule. Overruns are not possible.
 //   - "continuously" is alias for "with 0s interval", meaning the job will run
 //     in a loop without any pauses.
-//   - "triggered" schedule indicates that job is always started via "Run now"
-//     button. 'Next' always returns DistantFuture constant.
+//   - "triggered" schedule indicates that job is always started via a trigger.
+//     'Next' always returns DistantFuture constant.
 func Parse(expr string, randSeed uint64) (sched *Schedule, err error) {
 	toParse := ""
 	switch expr {
