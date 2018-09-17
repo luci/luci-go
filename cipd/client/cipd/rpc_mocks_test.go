@@ -174,6 +174,14 @@ func (m *mockedRepoClient) UnhidePackage(ctx context.Context, in *api.PackageReq
 	return out.(*empty.Empty), nil
 }
 
+func (m *mockedRepoClient) DeletePackage(ctx context.Context, in *api.PackageRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out, err := m.call("DeletePackage", in, opts)
+	if err != nil {
+		return nil, err
+	}
+	return out.(*empty.Empty), nil
+}
+
 func (m *mockedRepoClient) RegisterInstance(ctx context.Context, in *api.Instance, opts ...grpc.CallOption) (*api.RegisterInstanceResponse, error) {
 	out, err := m.call("RegisterInstance", in, opts)
 	if err != nil {
