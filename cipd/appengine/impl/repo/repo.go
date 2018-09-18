@@ -1278,6 +1278,10 @@ func (impl *repoImpl) DescribeClient(c context.Context, r *api.DescribeClientReq
 ////////////////////////////////////////////////////////////////////////////////
 // Non-pRPC handlers for the client bootstrap and legacy API.
 
+// Name of a header that contains resolved CIPD instance IDs in /client and /dl
+// responses.
+const cipdInstanceHeader = "X-Cipd-Instance"
+
 // legacyInstance is JSON representation of Instance in the legacy API.
 type legacyInstance struct {
 	PackageName  string `json:"package_name,omitempty"`
@@ -1335,8 +1339,12 @@ func replyWithError(w http.ResponseWriter, status, message string, args ...inter
 }
 
 // InstallHandlers installs non-pRPC HTTP handlers into the router.
+//
+// 'base' middleware chain here is assumed to have an authentication middleware
+// that checks 'Authorization' header (not cookies!).
 func (impl *repoImpl) InstallHandlers(r *router.Router, base router.MiddlewareChain) {
 	r.GET("/client", base, adaptGrpcErr(impl.handleClientBootstrap))
+	r.GET("/dl/*path", base, adaptGrpcErr(impl.handlePackageDownload))
 
 	r.GET("/_ah/api/repo/v1/client", base, adaptGrpcErr(impl.handleLegacyClientInfo))
 	r.GET("/_ah/api/repo/v1/instance", base, adaptGrpcErr(impl.handleLegacyInstance))
@@ -1395,6 +1403,10 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 		return err
 	}
 
+	// Put resolved instance ID into the response headers. This may be useful when
+	// debugging fetches.
+	w.Header().Set(cipdInstanceHeader, common.ObjectRefToInstanceID(inst.Instance))
+
 	// Grab the location of the extracted CIPD client from the post-processor.
 	res, err := processing.GetClientExtractorResult(c, inst)
 	switch {
@@ -1414,6 +1426,64 @@ func (impl *repoImpl) handleClientBootstrap(ctx *router.Context) error {
 	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
 		Object:           ref,
 		DownloadFilename: processing.GetClientBinaryName(pkg), // e.g. 'cipd.exe'
+	})
+	if err == nil {
+		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
+	}
+	return err
+}
+
+// handlePackageDownload redirects to a CIPD package file (raw octet stream
+// with zipped package data) in Google Storage.
+//
+// GET /dl/<package>/+/<version>.
+//
+// Where:
+//    package: a CIPD package name (e.g. "a/b/c/linux-amd64").
+//    version: a package version identifier (instance ID, a ref or a tag).
+//
+// On success issues HTTP 302 redirect to the signed Google Storage URL.
+// On errors returns HTTP 4** with an error message.
+func (impl *repoImpl) handlePackageDownload(ctx *router.Context) error {
+	c, r, w := ctx.Context, ctx.Request, ctx.Writer
+
+	// Parse the path. The router is too simplistic to parse such paths. It also
+	// likes to prepend '/' to it.
+	path := strings.TrimPrefix(ctx.Params.ByName("path"), "/")
+	chunks := strings.SplitN(path, "/+/", 2)
+	if len(chunks) != 2 {
+		return status.Errorf(codes.InvalidArgument, "the URL should have form /dl/<package>/+/<version>")
+	}
+	pkg, version := chunks[0], chunks[1]
+
+	// Resolve the version into a concrete instance. This also does rigorous
+	// argument validation, ACL checks and verifies the resulting instance exists.
+	inst, err := impl.ResolveVersion(c, &api.ResolveVersionRequest{
+		Package: pkg,
+		Version: version,
+	})
+	if err != nil {
+		return err
+	}
+
+	// Put resolved instance ID into the response headers. This may be useful when
+	// debugging fetches.
+	w.Header().Set(cipdInstanceHeader, common.ObjectRefToInstanceID(inst.Instance))
+
+	// Generate a name for the file based on the last two components of the
+	// package name. This name is used by browsers when downloading the file.
+	name := ""
+	chunks = strings.Split(pkg, "/")
+	if len(chunks) > 1 {
+		name = fmt.Sprintf("%s-%s", chunks[len(chunks)-2], chunks[len(chunks)-1])
+	} else {
+		name = chunks[0]
+	}
+
+	// Ask CAS for a signed URL to the package and redirect there.
+	url, err := impl.cas.GetObjectURL(c, &api.GetObjectURLRequest{
+		Object:           inst.Instance,
+		DownloadFilename: name + ".zip",
 	})
 	if err == nil {
 		http.Redirect(w, r, url.SignedUrl, http.StatusFound)
