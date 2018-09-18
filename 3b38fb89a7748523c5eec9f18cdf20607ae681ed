@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4fb3669d_27fb9a9b",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-18T00:58:00Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 57,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 51
+      },
+      "revId": "3b38fb89a7748523c5eec9f18cdf20607ae681ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
