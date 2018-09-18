@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -2101,7 +2102,7 @@ func TestResolveVersion(t *testing.T) {
 	})
 }
 
-func TestGetInstanceURL(t *testing.T) {
+func TestGetInstanceURLAndDownloads(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
@@ -2130,76 +2131,134 @@ func TestGetInstanceURL(t *testing.T) {
 		}
 		So(datastore.Put(ctx, &model.Package{Name: "a/pkg"}, inst), ShouldBeNil)
 
-		Convey("Happy path", func() {
-			mockedObjURL := &api.ObjectURL{SignedUrl: "http://example.com"}
+		cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
+			So(r.Object.HashAlgo, ShouldEqual, api.HashAlgo_SHA1)
+			So(r.Object.HexDigest, ShouldEqual, inst.InstanceID)
+			return &api.ObjectURL{
+				SignedUrl: fmt.Sprintf("http://example.com/%s?d=%s", r.Object.HexDigest, r.DownloadFilename),
+			}, nil
+		}
 
-			cas.GetObjectURLImpl = func(_ context.Context, r *api.GetObjectURLRequest) (*api.ObjectURL, error) {
-				So(r, ShouldResembleProto, &api.GetObjectURLRequest{
-					Object: &api.ObjectRef{
+		Convey("GetInstanceURL", func() {
+			Convey("Happy path", func() {
+				resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  inst.Package.StringID(),
+					Instance: inst.Proto().Instance,
+				})
+				So(err, ShouldBeNil)
+				So(resp, ShouldResembleProto, &api.ObjectURL{
+					SignedUrl: "http://example.com/1111111111111111111111111111111111111111?d=",
+				})
+			})
+
+			Convey("Bad package name", func() {
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  "///",
+					Instance: inst.Proto().Instance,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'package'")
+			})
+
+			Convey("Bad instance", func() {
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package: "a/pkg",
+					Instance: &api.ObjectRef{
 						HashAlgo:  api.HashAlgo_SHA1,
-						HexDigest: inst.InstanceID,
+						HexDigest: "huh",
 					},
 				})
-				return mockedObjURL, nil
+				So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
+				So(err, ShouldErrLike, "bad 'instance'")
+			})
+
+			Convey("No access", func() {
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  "b",
+					Instance: inst.Proto().Instance,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
+				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			})
+
+			Convey("Missing package", func() {
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package:  "a/missing",
+					Instance: inst.Proto().Instance,
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such package")
+			})
+
+			Convey("Missing instance", func() {
+				_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
+					Package: "a/pkg",
+					Instance: &api.ObjectRef{
+						HashAlgo:  api.HashAlgo_SHA1,
+						HexDigest: strings.Repeat("f", 40),
+					},
+				})
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				So(err, ShouldErrLike, "no such instance")
+			})
+		})
+
+		Convey("Raw download handler", func() {
+			call := func(path string) *httptest.ResponseRecorder {
+				rr := httptest.NewRecorder()
+				adaptGrpcErr(impl.handlePackageDownload)(&router.Context{
+					Context: ctx,
+					Request: &http.Request{},
+					Params: httprouter.Params{
+						{Key: "path", Value: path},
+					},
+					Writer: rr,
+				})
+				return rr
 			}
 
-			resp, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package:  inst.Package.StringID(),
-				Instance: inst.Proto().Instance,
+			Convey("Happy path", func() {
+				rr := call("/a/pkg/+/1111111111111111111111111111111111111111")
+				So(rr.Code, ShouldEqual, http.StatusFound)
+				So(rr.Header().Get("Location"), ShouldEqual, "http://example.com/1111111111111111111111111111111111111111?d=a-pkg.zip")
+				So(rr.Header().Get(cipdInstanceHeader), ShouldEqual, inst.InstanceID)
 			})
-			So(err, ShouldBeNil)
-			So(resp, ShouldResembleProto, mockedObjURL)
-		})
 
-		Convey("Bad package name", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package:  "///",
-				Instance: inst.Proto().Instance,
+			Convey("Malformed URL", func() {
+				rr := call("huh")
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "the URL should have form")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'package'")
-		})
 
-		Convey("Bad instance", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package: "a/pkg",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: "huh",
-				},
+			Convey("Bad package name", func() {
+				rr := call("/???/+/live")
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "invalid package name")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.InvalidArgument)
-			So(err, ShouldErrLike, "bad 'instance'")
-		})
 
-		Convey("No access", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package:  "b",
-				Instance: inst.Proto().Instance,
+			Convey("Bad version", func() {
+				rr := call("/pkg/+/???")
+				So(rr.Code, ShouldEqual, http.StatusBadRequest)
+				So(rr.Body.String(), ShouldContainSubstring, "bad version")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
-		})
 
-		Convey("Missing package", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package:  "a/missing",
-				Instance: inst.Proto().Instance,
+			Convey("No access", func() {
+				rr := call("/b/+/live")
+				So(rr.Code, ShouldEqual, http.StatusForbidden)
+				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such package")
-		})
 
-		Convey("Missing instance", func() {
-			_, err := impl.GetInstanceURL(ctx, &api.GetInstanceURLRequest{
-				Package: "a/pkg",
-				Instance: &api.ObjectRef{
-					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: strings.Repeat("f", 40),
-				},
+			Convey("Missing package", func() {
+				rr := call("/a/missing/+/live")
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "no such package")
 			})
-			So(grpc.Code(err), ShouldEqual, codes.NotFound)
-			So(err, ShouldErrLike, "no such instance")
+
+			Convey("Missing instance", func() {
+				rr := call("/a/pkg/+/1111111111111111111111111111111111111112")
+				So(rr.Code, ShouldEqual, http.StatusNotFound)
+				So(rr.Body.String(), ShouldContainSubstring, "no such instance")
+			})
 		})
 	})
 }
@@ -2464,6 +2523,7 @@ func TestClientBootstrap(t *testing.T) {
 				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusFound)
 				So(rr.Header().Get("Location"), ShouldEqual, expectedClientURL)
+				So(rr.Header().Get(cipdInstanceHeader), ShouldEqual, goodIID)
 			})
 
 			Convey("No plat", func() {

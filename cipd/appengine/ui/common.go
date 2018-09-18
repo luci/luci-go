@@ -71,7 +71,7 @@ func instancePageURL(pkg, ver string) string {
 // routeToPage routes to an appropriate page depending on the request URL.
 func routeToPage(c *router.Context) error {
 	path := c.Params.ByName("path")
-	switch chunks := strings.Split(path, "/+/"); {
+	switch chunks := strings.SplitN(path, "/+/", 2); {
 	case len(chunks) <= 1: // no '/+/' in path => prefix listing page
 		return prefixListingPage(c, path)
 	case len(chunks) == 2 && chunks[1] == "": // ends with '/+/' => package page
