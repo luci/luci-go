@@ -33,6 +33,9 @@ import (
 //
 // Package names must be lower case and have form "<word>/<word/<word>". See
 // ValidatePackageName for the full spec of how the package name can look.
+//
+// Note: do NOT ever add '+' as allowed character. It will break various URL
+// parsers that use '/+/' to separate parameters.
 var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-\.]+/)*[a-z0-9_\-\.]+$`)
 
 // instanceTagKeyRe is a regular expression for a tag key.
