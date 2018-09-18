@@ -571,6 +571,13 @@ func (impl *repoImpl) RegisterInstance(c context.Context, r *api.Instance) (resp
 		return nil, errors.Annotate(err, "failed to initiate an upload op (code %s)", code).Err()
 	}
 
+	// Warn about registering deprecated SHA1 packages. Eventually this will be
+	// forbidden completely.
+	if r.Instance.HashAlgo == api.HashAlgo_SHA1 {
+		logging.Warningf(c, "Deprecated SHA1 instance: %s (%s) from %s",
+			r.Package, common.ObjectRefToInstanceID(r.Instance), auth.CurrentIdentity(c))
+	}
+
 	// The instance is already in the CAS storage. Register it in the repository.
 	instance = (&model.Instance{
 		RegisteredBy: string(auth.CurrentIdentity(c)),
