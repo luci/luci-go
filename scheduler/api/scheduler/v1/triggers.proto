@@ -44,6 +44,7 @@ message Trigger {
   // by the Scheduler, see corresponding protos.
   oneof payload {
     CronTrigger cron = 40;
+    WebUITrigger webui = 41;
     NoopTrigger noop = 50;
     GitilesTrigger gitiles = 51;
     BuildbucketTrigger buildbucket = 52;
@@ -60,6 +61,14 @@ message Trigger {
 // may appear in the API responses though.
 message CronTrigger {
   int64 generation = 1; // monotonically increasing number
+}
+
+
+// WebUITrigger is emitted whenever users click "Trigger" button in UI.
+//
+// Note: such triggers can't be scheduled through external Scheduler API (to
+// avoid confusion). They may appear in the API responses though.
+message WebUITrigger {
 }
 
 

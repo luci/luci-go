@@ -37,6 +37,14 @@ func TestRequestBuilder(t *testing.T) {
 		So(r.Request, ShouldResemble, task.Request{})
 	})
 
+	Convey("FromWebUITrigger", t, func() {
+		r := RequestBuilder{}
+		r.FromTrigger(&internal.Trigger{
+			Payload: &internal.Trigger_Webui{},
+		})
+		So(r.Request, ShouldResemble, task.Request{})
+	})
+
 	Convey("FromNoopTrigger", t, func() {
 		r := RequestBuilder{}
 		r.FromTrigger(&internal.Trigger{

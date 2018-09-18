@@ -137,7 +137,7 @@ message Job {
   // Schedule describes when to run the job.
   //
   // A job with a schedule can still be triggered by other triggering jobs
-  // and via "Trigger now" button in UI.
+  // and via "Trigger" button in UI.
   //
   // Supported kinds of schedules (illustrated by examples):
   //   - "* 0 * * * *": cron-like expression, in a syntax supported by

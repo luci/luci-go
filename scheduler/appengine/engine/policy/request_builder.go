@@ -49,6 +49,8 @@ func (r *RequestBuilder) FromTrigger(t *internal.Trigger) {
 	switch p := t.Payload.(type) {
 	case *internal.Trigger_Cron:
 		r.FromCronTrigger(p.Cron)
+	case *internal.Trigger_Webui:
+		r.FromWebUITrigger(p.Webui)
 	case *internal.Trigger_Noop:
 		r.FromNoopTrigger(p.Noop)
 	case *internal.Trigger_Gitiles:
@@ -62,6 +64,12 @@ func (r *RequestBuilder) FromTrigger(t *internal.Trigger) {
 
 // FromCronTrigger derives the request properties from the given cron trigger.
 func (r *RequestBuilder) FromCronTrigger(t *scheduler.CronTrigger) {
+	// nothing here for now
+}
+
+// FromWebUITrigger derives the request properties from the given web UI
+// trigger.
+func (r *RequestBuilder) FromWebUITrigger(t *scheduler.WebUITrigger) {
 	// nothing here for now
 }
 
