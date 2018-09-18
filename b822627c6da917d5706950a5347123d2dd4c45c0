@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "1c78d35b_8ae2a7c8",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-18T00:44:17Z",
+      "side": 1,
+      "message": "Added comment.\n\nIt matters to cover batching and in particular the flush of the final incomplete batch.",
+      "parentUuid": "5ff950cf_be049e09",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 37,
+        "endChar": 22
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f5a1c500_b7542d47",
         "filename": "cipd/appengine/impl/model/deletion_test.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "33712513_3d31c321",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-18T00:44:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f5a1c500_b7542d47",
+      "range": {
+        "startLine": 48,
+        "startChar": 50,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "81aaab2f_fd35a78e",
         "filename": "cipd/appengine/impl/model/deletion_test.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "033ef5b0_efa891d8",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-18T00:44:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81aaab2f_fd35a78e",
+      "range": {
+        "startLine": 90,
+        "startChar": 26,
+        "endLine": 90,
+        "endChar": 27
+      },
+      "revId": "b822627c6da917d5706950a5347123d2dd4c45c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
