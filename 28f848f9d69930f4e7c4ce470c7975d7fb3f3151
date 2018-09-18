@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "9f463410_eaa7f789",
+        "filename": "cipd/appengine/impl/repo/repo.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1446,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-18T22:21:15Z",
+      "side": 1,
+      "message": "nit: i was told to use simplistic :P",
+      "range": {
+        "startLine": 1446,
+        "startChar": 38,
+        "endLine": 1446,
+        "endChar": 42
+      },
+      "revId": "28f848f9d69930f4e7c4ce470c7975d7fb3f3151",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "be4c995e_8b4c46e3",
         "filename": "cipd/appengine/impl/repo/repo.go",
         "patchSetId": 1
