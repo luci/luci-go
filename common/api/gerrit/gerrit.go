@@ -43,30 +43,31 @@ const contentType = "application/json; charset=UTF-8"
 // TODO(nodir): replace this type with
 // https://godoc.org/go.chromium.org/luci/common/proto/gerrit#ChangeInfo.
 type Change struct {
-	ChangeNumber           int                  `json:"_number"`
-	ID                     string               `json:"id"`
-	ChangeID               string               `json:"change_id"`
-	Project                string               `json:"project"`
-	Branch                 string               `json:"branch"`
-	Topic                  string               `json:"topic"`
-	Hashtags               []string             `json:"hashtags"`
-	Subject                string               `json:"subject"`
-	Status                 string               `json:"status"`
-	Created                string               `json:"created"`
-	Updated                string               `json:"updated"`
-	Mergeable              bool                 `json:"mergeable"`
-	Submitted              string               `json:"submitted"`
-	SubmitType             string               `json:"submit_type"`
-	Insertions             int                  `json:"insertions"`
-	Deletions              int                  `json:"deletions"`
-	UnresolvedCommentCount int                  `json:"unresolved_comment_count"`
-	HasReviewStarted       bool                 `json:"has_review_started"`
-	Owner                  AccountInfo          `json:"owner"`
-	Labels                 map[string]LabelInfo `json:"labels"`
-	Submitter              AccountInfo          `json:"submitter"`
-	Reviewers              Reviewers            `json:"reviewers"`
-	RevertOf               int                  `json:"revert_of"`
-	CurrentRevision        string               `json:"current_revision"`
+	ChangeNumber           int                     `json:"_number"`
+	ID                     string                  `json:"id"`
+	ChangeID               string                  `json:"change_id"`
+	Project                string                  `json:"project"`
+	Branch                 string                  `json:"branch"`
+	Topic                  string                  `json:"topic"`
+	Hashtags               []string                `json:"hashtags"`
+	Subject                string                  `json:"subject"`
+	Status                 string                  `json:"status"`
+	Created                string                  `json:"created"`
+	Updated                string                  `json:"updated"`
+	Mergeable              bool                    `json:"mergeable"`
+	Submitted              string                  `json:"submitted"`
+	SubmitType             string                  `json:"submit_type"`
+	Insertions             int                     `json:"insertions"`
+	Deletions              int                     `json:"deletions"`
+	UnresolvedCommentCount int                     `json:"unresolved_comment_count"`
+	HasReviewStarted       bool                    `json:"has_review_started"`
+	Owner                  AccountInfo             `json:"owner"`
+	Labels                 map[string]LabelInfo    `json:"labels"`
+	Submitter              AccountInfo             `json:"submitter"`
+	Reviewers              Reviewers               `json:"reviewers"`
+	RevertOf               int                     `json:"revert_of"`
+	CurrentRevision        string                  `json:"current_revision"`
+	Revisions              map[string]RevisionInfo `json:"revisions"`
 	// MoreChanges is not part of a Change, but gerrit piggy-backs on the
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
@@ -103,6 +104,38 @@ type LabelInfo struct {
 
 	// Blocking reflects whether this label block the submit operation.
 	Blocking bool `json:"blocking,omitempty"`
+}
+
+// RevisionKind represents the "kind" field for a patch set.
+type RevisionKind string
+
+var (
+	RevisionRework                 RevisionKind = "REWORK"
+	RevisionTrivialRebase                       = "TRIVIAL_REBASE"
+	RevisionMergeFirstParentUpdate              = "MERGE_FIRST_PARENT_UPDATE"
+	RevisionNoCodeChange                        = "NO_CODE_CHANGE"
+	RevisionNoChange                            = "NO_CHANGE"
+)
+
+// RevisionInfo contains information about a specific patch set.
+//
+// Corresponds with
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-info.
+// TODO(mknyszek): Support the rest of that structure.
+type RevisionInfo struct {
+	// PatchSetNumber is the number associated with the given patch set.
+	PatchSetNumber int `json:"_number"`
+
+	// Kind is the kind of revision this is.
+	//
+	// Allowed values are specified in the RevisionKind type.
+	Kind RevisionKind `json:"kind"`
+
+	// Ref is the Git reference for the patchset.
+	Ref string `json:"ref"`
+
+	// Uploader represents the account which uploaded this patch set.
+	Uploader AccountInfo `json:"uploader"`
 }
 
 // Reviewers is a map that maps a type of reviewer to its account info.
