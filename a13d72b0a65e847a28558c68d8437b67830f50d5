@@ -22,6 +22,30 @@
       "revId": "a13d72b0a65e847a28558c68d8437b67830f50d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d0115c1_00c541db",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1154295
+      },
+      "writtenOn": "2018-09-19T00:03:05Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d382f524_56937873",
+      "range": {
+        "startLine": 118,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 56
+      },
+      "revId": "a13d72b0a65e847a28558c68d8437b67830f50d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
