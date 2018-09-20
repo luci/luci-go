@@ -30,7 +30,7 @@ import (
 
 // version must be updated whenever functional change (behavior, arguments,
 // supported commands) is done.
-const version = "0.2"
+const version = "0.3"
 
 func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
@@ -38,6 +38,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "Client tool to access a swarming server.",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
+			cmdBots(defaultAuthOpts),
 			cmdCollect(defaultAuthOpts),
 			cmdRequestShow(defaultAuthOpts),
 			cmdSpawnTasks(defaultAuthOpts),
