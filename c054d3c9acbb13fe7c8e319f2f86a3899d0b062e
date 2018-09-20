@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "34dec193_c1b0ca9e",
+        "filename": "common/flag/fieldslice.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-20T15:00:27Z",
+      "side": 1,
+      "message": "nit: the choice of var names is confusing. Normally i is the index. same below",
+      "range": {
+        "startLine": 30,
+        "startChar": 5,
+        "endLine": 30,
+        "endChar": 9
+      },
+      "revId": "c054d3c9acbb13fe7c8e319f2f86a3899d0b062e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
