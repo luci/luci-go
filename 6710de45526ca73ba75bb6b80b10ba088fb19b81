@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "88e76b96_d5b1564c",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T01:23:32Z",
+      "side": 1,
+      "message": "I\u0027m ambivalent between \u0027bots-list\u0027 and \u0027bots\u0027.",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4bfadd70_aa9a0e4d",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T01:23:32Z",
+      "side": 1,
+      "message": "If a file is specified the content shouldn\u0027t be printed to stdout.\nAlso, I prefer to write json.MarshalIndent(bots, \"\", \" \") to stdout, so we can use shell piping.",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6114db17_71f7cc43",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T01:23:32Z",
+      "side": 1,
+      "message": "When writing to disk, do not use indentation, as the file can become large, use tight encoding (the default).",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b47ae48c_62995e3a",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T01:23:32Z",
+      "side": 1,
+      "message": "use ioutil.WriteFile() instead since you\u0027re only doing a single write of []byte.",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
