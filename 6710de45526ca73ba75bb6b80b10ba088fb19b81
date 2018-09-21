@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8eae2928_b1e8a13a",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T01:40:32Z",
+      "side": 1,
+      "message": "I wasn\u0027t sure. bots-list is because it\u0027s the list API of the bots service, but bots matches swarming.py. Changed to bots.",
+      "parentUuid": "88e76b96_d5b1564c",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4bfadd70_aa9a0e4d",
         "filename": "client/cmd/swarming/bots_list.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3ad5757_cc07944c",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T01:40:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4bfadd70_aa9a0e4d",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "69512c7d_e9aaeb41",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T01:40:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6114db17_71f7cc43",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b47ae48c_62995e3a",
         "filename": "client/cmd/swarming/bots_list.go",
         "patchSetId": 1
@@ -67,6 +121,24 @@
       "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ad1be42c_dcf75e34",
+        "filename": "client/cmd/swarming/bots_list.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T01:40:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b47ae48c_62995e3a",
+      "revId": "6710de45526ca73ba75bb6b80b10ba088fb19b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
