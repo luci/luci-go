@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4eeded2_b265c72a",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-21T21:34:44Z",
+      "side": 1,
+      "message": "uint? Or at least document acceptable value range",
+      "range": {
+        "startLine": 36,
+        "startChar": 20,
+        "endLine": 36,
+        "endChar": 23
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b6ab52f_de17e111",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-21T21:34:44Z",
+      "side": 1,
+      "message": "it would be good to add some guidance of when to set this \u003e 1.0. For big data sets? Small data sets? When Shards is large? Is there a generally good default value?",
+      "range": {
+        "startLine": 37,
+        "startChar": 42,
+        "endLine": 37,
+        "endChar": 60
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "14184391_736a5b33",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-21T21:34:44Z",
+      "side": 1,
+      "message": "nit: don\u0027t need this (and I don\u0027t feel it adds clarity, in case that\u0027s why you have it :)).",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 13
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
