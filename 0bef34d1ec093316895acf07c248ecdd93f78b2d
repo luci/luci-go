@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0f935724_37cf1bd4",
+        "filename": "client/cmd/swarming/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T22:17:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0e069890_5a98e731",
+      "revId": "0bef34d1ec093316895acf07c248ecdd93f78b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8454852c_7beea603",
         "filename": "client/cmd/swarming/bots.go",
         "patchSetId": 3
@@ -33,6 +51,24 @@
       "revId": "0bef34d1ec093316895acf07c248ecdd93f78b2d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a634f8a2_124f4d52",
+        "filename": "client/cmd/swarming/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-09-21T22:17:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8454852c_7beea603",
+      "revId": "0bef34d1ec093316895acf07c248ecdd93f78b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
