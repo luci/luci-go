@@ -17,6 +17,7 @@ package logs
 import (
 	"fmt"
 	"html/template"
+	"image/color"
 	"net/http"
 	"strings"
 	"time"
@@ -65,46 +66,20 @@ type header struct {
 }
 
 // The stylesheet is inlined because static_dir isn't supported in flex.
+// IMPORTANT: js/css assets are served via the "static" module/service.
 var headerTemplate = template.Must(template.New("header").Parse(`
 <!DOCTYPE html>
 <head>
 <html lang="en">
 <meta charset="utf-8">
 <meta name="google" value="notranslate">
-<style>
-	body {
-		font-family: Verdana, sans-serif;
-		font-size: 14px;
-		margin-left: 30px;
-		margin-right: 30px;
-		margin-top: 20px;
-		margin-bottom: 50px;
-	}
-	header {
-		display: flex;
-		justify-content: space-between;
-	}
-	.account-picture {
-		border-radius: 6px;
-		width: 25px;
-		height: 25px;
-		vertical-align: middle;
-	}
-	.line {
-		font-family: Courier New, Courier, monospace;
-		font-size: 16px;
-		white-space: pre;
-	}
-	footer {
-		clear: both;
-		font-size: 14px;
-	}
-	.logdog-logo {
-		width: 4em;
-		float: left;
-		margin-right: 10px;
-	}
-</style>
+<link rel="stylesheet" href="/static/css/viewer.css" type="text/css">
+<link rel="stylesheet" href="/static/third_party/css/jquery-ui.min.css" type="text/css">
+<script src="/static/third_party/js/moment-with-locales.min.js"></script>
+<script src="/static/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
+<script src="/static/js/time.js"></script>
+<script src="/static/third_party/js/jquery.min.js"></script>
+<script src="/static/third_party/js/jquery-ui.min.js"></script>
 <link id="favicon" rel="shortcut icon" type="image/png" href="https://storage.googleapis.com/chrome-infra/logdog-small.png">
 <title>{{ .Title }} | LogDog </title></head>
 <header>
@@ -120,15 +95,8 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		{{ .UserEmail }} |
 		<a href="{{.LogoutURL}}" alt="Logout">Logout</a>
 	{{ end }}
-</div></header><hr><div class="lines">
-<script>
-  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
-
-  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3ELogDog');
-</script>
+</div></header><hr><div id="lines" class="lines">
+<script src="/static/js/viewer.js"></script>
 `))
 
 type footer struct {
@@ -534,6 +502,81 @@ func writeFooter(ctx *router.Context, start time.Time, err error, format string)
 	// This way we don't silently serve someone bad data.
 }
 
+type durationInfoStruct struct {
+	delta     int64 // Delta since last output, in Milliseconds.
+	text      string
+	textColor string
+	bgColor   string
+}
+
+var white = color.RGBA{255, 255, 255, 0}
+var liteyellow = color.RGBA{255, 254, 214, 0}
+var yellow = color.RGBA{232, 220, 118, 0}
+var red = color.RGBA{219, 37, 37, 0}
+
+func linearScale(from, to uint8, scale float64) uint8 {
+	return uint8((float64(to) * scale) + (float64(from) * (1.0 - scale)))
+}
+
+// Gradient produces a color between from and to colors
+// given a scale between 0.0 to 1.0, with each of the color
+// components multiplied.
+func gradient(from, to color.RGBA, scale float64) (result color.RGBA) {
+	if scale > 1.0 {
+		scale = 1.0
+	}
+	if scale < 0.0 {
+		scale = 0.0
+	}
+	result.R = linearScale(from.R, to.R, scale)
+	result.G = linearScale(from.G, to.G, scale)
+	result.B = linearScale(from.B, to.B, scale)
+	return
+}
+
+func hex(c color.RGBA) string {
+	return fmt.Sprintf("#%2X%2X%2X", c.R, c.G, c.B)
+}
+
+func durationInfo(previous, current time.Duration) (di durationInfoStruct) {
+	s := float64(current) / 1e9
+	m := int(s / 60)
+	switch {
+	case current < time.Minute*5:
+		di.text = fmt.Sprintf("%.1fs", s)
+	case current < time.Minute*60:
+		di.text = fmt.Sprintf("%dm %ds", m, int(s)%60)
+	default:
+		di.text = fmt.Sprintf("%dh %dm", m/60, m%60)
+	}
+	if previous == 0 {
+		return
+	}
+	delta := current - previous
+	di.delta = int64(delta / 1e6)
+	// 0s - 1s:   No color change
+	// 1s - 10s:  Neutural (#ffffff) to yellow (#e8dc76)
+	// 10s - 60s: Yellow (#e8dc76) to red (#db2525)
+	switch {
+	case delta > 10*time.Second:
+		// 10s = 0.0
+		// 60s = 1.0
+		scale := float64(delta-10*time.Second) / float64((60/10)*time.Second)
+		di.bgColor = hex(gradient(yellow, red, scale))
+		if scale > 0.5 {
+			di.textColor = hex(white)
+		}
+	case delta > time.Second:
+		//  0s = 0.0
+		// 10s = 1.0
+		scale := float64(delta) / float64(time.Second*10)
+		di.bgColor = hex(gradient(white, yellow, scale))
+	}
+	return
+}
+
+const lineTemplate = `<div class="line"><div class="timestamp" onclick="window.location.hash='L%s'" data-timestamp="%d" data-delta="%d" onmouseover="utils.formatTime(this)" style="%s">%s</div><span class="text">%s</span></div>`
+
 // serve reads log entries from data.ch and writes into w.
 func serve(c context.Context, data logData, w http.ResponseWriter) error {
 	flusher, ok := w.(http.Flusher)
@@ -544,22 +587,34 @@ func serve(c context.Context, data logData, w http.ResponseWriter) error {
 				"Logs will not stream correctly until this is fixed.")
 		flusher = &nopFlusher{}
 	}
+	prevDuration := time.Duration(0)
 	// Serve the logs.
 	for logResp := range data.ch {
 		log, err := logResp.log, logResp.err
 		if err != nil {
 			return err
 		}
-		for _, line := range log.GetText().GetLines() {
+		for i, line := range log.GetText().GetLines() {
 			text := line.GetValue()
+			id := fmt.Sprintf("%d_%d", log.StreamIndex, i)
 			if data.options.format == formatHTML {
 				text = template.HTMLEscapeString(text)
 				duration, err := ptypes.Duration(log.GetTimeOffset())
 				if err != nil {
-					text = fmt.Sprintf("<div class=\"line\">%s</div>", text)
+					text = fmt.Sprintf("<div id=\"L%s\" class=\"line\"><span class=\"text\">%s</span></div>", id, text)
 				} else {
 					t := data.logStream.Timestamp.Add(duration)
-					text = fmt.Sprintf("<div class=\"line\" data-timestamp=\"%s\">%s</div>", t.Format(time.RFC3339), text)
+					di := durationInfo(prevDuration, duration)
+					style := ""
+					if di.textColor != "" {
+						style += fmt.Sprintf("color:%s; ", di.textColor)
+					}
+					if di.bgColor != "" {
+						style += fmt.Sprintf("background-color:%s; ", di.bgColor)
+					}
+					prevDuration = duration
+					ms := t.UnixNano() / 1e6
+					text = fmt.Sprintf(lineTemplate, id, ms, di.delta, style, di.text, text)
 				}
 			}
 			if _, err := fmt.Fprintln(w, text); err != nil {
