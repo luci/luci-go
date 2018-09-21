@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0e069890_5a98e731",
+        "filename": "client/cmd/swarming/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T22:13:24Z",
+      "side": 1,
+      "message": "I still prefer to not print when a file is specified (and ignore the quiet flag).",
+      "revId": "0bef34d1ec093316895acf07c248ecdd93f78b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8454852c_7beea603",
+        "filename": "client/cmd/swarming/bots.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 116,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-21T22:13:24Z",
+      "side": 1,
+      "message": "just print, like os.Stdout.Write(j) or fmt.Printf(\"%s\\n\", j)",
+      "revId": "0bef34d1ec093316895acf07c248ecdd93f78b2d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
