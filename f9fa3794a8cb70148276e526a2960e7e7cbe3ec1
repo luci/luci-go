@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "76cf4d38_82b76ff3",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-21T22:30:01Z",
+      "side": 1,
+      "message": "Documented.",
+      "parentUuid": "e4eeded2_b265c72a",
+      "range": {
+        "startLine": 36,
+        "startChar": 20,
+        "endLine": 36,
+        "endChar": 23
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8b6ab52f_de17e111",
         "filename": "appengine/mapper/splitter/split.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "52c2a7ba_2b038327",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-21T22:30:01Z",
+      "side": 1,
+      "message": "hm... I realized I don\u0027t need it as a factor and replaced it with \"Samples\" count, which can always be set to e.g. 512 to guarantee good accuracy of splits regardless of number of shards.",
+      "parentUuid": "8b6ab52f_de17e111",
+      "range": {
+        "startLine": 37,
+        "startChar": 42,
+        "endLine": 37,
+        "endChar": 60
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "14184391_736a5b33",
         "filename": "appengine/mapper/splitter/split.go",
         "patchSetId": 2
@@ -68,6 +116,30 @@
       "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a91f8c47_2a04ac9b",
+        "filename": "appengine/mapper/splitter/split.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-21T22:30:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "14184391_736a5b33",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 151,
+        "endChar": 13
+      },
+      "revId": "f9fa3794a8cb70148276e526a2960e7e7cbe3ec1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
