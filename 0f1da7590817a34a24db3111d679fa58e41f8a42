@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "246a9781_452d39dd",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 580,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-22T05:40:56Z",
+      "side": 1,
+      "message": "don\u0027t you need to escape ierr here?",
+      "range": {
+        "startLine": 580,
+        "startChar": 64,
+        "endLine": 580,
+        "endChar": 66
+      },
+      "revId": "0f1da7590817a34a24db3111d679fa58e41f8a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b393d544_c783b569",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-22T05:40:56Z",
+      "side": 1,
+      "message": "i think this should also be html-escaped.",
+      "range": {
+        "startLine": 592,
+        "startChar": 56,
+        "endLine": 592,
+        "endChar": 60
+      },
+      "revId": "0f1da7590817a34a24db3111d679fa58e41f8a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5336cc41_12537ea2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-22T05:40:56Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 595,
+        "startChar": 102,
+        "endLine": 595,
+        "endChar": 106
+      },
+      "revId": "0f1da7590817a34a24db3111d679fa58e41f8a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
