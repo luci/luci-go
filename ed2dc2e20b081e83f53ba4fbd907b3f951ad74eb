@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "08451bb0_b762925e",
+        "filename": "mp/cmd/snapshot/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-22T01:47:02Z",
+      "side": 1,
+      "message": "strictly speaking, this isn\u0027t MP specific. but it doesn\u0027t fit in client/cmd either. So, I\u0027m fine with keeping it in mp/",
+      "revId": "ed2dc2e20b081e83f53ba4fbd907b3f951ad74eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
