@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c2a73f8_04ad3b4d",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-22T00:05:24Z",
+      "side": 1,
+      "message": "This is the reason this struct exists. Need a way to serialize queries.",
+      "range": {
+        "startLine": 27,
+        "startChar": 3,
+        "endLine": 27,
+        "endChar": 51
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c188d3d5_98eb56bc",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-22T00:05:24Z",
+      "side": 1,
+      "message": "More stuff can be added as needed later. It\u0027s not essential for most of the implementation.",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 71
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
