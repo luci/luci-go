@@ -90,6 +90,9 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		height: 25px;
 		vertical-align: middle;
 	}
+	.error {
+		color: red;
+	}
 	.line {
 		font-family: Courier New, Courier, monospace;
 		font-size: 16px;
@@ -346,10 +349,9 @@ func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 		// Do the actual work.
 		nextIndex, err := fetchOnce(c, ch, index, params)
 		// Signal regardless of error.  Server will bail on error and flush otherwise.
+		// Important: if fetchOnce errors out, we still expect nextIndex to increment regardless,
+		// otherwise this may get stuck in an infinite loop.
 		ch <- logResp{nil, err}
-		if err != nil {
-			return
-		}
 
 		// Check if the log has finished streaming and if we're done.
 		if lst.Terminated() && nextIndex > types.MessageIndex(lst.TerminalIndex) {
@@ -360,14 +362,24 @@ func fetch(c context.Context, ch chan<- logResp, params fetchParams) {
 			return
 		}
 
+		if err != nil {
+			index = nextIndex
+			continue
+		}
+
 		// Log is still streaming.  Set the next index, sleep a bit and try again.
 		backoff = backoff * 2
 		if backoff > maxBackoff {
 			backoff = maxBackoff
 		}
 		if index != nextIndex {
-			// If its a relatively active log stream, don't sleep too long.
-			backoff = time.Second
+			if err != nil {
+				// An error on one log entry means we want to try the next one asap.
+				backoff = 0
+			} else {
+				// If its a relatively active log stream, don't sleep too long.
+				backoff = time.Second
+			}
 		}
 		if tr := clock.Sleep(c, backoff); tr.Err != nil {
 			// If the user cancelled the request, bail out instead.
@@ -400,6 +412,8 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 	err := st.Get(c, req, func(e *storage.Entry) bool {
 		var le *logpb.LogEntry
 		if le, ierr = e.GetLogEntry(); ierr != nil {
+			// This log entry is bad, just try the next one blindly.
+			index++
 			return false
 		}
 		sidx, _ := e.GetStreamIndex() // GetLogEntry succeeded, so this must.
@@ -419,6 +433,10 @@ func fetchOnce(c context.Context, ch chan<- logResp, index types.MessageIndex, p
 		index = sidx + 1
 		return true
 	})
+	if err != nil {
+		index++
+		logging.WithError(err).Debugf(c, "got some error while fetching, incrementing index to %d", index)
+	}
 	// TODO(hinoka): Handle not found case.
 	if err == nil && ierr != nil {
 		err = ierr
@@ -535,7 +553,17 @@ func writeFooter(ctx *router.Context, start time.Time, err error, format string)
 }
 
 // serve reads log entries from data.ch and writes into w.
-func serve(c context.Context, data logData, w http.ResponseWriter) error {
+func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
+	// Replace an empty multierror with nil.
+	merr := errors.MultiError{}
+	defer func() {
+		if merr.First() == nil {
+			err = nil
+		} else {
+			err = merr
+		}
+	}()
+
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		logging.Errorf(c,
@@ -546,24 +574,29 @@ func serve(c context.Context, data logData, w http.ResponseWriter) error {
 	}
 	// Serve the logs.
 	for logResp := range data.ch {
-		log, err := logResp.log, logResp.err
-		if err != nil {
-			return err
+		log, ierr := logResp.log, logResp.err
+		if ierr != nil {
+			merr = append(merr, ierr)
+			text := fmt.Sprintf("<div class=\"error line\">LOGDOG ERROR: %s</div>", template.HTMLEscapeString(ierr.Error()))
+			if _, ierr := fmt.Fprintln(w, text); ierr != nil {
+				merr = append(merr, errors.Reason("could not write line %q", text).Err())
+			}
+			continue
 		}
 		for _, line := range log.GetText().GetLines() {
 			text := line.GetValue()
 			if data.options.format == formatHTML {
 				text = template.HTMLEscapeString(text)
-				duration, err := ptypes.Duration(log.GetTimeOffset())
-				if err != nil {
+				duration, ierr := ptypes.Duration(log.GetTimeOffset())
+				if ierr != nil {
 					text = fmt.Sprintf("<div class=\"line\">%s</div>", text)
 				} else {
 					t := data.logStream.Timestamp.Add(duration)
 					text = fmt.Sprintf("<div class=\"line\" data-timestamp=\"%s\">%s</div>", t.Format(time.RFC3339), text)
 				}
 			}
-			if _, err := fmt.Fprintln(w, text); err != nil {
-				return errors.Reason("could not write line %q", text).Err()
+			if _, ierr := fmt.Fprintln(w, text); ierr != nil {
+				merr = append(merr, errors.Reason("could not write line %q", text).Err())
 			}
 		}
 		if log == nil {
@@ -574,7 +607,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) error {
 			flusher.Flush()
 		}
 	}
-	return nil
+	return
 }
 
 // GetHandler is an HTTP handler for retrieving logs.
