@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "60a3c361_c7e3a04b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-09-24T18:53:56Z",
+      "side": 1,
+      "message": "derp. Sorry.",
+      "parentUuid": "da2c972e_3fc213bb",
+      "range": {
+        "startLine": 592,
+        "startChar": 56,
+        "endLine": 592,
+        "endChar": 60
+      },
+      "revId": "0f1da7590817a34a24db3111d679fa58e41f8a42",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5336cc41_12537ea2",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 2
