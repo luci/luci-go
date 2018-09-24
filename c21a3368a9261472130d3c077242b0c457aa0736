@@ -1,0 +1,371 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d47492f1_d985692c",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "const here and for most vars below, since you already use const above",
+      "range": {
+        "startLine": 31,
+        "startChar": 4,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0336f3f8_f395eb5c",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: semicolon\nbelow too",
+      "range": {
+        "startLine": 41,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 5
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff9ff692_89cfe5e9",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "what if data- attributes were changed? i think it is not this function\u0027s job to have this knowledge, but caller\u0027s job",
+      "range": {
+        "startLine": 48,
+        "startChar": 36,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae05a477_a48c6719",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "this file uses a mix of \u0027 and \"\nplease choose one",
+      "range": {
+        "startLine": 50,
+        "startChar": 40,
+        "endLine": 50,
+        "endChar": 41
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bbd4d600_97680f5a",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: L50-55 read as 1) start computing new timestamp, but do not finish 2) compute delta 3) finish computing new timestamp. It would be more readable if it was 1) compute new timestamp 2) compute delta\n\nmaybe reorder some lines",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c986435_f8105495",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: i think this belongs to the caller too, this func seems too generic for this",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba24b54d_b68f46e2",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: space after s",
+      "range": {
+        "startLine": 79,
+        "startChar": 42,
+        "endLine": 79,
+        "endChar": 43
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ed438df_1746cb66",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 518,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "this seems equivalent to simpler\n\n  return from + int8(float64(to-from) * scale)",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0495e0b4_46d27295",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 521,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: g",
+      "range": {
+        "startLine": 521,
+        "startChar": 3,
+        "endLine": 521,
+        "endChar": 4
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "930b7caf_15c7c378",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 530,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "use math.Max/Min?",
+      "range": {
+        "startLine": 525,
+        "startChar": 1,
+        "endLine": 530,
+        "endChar": 2
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "536b5762_dd75cd9f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "current.Seconds()",
+      "range": {
+        "startLine": 542,
+        "startChar": 6,
+        "endLine": 542,
+        "endChar": 28
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff899a5a_d48c08b7",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 545,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "nit: i find 5*time.Minute more readable because humans say \"5 minutes\"\nsame below",
+      "range": {
+        "startLine": 545,
+        "startChar": 16,
+        "endLine": 545,
+        "endChar": 29
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e4a9662_f8951653",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 558,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "Neutral\n\nor just white",
+      "range": {
+        "startLine": 558,
+        "startChar": 15,
+        "endLine": 558,
+        "endChar": 23
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a0eb333_fb3b4b9f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 578,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "the cursor does not change to a pointing hand, so user would not realize that this is clickable.\nthe URL is long, so the changing fragment is hardly discoverable\n\nwhy not \u003ca\u003e ?",
+      "range": {
+        "startLine": 578,
+        "startChar": 63,
+        "endLine": 578,
+        "endChar": 98
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30769348_17e5c36a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 579,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "please split this const string to multiple lines to make it readable",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eb8614d_d75a0225",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "quota is escaped 6 times in this line. Consider using `",
+      "range": {
+        "startLine": 604,
+        "startChar": 33,
+        "endLine": 604,
+        "endChar": 35
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "69f84e27_9b85b179",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-24T19:40:19Z",
+      "side": 1,
+      "message": "is this L intentional? if so, i think it belongs to \"id\" variable, otherwise id variable is incorrect\nalso duplication in L578",
+      "range": {
+        "startLine": 604,
+        "startChar": 35,
+        "endLine": 604,
+        "endChar": 36
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
