@@ -158,7 +158,7 @@ message Builder {
   message Recipe {
     // Repository URL of the recipe package.
     // Value "-" is treated as unset.
-  string repository = 1;
+    string repository = 1;
     // Name of the recipe to run.
     string name = 2;
 
@@ -309,9 +309,15 @@ message Builder {
   // Each tag will end up in "swarming_tag" buildbucket tag, for example
   // "swarming_tag:builder:release"
   repeated string swarming_tags = 2;
-  // Colon-delimited key-value pair of task dimensions.
+  // Colon-delimited key-value pair of task dimensions with an optional
+  // expiration prefix in seconds.
   //
-  // If value is not specified ("<key>:"), then it excludes a default value.
+  // The value must match one of these formats:
+  // - "<key>:": excludes the default value.
+  // - "<key>:<value>": sets a dimension value.
+  // - "<expiration_secs>:<key>:<value>": sets a dimension value, and falls back
+  //   without it after <expiration_secs> using a Swarming TaskSlice.
+  //   <expiration_secs> must be a number of seconds.
   //
   // If this builder is defined in a bucket, dimension "pool" is defaulted
   // to the name of the bucket. See Bucket message below.

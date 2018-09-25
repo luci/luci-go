@@ -317,9 +317,15 @@ type Builder struct {
 	// Each tag will end up in "swarming_tag" buildbucket tag, for example
 	// "swarming_tag:builder:release"
 	SwarmingTags []string `protobuf:"bytes,2,rep,name=swarming_tags,json=swarmingTags,proto3" json:"swarming_tags,omitempty"`
-	// Colon-delimited key-value pair of task dimensions.
+	// Colon-delimited key-value pair of task dimensions with an optional
+	// expiration prefix in seconds.
 	//
-	// If value is not specified ("<key>:"), then it excludes a default value.
+	// The value must match one of these formats:
+	// - "<key>:": excludes the default value.
+	// - "<key>:<value>": sets a dimension value.
+	// - "<expiration_secs>:<key>:<value>": sets a dimension value, and falls back
+	//   without it after <expiration_secs> using a Swarming TaskSlice.
+	//   <expiration_secs> must be a number of seconds.
 	//
 	// If this builder is defined in a bucket, dimension "pool" is defaulted
 	// to the name of the bucket. See Bucket message below.
