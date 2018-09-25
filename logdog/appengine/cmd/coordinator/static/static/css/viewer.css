@@ -1,0 +1,68 @@
+/* Copyright 2018 The LUCI Authors.
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
+
+body {
+  font-family: Verdana, sans-serif;
+  font-size: 14px;
+  margin-left: 30px;
+  margin-right: 30px;
+  margin-top: 20px;
+  margin-bottom: 50px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+}
+.account-picture {
+  border-radius: 6px;
+  width: 25px;
+  height: 25px;
+  vertical-align: middle;
+}
+.timestamp {
+  user-select: none;
+  border-right: 1px solid #f1f2f3;
+  color: #666;
+  display: inline-block;
+  width: 100px;
+  padding-right: 0.5em;
+  margin-right: 0.4em;
+  text-align: right;
+  cursor: pointer;
+}
+.ui-tooltip {
+  white-space: pre-line;
+  font-size: medium;
+}
+.error {
+  color: red;
+}
+.line {
+  font-family: Courier New, Courier, monospace;
+  font-size: 16px;
+  white-space: nowrap;
+}
+.line:target {
+  background: #cfd8dc;
+}
+footer {
+  clear: both;
+  font-size: 14px;
+}
+.logdog-logo {
+  width: 4em;
+  float: left;
+  margin-right: 10px;
+}
