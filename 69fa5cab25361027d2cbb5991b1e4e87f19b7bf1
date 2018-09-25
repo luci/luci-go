@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8f6a455_c9c1dadd",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1000325
+      },
+      "writtenOn": "2018-09-25T18:45:13Z",
+      "side": 1,
+      "message": "Is this a simple integer of seconds, or does it support appreviations like \"3m\" as was mentioned in email?\n\nI\u0027m totally good either way, just making sure the documentation is sufficient.",
+      "revId": "69fa5cab25361027d2cbb5991b1e4e87f19b7bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
