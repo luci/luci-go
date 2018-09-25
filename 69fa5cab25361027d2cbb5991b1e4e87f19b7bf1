@@ -16,6 +16,24 @@
       "revId": "69fa5cab25361027d2cbb5991b1e4e87f19b7bf1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0a423e1_a40168ae",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-09-25T19:55:51Z",
+      "side": 1,
+      "message": "Documented that it must be seconds.",
+      "parentUuid": "b8f6a455_c9c1dadd",
+      "revId": "69fa5cab25361027d2cbb5991b1e4e87f19b7bf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
