@@ -34,7 +34,13 @@ import (
 	"go.chromium.org/luci/appengine/mapper/splitter"
 )
 
-// ID identifies a mapper.
+// ID identifies a mapper registered in the controller.
+//
+// It will be passed across processes, so all processes that execute mapper jobs
+// should register same mappers under same IDs.
+//
+// The safest approach is to keep mapper IDs in the app unique, e.g. do NOT
+// reuse them when adding new mappers or significantly changing existing ones.
 type ID string
 
 // Mapper knows how to apply some function to a slice of entities.
@@ -49,31 +55,54 @@ type Mapper interface {
 
 	// Process applies some function to the given slice of entities, given by
 	// their keys.
+	//
+	// May be called multiple times for same key (thus should be idempotent).
+	//
+	// Returning a transient error indicates that the processing of this batch of
+	// keys should be retried (even if some keys were processed successfully).
+	//
+	// Returning a fatal error causes the entire shard (and eventually the entire
+	// job) to be marked as failed. The processing of the failed shard stops right
+	// away, but other shards are kept running until completion (or their own
+	// failure).
+	//
+	// The function is called outside of any transactions, so it can start its own
+	// if needed.
 	Process(c context.Context, p Params, keys []*datastore.Key) error
 }
 
 // Controller is responsible for starting, progressing and finishing mapping
 // jobs.
 //
-// It should be treated as a global singleton object. There's rarely a need to
-// have more than one controller per application.
+// It should be treated as a global singleton object. Having more than one
+// controller in the production application is a bad idea (they'll collide with
+// each other since they use global datastore namespace). It's still useful
+// to instantiate multiple controllers in unit tests.
 type Controller struct {
 	// MapperQueue is a name of the GAE task queue to use for mapping jobs.
 	//
 	// This queue will perform all "heavy" tasks. It should be configured
-	// appropriately to allow desired number of tasks to run in parallel.
+	// appropriately to allow desired number of shards to run in parallel.
+	//
+	// For example, if the largest submitted job is expected to have 128 shards,
+	// max_concurrent_requests setting of the mapper queue should be at least 128,
+	// otherwise some shards will be stalled waiting for others to finish
+	// (defeating the purpose of having large number of shards).
 	//
 	// If empty, "default" is used.
 	MapperQueue string
 
 	// ControlQueue is a name of the GAE task queue to use for control signals.
 	//
-	// This queue is used very lightly when starting and stopping jobs.
+	// This queue is used very lightly when starting and stopping jobs (roughly
+	// 2*Shards tasks overall per job). A default queue.yaml settings for such
+	// queue should be sufficient (unless you run a lot of different jobs at
+	// once).
 	//
 	// If empty, "default" is used.
 	ControlQueue string
 
-	l       sync.RWMutex
+	m       sync.RWMutex
 	mappers map[ID]Mapper
 	disp    *tq.Dispatcher
 
@@ -93,8 +122,8 @@ type Controller struct {
 // tq.Dispatchers (with different base URLs, so they don't conflict with each
 // other) and install them all into the router.
 func (ctl *Controller) Install(disp *tq.Dispatcher) {
-	ctl.l.Lock()
-	defer ctl.l.Unlock()
+	ctl.m.Lock()
+	defer ctl.m.Unlock()
 
 	if ctl.disp != nil {
 		panic("mapper.Controller is already installed into a tq.Dispatcher")
@@ -108,8 +137,8 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 //
 // Grabs the reader lock inside.
 func (ctl *Controller) tq() *tq.Dispatcher {
-	ctl.l.RLock()
-	defer ctl.l.RUnlock()
+	ctl.m.RLock()
+	defer ctl.m.RUnlock()
 	if ctl.disp == nil {
 		panic("mapper.Controller wasn't installed into tq.Dispatcher yet")
 	}
@@ -128,8 +157,8 @@ func (ctl *Controller) tq() *tq.Dispatcher {
 func (ctl *Controller) RegisterMapper(m Mapper) {
 	id := m.MapperID()
 
-	ctl.l.Lock()
-	defer ctl.l.Unlock()
+	ctl.m.Lock()
+	defer ctl.m.Unlock()
 
 	if _, ok := ctl.mappers[id]; ok {
 		panic(fmt.Sprintf("mapper %q is already registered", id))
@@ -145,8 +174,8 @@ func (ctl *Controller) RegisterMapper(m Mapper) {
 //
 // Grabs the reader lock inside.
 func (ctl *Controller) getMapper(id ID) (Mapper, error) {
-	ctl.l.RLock()
-	defer ctl.l.RUnlock()
+	ctl.m.RLock()
+	defer ctl.m.RUnlock()
 	if m, ok := ctl.mappers[id]; ok {
 		return m, nil
 	}
