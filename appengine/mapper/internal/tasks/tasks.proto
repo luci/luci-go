@@ -26,3 +26,11 @@ option go_package = "tasks";
 message SplitAndLaunch {
   int64 job_id = 1;
 }
+
+
+// FanOutShards enqueues a bunch of ProcessShard named tasks (one per shard).
+//
+// Enqueued transactionally by SplitAndLaunch after it has constructed shards.
+message FanOutShards {
+  int64 job_id = 1;
+}
