@@ -23,7 +23,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -38,10 +37,10 @@ func (dumpingMapper) MapperID() mapper.ID {
 }
 
 func (dumpingMapper) Process(c context.Context, params mapper.Params, keys []*datastore.Key) error {
-	logging.Infof(c, "Got %d keys:", len(keys))
+	/*logging.Infof(c, "Got %d keys:", len(keys))
 	for _, k := range keys {
 		logging.Infof(c, "%s", k)
-	}
+	}*/
 	return nil
 }
 
