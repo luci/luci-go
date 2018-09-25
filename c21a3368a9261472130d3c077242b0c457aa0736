@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "84f6676b_30c24bea",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d47492f1_d985692c",
+      "range": {
+        "startLine": 31,
+        "startChar": 4,
+        "endLine": 31,
+        "endChar": 7
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0336f3f8_f395eb5c",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "58cd4f25_7c698d07",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0336f3f8_f395eb5c",
+      "range": {
+        "startLine": 41,
+        "startChar": 4,
+        "endLine": 41,
+        "endChar": 5
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "1d58d313_f75e483e",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Normally yes, but the data- attribute is currently known not to change.\nBecause the caller needs to live in html code (within a onmouseover\u003d\"...\") it\u0027s best to keep it as short as possible, since it is repeated for every line.\nI\u0027ve updated the function name and docstring.",
+      "parentUuid": "ff9ff692_89cfe5e9",
+      "range": {
+        "startLine": 48,
+        "startChar": 36,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae05a477_a48c6719",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "279cb2c0_9ca53aae",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ae05a477_a48c6719",
+      "range": {
+        "startLine": 50,
+        "startChar": 40,
+        "endLine": 50,
+        "endChar": 41
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bbd4d600_97680f5a",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
         "patchSetId": 3
@@ -111,6 +207,24 @@
     },
     {
       "key": {
+        "uuid": "37623672_1bcf0d50",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bbd4d600_97680f5a",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c986435_f8105495",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
         "patchSetId": 3
@@ -125,6 +239,24 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4e310308_0c503dfb",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Removed, it\u0027s not super useful.",
+      "parentUuid": "7c986435_f8105495",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "ba203031_24aebe35",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba24b54d_b68f46e2",
+      "range": {
+        "startLine": 79,
+        "startChar": 42,
+        "endLine": 79,
+        "endChar": 43
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ed438df_1746cb66",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 3
@@ -165,6 +321,24 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "647b2a00_7d068cc4",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 518,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Not exactly, this is subtle, but uint8 ranges from 0-255, but int8 ranges from approx -127 to 127, this means that weird things happen when you subtract one uint from another uint.  yay integer overflow.\n\ni\u0027ll keep the formula, but adjust it to do everything in floats.",
+      "parentUuid": "2ed438df_1746cb66",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -191,6 +365,30 @@
     },
     {
       "key": {
+        "uuid": "710f7e00_87f164a5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 521,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0495e0b4_46d27295",
+      "range": {
+        "startLine": 521,
+        "startChar": 3,
+        "endLine": 521,
+        "endChar": 4
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "930b7caf_15c7c378",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 3
@@ -211,6 +409,30 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8fb71ac7_cc872cfb",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 530,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "930b7caf_15c7c378",
+      "range": {
+        "startLine": 525,
+        "startChar": 1,
+        "endLine": 530,
+        "endChar": 2
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "c3420ed3_7b96b3ab",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "536b5762_dd75cd9f",
+      "range": {
+        "startLine": 542,
+        "startChar": 6,
+        "endLine": 542,
+        "endChar": 28
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ff899a5a_d48c08b7",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 3
@@ -257,6 +503,30 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dae9b0b4_ba5cb2ca",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 545,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff899a5a_d48c08b7",
+      "range": {
+        "startLine": 545,
+        "startChar": 16,
+        "endLine": 545,
+        "endChar": 29
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -283,6 +553,30 @@
     },
     {
       "key": {
+        "uuid": "5c5b2c9b_af066a15",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 558,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e4a9662_f8951653",
+      "range": {
+        "startLine": 558,
+        "startChar": 15,
+        "endLine": 558,
+        "endChar": 23
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8a0eb333_fb3b4b9f",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 3
@@ -306,6 +600,30 @@
     },
     {
       "key": {
+        "uuid": "55b07280_afe0d580",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 578,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "\u003ca\u003e is unnecessary since we already have a dom node here, and gerrit doesn\u0027t use it either.\n\nThe missing pointing hand was due to CSS, which i fixed by adding \"cursor: pointer;\"",
+      "parentUuid": "8a0eb333_fb3b4b9f",
+      "range": {
+        "startLine": 578,
+        "startChar": 63,
+        "endLine": 578,
+        "endChar": 98
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "30769348_17e5c36a",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 3
@@ -320,6 +638,24 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d396fd52_1185599f",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 579,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30769348_17e5c36a",
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -366,6 +702,54 @@
       "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "757afa92_476e58fb",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "69f84e27_9b85b179",
+      "range": {
+        "startLine": 604,
+        "startChar": 35,
+        "endLine": 604,
+        "endChar": 36
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03a8a901_fc4ad17a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 604,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-09-25T18:52:12Z",
+      "side": 1,
+      "message": "Switched to html.template instead.",
+      "parentUuid": "8eb8614d_d75a0225",
+      "range": {
+        "startLine": 604,
+        "startChar": 33,
+        "endLine": 604,
+        "endChar": 35
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
