@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "f3020ed6_76568779",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Per app. Tried to explain in the comment. I assumed it was pretty obvious (it\u0027s just a key in a registry of functions, since we somehow need to pass function across process boundaries).",
+      "parentUuid": "702afe00_82c1d56a",
+      "range": {
+        "startLine": 35,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a6664e14_293282dd",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdaf3d17_c00e0ca6",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Clarified. It\u0027s just a first sketch of the semantics. It can be changed/improved later if needed. But for now I\u0027d like to get MVP without writing a ton of logic that may not be needed.",
+      "parentUuid": "a6664e14_293282dd",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 49,
+        "endChar": 15
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -94,6 +142,54 @@
     },
     {
       "key": {
+        "uuid": "e96e16b7_39439d32",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1c8f5c9f_a06ceb87",
+      "range": {
+        "startLine": 56,
+        "startChar": 16,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ff29ec1a_36e9131d",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Never say never... Fine, changed to \"never\", clarified why this is a struct rather than global objects (\u003d\u003d mostly for isolation in tests).",
+      "parentUuid": "b3e3455f_081a46c6",
+      "range": {
+        "startLine": 56,
+        "startChar": 60,
+        "endLine": 56,
+        "endChar": 66
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "650486e3_6fb2902d",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 1
@@ -114,6 +210,30 @@
       "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2f07ae0_ab5d5fd4",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Not sure what your notation means... Replaced \"desired number of tasks\" with \"desired number of shards\" and added an example.",
+      "parentUuid": "650486e3_6fb2902d",
+      "range": {
+        "startLine": 62,
+        "startChar": 27,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "d2be822c_31966311",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "I hope users of the library will have some intelligence to decide this on their own... It all depends on circumstances and there\u0027s no single best config. Added some more information about its usage.",
+      "parentUuid": "9e142275_0ea98675",
+      "range": {
+        "startLine": 69,
+        "startChar": 23,
+        "endLine": 69,
+        "endChar": 36
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d494b6a7_10679dff",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 1
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "6bf1530c_ab4ca459",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "\u0027l\u0027 for lock, whatever, changed to \u0027m\u0027. This is very important :)",
+      "parentUuid": "d494b6a7_10679dff",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 1
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e46ca0ce_2a81866c",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 1
@@ -183,6 +351,30 @@
       "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bfd4403e_3df467e5",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "I can move this to the config, but it will just frighten and confuse people. I really hope 512 should be enough for all circumstances. (But we\u0027ll see).",
+      "parentUuid": "e46ca0ce_2a81866c",
+      "range": {
+        "startLine": 232,
+        "startChar": 19,
+        "endLine": 232,
+        "endChar": 48
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -244,6 +436,30 @@
       "side": 1,
       "message": "Maybe we could just expose the query struct in luci/gae to allow it to be embedded?",
       "parentUuid": "c188d3d5_98eb56bc",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 71
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a79fdf83_4759b508",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:51:28Z",
+      "side": 1,
+      "message": "Is there really a need elsewhere for this? Mapper if the only library that needs it so far. And it doesn\u0027t need generic query structures (there\u0027s a lot of stuff that makes no sense to put in mapper\u0027s queries: order, limits, cursors, etc).\n\nIf we move this into luci/gae, we\u0027ll have to make it general enough to be able to serialize all queries. But this is not needed in the mapper (the only client so far), and in fact harmful (we\u0027ll have to add checks that forbid unneeded stuff).\n\nThus I believe moving this to luci/gae is a waste of time.",
+      "parentUuid": "abf46f76_b521c9ca",
       "range": {
         "startLine": 29,
         "startChar": 1,
