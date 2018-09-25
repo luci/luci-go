@@ -2,6 +2,190 @@
   "comments": [
     {
       "key": {
+        "uuid": "702afe00_82c1d56a",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "what are the requirements for this ID? unique per Mapper job? per application? globally?",
+      "range": {
+        "startLine": 35,
+        "startChar": 3,
+        "endLine": 35,
+        "endChar": 25
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6664e14_293282dd",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "what about:\n  * Deadlines\n  * Errors (I see that this can return an error, but not sure what happens if I process some but not all entities)\n  * Transactions (is this up to me, or is there some way I could/should coordinate transactions with the outer framework?)",
+      "range": {
+        "startLine": 48,
+        "startChar": 4,
+        "endLine": 49,
+        "endChar": 15
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3e3455f_081a46c6",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "rarely !\u003d never; please elaborate or simplify",
+      "range": {
+        "startLine": 56,
+        "startChar": 60,
+        "endLine": 56,
+        "endChar": 66
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1c8f5c9f_a06ceb87",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "nit: treated",
+      "range": {
+        "startLine": 56,
+        "startChar": 16,
+        "endLine": 56,
+        "endChar": 21
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "650486e3_6fb2902d",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "`f(??) \u003d desired number`?",
+      "range": {
+        "startLine": 62,
+        "startChar": 27,
+        "endLine": 62,
+        "endChar": 41
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9e142275_0ea98675",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "suggested config?",
+      "range": {
+        "startLine": 69,
+        "startChar": 23,
+        "endLine": 69,
+        "endChar": 36
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d494b6a7_10679dff",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "not m? :)",
+      "range": {
+        "startLine": 74,
+        "startChar": 0,
+        "endLine": 74,
+        "endChar": 1
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e46ca0ce_2a81866c",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": ":)",
+      "range": {
+        "startLine": 232,
+        "startChar": 19,
+        "endLine": 232,
+        "endChar": 48
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2c2a73f8_04ad3b4d",
         "filename": "appengine/mapper/job.go",
         "patchSetId": 1
@@ -36,6 +220,30 @@
       "writtenOn": "2018-09-22T00:05:24Z",
       "side": 1,
       "message": "More stuff can be added as needed later. It\u0027s not essential for most of the implementation.",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 71
+      },
+      "revId": "437cf15b0a4c09afd27824b5ee485af0d72bd519",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "abf46f76_b521c9ca",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-25T17:44:31Z",
+      "side": 1,
+      "message": "Maybe we could just expose the query struct in luci/gae to allow it to be embedded?",
+      "parentUuid": "c188d3d5_98eb56bc",
       "range": {
         "startLine": 29,
         "startChar": 1,
