@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73635fba_a698dd06",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-25T18:54:14Z",
+      "side": 1,
+      "message": "I realized this is not exactly true. They make no queries using indexes, only direct hits using keys. So multiple controllers can live happily... At least with the current structure.",
+      "range": {
+        "startLine": 78,
+        "startChar": 58,
+        "endLine": 79,
+        "endChar": 56
+      },
+      "revId": "eaf94471a009d1ccc45148d969f5632f4acf836d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
