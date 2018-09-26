@@ -41,6 +41,11 @@ handlers:
   static_dir: dist/logdog-view
   secure: always
 
+  # Handlers for misc resources, used for Plain-text log viewer.
+- url: /static
+  static_dir: static
+  secure: always
+
 ##
 # RPC Explorer
 ##
