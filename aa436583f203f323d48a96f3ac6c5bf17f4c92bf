@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3af8a7d6_ceaa11e9",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-26T13:33:52Z",
+      "side": 1,
+      "message": "This copies map from https://chromium.googlesource.com/infra/luci/luci-go/+/df80d53f1a5a90690b5908bb8d2b3d37ae11badf/buildbucket/annotations.go#155, but those are different types, thus we can\u0027t easily reuse it. Besides, model.Status has more possible value that a step can take after it has completed running, so we need more entries here.",
+      "revId": "aa436583f203f323d48a96f3ac6c5bf17f4c92bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f599d4e6_a2375738",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-26T13:33:52Z",
+      "side": 1,
+      "message": "This is ensured by lines 166-167 above. The method does not return anywhere else and those lines always execute, hence I am certain that first step is always direct child and also that it is always defined allowing me access it directly by index below.",
+      "revId": "aa436583f203f323d48a96f3ac6c5bf17f4c92bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cbdac35f_5ef3cb30",
+        "filename": "milo/buildsource/swarming/expectations/build-exception.json",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-26T13:33:52Z",
+      "side": 1,
+      "message": "This is because bot_update step below has infra failure.",
+      "revId": "aa436583f203f323d48a96f3ac6c5bf17f4c92bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b6eaa08a_b7978a61",
+        "filename": "milo/frontend/expectations/swarming.build-build-exception.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-26T13:33:52Z",
+      "side": 1,
+      "message": "This is because \u0027Steps\u0027 step below has become marked as InfraFailure.",
+      "range": {
+        "startLine": 9,
+        "startChar": 6,
+        "endLine": 9,
+        "endChar": 19
+      },
+      "revId": "aa436583f203f323d48a96f3ac6c5bf17f4c92bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "02097c50_3e1a38bb",
+        "filename": "milo/frontend/expectations/swarming.build-build-exception.html",
+        "patchSetId": 2
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-09-26T13:33:52Z",
+      "side": 1,
+      "message": "This is updated status for the \u0027Steps\u0027 step below on line 129, which is set to InfraFailure since its substep bot_update has infra failure.",
+      "range": {
+        "startLine": 120,
+        "startChar": 33,
+        "endLine": 120,
+        "endChar": 45
+      },
+      "revId": "aa436583f203f323d48a96f3ac6c5bf17f4c92bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
