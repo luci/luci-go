@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c76fef5_b3ba2df2",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 548,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-26T18:04:47Z",
+      "side": 1,
+      "message": "this is more readable, thanks",
+      "revId": "94eaeca77e5fd954ccb4f03255f524cf505b9e3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ee8d27d_25dfd1cd",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 612,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-26T18:04:47Z",
+      "side": 1,
+      "message": "why this slash is needed? we already use `\nwe don\u0027t use it in L615",
+      "range": {
+        "startLine": 612,
+        "startChar": 11,
+        "endLine": 612,
+        "endChar": 12
+      },
+      "revId": "94eaeca77e5fd954ccb4f03255f524cf505b9e3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64f96334_30b99e78",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 632,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-26T18:04:47Z",
+      "side": 1,
+      "message": "not a part of this CL, but note that this may cause some hair pulling if a future maintainer tries to return a non-nil error without touching merr",
+      "range": {
+        "startLine": 632,
+        "startChar": 3,
+        "endLine": 632,
+        "endChar": 12
+      },
+      "revId": "94eaeca77e5fd954ccb4f03255f524cf505b9e3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "35798611_b9d86cce",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-26T18:04:47Z",
+      "side": 1,
+      "message": "would a user receive the response if we return an error? if they wouldn\u0027t then L652-654 is noop. Should we update merr only if we failed to render errorTemplate?",
+      "range": {
+        "startLine": 651,
+        "startChar": 3,
+        "endLine": 651,
+        "endChar": 28
+      },
+      "revId": "94eaeca77e5fd954ccb4f03255f524cf505b9e3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

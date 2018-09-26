@@ -143,6 +143,30 @@
     },
     {
       "key": {
+        "uuid": "e0b0b4e4_81335f70",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
+        "patchSetId": 3
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-09-26T18:04:47Z",
+      "side": 1,
+      "message": "makes sense. This function, its name and impl, looked general purpose.",
+      "parentUuid": "1d58d313_f75e483e",
+      "range": {
+        "startLine": 48,
+        "startChar": 36,
+        "endLine": 48,
+        "endChar": 51
+      },
+      "revId": "c21a3368a9261472130d3c077242b0c457aa0736",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ae05a477_a48c6719",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/time.js",
         "patchSetId": 3
