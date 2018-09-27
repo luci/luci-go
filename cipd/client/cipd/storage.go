@@ -235,24 +235,45 @@ func (s *storageImpl) getNextOffset(ctx context.Context, url string, length int6
 // TODO(vadimsh): Use resumable download protocol.
 
 func (s *storageImpl) download(ctx context.Context, url string, output io.WriteSeeker, h hash.Hash) error {
-	// reportProgress print fetch progress, throttling the reports rate.
-	var prevProgress int64 = 1000 // >100%
+	var prevProgress int64
+	var prevOffset int64
 	var prevReportTs time.Time
+	var lastSpeed string
+
+	// reportProgress print the download progress, throttling the reports rate.
 	reportProgress := func(read int64, total int64) {
 		now := clock.Now(ctx)
 		progress := read * 100 / total
 		if progress < prevProgress || read == total || now.Sub(prevReportTs) > downloadReportInterval {
-			logging.Infof(ctx, "cipd: fetching - %d%%", progress)
-			prevReportTs = now
+			// Calculate instantaneous speed only over sufficiently long intervals,
+			// otherwise it may appear to fluctuate wildly.
+			if !prevReportTs.IsZero() {
+				if dt := now.Sub(prevReportTs); dt > time.Second {
+					kbps := float64(read-prevOffset) / dt.Seconds() / 1000.0
+					lastSpeed = fmt.Sprintf("%.1f", kbps)
+				}
+			}
+			logging.Infof(ctx, "cipd: fetching - %d%% (%s KB/s)", progress, lastSpeed)
 			prevProgress = progress
+			prevOffset = read
+			prevReportTs = now
 		}
+	}
+
+	// resetProgress resets the progress counter.
+	resetProgress := func(total int64) {
+		prevProgress = 1000 // > 100%, to trigger first initial progress report
+		prevOffset = 0
+		prevReportTs = time.Time{}
+		lastSpeed = "??"
+		reportProgress(0, total)
 	}
 
 	// download is a separate function to be able to use deferred close.
 	download := func(out io.Writer, src io.ReadCloser, totalLen int64) error {
 		defer src.Close()
 		logging.Infof(ctx, "cipd: about to fetch %.1f MB", float32(totalLen)/1000.0/1000.0)
-		reportProgress(0, totalLen)
+		resetProgress(totalLen)
 		_, err := io.Copy(out, &readerWithProgress{
 			reader:   src,
 			callback: func(read int64) { reportProgress(read, totalLen) },

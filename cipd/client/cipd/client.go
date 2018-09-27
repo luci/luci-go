@@ -1366,11 +1366,12 @@ func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common
 // remoteFetchInstance fetches the package file into 'output' and verifies its
 // hash along the way. Assumes 'pin' is already validated.
 func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pin, output io.WriteSeeker) (err error) {
+	startTS := clock.Now(ctx)
 	defer func() {
 		if err != nil {
 			logging.Errorf(ctx, "cipd: failed to fetch %s - %s", pin, err)
 		} else {
-			logging.Infof(ctx, "cipd: successfully fetched %s", pin)
+			logging.Infof(ctx, "cipd: successfully fetched %s in %.1fs", pin, clock.Now(ctx).Sub(startTS).Seconds())
 		}
 	}()
 
