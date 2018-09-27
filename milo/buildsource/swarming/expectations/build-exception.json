@@ -4,7 +4,7 @@
       "Label": "2d8d62f6be545b10",
       "URL": ""
     },
-    "Status": "Failure",
+    "Status": "InfraFailure",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
