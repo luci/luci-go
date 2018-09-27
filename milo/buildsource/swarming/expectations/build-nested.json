@@ -348,7 +348,7 @@
         "Duration": 1549999872
       },
       "Type": "Step",
-      "LevelsDeep": 0,
+      "LevelsDeep": 1,
       "Verbosity": 0,
       "Text": null
     },
@@ -377,7 +377,7 @@
         "Duration": 42170000128
       },
       "Type": "Step",
-      "LevelsDeep": 0,
+      "LevelsDeep": 1,
       "Verbosity": 2,
       "Text": null
     }

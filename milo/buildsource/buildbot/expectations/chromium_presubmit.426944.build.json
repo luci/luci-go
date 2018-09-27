@@ -43,7 +43,7 @@
       "Duration": 209390011000
     },
     "Type": "Summary",
-    "LevelsDeep": 1,
+    "LevelsDeep": 0,
     "Verbosity": 0,
     "Text": [
       "build successful"

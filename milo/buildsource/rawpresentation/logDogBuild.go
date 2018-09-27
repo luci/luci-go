@@ -56,7 +56,7 @@ var statusPrecendence = map[model.Status]int{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step) []*ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, depth uint32) []*ui.BuildComponent {
 
 	comp := &ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
 	switch anno.Status {
@@ -147,7 +147,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step) []*ui
 	comp.Type = ui.Step
 
 	// This should always be 0
-	comp.LevelsDeep = 0
+	comp.LevelsDeep = depth
 
 	// Timestamps
 	var start, end time.Time
@@ -177,7 +177,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step) []*ui
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		subcomps := miloBuildStep(c, ub, subanno)
+		subcomps := miloBuildStep(c, ub, subanno, depth+1)
 		for _, subcomp := range subcomps {
 			results = append(results, subcomp)
 		}
@@ -214,7 +214,7 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_S
 			continue
 		}
 
-		bss := miloBuildStep(c, ub, anno)
+		bss := miloBuildStep(c, ub, anno, 0)
 		for _, bs := range bss {
 			components = append(components, bs)
 			propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
@@ -238,7 +238,7 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	build.Summary = *(miloBuildStep(c, ub, mainAnno)[0])
+	build.Summary = *(miloBuildStep(c, ub, mainAnno, 0)[0])
 	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep)
 
 	// Take care of properties

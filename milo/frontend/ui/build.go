@@ -322,9 +322,10 @@ type BuildComponent struct {
 	// This is either "RECIPE" or "STEP".  An attempt is considered a recipe.
 	Type ComponentType
 
-	// Specifies if this is a top level or a dependency.  Manifests itself as an
-	// indentation level.  Valid options are 0 and 1.  Anything more than 1 is
-	// automatically truncated to 1.
+	// Specifies the depth at which a step is rendered, which is also used to
+	// determin the hierarchy and provide users with UI to collapse parent steps
+	// hiding substeps. This is ignored for non-step build components such as
+	// build summary.
 	LevelsDeep uint32
 
 	// Verbosity indicates how important this step is.
