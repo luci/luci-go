@@ -66,3 +66,6 @@ footer {
   float: left;
   margin-right: 10px;
 }
+.text {
+  white-space: pre;
+}
