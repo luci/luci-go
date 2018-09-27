@@ -340,7 +340,7 @@ func (r *Rules) Rule(c context.Context, serviceAccount string, proxy identity.Id
 	if len(visibleRules) != len(rules) {
 		msg += fmt.Sprintf(" and %d more", len(rules)-len(visibleRules))
 	}
-	return nil, status.Errorf(codes.PermissionDenied, msg)
+	return nil, status.Errorf(codes.InvalidArgument, msg)
 }
 
 // Check checks that rules allow the requested usage.

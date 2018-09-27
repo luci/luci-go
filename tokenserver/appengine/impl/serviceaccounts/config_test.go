@@ -139,7 +139,7 @@ func TestRules(t *testing.T) {
 
 		// Note: "rule 2" is not visible to proxy@example.com.
 		rule, err = cfg.Rule(ctx, "via-both@robots.com", "user:proxy@example.com")
-		So(status.Code(err), ShouldEqual, codes.PermissionDenied)
+		So(status.Code(err), ShouldEqual, codes.InvalidArgument)
 		So(err, ShouldErrLike, `matches 2 rules in the config rev fake-revision: "rule 1" and 1 more`)
 
 		// Note: no rules are visible to the proxy at all.

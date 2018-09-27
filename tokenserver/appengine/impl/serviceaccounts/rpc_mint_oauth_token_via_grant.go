@@ -20,6 +20,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
 	"go.chromium.org/luci/server/auth/signing"
@@ -104,7 +105,11 @@ func (r *MintOAuthTokenViaGrantRPC) MintOAuthTokenViaGrant(c context.Context, re
 	})
 	if err != nil {
 		logging.WithError(err).Errorf(c, "Failed to mint oauth token for %q", grantBody.ServiceAccount)
-		return nil, status.Errorf(codes.Internal, "failed to mint oauth token for %q - %s", grantBody.ServiceAccount, err)
+		code := codes.InvalidArgument // mostly likely misconfigured IAM roles
+		if transient.Tag.In(err) {
+			code = codes.Internal
+		}
+		return nil, status.Errorf(code, "failed to mint oauth token for %q - %s", grantBody.ServiceAccount, err)
 	}
 
 	// Grab a string that identifies token server version. This almost always
