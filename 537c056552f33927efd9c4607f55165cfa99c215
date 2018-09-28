@@ -16,6 +16,24 @@
       "revId": "537c056552f33927efd9c4607f55165cfa99c215",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4961e2db_ad01068d",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-28T22:19:58Z",
+      "side": 1,
+      "message": "Pretty much yes. Each shards sweeps its key space sequentially (using __key__ filters, not cursors). So if new entity appears in an already processed subrange, it will be skipped.",
+      "parentUuid": "89d10c0f_e912387e",
+      "revId": "537c056552f33927efd9c4607f55165cfa99c215",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
