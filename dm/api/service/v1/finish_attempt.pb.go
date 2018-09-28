@@ -5,8 +5,9 @@ package dm
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -38,6 +39,7 @@ func (*FinishAttemptReq) ProtoMessage()    {}
 func (*FinishAttemptReq) Descriptor() ([]byte, []int) {
 	return fileDescriptor_31dc2b787f3be2cf, []int{0}
 }
+
 func (m *FinishAttemptReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FinishAttemptReq.Unmarshal(m, b)
 }

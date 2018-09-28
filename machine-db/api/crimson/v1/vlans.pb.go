@@ -5,9 +5,10 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -44,6 +45,7 @@ func (*VLAN) ProtoMessage()    {}
 func (*VLAN) Descriptor() ([]byte, []int) {
 	return fileDescriptor_674503a3aa3cd9ab, []int{0}
 }
+
 func (m *VLAN) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VLAN.Unmarshal(m, b)
 }
@@ -114,6 +116,7 @@ func (*ListVLANsRequest) ProtoMessage()    {}
 func (*ListVLANsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_674503a3aa3cd9ab, []int{1}
 }
+
 func (m *ListVLANsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVLANsRequest.Unmarshal(m, b)
 }
@@ -161,6 +164,7 @@ func (*ListVLANsResponse) ProtoMessage()    {}
 func (*ListVLANsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_674503a3aa3cd9ab, []int{2}
 }
+
 func (m *ListVLANsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVLANsResponse.Unmarshal(m, b)
 }

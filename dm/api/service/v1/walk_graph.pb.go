@@ -5,10 +5,11 @@ package dm
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	_ "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -86,6 +87,7 @@ func (*WalkGraphReq) ProtoMessage()    {}
 func (*WalkGraphReq) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0}
 }
+
 func (m *WalkGraphReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq.Unmarshal(m, b)
 }
@@ -164,6 +166,7 @@ func (*WalkGraphReq_Mode) ProtoMessage()    {}
 func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0, 0}
 }
+
 func (m *WalkGraphReq_Mode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Mode.Unmarshal(m, b)
 }
@@ -229,6 +232,7 @@ func (*WalkGraphReq_Limit) ProtoMessage()    {}
 func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0, 1}
 }
+
 func (m *WalkGraphReq_Limit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Limit.Unmarshal(m, b)
 }
@@ -299,6 +303,7 @@ func (*WalkGraphReq_Include) ProtoMessage()    {}
 func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0, 2}
 }
+
 func (m *WalkGraphReq_Include) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Include.Unmarshal(m, b)
 }
@@ -397,6 +402,7 @@ func (*WalkGraphReq_Include_Options) ProtoMessage()    {}
 func (*WalkGraphReq_Include_Options) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0, 2, 0}
 }
+
 func (m *WalkGraphReq_Include_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Include_Options.Unmarshal(m, b)
 }
@@ -466,6 +472,7 @@ func (*WalkGraphReq_Exclude) ProtoMessage()    {}
 func (*WalkGraphReq_Exclude) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ff1922d0e189b66, []int{0, 3}
 }
+
 func (m *WalkGraphReq_Exclude) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Exclude.Unmarshal(m, b)
 }
@@ -499,13 +506,13 @@ func (m *WalkGraphReq_Exclude) GetAttempts() *AttemptList {
 }
 
 func init() {
+	proto.RegisterEnum("dm.WalkGraphReq_Mode_Direction", WalkGraphReq_Mode_Direction_name, WalkGraphReq_Mode_Direction_value)
 	proto.RegisterType((*WalkGraphReq)(nil), "dm.WalkGraphReq")
 	proto.RegisterType((*WalkGraphReq_Mode)(nil), "dm.WalkGraphReq.Mode")
 	proto.RegisterType((*WalkGraphReq_Limit)(nil), "dm.WalkGraphReq.Limit")
 	proto.RegisterType((*WalkGraphReq_Include)(nil), "dm.WalkGraphReq.Include")
 	proto.RegisterType((*WalkGraphReq_Include_Options)(nil), "dm.WalkGraphReq.Include.Options")
 	proto.RegisterType((*WalkGraphReq_Exclude)(nil), "dm.WalkGraphReq.Exclude")
-	proto.RegisterEnum("dm.WalkGraphReq_Mode_Direction", WalkGraphReq_Mode_Direction_name, WalkGraphReq_Mode_Direction_value)
 }
 
 func init() {

@@ -5,8 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -39,6 +40,7 @@ func (*Platform) ProtoMessage()    {}
 func (*Platform) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c2715c7520a49a12, []int{0}
 }
+
 func (m *Platform) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Platform.Unmarshal(m, b)
 }
@@ -93,6 +95,7 @@ func (*Platforms) ProtoMessage()    {}
 func (*Platforms) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c2715c7520a49a12, []int{1}
 }
+
 func (m *Platforms) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Platforms.Unmarshal(m, b)
 }

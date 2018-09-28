@@ -5,8 +5,9 @@ package messages
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -115,6 +116,7 @@ func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{0}
 }
+
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
 }
@@ -171,6 +173,7 @@ func (*Acl) ProtoMessage()    {}
 func (*Acl) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{1}
 }
+
 func (m *Acl) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acl.Unmarshal(m, b)
 }
@@ -222,6 +225,7 @@ func (*AclSet) ProtoMessage()    {}
 func (*AclSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{2}
 }
+
 func (m *AclSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclSet.Unmarshal(m, b)
 }
@@ -298,6 +302,7 @@ func (*TriggeringPolicy) ProtoMessage()    {}
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{3}
 }
+
 func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggeringPolicy.Unmarshal(m, b)
 }
@@ -417,6 +422,7 @@ func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{4}
 }
+
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
 }
@@ -541,6 +547,7 @@ func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{5}
 }
+
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
 }
@@ -638,6 +645,7 @@ func (*NoopTask) ProtoMessage()    {}
 func (*NoopTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{6}
 }
+
 func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTask.Unmarshal(m, b)
 }
@@ -702,6 +710,7 @@ func (*GitilesTask) ProtoMessage()    {}
 func (*GitilesTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{7}
 }
+
 func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTask.Unmarshal(m, b)
 }
@@ -753,6 +762,7 @@ func (*UrlFetchTask) ProtoMessage()    {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{8}
 }
+
 func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UrlFetchTask.Unmarshal(m, b)
 }
@@ -817,6 +827,7 @@ func (*BuildbucketTask) ProtoMessage()    {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{9}
 }
+
 func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTask.Unmarshal(m, b)
 }
@@ -889,6 +900,7 @@ func (*TaskDefWrapper) ProtoMessage()    {}
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3b38e5823bccf1c5, []int{10}
 }
+
 func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TaskDefWrapper.Unmarshal(m, b)
 }
@@ -936,6 +948,8 @@ func (m *TaskDefWrapper) GetGitiles() *GitilesTask {
 }
 
 func init() {
+	proto.RegisterEnum("scheduler.config.Acl_Role", Acl_Role_name, Acl_Role_value)
+	proto.RegisterEnum("scheduler.config.TriggeringPolicy_Kind", TriggeringPolicy_Kind_name, TriggeringPolicy_Kind_value)
 	proto.RegisterType((*ProjectConfig)(nil), "scheduler.config.ProjectConfig")
 	proto.RegisterType((*Acl)(nil), "scheduler.config.Acl")
 	proto.RegisterType((*AclSet)(nil), "scheduler.config.AclSet")
@@ -947,8 +961,6 @@ func init() {
 	proto.RegisterType((*UrlFetchTask)(nil), "scheduler.config.UrlFetchTask")
 	proto.RegisterType((*BuildbucketTask)(nil), "scheduler.config.BuildbucketTask")
 	proto.RegisterType((*TaskDefWrapper)(nil), "scheduler.config.TaskDefWrapper")
-	proto.RegisterEnum("scheduler.config.Acl_Role", Acl_Role_name, Acl_Role_value)
-	proto.RegisterEnum("scheduler.config.TriggeringPolicy_Kind", TriggeringPolicy_Kind_name, TriggeringPolicy_Kind_value)
 }
 
 func init() {

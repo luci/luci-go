@@ -5,8 +5,9 @@ package messages
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -93,6 +94,7 @@ func (*DelegationToken) ProtoMessage()    {}
 func (*DelegationToken) Descriptor() ([]byte, []int) {
 	return fileDescriptor_67dd1eacea24f38c, []int{0}
 }
+
 func (m *DelegationToken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationToken.Unmarshal(m, b)
 }
@@ -197,6 +199,7 @@ func (*Subtoken) ProtoMessage()    {}
 func (*Subtoken) Descriptor() ([]byte, []int) {
 	return fileDescriptor_67dd1eacea24f38c, []int{1}
 }
+
 func (m *Subtoken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Subtoken.Unmarshal(m, b)
 }
@@ -279,9 +282,9 @@ func (m *Subtoken) GetTags() []string {
 }
 
 func init() {
+	proto.RegisterEnum("messages.Subtoken_Kind", Subtoken_Kind_name, Subtoken_Kind_value)
 	proto.RegisterType((*DelegationToken)(nil), "messages.DelegationToken")
 	proto.RegisterType((*Subtoken)(nil), "messages.Subtoken")
-	proto.RegisterEnum("messages.Subtoken_Kind", Subtoken_Kind_name, Subtoken_Kind_value)
 }
 
 func init() {

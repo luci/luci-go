@@ -5,10 +5,11 @@ package dm
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*MultiPropertyValue) ProtoMessage()    {}
 func (*MultiPropertyValue) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1def6b5c0f81b24d, []int{0}
 }
+
 func (m *MultiPropertyValue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiPropertyValue.Unmarshal(m, b)
 }
@@ -80,6 +82,7 @@ func (*PropertyValue) ProtoMessage()    {}
 func (*PropertyValue) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1def6b5c0f81b24d, []int{1}
 }
+
 func (m *PropertyValue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PropertyValue.Unmarshal(m, b)
 }
@@ -345,6 +348,7 @@ func (*AttemptList) ProtoMessage()    {}
 func (*AttemptList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1def6b5c0f81b24d, []int{2}
 }
+
 func (m *AttemptList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AttemptList.Unmarshal(m, b)
 }
@@ -383,6 +387,7 @@ func (*AttemptList_Nums) ProtoMessage()    {}
 func (*AttemptList_Nums) Descriptor() ([]byte, []int) {
 	return fileDescriptor_1def6b5c0f81b24d, []int{2, 0}
 }
+
 func (m *AttemptList_Nums) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AttemptList_Nums.Unmarshal(m, b)
 }

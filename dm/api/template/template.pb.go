@@ -5,10 +5,11 @@ package dmTemplate
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	templateproto "go.chromium.org/luci/common/data/text/templateproto"
 	v1 "go.chromium.org/luci/dm/api/service/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -36,6 +37,7 @@ func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_374a6f94bcadcedb, []int{0}
 }
+
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File.Unmarshal(m, b)
 }
@@ -78,6 +80,7 @@ func (*File_Template) ProtoMessage()    {}
 func (*File_Template) Descriptor() ([]byte, []int) {
 	return fileDescriptor_374a6f94bcadcedb, []int{0, 0}
 }
+
 func (m *File_Template) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template.Unmarshal(m, b)
 }

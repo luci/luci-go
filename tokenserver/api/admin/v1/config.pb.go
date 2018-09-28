@@ -5,8 +5,9 @@ package admin
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*TokenServerConfig) ProtoMessage()    {}
 func (*TokenServerConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{0}
 }
+
 func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TokenServerConfig.Unmarshal(m, b)
 }
@@ -92,6 +94,7 @@ func (*CertificateAuthorityConfig) ProtoMessage()    {}
 func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{1}
 }
+
 func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CertificateAuthorityConfig.Unmarshal(m, b)
 }
@@ -182,6 +185,7 @@ func (*DomainConfig) ProtoMessage()    {}
 func (*DomainConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{2}
 }
+
 func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DomainConfig.Unmarshal(m, b)
 }
@@ -235,6 +239,7 @@ func (*DelegationPermissions) ProtoMessage()    {}
 func (*DelegationPermissions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{3}
 }
+
 func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationPermissions.Unmarshal(m, b)
 }
@@ -353,6 +358,7 @@ func (*DelegationRule) ProtoMessage()    {}
 func (*DelegationRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{4}
 }
+
 func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationRule.Unmarshal(m, b)
 }
@@ -452,6 +458,7 @@ func (*ServiceAccountsPermissions) ProtoMessage()    {}
 func (*ServiceAccountsPermissions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{5}
 }
+
 func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountsPermissions.Unmarshal(m, b)
 }
@@ -570,6 +577,7 @@ func (*ServiceAccountRule) ProtoMessage()    {}
 func (*ServiceAccountRule) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{6}
 }
+
 func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRule.Unmarshal(m, b)
 }
@@ -675,6 +683,7 @@ func (*ServiceAccountRuleDefaults) ProtoMessage()    {}
 func (*ServiceAccountRuleDefaults) Descriptor() ([]byte, []int) {
 	return fileDescriptor_aeb7d66bba60fd47, []int{7}
 }
+
 func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Unmarshal(m, b)
 }

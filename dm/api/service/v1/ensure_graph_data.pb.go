@@ -5,9 +5,10 @@ package dm
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	templateproto "go.chromium.org/luci/common/data/text/templateproto"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -43,6 +44,7 @@ func (*TemplateInstantiation) ProtoMessage()    {}
 func (*TemplateInstantiation) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{0}
 }
+
 func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TemplateInstantiation.Unmarshal(m, b)
 }
@@ -150,6 +152,7 @@ func (*EnsureGraphDataReq) ProtoMessage()    {}
 func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{1}
 }
+
 func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq.Unmarshal(m, b)
 }
@@ -244,6 +247,7 @@ func (*EnsureGraphDataReq_Limit) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{1, 0}
 }
+
 func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Unmarshal(m, b)
 }
@@ -282,6 +286,7 @@ func (*EnsureGraphDataReq_Include) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{1, 1}
 }
+
 func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Unmarshal(m, b)
 }
@@ -321,6 +326,7 @@ func (*EnsureGraphDataReq_Include_Options) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include_Options) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{1, 1, 0}
 }
+
 func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Unmarshal(m, b)
 }
@@ -409,6 +415,7 @@ func (*EnsureGraphDataRsp) ProtoMessage()    {}
 func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2be8364c35d3177, []int{2}
 }
+
 func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataRsp.Unmarshal(m, b)
 }

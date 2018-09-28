@@ -5,9 +5,10 @@ package swarmingV1
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -38,6 +39,7 @@ func (*Parameters) ProtoMessage()    {}
 func (*Parameters) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a392a071be03ce1c, []int{0}
 }
+
 func (m *Parameters) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters.Unmarshal(m, b)
 }
@@ -116,6 +118,7 @@ func (*Parameters_Scheduling) ProtoMessage()    {}
 func (*Parameters_Scheduling) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a392a071be03ce1c, []int{0, 0}
 }
+
 func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Scheduling.Unmarshal(m, b)
 }
@@ -179,6 +182,7 @@ func (*Parameters_Meta) ProtoMessage()    {}
 func (*Parameters_Meta) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a392a071be03ce1c, []int{0, 1}
 }
+
 func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Meta.Unmarshal(m, b)
 }
@@ -238,6 +242,7 @@ func (*Parameters_Job) ProtoMessage()    {}
 func (*Parameters_Job) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a392a071be03ce1c, []int{0, 2}
 }
+
 func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job.Unmarshal(m, b)
 }
@@ -303,6 +308,7 @@ func (*Parameters_Job_Inputs) ProtoMessage()    {}
 func (*Parameters_Job_Inputs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_a392a071be03ce1c, []int{0, 2, 0}
 }
+
 func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job_Inputs.Unmarshal(m, b)
 }

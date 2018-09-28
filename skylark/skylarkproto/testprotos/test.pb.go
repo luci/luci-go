@@ -5,9 +5,10 @@ package testprotos
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -94,6 +95,7 @@ func (*SimpleFields) ProtoMessage()    {}
 func (*SimpleFields) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{0}
 }
+
 func (m *SimpleFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SimpleFields.Unmarshal(m, b)
 }
@@ -203,6 +205,7 @@ func (*MessageFields) ProtoMessage()    {}
 func (*MessageFields) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{1}
 }
+
 func (m *MessageFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MessageFields.Unmarshal(m, b)
 }
@@ -249,6 +252,7 @@ func (*Simple) ProtoMessage()    {}
 func (*Simple) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{2}
 }
+
 func (m *Simple) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Simple.Unmarshal(m, b)
 }
@@ -302,6 +306,7 @@ func (*Complex) ProtoMessage()    {}
 func (*Complex) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{3}
 }
+
 func (m *Complex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex.Unmarshal(m, b)
 }
@@ -479,6 +484,7 @@ func (*Complex_InnerMessage) ProtoMessage()    {}
 func (*Complex_InnerMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{3, 0}
 }
+
 func (m *Complex_InnerMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex_InnerMessage.Unmarshal(m, b)
 }
@@ -518,6 +524,7 @@ func (*RefsOtherProtos) ProtoMessage()    {}
 func (*RefsOtherProtos) Descriptor() ([]byte, []int) {
 	return fileDescriptor_13737774a66b07cd, []int{4}
 }
+
 func (m *RefsOtherProtos) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsOtherProtos.Unmarshal(m, b)
 }
@@ -551,14 +558,14 @@ func (m *RefsOtherProtos) GetTs() *timestamp.Timestamp {
 }
 
 func init() {
+	proto.RegisterEnum("testprotos.Enum", Enum_name, Enum_value)
+	proto.RegisterEnum("testprotos.Complex_InnerEnum", Complex_InnerEnum_name, Complex_InnerEnum_value)
 	proto.RegisterType((*SimpleFields)(nil), "testprotos.SimpleFields")
 	proto.RegisterType((*MessageFields)(nil), "testprotos.MessageFields")
 	proto.RegisterType((*Simple)(nil), "testprotos.Simple")
 	proto.RegisterType((*Complex)(nil), "testprotos.Complex")
 	proto.RegisterType((*Complex_InnerMessage)(nil), "testprotos.Complex.InnerMessage")
 	proto.RegisterType((*RefsOtherProtos)(nil), "testprotos.RefsOtherProtos")
-	proto.RegisterEnum("testprotos.Enum", Enum_name, Enum_value)
-	proto.RegisterEnum("testprotos.Complex_InnerEnum", Complex_InnerEnum_name, Complex_InnerEnum_value)
 }
 
 func init() {

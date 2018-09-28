@@ -5,8 +5,9 @@ package protocol
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -202,6 +203,7 @@ func (*ServiceLinkTicket) ProtoMessage()    {}
 func (*ServiceLinkTicket) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{0}
 }
+
 func (m *ServiceLinkTicket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceLinkTicket.Unmarshal(m, b)
 }
@@ -268,6 +270,7 @@ func (*ServiceLinkRequest) ProtoMessage()    {}
 func (*ServiceLinkRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{1}
 }
+
 func (m *ServiceLinkRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceLinkRequest.Unmarshal(m, b)
 }
@@ -321,6 +324,7 @@ func (*ServiceLinkResponse) ProtoMessage()    {}
 func (*ServiceLinkResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{2}
 }
+
 func (m *ServiceLinkResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceLinkResponse.Unmarshal(m, b)
 }
@@ -379,6 +383,7 @@ func (*AuthGroup) ProtoMessage()    {}
 func (*AuthGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{3}
 }
+
 func (m *AuthGroup) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AuthGroup.Unmarshal(m, b)
 }
@@ -495,6 +500,7 @@ func (*AuthIPWhitelist) ProtoMessage()    {}
 func (*AuthIPWhitelist) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{4}
 }
+
 func (m *AuthIPWhitelist) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AuthIPWhitelist.Unmarshal(m, b)
 }
@@ -586,6 +592,7 @@ func (*AuthIPWhitelistAssignment) ProtoMessage()    {}
 func (*AuthIPWhitelistAssignment) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{5}
 }
+
 func (m *AuthIPWhitelistAssignment) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AuthIPWhitelistAssignment.Unmarshal(m, b)
 }
@@ -666,6 +673,7 @@ func (*AuthDB) ProtoMessage()    {}
 func (*AuthDB) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{6}
 }
+
 func (m *AuthDB) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AuthDB.Unmarshal(m, b)
 }
@@ -752,6 +760,7 @@ func (*AuthDBRevision) ProtoMessage()    {}
 func (*AuthDBRevision) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{7}
 }
+
 func (m *AuthDBRevision) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AuthDBRevision.Unmarshal(m, b)
 }
@@ -810,6 +819,7 @@ func (*ChangeNotification) ProtoMessage()    {}
 func (*ChangeNotification) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{8}
 }
+
 func (m *ChangeNotification) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChangeNotification.Unmarshal(m, b)
 }
@@ -858,6 +868,7 @@ func (*ReplicationPushRequest) ProtoMessage()    {}
 func (*ReplicationPushRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{9}
 }
+
 func (m *ReplicationPushRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReplicationPushRequest.Unmarshal(m, b)
 }
@@ -918,6 +929,7 @@ func (*ReplicationPushResponse) ProtoMessage()    {}
 func (*ReplicationPushResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_de7cec209bf04315, []int{10}
 }
+
 func (m *ReplicationPushResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReplicationPushResponse.Unmarshal(m, b)
 }
@@ -965,6 +977,9 @@ func (m *ReplicationPushResponse) GetAuthCodeVersion() string {
 }
 
 func init() {
+	proto.RegisterEnum("protocol.ServiceLinkResponse_Status", ServiceLinkResponse_Status_name, ServiceLinkResponse_Status_value)
+	proto.RegisterEnum("protocol.ReplicationPushResponse_Status", ReplicationPushResponse_Status_name, ReplicationPushResponse_Status_value)
+	proto.RegisterEnum("protocol.ReplicationPushResponse_ErrorCode", ReplicationPushResponse_ErrorCode_name, ReplicationPushResponse_ErrorCode_value)
 	proto.RegisterType((*ServiceLinkTicket)(nil), "protocol.ServiceLinkTicket")
 	proto.RegisterType((*ServiceLinkRequest)(nil), "protocol.ServiceLinkRequest")
 	proto.RegisterType((*ServiceLinkResponse)(nil), "protocol.ServiceLinkResponse")
@@ -976,9 +991,6 @@ func init() {
 	proto.RegisterType((*ChangeNotification)(nil), "protocol.ChangeNotification")
 	proto.RegisterType((*ReplicationPushRequest)(nil), "protocol.ReplicationPushRequest")
 	proto.RegisterType((*ReplicationPushResponse)(nil), "protocol.ReplicationPushResponse")
-	proto.RegisterEnum("protocol.ServiceLinkResponse_Status", ServiceLinkResponse_Status_name, ServiceLinkResponse_Status_value)
-	proto.RegisterEnum("protocol.ReplicationPushResponse_Status", ReplicationPushResponse_Status_name, ReplicationPushResponse_Status_value)
-	proto.RegisterEnum("protocol.ReplicationPushResponse_ErrorCode", ReplicationPushResponse_ErrorCode_name, ReplicationPushResponse_ErrorCode_value)
 }
 
 func init() {

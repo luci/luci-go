@@ -5,8 +5,9 @@ package srcman
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -74,6 +75,7 @@ func (*Manifest) ProtoMessage()    {}
 func (*Manifest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{0}
 }
+
 func (m *Manifest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Manifest.Unmarshal(m, b)
 }
@@ -176,6 +178,7 @@ func (*Manifest_GitCheckout) ProtoMessage()    {}
 func (*Manifest_GitCheckout) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{0, 0}
 }
+
 func (m *Manifest_GitCheckout) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Manifest_GitCheckout.Unmarshal(m, b)
 }
@@ -264,6 +267,7 @@ func (*Manifest_CIPDPackage) ProtoMessage()    {}
 func (*Manifest_CIPDPackage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{0, 1}
 }
+
 func (m *Manifest_CIPDPackage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Manifest_CIPDPackage.Unmarshal(m, b)
 }
@@ -325,6 +329,7 @@ func (*Manifest_Isolated) ProtoMessage()    {}
 func (*Manifest_Isolated) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{0, 2}
 }
+
 func (m *Manifest_Isolated) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Manifest_Isolated.Unmarshal(m, b)
 }
@@ -395,6 +400,7 @@ func (*Manifest_Directory) ProtoMessage()    {}
 func (*Manifest_Directory) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{0, 3}
 }
+
 func (m *Manifest_Directory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Manifest_Directory.Unmarshal(m, b)
 }
@@ -478,6 +484,7 @@ func (*ManifestLink) ProtoMessage()    {}
 func (*ManifestLink) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9f003f10f6b5b7bd, []int{1}
 }
+
 func (m *ManifestLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestLink.Unmarshal(m, b)
 }

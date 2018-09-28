@@ -5,9 +5,10 @@ package tasks
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/cipd/api/cipd/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*RunProcessors) ProtoMessage()    {}
 func (*RunProcessors) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d2aa67c95ad0b65e, []int{0}
 }
+
 func (m *RunProcessors) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RunProcessors.Unmarshal(m, b)
 }

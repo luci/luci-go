@@ -5,8 +5,9 @@ package swarmingV1
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -34,6 +35,7 @@ func (*CipdPackage) ProtoMessage()    {}
 func (*CipdPackage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d6ef6bc8018ba385, []int{0}
 }
+
 func (m *CipdPackage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdPackage.Unmarshal(m, b)
 }
@@ -90,6 +92,7 @@ func (*CipdSpec) ProtoMessage()    {}
 func (*CipdSpec) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d6ef6bc8018ba385, []int{1}
 }
+
 func (m *CipdSpec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdSpec.Unmarshal(m, b)
 }
@@ -142,6 +145,7 @@ func (*CipdSpec_CipdPackages) ProtoMessage()    {}
 func (*CipdSpec_CipdPackages) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d6ef6bc8018ba385, []int{1, 0}
 }
+
 func (m *CipdSpec_CipdPackages) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdSpec_CipdPackages.Unmarshal(m, b)
 }

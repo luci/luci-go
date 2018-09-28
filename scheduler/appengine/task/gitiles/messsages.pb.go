@@ -5,8 +5,9 @@ package gitiles
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*Child) ProtoMessage()    {}
 func (*Child) Descriptor() ([]byte, []int) {
 	return fileDescriptor_208d1a1363befab1, []int{0}
 }
+
 func (m *Child) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Child.Unmarshal(m, b)
 }
@@ -82,6 +84,7 @@ func (*RefSpace) ProtoMessage()    {}
 func (*RefSpace) Descriptor() ([]byte, []int) {
 	return fileDescriptor_208d1a1363befab1, []int{1}
 }
+
 func (m *RefSpace) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefSpace.Unmarshal(m, b)
 }
@@ -128,6 +131,7 @@ func (*RepositoryState) ProtoMessage()    {}
 func (*RepositoryState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_208d1a1363befab1, []int{2}
 }
+
 func (m *RepositoryState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RepositoryState.Unmarshal(m, b)
 }

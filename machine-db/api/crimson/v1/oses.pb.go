@@ -5,8 +5,9 @@ package crimson
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -37,6 +38,7 @@ func (*OS) ProtoMessage()    {}
 func (*OS) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ccc648486e27b263, []int{0}
 }
+
 func (m *OS) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OS.Unmarshal(m, b)
 }
@@ -84,6 +86,7 @@ func (*ListOSesRequest) ProtoMessage()    {}
 func (*ListOSesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ccc648486e27b263, []int{1}
 }
+
 func (m *ListOSesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListOSesRequest.Unmarshal(m, b)
 }
@@ -124,6 +127,7 @@ func (*ListOSesResponse) ProtoMessage()    {}
 func (*ListOSesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ccc648486e27b263, []int{2}
 }
+
 func (m *ListOSesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListOSesResponse.Unmarshal(m, b)
 }

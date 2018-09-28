@@ -5,8 +5,9 @@ package acls
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -36,6 +37,7 @@ func (*Acls) ProtoMessage()    {}
 func (*Acls) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0a85e1525a5d8e6b, []int{0}
 }
+
 func (m *Acls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acls.Unmarshal(m, b)
 }

@@ -5,10 +5,11 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -55,6 +56,7 @@ func (*VM) ProtoMessage()    {}
 func (*VM) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ac68362bdfdec1d3, []int{0}
 }
+
 func (m *VM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VM.Unmarshal(m, b)
 }
@@ -151,6 +153,7 @@ func (*CreateVMRequest) ProtoMessage()    {}
 func (*CreateVMRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ac68362bdfdec1d3, []int{1}
 }
+
 func (m *CreateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateVMRequest.Unmarshal(m, b)
 }
@@ -203,6 +206,7 @@ func (*ListVMsRequest) ProtoMessage()    {}
 func (*ListVMsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ac68362bdfdec1d3, []int{2}
 }
+
 func (m *ListVMsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsRequest.Unmarshal(m, b)
 }
@@ -285,6 +289,7 @@ func (*ListVMsResponse) ProtoMessage()    {}
 func (*ListVMsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ac68362bdfdec1d3, []int{3}
 }
+
 func (m *ListVMsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsResponse.Unmarshal(m, b)
 }
@@ -327,6 +332,7 @@ func (*UpdateVMRequest) ProtoMessage()    {}
 func (*UpdateVMRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ac68362bdfdec1d3, []int{4}
 }
+
 func (m *UpdateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateVMRequest.Unmarshal(m, b)
 }

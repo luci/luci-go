@@ -5,9 +5,10 @@ package scheduler
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	_struct "github.com/golang/protobuf/ptypes/struct"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -60,6 +61,7 @@ func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{0}
 }
+
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
 }
@@ -326,6 +328,7 @@ func (*CronTrigger) ProtoMessage()    {}
 func (*CronTrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{1}
 }
+
 func (m *CronTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CronTrigger.Unmarshal(m, b)
 }
@@ -367,6 +370,7 @@ func (*WebUITrigger) ProtoMessage()    {}
 func (*WebUITrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{2}
 }
+
 func (m *WebUITrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WebUITrigger.Unmarshal(m, b)
 }
@@ -400,6 +404,7 @@ func (*NoopTrigger) ProtoMessage()    {}
 func (*NoopTrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{3}
 }
+
 func (m *NoopTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTrigger.Unmarshal(m, b)
 }
@@ -444,6 +449,7 @@ func (*GitilesTrigger) ProtoMessage()    {}
 func (*GitilesTrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{4}
 }
+
 func (m *GitilesTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTrigger.Unmarshal(m, b)
 }
@@ -505,6 +511,7 @@ func (*BuildbucketTrigger) ProtoMessage()    {}
 func (*BuildbucketTrigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_70a792ba8b927069, []int{5}
 }
+
 func (m *BuildbucketTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTrigger.Unmarshal(m, b)
 }

@@ -5,8 +5,9 @@ package tokenserver
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -95,6 +96,7 @@ func (*MachineTokenBody) ProtoMessage()    {}
 func (*MachineTokenBody) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dff8dcc9d4458b55, []int{0}
 }
+
 func (m *MachineTokenBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenBody.Unmarshal(m, b)
 }
@@ -174,6 +176,7 @@ func (*MachineTokenEnvelope) ProtoMessage()    {}
 func (*MachineTokenEnvelope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dff8dcc9d4458b55, []int{1}
 }
+
 func (m *MachineTokenEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenEnvelope.Unmarshal(m, b)
 }
@@ -214,9 +217,9 @@ func (m *MachineTokenEnvelope) GetRsaSha256() []byte {
 }
 
 func init() {
+	proto.RegisterEnum("tokenserver.MachineTokenType", MachineTokenType_name, MachineTokenType_value)
 	proto.RegisterType((*MachineTokenBody)(nil), "tokenserver.MachineTokenBody")
 	proto.RegisterType((*MachineTokenEnvelope)(nil), "tokenserver.MachineTokenEnvelope")
-	proto.RegisterEnum("tokenserver.MachineTokenType", MachineTokenType_name, MachineTokenType_value)
 }
 
 func init() {

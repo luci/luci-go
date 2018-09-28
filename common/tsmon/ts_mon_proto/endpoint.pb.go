@@ -5,8 +5,9 @@ package ts_mon_proto
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -33,6 +34,7 @@ func (*Request) ProtoMessage()    {}
 func (*Request) Descriptor() ([]byte, []int) {
 	return fileDescriptor_933117f6dff2e889, []int{0}
 }
+
 func (m *Request) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Request.Unmarshal(m, b)
 }

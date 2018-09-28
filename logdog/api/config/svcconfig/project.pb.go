@@ -5,9 +5,10 @@ package svcconfig
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -81,6 +82,7 @@ func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_4b481a5cd36b270f, []int{0}
 }
+
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
 }

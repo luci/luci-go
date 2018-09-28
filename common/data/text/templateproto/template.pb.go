@@ -5,9 +5,10 @@ package templateproto
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -46,6 +47,7 @@ func (*Value) ProtoMessage()    {}
 func (*Value) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{0}
 }
+
 func (m *Value) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Value.Unmarshal(m, b)
 }
@@ -390,6 +392,7 @@ func (*Schema) ProtoMessage()    {}
 func (*Schema) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1}
 }
+
 func (m *Schema) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema.Unmarshal(m, b)
 }
@@ -757,6 +760,7 @@ func (*Schema_Set) ProtoMessage()    {}
 func (*Schema_Set) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 0}
 }
+
 func (m *Schema_Set) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Set.Unmarshal(m, b)
 }
@@ -797,6 +801,7 @@ func (*Schema_Set_Entry) ProtoMessage()    {}
 func (*Schema_Set_Entry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 0, 0}
 }
+
 func (m *Schema_Set_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Set_Entry.Unmarshal(m, b)
 }
@@ -844,6 +849,7 @@ func (*Schema_JSON) ProtoMessage()    {}
 func (*Schema_JSON) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 1}
 }
+
 func (m *Schema_JSON) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_JSON.Unmarshal(m, b)
 }
@@ -884,6 +890,7 @@ func (*Schema_Sequence) ProtoMessage()    {}
 func (*Schema_Sequence) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 2}
 }
+
 func (m *Schema_Sequence) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Sequence.Unmarshal(m, b)
 }
@@ -921,6 +928,7 @@ func (*Schema_Atom) ProtoMessage()    {}
 func (*Schema_Atom) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{1, 3}
 }
+
 func (m *Schema_Atom) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Schema_Atom.Unmarshal(m, b)
 }
@@ -953,6 +961,7 @@ func (*File) ProtoMessage()    {}
 func (*File) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{2}
 }
+
 func (m *File) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File.Unmarshal(m, b)
 }
@@ -1005,6 +1014,7 @@ func (*File_Template) ProtoMessage()    {}
 func (*File_Template) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{2, 0}
 }
+
 func (m *File_Template) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template.Unmarshal(m, b)
 }
@@ -1064,6 +1074,7 @@ func (*File_Template_Parameter) ProtoMessage()    {}
 func (*File_Template_Parameter) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{2, 0, 0}
 }
+
 func (m *File_Template_Parameter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_File_Template_Parameter.Unmarshal(m, b)
 }
@@ -1124,6 +1135,7 @@ func (*Specifier) ProtoMessage()    {}
 func (*Specifier) Descriptor() ([]byte, []int) {
 	return fileDescriptor_41b1a7e1a454e1ec, []int{3}
 }
+
 func (m *Specifier) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Specifier.Unmarshal(m, b)
 }

@@ -5,10 +5,11 @@ package distributor
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
 	v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*Alias) ProtoMessage()    {}
 func (*Alias) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ae589283bac413cb, []int{0}
 }
+
 func (m *Alias) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Alias.Unmarshal(m, b)
 }
@@ -83,6 +85,7 @@ func (*Distributor) ProtoMessage()    {}
 func (*Distributor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ae589283bac413cb, []int{1}
 }
+
 func (m *Distributor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Distributor.Unmarshal(m, b)
 }
@@ -257,6 +260,7 @@ func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ae589283bac413cb, []int{2}
 }
+
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
 }

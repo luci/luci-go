@@ -5,10 +5,11 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -60,6 +61,7 @@ func (*PhysicalHost) ProtoMessage()    {}
 func (*PhysicalHost) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc4ca5e2610d2a30, []int{0}
 }
+
 func (m *PhysicalHost) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PhysicalHost.Unmarshal(m, b)
 }
@@ -177,6 +179,7 @@ func (*CreatePhysicalHostRequest) ProtoMessage()    {}
 func (*CreatePhysicalHostRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc4ca5e2610d2a30, []int{1}
 }
+
 func (m *CreatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreatePhysicalHostRequest.Unmarshal(m, b)
 }
@@ -239,6 +242,7 @@ func (*ListPhysicalHostsRequest) ProtoMessage()    {}
 func (*ListPhysicalHostsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc4ca5e2610d2a30, []int{2}
 }
+
 func (m *ListPhysicalHostsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsRequest.Unmarshal(m, b)
 }
@@ -356,6 +360,7 @@ func (*ListPhysicalHostsResponse) ProtoMessage()    {}
 func (*ListPhysicalHostsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc4ca5e2610d2a30, []int{3}
 }
+
 func (m *ListPhysicalHostsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListPhysicalHostsResponse.Unmarshal(m, b)
 }
@@ -398,6 +403,7 @@ func (*UpdatePhysicalHostRequest) ProtoMessage()    {}
 func (*UpdatePhysicalHostRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_fc4ca5e2610d2a30, []int{4}
 }
+
 func (m *UpdatePhysicalHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdatePhysicalHostRequest.Unmarshal(m, b)
 }

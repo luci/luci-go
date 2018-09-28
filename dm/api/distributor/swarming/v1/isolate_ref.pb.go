@@ -5,8 +5,9 @@ package swarmingV1
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -34,6 +35,7 @@ func (*IsolatedRef) ProtoMessage()    {}
 func (*IsolatedRef) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0ca7d5f1aabd0c83, []int{0}
 }
+
 func (m *IsolatedRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsolatedRef.Unmarshal(m, b)
 }

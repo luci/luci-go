@@ -5,10 +5,11 @@ package dm
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -262,6 +263,7 @@ func (*AbnormalFinish) ProtoMessage()    {}
 func (*AbnormalFinish) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{0}
 }
+
 func (m *AbnormalFinish) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AbnormalFinish.Unmarshal(m, b)
 }
@@ -316,6 +318,7 @@ func (*Quest) ProtoMessage()    {}
 func (*Quest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1}
 }
+
 func (m *Quest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest.Unmarshal(m, b)
 }
@@ -382,6 +385,7 @@ func (*Quest_ID) ProtoMessage()    {}
 func (*Quest_ID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 0}
 }
+
 func (m *Quest_ID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_ID.Unmarshal(m, b)
 }
@@ -446,6 +450,7 @@ func (*Quest_Desc) ProtoMessage()    {}
 func (*Quest_Desc) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 1}
 }
+
 func (m *Quest_Desc) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_Desc.Unmarshal(m, b)
 }
@@ -512,6 +517,7 @@ func (*Quest_Desc_Meta) ProtoMessage()    {}
 func (*Quest_Desc_Meta) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 1, 0}
 }
+
 func (m *Quest_Desc_Meta) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_Desc_Meta.Unmarshal(m, b)
 }
@@ -580,6 +586,7 @@ func (*Quest_Desc_Meta_Retry) ProtoMessage()    {}
 func (*Quest_Desc_Meta_Retry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 1, 0, 0}
 }
+
 func (m *Quest_Desc_Meta_Retry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_Desc_Meta_Retry.Unmarshal(m, b)
 }
@@ -657,6 +664,7 @@ func (*Quest_Desc_Meta_Timeouts) ProtoMessage()    {}
 func (*Quest_Desc_Meta_Timeouts) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 1, 0, 1}
 }
+
 func (m *Quest_Desc_Meta_Timeouts) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_Desc_Meta_Timeouts.Unmarshal(m, b)
 }
@@ -712,6 +720,7 @@ func (*Quest_TemplateSpec) ProtoMessage()    {}
 func (*Quest_TemplateSpec) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 2}
 }
+
 func (m *Quest_TemplateSpec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_TemplateSpec.Unmarshal(m, b)
 }
@@ -773,6 +782,7 @@ func (*Quest_Data) ProtoMessage()    {}
 func (*Quest_Data) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{1, 3}
 }
+
 func (m *Quest_Data) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Quest_Data.Unmarshal(m, b)
 }
@@ -839,6 +849,7 @@ func (*JsonResult) ProtoMessage()    {}
 func (*JsonResult) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{2}
 }
+
 func (m *JsonResult) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JsonResult.Unmarshal(m, b)
 }
@@ -893,6 +904,7 @@ func (*Result) ProtoMessage()    {}
 func (*Result) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{3}
 }
+
 func (m *Result) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Result.Unmarshal(m, b)
 }
@@ -950,6 +962,7 @@ func (*Attempt) ProtoMessage()    {}
 func (*Attempt) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4}
 }
+
 func (m *Attempt) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt.Unmarshal(m, b)
 }
@@ -1031,6 +1044,7 @@ func (*Attempt_ID) ProtoMessage()    {}
 func (*Attempt_ID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 0}
 }
+
 func (m *Attempt_ID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_ID.Unmarshal(m, b)
 }
@@ -1085,6 +1099,7 @@ func (*Attempt_Data) ProtoMessage()    {}
 func (*Attempt_Data) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 1}
 }
+
 func (m *Attempt_Data) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Data.Unmarshal(m, b)
 }
@@ -1345,6 +1360,7 @@ func (*Attempt_Data_Scheduling) ProtoMessage()    {}
 func (*Attempt_Data_Scheduling) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 1, 0}
 }
+
 func (m *Attempt_Data_Scheduling) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Data_Scheduling.Unmarshal(m, b)
 }
@@ -1378,6 +1394,7 @@ func (*Attempt_Data_Executing) ProtoMessage()    {}
 func (*Attempt_Data_Executing) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 1, 1}
 }
+
 func (m *Attempt_Data_Executing) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Data_Executing.Unmarshal(m, b)
 }
@@ -1417,6 +1434,7 @@ func (*Attempt_Data_Waiting) ProtoMessage()    {}
 func (*Attempt_Data_Waiting) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 1, 2}
 }
+
 func (m *Attempt_Data_Waiting) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Data_Waiting.Unmarshal(m, b)
 }
@@ -1462,6 +1480,7 @@ func (*Attempt_Data_Finished) ProtoMessage()    {}
 func (*Attempt_Data_Finished) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 1, 3}
 }
+
 func (m *Attempt_Data_Finished) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Data_Finished.Unmarshal(m, b)
 }
@@ -1513,6 +1532,7 @@ func (*Attempt_Partial) ProtoMessage()    {}
 func (*Attempt_Partial) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{4, 3}
 }
+
 func (m *Attempt_Partial) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Attempt_Partial.Unmarshal(m, b)
 }
@@ -1583,6 +1603,7 @@ func (*Execution) ProtoMessage()    {}
 func (*Execution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5}
 }
+
 func (m *Execution) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution.Unmarshal(m, b)
 }
@@ -1638,6 +1659,7 @@ func (*Execution_Auth) ProtoMessage()    {}
 func (*Execution_Auth) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 0}
 }
+
 func (m *Execution_Auth) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Auth.Unmarshal(m, b)
 }
@@ -1685,6 +1707,7 @@ func (*Execution_ID) ProtoMessage()    {}
 func (*Execution_ID) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 1}
 }
+
 func (m *Execution_ID) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_ID.Unmarshal(m, b)
 }
@@ -1746,6 +1769,7 @@ func (*Execution_Data) ProtoMessage()    {}
 func (*Execution_Data) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2}
 }
+
 func (m *Execution_Data) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data.Unmarshal(m, b)
 }
@@ -2008,6 +2032,7 @@ func (*Execution_Data_DistributorInfo) ProtoMessage()    {}
 func (*Execution_Data_DistributorInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2, 0}
 }
+
 func (m *Execution_Data_DistributorInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data_DistributorInfo.Unmarshal(m, b)
 }
@@ -2066,6 +2091,7 @@ func (*Execution_Data_Scheduling) ProtoMessage()    {}
 func (*Execution_Data_Scheduling) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2, 1}
 }
+
 func (m *Execution_Data_Scheduling) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data_Scheduling.Unmarshal(m, b)
 }
@@ -2096,6 +2122,7 @@ func (*Execution_Data_Running) ProtoMessage()    {}
 func (*Execution_Data_Running) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2, 2}
 }
+
 func (m *Execution_Data_Running) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data_Running.Unmarshal(m, b)
 }
@@ -2126,6 +2153,7 @@ func (*Execution_Data_Stopping) ProtoMessage()    {}
 func (*Execution_Data_Stopping) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2, 3}
 }
+
 func (m *Execution_Data_Stopping) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data_Stopping.Unmarshal(m, b)
 }
@@ -2157,6 +2185,7 @@ func (*Execution_Data_Finished) ProtoMessage()    {}
 func (*Execution_Data_Finished) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{5, 2, 4}
 }
+
 func (m *Execution_Data_Finished) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Execution_Data_Finished.Unmarshal(m, b)
 }
@@ -2223,6 +2252,7 @@ func (*GraphData) ProtoMessage()    {}
 func (*GraphData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0953f0083e32b1a3, []int{6}
 }
+
 func (m *GraphData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphData.Unmarshal(m, b)
 }
@@ -2263,6 +2293,10 @@ func (m *GraphData) GetHadMore() bool {
 }
 
 func init() {
+	proto.RegisterEnum("dm.AbnormalFinish_Status", AbnormalFinish_Status_name, AbnormalFinish_Status_value)
+	proto.RegisterEnum("dm.Attempt_State", Attempt_State_name, Attempt_State_value)
+	proto.RegisterEnum("dm.Attempt_Partial_Result", Attempt_Partial_Result_name, Attempt_Partial_Result_value)
+	proto.RegisterEnum("dm.Execution_State", Execution_State_name, Execution_State_value)
 	proto.RegisterType((*AbnormalFinish)(nil), "dm.AbnormalFinish")
 	proto.RegisterType((*Quest)(nil), "dm.Quest")
 	proto.RegisterMapType((map[uint32]*Attempt)(nil), "dm.Quest.AttemptsEntry")
@@ -2295,10 +2329,6 @@ func init() {
 	proto.RegisterType((*Execution_Data_Finished)(nil), "dm.Execution.Data.Finished")
 	proto.RegisterType((*GraphData)(nil), "dm.GraphData")
 	proto.RegisterMapType((map[string]*Quest)(nil), "dm.GraphData.QuestsEntry")
-	proto.RegisterEnum("dm.AbnormalFinish_Status", AbnormalFinish_Status_name, AbnormalFinish_Status_value)
-	proto.RegisterEnum("dm.Attempt_State", Attempt_State_name, Attempt_State_value)
-	proto.RegisterEnum("dm.Attempt_Partial_Result", Attempt_Partial_Result_name, Attempt_Partial_Result_value)
-	proto.RegisterEnum("dm.Execution_State", Execution_State_name, Execution_State_value)
 }
 
 func init() {

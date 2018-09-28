@@ -5,8 +5,9 @@ package svcconfig
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -38,6 +39,7 @@ func (*Transport) ProtoMessage()    {}
 func (*Transport) Descriptor() ([]byte, []int) {
 	return fileDescriptor_abf4c1f6cd2b2e8c, []int{0}
 }
+
 func (m *Transport) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Transport.Unmarshal(m, b)
 }
@@ -154,6 +156,7 @@ func (*Transport_PubSub) ProtoMessage()    {}
 func (*Transport_PubSub) Descriptor() ([]byte, []int) {
 	return fileDescriptor_abf4c1f6cd2b2e8c, []int{0, 0}
 }
+
 func (m *Transport_PubSub) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Transport_PubSub.Unmarshal(m, b)
 }

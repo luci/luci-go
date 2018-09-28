@@ -5,10 +5,11 @@ package milo
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	srcman "go.chromium.org/luci/common/proto/srcman"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -125,6 +126,7 @@ func (*FailureDetails) ProtoMessage()    {}
 func (*FailureDetails) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{0}
 }
+
 func (m *FailureDetails) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FailureDetails.Unmarshal(m, b)
 }
@@ -213,6 +215,7 @@ func (*Step) ProtoMessage()    {}
 func (*Step) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{1}
 }
+
 func (m *Step) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step.Unmarshal(m, b)
 }
@@ -355,6 +358,7 @@ func (*Step_Command) ProtoMessage()    {}
 func (*Step_Command) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{1, 0}
 }
+
 func (m *Step_Command) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Command.Unmarshal(m, b)
 }
@@ -413,6 +417,7 @@ func (*Step_Substep) ProtoMessage()    {}
 func (*Step_Substep) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{1, 1}
 }
+
 func (m *Step_Substep) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Substep.Unmarshal(m, b)
 }
@@ -566,6 +571,7 @@ func (*Step_Progress) ProtoMessage()    {}
 func (*Step_Progress) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{1, 2}
 }
+
 func (m *Step_Progress) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Progress.Unmarshal(m, b)
 }
@@ -615,6 +621,7 @@ func (*Step_Property) ProtoMessage()    {}
 func (*Step_Property) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{1, 3}
 }
+
 func (m *Step_Property) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Property.Unmarshal(m, b)
 }
@@ -672,6 +679,7 @@ func (*Link) ProtoMessage()    {}
 func (*Link) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{2}
 }
+
 func (m *Link) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Link.Unmarshal(m, b)
 }
@@ -896,6 +904,7 @@ func (*LogdogStream) ProtoMessage()    {}
 func (*LogdogStream) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{3}
 }
+
 func (m *LogdogStream) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogdogStream.Unmarshal(m, b)
 }
@@ -953,6 +962,7 @@ func (*IsolateObject) ProtoMessage()    {}
 func (*IsolateObject) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{4}
 }
+
 func (m *IsolateObject) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsolateObject.Unmarshal(m, b)
 }
@@ -1007,6 +1017,7 @@ func (*DMLink) ProtoMessage()    {}
 func (*DMLink) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5bd7e67978ee4b61, []int{5}
 }
+
 func (m *DMLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DMLink.Unmarshal(m, b)
 }
@@ -1054,6 +1065,8 @@ func (m *DMLink) GetExecution() int64 {
 }
 
 func init() {
+	proto.RegisterEnum("milo.Status", Status_name, Status_value)
+	proto.RegisterEnum("milo.FailureDetails_Type", FailureDetails_Type_name, FailureDetails_Type_value)
 	proto.RegisterType((*FailureDetails)(nil), "milo.FailureDetails")
 	proto.RegisterType((*Step)(nil), "milo.Step")
 	proto.RegisterMapType((map[string]*srcman.ManifestLink)(nil), "milo.Step.SourceManifestsEntry")
@@ -1066,8 +1079,6 @@ func init() {
 	proto.RegisterType((*LogdogStream)(nil), "milo.LogdogStream")
 	proto.RegisterType((*IsolateObject)(nil), "milo.IsolateObject")
 	proto.RegisterType((*DMLink)(nil), "milo.DMLink")
-	proto.RegisterEnum("milo.Status", Status_name, Status_value)
-	proto.RegisterEnum("milo.FailureDetails_Type", FailureDetails_Type_name, FailureDetails_Type_value)
 }
 
 func init() {

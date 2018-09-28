@@ -5,9 +5,10 @@ package config
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -42,6 +43,7 @@ func (*VLAN) ProtoMessage()    {}
 func (*VLAN) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bb654d86333e52aa, []int{0}
 }
+
 func (m *VLAN) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VLAN.Unmarshal(m, b)
 }
@@ -103,6 +105,7 @@ func (*VLANs) ProtoMessage()    {}
 func (*VLANs) Descriptor() ([]byte, []int) {
 	return fileDescriptor_bb654d86333e52aa, []int{1}
 }
+
 func (m *VLANs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VLANs.Unmarshal(m, b)
 }
