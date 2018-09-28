@@ -27,6 +27,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -36,6 +37,7 @@ import (
 	gitpb "go.chromium.org/luci/common/proto/git"
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	logDogTypes "go.chromium.org/luci/logdog/common/types"
+	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 	"go.chromium.org/luci/milo/buildsource/swarming"
@@ -369,6 +371,8 @@ func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
+	case build == nil && auth.CurrentUser(c).Identity == identity.AnonymousIdentity:
+		return nil, errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
 	case build == nil:
 		return nil, errors.Reason("build at %q not found", address).Tag(common.CodeNotFound).Err()
 	default:
