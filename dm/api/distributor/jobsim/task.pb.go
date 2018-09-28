@@ -3,13 +3,11 @@
 
 package jobsim
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -39,7 +37,7 @@ func (m *Phrase) Reset()         { *m = Phrase{} }
 func (m *Phrase) String() string { return proto.CompactTextString(m) }
 func (*Phrase) ProtoMessage()    {}
 func (*Phrase) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{0}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{0}
 }
 func (m *Phrase) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Phrase.Unmarshal(m, b)
@@ -47,8 +45,8 @@ func (m *Phrase) XXX_Unmarshal(b []byte) error {
 func (m *Phrase) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Phrase.Marshal(b, m, deterministic)
 }
-func (m *Phrase) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Phrase.Merge(m, src)
+func (dst *Phrase) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Phrase.Merge(dst, src)
 }
 func (m *Phrase) XXX_Size() int {
 	return xxx_messageInfo_Phrase.Size(m)
@@ -102,7 +100,7 @@ func (m *ReturnStage) Reset()         { *m = ReturnStage{} }
 func (m *ReturnStage) String() string { return proto.CompactTextString(m) }
 func (*ReturnStage) ProtoMessage()    {}
 func (*ReturnStage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{1}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{1}
 }
 func (m *ReturnStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReturnStage.Unmarshal(m, b)
@@ -110,8 +108,8 @@ func (m *ReturnStage) XXX_Unmarshal(b []byte) error {
 func (m *ReturnStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ReturnStage.Marshal(b, m, deterministic)
 }
-func (m *ReturnStage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ReturnStage.Merge(m, src)
+func (dst *ReturnStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ReturnStage.Merge(dst, src)
 }
 func (m *ReturnStage) XXX_Size() int {
 	return xxx_messageInfo_ReturnStage.Size(m)
@@ -155,7 +153,7 @@ func (m *Stage) Reset()         { *m = Stage{} }
 func (m *Stage) String() string { return proto.CompactTextString(m) }
 func (*Stage) ProtoMessage()    {}
 func (*Stage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{2}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{2}
 }
 func (m *Stage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Stage.Unmarshal(m, b)
@@ -163,8 +161,8 @@ func (m *Stage) XXX_Unmarshal(b []byte) error {
 func (m *Stage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Stage.Marshal(b, m, deterministic)
 }
-func (m *Stage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Stage.Merge(m, src)
+func (dst *Stage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Stage.Merge(dst, src)
 }
 func (m *Stage) XXX_Size() int {
 	return xxx_messageInfo_Stage.Size(m)
@@ -336,7 +334,7 @@ func (m *FailureStage) Reset()         { *m = FailureStage{} }
 func (m *FailureStage) String() string { return proto.CompactTextString(m) }
 func (*FailureStage) ProtoMessage()    {}
 func (*FailureStage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{3}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{3}
 }
 func (m *FailureStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FailureStage.Unmarshal(m, b)
@@ -344,8 +342,8 @@ func (m *FailureStage) XXX_Unmarshal(b []byte) error {
 func (m *FailureStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FailureStage.Marshal(b, m, deterministic)
 }
-func (m *FailureStage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FailureStage.Merge(m, src)
+func (dst *FailureStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FailureStage.Merge(dst, src)
 }
 func (m *FailureStage) XXX_Size() int {
 	return xxx_messageInfo_FailureStage.Size(m)
@@ -376,7 +374,7 @@ func (m *StallStage) Reset()         { *m = StallStage{} }
 func (m *StallStage) String() string { return proto.CompactTextString(m) }
 func (*StallStage) ProtoMessage()    {}
 func (*StallStage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{4}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{4}
 }
 func (m *StallStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StallStage.Unmarshal(m, b)
@@ -384,8 +382,8 @@ func (m *StallStage) XXX_Unmarshal(b []byte) error {
 func (m *StallStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_StallStage.Marshal(b, m, deterministic)
 }
-func (m *StallStage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_StallStage.Merge(m, src)
+func (dst *StallStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StallStage.Merge(dst, src)
 }
 func (m *StallStage) XXX_Size() int {
 	return xxx_messageInfo_StallStage.Size(m)
@@ -416,7 +414,7 @@ func (m *DepsStage) Reset()         { *m = DepsStage{} }
 func (m *DepsStage) String() string { return proto.CompactTextString(m) }
 func (*DepsStage) ProtoMessage()    {}
 func (*DepsStage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{5}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{5}
 }
 func (m *DepsStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DepsStage.Unmarshal(m, b)
@@ -424,8 +422,8 @@ func (m *DepsStage) XXX_Unmarshal(b []byte) error {
 func (m *DepsStage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DepsStage.Marshal(b, m, deterministic)
 }
-func (m *DepsStage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DepsStage.Merge(m, src)
+func (dst *DepsStage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DepsStage.Merge(dst, src)
 }
 func (m *DepsStage) XXX_Size() int {
 	return xxx_messageInfo_DepsStage.Size(m)
@@ -470,7 +468,7 @@ func (m *Dependency) Reset()         { *m = Dependency{} }
 func (m *Dependency) String() string { return proto.CompactTextString(m) }
 func (*Dependency) ProtoMessage()    {}
 func (*Dependency) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{6}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{6}
 }
 func (m *Dependency) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Dependency.Unmarshal(m, b)
@@ -478,8 +476,8 @@ func (m *Dependency) XXX_Unmarshal(b []byte) error {
 func (m *Dependency) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Dependency.Marshal(b, m, deterministic)
 }
-func (m *Dependency) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Dependency.Merge(m, src)
+func (dst *Dependency) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Dependency.Merge(dst, src)
 }
 func (m *Dependency) XXX_Size() int {
 	return xxx_messageInfo_Dependency.Size(m)
@@ -629,7 +627,7 @@ func (m *SparseRange) Reset()         { *m = SparseRange{} }
 func (m *SparseRange) String() string { return proto.CompactTextString(m) }
 func (*SparseRange) ProtoMessage()    {}
 func (*SparseRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{7}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{7}
 }
 func (m *SparseRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SparseRange.Unmarshal(m, b)
@@ -637,8 +635,8 @@ func (m *SparseRange) XXX_Unmarshal(b []byte) error {
 func (m *SparseRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SparseRange.Marshal(b, m, deterministic)
 }
-func (m *SparseRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SparseRange.Merge(m, src)
+func (dst *SparseRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SparseRange.Merge(dst, src)
 }
 func (m *SparseRange) XXX_Size() int {
 	return xxx_messageInfo_SparseRange.Size(m)
@@ -671,7 +669,7 @@ func (m *RangeItem) Reset()         { *m = RangeItem{} }
 func (m *RangeItem) String() string { return proto.CompactTextString(m) }
 func (*RangeItem) ProtoMessage()    {}
 func (*RangeItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{8}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{8}
 }
 func (m *RangeItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RangeItem.Unmarshal(m, b)
@@ -679,8 +677,8 @@ func (m *RangeItem) XXX_Unmarshal(b []byte) error {
 func (m *RangeItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RangeItem.Marshal(b, m, deterministic)
 }
-func (m *RangeItem) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RangeItem.Merge(m, src)
+func (dst *RangeItem) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RangeItem.Merge(dst, src)
 }
 func (m *RangeItem) XXX_Size() int {
 	return xxx_messageInfo_RangeItem.Size(m)
@@ -810,7 +808,7 @@ func (m *Range) Reset()         { *m = Range{} }
 func (m *Range) String() string { return proto.CompactTextString(m) }
 func (*Range) ProtoMessage()    {}
 func (*Range) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5cdcbaf2009df1de, []int{9}
+	return fileDescriptor_task_5fd4f9a35c9cef60, []int{9}
 }
 func (m *Range) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Range.Unmarshal(m, b)
@@ -818,8 +816,8 @@ func (m *Range) XXX_Unmarshal(b []byte) error {
 func (m *Range) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Range.Marshal(b, m, deterministic)
 }
-func (m *Range) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Range.Merge(m, src)
+func (dst *Range) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Range.Merge(dst, src)
 }
 func (m *Range) XXX_Size() int {
 	return xxx_messageInfo_Range.Size(m)
@@ -858,10 +856,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/task.proto", fileDescriptor_5cdcbaf2009df1de)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/task.proto", fileDescriptor_task_5fd4f9a35c9cef60)
 }
 
-var fileDescriptor_5cdcbaf2009df1de = []byte{
+var fileDescriptor_task_5fd4f9a35c9cef60 = []byte{
 	// 592 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x53, 0xcd, 0x6e, 0xd3, 0x40,
 	0x10, 0xc6, 0x4d, 0xec, 0x36, 0xe3, 0x04, 0x95, 0x05, 0x21, 0x37, 0x07, 0x88, 0x2c, 0x35, 0x8d,

@@ -5,12 +5,10 @@ package scheduler
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import empty "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -43,7 +41,7 @@ func (m *JobsRequest) Reset()         { *m = JobsRequest{} }
 func (m *JobsRequest) String() string { return proto.CompactTextString(m) }
 func (*JobsRequest) ProtoMessage()    {}
 func (*JobsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{0}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{0}
 }
 func (m *JobsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobsRequest.Unmarshal(m, b)
@@ -51,8 +49,8 @@ func (m *JobsRequest) XXX_Unmarshal(b []byte) error {
 func (m *JobsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobsRequest.Marshal(b, m, deterministic)
 }
-func (m *JobsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobsRequest.Merge(m, src)
+func (dst *JobsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobsRequest.Merge(dst, src)
 }
 func (m *JobsRequest) XXX_Size() int {
 	return xxx_messageInfo_JobsRequest.Size(m)
@@ -96,7 +94,7 @@ func (m *JobsReply) Reset()         { *m = JobsReply{} }
 func (m *JobsReply) String() string { return proto.CompactTextString(m) }
 func (*JobsReply) ProtoMessage()    {}
 func (*JobsReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{1}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{1}
 }
 func (m *JobsReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobsReply.Unmarshal(m, b)
@@ -104,8 +102,8 @@ func (m *JobsReply) XXX_Unmarshal(b []byte) error {
 func (m *JobsReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobsReply.Marshal(b, m, deterministic)
 }
-func (m *JobsReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobsReply.Merge(m, src)
+func (dst *JobsReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobsReply.Merge(dst, src)
 }
 func (m *JobsReply) XXX_Size() int {
 	return xxx_messageInfo_JobsReply.Size(m)
@@ -144,7 +142,7 @@ func (m *InvocationsRequest) Reset()         { *m = InvocationsRequest{} }
 func (m *InvocationsRequest) String() string { return proto.CompactTextString(m) }
 func (*InvocationsRequest) ProtoMessage()    {}
 func (*InvocationsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{2}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{2}
 }
 func (m *InvocationsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsRequest.Unmarshal(m, b)
@@ -152,8 +150,8 @@ func (m *InvocationsRequest) XXX_Unmarshal(b []byte) error {
 func (m *InvocationsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationsRequest.Marshal(b, m, deterministic)
 }
-func (m *InvocationsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationsRequest.Merge(m, src)
+func (dst *InvocationsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationsRequest.Merge(dst, src)
 }
 func (m *InvocationsRequest) XXX_Size() int {
 	return xxx_messageInfo_InvocationsRequest.Size(m)
@@ -197,7 +195,7 @@ func (m *InvocationsReply) Reset()         { *m = InvocationsReply{} }
 func (m *InvocationsReply) String() string { return proto.CompactTextString(m) }
 func (*InvocationsReply) ProtoMessage()    {}
 func (*InvocationsReply) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{3}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{3}
 }
 func (m *InvocationsReply) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsReply.Unmarshal(m, b)
@@ -205,8 +203,8 @@ func (m *InvocationsReply) XXX_Unmarshal(b []byte) error {
 func (m *InvocationsReply) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationsReply.Marshal(b, m, deterministic)
 }
-func (m *InvocationsReply) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationsReply.Merge(m, src)
+func (dst *InvocationsReply) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationsReply.Merge(dst, src)
 }
 func (m *InvocationsReply) XXX_Size() int {
 	return xxx_messageInfo_InvocationsReply.Size(m)
@@ -255,7 +253,7 @@ func (m *EmitTriggersRequest) Reset()         { *m = EmitTriggersRequest{} }
 func (m *EmitTriggersRequest) String() string { return proto.CompactTextString(m) }
 func (*EmitTriggersRequest) ProtoMessage()    {}
 func (*EmitTriggersRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{4}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{4}
 }
 func (m *EmitTriggersRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EmitTriggersRequest.Unmarshal(m, b)
@@ -263,8 +261,8 @@ func (m *EmitTriggersRequest) XXX_Unmarshal(b []byte) error {
 func (m *EmitTriggersRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EmitTriggersRequest.Marshal(b, m, deterministic)
 }
-func (m *EmitTriggersRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EmitTriggersRequest.Merge(m, src)
+func (dst *EmitTriggersRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmitTriggersRequest.Merge(dst, src)
 }
 func (m *EmitTriggersRequest) XXX_Size() int {
 	return xxx_messageInfo_EmitTriggersRequest.Size(m)
@@ -301,7 +299,7 @@ func (m *EmitTriggersRequest_Batch) Reset()         { *m = EmitTriggersRequest_B
 func (m *EmitTriggersRequest_Batch) String() string { return proto.CompactTextString(m) }
 func (*EmitTriggersRequest_Batch) ProtoMessage()    {}
 func (*EmitTriggersRequest_Batch) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{4, 0}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{4, 0}
 }
 func (m *EmitTriggersRequest_Batch) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Unmarshal(m, b)
@@ -309,8 +307,8 @@ func (m *EmitTriggersRequest_Batch) XXX_Unmarshal(b []byte) error {
 func (m *EmitTriggersRequest_Batch) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Marshal(b, m, deterministic)
 }
-func (m *EmitTriggersRequest_Batch) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EmitTriggersRequest_Batch.Merge(m, src)
+func (dst *EmitTriggersRequest_Batch) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EmitTriggersRequest_Batch.Merge(dst, src)
 }
 func (m *EmitTriggersRequest_Batch) XXX_Size() int {
 	return xxx_messageInfo_EmitTriggersRequest_Batch.Size(m)
@@ -348,7 +346,7 @@ func (m *JobRef) Reset()         { *m = JobRef{} }
 func (m *JobRef) String() string { return proto.CompactTextString(m) }
 func (*JobRef) ProtoMessage()    {}
 func (*JobRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{5}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{5}
 }
 func (m *JobRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobRef.Unmarshal(m, b)
@@ -356,8 +354,8 @@ func (m *JobRef) XXX_Unmarshal(b []byte) error {
 func (m *JobRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobRef.Marshal(b, m, deterministic)
 }
-func (m *JobRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobRef.Merge(m, src)
+func (dst *JobRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobRef.Merge(dst, src)
 }
 func (m *JobRef) XXX_Size() int {
 	return xxx_messageInfo_JobRef.Size(m)
@@ -398,7 +396,7 @@ func (m *InvocationRef) Reset()         { *m = InvocationRef{} }
 func (m *InvocationRef) String() string { return proto.CompactTextString(m) }
 func (*InvocationRef) ProtoMessage()    {}
 func (*InvocationRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{6}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{6}
 }
 func (m *InvocationRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationRef.Unmarshal(m, b)
@@ -406,8 +404,8 @@ func (m *InvocationRef) XXX_Unmarshal(b []byte) error {
 func (m *InvocationRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationRef.Marshal(b, m, deterministic)
 }
-func (m *InvocationRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationRef.Merge(m, src)
+func (dst *InvocationRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationRef.Merge(dst, src)
 }
 func (m *InvocationRef) XXX_Size() int {
 	return xxx_messageInfo_InvocationRef.Size(m)
@@ -447,7 +445,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{7}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{7}
 }
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
@@ -455,8 +453,8 @@ func (m *Job) XXX_Unmarshal(b []byte) error {
 func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
 }
-func (m *Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Job.Merge(m, src)
+func (dst *Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Job.Merge(dst, src)
 }
 func (m *Job) XXX_Size() int {
 	return xxx_messageInfo_Job.Size(m)
@@ -512,7 +510,7 @@ func (m *JobState) Reset()         { *m = JobState{} }
 func (m *JobState) String() string { return proto.CompactTextString(m) }
 func (*JobState) ProtoMessage()    {}
 func (*JobState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{8}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{8}
 }
 func (m *JobState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_JobState.Unmarshal(m, b)
@@ -520,8 +518,8 @@ func (m *JobState) XXX_Unmarshal(b []byte) error {
 func (m *JobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_JobState.Marshal(b, m, deterministic)
 }
-func (m *JobState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_JobState.Merge(m, src)
+func (dst *JobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobState.Merge(dst, src)
 }
 func (m *JobState) XXX_Size() int {
 	return xxx_messageInfo_JobState.Size(m)
@@ -567,7 +565,7 @@ func (m *Invocation) Reset()         { *m = Invocation{} }
 func (m *Invocation) String() string { return proto.CompactTextString(m) }
 func (*Invocation) ProtoMessage()    {}
 func (*Invocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e96332fbbddc17fa, []int{9}
+	return fileDescriptor_scheduler_05a392c43529eec9, []int{9}
 }
 func (m *Invocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Invocation.Unmarshal(m, b)
@@ -575,8 +573,8 @@ func (m *Invocation) XXX_Unmarshal(b []byte) error {
 func (m *Invocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Invocation.Marshal(b, m, deterministic)
 }
-func (m *Invocation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Invocation.Merge(m, src)
+func (dst *Invocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Invocation.Merge(dst, src)
 }
 func (m *Invocation) XXX_Size() int {
 	return xxx_messageInfo_Invocation.Size(m)
@@ -1126,10 +1124,10 @@ var _Scheduler_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto", fileDescriptor_e96332fbbddc17fa)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/scheduler.proto", fileDescriptor_scheduler_05a392c43529eec9)
 }
 
-var fileDescriptor_e96332fbbddc17fa = []byte{
+var fileDescriptor_scheduler_05a392c43529eec9 = []byte{
 	// 753 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xdf, 0x52, 0xeb, 0x44,
 	0x1c, 0x9e, 0x52, 0xda, 0x26, 0xbf, 0x42, 0xc1, 0x05, 0x99, 0x58, 0x44, 0x6b, 0xd4, 0xa1, 0x3a,

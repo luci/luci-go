@@ -3,11 +3,9 @@
 
 package config
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,7 +39,7 @@ func (m *Settings) Reset()         { *m = Settings{} }
 func (m *Settings) String() string { return proto.CompactTextString(m) }
 func (*Settings) ProtoMessage()    {}
 func (*Settings) Descriptor() ([]byte, []int) {
-	return fileDescriptor_98dd5cb9562385c0, []int{0}
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0}
 }
 func (m *Settings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings.Unmarshal(m, b)
@@ -49,8 +47,8 @@ func (m *Settings) XXX_Unmarshal(b []byte) error {
 func (m *Settings) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings.Marshal(b, m, deterministic)
 }
-func (m *Settings) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings.Merge(m, src)
+func (dst *Settings) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings.Merge(dst, src)
 }
 func (m *Settings) XXX_Size() int {
 	return xxx_messageInfo_Settings.Size(m)
@@ -108,7 +106,7 @@ func (m *Settings_Buildbot) Reset()         { *m = Settings_Buildbot{} }
 func (m *Settings_Buildbot) String() string { return proto.CompactTextString(m) }
 func (*Settings_Buildbot) ProtoMessage()    {}
 func (*Settings_Buildbot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_98dd5cb9562385c0, []int{0, 0}
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 0}
 }
 func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbot.Unmarshal(m, b)
@@ -116,8 +114,8 @@ func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Buildbot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Buildbot.Marshal(b, m, deterministic)
 }
-func (m *Settings_Buildbot) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Buildbot.Merge(m, src)
+func (dst *Settings_Buildbot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbot.Merge(dst, src)
 }
 func (m *Settings_Buildbot) XXX_Size() int {
 	return xxx_messageInfo_Settings_Buildbot.Size(m)
@@ -166,7 +164,7 @@ func (m *Settings_Buildbucket) Reset()         { *m = Settings_Buildbucket{} }
 func (m *Settings_Buildbucket) String() string { return proto.CompactTextString(m) }
 func (*Settings_Buildbucket) ProtoMessage()    {}
 func (*Settings_Buildbucket) Descriptor() ([]byte, []int) {
-	return fileDescriptor_98dd5cb9562385c0, []int{0, 1}
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 1}
 }
 func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbucket.Unmarshal(m, b)
@@ -174,8 +172,8 @@ func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Buildbucket) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Buildbucket.Marshal(b, m, deterministic)
 }
-func (m *Settings_Buildbucket) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Buildbucket.Merge(m, src)
+func (dst *Settings_Buildbucket) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Buildbucket.Merge(dst, src)
 }
 func (m *Settings_Buildbucket) XXX_Size() int {
 	return xxx_messageInfo_Settings_Buildbucket.Size(m)
@@ -224,7 +222,7 @@ func (m *Settings_Swarming) Reset()         { *m = Settings_Swarming{} }
 func (m *Settings_Swarming) String() string { return proto.CompactTextString(m) }
 func (*Settings_Swarming) ProtoMessage()    {}
 func (*Settings_Swarming) Descriptor() ([]byte, []int) {
-	return fileDescriptor_98dd5cb9562385c0, []int{0, 2}
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 2}
 }
 func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Swarming.Unmarshal(m, b)
@@ -232,8 +230,8 @@ func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
 func (m *Settings_Swarming) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_Swarming.Marshal(b, m, deterministic)
 }
-func (m *Settings_Swarming) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_Swarming.Merge(m, src)
+func (dst *Settings_Swarming) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_Swarming.Merge(dst, src)
 }
 func (m *Settings_Swarming) XXX_Size() int {
 	return xxx_messageInfo_Settings_Swarming.Size(m)
@@ -293,7 +291,7 @@ func (m *Settings_SourceAcls) Reset()         { *m = Settings_SourceAcls{} }
 func (m *Settings_SourceAcls) String() string { return proto.CompactTextString(m) }
 func (*Settings_SourceAcls) ProtoMessage()    {}
 func (*Settings_SourceAcls) Descriptor() ([]byte, []int) {
-	return fileDescriptor_98dd5cb9562385c0, []int{0, 3}
+	return fileDescriptor_settings_de1143cae3c9b2b5, []int{0, 3}
 }
 func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_SourceAcls.Unmarshal(m, b)
@@ -301,8 +299,8 @@ func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
 func (m *Settings_SourceAcls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Settings_SourceAcls.Marshal(b, m, deterministic)
 }
-func (m *Settings_SourceAcls) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Settings_SourceAcls.Merge(m, src)
+func (dst *Settings_SourceAcls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Settings_SourceAcls.Merge(dst, src)
 }
 func (m *Settings_SourceAcls) XXX_Size() int {
 	return xxx_messageInfo_Settings_SourceAcls.Size(m)
@@ -343,10 +341,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor_98dd5cb9562385c0)
+	proto.RegisterFile("go.chromium.org/luci/milo/api/config/settings.proto", fileDescriptor_settings_de1143cae3c9b2b5)
 }
 
-var fileDescriptor_98dd5cb9562385c0 = []byte{
+var fileDescriptor_settings_de1143cae3c9b2b5 = []byte{
 	// 396 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x92, 0xbf, 0x8e, 0xd4, 0x30,
 	0x10, 0xc6, 0x95, 0xcb, 0xde, 0x91, 0x9d, 0x1c, 0x20, 0x99, 0x43, 0x84, 0x54, 0x0b, 0x14, 0x6c,

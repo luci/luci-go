@@ -3,12 +3,10 @@
 
 package testprotos
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -32,7 +30,6 @@ var Enum_name = map[int32]string{
 	0: "ENUM_DEFAULT",
 	1: "ENUM_VAL_1",
 }
-
 var Enum_value = map[string]int32{
 	"ENUM_DEFAULT": 0,
 	"ENUM_VAL_1":   1,
@@ -41,9 +38,8 @@ var Enum_value = map[string]int32{
 func (x Enum) String() string {
 	return proto.EnumName(Enum_name, int32(x))
 }
-
 func (Enum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{0}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{0}
 }
 
 type Complex_InnerEnum int32
@@ -57,7 +53,6 @@ var Complex_InnerEnum_name = map[int32]string{
 	0: "UNKNOWN",
 	1: "ENUM_VAL_1",
 }
-
 var Complex_InnerEnum_value = map[string]int32{
 	"UNKNOWN":    0,
 	"ENUM_VAL_1": 1,
@@ -66,9 +61,8 @@ var Complex_InnerEnum_value = map[string]int32{
 func (x Complex_InnerEnum) String() string {
 	return proto.EnumName(Complex_InnerEnum_name, int32(x))
 }
-
 func (Complex_InnerEnum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{3, 0}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{3, 0}
 }
 
 type SimpleFields struct {
@@ -92,7 +86,7 @@ func (m *SimpleFields) Reset()         { *m = SimpleFields{} }
 func (m *SimpleFields) String() string { return proto.CompactTextString(m) }
 func (*SimpleFields) ProtoMessage()    {}
 func (*SimpleFields) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{0}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{0}
 }
 func (m *SimpleFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SimpleFields.Unmarshal(m, b)
@@ -100,8 +94,8 @@ func (m *SimpleFields) XXX_Unmarshal(b []byte) error {
 func (m *SimpleFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SimpleFields.Marshal(b, m, deterministic)
 }
-func (m *SimpleFields) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SimpleFields.Merge(m, src)
+func (dst *SimpleFields) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SimpleFields.Merge(dst, src)
 }
 func (m *SimpleFields) XXX_Size() int {
 	return xxx_messageInfo_SimpleFields.Size(m)
@@ -201,7 +195,7 @@ func (m *MessageFields) Reset()         { *m = MessageFields{} }
 func (m *MessageFields) String() string { return proto.CompactTextString(m) }
 func (*MessageFields) ProtoMessage()    {}
 func (*MessageFields) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{1}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{1}
 }
 func (m *MessageFields) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MessageFields.Unmarshal(m, b)
@@ -209,8 +203,8 @@ func (m *MessageFields) XXX_Unmarshal(b []byte) error {
 func (m *MessageFields) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MessageFields.Marshal(b, m, deterministic)
 }
-func (m *MessageFields) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MessageFields.Merge(m, src)
+func (dst *MessageFields) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MessageFields.Merge(dst, src)
 }
 func (m *MessageFields) XXX_Size() int {
 	return xxx_messageInfo_MessageFields.Size(m)
@@ -247,7 +241,7 @@ func (m *Simple) Reset()         { *m = Simple{} }
 func (m *Simple) String() string { return proto.CompactTextString(m) }
 func (*Simple) ProtoMessage()    {}
 func (*Simple) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{2}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{2}
 }
 func (m *Simple) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Simple.Unmarshal(m, b)
@@ -255,8 +249,8 @@ func (m *Simple) XXX_Unmarshal(b []byte) error {
 func (m *Simple) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Simple.Marshal(b, m, deterministic)
 }
-func (m *Simple) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Simple.Merge(m, src)
+func (dst *Simple) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Simple.Merge(dst, src)
 }
 func (m *Simple) XXX_Size() int {
 	return xxx_messageInfo_Simple.Size(m)
@@ -300,7 +294,7 @@ func (m *Complex) Reset()         { *m = Complex{} }
 func (m *Complex) String() string { return proto.CompactTextString(m) }
 func (*Complex) ProtoMessage()    {}
 func (*Complex) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{3}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{3}
 }
 func (m *Complex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex.Unmarshal(m, b)
@@ -308,8 +302,8 @@ func (m *Complex) XXX_Unmarshal(b []byte) error {
 func (m *Complex) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Complex.Marshal(b, m, deterministic)
 }
-func (m *Complex) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Complex.Merge(m, src)
+func (dst *Complex) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Complex.Merge(dst, src)
 }
 func (m *Complex) XXX_Size() int {
 	return xxx_messageInfo_Complex.Size(m)
@@ -477,7 +471,7 @@ func (m *Complex_InnerMessage) Reset()         { *m = Complex_InnerMessage{} }
 func (m *Complex_InnerMessage) String() string { return proto.CompactTextString(m) }
 func (*Complex_InnerMessage) ProtoMessage()    {}
 func (*Complex_InnerMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{3, 0}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{3, 0}
 }
 func (m *Complex_InnerMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Complex_InnerMessage.Unmarshal(m, b)
@@ -485,8 +479,8 @@ func (m *Complex_InnerMessage) XXX_Unmarshal(b []byte) error {
 func (m *Complex_InnerMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Complex_InnerMessage.Marshal(b, m, deterministic)
 }
-func (m *Complex_InnerMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Complex_InnerMessage.Merge(m, src)
+func (dst *Complex_InnerMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Complex_InnerMessage.Merge(dst, src)
 }
 func (m *Complex_InnerMessage) XXX_Size() int {
 	return xxx_messageInfo_Complex_InnerMessage.Size(m)
@@ -516,7 +510,7 @@ func (m *RefsOtherProtos) Reset()         { *m = RefsOtherProtos{} }
 func (m *RefsOtherProtos) String() string { return proto.CompactTextString(m) }
 func (*RefsOtherProtos) ProtoMessage()    {}
 func (*RefsOtherProtos) Descriptor() ([]byte, []int) {
-	return fileDescriptor_13737774a66b07cd, []int{4}
+	return fileDescriptor_test_eb81001deb9f9da7, []int{4}
 }
 func (m *RefsOtherProtos) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsOtherProtos.Unmarshal(m, b)
@@ -524,8 +518,8 @@ func (m *RefsOtherProtos) XXX_Unmarshal(b []byte) error {
 func (m *RefsOtherProtos) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsOtherProtos.Marshal(b, m, deterministic)
 }
-func (m *RefsOtherProtos) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsOtherProtos.Merge(m, src)
+func (dst *RefsOtherProtos) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsOtherProtos.Merge(dst, src)
 }
 func (m *RefsOtherProtos) XXX_Size() int {
 	return xxx_messageInfo_RefsOtherProtos.Size(m)
@@ -562,10 +556,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor_13737774a66b07cd)
+	proto.RegisterFile("go.chromium.org/luci/skylark/skylarkproto/testprotos/test.proto", fileDescriptor_test_eb81001deb9f9da7)
 }
 
-var fileDescriptor_13737774a66b07cd = []byte{
+var fileDescriptor_test_eb81001deb9f9da7 = []byte{
 	// 595 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x9d, 0x93, 0x36, 0x6d, 0x6f, 0xb3, 0xfd, 0x2a, 0x4b, 0x3f, 0x11, 0x55, 0x20, 0xac, 0x88,

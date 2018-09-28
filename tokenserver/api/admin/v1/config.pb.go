@@ -3,11 +3,9 @@
 
 package admin
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +31,7 @@ func (m *TokenServerConfig) Reset()         { *m = TokenServerConfig{} }
 func (m *TokenServerConfig) String() string { return proto.CompactTextString(m) }
 func (*TokenServerConfig) ProtoMessage()    {}
 func (*TokenServerConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{0}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{0}
 }
 func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TokenServerConfig.Unmarshal(m, b)
@@ -41,8 +39,8 @@ func (m *TokenServerConfig) XXX_Unmarshal(b []byte) error {
 func (m *TokenServerConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TokenServerConfig.Marshal(b, m, deterministic)
 }
-func (m *TokenServerConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TokenServerConfig.Merge(m, src)
+func (dst *TokenServerConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TokenServerConfig.Merge(dst, src)
 }
 func (m *TokenServerConfig) XXX_Size() int {
 	return xxx_messageInfo_TokenServerConfig.Size(m)
@@ -90,7 +88,7 @@ func (m *CertificateAuthorityConfig) Reset()         { *m = CertificateAuthority
 func (m *CertificateAuthorityConfig) String() string { return proto.CompactTextString(m) }
 func (*CertificateAuthorityConfig) ProtoMessage()    {}
 func (*CertificateAuthorityConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{1}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{1}
 }
 func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CertificateAuthorityConfig.Unmarshal(m, b)
@@ -98,8 +96,8 @@ func (m *CertificateAuthorityConfig) XXX_Unmarshal(b []byte) error {
 func (m *CertificateAuthorityConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CertificateAuthorityConfig.Marshal(b, m, deterministic)
 }
-func (m *CertificateAuthorityConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CertificateAuthorityConfig.Merge(m, src)
+func (dst *CertificateAuthorityConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CertificateAuthorityConfig.Merge(dst, src)
 }
 func (m *CertificateAuthorityConfig) XXX_Size() int {
 	return xxx_messageInfo_CertificateAuthorityConfig.Size(m)
@@ -180,7 +178,7 @@ func (m *DomainConfig) Reset()         { *m = DomainConfig{} }
 func (m *DomainConfig) String() string { return proto.CompactTextString(m) }
 func (*DomainConfig) ProtoMessage()    {}
 func (*DomainConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{2}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{2}
 }
 func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DomainConfig.Unmarshal(m, b)
@@ -188,8 +186,8 @@ func (m *DomainConfig) XXX_Unmarshal(b []byte) error {
 func (m *DomainConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DomainConfig.Marshal(b, m, deterministic)
 }
-func (m *DomainConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DomainConfig.Merge(m, src)
+func (dst *DomainConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DomainConfig.Merge(dst, src)
 }
 func (m *DomainConfig) XXX_Size() int {
 	return xxx_messageInfo_DomainConfig.Size(m)
@@ -233,7 +231,7 @@ func (m *DelegationPermissions) Reset()         { *m = DelegationPermissions{} }
 func (m *DelegationPermissions) String() string { return proto.CompactTextString(m) }
 func (*DelegationPermissions) ProtoMessage()    {}
 func (*DelegationPermissions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{3}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{3}
 }
 func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationPermissions.Unmarshal(m, b)
@@ -241,8 +239,8 @@ func (m *DelegationPermissions) XXX_Unmarshal(b []byte) error {
 func (m *DelegationPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DelegationPermissions.Marshal(b, m, deterministic)
 }
-func (m *DelegationPermissions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelegationPermissions.Merge(m, src)
+func (dst *DelegationPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationPermissions.Merge(dst, src)
 }
 func (m *DelegationPermissions) XXX_Size() int {
 	return xxx_messageInfo_DelegationPermissions.Size(m)
@@ -351,7 +349,7 @@ func (m *DelegationRule) Reset()         { *m = DelegationRule{} }
 func (m *DelegationRule) String() string { return proto.CompactTextString(m) }
 func (*DelegationRule) ProtoMessage()    {}
 func (*DelegationRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{4}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{4}
 }
 func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationRule.Unmarshal(m, b)
@@ -359,8 +357,8 @@ func (m *DelegationRule) XXX_Unmarshal(b []byte) error {
 func (m *DelegationRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DelegationRule.Marshal(b, m, deterministic)
 }
-func (m *DelegationRule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelegationRule.Merge(m, src)
+func (dst *DelegationRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationRule.Merge(dst, src)
 }
 func (m *DelegationRule) XXX_Size() int {
 	return xxx_messageInfo_DelegationRule.Size(m)
@@ -450,7 +448,7 @@ func (m *ServiceAccountsPermissions) Reset()         { *m = ServiceAccountsPermi
 func (m *ServiceAccountsPermissions) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountsPermissions) ProtoMessage()    {}
 func (*ServiceAccountsPermissions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{5}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{5}
 }
 func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountsPermissions.Unmarshal(m, b)
@@ -458,8 +456,8 @@ func (m *ServiceAccountsPermissions) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountsPermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountsPermissions.Marshal(b, m, deterministic)
 }
-func (m *ServiceAccountsPermissions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountsPermissions.Merge(m, src)
+func (dst *ServiceAccountsPermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountsPermissions.Merge(dst, src)
 }
 func (m *ServiceAccountsPermissions) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountsPermissions.Size(m)
@@ -568,7 +566,7 @@ func (m *ServiceAccountRule) Reset()         { *m = ServiceAccountRule{} }
 func (m *ServiceAccountRule) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountRule) ProtoMessage()    {}
 func (*ServiceAccountRule) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{6}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{6}
 }
 func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRule.Unmarshal(m, b)
@@ -576,8 +574,8 @@ func (m *ServiceAccountRule) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountRule) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountRule.Marshal(b, m, deterministic)
 }
-func (m *ServiceAccountRule) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountRule.Merge(m, src)
+func (dst *ServiceAccountRule) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRule.Merge(dst, src)
 }
 func (m *ServiceAccountRule) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountRule.Size(m)
@@ -673,7 +671,7 @@ func (m *ServiceAccountRuleDefaults) Reset()         { *m = ServiceAccountRuleDe
 func (m *ServiceAccountRuleDefaults) String() string { return proto.CompactTextString(m) }
 func (*ServiceAccountRuleDefaults) ProtoMessage()    {}
 func (*ServiceAccountRuleDefaults) Descriptor() ([]byte, []int) {
-	return fileDescriptor_aeb7d66bba60fd47, []int{7}
+	return fileDescriptor_config_b36d6463a87a68ec, []int{7}
 }
 func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Unmarshal(m, b)
@@ -681,8 +679,8 @@ func (m *ServiceAccountRuleDefaults) XXX_Unmarshal(b []byte) error {
 func (m *ServiceAccountRuleDefaults) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Marshal(b, m, deterministic)
 }
-func (m *ServiceAccountRuleDefaults) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceAccountRuleDefaults.Merge(m, src)
+func (dst *ServiceAccountRuleDefaults) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceAccountRuleDefaults.Merge(dst, src)
 }
 func (m *ServiceAccountRuleDefaults) XXX_Size() int {
 	return xxx_messageInfo_ServiceAccountRuleDefaults.Size(m)
@@ -719,10 +717,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor_aeb7d66bba60fd47)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/admin/v1/config.proto", fileDescriptor_config_b36d6463a87a68ec)
 }
 
-var fileDescriptor_aeb7d66bba60fd47 = []byte{
+var fileDescriptor_config_b36d6463a87a68ec = []byte{
 	// 755 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0x4d, 0x8f, 0x22, 0x45,
 	0x18, 0x0e, 0x4d, 0x03, 0x4d, 0x2d, 0xc3, 0xb2, 0xb5, 0xcc, 0x5a, 0xee, 0x9a, 0xc8, 0x62, 0x36,

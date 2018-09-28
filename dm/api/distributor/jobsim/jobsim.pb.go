@@ -3,11 +3,9 @@
 
 package jobsim
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -44,7 +42,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cabdc2d418c4e740, []int{0}
+	return fileDescriptor_jobsim_591222a3e131fe6d, []int{0}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
@@ -52,8 +50,8 @@ func (m *Config) XXX_Unmarshal(b []byte) error {
 func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 }
-func (m *Config) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config.Merge(m, src)
+func (dst *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(dst, src)
 }
 func (m *Config) XXX_Size() int {
 	return xxx_messageInfo_Config.Size(m)
@@ -83,10 +81,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/jobsim.proto", fileDescriptor_cabdc2d418c4e740)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/jobsim/jobsim.proto", fileDescriptor_jobsim_591222a3e131fe6d)
 }
 
-var fileDescriptor_cabdc2d418c4e740 = []byte{
+var fileDescriptor_jobsim_591222a3e131fe6d = []byte{
 	// 142 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x2c, 0x8c, 0xb1, 0x0e, 0xc2, 0x20,
 	0x14, 0x45, 0x83, 0x31, 0x44, 0x71, 0x63, 0xea, 0x66, 0xe3, 0xd4, 0x09, 0x06, 0x47, 0xe3, 0xe4,

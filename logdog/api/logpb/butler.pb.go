@@ -3,12 +3,10 @@
 
 package logpb
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,7 +34,6 @@ var ButlerMetadata_ContentType_name = map[int32]string{
 	0: "Invalid",
 	1: "ButlerLogBundle",
 }
-
 var ButlerMetadata_ContentType_value = map[string]int32{
 	"Invalid":         0,
 	"ButlerLogBundle": 1,
@@ -45,9 +42,8 @@ var ButlerMetadata_ContentType_value = map[string]int32{
 func (x ButlerMetadata_ContentType) String() string {
 	return proto.EnumName(ButlerMetadata_ContentType_name, int32(x))
 }
-
 func (ButlerMetadata_ContentType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_25f3936477fa1e93, []int{0, 0}
+	return fileDescriptor_butler_b31ee24866c731ed, []int{0, 0}
 }
 
 // Compression scheme of attached data.
@@ -62,7 +58,6 @@ var ButlerMetadata_Compression_name = map[int32]string{
 	0: "NONE",
 	1: "ZLIB",
 }
-
 var ButlerMetadata_Compression_value = map[string]int32{
 	"NONE": 0,
 	"ZLIB": 1,
@@ -71,9 +66,8 @@ var ButlerMetadata_Compression_value = map[string]int32{
 func (x ButlerMetadata_Compression) String() string {
 	return proto.EnumName(ButlerMetadata_Compression_name, int32(x))
 }
-
 func (ButlerMetadata_Compression) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_25f3936477fa1e93, []int{0, 1}
+	return fileDescriptor_butler_b31ee24866c731ed, []int{0, 1}
 }
 
 //
@@ -94,7 +88,7 @@ func (m *ButlerMetadata) Reset()         { *m = ButlerMetadata{} }
 func (m *ButlerMetadata) String() string { return proto.CompactTextString(m) }
 func (*ButlerMetadata) ProtoMessage()    {}
 func (*ButlerMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_25f3936477fa1e93, []int{0}
+	return fileDescriptor_butler_b31ee24866c731ed, []int{0}
 }
 func (m *ButlerMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerMetadata.Unmarshal(m, b)
@@ -102,8 +96,8 @@ func (m *ButlerMetadata) XXX_Unmarshal(b []byte) error {
 func (m *ButlerMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerMetadata.Marshal(b, m, deterministic)
 }
-func (m *ButlerMetadata) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerMetadata.Merge(m, src)
+func (dst *ButlerMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerMetadata.Merge(dst, src)
 }
 func (m *ButlerMetadata) XXX_Size() int {
 	return xxx_messageInfo_ButlerMetadata.Size(m)
@@ -189,7 +183,7 @@ func (m *ButlerLogBundle) Reset()         { *m = ButlerLogBundle{} }
 func (m *ButlerLogBundle) String() string { return proto.CompactTextString(m) }
 func (*ButlerLogBundle) ProtoMessage()    {}
 func (*ButlerLogBundle) Descriptor() ([]byte, []int) {
-	return fileDescriptor_25f3936477fa1e93, []int{1}
+	return fileDescriptor_butler_b31ee24866c731ed, []int{1}
 }
 func (m *ButlerLogBundle) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle.Unmarshal(m, b)
@@ -197,8 +191,8 @@ func (m *ButlerLogBundle) XXX_Unmarshal(b []byte) error {
 func (m *ButlerLogBundle) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerLogBundle.Marshal(b, m, deterministic)
 }
-func (m *ButlerLogBundle) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerLogBundle.Merge(m, src)
+func (dst *ButlerLogBundle) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerLogBundle.Merge(dst, src)
 }
 func (m *ButlerLogBundle) XXX_Size() int {
 	return xxx_messageInfo_ButlerLogBundle.Size(m)
@@ -292,7 +286,7 @@ func (m *ButlerLogBundle_Entry) Reset()         { *m = ButlerLogBundle_Entry{} }
 func (m *ButlerLogBundle_Entry) String() string { return proto.CompactTextString(m) }
 func (*ButlerLogBundle_Entry) ProtoMessage()    {}
 func (*ButlerLogBundle_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_25f3936477fa1e93, []int{1, 0}
+	return fileDescriptor_butler_b31ee24866c731ed, []int{1, 0}
 }
 func (m *ButlerLogBundle_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Unmarshal(m, b)
@@ -300,8 +294,8 @@ func (m *ButlerLogBundle_Entry) XXX_Unmarshal(b []byte) error {
 func (m *ButlerLogBundle_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Marshal(b, m, deterministic)
 }
-func (m *ButlerLogBundle_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ButlerLogBundle_Entry.Merge(m, src)
+func (dst *ButlerLogBundle_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ButlerLogBundle_Entry.Merge(dst, src)
 }
 func (m *ButlerLogBundle_Entry) XXX_Size() int {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Size(m)
@@ -356,10 +350,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/butler.proto", fileDescriptor_25f3936477fa1e93)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/butler.proto", fileDescriptor_butler_b31ee24866c731ed)
 }
 
-var fileDescriptor_25f3936477fa1e93 = []byte{
+var fileDescriptor_butler_b31ee24866c731ed = []byte{
 	// 496 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x51, 0x4d, 0x6b, 0xdb, 0x40,
 	0x10, 0x8d, 0x6c, 0xf9, 0x6b, 0x9c, 0x38, 0xee, 0x96, 0xb6, 0xc2, 0x14, 0xea, 0x38, 0x14, 0x0c,

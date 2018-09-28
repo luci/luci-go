@@ -3,11 +3,9 @@
 
 package gitiles
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +31,7 @@ func (m *Child) Reset()         { *m = Child{} }
 func (m *Child) String() string { return proto.CompactTextString(m) }
 func (*Child) ProtoMessage()    {}
 func (*Child) Descriptor() ([]byte, []int) {
-	return fileDescriptor_208d1a1363befab1, []int{0}
+	return fileDescriptor_messsages_e40891e429f54ff5, []int{0}
 }
 func (m *Child) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Child.Unmarshal(m, b)
@@ -41,8 +39,8 @@ func (m *Child) XXX_Unmarshal(b []byte) error {
 func (m *Child) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Child.Marshal(b, m, deterministic)
 }
-func (m *Child) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Child.Merge(m, src)
+func (dst *Child) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Child.Merge(dst, src)
 }
 func (m *Child) XXX_Size() int {
 	return xxx_messageInfo_Child.Size(m)
@@ -80,7 +78,7 @@ func (m *RefSpace) Reset()         { *m = RefSpace{} }
 func (m *RefSpace) String() string { return proto.CompactTextString(m) }
 func (*RefSpace) ProtoMessage()    {}
 func (*RefSpace) Descriptor() ([]byte, []int) {
-	return fileDescriptor_208d1a1363befab1, []int{1}
+	return fileDescriptor_messsages_e40891e429f54ff5, []int{1}
 }
 func (m *RefSpace) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefSpace.Unmarshal(m, b)
@@ -88,8 +86,8 @@ func (m *RefSpace) XXX_Unmarshal(b []byte) error {
 func (m *RefSpace) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefSpace.Marshal(b, m, deterministic)
 }
-func (m *RefSpace) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefSpace.Merge(m, src)
+func (dst *RefSpace) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefSpace.Merge(dst, src)
 }
 func (m *RefSpace) XXX_Size() int {
 	return xxx_messageInfo_RefSpace.Size(m)
@@ -126,7 +124,7 @@ func (m *RepositoryState) Reset()         { *m = RepositoryState{} }
 func (m *RepositoryState) String() string { return proto.CompactTextString(m) }
 func (*RepositoryState) ProtoMessage()    {}
 func (*RepositoryState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_208d1a1363befab1, []int{2}
+	return fileDescriptor_messsages_e40891e429f54ff5, []int{2}
 }
 func (m *RepositoryState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RepositoryState.Unmarshal(m, b)
@@ -134,8 +132,8 @@ func (m *RepositoryState) XXX_Unmarshal(b []byte) error {
 func (m *RepositoryState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RepositoryState.Marshal(b, m, deterministic)
 }
-func (m *RepositoryState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RepositoryState.Merge(m, src)
+func (dst *RepositoryState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RepositoryState.Merge(dst, src)
 }
 func (m *RepositoryState) XXX_Size() int {
 	return xxx_messageInfo_RepositoryState.Size(m)
@@ -160,10 +158,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/task/gitiles/messsages.proto", fileDescriptor_208d1a1363befab1)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/task/gitiles/messsages.proto", fileDescriptor_messsages_e40891e429f54ff5)
 }
 
-var fileDescriptor_208d1a1363befab1 = []byte{
+var fileDescriptor_messsages_e40891e429f54ff5 = []byte{
 	// 233 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x4f, 0xcd, 0x4a, 0xc4, 0x30,
 	0x10, 0xa6, 0xab, 0xd6, 0xdd, 0x28, 0x28, 0x39, 0x68, 0xf1, 0x54, 0x7a, 0xea, 0x29, 0xc1, 0xed,

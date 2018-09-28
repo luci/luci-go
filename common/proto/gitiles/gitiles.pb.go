@@ -5,12 +5,10 @@ package gitiles
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	git "go.chromium.org/luci/common/proto/git"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import git "go.chromium.org/luci/common/proto/git"
 
 import (
 	context "golang.org/x/net/context"
@@ -76,7 +74,7 @@ func (m *LogRequest) Reset()         { *m = LogRequest{} }
 func (m *LogRequest) String() string { return proto.CompactTextString(m) }
 func (*LogRequest) ProtoMessage()    {}
 func (*LogRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4cdf9f15dd6bc12a, []int{0}
+	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{0}
 }
 func (m *LogRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogRequest.Unmarshal(m, b)
@@ -84,8 +82,8 @@ func (m *LogRequest) XXX_Unmarshal(b []byte) error {
 func (m *LogRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogRequest.Marshal(b, m, deterministic)
 }
-func (m *LogRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogRequest.Merge(m, src)
+func (dst *LogRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogRequest.Merge(dst, src)
 }
 func (m *LogRequest) XXX_Size() int {
 	return xxx_messageInfo_LogRequest.Size(m)
@@ -153,7 +151,7 @@ func (m *LogResponse) Reset()         { *m = LogResponse{} }
 func (m *LogResponse) String() string { return proto.CompactTextString(m) }
 func (*LogResponse) ProtoMessage()    {}
 func (*LogResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4cdf9f15dd6bc12a, []int{1}
+	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{1}
 }
 func (m *LogResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogResponse.Unmarshal(m, b)
@@ -161,8 +159,8 @@ func (m *LogResponse) XXX_Unmarshal(b []byte) error {
 func (m *LogResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogResponse.Marshal(b, m, deterministic)
 }
-func (m *LogResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogResponse.Merge(m, src)
+func (dst *LogResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogResponse.Merge(dst, src)
 }
 func (m *LogResponse) XXX_Size() int {
 	return xxx_messageInfo_LogResponse.Size(m)
@@ -224,7 +222,7 @@ func (m *RefsRequest) Reset()         { *m = RefsRequest{} }
 func (m *RefsRequest) String() string { return proto.CompactTextString(m) }
 func (*RefsRequest) ProtoMessage()    {}
 func (*RefsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4cdf9f15dd6bc12a, []int{2}
+	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{2}
 }
 func (m *RefsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsRequest.Unmarshal(m, b)
@@ -232,8 +230,8 @@ func (m *RefsRequest) XXX_Unmarshal(b []byte) error {
 func (m *RefsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsRequest.Marshal(b, m, deterministic)
 }
-func (m *RefsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsRequest.Merge(m, src)
+func (dst *RefsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsRequest.Merge(dst, src)
 }
 func (m *RefsRequest) XXX_Size() int {
 	return xxx_messageInfo_RefsRequest.Size(m)
@@ -272,7 +270,7 @@ func (m *RefsResponse) Reset()         { *m = RefsResponse{} }
 func (m *RefsResponse) String() string { return proto.CompactTextString(m) }
 func (*RefsResponse) ProtoMessage()    {}
 func (*RefsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4cdf9f15dd6bc12a, []int{3}
+	return fileDescriptor_gitiles_b221f3ba6f31d539, []int{3}
 }
 func (m *RefsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RefsResponse.Unmarshal(m, b)
@@ -280,8 +278,8 @@ func (m *RefsResponse) XXX_Unmarshal(b []byte) error {
 func (m *RefsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RefsResponse.Marshal(b, m, deterministic)
 }
-func (m *RefsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RefsResponse.Merge(m, src)
+func (dst *RefsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RefsResponse.Merge(dst, src)
 }
 func (m *RefsResponse) XXX_Size() int {
 	return xxx_messageInfo_RefsResponse.Size(m)
@@ -442,10 +440,10 @@ var _Gitiles_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/gitiles/gitiles.proto", fileDescriptor_4cdf9f15dd6bc12a)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/gitiles/gitiles.proto", fileDescriptor_gitiles_b221f3ba6f31d539)
 }
 
-var fileDescriptor_4cdf9f15dd6bc12a = []byte{
+var fileDescriptor_gitiles_b221f3ba6f31d539 = []byte{
 	// 427 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0xdd, 0x6a, 0xd4, 0x40,
 	0x14, 0x80, 0x9b, 0x4d, 0xeb, 0xee, 0x9e, 0xf8, 0xc7, 0xb8, 0xc2, 0xb0, 0xa5, 0xb2, 0x04, 0x91,

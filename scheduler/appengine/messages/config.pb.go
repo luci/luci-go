@@ -3,11 +3,9 @@
 
 package messages
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -42,7 +40,6 @@ var Acl_Role_name = map[int32]string{
 	2: "TRIGGERER",
 	1: "OWNER",
 }
-
 var Acl_Role_value = map[string]int32{
 	"READER":    0,
 	"TRIGGERER": 2,
@@ -52,9 +49,8 @@ var Acl_Role_value = map[string]int32{
 func (x Acl_Role) String() string {
 	return proto.EnumName(Acl_Role_name, int32(x))
 }
-
 func (Acl_Role) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{1, 0}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{1, 0}
 }
 
 type TriggeringPolicy_Kind int32
@@ -80,7 +76,6 @@ var TriggeringPolicy_Kind_name = map[int32]string{
 	1: "GREEDY_BATCHING",
 	2: "LOGARITHMIC_BATCHING",
 }
-
 var TriggeringPolicy_Kind_value = map[string]int32{
 	"UNDEFINED":            0,
 	"GREEDY_BATCHING":      1,
@@ -90,9 +85,8 @@ var TriggeringPolicy_Kind_value = map[string]int32{
 func (x TriggeringPolicy_Kind) String() string {
 	return proto.EnumName(TriggeringPolicy_Kind_name, int32(x))
 }
-
 func (TriggeringPolicy_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{3, 0}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{3, 0}
 }
 
 // ProjectConfig defines a schema for a config file that describe jobs belonging
@@ -113,7 +107,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{0}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -121,8 +115,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (m *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(m, src)
+func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(dst, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -169,7 +163,7 @@ func (m *Acl) Reset()         { *m = Acl{} }
 func (m *Acl) String() string { return proto.CompactTextString(m) }
 func (*Acl) ProtoMessage()    {}
 func (*Acl) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{1}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{1}
 }
 func (m *Acl) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acl.Unmarshal(m, b)
@@ -177,8 +171,8 @@ func (m *Acl) XXX_Unmarshal(b []byte) error {
 func (m *Acl) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Acl.Marshal(b, m, deterministic)
 }
-func (m *Acl) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Acl.Merge(m, src)
+func (dst *Acl) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Acl.Merge(dst, src)
 }
 func (m *Acl) XXX_Size() int {
 	return xxx_messageInfo_Acl.Size(m)
@@ -220,7 +214,7 @@ func (m *AclSet) Reset()         { *m = AclSet{} }
 func (m *AclSet) String() string { return proto.CompactTextString(m) }
 func (*AclSet) ProtoMessage()    {}
 func (*AclSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{2}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{2}
 }
 func (m *AclSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclSet.Unmarshal(m, b)
@@ -228,8 +222,8 @@ func (m *AclSet) XXX_Unmarshal(b []byte) error {
 func (m *AclSet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AclSet.Marshal(b, m, deterministic)
 }
-func (m *AclSet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AclSet.Merge(m, src)
+func (dst *AclSet) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AclSet.Merge(dst, src)
 }
 func (m *AclSet) XXX_Size() int {
 	return xxx_messageInfo_AclSet.Size(m)
@@ -296,7 +290,7 @@ func (m *TriggeringPolicy) Reset()         { *m = TriggeringPolicy{} }
 func (m *TriggeringPolicy) String() string { return proto.CompactTextString(m) }
 func (*TriggeringPolicy) ProtoMessage()    {}
 func (*TriggeringPolicy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{3}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{3}
 }
 func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggeringPolicy.Unmarshal(m, b)
@@ -304,8 +298,8 @@ func (m *TriggeringPolicy) XXX_Unmarshal(b []byte) error {
 func (m *TriggeringPolicy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TriggeringPolicy.Marshal(b, m, deterministic)
 }
-func (m *TriggeringPolicy) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TriggeringPolicy.Merge(m, src)
+func (dst *TriggeringPolicy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TriggeringPolicy.Merge(dst, src)
 }
 func (m *TriggeringPolicy) XXX_Size() int {
 	return xxx_messageInfo_TriggeringPolicy.Size(m)
@@ -415,7 +409,7 @@ func (m *Job) Reset()         { *m = Job{} }
 func (m *Job) String() string { return proto.CompactTextString(m) }
 func (*Job) ProtoMessage()    {}
 func (*Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{4}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{4}
 }
 func (m *Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Job.Unmarshal(m, b)
@@ -423,8 +417,8 @@ func (m *Job) XXX_Unmarshal(b []byte) error {
 func (m *Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Job.Marshal(b, m, deterministic)
 }
-func (m *Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Job.Merge(m, src)
+func (dst *Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Job.Merge(dst, src)
 }
 func (m *Job) XXX_Size() int {
 	return xxx_messageInfo_Job.Size(m)
@@ -539,7 +533,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{5}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{5}
 }
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
@@ -547,8 +541,8 @@ func (m *Trigger) XXX_Unmarshal(b []byte) error {
 func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
 }
-func (m *Trigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Trigger.Merge(m, src)
+func (dst *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(dst, src)
 }
 func (m *Trigger) XXX_Size() int {
 	return xxx_messageInfo_Trigger.Size(m)
@@ -636,7 +630,7 @@ func (m *NoopTask) Reset()         { *m = NoopTask{} }
 func (m *NoopTask) String() string { return proto.CompactTextString(m) }
 func (*NoopTask) ProtoMessage()    {}
 func (*NoopTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{6}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{6}
 }
 func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTask.Unmarshal(m, b)
@@ -644,8 +638,8 @@ func (m *NoopTask) XXX_Unmarshal(b []byte) error {
 func (m *NoopTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NoopTask.Marshal(b, m, deterministic)
 }
-func (m *NoopTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NoopTask.Merge(m, src)
+func (dst *NoopTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NoopTask.Merge(dst, src)
 }
 func (m *NoopTask) XXX_Size() int {
 	return xxx_messageInfo_NoopTask.Size(m)
@@ -700,7 +694,7 @@ func (m *GitilesTask) Reset()         { *m = GitilesTask{} }
 func (m *GitilesTask) String() string { return proto.CompactTextString(m) }
 func (*GitilesTask) ProtoMessage()    {}
 func (*GitilesTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{7}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{7}
 }
 func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTask.Unmarshal(m, b)
@@ -708,8 +702,8 @@ func (m *GitilesTask) XXX_Unmarshal(b []byte) error {
 func (m *GitilesTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GitilesTask.Marshal(b, m, deterministic)
 }
-func (m *GitilesTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GitilesTask.Merge(m, src)
+func (dst *GitilesTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesTask.Merge(dst, src)
 }
 func (m *GitilesTask) XXX_Size() int {
 	return xxx_messageInfo_GitilesTask.Size(m)
@@ -751,7 +745,7 @@ func (m *UrlFetchTask) Reset()         { *m = UrlFetchTask{} }
 func (m *UrlFetchTask) String() string { return proto.CompactTextString(m) }
 func (*UrlFetchTask) ProtoMessage()    {}
 func (*UrlFetchTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{8}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{8}
 }
 func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UrlFetchTask.Unmarshal(m, b)
@@ -759,8 +753,8 @@ func (m *UrlFetchTask) XXX_Unmarshal(b []byte) error {
 func (m *UrlFetchTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UrlFetchTask.Marshal(b, m, deterministic)
 }
-func (m *UrlFetchTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UrlFetchTask.Merge(m, src)
+func (dst *UrlFetchTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UrlFetchTask.Merge(dst, src)
 }
 func (m *UrlFetchTask) XXX_Size() int {
 	return xxx_messageInfo_UrlFetchTask.Size(m)
@@ -815,7 +809,7 @@ func (m *BuildbucketTask) Reset()         { *m = BuildbucketTask{} }
 func (m *BuildbucketTask) String() string { return proto.CompactTextString(m) }
 func (*BuildbucketTask) ProtoMessage()    {}
 func (*BuildbucketTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{9}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{9}
 }
 func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTask.Unmarshal(m, b)
@@ -823,8 +817,8 @@ func (m *BuildbucketTask) XXX_Unmarshal(b []byte) error {
 func (m *BuildbucketTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbucketTask.Marshal(b, m, deterministic)
 }
-func (m *BuildbucketTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbucketTask.Merge(m, src)
+func (dst *BuildbucketTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbucketTask.Merge(dst, src)
 }
 func (m *BuildbucketTask) XXX_Size() int {
 	return xxx_messageInfo_BuildbucketTask.Size(m)
@@ -887,7 +881,7 @@ func (m *TaskDefWrapper) Reset()         { *m = TaskDefWrapper{} }
 func (m *TaskDefWrapper) String() string { return proto.CompactTextString(m) }
 func (*TaskDefWrapper) ProtoMessage()    {}
 func (*TaskDefWrapper) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3b38e5823bccf1c5, []int{10}
+	return fileDescriptor_config_f3fc8a0c162904f1, []int{10}
 }
 func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TaskDefWrapper.Unmarshal(m, b)
@@ -895,8 +889,8 @@ func (m *TaskDefWrapper) XXX_Unmarshal(b []byte) error {
 func (m *TaskDefWrapper) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TaskDefWrapper.Marshal(b, m, deterministic)
 }
-func (m *TaskDefWrapper) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TaskDefWrapper.Merge(m, src)
+func (dst *TaskDefWrapper) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TaskDefWrapper.Merge(dst, src)
 }
 func (m *TaskDefWrapper) XXX_Size() int {
 	return xxx_messageInfo_TaskDefWrapper.Size(m)
@@ -952,10 +946,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_3b38e5823bccf1c5)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/messages/config.proto", fileDescriptor_config_f3fc8a0c162904f1)
 }
 
-var fileDescriptor_3b38e5823bccf1c5 = []byte{
+var fileDescriptor_config_f3fc8a0c162904f1 = []byte{
 	// 924 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xdd, 0x6e, 0xdb, 0x36,
 	0x14, 0xae, 0x7e, 0x6c, 0xcb, 0x27, 0x4d, 0xaa, 0x71, 0xeb, 0xa0, 0x66, 0x68, 0xe7, 0x09, 0x1b,

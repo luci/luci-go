@@ -3,11 +3,9 @@
 
 package tasks
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +31,7 @@ func (m *VerifyUpload) Reset()         { *m = VerifyUpload{} }
 func (m *VerifyUpload) String() string { return proto.CompactTextString(m) }
 func (*VerifyUpload) ProtoMessage()    {}
 func (*VerifyUpload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_898f171f35cf6881, []int{0}
+	return fileDescriptor_tasks_8698bfc6090ba75f, []int{0}
 }
 func (m *VerifyUpload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VerifyUpload.Unmarshal(m, b)
@@ -41,8 +39,8 @@ func (m *VerifyUpload) XXX_Unmarshal(b []byte) error {
 func (m *VerifyUpload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_VerifyUpload.Marshal(b, m, deterministic)
 }
-func (m *VerifyUpload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VerifyUpload.Merge(m, src)
+func (dst *VerifyUpload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VerifyUpload.Merge(dst, src)
 }
 func (m *VerifyUpload) XXX_Size() int {
 	return xxx_messageInfo_VerifyUpload.Size(m)
@@ -74,7 +72,7 @@ func (m *CleanupUpload) Reset()         { *m = CleanupUpload{} }
 func (m *CleanupUpload) String() string { return proto.CompactTextString(m) }
 func (*CleanupUpload) ProtoMessage()    {}
 func (*CleanupUpload) Descriptor() ([]byte, []int) {
-	return fileDescriptor_898f171f35cf6881, []int{1}
+	return fileDescriptor_tasks_8698bfc6090ba75f, []int{1}
 }
 func (m *CleanupUpload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CleanupUpload.Unmarshal(m, b)
@@ -82,8 +80,8 @@ func (m *CleanupUpload) XXX_Unmarshal(b []byte) error {
 func (m *CleanupUpload) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CleanupUpload.Marshal(b, m, deterministic)
 }
-func (m *CleanupUpload) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CleanupUpload.Merge(m, src)
+func (dst *CleanupUpload) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CleanupUpload.Merge(dst, src)
 }
 func (m *CleanupUpload) XXX_Size() int {
 	return xxx_messageInfo_CleanupUpload.Size(m)
@@ -121,10 +119,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/cas/tasks/tasks.proto", fileDescriptor_898f171f35cf6881)
+	proto.RegisterFile("go.chromium.org/luci/cipd/appengine/impl/cas/tasks/tasks.proto", fileDescriptor_tasks_8698bfc6090ba75f)
 }
 
-var fileDescriptor_898f171f35cf6881 = []byte{
+var fileDescriptor_tasks_8698bfc6090ba75f = []byte{
 	// 205 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xb2, 0x4b, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

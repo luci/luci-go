@@ -3,13 +3,11 @@
 
 package distributor
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
-	v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
+import v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +31,7 @@ func (m *Alias) Reset()         { *m = Alias{} }
 func (m *Alias) String() string { return proto.CompactTextString(m) }
 func (*Alias) ProtoMessage()    {}
 func (*Alias) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ae589283bac413cb, []int{0}
+	return fileDescriptor_distributor_1d5579459576239f, []int{0}
 }
 func (m *Alias) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Alias.Unmarshal(m, b)
@@ -41,8 +39,8 @@ func (m *Alias) XXX_Unmarshal(b []byte) error {
 func (m *Alias) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Alias.Marshal(b, m, deterministic)
 }
-func (m *Alias) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Alias.Merge(m, src)
+func (dst *Alias) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Alias.Merge(dst, src)
 }
 func (m *Alias) XXX_Size() int {
 	return xxx_messageInfo_Alias.Size(m)
@@ -81,7 +79,7 @@ func (m *Distributor) Reset()         { *m = Distributor{} }
 func (m *Distributor) String() string { return proto.CompactTextString(m) }
 func (*Distributor) ProtoMessage()    {}
 func (*Distributor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ae589283bac413cb, []int{1}
+	return fileDescriptor_distributor_1d5579459576239f, []int{1}
 }
 func (m *Distributor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Distributor.Unmarshal(m, b)
@@ -89,8 +87,8 @@ func (m *Distributor) XXX_Unmarshal(b []byte) error {
 func (m *Distributor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Distributor.Marshal(b, m, deterministic)
 }
-func (m *Distributor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Distributor.Merge(m, src)
+func (dst *Distributor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Distributor.Merge(dst, src)
 }
 func (m *Distributor) XXX_Size() int {
 	return xxx_messageInfo_Distributor.Size(m)
@@ -255,7 +253,7 @@ func (m *Config) Reset()         { *m = Config{} }
 func (m *Config) String() string { return proto.CompactTextString(m) }
 func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ae589283bac413cb, []int{2}
+	return fileDescriptor_distributor_1d5579459576239f, []int{2}
 }
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
@@ -263,8 +261,8 @@ func (m *Config) XXX_Unmarshal(b []byte) error {
 func (m *Config) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Config.Marshal(b, m, deterministic)
 }
-func (m *Config) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Config.Merge(m, src)
+func (dst *Config) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Config.Merge(dst, src)
 }
 func (m *Config) XXX_Size() int {
 	return xxx_messageInfo_Config.Size(m)
@@ -290,10 +288,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/distributor.proto", fileDescriptor_ae589283bac413cb)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/distributor.proto", fileDescriptor_distributor_1d5579459576239f)
 }
 
-var fileDescriptor_ae589283bac413cb = []byte{
+var fileDescriptor_distributor_1d5579459576239f = []byte{
 	// 334 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x91, 0x4f, 0x4b, 0xc3, 0x30,
 	0x18, 0xc6, 0xd7, 0xb5, 0x1b, 0xf3, 0x8d, 0x48, 0x89, 0x07, 0xcb, 0x4e, 0xba, 0xd3, 0x9c, 0x90,

@@ -3,11 +3,9 @@
 
 package swarmingV1
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -32,7 +30,7 @@ func (m *IsolatedRef) Reset()         { *m = IsolatedRef{} }
 func (m *IsolatedRef) String() string { return proto.CompactTextString(m) }
 func (*IsolatedRef) ProtoMessage()    {}
 func (*IsolatedRef) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ca7d5f1aabd0c83, []int{0}
+	return fileDescriptor_isolate_ref_1405cc6c3c3fdace, []int{0}
 }
 func (m *IsolatedRef) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsolatedRef.Unmarshal(m, b)
@@ -40,8 +38,8 @@ func (m *IsolatedRef) XXX_Unmarshal(b []byte) error {
 func (m *IsolatedRef) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_IsolatedRef.Marshal(b, m, deterministic)
 }
-func (m *IsolatedRef) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IsolatedRef.Merge(m, src)
+func (dst *IsolatedRef) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IsolatedRef.Merge(dst, src)
 }
 func (m *IsolatedRef) XXX_Size() int {
 	return xxx_messageInfo_IsolatedRef.Size(m)
@@ -71,10 +69,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/isolate_ref.proto", fileDescriptor_0ca7d5f1aabd0c83)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/isolate_ref.proto", fileDescriptor_isolate_ref_1405cc6c3c3fdace)
 }
 
-var fileDescriptor_0ca7d5f1aabd0c83 = []byte{
+var fileDescriptor_isolate_ref_1405cc6c3c3fdace = []byte{
 	// 149 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x72, 0x4d, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

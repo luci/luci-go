@@ -5,12 +5,10 @@ package dm
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import empty "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -251,10 +249,10 @@ var _Deps_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/service.proto", fileDescriptor_68bd6a527f0765eb)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/service.proto", fileDescriptor_service_8907f222c15c0f56)
 }
 
-var fileDescriptor_68bd6a527f0765eb = []byte{
+var fileDescriptor_service_8907f222c15c0f56 = []byte{
 	// 278 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0x4d, 0x4b, 0xc4, 0x30,
 	0x10, 0x86, 0x51, 0x44, 0x30, 0xb0, 0xa8, 0x41, 0x44, 0xea, 0x5f, 0x90, 0x04, 0x3f, 0xc0, 0x83,

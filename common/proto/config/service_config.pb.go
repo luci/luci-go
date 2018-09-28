@@ -3,11 +3,9 @@
 
 package config
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +33,6 @@ var ConfigSetLocation_StorageType_name = map[int32]string{
 	0: "UNSET",
 	1: "GITILES",
 }
-
 var ConfigSetLocation_StorageType_value = map[string]int32{
 	"UNSET":   0,
 	"GITILES": 1,
@@ -44,9 +41,8 @@ var ConfigSetLocation_StorageType_value = map[string]int32{
 func (x ConfigSetLocation_StorageType) String() string {
 	return proto.EnumName(ConfigSetLocation_StorageType_name, int32(x))
 }
-
 func (ConfigSetLocation_StorageType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{0, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{0, 0}
 }
 
 // Severity of a validation response message. In JSON encoded as a string.
@@ -69,7 +65,6 @@ var ValidationResponseMessage_Severity_name = map[int32]string{
 	40: "ERROR",
 	50: "CRITICAL",
 }
-
 var ValidationResponseMessage_Severity_value = map[string]int32{
 	"UNKNOWN":  0,
 	"DEBUG":    10,
@@ -82,9 +77,8 @@ var ValidationResponseMessage_Severity_value = map[string]int32{
 func (x ValidationResponseMessage_Severity) String() string {
 	return proto.EnumName(ValidationResponseMessage_Severity_name, int32(x))
 }
-
 func (ValidationResponseMessage_Severity) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{12, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{12, 0}
 }
 
 // Used to specify project/service configuration location.
@@ -102,7 +96,7 @@ func (m *ConfigSetLocation) Reset()         { *m = ConfigSetLocation{} }
 func (m *ConfigSetLocation) String() string { return proto.CompactTextString(m) }
 func (*ConfigSetLocation) ProtoMessage()    {}
 func (*ConfigSetLocation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{0}
 }
 func (m *ConfigSetLocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConfigSetLocation.Unmarshal(m, b)
@@ -110,8 +104,8 @@ func (m *ConfigSetLocation) XXX_Unmarshal(b []byte) error {
 func (m *ConfigSetLocation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ConfigSetLocation.Marshal(b, m, deterministic)
 }
-func (m *ConfigSetLocation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfigSetLocation.Merge(m, src)
+func (dst *ConfigSetLocation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigSetLocation.Merge(dst, src)
 }
 func (m *ConfigSetLocation) XXX_Size() int {
 	return xxx_messageInfo_ConfigSetLocation.Size(m)
@@ -151,7 +145,7 @@ func (m *Project) Reset()         { *m = Project{} }
 func (m *Project) String() string { return proto.CompactTextString(m) }
 func (*Project) ProtoMessage()    {}
 func (*Project) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{1}
+	return fileDescriptor_service_config_27e697587861a29c, []int{1}
 }
 func (m *Project) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Project.Unmarshal(m, b)
@@ -159,8 +153,8 @@ func (m *Project) XXX_Unmarshal(b []byte) error {
 func (m *Project) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Project.Marshal(b, m, deterministic)
 }
-func (m *Project) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Project.Merge(m, src)
+func (dst *Project) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Project.Merge(dst, src)
 }
 func (m *Project) XXX_Size() int {
 	return xxx_messageInfo_Project.Size(m)
@@ -198,7 +192,7 @@ func (m *ProjectsCfg) Reset()         { *m = ProjectsCfg{} }
 func (m *ProjectsCfg) String() string { return proto.CompactTextString(m) }
 func (*ProjectsCfg) ProtoMessage()    {}
 func (*ProjectsCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{2}
+	return fileDescriptor_service_config_27e697587861a29c, []int{2}
 }
 func (m *ProjectsCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectsCfg.Unmarshal(m, b)
@@ -206,8 +200,8 @@ func (m *ProjectsCfg) XXX_Unmarshal(b []byte) error {
 func (m *ProjectsCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectsCfg.Marshal(b, m, deterministic)
 }
-func (m *ProjectsCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectsCfg.Merge(m, src)
+func (dst *ProjectsCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectsCfg.Merge(dst, src)
 }
 func (m *ProjectsCfg) XXX_Size() int {
 	return xxx_messageInfo_ProjectsCfg.Size(m)
@@ -256,7 +250,7 @@ func (m *Service) Reset()         { *m = Service{} }
 func (m *Service) String() string { return proto.CompactTextString(m) }
 func (*Service) ProtoMessage()    {}
 func (*Service) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{3}
+	return fileDescriptor_service_config_27e697587861a29c, []int{3}
 }
 func (m *Service) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Service.Unmarshal(m, b)
@@ -264,8 +258,8 @@ func (m *Service) XXX_Unmarshal(b []byte) error {
 func (m *Service) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Service.Marshal(b, m, deterministic)
 }
-func (m *Service) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Service.Merge(m, src)
+func (dst *Service) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Service.Merge(dst, src)
 }
 func (m *Service) XXX_Size() int {
 	return xxx_messageInfo_Service.Size(m)
@@ -330,7 +324,7 @@ func (m *ServiceDynamicMetadata) Reset()         { *m = ServiceDynamicMetadata{}
 func (m *ServiceDynamicMetadata) String() string { return proto.CompactTextString(m) }
 func (*ServiceDynamicMetadata) ProtoMessage()    {}
 func (*ServiceDynamicMetadata) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{4}
+	return fileDescriptor_service_config_27e697587861a29c, []int{4}
 }
 func (m *ServiceDynamicMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceDynamicMetadata.Unmarshal(m, b)
@@ -338,8 +332,8 @@ func (m *ServiceDynamicMetadata) XXX_Unmarshal(b []byte) error {
 func (m *ServiceDynamicMetadata) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServiceDynamicMetadata.Marshal(b, m, deterministic)
 }
-func (m *ServiceDynamicMetadata) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServiceDynamicMetadata.Merge(m, src)
+func (dst *ServiceDynamicMetadata) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServiceDynamicMetadata.Merge(dst, src)
 }
 func (m *ServiceDynamicMetadata) XXX_Size() int {
 	return xxx_messageInfo_ServiceDynamicMetadata.Size(m)
@@ -377,7 +371,7 @@ func (m *ServicesCfg) Reset()         { *m = ServicesCfg{} }
 func (m *ServicesCfg) String() string { return proto.CompactTextString(m) }
 func (*ServicesCfg) ProtoMessage()    {}
 func (*ServicesCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{5}
+	return fileDescriptor_service_config_27e697587861a29c, []int{5}
 }
 func (m *ServicesCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServicesCfg.Unmarshal(m, b)
@@ -385,8 +379,8 @@ func (m *ServicesCfg) XXX_Unmarshal(b []byte) error {
 func (m *ServicesCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ServicesCfg.Marshal(b, m, deterministic)
 }
-func (m *ServicesCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ServicesCfg.Merge(m, src)
+func (dst *ServicesCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ServicesCfg.Merge(dst, src)
 }
 func (m *ServicesCfg) XXX_Size() int {
 	return xxx_messageInfo_ServicesCfg.Size(m)
@@ -426,7 +420,7 @@ func (m *AclCfg) Reset()         { *m = AclCfg{} }
 func (m *AclCfg) String() string { return proto.CompactTextString(m) }
 func (*AclCfg) ProtoMessage()    {}
 func (*AclCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{6}
+	return fileDescriptor_service_config_27e697587861a29c, []int{6}
 }
 func (m *AclCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclCfg.Unmarshal(m, b)
@@ -434,8 +428,8 @@ func (m *AclCfg) XXX_Unmarshal(b []byte) error {
 func (m *AclCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AclCfg.Marshal(b, m, deterministic)
 }
-func (m *AclCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AclCfg.Merge(m, src)
+func (dst *AclCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AclCfg.Merge(dst, src)
 }
 func (m *AclCfg) XXX_Size() int {
 	return xxx_messageInfo_AclCfg.Size(m)
@@ -495,7 +489,7 @@ func (m *ImportCfg) Reset()         { *m = ImportCfg{} }
 func (m *ImportCfg) String() string { return proto.CompactTextString(m) }
 func (*ImportCfg) ProtoMessage()    {}
 func (*ImportCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{7}
+	return fileDescriptor_service_config_27e697587861a29c, []int{7}
 }
 func (m *ImportCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportCfg.Unmarshal(m, b)
@@ -503,8 +497,8 @@ func (m *ImportCfg) XXX_Unmarshal(b []byte) error {
 func (m *ImportCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportCfg.Marshal(b, m, deterministic)
 }
-func (m *ImportCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportCfg.Merge(m, src)
+func (dst *ImportCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportCfg.Merge(dst, src)
 }
 func (m *ImportCfg) XXX_Size() int {
 	return xxx_messageInfo_ImportCfg.Size(m)
@@ -542,7 +536,7 @@ func (m *ImportCfg_Gitiles) Reset()         { *m = ImportCfg_Gitiles{} }
 func (m *ImportCfg_Gitiles) String() string { return proto.CompactTextString(m) }
 func (*ImportCfg_Gitiles) ProtoMessage()    {}
 func (*ImportCfg_Gitiles) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{7, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{7, 0}
 }
 func (m *ImportCfg_Gitiles) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportCfg_Gitiles.Unmarshal(m, b)
@@ -550,8 +544,8 @@ func (m *ImportCfg_Gitiles) XXX_Unmarshal(b []byte) error {
 func (m *ImportCfg_Gitiles) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ImportCfg_Gitiles.Marshal(b, m, deterministic)
 }
-func (m *ImportCfg_Gitiles) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ImportCfg_Gitiles.Merge(m, src)
+func (dst *ImportCfg_Gitiles) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ImportCfg_Gitiles.Merge(dst, src)
 }
 func (m *ImportCfg_Gitiles) XXX_Size() int {
 	return xxx_messageInfo_ImportCfg_Gitiles.Size(m)
@@ -611,7 +605,7 @@ func (m *SchemasCfg) Reset()         { *m = SchemasCfg{} }
 func (m *SchemasCfg) String() string { return proto.CompactTextString(m) }
 func (*SchemasCfg) ProtoMessage()    {}
 func (*SchemasCfg) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{8}
+	return fileDescriptor_service_config_27e697587861a29c, []int{8}
 }
 func (m *SchemasCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SchemasCfg.Unmarshal(m, b)
@@ -619,8 +613,8 @@ func (m *SchemasCfg) XXX_Unmarshal(b []byte) error {
 func (m *SchemasCfg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SchemasCfg.Marshal(b, m, deterministic)
 }
-func (m *SchemasCfg) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SchemasCfg.Merge(m, src)
+func (dst *SchemasCfg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SchemasCfg.Merge(dst, src)
 }
 func (m *SchemasCfg) XXX_Size() int {
 	return xxx_messageInfo_SchemasCfg.Size(m)
@@ -655,7 +649,7 @@ func (m *SchemasCfg_Schema) Reset()         { *m = SchemasCfg_Schema{} }
 func (m *SchemasCfg_Schema) String() string { return proto.CompactTextString(m) }
 func (*SchemasCfg_Schema) ProtoMessage()    {}
 func (*SchemasCfg_Schema) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{8, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{8, 0}
 }
 func (m *SchemasCfg_Schema) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SchemasCfg_Schema.Unmarshal(m, b)
@@ -663,8 +657,8 @@ func (m *SchemasCfg_Schema) XXX_Unmarshal(b []byte) error {
 func (m *SchemasCfg_Schema) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SchemasCfg_Schema.Marshal(b, m, deterministic)
 }
-func (m *SchemasCfg_Schema) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SchemasCfg_Schema.Merge(m, src)
+func (dst *SchemasCfg_Schema) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SchemasCfg_Schema.Merge(dst, src)
 }
 func (m *SchemasCfg_Schema) XXX_Size() int {
 	return xxx_messageInfo_SchemasCfg_Schema.Size(m)
@@ -705,7 +699,7 @@ func (m *ConfigPattern) Reset()         { *m = ConfigPattern{} }
 func (m *ConfigPattern) String() string { return proto.CompactTextString(m) }
 func (*ConfigPattern) ProtoMessage()    {}
 func (*ConfigPattern) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{9}
+	return fileDescriptor_service_config_27e697587861a29c, []int{9}
 }
 func (m *ConfigPattern) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConfigPattern.Unmarshal(m, b)
@@ -713,8 +707,8 @@ func (m *ConfigPattern) XXX_Unmarshal(b []byte) error {
 func (m *ConfigPattern) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ConfigPattern.Marshal(b, m, deterministic)
 }
-func (m *ConfigPattern) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ConfigPattern.Merge(m, src)
+func (dst *ConfigPattern) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ConfigPattern.Merge(dst, src)
 }
 func (m *ConfigPattern) XXX_Size() int {
 	return xxx_messageInfo_ConfigPattern.Size(m)
@@ -757,7 +751,7 @@ func (m *Validator) Reset()         { *m = Validator{} }
 func (m *Validator) String() string { return proto.CompactTextString(m) }
 func (*Validator) ProtoMessage()    {}
 func (*Validator) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{10}
+	return fileDescriptor_service_config_27e697587861a29c, []int{10}
 }
 func (m *Validator) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Validator.Unmarshal(m, b)
@@ -765,8 +759,8 @@ func (m *Validator) XXX_Unmarshal(b []byte) error {
 func (m *Validator) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Validator.Marshal(b, m, deterministic)
 }
-func (m *Validator) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Validator.Merge(m, src)
+func (dst *Validator) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Validator.Merge(dst, src)
 }
 func (m *Validator) XXX_Size() int {
 	return xxx_messageInfo_Validator.Size(m)
@@ -809,7 +803,7 @@ func (m *ValidationRequestMessage) Reset()         { *m = ValidationRequestMessa
 func (m *ValidationRequestMessage) String() string { return proto.CompactTextString(m) }
 func (*ValidationRequestMessage) ProtoMessage()    {}
 func (*ValidationRequestMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{11}
+	return fileDescriptor_service_config_27e697587861a29c, []int{11}
 }
 func (m *ValidationRequestMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationRequestMessage.Unmarshal(m, b)
@@ -817,8 +811,8 @@ func (m *ValidationRequestMessage) XXX_Unmarshal(b []byte) error {
 func (m *ValidationRequestMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ValidationRequestMessage.Marshal(b, m, deterministic)
 }
-func (m *ValidationRequestMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidationRequestMessage.Merge(m, src)
+func (dst *ValidationRequestMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationRequestMessage.Merge(dst, src)
 }
 func (m *ValidationRequestMessage) XXX_Size() int {
 	return xxx_messageInfo_ValidationRequestMessage.Size(m)
@@ -865,7 +859,7 @@ func (m *ValidationResponseMessage) Reset()         { *m = ValidationResponseMes
 func (m *ValidationResponseMessage) String() string { return proto.CompactTextString(m) }
 func (*ValidationResponseMessage) ProtoMessage()    {}
 func (*ValidationResponseMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{12}
+	return fileDescriptor_service_config_27e697587861a29c, []int{12}
 }
 func (m *ValidationResponseMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationResponseMessage.Unmarshal(m, b)
@@ -873,8 +867,8 @@ func (m *ValidationResponseMessage) XXX_Unmarshal(b []byte) error {
 func (m *ValidationResponseMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ValidationResponseMessage.Marshal(b, m, deterministic)
 }
-func (m *ValidationResponseMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidationResponseMessage.Merge(m, src)
+func (dst *ValidationResponseMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationResponseMessage.Merge(dst, src)
 }
 func (m *ValidationResponseMessage) XXX_Size() int {
 	return xxx_messageInfo_ValidationResponseMessage.Size(m)
@@ -907,7 +901,7 @@ func (m *ValidationResponseMessage_Message) Reset()         { *m = ValidationRes
 func (m *ValidationResponseMessage_Message) String() string { return proto.CompactTextString(m) }
 func (*ValidationResponseMessage_Message) ProtoMessage()    {}
 func (*ValidationResponseMessage_Message) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b74f321d20ceb312, []int{12, 0}
+	return fileDescriptor_service_config_27e697587861a29c, []int{12, 0}
 }
 func (m *ValidationResponseMessage_Message) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationResponseMessage_Message.Unmarshal(m, b)
@@ -915,8 +909,8 @@ func (m *ValidationResponseMessage_Message) XXX_Unmarshal(b []byte) error {
 func (m *ValidationResponseMessage_Message) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ValidationResponseMessage_Message.Marshal(b, m, deterministic)
 }
-func (m *ValidationResponseMessage_Message) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ValidationResponseMessage_Message.Merge(m, src)
+func (dst *ValidationResponseMessage_Message) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValidationResponseMessage_Message.Merge(dst, src)
 }
 func (m *ValidationResponseMessage_Message) XXX_Size() int {
 	return xxx_messageInfo_ValidationResponseMessage_Message.Size(m)
@@ -963,10 +957,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/config/service_config.proto", fileDescriptor_b74f321d20ceb312)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/config/service_config.proto", fileDescriptor_service_config_27e697587861a29c)
 }
 
-var fileDescriptor_b74f321d20ceb312 = []byte{
+var fileDescriptor_service_config_27e697587861a29c = []byte{
 	// 904 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0xdd, 0x6e, 0x1b, 0x45,
 	0x14, 0xae, 0x9d, 0xc4, 0x3f, 0xc7, 0x69, 0xb2, 0x1d, 0x99, 0xd4, 0x0d, 0x02, 0xc2, 0x4a, 0x91,

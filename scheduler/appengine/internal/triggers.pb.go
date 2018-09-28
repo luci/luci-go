@@ -3,13 +3,11 @@
 
 package internal
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -102,7 +100,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c2ad71048335c7d0, []int{0}
+	return fileDescriptor_triggers_1add7e18c9c9a250, []int{0}
 }
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
@@ -110,8 +108,8 @@ func (m *Trigger) XXX_Unmarshal(b []byte) error {
 func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
 }
-func (m *Trigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Trigger.Merge(m, src)
+func (dst *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(dst, src)
 }
 func (m *Trigger) XXX_Size() int {
 	return xxx_messageInfo_Trigger.Size(m)
@@ -397,7 +395,7 @@ func (m *TriggerList) Reset()         { *m = TriggerList{} }
 func (m *TriggerList) String() string { return proto.CompactTextString(m) }
 func (*TriggerList) ProtoMessage()    {}
 func (*TriggerList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c2ad71048335c7d0, []int{1}
+	return fileDescriptor_triggers_1add7e18c9c9a250, []int{1}
 }
 func (m *TriggerList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggerList.Unmarshal(m, b)
@@ -405,8 +403,8 @@ func (m *TriggerList) XXX_Unmarshal(b []byte) error {
 func (m *TriggerList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TriggerList.Marshal(b, m, deterministic)
 }
-func (m *TriggerList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TriggerList.Merge(m, src)
+func (dst *TriggerList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TriggerList.Merge(dst, src)
 }
 func (m *TriggerList) XXX_Size() int {
 	return xxx_messageInfo_TriggerList.Size(m)
@@ -430,10 +428,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor_c2ad71048335c7d0)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/triggers.proto", fileDescriptor_triggers_1add7e18c9c9a250)
 }
 
-var fileDescriptor_c2ad71048335c7d0 = []byte{
+var fileDescriptor_triggers_1add7e18c9c9a250 = []byte{
 	// 458 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x92, 0x5f, 0x8b, 0xd4, 0x30,
 	0x14, 0xc5, 0xed, 0xfc, 0xeb, 0x6c, 0xc6, 0x5d, 0x35, 0xf8, 0x27, 0x0e, 0x88, 0xc3, 0x2a, 0x32,
