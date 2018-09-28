@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8e5741a8_891f3f53",
+        "filename": "appengine/mapper/internal/tasks/tasks.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-28T17:51:28Z",
+      "side": 1,
+      "message": "Something\u0027s not right, this looks like a regression to a previous version. Here\u0027s where imports were pulled into single import block: https://github.com/golang/protobuf/commit/a47340a8e42c4ceb44c00c2a05199e24b24fcaef\n\nAlso \u0027go generate\u0027 produces zero diff in my workspace, which is also up-to-date.",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 18
+      },
+      "revId": "9f543b47c769c15c0c5cf8c1b25c7a720dae93e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
