@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "89d10c0f_e912387e",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-09-28T22:13:08Z",
+      "side": 1,
+      "message": "question; what\u0027s the behavior of the mapper if the query result set changes during the mapping process? Undefined?",
+      "revId": "537c056552f33927efd9c4607f55165cfa99c215",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
