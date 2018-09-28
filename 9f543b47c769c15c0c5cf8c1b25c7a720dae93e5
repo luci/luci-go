@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "ac298ed0_c0e8096d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-28T17:52:43Z",
+      "side": 1,
+      "message": "do you perhaps have infra_internal.git gclient workspace? gclient sync will rollback infra.git to the pinned version.",
+      "range": {
+        "startLine": 11,
+        "startChar": 2,
+        "endLine": 11,
+        "endChar": 14
+      },
+      "revId": "9f543b47c769c15c0c5cf8c1b25c7a720dae93e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "8e5741a8_891f3f53",
         "filename": "appengine/mapper/internal/tasks/tasks.pb.go",
         "patchSetId": 2
