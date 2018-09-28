@@ -3,13 +3,11 @@
 
 package dm
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import empty "github.com/golang/protobuf/ptypes/empty"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -33,7 +31,7 @@ func (m *MultiPropertyValue) Reset()         { *m = MultiPropertyValue{} }
 func (m *MultiPropertyValue) String() string { return proto.CompactTextString(m) }
 func (*MultiPropertyValue) ProtoMessage()    {}
 func (*MultiPropertyValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1def6b5c0f81b24d, []int{0}
+	return fileDescriptor_types_77f8d79627685e00, []int{0}
 }
 func (m *MultiPropertyValue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MultiPropertyValue.Unmarshal(m, b)
@@ -41,8 +39,8 @@ func (m *MultiPropertyValue) XXX_Unmarshal(b []byte) error {
 func (m *MultiPropertyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MultiPropertyValue.Marshal(b, m, deterministic)
 }
-func (m *MultiPropertyValue) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MultiPropertyValue.Merge(m, src)
+func (dst *MultiPropertyValue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MultiPropertyValue.Merge(dst, src)
 }
 func (m *MultiPropertyValue) XXX_Size() int {
 	return xxx_messageInfo_MultiPropertyValue.Size(m)
@@ -78,7 +76,7 @@ func (m *PropertyValue) Reset()         { *m = PropertyValue{} }
 func (m *PropertyValue) String() string { return proto.CompactTextString(m) }
 func (*PropertyValue) ProtoMessage()    {}
 func (*PropertyValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1def6b5c0f81b24d, []int{1}
+	return fileDescriptor_types_77f8d79627685e00, []int{1}
 }
 func (m *PropertyValue) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PropertyValue.Unmarshal(m, b)
@@ -86,8 +84,8 @@ func (m *PropertyValue) XXX_Unmarshal(b []byte) error {
 func (m *PropertyValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PropertyValue.Marshal(b, m, deterministic)
 }
-func (m *PropertyValue) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PropertyValue.Merge(m, src)
+func (dst *PropertyValue) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PropertyValue.Merge(dst, src)
 }
 func (m *PropertyValue) XXX_Size() int {
 	return xxx_messageInfo_PropertyValue.Size(m)
@@ -343,7 +341,7 @@ func (m *AttemptList) Reset()         { *m = AttemptList{} }
 func (m *AttemptList) String() string { return proto.CompactTextString(m) }
 func (*AttemptList) ProtoMessage()    {}
 func (*AttemptList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1def6b5c0f81b24d, []int{2}
+	return fileDescriptor_types_77f8d79627685e00, []int{2}
 }
 func (m *AttemptList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AttemptList.Unmarshal(m, b)
@@ -351,8 +349,8 @@ func (m *AttemptList) XXX_Unmarshal(b []byte) error {
 func (m *AttemptList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AttemptList.Marshal(b, m, deterministic)
 }
-func (m *AttemptList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AttemptList.Merge(m, src)
+func (dst *AttemptList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttemptList.Merge(dst, src)
 }
 func (m *AttemptList) XXX_Size() int {
 	return xxx_messageInfo_AttemptList.Size(m)
@@ -381,7 +379,7 @@ func (m *AttemptList_Nums) Reset()         { *m = AttemptList_Nums{} }
 func (m *AttemptList_Nums) String() string { return proto.CompactTextString(m) }
 func (*AttemptList_Nums) ProtoMessage()    {}
 func (*AttemptList_Nums) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1def6b5c0f81b24d, []int{2, 0}
+	return fileDescriptor_types_77f8d79627685e00, []int{2, 0}
 }
 func (m *AttemptList_Nums) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AttemptList_Nums.Unmarshal(m, b)
@@ -389,8 +387,8 @@ func (m *AttemptList_Nums) XXX_Unmarshal(b []byte) error {
 func (m *AttemptList_Nums) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AttemptList_Nums.Marshal(b, m, deterministic)
 }
-func (m *AttemptList_Nums) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AttemptList_Nums.Merge(m, src)
+func (dst *AttemptList_Nums) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AttemptList_Nums.Merge(dst, src)
 }
 func (m *AttemptList_Nums) XXX_Size() int {
 	return xxx_messageInfo_AttemptList_Nums.Size(m)
@@ -417,10 +415,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/types.proto", fileDescriptor_1def6b5c0f81b24d)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/types.proto", fileDescriptor_types_77f8d79627685e00)
 }
 
-var fileDescriptor_1def6b5c0f81b24d = []byte{
+var fileDescriptor_types_77f8d79627685e00 = []byte{
 	// 380 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x90, 0xdf, 0x8a, 0xd4, 0x30,
 	0x14, 0xc6, 0x37, 0x6d, 0x67, 0x66, 0x4d, 0x5d, 0x18, 0x83, 0xac, 0xa1, 0x82, 0x96, 0xb9, 0xb1,

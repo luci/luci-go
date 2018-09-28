@@ -5,11 +5,9 @@ package main
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 import (
 	context "golang.org/x/net/context"
@@ -44,7 +42,6 @@ var E1_name = map[int32]string{
 	0: "V0",
 	1: "V1",
 }
-
 var E1_value = map[string]int32{
 	"V0": 0,
 	"V1": 1,
@@ -53,9 +50,8 @@ var E1_value = map[string]int32{
 func (x E1) String() string {
 	return proto.EnumName(E1_name, int32(x))
 }
-
 func (E1) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{0}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{0}
 }
 
 type NestedMessageParent_NestedEnum int32
@@ -69,7 +65,6 @@ var NestedMessageParent_NestedEnum_name = map[int32]string{
 	0: "V0",
 	1: "V1",
 }
-
 var NestedMessageParent_NestedEnum_value = map[string]int32{
 	"V0": 0,
 	"V1": 1,
@@ -78,9 +73,8 @@ var NestedMessageParent_NestedEnum_value = map[string]int32{
 func (x NestedMessageParent_NestedEnum) String() string {
 	return proto.EnumName(NestedMessageParent_NestedEnum_name, int32(x))
 }
-
 func (NestedMessageParent_NestedEnum) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{3, 0}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{3, 0}
 }
 
 // M1
@@ -98,7 +92,7 @@ func (m *M1) Reset()         { *m = M1{} }
 func (m *M1) String() string { return proto.CompactTextString(m) }
 func (*M1) ProtoMessage()    {}
 func (*M1) Descriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{0}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{0}
 }
 func (m *M1) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M1.Unmarshal(m, b)
@@ -106,8 +100,8 @@ func (m *M1) XXX_Unmarshal(b []byte) error {
 func (m *M1) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M1.Marshal(b, m, deterministic)
 }
-func (m *M1) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M1.Merge(m, src)
+func (dst *M1) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M1.Merge(dst, src)
 }
 func (m *M1) XXX_Size() int {
 	return xxx_messageInfo_M1.Size(m)
@@ -143,7 +137,7 @@ func (m *M2) Reset()         { *m = M2{} }
 func (m *M2) String() string { return proto.CompactTextString(m) }
 func (*M2) ProtoMessage()    {}
 func (*M2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{1}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{1}
 }
 func (m *M2) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M2.Unmarshal(m, b)
@@ -151,8 +145,8 @@ func (m *M2) XXX_Unmarshal(b []byte) error {
 func (m *M2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M2.Marshal(b, m, deterministic)
 }
-func (m *M2) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M2.Merge(m, src)
+func (dst *M2) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M2.Merge(dst, src)
 }
 func (m *M2) XXX_Size() int {
 	return xxx_messageInfo_M2.Size(m)
@@ -204,7 +198,7 @@ func (m *M3) Reset()         { *m = M3{} }
 func (m *M3) String() string { return proto.CompactTextString(m) }
 func (*M3) ProtoMessage()    {}
 func (*M3) Descriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{2}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{2}
 }
 func (m *M3) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M3.Unmarshal(m, b)
@@ -212,8 +206,8 @@ func (m *M3) XXX_Unmarshal(b []byte) error {
 func (m *M3) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_M3.Marshal(b, m, deterministic)
 }
-func (m *M3) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_M3.Merge(m, src)
+func (dst *M3) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_M3.Merge(dst, src)
 }
 func (m *M3) XXX_Size() int {
 	return xxx_messageInfo_M3.Size(m)
@@ -426,7 +420,7 @@ func (m *NestedMessageParent) Reset()         { *m = NestedMessageParent{} }
 func (m *NestedMessageParent) String() string { return proto.CompactTextString(m) }
 func (*NestedMessageParent) ProtoMessage()    {}
 func (*NestedMessageParent) Descriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{3}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{3}
 }
 func (m *NestedMessageParent) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NestedMessageParent.Unmarshal(m, b)
@@ -434,8 +428,8 @@ func (m *NestedMessageParent) XXX_Unmarshal(b []byte) error {
 func (m *NestedMessageParent) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NestedMessageParent.Marshal(b, m, deterministic)
 }
-func (m *NestedMessageParent) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NestedMessageParent.Merge(m, src)
+func (dst *NestedMessageParent) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NestedMessageParent.Merge(dst, src)
 }
 func (m *NestedMessageParent) XXX_Size() int {
 	return xxx_messageInfo_NestedMessageParent.Size(m)
@@ -458,7 +452,7 @@ func (m *NestedMessageParent_NestedMessage) Reset()         { *m = NestedMessage
 func (m *NestedMessageParent_NestedMessage) String() string { return proto.CompactTextString(m) }
 func (*NestedMessageParent_NestedMessage) ProtoMessage()    {}
 func (*NestedMessageParent_NestedMessage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_93bc88ebfd26a5a0, []int{3, 0}
+	return fileDescriptor_printer_test_c65f57d5126841ae, []int{3, 0}
 }
 func (m *NestedMessageParent_NestedMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NestedMessageParent_NestedMessage.Unmarshal(m, b)
@@ -466,8 +460,8 @@ func (m *NestedMessageParent_NestedMessage) XXX_Unmarshal(b []byte) error {
 func (m *NestedMessageParent_NestedMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NestedMessageParent_NestedMessage.Marshal(b, m, deterministic)
 }
-func (m *NestedMessageParent_NestedMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NestedMessageParent_NestedMessage.Merge(m, src)
+func (dst *NestedMessageParent_NestedMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NestedMessageParent_NestedMessage.Merge(dst, src)
 }
 func (m *NestedMessageParent_NestedMessage) XXX_Size() int {
 	return xxx_messageInfo_NestedMessageParent_NestedMessage.Size(m)
@@ -719,10 +713,10 @@ var _S2_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/grpc/cmd/prpc/printer_test.proto", fileDescriptor_93bc88ebfd26a5a0)
+	proto.RegisterFile("go.chromium.org/luci/grpc/cmd/prpc/printer_test.proto", fileDescriptor_printer_test_c65f57d5126841ae)
 }
 
-var fileDescriptor_93bc88ebfd26a5a0 = []byte{
+var fileDescriptor_printer_test_c65f57d5126841ae = []byte{
 	// 305 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xcb, 0x4b, 0xc4, 0x30,
 	0x10, 0xc6, 0xb7, 0xb3, 0x0f, 0x74, 0xc4, 0xa5, 0xc4, 0x3d, 0x84, 0xc5, 0xc3, 0xd2, 0xd3, 0xe2,

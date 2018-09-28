@@ -3,12 +3,10 @@
 
 package tokenserver
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -63,7 +61,7 @@ func (m *OAuthTokenGrantBody) Reset()         { *m = OAuthTokenGrantBody{} }
 func (m *OAuthTokenGrantBody) String() string { return proto.CompactTextString(m) }
 func (*OAuthTokenGrantBody) ProtoMessage()    {}
 func (*OAuthTokenGrantBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e508b3aaac47612, []int{0}
+	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{0}
 }
 func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantBody.Unmarshal(m, b)
@@ -71,8 +69,8 @@ func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
 func (m *OAuthTokenGrantBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OAuthTokenGrantBody.Marshal(b, m, deterministic)
 }
-func (m *OAuthTokenGrantBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OAuthTokenGrantBody.Merge(m, src)
+func (dst *OAuthTokenGrantBody) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantBody.Merge(dst, src)
 }
 func (m *OAuthTokenGrantBody) XXX_Size() int {
 	return xxx_messageInfo_OAuthTokenGrantBody.Size(m)
@@ -141,7 +139,7 @@ func (m *OAuthTokenGrantEnvelope) Reset()         { *m = OAuthTokenGrantEnvelope
 func (m *OAuthTokenGrantEnvelope) String() string { return proto.CompactTextString(m) }
 func (*OAuthTokenGrantEnvelope) ProtoMessage()    {}
 func (*OAuthTokenGrantEnvelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2e508b3aaac47612, []int{1}
+	return fileDescriptor_oauth_token_grant_480c9516e875a2c8, []int{1}
 }
 func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Unmarshal(m, b)
@@ -149,8 +147,8 @@ func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
 func (m *OAuthTokenGrantEnvelope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Marshal(b, m, deterministic)
 }
-func (m *OAuthTokenGrantEnvelope) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OAuthTokenGrantEnvelope.Merge(m, src)
+func (dst *OAuthTokenGrantEnvelope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OAuthTokenGrantEnvelope.Merge(dst, src)
 }
 func (m *OAuthTokenGrantEnvelope) XXX_Size() int {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Size(m)
@@ -188,10 +186,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor_2e508b3aaac47612)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/oauth_token_grant.proto", fileDescriptor_oauth_token_grant_480c9516e875a2c8)
 }
 
-var fileDescriptor_2e508b3aaac47612 = []byte{
+var fileDescriptor_oauth_token_grant_480c9516e875a2c8 = []byte{
 	// 346 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x5c, 0x90, 0x4d, 0x4b, 0xeb, 0x40,
 	0x14, 0x86, 0xc9, 0xed, 0xed, 0xd7, 0xb4, 0xf4, 0xf6, 0xce, 0xbd, 0x62, 0x2c, 0x88, 0xa5, 0x1b,

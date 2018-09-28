@@ -3,11 +3,9 @@
 
 package acls
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -34,7 +32,7 @@ func (m *Acls) Reset()         { *m = Acls{} }
 func (m *Acls) String() string { return proto.CompactTextString(m) }
 func (*Acls) ProtoMessage()    {}
 func (*Acls) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0a85e1525a5d8e6b, []int{0}
+	return fileDescriptor_acls_13ab45e016ddcf20, []int{0}
 }
 func (m *Acls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acls.Unmarshal(m, b)
@@ -42,8 +40,8 @@ func (m *Acls) XXX_Unmarshal(b []byte) error {
 func (m *Acls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Acls.Marshal(b, m, deterministic)
 }
-func (m *Acls) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Acls.Merge(m, src)
+func (dst *Acls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Acls.Merge(dst, src)
 }
 func (m *Acls) XXX_Size() int {
 	return xxx_messageInfo_Acls.Size(m)
@@ -73,10 +71,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/acls/acls.proto", fileDescriptor_0a85e1525a5d8e6b)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/acls/acls.proto", fileDescriptor_acls_13ab45e016ddcf20)
 }
 
-var fileDescriptor_0a85e1525a5d8e6b = []byte{
+var fileDescriptor_acls_13ab45e016ddcf20 = []byte{
 	// 115 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xd2, 0x4e, 0xcf, 0xd7, 0x4b,
 	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,

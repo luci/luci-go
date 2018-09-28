@@ -3,12 +3,10 @@
 
 package logdog
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -47,7 +45,7 @@ func (m *LogStreamState) Reset()         { *m = LogStreamState{} }
 func (m *LogStreamState) String() string { return proto.CompactTextString(m) }
 func (*LogStreamState) ProtoMessage()    {}
 func (*LogStreamState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3bfde41f3abf9e4, []int{0}
+	return fileDescriptor_state_a725b322fbb28ebb, []int{0}
 }
 func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamState.Unmarshal(m, b)
@@ -55,8 +53,8 @@ func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
 func (m *LogStreamState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogStreamState.Marshal(b, m, deterministic)
 }
-func (m *LogStreamState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogStreamState.Merge(m, src)
+func (dst *LogStreamState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState.Merge(dst, src)
 }
 func (m *LogStreamState) XXX_Size() int {
 	return xxx_messageInfo_LogStreamState.Size(m)
@@ -125,7 +123,7 @@ func (m *LogStreamState_ArchiveInfo) Reset()         { *m = LogStreamState_Archi
 func (m *LogStreamState_ArchiveInfo) String() string { return proto.CompactTextString(m) }
 func (*LogStreamState_ArchiveInfo) ProtoMessage()    {}
 func (*LogStreamState_ArchiveInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e3bfde41f3abf9e4, []int{0, 0}
+	return fileDescriptor_state_a725b322fbb28ebb, []int{0, 0}
 }
 func (m *LogStreamState_ArchiveInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamState_ArchiveInfo.Unmarshal(m, b)
@@ -133,8 +131,8 @@ func (m *LogStreamState_ArchiveInfo) XXX_Unmarshal(b []byte) error {
 func (m *LogStreamState_ArchiveInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogStreamState_ArchiveInfo.Marshal(b, m, deterministic)
 }
-func (m *LogStreamState_ArchiveInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogStreamState_ArchiveInfo.Merge(m, src)
+func (dst *LogStreamState_ArchiveInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamState_ArchiveInfo.Merge(dst, src)
 }
 func (m *LogStreamState_ArchiveInfo) XXX_Size() int {
 	return xxx_messageInfo_LogStreamState_ArchiveInfo.Size(m)
@@ -186,10 +184,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto", fileDescriptor_e3bfde41f3abf9e4)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/state.proto", fileDescriptor_state_a725b322fbb28ebb)
 }
 
-var fileDescriptor_e3bfde41f3abf9e4 = []byte{
+var fileDescriptor_state_a725b322fbb28ebb = []byte{
 	// 361 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xcd, 0x6a, 0xe3, 0x30,
 	0x14, 0x85, 0x71, 0x3c, 0x93, 0x38, 0xca, 0x24, 0x03, 0x5a, 0x0c, 0x1e, 0x0f, 0xc3, 0x98, 0x0c,

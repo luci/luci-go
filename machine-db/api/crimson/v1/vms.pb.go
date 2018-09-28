@@ -3,13 +3,11 @@
 
 package crimson
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	v1 "go.chromium.org/luci/machine-db/api/common/v1"
-	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import v1 "go.chromium.org/luci/machine-db/api/common/v1"
+import field_mask "google.golang.org/genproto/protobuf/field_mask"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -53,7 +51,7 @@ func (m *VM) Reset()         { *m = VM{} }
 func (m *VM) String() string { return proto.CompactTextString(m) }
 func (*VM) ProtoMessage()    {}
 func (*VM) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac68362bdfdec1d3, []int{0}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{0}
 }
 func (m *VM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_VM.Unmarshal(m, b)
@@ -61,8 +59,8 @@ func (m *VM) XXX_Unmarshal(b []byte) error {
 func (m *VM) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_VM.Marshal(b, m, deterministic)
 }
-func (m *VM) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_VM.Merge(m, src)
+func (dst *VM) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_VM.Merge(dst, src)
 }
 func (m *VM) XXX_Size() int {
 	return xxx_messageInfo_VM.Size(m)
@@ -149,7 +147,7 @@ func (m *CreateVMRequest) Reset()         { *m = CreateVMRequest{} }
 func (m *CreateVMRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateVMRequest) ProtoMessage()    {}
 func (*CreateVMRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac68362bdfdec1d3, []int{1}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{1}
 }
 func (m *CreateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateVMRequest.Unmarshal(m, b)
@@ -157,8 +155,8 @@ func (m *CreateVMRequest) XXX_Unmarshal(b []byte) error {
 func (m *CreateVMRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateVMRequest.Marshal(b, m, deterministic)
 }
-func (m *CreateVMRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateVMRequest.Merge(m, src)
+func (dst *CreateVMRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateVMRequest.Merge(dst, src)
 }
 func (m *CreateVMRequest) XXX_Size() int {
 	return xxx_messageInfo_CreateVMRequest.Size(m)
@@ -201,7 +199,7 @@ func (m *ListVMsRequest) Reset()         { *m = ListVMsRequest{} }
 func (m *ListVMsRequest) String() string { return proto.CompactTextString(m) }
 func (*ListVMsRequest) ProtoMessage()    {}
 func (*ListVMsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac68362bdfdec1d3, []int{2}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{2}
 }
 func (m *ListVMsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsRequest.Unmarshal(m, b)
@@ -209,8 +207,8 @@ func (m *ListVMsRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListVMsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListVMsRequest.Marshal(b, m, deterministic)
 }
-func (m *ListVMsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListVMsRequest.Merge(m, src)
+func (dst *ListVMsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListVMsRequest.Merge(dst, src)
 }
 func (m *ListVMsRequest) XXX_Size() int {
 	return xxx_messageInfo_ListVMsRequest.Size(m)
@@ -283,7 +281,7 @@ func (m *ListVMsResponse) Reset()         { *m = ListVMsResponse{} }
 func (m *ListVMsResponse) String() string { return proto.CompactTextString(m) }
 func (*ListVMsResponse) ProtoMessage()    {}
 func (*ListVMsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac68362bdfdec1d3, []int{3}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{3}
 }
 func (m *ListVMsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListVMsResponse.Unmarshal(m, b)
@@ -291,8 +289,8 @@ func (m *ListVMsResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListVMsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListVMsResponse.Marshal(b, m, deterministic)
 }
-func (m *ListVMsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListVMsResponse.Merge(m, src)
+func (dst *ListVMsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListVMsResponse.Merge(dst, src)
 }
 func (m *ListVMsResponse) XXX_Size() int {
 	return xxx_messageInfo_ListVMsResponse.Size(m)
@@ -325,7 +323,7 @@ func (m *UpdateVMRequest) Reset()         { *m = UpdateVMRequest{} }
 func (m *UpdateVMRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateVMRequest) ProtoMessage()    {}
 func (*UpdateVMRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ac68362bdfdec1d3, []int{4}
+	return fileDescriptor_vms_f90236ff19f3c8d7, []int{4}
 }
 func (m *UpdateVMRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateVMRequest.Unmarshal(m, b)
@@ -333,8 +331,8 @@ func (m *UpdateVMRequest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateVMRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateVMRequest.Marshal(b, m, deterministic)
 }
-func (m *UpdateVMRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateVMRequest.Merge(m, src)
+func (dst *UpdateVMRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateVMRequest.Merge(dst, src)
 }
 func (m *UpdateVMRequest) XXX_Size() int {
 	return xxx_messageInfo_UpdateVMRequest.Size(m)
@@ -368,10 +366,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor_ac68362bdfdec1d3)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/vms.proto", fileDescriptor_vms_f90236ff19f3c8d7)
 }
 
-var fileDescriptor_ac68362bdfdec1d3 = []byte{
+var fileDescriptor_vms_f90236ff19f3c8d7 = []byte{
 	// 462 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x92, 0x41, 0x8f, 0xd3, 0x30,
 	0x10, 0x85, 0x95, 0xa4, 0xed, 0x6e, 0xa7, 0xa2, 0x05, 0x8b, 0x83, 0x55, 0xb4, 0x52, 0x54, 0x84,

@@ -3,11 +3,9 @@
 
 package swarmingV1
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -38,7 +36,7 @@ func (m *Result) Reset()         { *m = Result{} }
 func (m *Result) String() string { return proto.CompactTextString(m) }
 func (*Result) ProtoMessage()    {}
 func (*Result) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f78100aa064bdfa0, []int{0}
+	return fileDescriptor_result_0c0267f9a31228d6, []int{0}
 }
 func (m *Result) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Result.Unmarshal(m, b)
@@ -46,8 +44,8 @@ func (m *Result) XXX_Unmarshal(b []byte) error {
 func (m *Result) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Result.Marshal(b, m, deterministic)
 }
-func (m *Result) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Result.Merge(m, src)
+func (dst *Result) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Result.Merge(dst, src)
 }
 func (m *Result) XXX_Size() int {
 	return xxx_messageInfo_Result.Size(m)
@@ -92,10 +90,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/result.proto", fileDescriptor_f78100aa064bdfa0)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/result.proto", fileDescriptor_result_0c0267f9a31228d6)
 }
 
-var fileDescriptor_f78100aa064bdfa0 = []byte{
+var fileDescriptor_result_0c0267f9a31228d6 = []byte{
 	// 313 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x90, 0xcf, 0x4b, 0xc3, 0x30,
 	0x14, 0xc7, 0xe9, 0xaa, 0x63, 0xcd, 0x40, 0x25, 0x0e, 0x56, 0xe6, 0x65, 0x78, 0x1a, 0x1e, 0x1a,

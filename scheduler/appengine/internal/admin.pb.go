@@ -5,13 +5,11 @@ package internal
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
 
 import (
 	context "golang.org/x/net/context"
@@ -50,7 +48,7 @@ func (m *DebugJobState) Reset()         { *m = DebugJobState{} }
 func (m *DebugJobState) String() string { return proto.CompactTextString(m) }
 func (*DebugJobState) ProtoMessage()    {}
 func (*DebugJobState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_44f1f51de3cab948, []int{0}
+	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0}
 }
 func (m *DebugJobState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DebugJobState.Unmarshal(m, b)
@@ -58,8 +56,8 @@ func (m *DebugJobState) XXX_Unmarshal(b []byte) error {
 func (m *DebugJobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DebugJobState.Marshal(b, m, deterministic)
 }
-func (m *DebugJobState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DebugJobState.Merge(m, src)
+func (dst *DebugJobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState.Merge(dst, src)
 }
 func (m *DebugJobState) XXX_Size() int {
 	return xxx_messageInfo_DebugJobState.Size(m)
@@ -141,7 +139,7 @@ func (m *DebugJobState_CronState) Reset()         { *m = DebugJobState_CronState
 func (m *DebugJobState_CronState) String() string { return proto.CompactTextString(m) }
 func (*DebugJobState_CronState) ProtoMessage()    {}
 func (*DebugJobState_CronState) Descriptor() ([]byte, []int) {
-	return fileDescriptor_44f1f51de3cab948, []int{0, 0}
+	return fileDescriptor_admin_60def8e8ab45c2a0, []int{0, 0}
 }
 func (m *DebugJobState_CronState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DebugJobState_CronState.Unmarshal(m, b)
@@ -149,8 +147,8 @@ func (m *DebugJobState_CronState) XXX_Unmarshal(b []byte) error {
 func (m *DebugJobState_CronState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DebugJobState_CronState.Marshal(b, m, deterministic)
 }
-func (m *DebugJobState_CronState) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DebugJobState_CronState.Merge(m, src)
+func (dst *DebugJobState_CronState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DebugJobState_CronState.Merge(dst, src)
 }
 func (m *DebugJobState_CronState) XXX_Size() int {
 	return xxx_messageInfo_DebugJobState_CronState.Size(m)
@@ -296,10 +294,10 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_44f1f51de3cab948)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/admin.proto", fileDescriptor_admin_60def8e8ab45c2a0)
 }
 
-var fileDescriptor_44f1f51de3cab948 = []byte{
+var fileDescriptor_admin_60def8e8ab45c2a0 = []byte{
 	// 505 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x53, 0x51, 0x6f, 0xd3, 0x30,
 	0x10, 0x56, 0x29, 0xed, 0x3a, 0x97, 0x0d, 0xe6, 0x0d, 0x14, 0x45, 0x82, 0x55, 0x3c, 0x40, 0x5f,

@@ -3,11 +3,9 @@
 
 package messages
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,7 +39,6 @@ var Subtoken_Kind_name = map[int32]string{
 	0: "UNKNOWN_KIND",
 	1: "BEARER_DELEGATION_TOKEN",
 }
-
 var Subtoken_Kind_value = map[string]int32{
 	"UNKNOWN_KIND":            0,
 	"BEARER_DELEGATION_TOKEN": 1,
@@ -50,9 +47,8 @@ var Subtoken_Kind_value = map[string]int32{
 func (x Subtoken_Kind) String() string {
 	return proto.EnumName(Subtoken_Kind_name, int32(x))
 }
-
 func (Subtoken_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_67dd1eacea24f38c, []int{1, 0}
+	return fileDescriptor_delegation_13d7ac7898765163, []int{1, 0}
 }
 
 // Signed serialized Subtoken.
@@ -91,7 +87,7 @@ func (m *DelegationToken) Reset()         { *m = DelegationToken{} }
 func (m *DelegationToken) String() string { return proto.CompactTextString(m) }
 func (*DelegationToken) ProtoMessage()    {}
 func (*DelegationToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_67dd1eacea24f38c, []int{0}
+	return fileDescriptor_delegation_13d7ac7898765163, []int{0}
 }
 func (m *DelegationToken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DelegationToken.Unmarshal(m, b)
@@ -99,8 +95,8 @@ func (m *DelegationToken) XXX_Unmarshal(b []byte) error {
 func (m *DelegationToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DelegationToken.Marshal(b, m, deterministic)
 }
-func (m *DelegationToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DelegationToken.Merge(m, src)
+func (dst *DelegationToken) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DelegationToken.Merge(dst, src)
 }
 func (m *DelegationToken) XXX_Size() int {
 	return xxx_messageInfo_DelegationToken.Size(m)
@@ -195,7 +191,7 @@ func (m *Subtoken) Reset()         { *m = Subtoken{} }
 func (m *Subtoken) String() string { return proto.CompactTextString(m) }
 func (*Subtoken) ProtoMessage()    {}
 func (*Subtoken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_67dd1eacea24f38c, []int{1}
+	return fileDescriptor_delegation_13d7ac7898765163, []int{1}
 }
 func (m *Subtoken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Subtoken.Unmarshal(m, b)
@@ -203,8 +199,8 @@ func (m *Subtoken) XXX_Unmarshal(b []byte) error {
 func (m *Subtoken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Subtoken.Marshal(b, m, deterministic)
 }
-func (m *Subtoken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Subtoken.Merge(m, src)
+func (dst *Subtoken) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Subtoken.Merge(dst, src)
 }
 func (m *Subtoken) XXX_Size() int {
 	return xxx_messageInfo_Subtoken.Size(m)
@@ -285,10 +281,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/server/auth/delegation/messages/delegation.proto", fileDescriptor_67dd1eacea24f38c)
+	proto.RegisterFile("go.chromium.org/luci/server/auth/delegation/messages/delegation.proto", fileDescriptor_delegation_13d7ac7898765163)
 }
 
-var fileDescriptor_67dd1eacea24f38c = []byte{
+var fileDescriptor_delegation_13d7ac7898765163 = []byte{
 	// 439 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x92, 0xd1, 0x6e, 0xd3, 0x30,
 	0x14, 0x86, 0xc9, 0x92, 0x8e, 0xd4, 0x94, 0x92, 0x99, 0x8b, 0x45, 0xec, 0x82, 0xaa, 0x70, 0x51,

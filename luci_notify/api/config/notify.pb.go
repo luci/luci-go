@@ -3,12 +3,10 @@
 
 package config
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	proto1 "go.chromium.org/luci/buildbucket/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import proto1 "go.chromium.org/luci/buildbucket/proto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +33,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{0}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -43,8 +41,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (m *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(m, src)
+func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(dst, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -87,7 +85,7 @@ func (m *Notifier) Reset()         { *m = Notifier{} }
 func (m *Notifier) String() string { return proto.CompactTextString(m) }
 func (*Notifier) ProtoMessage()    {}
 func (*Notifier) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{1}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{1}
 }
 func (m *Notifier) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifier.Unmarshal(m, b)
@@ -95,8 +93,8 @@ func (m *Notifier) XXX_Unmarshal(b []byte) error {
 func (m *Notifier) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notifier.Marshal(b, m, deterministic)
 }
-func (m *Notifier) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notifier.Merge(m, src)
+func (dst *Notifier) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notifier.Merge(dst, src)
 }
 func (m *Notifier) XXX_Size() int {
 	return xxx_messageInfo_Notifier.Size(m)
@@ -171,7 +169,7 @@ func (m *Notification) Reset()         { *m = Notification{} }
 func (m *Notification) String() string { return proto.CompactTextString(m) }
 func (*Notification) ProtoMessage()    {}
 func (*Notification) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{2}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{2}
 }
 func (m *Notification) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification.Unmarshal(m, b)
@@ -179,8 +177,8 @@ func (m *Notification) XXX_Unmarshal(b []byte) error {
 func (m *Notification) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification.Marshal(b, m, deterministic)
 }
-func (m *Notification) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification.Merge(m, src)
+func (dst *Notification) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification.Merge(dst, src)
 }
 func (m *Notification) XXX_Size() int {
 	return xxx_messageInfo_Notification.Size(m)
@@ -247,7 +245,7 @@ func (m *Notification_Email) Reset()         { *m = Notification_Email{} }
 func (m *Notification_Email) String() string { return proto.CompactTextString(m) }
 func (*Notification_Email) ProtoMessage()    {}
 func (*Notification_Email) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{2, 0}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{2, 0}
 }
 func (m *Notification_Email) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Email.Unmarshal(m, b)
@@ -255,8 +253,8 @@ func (m *Notification_Email) XXX_Unmarshal(b []byte) error {
 func (m *Notification_Email) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification_Email.Marshal(b, m, deterministic)
 }
-func (m *Notification_Email) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification_Email.Merge(m, src)
+func (dst *Notification_Email) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification_Email.Merge(dst, src)
 }
 func (m *Notification_Email) XXX_Size() int {
 	return xxx_messageInfo_Notification_Email.Size(m)
@@ -296,7 +294,7 @@ func (m *Notification_Blamelist) Reset()         { *m = Notification_Blamelist{}
 func (m *Notification_Blamelist) String() string { return proto.CompactTextString(m) }
 func (*Notification_Blamelist) ProtoMessage()    {}
 func (*Notification_Blamelist) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{2, 1}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{2, 1}
 }
 func (m *Notification_Blamelist) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Blamelist.Unmarshal(m, b)
@@ -304,8 +302,8 @@ func (m *Notification_Blamelist) XXX_Unmarshal(b []byte) error {
 func (m *Notification_Blamelist) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notification_Blamelist.Marshal(b, m, deterministic)
 }
-func (m *Notification_Blamelist) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notification_Blamelist.Merge(m, src)
+func (dst *Notification_Blamelist) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notification_Blamelist.Merge(dst, src)
 }
 func (m *Notification_Blamelist) XXX_Size() int {
 	return xxx_messageInfo_Notification_Blamelist.Size(m)
@@ -360,7 +358,7 @@ func (m *Builder) Reset()         { *m = Builder{} }
 func (m *Builder) String() string { return proto.CompactTextString(m) }
 func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{3}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{3}
 }
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
@@ -368,8 +366,8 @@ func (m *Builder) XXX_Unmarshal(b []byte) error {
 func (m *Builder) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Builder.Marshal(b, m, deterministic)
 }
-func (m *Builder) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Builder.Merge(m, src)
+func (dst *Builder) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Builder.Merge(dst, src)
 }
 func (m *Builder) XXX_Size() int {
 	return xxx_messageInfo_Builder.Size(m)
@@ -415,7 +413,7 @@ func (m *Notifications) Reset()         { *m = Notifications{} }
 func (m *Notifications) String() string { return proto.CompactTextString(m) }
 func (*Notifications) ProtoMessage()    {}
 func (*Notifications) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{4}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{4}
 }
 func (m *Notifications) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifications.Unmarshal(m, b)
@@ -423,8 +421,8 @@ func (m *Notifications) XXX_Unmarshal(b []byte) error {
 func (m *Notifications) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Notifications.Marshal(b, m, deterministic)
 }
-func (m *Notifications) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Notifications.Merge(m, src)
+func (dst *Notifications) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Notifications.Merge(dst, src)
 }
 func (m *Notifications) XXX_Size() int {
 	return xxx_messageInfo_Notifications.Size(m)
@@ -455,7 +453,7 @@ func (m *GitilesCommits) Reset()         { *m = GitilesCommits{} }
 func (m *GitilesCommits) String() string { return proto.CompactTextString(m) }
 func (*GitilesCommits) ProtoMessage()    {}
 func (*GitilesCommits) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9a6945a7af0ec43b, []int{5}
+	return fileDescriptor_notify_f36c9c4797e16074, []int{5}
 }
 func (m *GitilesCommits) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesCommits.Unmarshal(m, b)
@@ -463,8 +461,8 @@ func (m *GitilesCommits) XXX_Unmarshal(b []byte) error {
 func (m *GitilesCommits) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GitilesCommits.Marshal(b, m, deterministic)
 }
-func (m *GitilesCommits) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GitilesCommits.Merge(m, src)
+func (dst *GitilesCommits) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesCommits.Merge(dst, src)
 }
 func (m *GitilesCommits) XXX_Size() int {
 	return xxx_messageInfo_GitilesCommits.Size(m)
@@ -494,10 +492,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/notify.proto", fileDescriptor_9a6945a7af0ec43b)
+	proto.RegisterFile("go.chromium.org/luci/luci_notify/api/config/notify.proto", fileDescriptor_notify_f36c9c4797e16074)
 }
 
-var fileDescriptor_9a6945a7af0ec43b = []byte{
+var fileDescriptor_notify_f36c9c4797e16074 = []byte{
 	// 479 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x4f, 0x8b, 0xd3, 0x40,
 	0x14, 0x27, 0xed, 0x36, 0x9b, 0xbc, 0xb5, 0xee, 0x32, 0x2e, 0x12, 0x22, 0xbb, 0x94, 0x5c, 0x2c,

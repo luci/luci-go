@@ -3,11 +3,9 @@
 
 package ts_mon_proto
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,7 +27,6 @@ const (
 var NetworkDevice_TypeId_name = map[int32]string{
 	34049749: "MESSAGE_TYPE_ID",
 }
-
 var NetworkDevice_TypeId_value = map[string]int32{
 	"MESSAGE_TYPE_ID": 34049749,
 }
@@ -39,11 +36,9 @@ func (x NetworkDevice_TypeId) Enum() *NetworkDevice_TypeId {
 	*p = x
 	return p
 }
-
 func (x NetworkDevice_TypeId) String() string {
 	return proto.EnumName(NetworkDevice_TypeId_name, int32(x))
 }
-
 func (x *NetworkDevice_TypeId) UnmarshalJSON(data []byte) error {
 	value, err := proto.UnmarshalJSONEnum(NetworkDevice_TypeId_value, data, "NetworkDevice_TypeId")
 	if err != nil {
@@ -52,9 +47,8 @@ func (x *NetworkDevice_TypeId) UnmarshalJSON(data []byte) error {
 	*x = NetworkDevice_TypeId(value)
 	return nil
 }
-
 func (NetworkDevice_TypeId) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_617c78492cfca97c, []int{0, 0}
+	return fileDescriptor_acquisition_network_device_23267241efcba8ad, []int{0, 0}
 }
 
 type NetworkDevice struct {
@@ -79,7 +73,7 @@ func (m *NetworkDevice) Reset()         { *m = NetworkDevice{} }
 func (m *NetworkDevice) String() string { return proto.CompactTextString(m) }
 func (*NetworkDevice) ProtoMessage()    {}
 func (*NetworkDevice) Descriptor() ([]byte, []int) {
-	return fileDescriptor_617c78492cfca97c, []int{0}
+	return fileDescriptor_acquisition_network_device_23267241efcba8ad, []int{0}
 }
 func (m *NetworkDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NetworkDevice.Unmarshal(m, b)
@@ -87,8 +81,8 @@ func (m *NetworkDevice) XXX_Unmarshal(b []byte) error {
 func (m *NetworkDevice) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NetworkDevice.Marshal(b, m, deterministic)
 }
-func (m *NetworkDevice) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NetworkDevice.Merge(m, src)
+func (dst *NetworkDevice) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NetworkDevice.Merge(dst, src)
 }
 func (m *NetworkDevice) XXX_Size() int {
 	return xxx_messageInfo_NetworkDevice.Size(m)
@@ -189,10 +183,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_network_device.proto", fileDescriptor_617c78492cfca97c)
+	proto.RegisterFile("go.chromium.org/luci/common/tsmon/ts_mon_proto/acquisition_network_device.proto", fileDescriptor_acquisition_network_device_23267241efcba8ad)
 }
 
-var fileDescriptor_617c78492cfca97c = []byte{
+var fileDescriptor_acquisition_network_device_23267241efcba8ad = []byte{
 	// 331 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xc1, 0x4e, 0xe3, 0x30,
 	0x10, 0x86, 0xd5, 0xed, 0xb6, 0x6a, 0x47, 0xbb, 0x6a, 0xd6, 0x5a, 0x55, 0x16, 0x02, 0x14, 0xf5,

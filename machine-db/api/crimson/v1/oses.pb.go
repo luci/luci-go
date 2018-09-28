@@ -3,11 +3,9 @@
 
 package crimson
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +33,7 @@ func (m *OS) Reset()         { *m = OS{} }
 func (m *OS) String() string { return proto.CompactTextString(m) }
 func (*OS) ProtoMessage()    {}
 func (*OS) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ccc648486e27b263, []int{0}
+	return fileDescriptor_oses_455e98695bf4123a, []int{0}
 }
 func (m *OS) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OS.Unmarshal(m, b)
@@ -43,8 +41,8 @@ func (m *OS) XXX_Unmarshal(b []byte) error {
 func (m *OS) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OS.Marshal(b, m, deterministic)
 }
-func (m *OS) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OS.Merge(m, src)
+func (dst *OS) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OS.Merge(dst, src)
 }
 func (m *OS) XXX_Size() int {
 	return xxx_messageInfo_OS.Size(m)
@@ -82,7 +80,7 @@ func (m *ListOSesRequest) Reset()         { *m = ListOSesRequest{} }
 func (m *ListOSesRequest) String() string { return proto.CompactTextString(m) }
 func (*ListOSesRequest) ProtoMessage()    {}
 func (*ListOSesRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ccc648486e27b263, []int{1}
+	return fileDescriptor_oses_455e98695bf4123a, []int{1}
 }
 func (m *ListOSesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListOSesRequest.Unmarshal(m, b)
@@ -90,8 +88,8 @@ func (m *ListOSesRequest) XXX_Unmarshal(b []byte) error {
 func (m *ListOSesRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListOSesRequest.Marshal(b, m, deterministic)
 }
-func (m *ListOSesRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListOSesRequest.Merge(m, src)
+func (dst *ListOSesRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListOSesRequest.Merge(dst, src)
 }
 func (m *ListOSesRequest) XXX_Size() int {
 	return xxx_messageInfo_ListOSesRequest.Size(m)
@@ -122,7 +120,7 @@ func (m *ListOSesResponse) Reset()         { *m = ListOSesResponse{} }
 func (m *ListOSesResponse) String() string { return proto.CompactTextString(m) }
 func (*ListOSesResponse) ProtoMessage()    {}
 func (*ListOSesResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ccc648486e27b263, []int{2}
+	return fileDescriptor_oses_455e98695bf4123a, []int{2}
 }
 func (m *ListOSesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListOSesResponse.Unmarshal(m, b)
@@ -130,8 +128,8 @@ func (m *ListOSesResponse) XXX_Unmarshal(b []byte) error {
 func (m *ListOSesResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListOSesResponse.Marshal(b, m, deterministic)
 }
-func (m *ListOSesResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListOSesResponse.Merge(m, src)
+func (dst *ListOSesResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListOSesResponse.Merge(dst, src)
 }
 func (m *ListOSesResponse) XXX_Size() int {
 	return xxx_messageInfo_ListOSesResponse.Size(m)
@@ -156,10 +154,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor_ccc648486e27b263)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/oses.proto", fileDescriptor_oses_455e98695bf4123a)
 }
 
-var fileDescriptor_ccc648486e27b263 = []byte{
+var fileDescriptor_oses_455e98695bf4123a = []byte{
 	// 197 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x8e, 0xc1, 0x4a, 0xc4, 0x30,
 	0x10, 0x86, 0xe9, 0xba, 0x2a, 0x3b, 0x3d, 0x28, 0xc1, 0x43, 0x6f, 0x96, 0x5e, 0xdc, 0x8b, 0x09,

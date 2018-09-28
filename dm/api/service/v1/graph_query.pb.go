@@ -3,11 +3,9 @@
 
 package dm
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -31,7 +29,6 @@ var GraphQuery_Search_Domain_name = map[int32]string{
 	0: "QUEST",
 	1: "ATTEMPT",
 }
-
 var GraphQuery_Search_Domain_value = map[string]int32{
 	"QUEST":   0,
 	"ATTEMPT": 1,
@@ -40,9 +37,8 @@ var GraphQuery_Search_Domain_value = map[string]int32{
 func (x GraphQuery_Search_Domain) String() string {
 	return proto.EnumName(GraphQuery_Search_Domain_name, int32(x))
 }
-
 func (GraphQuery_Search_Domain) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_922ae0b01ed267cc, []int{0, 1, 0}
+	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 1, 0}
 }
 
 // GraphQuery represents a single query into the state of DM's dependency graph.
@@ -67,7 +63,7 @@ func (m *GraphQuery) Reset()         { *m = GraphQuery{} }
 func (m *GraphQuery) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery) ProtoMessage()    {}
 func (*GraphQuery) Descriptor() ([]byte, []int) {
-	return fileDescriptor_922ae0b01ed267cc, []int{0}
+	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0}
 }
 func (m *GraphQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery.Unmarshal(m, b)
@@ -75,8 +71,8 @@ func (m *GraphQuery) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery.Marshal(b, m, deterministic)
 }
-func (m *GraphQuery) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery.Merge(m, src)
+func (dst *GraphQuery) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery.Merge(dst, src)
 }
 func (m *GraphQuery) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery.Size(m)
@@ -121,7 +117,7 @@ func (m *GraphQuery_AttemptRange) Reset()         { *m = GraphQuery_AttemptRange
 func (m *GraphQuery_AttemptRange) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery_AttemptRange) ProtoMessage()    {}
 func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_922ae0b01ed267cc, []int{0, 0}
+	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 0}
 }
 func (m *GraphQuery_AttemptRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Unmarshal(m, b)
@@ -129,8 +125,8 @@ func (m *GraphQuery_AttemptRange) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery_AttemptRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Marshal(b, m, deterministic)
 }
-func (m *GraphQuery_AttemptRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery_AttemptRange.Merge(m, src)
+func (dst *GraphQuery_AttemptRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery_AttemptRange.Merge(dst, src)
 }
 func (m *GraphQuery_AttemptRange) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Size(m)
@@ -260,7 +256,7 @@ func (m *GraphQuery_Search) Reset()         { *m = GraphQuery_Search{} }
 func (m *GraphQuery_Search) String() string { return proto.CompactTextString(m) }
 func (*GraphQuery_Search) ProtoMessage()    {}
 func (*GraphQuery_Search) Descriptor() ([]byte, []int) {
-	return fileDescriptor_922ae0b01ed267cc, []int{0, 1}
+	return fileDescriptor_graph_query_98d0dcff1c01949d, []int{0, 1}
 }
 func (m *GraphQuery_Search) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_Search.Unmarshal(m, b)
@@ -268,8 +264,8 @@ func (m *GraphQuery_Search) XXX_Unmarshal(b []byte) error {
 func (m *GraphQuery_Search) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GraphQuery_Search.Marshal(b, m, deterministic)
 }
-func (m *GraphQuery_Search) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GraphQuery_Search.Merge(m, src)
+func (dst *GraphQuery_Search) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GraphQuery_Search.Merge(dst, src)
 }
 func (m *GraphQuery_Search) XXX_Size() int {
 	return xxx_messageInfo_GraphQuery_Search.Size(m)
@@ -325,10 +321,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_query.proto", fileDescriptor_922ae0b01ed267cc)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/graph_query.proto", fileDescriptor_graph_query_98d0dcff1c01949d)
 }
 
-var fileDescriptor_922ae0b01ed267cc = []byte{
+var fileDescriptor_graph_query_98d0dcff1c01949d = []byte{
 	// 473 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x93, 0x41, 0x6f, 0xd3, 0x40,
 	0x10, 0x85, 0xb1, 0x1d, 0xbb, 0x74, 0x9c, 0x94, 0x74, 0x05, 0xc8, 0x32, 0x1c, 0xa2, 0x72, 0x48,

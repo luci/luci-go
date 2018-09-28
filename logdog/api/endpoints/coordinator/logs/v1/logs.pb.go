@@ -5,14 +5,12 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	logpb "go.chromium.org/luci/logdog/api/logpb"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import logpb "go.chromium.org/luci/logdog/api/logpb"
 
 import (
 	context "golang.org/x/net/context"
@@ -47,7 +45,6 @@ var QueryRequest_Trinary_name = map[int32]string{
 	1: "YES",
 	2: "NO",
 }
-
 var QueryRequest_Trinary_value = map[string]int32{
 	"BOTH": 0,
 	"YES":  1,
@@ -57,9 +54,8 @@ var QueryRequest_Trinary_value = map[string]int32{
 func (x QueryRequest_Trinary) String() string {
 	return proto.EnumName(QueryRequest_Trinary_name, int32(x))
 }
-
 func (QueryRequest_Trinary) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{3, 0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3, 0}
 }
 
 // GetRequest is the request structure for the user Get endpoint.
@@ -121,7 +117,7 @@ func (m *GetRequest) Reset()         { *m = GetRequest{} }
 func (m *GetRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest) ProtoMessage()    {}
 func (*GetRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{0}
 }
 func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest.Unmarshal(m, b)
@@ -129,8 +125,8 @@ func (m *GetRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetRequest.Marshal(b, m, deterministic)
 }
-func (m *GetRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetRequest.Merge(m, src)
+func (dst *GetRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest.Merge(dst, src)
 }
 func (m *GetRequest) XXX_Size() int {
 	return xxx_messageInfo_GetRequest.Size(m)
@@ -216,7 +212,7 @@ func (m *GetRequest_SignURLRequest) Reset()         { *m = GetRequest_SignURLReq
 func (m *GetRequest_SignURLRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRequest_SignURLRequest) ProtoMessage()    {}
 func (*GetRequest_SignURLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{0, 0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{0, 0}
 }
 func (m *GetRequest_SignURLRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Unmarshal(m, b)
@@ -224,8 +220,8 @@ func (m *GetRequest_SignURLRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetRequest_SignURLRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Marshal(b, m, deterministic)
 }
-func (m *GetRequest_SignURLRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetRequest_SignURLRequest.Merge(m, src)
+func (dst *GetRequest_SignURLRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRequest_SignURLRequest.Merge(dst, src)
 }
 func (m *GetRequest_SignURLRequest) XXX_Size() int {
 	return xxx_messageInfo_GetRequest_SignURLRequest.Size(m)
@@ -282,7 +278,7 @@ func (m *TailRequest) Reset()         { *m = TailRequest{} }
 func (m *TailRequest) String() string { return proto.CompactTextString(m) }
 func (*TailRequest) ProtoMessage()    {}
 func (*TailRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{1}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{1}
 }
 func (m *TailRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TailRequest.Unmarshal(m, b)
@@ -290,8 +286,8 @@ func (m *TailRequest) XXX_Unmarshal(b []byte) error {
 func (m *TailRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TailRequest.Marshal(b, m, deterministic)
 }
-func (m *TailRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TailRequest.Merge(m, src)
+func (dst *TailRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TailRequest.Merge(dst, src)
 }
 func (m *TailRequest) XXX_Size() int {
 	return xxx_messageInfo_TailRequest.Size(m)
@@ -353,7 +349,7 @@ func (m *GetResponse) Reset()         { *m = GetResponse{} }
 func (m *GetResponse) String() string { return proto.CompactTextString(m) }
 func (*GetResponse) ProtoMessage()    {}
 func (*GetResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{2}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{2}
 }
 func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResponse.Unmarshal(m, b)
@@ -361,8 +357,8 @@ func (m *GetResponse) XXX_Unmarshal(b []byte) error {
 func (m *GetResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetResponse.Marshal(b, m, deterministic)
 }
-func (m *GetResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetResponse.Merge(m, src)
+func (dst *GetResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse.Merge(dst, src)
 }
 func (m *GetResponse) XXX_Size() int {
 	return xxx_messageInfo_GetResponse.Size(m)
@@ -425,7 +421,7 @@ func (m *GetResponse_SignedUrls) Reset()         { *m = GetResponse_SignedUrls{}
 func (m *GetResponse_SignedUrls) String() string { return proto.CompactTextString(m) }
 func (*GetResponse_SignedUrls) ProtoMessage()    {}
 func (*GetResponse_SignedUrls) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{2, 0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{2, 0}
 }
 func (m *GetResponse_SignedUrls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetResponse_SignedUrls.Unmarshal(m, b)
@@ -433,8 +429,8 @@ func (m *GetResponse_SignedUrls) XXX_Unmarshal(b []byte) error {
 func (m *GetResponse_SignedUrls) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetResponse_SignedUrls.Marshal(b, m, deterministic)
 }
-func (m *GetResponse_SignedUrls) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetResponse_SignedUrls.Merge(m, src)
+func (dst *GetResponse_SignedUrls) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetResponse_SignedUrls.Merge(dst, src)
 }
 func (m *GetResponse_SignedUrls) XXX_Size() int {
 	return xxx_messageInfo_GetResponse_SignedUrls.Size(m)
@@ -538,7 +534,7 @@ func (m *QueryRequest) Reset()         { *m = QueryRequest{} }
 func (m *QueryRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryRequest) ProtoMessage()    {}
 func (*QueryRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{3}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3}
 }
 func (m *QueryRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryRequest.Unmarshal(m, b)
@@ -546,8 +542,8 @@ func (m *QueryRequest) XXX_Unmarshal(b []byte) error {
 func (m *QueryRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryRequest.Marshal(b, m, deterministic)
 }
-func (m *QueryRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryRequest.Merge(m, src)
+func (dst *QueryRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRequest.Merge(dst, src)
 }
 func (m *QueryRequest) XXX_Size() int {
 	return xxx_messageInfo_QueryRequest.Size(m)
@@ -662,7 +658,7 @@ func (m *QueryRequest_StreamTypeFilter) Reset()         { *m = QueryRequest_Stre
 func (m *QueryRequest_StreamTypeFilter) String() string { return proto.CompactTextString(m) }
 func (*QueryRequest_StreamTypeFilter) ProtoMessage()    {}
 func (*QueryRequest_StreamTypeFilter) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{3, 0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{3, 0}
 }
 func (m *QueryRequest_StreamTypeFilter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Unmarshal(m, b)
@@ -670,8 +666,8 @@ func (m *QueryRequest_StreamTypeFilter) XXX_Unmarshal(b []byte) error {
 func (m *QueryRequest_StreamTypeFilter) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Marshal(b, m, deterministic)
 }
-func (m *QueryRequest_StreamTypeFilter) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryRequest_StreamTypeFilter.Merge(m, src)
+func (dst *QueryRequest_StreamTypeFilter) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryRequest_StreamTypeFilter.Merge(dst, src)
 }
 func (m *QueryRequest_StreamTypeFilter) XXX_Size() int {
 	return xxx_messageInfo_QueryRequest_StreamTypeFilter.Size(m)
@@ -708,7 +704,7 @@ func (m *QueryResponse) Reset()         { *m = QueryResponse{} }
 func (m *QueryResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryResponse) ProtoMessage()    {}
 func (*QueryResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{4}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{4}
 }
 func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryResponse.Unmarshal(m, b)
@@ -716,8 +712,8 @@ func (m *QueryResponse) XXX_Unmarshal(b []byte) error {
 func (m *QueryResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryResponse.Marshal(b, m, deterministic)
 }
-func (m *QueryResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResponse.Merge(m, src)
+func (dst *QueryResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResponse.Merge(dst, src)
 }
 func (m *QueryResponse) XXX_Size() int {
 	return xxx_messageInfo_QueryResponse.Size(m)
@@ -778,7 +774,7 @@ func (m *QueryResponse_Stream) Reset()         { *m = QueryResponse_Stream{} }
 func (m *QueryResponse_Stream) String() string { return proto.CompactTextString(m) }
 func (*QueryResponse_Stream) ProtoMessage()    {}
 func (*QueryResponse_Stream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_fc34668f0f01b99d, []int{4, 0}
+	return fileDescriptor_logs_4b2aab2ce8da1cd7, []int{4, 0}
 }
 func (m *QueryResponse_Stream) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryResponse_Stream.Unmarshal(m, b)
@@ -786,8 +782,8 @@ func (m *QueryResponse_Stream) XXX_Unmarshal(b []byte) error {
 func (m *QueryResponse_Stream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryResponse_Stream.Marshal(b, m, deterministic)
 }
-func (m *QueryResponse_Stream) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResponse_Stream.Merge(m, src)
+func (dst *QueryResponse_Stream) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResponse_Stream.Merge(dst, src)
 }
 func (m *QueryResponse_Stream) XXX_Size() int {
 	return xxx_messageInfo_QueryResponse_Stream.Size(m)
@@ -1019,10 +1015,10 @@ var _Logs_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/logs.proto", fileDescriptor_fc34668f0f01b99d)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1/logs.proto", fileDescriptor_logs_4b2aab2ce8da1cd7)
 }
 
-var fileDescriptor_fc34668f0f01b99d = []byte{
+var fileDescriptor_logs_4b2aab2ce8da1cd7 = []byte{
 	// 911 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0xdd, 0xae, 0xdb, 0x44,
 	0x10, 0xc6, 0x89, 0xf3, 0x37, 0x4e, 0x72, 0xc2, 0x52, 0x2a, 0x63, 0xe8, 0x69, 0x9a, 0x52, 0x91,

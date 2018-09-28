@@ -3,12 +3,10 @@
 
 package scheduler
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	_struct "github.com/golang/protobuf/ptypes/struct"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import _struct "github.com/golang/protobuf/ptypes/struct"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -58,7 +56,7 @@ func (m *Trigger) Reset()         { *m = Trigger{} }
 func (m *Trigger) String() string { return proto.CompactTextString(m) }
 func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{0}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{0}
 }
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
@@ -66,8 +64,8 @@ func (m *Trigger) XXX_Unmarshal(b []byte) error {
 func (m *Trigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Trigger.Marshal(b, m, deterministic)
 }
-func (m *Trigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Trigger.Merge(m, src)
+func (dst *Trigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Trigger.Merge(dst, src)
 }
 func (m *Trigger) XXX_Size() int {
 	return xxx_messageInfo_Trigger.Size(m)
@@ -324,7 +322,7 @@ func (m *CronTrigger) Reset()         { *m = CronTrigger{} }
 func (m *CronTrigger) String() string { return proto.CompactTextString(m) }
 func (*CronTrigger) ProtoMessage()    {}
 func (*CronTrigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{1}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{1}
 }
 func (m *CronTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CronTrigger.Unmarshal(m, b)
@@ -332,8 +330,8 @@ func (m *CronTrigger) XXX_Unmarshal(b []byte) error {
 func (m *CronTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CronTrigger.Marshal(b, m, deterministic)
 }
-func (m *CronTrigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CronTrigger.Merge(m, src)
+func (dst *CronTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CronTrigger.Merge(dst, src)
 }
 func (m *CronTrigger) XXX_Size() int {
 	return xxx_messageInfo_CronTrigger.Size(m)
@@ -365,7 +363,7 @@ func (m *WebUITrigger) Reset()         { *m = WebUITrigger{} }
 func (m *WebUITrigger) String() string { return proto.CompactTextString(m) }
 func (*WebUITrigger) ProtoMessage()    {}
 func (*WebUITrigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{2}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{2}
 }
 func (m *WebUITrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WebUITrigger.Unmarshal(m, b)
@@ -373,8 +371,8 @@ func (m *WebUITrigger) XXX_Unmarshal(b []byte) error {
 func (m *WebUITrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WebUITrigger.Marshal(b, m, deterministic)
 }
-func (m *WebUITrigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WebUITrigger.Merge(m, src)
+func (dst *WebUITrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WebUITrigger.Merge(dst, src)
 }
 func (m *WebUITrigger) XXX_Size() int {
 	return xxx_messageInfo_WebUITrigger.Size(m)
@@ -398,7 +396,7 @@ func (m *NoopTrigger) Reset()         { *m = NoopTrigger{} }
 func (m *NoopTrigger) String() string { return proto.CompactTextString(m) }
 func (*NoopTrigger) ProtoMessage()    {}
 func (*NoopTrigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{3}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{3}
 }
 func (m *NoopTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NoopTrigger.Unmarshal(m, b)
@@ -406,8 +404,8 @@ func (m *NoopTrigger) XXX_Unmarshal(b []byte) error {
 func (m *NoopTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_NoopTrigger.Marshal(b, m, deterministic)
 }
-func (m *NoopTrigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_NoopTrigger.Merge(m, src)
+func (dst *NoopTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_NoopTrigger.Merge(dst, src)
 }
 func (m *NoopTrigger) XXX_Size() int {
 	return xxx_messageInfo_NoopTrigger.Size(m)
@@ -442,7 +440,7 @@ func (m *GitilesTrigger) Reset()         { *m = GitilesTrigger{} }
 func (m *GitilesTrigger) String() string { return proto.CompactTextString(m) }
 func (*GitilesTrigger) ProtoMessage()    {}
 func (*GitilesTrigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{4}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{4}
 }
 func (m *GitilesTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesTrigger.Unmarshal(m, b)
@@ -450,8 +448,8 @@ func (m *GitilesTrigger) XXX_Unmarshal(b []byte) error {
 func (m *GitilesTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GitilesTrigger.Marshal(b, m, deterministic)
 }
-func (m *GitilesTrigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GitilesTrigger.Merge(m, src)
+func (dst *GitilesTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GitilesTrigger.Merge(dst, src)
 }
 func (m *GitilesTrigger) XXX_Size() int {
 	return xxx_messageInfo_GitilesTrigger.Size(m)
@@ -503,7 +501,7 @@ func (m *BuildbucketTrigger) Reset()         { *m = BuildbucketTrigger{} }
 func (m *BuildbucketTrigger) String() string { return proto.CompactTextString(m) }
 func (*BuildbucketTrigger) ProtoMessage()    {}
 func (*BuildbucketTrigger) Descriptor() ([]byte, []int) {
-	return fileDescriptor_70a792ba8b927069, []int{5}
+	return fileDescriptor_triggers_e20c213d41681a03, []int{5}
 }
 func (m *BuildbucketTrigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketTrigger.Unmarshal(m, b)
@@ -511,8 +509,8 @@ func (m *BuildbucketTrigger) XXX_Unmarshal(b []byte) error {
 func (m *BuildbucketTrigger) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_BuildbucketTrigger.Marshal(b, m, deterministic)
 }
-func (m *BuildbucketTrigger) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_BuildbucketTrigger.Merge(m, src)
+func (dst *BuildbucketTrigger) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_BuildbucketTrigger.Merge(dst, src)
 }
 func (m *BuildbucketTrigger) XXX_Size() int {
 	return xxx_messageInfo_BuildbucketTrigger.Size(m)
@@ -547,10 +545,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto", fileDescriptor_70a792ba8b927069)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/api/scheduler/v1/triggers.proto", fileDescriptor_triggers_e20c213d41681a03)
 }
 
-var fileDescriptor_70a792ba8b927069 = []byte{
+var fileDescriptor_triggers_e20c213d41681a03 = []byte{
 	// 405 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x64, 0x92, 0xcf, 0x6e, 0xd4, 0x30,
 	0x10, 0xc6, 0xd9, 0x6c, 0xcb, 0xb2, 0xb3, 0x68, 0x85, 0x2c, 0x04, 0xa6, 0x02, 0xb4, 0xe4, 0xb4,

@@ -3,13 +3,11 @@
 
 package logpb
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,7 +34,6 @@ var StreamType_name = map[int32]string{
 	1: "BINARY",
 	2: "DATAGRAM",
 }
-
 var StreamType_value = map[string]int32{
 	"TEXT":     0,
 	"BINARY":   1,
@@ -46,9 +43,8 @@ var StreamType_value = map[string]int32{
 func (x StreamType) String() string {
 	return proto.EnumName(StreamType_name, int32(x))
 }
-
 func (StreamType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{0}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{0}
 }
 
 // *
@@ -105,7 +101,7 @@ func (m *LogStreamDescriptor) Reset()         { *m = LogStreamDescriptor{} }
 func (m *LogStreamDescriptor) String() string { return proto.CompactTextString(m) }
 func (*LogStreamDescriptor) ProtoMessage()    {}
 func (*LogStreamDescriptor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{0}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{0}
 }
 func (m *LogStreamDescriptor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamDescriptor.Unmarshal(m, b)
@@ -113,8 +109,8 @@ func (m *LogStreamDescriptor) XXX_Unmarshal(b []byte) error {
 func (m *LogStreamDescriptor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogStreamDescriptor.Marshal(b, m, deterministic)
 }
-func (m *LogStreamDescriptor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogStreamDescriptor.Merge(m, src)
+func (dst *LogStreamDescriptor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogStreamDescriptor.Merge(dst, src)
 }
 func (m *LogStreamDescriptor) XXX_Size() int {
 	return xxx_messageInfo_LogStreamDescriptor.Size(m)
@@ -186,7 +182,7 @@ func (m *Text) Reset()         { *m = Text{} }
 func (m *Text) String() string { return proto.CompactTextString(m) }
 func (*Text) ProtoMessage()    {}
 func (*Text) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{1}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{1}
 }
 func (m *Text) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Text.Unmarshal(m, b)
@@ -194,8 +190,8 @@ func (m *Text) XXX_Unmarshal(b []byte) error {
 func (m *Text) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Text.Marshal(b, m, deterministic)
 }
-func (m *Text) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Text.Merge(m, src)
+func (dst *Text) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Text.Merge(dst, src)
 }
 func (m *Text) XXX_Size() int {
 	return xxx_messageInfo_Text.Size(m)
@@ -232,7 +228,7 @@ func (m *Text_Line) Reset()         { *m = Text_Line{} }
 func (m *Text_Line) String() string { return proto.CompactTextString(m) }
 func (*Text_Line) ProtoMessage()    {}
 func (*Text_Line) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{1, 0}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{1, 0}
 }
 func (m *Text_Line) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Text_Line.Unmarshal(m, b)
@@ -240,8 +236,8 @@ func (m *Text_Line) XXX_Unmarshal(b []byte) error {
 func (m *Text_Line) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Text_Line.Marshal(b, m, deterministic)
 }
-func (m *Text_Line) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Text_Line.Merge(m, src)
+func (dst *Text_Line) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Text_Line.Merge(dst, src)
 }
 func (m *Text_Line) XXX_Size() int {
 	return xxx_messageInfo_Text_Line.Size(m)
@@ -279,7 +275,7 @@ func (m *Binary) Reset()         { *m = Binary{} }
 func (m *Binary) String() string { return proto.CompactTextString(m) }
 func (*Binary) ProtoMessage()    {}
 func (*Binary) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{2}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{2}
 }
 func (m *Binary) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Binary.Unmarshal(m, b)
@@ -287,8 +283,8 @@ func (m *Binary) XXX_Unmarshal(b []byte) error {
 func (m *Binary) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Binary.Marshal(b, m, deterministic)
 }
-func (m *Binary) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Binary.Merge(m, src)
+func (dst *Binary) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Binary.Merge(dst, src)
 }
 func (m *Binary) XXX_Size() int {
 	return xxx_messageInfo_Binary.Size(m)
@@ -320,7 +316,7 @@ func (m *Datagram) Reset()         { *m = Datagram{} }
 func (m *Datagram) String() string { return proto.CompactTextString(m) }
 func (*Datagram) ProtoMessage()    {}
 func (*Datagram) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{3}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{3}
 }
 func (m *Datagram) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datagram.Unmarshal(m, b)
@@ -328,8 +324,8 @@ func (m *Datagram) XXX_Unmarshal(b []byte) error {
 func (m *Datagram) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Datagram.Marshal(b, m, deterministic)
 }
-func (m *Datagram) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Datagram.Merge(m, src)
+func (dst *Datagram) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datagram.Merge(dst, src)
 }
 func (m *Datagram) XXX_Size() int {
 	return xxx_messageInfo_Datagram.Size(m)
@@ -375,7 +371,7 @@ func (m *Datagram_Partial) Reset()         { *m = Datagram_Partial{} }
 func (m *Datagram_Partial) String() string { return proto.CompactTextString(m) }
 func (*Datagram_Partial) ProtoMessage()    {}
 func (*Datagram_Partial) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{3, 0}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{3, 0}
 }
 func (m *Datagram_Partial) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datagram_Partial.Unmarshal(m, b)
@@ -383,8 +379,8 @@ func (m *Datagram_Partial) XXX_Unmarshal(b []byte) error {
 func (m *Datagram_Partial) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Datagram_Partial.Marshal(b, m, deterministic)
 }
-func (m *Datagram_Partial) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Datagram_Partial.Merge(m, src)
+func (dst *Datagram_Partial) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Datagram_Partial.Merge(dst, src)
 }
 func (m *Datagram_Partial) XXX_Size() int {
 	return xxx_messageInfo_Datagram_Partial.Size(m)
@@ -468,7 +464,7 @@ func (m *LogEntry) Reset()         { *m = LogEntry{} }
 func (m *LogEntry) String() string { return proto.CompactTextString(m) }
 func (*LogEntry) ProtoMessage()    {}
 func (*LogEntry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{4}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{4}
 }
 func (m *LogEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogEntry.Unmarshal(m, b)
@@ -476,8 +472,8 @@ func (m *LogEntry) XXX_Unmarshal(b []byte) error {
 func (m *LogEntry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogEntry.Marshal(b, m, deterministic)
 }
-func (m *LogEntry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogEntry.Merge(m, src)
+func (dst *LogEntry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogEntry.Merge(dst, src)
 }
 func (m *LogEntry) XXX_Size() int {
 	return xxx_messageInfo_LogEntry.Size(m)
@@ -711,7 +707,7 @@ func (m *LogIndex) Reset()         { *m = LogIndex{} }
 func (m *LogIndex) String() string { return proto.CompactTextString(m) }
 func (*LogIndex) ProtoMessage()    {}
 func (*LogIndex) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{5}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{5}
 }
 func (m *LogIndex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogIndex.Unmarshal(m, b)
@@ -719,8 +715,8 @@ func (m *LogIndex) XXX_Unmarshal(b []byte) error {
 func (m *LogIndex) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogIndex.Marshal(b, m, deterministic)
 }
-func (m *LogIndex) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogIndex.Merge(m, src)
+func (dst *LogIndex) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogIndex.Merge(dst, src)
 }
 func (m *LogIndex) XXX_Size() int {
 	return xxx_messageInfo_LogIndex.Size(m)
@@ -813,7 +809,7 @@ func (m *LogIndex_Entry) Reset()         { *m = LogIndex_Entry{} }
 func (m *LogIndex_Entry) String() string { return proto.CompactTextString(m) }
 func (*LogIndex_Entry) ProtoMessage()    {}
 func (*LogIndex_Entry) Descriptor() ([]byte, []int) {
-	return fileDescriptor_30887c96a468dac0, []int{5, 0}
+	return fileDescriptor_log_0cb77fdc814e7bf8, []int{5, 0}
 }
 func (m *LogIndex_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogIndex_Entry.Unmarshal(m, b)
@@ -821,8 +817,8 @@ func (m *LogIndex_Entry) XXX_Unmarshal(b []byte) error {
 func (m *LogIndex_Entry) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogIndex_Entry.Marshal(b, m, deterministic)
 }
-func (m *LogIndex_Entry) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogIndex_Entry.Merge(m, src)
+func (dst *LogIndex_Entry) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogIndex_Entry.Merge(dst, src)
 }
 func (m *LogIndex_Entry) XXX_Size() int {
 	return xxx_messageInfo_LogIndex_Entry.Size(m)
@@ -883,10 +879,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/log.proto", fileDescriptor_30887c96a468dac0)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/logpb/log.proto", fileDescriptor_log_0cb77fdc814e7bf8)
 }
 
-var fileDescriptor_30887c96a468dac0 = []byte{
+var fileDescriptor_log_0cb77fdc814e7bf8 = []byte{
 	// 783 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xdd, 0x6e, 0xe3, 0x44,
 	0x14, 0xae, 0x1d, 0x27, 0x71, 0x8e, 0x53, 0x9a, 0x1d, 0x60, 0x31, 0x16, 0x82, 0x34, 0x42, 0x25,

@@ -3,11 +3,9 @@
 
 package vpython
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -57,7 +55,7 @@ func (m *Spec) Reset()         { *m = Spec{} }
 func (m *Spec) String() string { return proto.CompactTextString(m) }
 func (*Spec) ProtoMessage()    {}
 func (*Spec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_12b41745b49e8c72, []int{0}
+	return fileDescriptor_spec_3f7e364ce64c2759, []int{0}
 }
 func (m *Spec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec.Unmarshal(m, b)
@@ -65,8 +63,8 @@ func (m *Spec) XXX_Unmarshal(b []byte) error {
 func (m *Spec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Spec.Marshal(b, m, deterministic)
 }
-func (m *Spec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Spec.Merge(m, src)
+func (dst *Spec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec.Merge(dst, src)
 }
 func (m *Spec) XXX_Size() int {
 	return xxx_messageInfo_Spec.Size(m)
@@ -145,7 +143,7 @@ func (m *Spec_Package) Reset()         { *m = Spec_Package{} }
 func (m *Spec_Package) String() string { return proto.CompactTextString(m) }
 func (*Spec_Package) ProtoMessage()    {}
 func (*Spec_Package) Descriptor() ([]byte, []int) {
-	return fileDescriptor_12b41745b49e8c72, []int{0, 0}
+	return fileDescriptor_spec_3f7e364ce64c2759, []int{0, 0}
 }
 func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec_Package.Unmarshal(m, b)
@@ -153,8 +151,8 @@ func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
 func (m *Spec_Package) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Spec_Package.Marshal(b, m, deterministic)
 }
-func (m *Spec_Package) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Spec_Package.Merge(m, src)
+func (dst *Spec_Package) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Spec_Package.Merge(dst, src)
 }
 func (m *Spec_Package) XXX_Size() int {
 	return xxx_messageInfo_Spec_Package.Size(m)
@@ -199,10 +197,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor_12b41745b49e8c72)
+	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/spec.proto", fileDescriptor_spec_3f7e364ce64c2759)
 }
 
-var fileDescriptor_12b41745b49e8c72 = []byte{
+var fileDescriptor_spec_3f7e364ce64c2759 = []byte{
 	// 287 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x90, 0xcf, 0x4a, 0xf4, 0x30,
 	0x14, 0xc5, 0xe9, 0x9f, 0xef, 0xab, 0x73, 0x87, 0x51, 0x0c, 0x08, 0x65, 0x56, 0x45, 0x10, 0x06,

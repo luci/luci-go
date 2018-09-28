@@ -5,11 +5,9 @@ package gerrit
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 import (
 	context "golang.org/x/net/context"
@@ -132,7 +130,6 @@ var QueryOption_name = map[int32]string{
 	1048576: "TRACKING_IDS",
 	2097152: "DOWNLOAD_COMMANDS",
 }
-
 var QueryOption_value = map[string]int32{
 	"OPTION_UNSPECIFIED": 0,
 	"LABELS":             1,
@@ -162,9 +159,8 @@ var QueryOption_value = map[string]int32{
 func (x QueryOption) String() string {
 	return proto.EnumName(QueryOption_name, int32(x))
 }
-
 func (QueryOption) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{0}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{0}
 }
 
 type CheckAccessResponse_Status int32
@@ -183,7 +179,6 @@ var CheckAccessResponse_Status_name = map[int32]string{
 	1: "FORBIDDEN",
 	2: "PROJECT_NOT_FOUND",
 }
-
 var CheckAccessResponse_Status_value = map[string]int32{
 	"ALLOWED":           0,
 	"FORBIDDEN":         1,
@@ -193,9 +188,8 @@ var CheckAccessResponse_Status_value = map[string]int32{
 func (x CheckAccessResponse_Status) String() string {
 	return proto.EnumName(CheckAccessResponse_Status_name, int32(x))
 }
-
 func (CheckAccessResponse_Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{2, 0}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{2, 0}
 }
 
 type GetChangeRequest struct {
@@ -212,7 +206,7 @@ func (m *GetChangeRequest) Reset()         { *m = GetChangeRequest{} }
 func (m *GetChangeRequest) String() string { return proto.CompactTextString(m) }
 func (*GetChangeRequest) ProtoMessage()    {}
 func (*GetChangeRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{0}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{0}
 }
 func (m *GetChangeRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetChangeRequest.Unmarshal(m, b)
@@ -220,8 +214,8 @@ func (m *GetChangeRequest) XXX_Unmarshal(b []byte) error {
 func (m *GetChangeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetChangeRequest.Marshal(b, m, deterministic)
 }
-func (m *GetChangeRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetChangeRequest.Merge(m, src)
+func (dst *GetChangeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetChangeRequest.Merge(dst, src)
 }
 func (m *GetChangeRequest) XXX_Size() int {
 	return xxx_messageInfo_GetChangeRequest.Size(m)
@@ -278,7 +272,7 @@ func (m *CheckAccessRequest) Reset()         { *m = CheckAccessRequest{} }
 func (m *CheckAccessRequest) String() string { return proto.CompactTextString(m) }
 func (*CheckAccessRequest) ProtoMessage()    {}
 func (*CheckAccessRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{1}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{1}
 }
 func (m *CheckAccessRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckAccessRequest.Unmarshal(m, b)
@@ -286,8 +280,8 @@ func (m *CheckAccessRequest) XXX_Unmarshal(b []byte) error {
 func (m *CheckAccessRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckAccessRequest.Marshal(b, m, deterministic)
 }
-func (m *CheckAccessRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckAccessRequest.Merge(m, src)
+func (dst *CheckAccessRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckAccessRequest.Merge(dst, src)
 }
 func (m *CheckAccessRequest) XXX_Size() int {
 	return xxx_messageInfo_CheckAccessRequest.Size(m)
@@ -341,7 +335,7 @@ func (m *CheckAccessResponse) Reset()         { *m = CheckAccessResponse{} }
 func (m *CheckAccessResponse) String() string { return proto.CompactTextString(m) }
 func (*CheckAccessResponse) ProtoMessage()    {}
 func (*CheckAccessResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{2}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{2}
 }
 func (m *CheckAccessResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CheckAccessResponse.Unmarshal(m, b)
@@ -349,8 +343,8 @@ func (m *CheckAccessResponse) XXX_Unmarshal(b []byte) error {
 func (m *CheckAccessResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CheckAccessResponse.Marshal(b, m, deterministic)
 }
-func (m *CheckAccessResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CheckAccessResponse.Merge(m, src)
+func (dst *CheckAccessResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CheckAccessResponse.Merge(dst, src)
 }
 func (m *CheckAccessResponse) XXX_Size() int {
 	return xxx_messageInfo_CheckAccessResponse.Size(m)
@@ -408,7 +402,7 @@ func (m *AccountInfo) Reset()         { *m = AccountInfo{} }
 func (m *AccountInfo) String() string { return proto.CompactTextString(m) }
 func (*AccountInfo) ProtoMessage()    {}
 func (*AccountInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{3}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{3}
 }
 func (m *AccountInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AccountInfo.Unmarshal(m, b)
@@ -416,8 +410,8 @@ func (m *AccountInfo) XXX_Unmarshal(b []byte) error {
 func (m *AccountInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_AccountInfo.Marshal(b, m, deterministic)
 }
-func (m *AccountInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AccountInfo.Merge(m, src)
+func (dst *AccountInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AccountInfo.Merge(dst, src)
 }
 func (m *AccountInfo) XXX_Size() int {
 	return xxx_messageInfo_AccountInfo.Size(m)
@@ -474,7 +468,7 @@ func (m *ChangeInfo) Reset()         { *m = ChangeInfo{} }
 func (m *ChangeInfo) String() string { return proto.CompactTextString(m) }
 func (*ChangeInfo) ProtoMessage()    {}
 func (*ChangeInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_3c6e096860f6adc3, []int{4}
+	return fileDescriptor_gerrit_577711b740588cbd, []int{4}
 }
 func (m *ChangeInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChangeInfo.Unmarshal(m, b)
@@ -482,8 +476,8 @@ func (m *ChangeInfo) XXX_Unmarshal(b []byte) error {
 func (m *ChangeInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ChangeInfo.Marshal(b, m, deterministic)
 }
-func (m *ChangeInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ChangeInfo.Merge(m, src)
+func (dst *ChangeInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangeInfo.Merge(dst, src)
 }
 func (m *ChangeInfo) XXX_Size() int {
 	return xxx_messageInfo_ChangeInfo.Size(m)
@@ -674,10 +668,10 @@ var _Gerrit_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/gerrit/gerrit.proto", fileDescriptor_3c6e096860f6adc3)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/gerrit/gerrit.proto", fileDescriptor_gerrit_577711b740588cbd)
 }
 
-var fileDescriptor_3c6e096860f6adc3 = []byte{
+var fileDescriptor_gerrit_577711b740588cbd = []byte{
 	// 766 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0xdd, 0x6e, 0xe3, 0x44,
 	0x14, 0x5e, 0x27, 0x69, 0xda, 0x9c, 0xd0, 0x64, 0x72, 0xda, 0x2d, 0x56, 0x91, 0x50, 0x94, 0xab,

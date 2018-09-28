@@ -3,11 +3,9 @@
 
 package internal
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,7 +39,7 @@ func (m *InvocationsCursor) Reset()         { *m = InvocationsCursor{} }
 func (m *InvocationsCursor) String() string { return proto.CompactTextString(m) }
 func (*InvocationsCursor) ProtoMessage()    {}
 func (*InvocationsCursor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dded6d90ada69499, []int{0}
+	return fileDescriptor_cursors_0a8f5de82cc4b906, []int{0}
 }
 func (m *InvocationsCursor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsCursor.Unmarshal(m, b)
@@ -49,8 +47,8 @@ func (m *InvocationsCursor) XXX_Unmarshal(b []byte) error {
 func (m *InvocationsCursor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_InvocationsCursor.Marshal(b, m, deterministic)
 }
-func (m *InvocationsCursor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_InvocationsCursor.Merge(m, src)
+func (dst *InvocationsCursor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_InvocationsCursor.Merge(dst, src)
 }
 func (m *InvocationsCursor) XXX_Size() int {
 	return xxx_messageInfo_InvocationsCursor.Size(m)
@@ -73,10 +71,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/cursors.proto", fileDescriptor_dded6d90ada69499)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/cursors.proto", fileDescriptor_cursors_0a8f5de82cc4b906)
 }
 
-var fileDescriptor_dded6d90ada69499 = []byte{
+var fileDescriptor_cursors_0a8f5de82cc4b906 = []byte{
 	// 157 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x34, 0xcd, 0x31, 0x0b, 0xc2, 0x30,
 	0x10, 0x40, 0x61, 0x5a, 0x45, 0x4a, 0x74, 0xa8, 0x9d, 0x1c, 0xd5, 0xc9, 0x29, 0x19, 0x5c, 0x05,

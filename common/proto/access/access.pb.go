@@ -5,13 +5,11 @@ package access
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	empty "github.com/golang/protobuf/ptypes/empty"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import empty "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -42,7 +40,7 @@ func (m *DescriptionResponse) Reset()         { *m = DescriptionResponse{} }
 func (m *DescriptionResponse) String() string { return proto.CompactTextString(m) }
 func (*DescriptionResponse) ProtoMessage()    {}
 func (*DescriptionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{0}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{0}
 }
 func (m *DescriptionResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescriptionResponse.Unmarshal(m, b)
@@ -50,8 +48,8 @@ func (m *DescriptionResponse) XXX_Unmarshal(b []byte) error {
 func (m *DescriptionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DescriptionResponse.Marshal(b, m, deterministic)
 }
-func (m *DescriptionResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DescriptionResponse.Merge(m, src)
+func (dst *DescriptionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DescriptionResponse.Merge(dst, src)
 }
 func (m *DescriptionResponse) XXX_Size() int {
 	return xxx_messageInfo_DescriptionResponse.Size(m)
@@ -114,7 +112,7 @@ func (m *DescriptionResponse_ResourceDescription) Reset() {
 func (m *DescriptionResponse_ResourceDescription) String() string { return proto.CompactTextString(m) }
 func (*DescriptionResponse_ResourceDescription) ProtoMessage()    {}
 func (*DescriptionResponse_ResourceDescription) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{0, 0}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{0, 0}
 }
 func (m *DescriptionResponse_ResourceDescription) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription.Unmarshal(m, b)
@@ -122,8 +120,8 @@ func (m *DescriptionResponse_ResourceDescription) XXX_Unmarshal(b []byte) error 
 func (m *DescriptionResponse_ResourceDescription) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription.Marshal(b, m, deterministic)
 }
-func (m *DescriptionResponse_ResourceDescription) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DescriptionResponse_ResourceDescription.Merge(m, src)
+func (dst *DescriptionResponse_ResourceDescription) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DescriptionResponse_ResourceDescription.Merge(dst, src)
 }
 func (m *DescriptionResponse_ResourceDescription) XXX_Size() int {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription.Size(m)
@@ -179,7 +177,7 @@ func (m *DescriptionResponse_ResourceDescription_Action) String() string {
 }
 func (*DescriptionResponse_ResourceDescription_Action) ProtoMessage() {}
 func (*DescriptionResponse_ResourceDescription_Action) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{0, 0, 0}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{0, 0, 0}
 }
 func (m *DescriptionResponse_ResourceDescription_Action) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Action.Unmarshal(m, b)
@@ -187,8 +185,8 @@ func (m *DescriptionResponse_ResourceDescription_Action) XXX_Unmarshal(b []byte)
 func (m *DescriptionResponse_ResourceDescription_Action) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Action.Marshal(b, m, deterministic)
 }
-func (m *DescriptionResponse_ResourceDescription_Action) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DescriptionResponse_ResourceDescription_Action.Merge(m, src)
+func (dst *DescriptionResponse_ResourceDescription_Action) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DescriptionResponse_ResourceDescription_Action.Merge(dst, src)
 }
 func (m *DescriptionResponse_ResourceDescription_Action) XXX_Size() int {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Action.Size(m)
@@ -226,7 +224,7 @@ func (m *DescriptionResponse_ResourceDescription_Role) String() string {
 }
 func (*DescriptionResponse_ResourceDescription_Role) ProtoMessage() {}
 func (*DescriptionResponse_ResourceDescription_Role) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{0, 0, 1}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{0, 0, 1}
 }
 func (m *DescriptionResponse_ResourceDescription_Role) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Role.Unmarshal(m, b)
@@ -234,8 +232,8 @@ func (m *DescriptionResponse_ResourceDescription_Role) XXX_Unmarshal(b []byte) e
 func (m *DescriptionResponse_ResourceDescription_Role) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Role.Marshal(b, m, deterministic)
 }
-func (m *DescriptionResponse_ResourceDescription_Role) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DescriptionResponse_ResourceDescription_Role.Merge(m, src)
+func (dst *DescriptionResponse_ResourceDescription_Role) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DescriptionResponse_ResourceDescription_Role.Merge(dst, src)
 }
 func (m *DescriptionResponse_ResourceDescription_Role) XXX_Size() int {
 	return xxx_messageInfo_DescriptionResponse_ResourceDescription_Role.Size(m)
@@ -284,7 +282,7 @@ func (m *PermittedActionsRequest) Reset()         { *m = PermittedActionsRequest
 func (m *PermittedActionsRequest) String() string { return proto.CompactTextString(m) }
 func (*PermittedActionsRequest) ProtoMessage()    {}
 func (*PermittedActionsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{1}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{1}
 }
 func (m *PermittedActionsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PermittedActionsRequest.Unmarshal(m, b)
@@ -292,8 +290,8 @@ func (m *PermittedActionsRequest) XXX_Unmarshal(b []byte) error {
 func (m *PermittedActionsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PermittedActionsRequest.Marshal(b, m, deterministic)
 }
-func (m *PermittedActionsRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PermittedActionsRequest.Merge(m, src)
+func (dst *PermittedActionsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PermittedActionsRequest.Merge(dst, src)
 }
 func (m *PermittedActionsRequest) XXX_Size() int {
 	return xxx_messageInfo_PermittedActionsRequest.Size(m)
@@ -335,7 +333,7 @@ func (m *PermittedActionsResponse) Reset()         { *m = PermittedActionsRespon
 func (m *PermittedActionsResponse) String() string { return proto.CompactTextString(m) }
 func (*PermittedActionsResponse) ProtoMessage()    {}
 func (*PermittedActionsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{2}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{2}
 }
 func (m *PermittedActionsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PermittedActionsResponse.Unmarshal(m, b)
@@ -343,8 +341,8 @@ func (m *PermittedActionsResponse) XXX_Unmarshal(b []byte) error {
 func (m *PermittedActionsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PermittedActionsResponse.Marshal(b, m, deterministic)
 }
-func (m *PermittedActionsResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PermittedActionsResponse.Merge(m, src)
+func (dst *PermittedActionsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PermittedActionsResponse.Merge(dst, src)
 }
 func (m *PermittedActionsResponse) XXX_Size() int {
 	return xxx_messageInfo_PermittedActionsResponse.Size(m)
@@ -387,7 +385,7 @@ func (m *PermittedActionsResponse_ResourcePermissions) String() string {
 }
 func (*PermittedActionsResponse_ResourcePermissions) ProtoMessage() {}
 func (*PermittedActionsResponse_ResourcePermissions) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4a2d397fb03f91ad, []int{2, 0}
+	return fileDescriptor_access_8baa2d0d02a943db, []int{2, 0}
 }
 func (m *PermittedActionsResponse_ResourcePermissions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PermittedActionsResponse_ResourcePermissions.Unmarshal(m, b)
@@ -395,8 +393,8 @@ func (m *PermittedActionsResponse_ResourcePermissions) XXX_Unmarshal(b []byte) e
 func (m *PermittedActionsResponse_ResourcePermissions) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_PermittedActionsResponse_ResourcePermissions.Marshal(b, m, deterministic)
 }
-func (m *PermittedActionsResponse_ResourcePermissions) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_PermittedActionsResponse_ResourcePermissions.Merge(m, src)
+func (dst *PermittedActionsResponse_ResourcePermissions) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PermittedActionsResponse_ResourcePermissions.Merge(dst, src)
 }
 func (m *PermittedActionsResponse_ResourcePermissions) XXX_Size() int {
 	return xxx_messageInfo_PermittedActionsResponse_ResourcePermissions.Size(m)
@@ -572,10 +570,10 @@ var _Access_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/access/access.proto", fileDescriptor_4a2d397fb03f91ad)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/access/access.proto", fileDescriptor_access_8baa2d0d02a943db)
 }
 
-var fileDescriptor_4a2d397fb03f91ad = []byte{
+var fileDescriptor_access_8baa2d0d02a943db = []byte{
 	// 528 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0xdd, 0x6e, 0xd3, 0x30,
 	0x14, 0x5e, 0xba, 0xb6, 0x53, 0x4f, 0xc7, 0x28, 0x9e, 0x04, 0xc1, 0x93, 0xa0, 0x84, 0x0b, 0x76,

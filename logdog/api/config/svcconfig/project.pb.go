@@ -3,12 +3,10 @@
 
 package svcconfig
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -79,7 +77,7 @@ func (m *ProjectConfig) Reset()         { *m = ProjectConfig{} }
 func (m *ProjectConfig) String() string { return proto.CompactTextString(m) }
 func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4b481a5cd36b270f, []int{0}
+	return fileDescriptor_project_fe097ae8484075f9, []int{0}
 }
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
@@ -87,8 +85,8 @@ func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 func (m *ProjectConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ProjectConfig.Marshal(b, m, deterministic)
 }
-func (m *ProjectConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ProjectConfig.Merge(m, src)
+func (dst *ProjectConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ProjectConfig.Merge(dst, src)
 }
 func (m *ProjectConfig) XXX_Size() int {
 	return xxx_messageInfo_ProjectConfig.Size(m)
@@ -153,10 +151,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor_4b481a5cd36b270f)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/project.proto", fileDescriptor_project_fe097ae8484075f9)
 }
 
-var fileDescriptor_4b481a5cd36b270f = []byte{
+var fileDescriptor_project_fe097ae8484075f9 = []byte{
 	// 344 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x91, 0xcd, 0x4e, 0xe3, 0x30,
 	0x14, 0x85, 0xd5, 0xe9, 0xcc, 0x68, 0xea, 0x76, 0xa0, 0x8d, 0x58, 0x84, 0x4a, 0xa0, 0x88, 0x55,
