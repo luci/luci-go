@@ -45,6 +45,30 @@
       "revId": "9f543b47c769c15c0c5cf8c1b25c7a720dae93e5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3d30271_8eeac55f",
+        "filename": "appengine/mapper/internal/tasks/tasks.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-09-28T17:57:10Z",
+      "side": 1,
+      "message": "Somehow this change rolled back protobuf lib (and probably other stuff): https://chromium.googlesource.com/infra/infra/+/6ac025e0e45d70044ee8e8b1fc5dc8d80363a8cb\n\nWe should roll it forward again. (I can do it in ~1.5h).",
+      "parentUuid": "8e5741a8_891f3f53",
+      "range": {
+        "startLine": 6,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 18
+      },
+      "revId": "9f543b47c769c15c0c5cf8c1b25c7a720dae93e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
