@@ -3,11 +3,9 @@
 
 package vpython
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -37,7 +35,7 @@ func (m *Environment) Reset()         { *m = Environment{} }
 func (m *Environment) String() string { return proto.CompactTextString(m) }
 func (*Environment) ProtoMessage()    {}
 func (*Environment) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b481cc037bc8a1e4, []int{0}
+	return fileDescriptor_env_0ce0676337b6794c, []int{0}
 }
 func (m *Environment) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Environment.Unmarshal(m, b)
@@ -45,8 +43,8 @@ func (m *Environment) XXX_Unmarshal(b []byte) error {
 func (m *Environment) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Environment.Marshal(b, m, deterministic)
 }
-func (m *Environment) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Environment.Merge(m, src)
+func (dst *Environment) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Environment.Merge(dst, src)
 }
 func (m *Environment) XXX_Size() int {
 	return xxx_messageInfo_Environment.Size(m)
@@ -97,7 +95,7 @@ func (m *Runtime) Reset()         { *m = Runtime{} }
 func (m *Runtime) String() string { return proto.CompactTextString(m) }
 func (*Runtime) ProtoMessage()    {}
 func (*Runtime) Descriptor() ([]byte, []int) {
-	return fileDescriptor_b481cc037bc8a1e4, []int{1}
+	return fileDescriptor_env_0ce0676337b6794c, []int{1}
 }
 func (m *Runtime) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Runtime.Unmarshal(m, b)
@@ -105,8 +103,8 @@ func (m *Runtime) XXX_Unmarshal(b []byte) error {
 func (m *Runtime) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Runtime.Marshal(b, m, deterministic)
 }
-func (m *Runtime) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Runtime.Merge(m, src)
+func (dst *Runtime) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Runtime.Merge(dst, src)
 }
 func (m *Runtime) XXX_Size() int {
 	return xxx_messageInfo_Runtime.Size(m)
@@ -151,10 +149,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/env.proto", fileDescriptor_b481cc037bc8a1e4)
+	proto.RegisterFile("go.chromium.org/luci/vpython/api/vpython/env.proto", fileDescriptor_env_0ce0676337b6794c)
 }
 
-var fileDescriptor_b481cc037bc8a1e4 = []byte{
+var fileDescriptor_env_0ce0676337b6794c = []byte{
 	// 252 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x8f, 0xb1, 0x6e, 0xf3, 0x20,
 	0x14, 0x85, 0xe5, 0xdf, 0x56, 0x2c, 0x5f, 0xeb, 0x97, 0x2a, 0x86, 0x0a, 0x65, 0x4a, 0x33, 0x45,

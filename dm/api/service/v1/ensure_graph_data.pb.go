@@ -3,12 +3,10 @@
 
 package dm
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	templateproto "go.chromium.org/luci/common/data/text/templateproto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import templateproto "go.chromium.org/luci/common/data/text/templateproto"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,7 +39,7 @@ func (m *TemplateInstantiation) Reset()         { *m = TemplateInstantiation{} }
 func (m *TemplateInstantiation) String() string { return proto.CompactTextString(m) }
 func (*TemplateInstantiation) ProtoMessage()    {}
 func (*TemplateInstantiation) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{0}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{0}
 }
 func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TemplateInstantiation.Unmarshal(m, b)
@@ -49,8 +47,8 @@ func (m *TemplateInstantiation) XXX_Unmarshal(b []byte) error {
 func (m *TemplateInstantiation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TemplateInstantiation.Marshal(b, m, deterministic)
 }
-func (m *TemplateInstantiation) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TemplateInstantiation.Merge(m, src)
+func (dst *TemplateInstantiation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TemplateInstantiation.Merge(dst, src)
 }
 func (m *TemplateInstantiation) XXX_Size() int {
 	return xxx_messageInfo_TemplateInstantiation.Size(m)
@@ -148,7 +146,7 @@ func (m *EnsureGraphDataReq) Reset()         { *m = EnsureGraphDataReq{} }
 func (m *EnsureGraphDataReq) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq) ProtoMessage()    {}
 func (*EnsureGraphDataReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{1}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1}
 }
 func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq.Unmarshal(m, b)
@@ -156,8 +154,8 @@ func (m *EnsureGraphDataReq) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq.Marshal(b, m, deterministic)
 }
-func (m *EnsureGraphDataReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq.Merge(m, src)
+func (dst *EnsureGraphDataReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq.Merge(dst, src)
 }
 func (m *EnsureGraphDataReq) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq.Size(m)
@@ -242,7 +240,7 @@ func (m *EnsureGraphDataReq_Limit) Reset()         { *m = EnsureGraphDataReq_Lim
 func (m *EnsureGraphDataReq_Limit) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Limit) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Limit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{1, 0}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 0}
 }
 func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Unmarshal(m, b)
@@ -250,8 +248,8 @@ func (m *EnsureGraphDataReq_Limit) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Limit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Marshal(b, m, deterministic)
 }
-func (m *EnsureGraphDataReq_Limit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Limit.Merge(m, src)
+func (dst *EnsureGraphDataReq_Limit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Limit.Merge(dst, src)
 }
 func (m *EnsureGraphDataReq_Limit) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Limit.Size(m)
@@ -280,7 +278,7 @@ func (m *EnsureGraphDataReq_Include) Reset()         { *m = EnsureGraphDataReq_I
 func (m *EnsureGraphDataReq_Include) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{1, 1}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1}
 }
 func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Unmarshal(m, b)
@@ -288,8 +286,8 @@ func (m *EnsureGraphDataReq_Include) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Include) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Marshal(b, m, deterministic)
 }
-func (m *EnsureGraphDataReq_Include) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Include.Merge(m, src)
+func (dst *EnsureGraphDataReq_Include) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include.Merge(dst, src)
 }
 func (m *EnsureGraphDataReq_Include) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Include.Size(m)
@@ -319,7 +317,7 @@ func (m *EnsureGraphDataReq_Include_Options) Reset()         { *m = EnsureGraphD
 func (m *EnsureGraphDataReq_Include_Options) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataReq_Include_Options) ProtoMessage()    {}
 func (*EnsureGraphDataReq_Include_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{1, 1, 0}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{1, 1, 0}
 }
 func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Unmarshal(m, b)
@@ -327,8 +325,8 @@ func (m *EnsureGraphDataReq_Include_Options) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataReq_Include_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Marshal(b, m, deterministic)
 }
-func (m *EnsureGraphDataReq_Include_Options) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataReq_Include_Options.Merge(m, src)
+func (dst *EnsureGraphDataReq_Include_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataReq_Include_Options.Merge(dst, src)
 }
 func (m *EnsureGraphDataReq_Include_Options) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataReq_Include_Options.Size(m)
@@ -407,7 +405,7 @@ func (m *EnsureGraphDataRsp) Reset()         { *m = EnsureGraphDataRsp{} }
 func (m *EnsureGraphDataRsp) String() string { return proto.CompactTextString(m) }
 func (*EnsureGraphDataRsp) ProtoMessage()    {}
 func (*EnsureGraphDataRsp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d2be8364c35d3177, []int{2}
+	return fileDescriptor_ensure_graph_data_e53364bc98f83755, []int{2}
 }
 func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EnsureGraphDataRsp.Unmarshal(m, b)
@@ -415,8 +413,8 @@ func (m *EnsureGraphDataRsp) XXX_Unmarshal(b []byte) error {
 func (m *EnsureGraphDataRsp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_EnsureGraphDataRsp.Marshal(b, m, deterministic)
 }
-func (m *EnsureGraphDataRsp) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_EnsureGraphDataRsp.Merge(m, src)
+func (dst *EnsureGraphDataRsp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EnsureGraphDataRsp.Merge(dst, src)
 }
 func (m *EnsureGraphDataRsp) XXX_Size() int {
 	return xxx_messageInfo_EnsureGraphDataRsp.Size(m)
@@ -479,10 +477,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor_d2be8364c35d3177)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/ensure_graph_data.proto", fileDescriptor_ensure_graph_data_e53364bc98f83755)
 }
 
-var fileDescriptor_d2be8364c35d3177 = []byte{
+var fileDescriptor_ensure_graph_data_e53364bc98f83755 = []byte{
 	// 649 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x53, 0x5f, 0x6f, 0xd3, 0x3e,
 	0x14, 0x55, 0x9a, 0xa4, 0x49, 0xdd, 0x76, 0x8b, 0xac, 0xdf, 0x0f, 0x85, 0x08, 0xc1, 0x54, 0x31,

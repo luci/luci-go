@@ -3,13 +3,11 @@
 
 package dm
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	_ "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import _ "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -37,7 +35,6 @@ var WalkGraphReq_Mode_Direction_name = map[int32]string{
 	1: "BACKWARDS",
 	2: "BOTH",
 }
-
 var WalkGraphReq_Mode_Direction_value = map[string]int32{
 	"FORWARDS":  0,
 	"BACKWARDS": 1,
@@ -47,9 +44,8 @@ var WalkGraphReq_Mode_Direction_value = map[string]int32{
 func (x WalkGraphReq_Mode_Direction) String() string {
 	return proto.EnumName(WalkGraphReq_Mode_Direction_name, int32(x))
 }
-
 func (WalkGraphReq_Mode_Direction) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 0, 0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 0, 0}
 }
 
 // WalkGraphReq allows you to walk from one or more Quests through their
@@ -84,7 +80,7 @@ func (m *WalkGraphReq) Reset()         { *m = WalkGraphReq{} }
 func (m *WalkGraphReq) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq) ProtoMessage()    {}
 func (*WalkGraphReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0}
 }
 func (m *WalkGraphReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq.Unmarshal(m, b)
@@ -92,8 +88,8 @@ func (m *WalkGraphReq) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq.Merge(m, src)
+func (dst *WalkGraphReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq.Merge(dst, src)
 }
 func (m *WalkGraphReq) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq.Size(m)
@@ -162,7 +158,7 @@ func (m *WalkGraphReq_Mode) Reset()         { *m = WalkGraphReq_Mode{} }
 func (m *WalkGraphReq_Mode) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Mode) ProtoMessage()    {}
 func (*WalkGraphReq_Mode) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 0}
 }
 func (m *WalkGraphReq_Mode) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Mode.Unmarshal(m, b)
@@ -170,8 +166,8 @@ func (m *WalkGraphReq_Mode) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq_Mode) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq_Mode.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq_Mode) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq_Mode.Merge(m, src)
+func (dst *WalkGraphReq_Mode) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Mode.Merge(dst, src)
 }
 func (m *WalkGraphReq_Mode) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq_Mode.Size(m)
@@ -227,7 +223,7 @@ func (m *WalkGraphReq_Limit) Reset()         { *m = WalkGraphReq_Limit{} }
 func (m *WalkGraphReq_Limit) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Limit) ProtoMessage()    {}
 func (*WalkGraphReq_Limit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 1}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 1}
 }
 func (m *WalkGraphReq_Limit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Limit.Unmarshal(m, b)
@@ -235,8 +231,8 @@ func (m *WalkGraphReq_Limit) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq_Limit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq_Limit.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq_Limit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq_Limit.Merge(m, src)
+func (dst *WalkGraphReq_Limit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Limit.Merge(dst, src)
 }
 func (m *WalkGraphReq_Limit) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq_Limit.Size(m)
@@ -297,7 +293,7 @@ func (m *WalkGraphReq_Include) Reset()         { *m = WalkGraphReq_Include{} }
 func (m *WalkGraphReq_Include) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Include) ProtoMessage()    {}
 func (*WalkGraphReq_Include) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 2}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 2}
 }
 func (m *WalkGraphReq_Include) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Include.Unmarshal(m, b)
@@ -305,8 +301,8 @@ func (m *WalkGraphReq_Include) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq_Include) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq_Include.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq_Include) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq_Include.Merge(m, src)
+func (dst *WalkGraphReq_Include) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Include.Merge(dst, src)
 }
 func (m *WalkGraphReq_Include) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq_Include.Size(m)
@@ -395,7 +391,7 @@ func (m *WalkGraphReq_Include_Options) Reset()         { *m = WalkGraphReq_Inclu
 func (m *WalkGraphReq_Include_Options) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Include_Options) ProtoMessage()    {}
 func (*WalkGraphReq_Include_Options) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 2, 0}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 2, 0}
 }
 func (m *WalkGraphReq_Include_Options) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Include_Options.Unmarshal(m, b)
@@ -403,8 +399,8 @@ func (m *WalkGraphReq_Include_Options) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq_Include_Options) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq_Include_Options.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq_Include_Options) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq_Include_Options.Merge(m, src)
+func (dst *WalkGraphReq_Include_Options) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Include_Options.Merge(dst, src)
 }
 func (m *WalkGraphReq_Include_Options) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq_Include_Options.Size(m)
@@ -464,7 +460,7 @@ func (m *WalkGraphReq_Exclude) Reset()         { *m = WalkGraphReq_Exclude{} }
 func (m *WalkGraphReq_Exclude) String() string { return proto.CompactTextString(m) }
 func (*WalkGraphReq_Exclude) ProtoMessage()    {}
 func (*WalkGraphReq_Exclude) Descriptor() ([]byte, []int) {
-	return fileDescriptor_0ff1922d0e189b66, []int{0, 3}
+	return fileDescriptor_walk_graph_1df281be071ebbf3, []int{0, 3}
 }
 func (m *WalkGraphReq_Exclude) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WalkGraphReq_Exclude.Unmarshal(m, b)
@@ -472,8 +468,8 @@ func (m *WalkGraphReq_Exclude) XXX_Unmarshal(b []byte) error {
 func (m *WalkGraphReq_Exclude) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WalkGraphReq_Exclude.Marshal(b, m, deterministic)
 }
-func (m *WalkGraphReq_Exclude) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_WalkGraphReq_Exclude.Merge(m, src)
+func (dst *WalkGraphReq_Exclude) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WalkGraphReq_Exclude.Merge(dst, src)
 }
 func (m *WalkGraphReq_Exclude) XXX_Size() int {
 	return xxx_messageInfo_WalkGraphReq_Exclude.Size(m)
@@ -509,10 +505,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/walk_graph.proto", fileDescriptor_0ff1922d0e189b66)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/walk_graph.proto", fileDescriptor_walk_graph_1df281be071ebbf3)
 }
 
-var fileDescriptor_0ff1922d0e189b66 = []byte{
+var fileDescriptor_walk_graph_1df281be071ebbf3 = []byte{
 	// 655 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x52, 0x6d, 0x6b, 0x13, 0x4d,
 	0x14, 0x7d, 0xd2, 0xbc, 0x6d, 0x6e, 0x9b, 0x3e, 0xe5, 0x82, 0x65, 0xbb, 0x82, 0x2d, 0x45, 0xa5,

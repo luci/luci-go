@@ -3,12 +3,10 @@
 
 package git
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -38,7 +36,6 @@ var Commit_TreeDiff_ChangeType_name = map[int32]string{
 	3: "MODIFY",
 	4: "RENAME",
 }
-
 var Commit_TreeDiff_ChangeType_value = map[string]int32{
 	"ADD":    0,
 	"COPY":   1,
@@ -50,9 +47,8 @@ var Commit_TreeDiff_ChangeType_value = map[string]int32{
 func (x Commit_TreeDiff_ChangeType) String() string {
 	return proto.EnumName(Commit_TreeDiff_ChangeType_name, int32(x))
 }
-
 func (Commit_TreeDiff_ChangeType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_9d74b2aaad703343, []int{0, 1, 0}
+	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 1, 0}
 }
 
 // Commit is a single parsed commit as represented in a git log or git show
@@ -78,7 +74,7 @@ func (m *Commit) Reset()         { *m = Commit{} }
 func (m *Commit) String() string { return proto.CompactTextString(m) }
 func (*Commit) ProtoMessage()    {}
 func (*Commit) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9d74b2aaad703343, []int{0}
+	return fileDescriptor_commit_b1539bca6d9636bf, []int{0}
 }
 func (m *Commit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit.Unmarshal(m, b)
@@ -86,8 +82,8 @@ func (m *Commit) XXX_Unmarshal(b []byte) error {
 func (m *Commit) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit.Marshal(b, m, deterministic)
 }
-func (m *Commit) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit.Merge(m, src)
+func (dst *Commit) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit.Merge(dst, src)
 }
 func (m *Commit) XXX_Size() int {
 	return xxx_messageInfo_Commit.Size(m)
@@ -162,7 +158,7 @@ func (m *Commit_User) Reset()         { *m = Commit_User{} }
 func (m *Commit_User) String() string { return proto.CompactTextString(m) }
 func (*Commit_User) ProtoMessage()    {}
 func (*Commit_User) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9d74b2aaad703343, []int{0, 0}
+	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 0}
 }
 func (m *Commit_User) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_User.Unmarshal(m, b)
@@ -170,8 +166,8 @@ func (m *Commit_User) XXX_Unmarshal(b []byte) error {
 func (m *Commit_User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit_User.Marshal(b, m, deterministic)
 }
-func (m *Commit_User) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit_User.Merge(m, src)
+func (dst *Commit_User) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit_User.Merge(dst, src)
 }
 func (m *Commit_User) XXX_Size() int {
 	return xxx_messageInfo_Commit_User.Size(m)
@@ -239,7 +235,7 @@ func (m *Commit_TreeDiff) Reset()         { *m = Commit_TreeDiff{} }
 func (m *Commit_TreeDiff) String() string { return proto.CompactTextString(m) }
 func (*Commit_TreeDiff) ProtoMessage()    {}
 func (*Commit_TreeDiff) Descriptor() ([]byte, []int) {
-	return fileDescriptor_9d74b2aaad703343, []int{0, 1}
+	return fileDescriptor_commit_b1539bca6d9636bf, []int{0, 1}
 }
 func (m *Commit_TreeDiff) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_TreeDiff.Unmarshal(m, b)
@@ -247,8 +243,8 @@ func (m *Commit_TreeDiff) XXX_Unmarshal(b []byte) error {
 func (m *Commit_TreeDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Commit_TreeDiff.Marshal(b, m, deterministic)
 }
-func (m *Commit_TreeDiff) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Commit_TreeDiff.Merge(m, src)
+func (dst *Commit_TreeDiff) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Commit_TreeDiff.Merge(dst, src)
 }
 func (m *Commit_TreeDiff) XXX_Size() int {
 	return xxx_messageInfo_Commit_TreeDiff.Size(m)
@@ -316,10 +312,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/git/commit.proto", fileDescriptor_9d74b2aaad703343)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/git/commit.proto", fileDescriptor_commit_b1539bca6d9636bf)
 }
 
-var fileDescriptor_9d74b2aaad703343 = []byte{
+var fileDescriptor_commit_b1539bca6d9636bf = []byte{
 	// 447 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x90, 0xc1, 0x6e, 0x9c, 0x30,
 	0x10, 0x86, 0xbb, 0x40, 0x60, 0x99, 0xa8, 0x11, 0xb2, 0x52, 0x89, 0xee, 0x25, 0xab, 0x9c, 0x38,

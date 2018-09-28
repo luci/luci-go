@@ -3,11 +3,9 @@
 
 package svcconfig
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -41,7 +39,7 @@ func (m *ArchiveIndexConfig) Reset()         { *m = ArchiveIndexConfig{} }
 func (m *ArchiveIndexConfig) String() string { return proto.CompactTextString(m) }
 func (*ArchiveIndexConfig) ProtoMessage()    {}
 func (*ArchiveIndexConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_4c3de80beb374f3f, []int{0}
+	return fileDescriptor_archival_7884d05a2483b72a, []int{0}
 }
 func (m *ArchiveIndexConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveIndexConfig.Unmarshal(m, b)
@@ -49,8 +47,8 @@ func (m *ArchiveIndexConfig) XXX_Unmarshal(b []byte) error {
 func (m *ArchiveIndexConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ArchiveIndexConfig.Marshal(b, m, deterministic)
 }
-func (m *ArchiveIndexConfig) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ArchiveIndexConfig.Merge(m, src)
+func (dst *ArchiveIndexConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveIndexConfig.Merge(dst, src)
 }
 func (m *ArchiveIndexConfig) XXX_Size() int {
 	return xxx_messageInfo_ArchiveIndexConfig.Size(m)
@@ -87,10 +85,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/archival.proto", fileDescriptor_4c3de80beb374f3f)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/archival.proto", fileDescriptor_archival_7884d05a2483b72a)
 }
 
-var fileDescriptor_4c3de80beb374f3f = []byte{
+var fileDescriptor_archival_7884d05a2483b72a = []byte{
 	// 170 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0xce, 0xbf, 0x0e, 0x82, 0x30,
 	0x10, 0xc7, 0xf1, 0xa0, 0xd1, 0x84, 0xea, 0xc4, 0xe4, 0x62, 0xa2, 0x4e, 0x4e, 0x74, 0xf0, 0x01,

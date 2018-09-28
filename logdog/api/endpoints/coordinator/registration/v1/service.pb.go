@@ -5,12 +5,10 @@ package logdog
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 import (
 	context "golang.org/x/net/context"
@@ -68,7 +66,7 @@ func (m *RegisterPrefixRequest) Reset()         { *m = RegisterPrefixRequest{} }
 func (m *RegisterPrefixRequest) String() string { return proto.CompactTextString(m) }
 func (*RegisterPrefixRequest) ProtoMessage()    {}
 func (*RegisterPrefixRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_317a8d00c4420d83, []int{0}
+	return fileDescriptor_service_fb57996e01a7c29f, []int{0}
 }
 func (m *RegisterPrefixRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterPrefixRequest.Unmarshal(m, b)
@@ -76,8 +74,8 @@ func (m *RegisterPrefixRequest) XXX_Unmarshal(b []byte) error {
 func (m *RegisterPrefixRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterPrefixRequest.Marshal(b, m, deterministic)
 }
-func (m *RegisterPrefixRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterPrefixRequest.Merge(m, src)
+func (dst *RegisterPrefixRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterPrefixRequest.Merge(dst, src)
 }
 func (m *RegisterPrefixRequest) XXX_Size() int {
 	return xxx_messageInfo_RegisterPrefixRequest.Size(m)
@@ -140,7 +138,7 @@ func (m *RegisterPrefixResponse) Reset()         { *m = RegisterPrefixResponse{}
 func (m *RegisterPrefixResponse) String() string { return proto.CompactTextString(m) }
 func (*RegisterPrefixResponse) ProtoMessage()    {}
 func (*RegisterPrefixResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_317a8d00c4420d83, []int{1}
+	return fileDescriptor_service_fb57996e01a7c29f, []int{1}
 }
 func (m *RegisterPrefixResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RegisterPrefixResponse.Unmarshal(m, b)
@@ -148,8 +146,8 @@ func (m *RegisterPrefixResponse) XXX_Unmarshal(b []byte) error {
 func (m *RegisterPrefixResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_RegisterPrefixResponse.Marshal(b, m, deterministic)
 }
-func (m *RegisterPrefixResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RegisterPrefixResponse.Merge(m, src)
+func (dst *RegisterPrefixResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RegisterPrefixResponse.Merge(dst, src)
 }
 func (m *RegisterPrefixResponse) XXX_Size() int {
 	return xxx_messageInfo_RegisterPrefixResponse.Size(m)
@@ -290,10 +288,10 @@ var _Registration_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1/service.proto", fileDescriptor_317a8d00c4420d83)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/registration/v1/service.proto", fileDescriptor_service_fb57996e01a7c29f)
 }
 
-var fileDescriptor_317a8d00c4420d83 = []byte{
+var fileDescriptor_service_fb57996e01a7c29f = []byte{
 	// 331 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x90, 0x41, 0x4f, 0x2a, 0x31,
 	0x14, 0x85, 0x33, 0x8f, 0x17, 0x78, 0x14, 0x42, 0x5e, 0x9a, 0x48, 0x06, 0x12, 0x71, 0xc2, 0x6a,

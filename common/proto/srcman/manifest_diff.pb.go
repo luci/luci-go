@@ -3,12 +3,10 @@
 
 package srcman
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	git "go.chromium.org/luci/common/proto/git"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import git "go.chromium.org/luci/common/proto/git"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -50,7 +48,6 @@ var ManifestDiff_Stat_name = map[int32]string{
 	4:  "MODIFIED",
 	12: "DIFF",
 }
-
 var ManifestDiff_Stat_value = map[string]int32{
 	"EQUAL":    0,
 	"ADDED":    1,
@@ -62,9 +59,8 @@ var ManifestDiff_Stat_value = map[string]int32{
 func (x ManifestDiff_Stat) String() string {
 	return proto.EnumName(ManifestDiff_Stat_name, int32(x))
 }
-
 func (ManifestDiff_Stat) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_36818c0267d64e2d, []int{0, 0}
+	return fileDescriptor_manifest_diff_5903507798f49e45, []int{0, 0}
 }
 
 // ManifestDiff holds basic difference information between two source manifests.
@@ -85,7 +81,7 @@ func (m *ManifestDiff) Reset()         { *m = ManifestDiff{} }
 func (m *ManifestDiff) String() string { return proto.CompactTextString(m) }
 func (*ManifestDiff) ProtoMessage()    {}
 func (*ManifestDiff) Descriptor() ([]byte, []int) {
-	return fileDescriptor_36818c0267d64e2d, []int{0}
+	return fileDescriptor_manifest_diff_5903507798f49e45, []int{0}
 }
 func (m *ManifestDiff) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff.Unmarshal(m, b)
@@ -93,8 +89,8 @@ func (m *ManifestDiff) XXX_Unmarshal(b []byte) error {
 func (m *ManifestDiff) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ManifestDiff.Marshal(b, m, deterministic)
 }
-func (m *ManifestDiff) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ManifestDiff.Merge(m, src)
+func (dst *ManifestDiff) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff.Merge(dst, src)
 }
 func (m *ManifestDiff) XXX_Size() int {
 	return xxx_messageInfo_ManifestDiff.Size(m)
@@ -164,7 +160,7 @@ func (m *ManifestDiff_GitCheckout) Reset()         { *m = ManifestDiff_GitChecko
 func (m *ManifestDiff_GitCheckout) String() string { return proto.CompactTextString(m) }
 func (*ManifestDiff_GitCheckout) ProtoMessage()    {}
 func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) {
-	return fileDescriptor_36818c0267d64e2d, []int{0, 0}
+	return fileDescriptor_manifest_diff_5903507798f49e45, []int{0, 0}
 }
 func (m *ManifestDiff_GitCheckout) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff_GitCheckout.Unmarshal(m, b)
@@ -172,8 +168,8 @@ func (m *ManifestDiff_GitCheckout) XXX_Unmarshal(b []byte) error {
 func (m *ManifestDiff_GitCheckout) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ManifestDiff_GitCheckout.Marshal(b, m, deterministic)
 }
-func (m *ManifestDiff_GitCheckout) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ManifestDiff_GitCheckout.Merge(m, src)
+func (dst *ManifestDiff_GitCheckout) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_GitCheckout.Merge(dst, src)
 }
 func (m *ManifestDiff_GitCheckout) XXX_Size() int {
 	return xxx_messageInfo_ManifestDiff_GitCheckout.Size(m)
@@ -244,7 +240,7 @@ func (m *ManifestDiff_Directory) Reset()         { *m = ManifestDiff_Directory{}
 func (m *ManifestDiff_Directory) String() string { return proto.CompactTextString(m) }
 func (*ManifestDiff_Directory) ProtoMessage()    {}
 func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) {
-	return fileDescriptor_36818c0267d64e2d, []int{0, 1}
+	return fileDescriptor_manifest_diff_5903507798f49e45, []int{0, 1}
 }
 func (m *ManifestDiff_Directory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff_Directory.Unmarshal(m, b)
@@ -252,8 +248,8 @@ func (m *ManifestDiff_Directory) XXX_Unmarshal(b []byte) error {
 func (m *ManifestDiff_Directory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ManifestDiff_Directory.Marshal(b, m, deterministic)
 }
-func (m *ManifestDiff_Directory) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ManifestDiff_Directory.Merge(m, src)
+func (dst *ManifestDiff_Directory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ManifestDiff_Directory.Merge(dst, src)
 }
 func (m *ManifestDiff_Directory) XXX_Size() int {
 	return xxx_messageInfo_ManifestDiff_Directory.Size(m)
@@ -316,10 +312,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/srcman/manifest_diff.proto", fileDescriptor_36818c0267d64e2d)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/srcman/manifest_diff.proto", fileDescriptor_manifest_diff_5903507798f49e45)
 }
 
-var fileDescriptor_36818c0267d64e2d = []byte{
+var fileDescriptor_manifest_diff_5903507798f49e45 = []byte{
 	// 546 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x94, 0xcf, 0x8b, 0xd3, 0x40,
 	0x14, 0xc7, 0xcd, 0xf6, 0xf7, 0x4b, 0x2d, 0x61, 0xf0, 0x90, 0xcd, 0x41, 0x4a, 0x61, 0xa1, 0xa7,

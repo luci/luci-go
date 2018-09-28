@@ -3,12 +3,10 @@
 
 package swarmingV1
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,7 +34,7 @@ func (m *Parameters) Reset()         { *m = Parameters{} }
 func (m *Parameters) String() string { return proto.CompactTextString(m) }
 func (*Parameters) ProtoMessage()    {}
 func (*Parameters) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a392a071be03ce1c, []int{0}
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0}
 }
 func (m *Parameters) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters.Unmarshal(m, b)
@@ -44,8 +42,8 @@ func (m *Parameters) XXX_Unmarshal(b []byte) error {
 func (m *Parameters) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters.Marshal(b, m, deterministic)
 }
-func (m *Parameters) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters.Merge(m, src)
+func (dst *Parameters) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters.Merge(dst, src)
 }
 func (m *Parameters) XXX_Size() int {
 	return xxx_messageInfo_Parameters.Size(m)
@@ -114,7 +112,7 @@ func (m *Parameters_Scheduling) Reset()         { *m = Parameters_Scheduling{} }
 func (m *Parameters_Scheduling) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Scheduling) ProtoMessage()    {}
 func (*Parameters_Scheduling) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a392a071be03ce1c, []int{0, 0}
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 0}
 }
 func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Scheduling.Unmarshal(m, b)
@@ -122,8 +120,8 @@ func (m *Parameters_Scheduling) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Scheduling) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Scheduling.Marshal(b, m, deterministic)
 }
-func (m *Parameters_Scheduling) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Scheduling.Merge(m, src)
+func (dst *Parameters_Scheduling) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Scheduling.Merge(dst, src)
 }
 func (m *Parameters_Scheduling) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Scheduling.Size(m)
@@ -177,7 +175,7 @@ func (m *Parameters_Meta) Reset()         { *m = Parameters_Meta{} }
 func (m *Parameters_Meta) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Meta) ProtoMessage()    {}
 func (*Parameters_Meta) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a392a071be03ce1c, []int{0, 1}
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 1}
 }
 func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Meta.Unmarshal(m, b)
@@ -185,8 +183,8 @@ func (m *Parameters_Meta) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Meta) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Meta.Marshal(b, m, deterministic)
 }
-func (m *Parameters_Meta) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Meta.Merge(m, src)
+func (dst *Parameters_Meta) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Meta.Merge(dst, src)
 }
 func (m *Parameters_Meta) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Meta.Size(m)
@@ -236,7 +234,7 @@ func (m *Parameters_Job) Reset()         { *m = Parameters_Job{} }
 func (m *Parameters_Job) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Job) ProtoMessage()    {}
 func (*Parameters_Job) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a392a071be03ce1c, []int{0, 2}
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2}
 }
 func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job.Unmarshal(m, b)
@@ -244,8 +242,8 @@ func (m *Parameters_Job) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Job) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Job.Marshal(b, m, deterministic)
 }
-func (m *Parameters_Job) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Job.Merge(m, src)
+func (dst *Parameters_Job) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job.Merge(dst, src)
 }
 func (m *Parameters_Job) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Job.Size(m)
@@ -301,7 +299,7 @@ func (m *Parameters_Job_Inputs) Reset()         { *m = Parameters_Job_Inputs{} }
 func (m *Parameters_Job_Inputs) String() string { return proto.CompactTextString(m) }
 func (*Parameters_Job_Inputs) ProtoMessage()    {}
 func (*Parameters_Job_Inputs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a392a071be03ce1c, []int{0, 2, 0}
+	return fileDescriptor_params_7b134476c4c1eb9c, []int{0, 2, 0}
 }
 func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Parameters_Job_Inputs.Unmarshal(m, b)
@@ -309,8 +307,8 @@ func (m *Parameters_Job_Inputs) XXX_Unmarshal(b []byte) error {
 func (m *Parameters_Job_Inputs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Parameters_Job_Inputs.Marshal(b, m, deterministic)
 }
-func (m *Parameters_Job_Inputs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Parameters_Job_Inputs.Merge(m, src)
+func (dst *Parameters_Job_Inputs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Parameters_Job_Inputs.Merge(dst, src)
 }
 func (m *Parameters_Job_Inputs) XXX_Size() int {
 	return xxx_messageInfo_Parameters_Job_Inputs.Size(m)
@@ -346,10 +344,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor_a392a071be03ce1c)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/params.proto", fileDescriptor_params_7b134476c4c1eb9c)
 }
 
-var fileDescriptor_a392a071be03ce1c = []byte{
+var fileDescriptor_params_7b134476c4c1eb9c = []byte{
 	// 513 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xdf, 0x8b, 0x13, 0x31,
 	0x10, 0xc7, 0x69, 0xb7, 0xd6, 0xeb, 0x14, 0x51, 0xe2, 0x81, 0xeb, 0x0a, 0x7a, 0xea, 0x83, 0x7d,

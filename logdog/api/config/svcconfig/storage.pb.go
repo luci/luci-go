@@ -3,12 +3,10 @@
 
 package svcconfig
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -51,7 +49,7 @@ func (m *Storage) Reset()         { *m = Storage{} }
 func (m *Storage) String() string { return proto.CompactTextString(m) }
 func (*Storage) ProtoMessage()    {}
 func (*Storage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_955b461662b6fa9d, []int{0}
+	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0}
 }
 func (m *Storage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage.Unmarshal(m, b)
@@ -59,8 +57,8 @@ func (m *Storage) XXX_Unmarshal(b []byte) error {
 func (m *Storage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Storage.Marshal(b, m, deterministic)
 }
-func (m *Storage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Storage.Merge(m, src)
+func (dst *Storage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage.Merge(dst, src)
 }
 func (m *Storage) XXX_Size() int {
 	return xxx_messageInfo_Storage.Size(m)
@@ -174,7 +172,7 @@ func (m *Storage_BigTable) Reset()         { *m = Storage_BigTable{} }
 func (m *Storage_BigTable) String() string { return proto.CompactTextString(m) }
 func (*Storage_BigTable) ProtoMessage()    {}
 func (*Storage_BigTable) Descriptor() ([]byte, []int) {
-	return fileDescriptor_955b461662b6fa9d, []int{0, 0}
+	return fileDescriptor_storage_e0fe2006e05c8c73, []int{0, 0}
 }
 func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage_BigTable.Unmarshal(m, b)
@@ -182,8 +180,8 @@ func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
 func (m *Storage_BigTable) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Storage_BigTable.Marshal(b, m, deterministic)
 }
-func (m *Storage_BigTable) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Storage_BigTable.Merge(m, src)
+func (dst *Storage_BigTable) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Storage_BigTable.Merge(dst, src)
 }
 func (m *Storage_BigTable) XXX_Size() int {
 	return xxx_messageInfo_Storage_BigTable.Size(m)
@@ -221,10 +219,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor_955b461662b6fa9d)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/config/svcconfig/storage.proto", fileDescriptor_storage_e0fe2006e05c8c73)
 }
 
-var fileDescriptor_955b461662b6fa9d = []byte{
+var fileDescriptor_storage_e0fe2006e05c8c73 = []byte{
 	// 260 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x3c, 0x8e, 0xb1, 0x4e, 0xc3, 0x30,
 	0x10, 0x86, 0x29, 0xa0, 0x36, 0x71, 0x11, 0x83, 0xa7, 0x10, 0x24, 0x84, 0x10, 0x03, 0x93, 0x2d,

@@ -3,12 +3,10 @@
 
 package internal
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -56,7 +54,7 @@ func (m *Timer) Reset()         { *m = Timer{} }
 func (m *Timer) String() string { return proto.CompactTextString(m) }
 func (*Timer) ProtoMessage()    {}
 func (*Timer) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5c542a10d7ff1dba, []int{0}
+	return fileDescriptor_timers_c1ef5b2ae56c7646, []int{0}
 }
 func (m *Timer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Timer.Unmarshal(m, b)
@@ -64,8 +62,8 @@ func (m *Timer) XXX_Unmarshal(b []byte) error {
 func (m *Timer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Timer.Marshal(b, m, deterministic)
 }
-func (m *Timer) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Timer.Merge(m, src)
+func (dst *Timer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Timer.Merge(dst, src)
 }
 func (m *Timer) XXX_Size() int {
 	return xxx_messageInfo_Timer.Size(m)
@@ -123,7 +121,7 @@ func (m *TimerList) Reset()         { *m = TimerList{} }
 func (m *TimerList) String() string { return proto.CompactTextString(m) }
 func (*TimerList) ProtoMessage()    {}
 func (*TimerList) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5c542a10d7ff1dba, []int{1}
+	return fileDescriptor_timers_c1ef5b2ae56c7646, []int{1}
 }
 func (m *TimerList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimerList.Unmarshal(m, b)
@@ -131,8 +129,8 @@ func (m *TimerList) XXX_Unmarshal(b []byte) error {
 func (m *TimerList) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TimerList.Marshal(b, m, deterministic)
 }
-func (m *TimerList) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TimerList.Merge(m, src)
+func (dst *TimerList) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TimerList.Merge(dst, src)
 }
 func (m *TimerList) XXX_Size() int {
 	return xxx_messageInfo_TimerList.Size(m)
@@ -156,10 +154,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor_5c542a10d7ff1dba)
+	proto.RegisterFile("go.chromium.org/luci/scheduler/appengine/internal/timers.proto", fileDescriptor_timers_c1ef5b2ae56c7646)
 }
 
-var fileDescriptor_5c542a10d7ff1dba = []byte{
+var fileDescriptor_timers_c1ef5b2ae56c7646 = []byte{
 	// 254 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x8f, 0x3d, 0x4f, 0xf3, 0x30,
 	0x10, 0xc7, 0xe5, 0xe4, 0x49, 0xfb, 0xf4, 0x8a, 0x40, 0xb2, 0x10, 0xb2, 0xba, 0x10, 0x75, 0xca,

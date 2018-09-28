@@ -3,11 +3,9 @@
 
 package swarmingV1
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -32,7 +30,7 @@ func (m *CipdPackage) Reset()         { *m = CipdPackage{} }
 func (m *CipdPackage) String() string { return proto.CompactTextString(m) }
 func (*CipdPackage) ProtoMessage()    {}
 func (*CipdPackage) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d6ef6bc8018ba385, []int{0}
+	return fileDescriptor_cipd_e8e80cb5d96a1dcd, []int{0}
 }
 func (m *CipdPackage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdPackage.Unmarshal(m, b)
@@ -40,8 +38,8 @@ func (m *CipdPackage) XXX_Unmarshal(b []byte) error {
 func (m *CipdPackage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CipdPackage.Marshal(b, m, deterministic)
 }
-func (m *CipdPackage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CipdPackage.Merge(m, src)
+func (dst *CipdPackage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CipdPackage.Merge(dst, src)
 }
 func (m *CipdPackage) XXX_Size() int {
 	return xxx_messageInfo_CipdPackage.Size(m)
@@ -88,7 +86,7 @@ func (m *CipdSpec) Reset()         { *m = CipdSpec{} }
 func (m *CipdSpec) String() string { return proto.CompactTextString(m) }
 func (*CipdSpec) ProtoMessage()    {}
 func (*CipdSpec) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d6ef6bc8018ba385, []int{1}
+	return fileDescriptor_cipd_e8e80cb5d96a1dcd, []int{1}
 }
 func (m *CipdSpec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdSpec.Unmarshal(m, b)
@@ -96,8 +94,8 @@ func (m *CipdSpec) XXX_Unmarshal(b []byte) error {
 func (m *CipdSpec) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CipdSpec.Marshal(b, m, deterministic)
 }
-func (m *CipdSpec) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CipdSpec.Merge(m, src)
+func (dst *CipdSpec) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CipdSpec.Merge(dst, src)
 }
 func (m *CipdSpec) XXX_Size() int {
 	return xxx_messageInfo_CipdSpec.Size(m)
@@ -140,7 +138,7 @@ func (m *CipdSpec_CipdPackages) Reset()         { *m = CipdSpec_CipdPackages{} }
 func (m *CipdSpec_CipdPackages) String() string { return proto.CompactTextString(m) }
 func (*CipdSpec_CipdPackages) ProtoMessage()    {}
 func (*CipdSpec_CipdPackages) Descriptor() ([]byte, []int) {
-	return fileDescriptor_d6ef6bc8018ba385, []int{1, 0}
+	return fileDescriptor_cipd_e8e80cb5d96a1dcd, []int{1, 0}
 }
 func (m *CipdSpec_CipdPackages) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CipdSpec_CipdPackages.Unmarshal(m, b)
@@ -148,8 +146,8 @@ func (m *CipdSpec_CipdPackages) XXX_Unmarshal(b []byte) error {
 func (m *CipdSpec_CipdPackages) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CipdSpec_CipdPackages.Marshal(b, m, deterministic)
 }
-func (m *CipdSpec_CipdPackages) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CipdSpec_CipdPackages.Merge(m, src)
+func (dst *CipdSpec_CipdPackages) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CipdSpec_CipdPackages.Merge(dst, src)
 }
 func (m *CipdSpec_CipdPackages) XXX_Size() int {
 	return xxx_messageInfo_CipdSpec_CipdPackages.Size(m)
@@ -175,10 +173,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/cipd.proto", fileDescriptor_d6ef6bc8018ba385)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/distributor/swarming/v1/cipd.proto", fileDescriptor_cipd_e8e80cb5d96a1dcd)
 }
 
-var fileDescriptor_d6ef6bc8018ba385 = []byte{
+var fileDescriptor_cipd_e8e80cb5d96a1dcd = []byte{
 	// 288 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x90, 0xcf, 0x4a, 0xf4, 0x30,
 	0x14, 0xc5, 0x69, 0xfb, 0x7d, 0x1d, 0xbd, 0x75, 0x21, 0x59, 0x68, 0x99, 0x55, 0x9d, 0xd5, 0xb8,

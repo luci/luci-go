@@ -3,11 +3,9 @@
 
 package tokenserver
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -36,7 +34,6 @@ var MachineTokenType_name = map[int32]string{
 	0: "UNKNOWN_TYPE",
 	2: "LUCI_MACHINE_TOKEN",
 }
-
 var MachineTokenType_value = map[string]int32{
 	"UNKNOWN_TYPE":       0,
 	"LUCI_MACHINE_TOKEN": 2,
@@ -45,9 +42,8 @@ var MachineTokenType_value = map[string]int32{
 func (x MachineTokenType) String() string {
 	return proto.EnumName(MachineTokenType_name, int32(x))
 }
-
 func (MachineTokenType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_dff8dcc9d4458b55, []int{0}
+	return fileDescriptor_machine_token_2e79f2307395f78d, []int{0}
 }
 
 // MachineTokenBody describes internal structure of the machine token.
@@ -93,7 +89,7 @@ func (m *MachineTokenBody) Reset()         { *m = MachineTokenBody{} }
 func (m *MachineTokenBody) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenBody) ProtoMessage()    {}
 func (*MachineTokenBody) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dff8dcc9d4458b55, []int{0}
+	return fileDescriptor_machine_token_2e79f2307395f78d, []int{0}
 }
 func (m *MachineTokenBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenBody.Unmarshal(m, b)
@@ -101,8 +97,8 @@ func (m *MachineTokenBody) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenBody) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenBody.Marshal(b, m, deterministic)
 }
-func (m *MachineTokenBody) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenBody.Merge(m, src)
+func (dst *MachineTokenBody) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenBody.Merge(dst, src)
 }
 func (m *MachineTokenBody) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenBody.Size(m)
@@ -172,7 +168,7 @@ func (m *MachineTokenEnvelope) Reset()         { *m = MachineTokenEnvelope{} }
 func (m *MachineTokenEnvelope) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenEnvelope) ProtoMessage()    {}
 func (*MachineTokenEnvelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dff8dcc9d4458b55, []int{1}
+	return fileDescriptor_machine_token_2e79f2307395f78d, []int{1}
 }
 func (m *MachineTokenEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenEnvelope.Unmarshal(m, b)
@@ -180,8 +176,8 @@ func (m *MachineTokenEnvelope) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenEnvelope) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenEnvelope.Marshal(b, m, deterministic)
 }
-func (m *MachineTokenEnvelope) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenEnvelope.Merge(m, src)
+func (dst *MachineTokenEnvelope) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenEnvelope.Merge(dst, src)
 }
 func (m *MachineTokenEnvelope) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenEnvelope.Size(m)
@@ -220,10 +216,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/machine_token.proto", fileDescriptor_dff8dcc9d4458b55)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/machine_token.proto", fileDescriptor_machine_token_2e79f2307395f78d)
 }
 
-var fileDescriptor_dff8dcc9d4458b55 = []byte{
+var fileDescriptor_machine_token_2e79f2307395f78d = []byte{
 	// 332 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0x4d, 0x4f, 0xf2, 0x40,
 	0x14, 0x85, 0xdf, 0xf2, 0xd1, 0x97, 0x0e, 0x5d, 0x34, 0xe3, 0x57, 0xa3, 0x31, 0x41, 0x56, 0xc4,

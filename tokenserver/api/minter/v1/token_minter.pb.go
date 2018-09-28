@@ -5,14 +5,12 @@ package minter
 
 import prpc "go.chromium.org/luci/grpc/prpc"
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	messages "go.chromium.org/luci/server/auth/delegation/messages"
-	api "go.chromium.org/luci/tokenserver/api"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import messages "go.chromium.org/luci/server/auth/delegation/messages"
+import api "go.chromium.org/luci/tokenserver/api"
 
 import (
 	context "golang.org/x/net/context"
@@ -42,7 +40,6 @@ var SignatureAlgorithm_name = map[int32]string{
 	0: "UNKNOWN_ALGO",
 	1: "SHA256_RSA_ALGO",
 }
-
 var SignatureAlgorithm_value = map[string]int32{
 	"UNKNOWN_ALGO":    0,
 	"SHA256_RSA_ALGO": 1,
@@ -51,9 +48,8 @@ var SignatureAlgorithm_value = map[string]int32{
 func (x SignatureAlgorithm) String() string {
 	return proto.EnumName(SignatureAlgorithm_name, int32(x))
 }
-
 func (SignatureAlgorithm) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{0}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{0}
 }
 
 // Possible kinds of fatal errors.
@@ -84,7 +80,6 @@ var ErrorCode_name = map[int32]string{
 	7: "BAD_TOKEN_ARGUMENTS",
 	8: "MACHINE_TOKEN_MINTING_ERROR",
 }
-
 var ErrorCode_value = map[string]int32{
 	"SUCCESS":                     0,
 	"UNSUPPORTED_SIGNATURE":       1,
@@ -100,9 +95,8 @@ var ErrorCode_value = map[string]int32{
 func (x ErrorCode) String() string {
 	return proto.EnumName(ErrorCode_name, int32(x))
 }
-
 func (ErrorCode) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{1}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{1}
 }
 
 // MintMachineTokenRequest wraps a serialized and signed MachineTokenRequest
@@ -127,7 +121,7 @@ func (m *MintMachineTokenRequest) Reset()         { *m = MintMachineTokenRequest
 func (m *MintMachineTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MintMachineTokenRequest) ProtoMessage()    {}
 func (*MintMachineTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{0}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{0}
 }
 func (m *MintMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintMachineTokenRequest.Unmarshal(m, b)
@@ -135,8 +129,8 @@ func (m *MintMachineTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintMachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintMachineTokenRequest.Marshal(b, m, deterministic)
 }
-func (m *MintMachineTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintMachineTokenRequest.Merge(m, src)
+func (dst *MintMachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintMachineTokenRequest.Merge(dst, src)
 }
 func (m *MintMachineTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MintMachineTokenRequest.Size(m)
@@ -187,7 +181,7 @@ func (m *MachineTokenRequest) Reset()         { *m = MachineTokenRequest{} }
 func (m *MachineTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenRequest) ProtoMessage()    {}
 func (*MachineTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{1}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{1}
 }
 func (m *MachineTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenRequest.Unmarshal(m, b)
@@ -195,8 +189,8 @@ func (m *MachineTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenRequest.Marshal(b, m, deterministic)
 }
-func (m *MachineTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenRequest.Merge(m, src)
+func (dst *MachineTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenRequest.Merge(dst, src)
 }
 func (m *MachineTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenRequest.Size(m)
@@ -263,7 +257,7 @@ func (m *MintMachineTokenResponse) Reset()         { *m = MintMachineTokenRespon
 func (m *MintMachineTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MintMachineTokenResponse) ProtoMessage()    {}
 func (*MintMachineTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{2}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{2}
 }
 func (m *MintMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintMachineTokenResponse.Unmarshal(m, b)
@@ -271,8 +265,8 @@ func (m *MintMachineTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintMachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintMachineTokenResponse.Marshal(b, m, deterministic)
 }
-func (m *MintMachineTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintMachineTokenResponse.Merge(m, src)
+func (dst *MintMachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintMachineTokenResponse.Merge(dst, src)
 }
 func (m *MintMachineTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MintMachineTokenResponse.Size(m)
@@ -335,7 +329,7 @@ func (m *MachineTokenResponse) Reset()         { *m = MachineTokenResponse{} }
 func (m *MachineTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MachineTokenResponse) ProtoMessage()    {}
 func (*MachineTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{3}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{3}
 }
 func (m *MachineTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MachineTokenResponse.Unmarshal(m, b)
@@ -343,8 +337,8 @@ func (m *MachineTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MachineTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MachineTokenResponse.Marshal(b, m, deterministic)
 }
-func (m *MachineTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MachineTokenResponse.Merge(m, src)
+func (dst *MachineTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MachineTokenResponse.Merge(dst, src)
 }
 func (m *MachineTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MachineTokenResponse.Size(m)
@@ -464,7 +458,7 @@ func (m *LuciMachineToken) Reset()         { *m = LuciMachineToken{} }
 func (m *LuciMachineToken) String() string { return proto.CompactTextString(m) }
 func (*LuciMachineToken) ProtoMessage()    {}
 func (*LuciMachineToken) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{4}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{4}
 }
 func (m *LuciMachineToken) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LuciMachineToken.Unmarshal(m, b)
@@ -472,8 +466,8 @@ func (m *LuciMachineToken) XXX_Unmarshal(b []byte) error {
 func (m *LuciMachineToken) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LuciMachineToken.Marshal(b, m, deterministic)
 }
-func (m *LuciMachineToken) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LuciMachineToken.Merge(m, src)
+func (dst *LuciMachineToken) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LuciMachineToken.Merge(dst, src)
 }
 func (m *LuciMachineToken) XXX_Size() int {
 	return xxx_messageInfo_LuciMachineToken.Size(m)
@@ -556,7 +550,7 @@ func (m *MintDelegationTokenRequest) Reset()         { *m = MintDelegationTokenR
 func (m *MintDelegationTokenRequest) String() string { return proto.CompactTextString(m) }
 func (*MintDelegationTokenRequest) ProtoMessage()    {}
 func (*MintDelegationTokenRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{5}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{5}
 }
 func (m *MintDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintDelegationTokenRequest.Unmarshal(m, b)
@@ -564,8 +558,8 @@ func (m *MintDelegationTokenRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintDelegationTokenRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintDelegationTokenRequest.Marshal(b, m, deterministic)
 }
-func (m *MintDelegationTokenRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintDelegationTokenRequest.Merge(m, src)
+func (dst *MintDelegationTokenRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintDelegationTokenRequest.Merge(dst, src)
 }
 func (m *MintDelegationTokenRequest) XXX_Size() int {
 	return xxx_messageInfo_MintDelegationTokenRequest.Size(m)
@@ -643,7 +637,7 @@ func (m *MintDelegationTokenResponse) Reset()         { *m = MintDelegationToken
 func (m *MintDelegationTokenResponse) String() string { return proto.CompactTextString(m) }
 func (*MintDelegationTokenResponse) ProtoMessage()    {}
 func (*MintDelegationTokenResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{6}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{6}
 }
 func (m *MintDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintDelegationTokenResponse.Unmarshal(m, b)
@@ -651,8 +645,8 @@ func (m *MintDelegationTokenResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintDelegationTokenResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintDelegationTokenResponse.Marshal(b, m, deterministic)
 }
-func (m *MintDelegationTokenResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintDelegationTokenResponse.Merge(m, src)
+func (dst *MintDelegationTokenResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintDelegationTokenResponse.Merge(dst, src)
 }
 func (m *MintDelegationTokenResponse) XXX_Size() int {
 	return xxx_messageInfo_MintDelegationTokenResponse.Size(m)
@@ -724,7 +718,7 @@ func (m *MintOAuthTokenGrantRequest) Reset()         { *m = MintOAuthTokenGrantR
 func (m *MintOAuthTokenGrantRequest) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenGrantRequest) ProtoMessage()    {}
 func (*MintOAuthTokenGrantRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{7}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{7}
 }
 func (m *MintOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Unmarshal(m, b)
@@ -732,8 +726,8 @@ func (m *MintOAuthTokenGrantRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenGrantRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Marshal(b, m, deterministic)
 }
-func (m *MintOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenGrantRequest.Merge(m, src)
+func (dst *MintOAuthTokenGrantRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenGrantRequest.Merge(dst, src)
 }
 func (m *MintOAuthTokenGrantRequest) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenGrantRequest.Size(m)
@@ -790,7 +784,7 @@ func (m *MintOAuthTokenGrantResponse) Reset()         { *m = MintOAuthTokenGrant
 func (m *MintOAuthTokenGrantResponse) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenGrantResponse) ProtoMessage()    {}
 func (*MintOAuthTokenGrantResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{8}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{8}
 }
 func (m *MintOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Unmarshal(m, b)
@@ -798,8 +792,8 @@ func (m *MintOAuthTokenGrantResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenGrantResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Marshal(b, m, deterministic)
 }
-func (m *MintOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenGrantResponse.Merge(m, src)
+func (dst *MintOAuthTokenGrantResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenGrantResponse.Merge(dst, src)
 }
 func (m *MintOAuthTokenGrantResponse) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenGrantResponse.Size(m)
@@ -867,7 +861,7 @@ func (m *MintOAuthTokenViaGrantRequest) Reset()         { *m = MintOAuthTokenVia
 func (m *MintOAuthTokenViaGrantRequest) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenViaGrantRequest) ProtoMessage()    {}
 func (*MintOAuthTokenViaGrantRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{9}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{9}
 }
 func (m *MintOAuthTokenViaGrantRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Unmarshal(m, b)
@@ -875,8 +869,8 @@ func (m *MintOAuthTokenViaGrantRequest) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenViaGrantRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Marshal(b, m, deterministic)
 }
-func (m *MintOAuthTokenViaGrantRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenViaGrantRequest.Merge(m, src)
+func (dst *MintOAuthTokenViaGrantRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenViaGrantRequest.Merge(dst, src)
 }
 func (m *MintOAuthTokenViaGrantRequest) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenViaGrantRequest.Size(m)
@@ -933,7 +927,7 @@ func (m *MintOAuthTokenViaGrantResponse) Reset()         { *m = MintOAuthTokenVi
 func (m *MintOAuthTokenViaGrantResponse) String() string { return proto.CompactTextString(m) }
 func (*MintOAuthTokenViaGrantResponse) ProtoMessage()    {}
 func (*MintOAuthTokenViaGrantResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_f6e01e20f1811b60, []int{10}
+	return fileDescriptor_token_minter_0e1c31d02b315259, []int{10}
 }
 func (m *MintOAuthTokenViaGrantResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Unmarshal(m, b)
@@ -941,8 +935,8 @@ func (m *MintOAuthTokenViaGrantResponse) XXX_Unmarshal(b []byte) error {
 func (m *MintOAuthTokenViaGrantResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Marshal(b, m, deterministic)
 }
-func (m *MintOAuthTokenViaGrantResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_MintOAuthTokenViaGrantResponse.Merge(m, src)
+func (dst *MintOAuthTokenViaGrantResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MintOAuthTokenViaGrantResponse.Merge(dst, src)
 }
 func (m *MintOAuthTokenViaGrantResponse) XXX_Size() int {
 	return xxx_messageInfo_MintOAuthTokenViaGrantResponse.Size(m)
@@ -1327,10 +1321,10 @@ var _TokenMinter_serviceDesc = grpc.ServiceDesc{
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/minter/v1/token_minter.proto", fileDescriptor_f6e01e20f1811b60)
+	proto.RegisterFile("go.chromium.org/luci/tokenserver/api/minter/v1/token_minter.proto", fileDescriptor_token_minter_0e1c31d02b315259)
 }
 
-var fileDescriptor_f6e01e20f1811b60 = []byte{
+var fileDescriptor_token_minter_0e1c31d02b315259 = []byte{
 	// 1134 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x56, 0x4f, 0x73, 0xdb, 0x44,
 	0x14, 0x8f, 0x62, 0xc7, 0xb1, 0x9f, 0x93, 0x54, 0x59, 0x27, 0xa9, 0xeb, 0x12, 0x12, 0x0c, 0x03,

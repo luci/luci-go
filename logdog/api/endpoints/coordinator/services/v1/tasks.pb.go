@@ -3,13 +3,11 @@
 
 package logdog
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import duration "github.com/golang/protobuf/ptypes/duration"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -34,7 +32,6 @@ var ArchiveDispatchTask_Tag_name = map[int32]string{
 	0: "TERMINATED",
 	1: "EXPIRED",
 }
-
 var ArchiveDispatchTask_Tag_value = map[string]int32{
 	"TERMINATED": 0,
 	"EXPIRED":    1,
@@ -43,9 +40,8 @@ var ArchiveDispatchTask_Tag_value = map[string]int32{
 func (x ArchiveDispatchTask_Tag) String() string {
 	return proto.EnumName(ArchiveDispatchTask_Tag_name, int32(x))
 }
-
 func (ArchiveDispatchTask_Tag) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_cd952f8ecee7e922, []int{0, 0}
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{0, 0}
 }
 
 // ArchiveDispatchTask is an internal task used by the Coordinator to schedule
@@ -76,7 +72,7 @@ func (m *ArchiveDispatchTask) Reset()         { *m = ArchiveDispatchTask{} }
 func (m *ArchiveDispatchTask) String() string { return proto.CompactTextString(m) }
 func (*ArchiveDispatchTask) ProtoMessage()    {}
 func (*ArchiveDispatchTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd952f8ecee7e922, []int{0}
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{0}
 }
 func (m *ArchiveDispatchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveDispatchTask.Unmarshal(m, b)
@@ -84,8 +80,8 @@ func (m *ArchiveDispatchTask) XXX_Unmarshal(b []byte) error {
 func (m *ArchiveDispatchTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ArchiveDispatchTask.Marshal(b, m, deterministic)
 }
-func (m *ArchiveDispatchTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ArchiveDispatchTask.Merge(m, src)
+func (dst *ArchiveDispatchTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveDispatchTask.Merge(dst, src)
 }
 func (m *ArchiveDispatchTask) XXX_Size() int {
 	return xxx_messageInfo_ArchiveDispatchTask.Size(m)
@@ -167,7 +163,7 @@ func (m *ArchiveTask) Reset()         { *m = ArchiveTask{} }
 func (m *ArchiveTask) String() string { return proto.CompactTextString(m) }
 func (*ArchiveTask) ProtoMessage()    {}
 func (*ArchiveTask) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cd952f8ecee7e922, []int{1}
+	return fileDescriptor_tasks_8ff0358e7d37f1a6, []int{1}
 }
 func (m *ArchiveTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveTask.Unmarshal(m, b)
@@ -175,8 +171,8 @@ func (m *ArchiveTask) XXX_Unmarshal(b []byte) error {
 func (m *ArchiveTask) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ArchiveTask.Marshal(b, m, deterministic)
 }
-func (m *ArchiveTask) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ArchiveTask.Merge(m, src)
+func (dst *ArchiveTask) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ArchiveTask.Merge(dst, src)
 }
 func (m *ArchiveTask) XXX_Size() int {
 	return xxx_messageInfo_ArchiveTask.Size(m)
@@ -236,10 +232,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto", fileDescriptor_cd952f8ecee7e922)
+	proto.RegisterFile("go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1/tasks.proto", fileDescriptor_tasks_8ff0358e7d37f1a6)
 }
 
-var fileDescriptor_cd952f8ecee7e922 = []byte{
+var fileDescriptor_tasks_8ff0358e7d37f1a6 = []byte{
 	// 377 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x92, 0xbf, 0x8f, 0xd3, 0x30,
 	0x14, 0xc7, 0x49, 0x72, 0xf4, 0x84, 0x53, 0x42, 0x65, 0x96, 0xd0, 0x81, 0xab, 0x32, 0x75, 0xb2,

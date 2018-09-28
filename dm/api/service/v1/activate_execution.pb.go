@@ -3,11 +3,9 @@
 
 package dm
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -62,7 +60,7 @@ func (m *ActivateExecutionReq) Reset()         { *m = ActivateExecutionReq{} }
 func (m *ActivateExecutionReq) String() string { return proto.CompactTextString(m) }
 func (*ActivateExecutionReq) ProtoMessage()    {}
 func (*ActivateExecutionReq) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c9b5cee97bd0a18f, []int{0}
+	return fileDescriptor_activate_execution_c988318c87d83ccf, []int{0}
 }
 func (m *ActivateExecutionReq) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ActivateExecutionReq.Unmarshal(m, b)
@@ -70,8 +68,8 @@ func (m *ActivateExecutionReq) XXX_Unmarshal(b []byte) error {
 func (m *ActivateExecutionReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ActivateExecutionReq.Marshal(b, m, deterministic)
 }
-func (m *ActivateExecutionReq) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ActivateExecutionReq.Merge(m, src)
+func (dst *ActivateExecutionReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActivateExecutionReq.Merge(dst, src)
 }
 func (m *ActivateExecutionReq) XXX_Size() int {
 	return xxx_messageInfo_ActivateExecutionReq.Size(m)
@@ -101,10 +99,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/activate_execution.proto", fileDescriptor_c9b5cee97bd0a18f)
+	proto.RegisterFile("go.chromium.org/luci/dm/api/service/v1/activate_execution.proto", fileDescriptor_activate_execution_c988318c87d83ccf)
 }
 
-var fileDescriptor_c9b5cee97bd0a18f = []byte{
+var fileDescriptor_activate_execution_c988318c87d83ccf = []byte{
 	// 181 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x8e, 0x31, 0x0b, 0xc2, 0x30,
 	0x10, 0x46, 0x69, 0x11, 0x87, 0x28, 0x0a, 0xc1, 0xa1, 0x38, 0x15, 0x07, 0xed, 0x94, 0xa0, 0x0e,

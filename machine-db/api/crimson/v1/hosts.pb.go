@@ -3,11 +3,9 @@
 
 package crimson
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -35,7 +33,7 @@ func (m *DeleteHostRequest) Reset()         { *m = DeleteHostRequest{} }
 func (m *DeleteHostRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteHostRequest) ProtoMessage()    {}
 func (*DeleteHostRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_e5f10a1e6da138ab, []int{0}
+	return fileDescriptor_hosts_77bd50d2491322df, []int{0}
 }
 func (m *DeleteHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteHostRequest.Unmarshal(m, b)
@@ -43,8 +41,8 @@ func (m *DeleteHostRequest) XXX_Unmarshal(b []byte) error {
 func (m *DeleteHostRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeleteHostRequest.Marshal(b, m, deterministic)
 }
-func (m *DeleteHostRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteHostRequest.Merge(m, src)
+func (dst *DeleteHostRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteHostRequest.Merge(dst, src)
 }
 func (m *DeleteHostRequest) XXX_Size() int {
 	return xxx_messageInfo_DeleteHostRequest.Size(m)
@@ -74,10 +72,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor_e5f10a1e6da138ab)
+	proto.RegisterFile("go.chromium.org/luci/machine-db/api/crimson/v1/hosts.proto", fileDescriptor_hosts_77bd50d2491322df)
 }
 
-var fileDescriptor_e5f10a1e6da138ab = []byte{
+var fileDescriptor_hosts_77bd50d2491322df = []byte{
 	// 144 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x2c, 0xcc, 0xb1, 0x0e, 0xc2, 0x20,
 	0x10, 0x80, 0xe1, 0x54, 0x8d, 0x46, 0x36, 0x99, 0x3a, 0x36, 0x4e, 0x5d, 0xe4, 0x62, 0xdc, 0x74,

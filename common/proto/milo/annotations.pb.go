@@ -3,13 +3,11 @@
 
 package milo
 
-import (
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	srcman "go.chromium.org/luci/common/proto/srcman"
-	math "math"
-)
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
+import srcman "go.chromium.org/luci/common/proto/srcman"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -42,7 +40,6 @@ var Status_name = map[int32]string{
 	2: "FAILURE",
 	3: "PENDING",
 }
-
 var Status_value = map[string]int32{
 	"RUNNING": 0,
 	"SUCCESS": 1,
@@ -53,9 +50,8 @@ var Status_value = map[string]int32{
 func (x Status) String() string {
 	return proto.EnumName(Status_name, int32(x))
 }
-
 func (Status) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{0}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{0}
 }
 
 // Type is the type of failure.
@@ -88,7 +84,6 @@ var FailureDetails_Type_name = map[int32]string{
 	4: "CANCELLED",
 	5: "EXPIRED",
 }
-
 var FailureDetails_Type_value = map[string]int32{
 	"GENERAL":              0,
 	"EXCEPTION":            1,
@@ -101,9 +96,8 @@ var FailureDetails_Type_value = map[string]int32{
 func (x FailureDetails_Type) String() string {
 	return proto.EnumName(FailureDetails_Type_name, int32(x))
 }
-
 func (FailureDetails_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{0, 0}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{0, 0}
 }
 
 // FailureType provides more details on the nature of the Status.
@@ -123,7 +117,7 @@ func (m *FailureDetails) Reset()         { *m = FailureDetails{} }
 func (m *FailureDetails) String() string { return proto.CompactTextString(m) }
 func (*FailureDetails) ProtoMessage()    {}
 func (*FailureDetails) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{0}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{0}
 }
 func (m *FailureDetails) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FailureDetails.Unmarshal(m, b)
@@ -131,8 +125,8 @@ func (m *FailureDetails) XXX_Unmarshal(b []byte) error {
 func (m *FailureDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FailureDetails.Marshal(b, m, deterministic)
 }
-func (m *FailureDetails) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FailureDetails.Merge(m, src)
+func (dst *FailureDetails) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FailureDetails.Merge(dst, src)
 }
 func (m *FailureDetails) XXX_Size() int {
 	return xxx_messageInfo_FailureDetails.Size(m)
@@ -211,7 +205,7 @@ func (m *Step) Reset()         { *m = Step{} }
 func (m *Step) String() string { return proto.CompactTextString(m) }
 func (*Step) ProtoMessage()    {}
 func (*Step) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{1}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{1}
 }
 func (m *Step) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step.Unmarshal(m, b)
@@ -219,8 +213,8 @@ func (m *Step) XXX_Unmarshal(b []byte) error {
 func (m *Step) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Step.Marshal(b, m, deterministic)
 }
-func (m *Step) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Step.Merge(m, src)
+func (dst *Step) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Step.Merge(dst, src)
 }
 func (m *Step) XXX_Size() int {
 	return xxx_messageInfo_Step.Size(m)
@@ -353,7 +347,7 @@ func (m *Step_Command) Reset()         { *m = Step_Command{} }
 func (m *Step_Command) String() string { return proto.CompactTextString(m) }
 func (*Step_Command) ProtoMessage()    {}
 func (*Step_Command) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{1, 0}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{1, 0}
 }
 func (m *Step_Command) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Command.Unmarshal(m, b)
@@ -361,8 +355,8 @@ func (m *Step_Command) XXX_Unmarshal(b []byte) error {
 func (m *Step_Command) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Step_Command.Marshal(b, m, deterministic)
 }
-func (m *Step_Command) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Step_Command.Merge(m, src)
+func (dst *Step_Command) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Step_Command.Merge(dst, src)
 }
 func (m *Step_Command) XXX_Size() int {
 	return xxx_messageInfo_Step_Command.Size(m)
@@ -411,7 +405,7 @@ func (m *Step_Substep) Reset()         { *m = Step_Substep{} }
 func (m *Step_Substep) String() string { return proto.CompactTextString(m) }
 func (*Step_Substep) ProtoMessage()    {}
 func (*Step_Substep) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{1, 1}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{1, 1}
 }
 func (m *Step_Substep) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Substep.Unmarshal(m, b)
@@ -419,8 +413,8 @@ func (m *Step_Substep) XXX_Unmarshal(b []byte) error {
 func (m *Step_Substep) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Step_Substep.Marshal(b, m, deterministic)
 }
-func (m *Step_Substep) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Step_Substep.Merge(m, src)
+func (dst *Step_Substep) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Step_Substep.Merge(dst, src)
 }
 func (m *Step_Substep) XXX_Size() int {
 	return xxx_messageInfo_Step_Substep.Size(m)
@@ -564,7 +558,7 @@ func (m *Step_Progress) Reset()         { *m = Step_Progress{} }
 func (m *Step_Progress) String() string { return proto.CompactTextString(m) }
 func (*Step_Progress) ProtoMessage()    {}
 func (*Step_Progress) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{1, 2}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{1, 2}
 }
 func (m *Step_Progress) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Progress.Unmarshal(m, b)
@@ -572,8 +566,8 @@ func (m *Step_Progress) XXX_Unmarshal(b []byte) error {
 func (m *Step_Progress) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Step_Progress.Marshal(b, m, deterministic)
 }
-func (m *Step_Progress) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Step_Progress.Merge(m, src)
+func (dst *Step_Progress) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Step_Progress.Merge(dst, src)
 }
 func (m *Step_Progress) XXX_Size() int {
 	return xxx_messageInfo_Step_Progress.Size(m)
@@ -613,7 +607,7 @@ func (m *Step_Property) Reset()         { *m = Step_Property{} }
 func (m *Step_Property) String() string { return proto.CompactTextString(m) }
 func (*Step_Property) ProtoMessage()    {}
 func (*Step_Property) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{1, 3}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{1, 3}
 }
 func (m *Step_Property) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Step_Property.Unmarshal(m, b)
@@ -621,8 +615,8 @@ func (m *Step_Property) XXX_Unmarshal(b []byte) error {
 func (m *Step_Property) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Step_Property.Marshal(b, m, deterministic)
 }
-func (m *Step_Property) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Step_Property.Merge(m, src)
+func (dst *Step_Property) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Step_Property.Merge(dst, src)
 }
 func (m *Step_Property) XXX_Size() int {
 	return xxx_messageInfo_Step_Property.Size(m)
@@ -670,7 +664,7 @@ func (m *Link) Reset()         { *m = Link{} }
 func (m *Link) String() string { return proto.CompactTextString(m) }
 func (*Link) ProtoMessage()    {}
 func (*Link) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{2}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{2}
 }
 func (m *Link) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Link.Unmarshal(m, b)
@@ -678,8 +672,8 @@ func (m *Link) XXX_Unmarshal(b []byte) error {
 func (m *Link) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Link.Marshal(b, m, deterministic)
 }
-func (m *Link) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Link.Merge(m, src)
+func (dst *Link) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Link.Merge(dst, src)
 }
 func (m *Link) XXX_Size() int {
 	return xxx_messageInfo_Link.Size(m)
@@ -894,7 +888,7 @@ func (m *LogdogStream) Reset()         { *m = LogdogStream{} }
 func (m *LogdogStream) String() string { return proto.CompactTextString(m) }
 func (*LogdogStream) ProtoMessage()    {}
 func (*LogdogStream) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{3}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{3}
 }
 func (m *LogdogStream) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogdogStream.Unmarshal(m, b)
@@ -902,8 +896,8 @@ func (m *LogdogStream) XXX_Unmarshal(b []byte) error {
 func (m *LogdogStream) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_LogdogStream.Marshal(b, m, deterministic)
 }
-func (m *LogdogStream) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_LogdogStream.Merge(m, src)
+func (dst *LogdogStream) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LogdogStream.Merge(dst, src)
 }
 func (m *LogdogStream) XXX_Size() int {
 	return xxx_messageInfo_LogdogStream.Size(m)
@@ -951,7 +945,7 @@ func (m *IsolateObject) Reset()         { *m = IsolateObject{} }
 func (m *IsolateObject) String() string { return proto.CompactTextString(m) }
 func (*IsolateObject) ProtoMessage()    {}
 func (*IsolateObject) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{4}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{4}
 }
 func (m *IsolateObject) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_IsolateObject.Unmarshal(m, b)
@@ -959,8 +953,8 @@ func (m *IsolateObject) XXX_Unmarshal(b []byte) error {
 func (m *IsolateObject) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_IsolateObject.Marshal(b, m, deterministic)
 }
-func (m *IsolateObject) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_IsolateObject.Merge(m, src)
+func (dst *IsolateObject) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_IsolateObject.Merge(dst, src)
 }
 func (m *IsolateObject) XXX_Size() int {
 	return xxx_messageInfo_IsolateObject.Size(m)
@@ -1005,7 +999,7 @@ func (m *DMLink) Reset()         { *m = DMLink{} }
 func (m *DMLink) String() string { return proto.CompactTextString(m) }
 func (*DMLink) ProtoMessage()    {}
 func (*DMLink) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5bd7e67978ee4b61, []int{5}
+	return fileDescriptor_annotations_f28fa84f2e8132db, []int{5}
 }
 func (m *DMLink) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DMLink.Unmarshal(m, b)
@@ -1013,8 +1007,8 @@ func (m *DMLink) XXX_Unmarshal(b []byte) error {
 func (m *DMLink) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DMLink.Marshal(b, m, deterministic)
 }
-func (m *DMLink) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DMLink.Merge(m, src)
+func (dst *DMLink) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DMLink.Merge(dst, src)
 }
 func (m *DMLink) XXX_Size() int {
 	return xxx_messageInfo_DMLink.Size(m)
@@ -1071,10 +1065,10 @@ func init() {
 }
 
 func init() {
-	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/annotations.proto", fileDescriptor_5bd7e67978ee4b61)
+	proto.RegisterFile("go.chromium.org/luci/common/proto/milo/annotations.proto", fileDescriptor_annotations_f28fa84f2e8132db)
 }
 
-var fileDescriptor_5bd7e67978ee4b61 = []byte{
+var fileDescriptor_annotations_f28fa84f2e8132db = []byte{
 	// 1052 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x55, 0x6f, 0x6f, 0xdb, 0xb6,
 	0x13, 0xf6, 0x1f, 0xd9, 0x8a, 0xcf, 0x4e, 0xaa, 0x1f, 0x7f, 0x5e, 0xa7, 0x1a, 0xc3, 0x92, 0x19,
