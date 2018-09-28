@@ -369,6 +369,8 @@ func GetRawBuild(c context.Context, address string) (*bbv1.ApiCommonBuildMessage
 	switch {
 	case err != nil:
 		return nil, errors.Annotate(err, "could not get build at %q", address).Err()
+	case build == nil && auth.CurrentUser(c).Identity == identity.AnonymousIdentity:
+		return nil, errors.Reason("not logged in").Tag(common.CodeUnauthorized).Err()
 	case build == nil:
 		return nil, errors.Reason("build at %q not found", address).Tag(common.CodeNotFound).Err()
 	default:
