@@ -5,8 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -43,6 +44,7 @@ func (*Settings) ProtoMessage()    {}
 func (*Settings) Descriptor() ([]byte, []int) {
 	return fileDescriptor_98dd5cb9562385c0, []int{0}
 }
+
 func (m *Settings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings.Unmarshal(m, b)
 }
@@ -110,6 +112,7 @@ func (*Settings_Buildbot) ProtoMessage()    {}
 func (*Settings_Buildbot) Descriptor() ([]byte, []int) {
 	return fileDescriptor_98dd5cb9562385c0, []int{0, 0}
 }
+
 func (m *Settings_Buildbot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbot.Unmarshal(m, b)
 }
@@ -168,6 +171,7 @@ func (*Settings_Buildbucket) ProtoMessage()    {}
 func (*Settings_Buildbucket) Descriptor() ([]byte, []int) {
 	return fileDescriptor_98dd5cb9562385c0, []int{0, 1}
 }
+
 func (m *Settings_Buildbucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Buildbucket.Unmarshal(m, b)
 }
@@ -226,6 +230,7 @@ func (*Settings_Swarming) ProtoMessage()    {}
 func (*Settings_Swarming) Descriptor() ([]byte, []int) {
 	return fileDescriptor_98dd5cb9562385c0, []int{0, 2}
 }
+
 func (m *Settings_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_Swarming.Unmarshal(m, b)
 }
@@ -295,6 +300,7 @@ func (*Settings_SourceAcls) ProtoMessage()    {}
 func (*Settings_SourceAcls) Descriptor() ([]byte, []int) {
 	return fileDescriptor_98dd5cb9562385c0, []int{0, 3}
 }
+
 func (m *Settings_SourceAcls) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings_SourceAcls.Unmarshal(m, b)
 }

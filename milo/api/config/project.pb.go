@@ -5,8 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -41,6 +42,7 @@ func (*Project) ProtoMessage()    {}
 func (*Project) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{0}
 }
+
 func (m *Project) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Project.Unmarshal(m, b)
 }
@@ -100,6 +102,7 @@ func (*Link) ProtoMessage()    {}
 func (*Link) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{1}
 }
+
 func (m *Link) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Link.Unmarshal(m, b)
 }
@@ -164,6 +167,7 @@ func (*Oncall) ProtoMessage()    {}
 func (*Oncall) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{2}
 }
+
 func (m *Oncall) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Oncall.Unmarshal(m, b)
 }
@@ -213,6 +217,7 @@ func (*LinkGroup) ProtoMessage()    {}
 func (*LinkGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{3}
 }
+
 func (m *LinkGroup) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LinkGroup.Unmarshal(m, b)
 }
@@ -269,6 +274,7 @@ func (*ConsoleSummaryGroup) ProtoMessage()    {}
 func (*ConsoleSummaryGroup) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{4}
 }
+
 func (m *ConsoleSummaryGroup) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConsoleSummaryGroup.Unmarshal(m, b)
 }
@@ -338,6 +344,7 @@ func (*Header) ProtoMessage()    {}
 func (*Header) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{5}
 }
+
 func (m *Header) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Header.Unmarshal(m, b)
 }
@@ -465,6 +472,7 @@ func (*Console) ProtoMessage()    {}
 func (*Console) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{6}
 }
+
 func (m *Console) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Console.Unmarshal(m, b)
 }
@@ -594,6 +602,7 @@ func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3e109f2242818b, []int{7}
 }
+
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
 }

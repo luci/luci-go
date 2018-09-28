@@ -5,8 +5,9 @@ package ts_mon_proto
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -77,6 +78,7 @@ func (*Task) ProtoMessage()    {}
 func (*Task) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c9556040af6e102a, []int{0}
 }
+
 func (m *Task) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Task.Unmarshal(m, b)
 }
@@ -152,8 +154,8 @@ func (m *Task) GetProxyZone() string {
 }
 
 func init() {
-	proto.RegisterType((*Task)(nil), "ts_mon.proto.Task")
 	proto.RegisterEnum("ts_mon.proto.Task_TypeId", Task_TypeId_name, Task_TypeId_value)
+	proto.RegisterType((*Task)(nil), "ts_mon.proto.Task")
 }
 
 func init() {

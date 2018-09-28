@@ -5,9 +5,10 @@ package svcconfig
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -53,6 +54,7 @@ func (*Storage) ProtoMessage()    {}
 func (*Storage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_955b461662b6fa9d, []int{0}
 }
+
 func (m *Storage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage.Unmarshal(m, b)
 }
@@ -176,6 +178,7 @@ func (*Storage_BigTable) ProtoMessage()    {}
 func (*Storage_BigTable) Descriptor() ([]byte, []int) {
 	return fileDescriptor_955b461662b6fa9d, []int{0, 0}
 }
+
 func (m *Storage_BigTable) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Storage_BigTable.Unmarshal(m, b)
 }

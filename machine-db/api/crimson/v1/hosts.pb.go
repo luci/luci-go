@@ -5,8 +5,9 @@ package crimson
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -37,6 +38,7 @@ func (*DeleteHostRequest) ProtoMessage()    {}
 func (*DeleteHostRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e5f10a1e6da138ab, []int{0}
 }
+
 func (m *DeleteHostRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteHostRequest.Unmarshal(m, b)
 }

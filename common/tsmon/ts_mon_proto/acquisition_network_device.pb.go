@@ -5,8 +5,9 @@ package ts_mon_proto
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -81,6 +82,7 @@ func (*NetworkDevice) ProtoMessage()    {}
 func (*NetworkDevice) Descriptor() ([]byte, []int) {
 	return fileDescriptor_617c78492cfca97c, []int{0}
 }
+
 func (m *NetworkDevice) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NetworkDevice.Unmarshal(m, b)
 }
@@ -184,8 +186,8 @@ func (m *NetworkDevice) GetProxyZone() string {
 }
 
 func init() {
-	proto.RegisterType((*NetworkDevice)(nil), "ts_mon.proto.NetworkDevice")
 	proto.RegisterEnum("ts_mon.proto.NetworkDevice_TypeId", NetworkDevice_TypeId_name, NetworkDevice_TypeId_value)
+	proto.RegisterType((*NetworkDevice)(nil), "ts_mon.proto.NetworkDevice")
 }
 
 func init() {

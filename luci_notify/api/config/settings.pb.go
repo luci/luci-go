@@ -5,8 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -38,6 +39,7 @@ func (*Settings) ProtoMessage()    {}
 func (*Settings) Descriptor() ([]byte, []int) {
 	return fileDescriptor_425f8f86e1321f04, []int{0}
 }
+
 func (m *Settings) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Settings.Unmarshal(m, b)
 }

@@ -5,8 +5,9 @@ package tokenserver
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -61,6 +62,7 @@ func (*TokenFile) ProtoMessage()    {}
 func (*TokenFile) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dd87c4ba28a039f0, []int{0}
 }
+
 func (m *TokenFile) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TokenFile.Unmarshal(m, b)
 }

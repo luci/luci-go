@@ -5,10 +5,11 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -56,6 +57,7 @@ func (*Machine) ProtoMessage()    {}
 func (*Machine) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{0}
 }
+
 func (m *Machine) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Machine.Unmarshal(m, b)
 }
@@ -159,6 +161,7 @@ func (*CreateMachineRequest) ProtoMessage()    {}
 func (*CreateMachineRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{1}
 }
+
 func (m *CreateMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateMachineRequest.Unmarshal(m, b)
 }
@@ -199,6 +202,7 @@ func (*DeleteMachineRequest) ProtoMessage()    {}
 func (*DeleteMachineRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{2}
 }
+
 func (m *DeleteMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteMachineRequest.Unmarshal(m, b)
 }
@@ -247,6 +251,7 @@ func (*ListMachinesRequest) ProtoMessage()    {}
 func (*ListMachinesRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{3}
 }
+
 func (m *ListMachinesRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMachinesRequest.Unmarshal(m, b)
 }
@@ -315,6 +320,7 @@ func (*ListMachinesResponse) ProtoMessage()    {}
 func (*ListMachinesResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{4}
 }
+
 func (m *ListMachinesResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListMachinesResponse.Unmarshal(m, b)
 }
@@ -357,6 +363,7 @@ func (*RenameMachineRequest) ProtoMessage()    {}
 func (*RenameMachineRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{5}
 }
+
 func (m *RenameMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RenameMachineRequest.Unmarshal(m, b)
 }
@@ -406,6 +413,7 @@ func (*UpdateMachineRequest) ProtoMessage()    {}
 func (*UpdateMachineRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_17aa8e73038b4213, []int{6}
 }
+
 func (m *UpdateMachineRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateMachineRequest.Unmarshal(m, b)
 }

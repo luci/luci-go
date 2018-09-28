@@ -5,9 +5,10 @@ package internal
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -58,6 +59,7 @@ func (*Timer) ProtoMessage()    {}
 func (*Timer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c542a10d7ff1dba, []int{0}
 }
+
 func (m *Timer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Timer.Unmarshal(m, b)
 }
@@ -125,6 +127,7 @@ func (*TimerList) ProtoMessage()    {}
 func (*TimerList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5c542a10d7ff1dba, []int{1}
 }
+
 func (m *TimerList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimerList.Unmarshal(m, b)
 }

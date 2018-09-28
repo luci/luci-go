@@ -5,9 +5,10 @@ package swarmingV1
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b41471e838ddca44, []int{0}
 }
+
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
 }
@@ -80,6 +82,7 @@ func (*Config_Swarming) ProtoMessage()    {}
 func (*Config_Swarming) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b41471e838ddca44, []int{0, 0}
 }
+
 func (m *Config_Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config_Swarming.Unmarshal(m, b)
 }
@@ -121,6 +124,7 @@ func (*Config_Isolate) ProtoMessage()    {}
 func (*Config_Isolate) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b41471e838ddca44, []int{0, 1}
 }
+
 func (m *Config_Isolate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config_Isolate.Unmarshal(m, b)
 }

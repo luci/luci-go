@@ -5,10 +5,11 @@ package logpb
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -107,6 +108,7 @@ func (*LogStreamDescriptor) ProtoMessage()    {}
 func (*LogStreamDescriptor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{0}
 }
+
 func (m *LogStreamDescriptor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamDescriptor.Unmarshal(m, b)
 }
@@ -188,6 +190,7 @@ func (*Text) ProtoMessage()    {}
 func (*Text) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{1}
 }
+
 func (m *Text) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Text.Unmarshal(m, b)
 }
@@ -234,6 +237,7 @@ func (*Text_Line) ProtoMessage()    {}
 func (*Text_Line) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{1, 0}
 }
+
 func (m *Text_Line) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Text_Line.Unmarshal(m, b)
 }
@@ -281,6 +285,7 @@ func (*Binary) ProtoMessage()    {}
 func (*Binary) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{2}
 }
+
 func (m *Binary) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Binary.Unmarshal(m, b)
 }
@@ -322,6 +327,7 @@ func (*Datagram) ProtoMessage()    {}
 func (*Datagram) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{3}
 }
+
 func (m *Datagram) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datagram.Unmarshal(m, b)
 }
@@ -377,6 +383,7 @@ func (*Datagram_Partial) ProtoMessage()    {}
 func (*Datagram_Partial) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{3, 0}
 }
+
 func (m *Datagram_Partial) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datagram_Partial.Unmarshal(m, b)
 }
@@ -470,6 +477,7 @@ func (*LogEntry) ProtoMessage()    {}
 func (*LogEntry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{4}
 }
+
 func (m *LogEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogEntry.Unmarshal(m, b)
 }
@@ -713,6 +721,7 @@ func (*LogIndex) ProtoMessage()    {}
 func (*LogIndex) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{5}
 }
+
 func (m *LogIndex) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogIndex.Unmarshal(m, b)
 }
@@ -815,6 +824,7 @@ func (*LogIndex_Entry) ProtoMessage()    {}
 func (*LogIndex_Entry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_30887c96a468dac0, []int{5, 0}
 }
+
 func (m *LogIndex_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogIndex_Entry.Unmarshal(m, b)
 }
@@ -869,6 +879,7 @@ func (m *LogIndex_Entry) GetTimeOffset() *duration.Duration {
 }
 
 func init() {
+	proto.RegisterEnum("logpb.StreamType", StreamType_name, StreamType_value)
 	proto.RegisterType((*LogStreamDescriptor)(nil), "logpb.LogStreamDescriptor")
 	proto.RegisterMapType((map[string]string)(nil), "logpb.LogStreamDescriptor.TagsEntry")
 	proto.RegisterType((*Text)(nil), "logpb.Text")
@@ -879,7 +890,6 @@ func init() {
 	proto.RegisterType((*LogEntry)(nil), "logpb.LogEntry")
 	proto.RegisterType((*LogIndex)(nil), "logpb.LogIndex")
 	proto.RegisterType((*LogIndex_Entry)(nil), "logpb.LogIndex.Entry")
-	proto.RegisterEnum("logpb.StreamType", StreamType_name, StreamType_value)
 }
 
 func init() {

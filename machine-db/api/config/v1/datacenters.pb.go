@@ -5,9 +5,10 @@ package config
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -42,6 +43,7 @@ func (*Switch) ProtoMessage()    {}
 func (*Switch) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ddd85d9fa4d73ee0, []int{0}
 }
+
 func (m *Switch) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Switch.Unmarshal(m, b)
 }
@@ -116,6 +118,7 @@ func (*KVM) ProtoMessage()    {}
 func (*KVM) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ddd85d9fa4d73ee0, []int{1}
 }
+
 func (m *KVM) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KVM.Unmarshal(m, b)
 }
@@ -206,6 +209,7 @@ func (*Rack) ProtoMessage()    {}
 func (*Rack) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ddd85d9fa4d73ee0, []int{2}
 }
+
 func (m *Rack) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Rack.Unmarshal(m, b)
 }
@@ -282,6 +286,7 @@ func (*Datacenter) ProtoMessage()    {}
 func (*Datacenter) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ddd85d9fa4d73ee0, []int{3}
 }
+
 func (m *Datacenter) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datacenter.Unmarshal(m, b)
 }
@@ -350,6 +355,7 @@ func (*Datacenters) ProtoMessage()    {}
 func (*Datacenters) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ddd85d9fa4d73ee0, []int{4}
 }
+
 func (m *Datacenters) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Datacenters.Unmarshal(m, b)
 }

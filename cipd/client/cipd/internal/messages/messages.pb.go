@@ -5,9 +5,10 @@ package messages
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -41,6 +42,7 @@ func (*BlobWithSHA1) ProtoMessage()    {}
 func (*BlobWithSHA1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{0}
 }
+
 func (m *BlobWithSHA1) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BlobWithSHA1.Unmarshal(m, b)
 }
@@ -97,6 +99,7 @@ func (*TagCache) ProtoMessage()    {}
 func (*TagCache) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{1}
 }
+
 func (m *TagCache) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache.Unmarshal(m, b)
 }
@@ -145,6 +148,7 @@ func (*TagCache_Entry) ProtoMessage()    {}
 func (*TagCache_Entry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{1, 0}
 }
+
 func (m *TagCache_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache_Entry.Unmarshal(m, b)
 }
@@ -208,6 +212,7 @@ func (*TagCache_FileEntry) ProtoMessage()    {}
 func (*TagCache_FileEntry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{1, 1}
 }
+
 func (m *TagCache_FileEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TagCache_FileEntry.Unmarshal(m, b)
 }
@@ -282,6 +287,7 @@ func (*InstanceCache) ProtoMessage()    {}
 func (*InstanceCache) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{2}
 }
+
 func (m *InstanceCache) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstanceCache.Unmarshal(m, b)
 }
@@ -330,6 +336,7 @@ func (*InstanceCache_Entry) ProtoMessage()    {}
 func (*InstanceCache_Entry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_3c2431e10c52fd39, []int{2, 0}
 }
+
 func (m *InstanceCache_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InstanceCache_Entry.Unmarshal(m, b)
 }

@@ -5,9 +5,10 @@ package tokenserver
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -65,6 +66,7 @@ func (*OAuthTokenGrantBody) ProtoMessage()    {}
 func (*OAuthTokenGrantBody) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e508b3aaac47612, []int{0}
 }
+
 func (m *OAuthTokenGrantBody) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantBody.Unmarshal(m, b)
 }
@@ -143,6 +145,7 @@ func (*OAuthTokenGrantEnvelope) ProtoMessage()    {}
 func (*OAuthTokenGrantEnvelope) Descriptor() ([]byte, []int) {
 	return fileDescriptor_2e508b3aaac47612, []int{1}
 }
+
 func (m *OAuthTokenGrantEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OAuthTokenGrantEnvelope.Unmarshal(m, b)
 }

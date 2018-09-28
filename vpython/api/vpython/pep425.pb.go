@@ -5,8 +5,9 @@ package vpython
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -40,6 +41,7 @@ func (*PEP425Tag) ProtoMessage()    {}
 func (*PEP425Tag) Descriptor() ([]byte, []int) {
 	return fileDescriptor_06702d5b59b98781, []int{0}
 }
+
 func (m *PEP425Tag) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PEP425Tag.Unmarshal(m, b)
 }

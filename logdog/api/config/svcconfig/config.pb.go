@@ -5,9 +5,10 @@ package svcconfig
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -44,6 +45,7 @@ func (*Config) ProtoMessage()    {}
 func (*Config) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d90d5c2d0a680180, []int{0}
 }
+
 func (m *Config) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Config.Unmarshal(m, b)
 }
@@ -154,6 +156,7 @@ func (*Coordinator) ProtoMessage()    {}
 func (*Coordinator) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d90d5c2d0a680180, []int{1}
 }
+
 func (m *Coordinator) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Coordinator.Unmarshal(m, b)
 }
@@ -246,6 +249,7 @@ func (*Collector) ProtoMessage()    {}
 func (*Collector) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d90d5c2d0a680180, []int{2}
 }
+
 func (m *Collector) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Collector.Unmarshal(m, b)
 }
@@ -342,6 +346,7 @@ func (*Archivist) ProtoMessage()    {}
 func (*Archivist) Descriptor() ([]byte, []int) {
 	return fileDescriptor_d90d5c2d0a680180, []int{3}
 }
+
 func (m *Archivist) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Archivist.Unmarshal(m, b)
 }

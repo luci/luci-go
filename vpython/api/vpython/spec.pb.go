@@ -5,8 +5,9 @@ package vpython
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -59,6 +60,7 @@ func (*Spec) ProtoMessage()    {}
 func (*Spec) Descriptor() ([]byte, []int) {
 	return fileDescriptor_12b41745b49e8c72, []int{0}
 }
+
 func (m *Spec) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec.Unmarshal(m, b)
 }
@@ -147,6 +149,7 @@ func (*Spec_Package) ProtoMessage()    {}
 func (*Spec_Package) Descriptor() ([]byte, []int) {
 	return fileDescriptor_12b41745b49e8c72, []int{0, 0}
 }
+
 func (m *Spec_Package) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Spec_Package.Unmarshal(m, b)
 }

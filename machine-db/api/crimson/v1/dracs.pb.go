@@ -5,9 +5,10 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -49,6 +50,7 @@ func (*DRAC) ProtoMessage()    {}
 func (*DRAC) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0e7c5f5f1ce4adfa, []int{0}
 }
+
 func (m *DRAC) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DRAC.Unmarshal(m, b)
 }
@@ -131,6 +133,7 @@ func (*CreateDRACRequest) ProtoMessage()    {}
 func (*CreateDRACRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0e7c5f5f1ce4adfa, []int{1}
 }
+
 func (m *CreateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDRACRequest.Unmarshal(m, b)
 }
@@ -181,6 +184,7 @@ func (*ListDRACsRequest) ProtoMessage()    {}
 func (*ListDRACsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0e7c5f5f1ce4adfa, []int{2}
 }
+
 func (m *ListDRACsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsRequest.Unmarshal(m, b)
 }
@@ -256,6 +260,7 @@ func (*ListDRACsResponse) ProtoMessage()    {}
 func (*ListDRACsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0e7c5f5f1ce4adfa, []int{3}
 }
+
 func (m *ListDRACsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListDRACsResponse.Unmarshal(m, b)
 }
@@ -298,6 +303,7 @@ func (*UpdateDRACRequest) ProtoMessage()    {}
 func (*UpdateDRACRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_0e7c5f5f1ce4adfa, []int{4}
 }
+
 func (m *UpdateDRACRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDRACRequest.Unmarshal(m, b)
 }

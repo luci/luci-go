@@ -5,8 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -104,6 +105,7 @@ func (*ConfigSetLocation) ProtoMessage()    {}
 func (*ConfigSetLocation) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{0}
 }
+
 func (m *ConfigSetLocation) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConfigSetLocation.Unmarshal(m, b)
 }
@@ -153,6 +155,7 @@ func (*Project) ProtoMessage()    {}
 func (*Project) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{1}
 }
+
 func (m *Project) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Project.Unmarshal(m, b)
 }
@@ -200,6 +203,7 @@ func (*ProjectsCfg) ProtoMessage()    {}
 func (*ProjectsCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{2}
 }
+
 func (m *ProjectsCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectsCfg.Unmarshal(m, b)
 }
@@ -258,6 +262,7 @@ func (*Service) ProtoMessage()    {}
 func (*Service) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{3}
 }
+
 func (m *Service) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Service.Unmarshal(m, b)
 }
@@ -332,6 +337,7 @@ func (*ServiceDynamicMetadata) ProtoMessage()    {}
 func (*ServiceDynamicMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{4}
 }
+
 func (m *ServiceDynamicMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServiceDynamicMetadata.Unmarshal(m, b)
 }
@@ -379,6 +385,7 @@ func (*ServicesCfg) ProtoMessage()    {}
 func (*ServicesCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{5}
 }
+
 func (m *ServicesCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ServicesCfg.Unmarshal(m, b)
 }
@@ -428,6 +435,7 @@ func (*AclCfg) ProtoMessage()    {}
 func (*AclCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{6}
 }
+
 func (m *AclCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclCfg.Unmarshal(m, b)
 }
@@ -497,6 +505,7 @@ func (*ImportCfg) ProtoMessage()    {}
 func (*ImportCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{7}
 }
+
 func (m *ImportCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportCfg.Unmarshal(m, b)
 }
@@ -544,6 +553,7 @@ func (*ImportCfg_Gitiles) ProtoMessage()    {}
 func (*ImportCfg_Gitiles) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{7, 0}
 }
+
 func (m *ImportCfg_Gitiles) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ImportCfg_Gitiles.Unmarshal(m, b)
 }
@@ -613,6 +623,7 @@ func (*SchemasCfg) ProtoMessage()    {}
 func (*SchemasCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{8}
 }
+
 func (m *SchemasCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SchemasCfg.Unmarshal(m, b)
 }
@@ -657,6 +668,7 @@ func (*SchemasCfg_Schema) ProtoMessage()    {}
 func (*SchemasCfg_Schema) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{8, 0}
 }
+
 func (m *SchemasCfg_Schema) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SchemasCfg_Schema.Unmarshal(m, b)
 }
@@ -707,6 +719,7 @@ func (*ConfigPattern) ProtoMessage()    {}
 func (*ConfigPattern) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{9}
 }
+
 func (m *ConfigPattern) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConfigPattern.Unmarshal(m, b)
 }
@@ -759,6 +772,7 @@ func (*Validator) ProtoMessage()    {}
 func (*Validator) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{10}
 }
+
 func (m *Validator) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Validator.Unmarshal(m, b)
 }
@@ -811,6 +825,7 @@ func (*ValidationRequestMessage) ProtoMessage()    {}
 func (*ValidationRequestMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{11}
 }
+
 func (m *ValidationRequestMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationRequestMessage.Unmarshal(m, b)
 }
@@ -867,6 +882,7 @@ func (*ValidationResponseMessage) ProtoMessage()    {}
 func (*ValidationResponseMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{12}
 }
+
 func (m *ValidationResponseMessage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationResponseMessage.Unmarshal(m, b)
 }
@@ -909,6 +925,7 @@ func (*ValidationResponseMessage_Message) ProtoMessage()    {}
 func (*ValidationResponseMessage_Message) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b74f321d20ceb312, []int{12, 0}
 }
+
 func (m *ValidationResponseMessage_Message) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ValidationResponseMessage_Message.Unmarshal(m, b)
 }
@@ -942,6 +959,8 @@ func (m *ValidationResponseMessage_Message) GetSeverity() ValidationResponseMess
 }
 
 func init() {
+	proto.RegisterEnum("config.ConfigSetLocation_StorageType", ConfigSetLocation_StorageType_name, ConfigSetLocation_StorageType_value)
+	proto.RegisterEnum("config.ValidationResponseMessage_Severity", ValidationResponseMessage_Severity_name, ValidationResponseMessage_Severity_value)
 	proto.RegisterType((*ConfigSetLocation)(nil), "config.ConfigSetLocation")
 	proto.RegisterType((*Project)(nil), "config.Project")
 	proto.RegisterType((*ProjectsCfg)(nil), "config.ProjectsCfg")
@@ -958,8 +977,6 @@ func init() {
 	proto.RegisterType((*ValidationRequestMessage)(nil), "config.ValidationRequestMessage")
 	proto.RegisterType((*ValidationResponseMessage)(nil), "config.ValidationResponseMessage")
 	proto.RegisterType((*ValidationResponseMessage_Message)(nil), "config.ValidationResponseMessage.Message")
-	proto.RegisterEnum("config.ConfigSetLocation_StorageType", ConfigSetLocation_StorageType_name, ConfigSetLocation_StorageType_value)
-	proto.RegisterEnum("config.ValidationResponseMessage_Severity", ValidationResponseMessage_Severity_name, ValidationResponseMessage_Severity_value)
 }
 
 func init() {

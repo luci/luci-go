@@ -5,8 +5,9 @@ package internal
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -43,6 +44,7 @@ func (*InvocationsCursor) ProtoMessage()    {}
 func (*InvocationsCursor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_dded6d90ada69499, []int{0}
 }
+
 func (m *InvocationsCursor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_InvocationsCursor.Unmarshal(m, b)
 }

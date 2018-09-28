@@ -5,9 +5,10 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -48,6 +49,7 @@ func (*NIC) ProtoMessage()    {}
 func (*NIC) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{0}
 }
+
 func (m *NIC) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_NIC.Unmarshal(m, b)
 }
@@ -130,6 +132,7 @@ func (*CreateNICRequest) ProtoMessage()    {}
 func (*CreateNICRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{1}
 }
+
 func (m *CreateNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateNICRequest.Unmarshal(m, b)
 }
@@ -172,6 +175,7 @@ func (*DeleteNICRequest) ProtoMessage()    {}
 func (*DeleteNICRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{2}
 }
+
 func (m *DeleteNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteNICRequest.Unmarshal(m, b)
 }
@@ -229,6 +233,7 @@ func (*ListNICsRequest) ProtoMessage()    {}
 func (*ListNICsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{3}
 }
+
 func (m *ListNICsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListNICsRequest.Unmarshal(m, b)
 }
@@ -304,6 +309,7 @@ func (*ListNICsResponse) ProtoMessage()    {}
 func (*ListNICsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{4}
 }
+
 func (m *ListNICsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListNICsResponse.Unmarshal(m, b)
 }
@@ -346,6 +352,7 @@ func (*UpdateNICRequest) ProtoMessage()    {}
 func (*UpdateNICRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_04c10592cdcb6ab3, []int{5}
 }
+
 func (m *UpdateNICRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateNICRequest.Unmarshal(m, b)
 }

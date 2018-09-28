@@ -5,9 +5,10 @@ package logpb
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -96,6 +97,7 @@ func (*ButlerMetadata) ProtoMessage()    {}
 func (*ButlerMetadata) Descriptor() ([]byte, []int) {
 	return fileDescriptor_25f3936477fa1e93, []int{0}
 }
+
 func (m *ButlerMetadata) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerMetadata.Unmarshal(m, b)
 }
@@ -191,6 +193,7 @@ func (*ButlerLogBundle) ProtoMessage()    {}
 func (*ButlerLogBundle) Descriptor() ([]byte, []int) {
 	return fileDescriptor_25f3936477fa1e93, []int{1}
 }
+
 func (m *ButlerLogBundle) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle.Unmarshal(m, b)
 }
@@ -294,6 +297,7 @@ func (*ButlerLogBundle_Entry) ProtoMessage()    {}
 func (*ButlerLogBundle_Entry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_25f3936477fa1e93, []int{1, 0}
 }
+
 func (m *ButlerLogBundle_Entry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ButlerLogBundle_Entry.Unmarshal(m, b)
 }
@@ -348,11 +352,11 @@ func (m *ButlerLogBundle_Entry) GetLogs() []*LogEntry {
 }
 
 func init() {
+	proto.RegisterEnum("logpb.ButlerMetadata_ContentType", ButlerMetadata_ContentType_name, ButlerMetadata_ContentType_value)
+	proto.RegisterEnum("logpb.ButlerMetadata_Compression", ButlerMetadata_Compression_name, ButlerMetadata_Compression_value)
 	proto.RegisterType((*ButlerMetadata)(nil), "logpb.ButlerMetadata")
 	proto.RegisterType((*ButlerLogBundle)(nil), "logpb.ButlerLogBundle")
 	proto.RegisterType((*ButlerLogBundle_Entry)(nil), "logpb.ButlerLogBundle.Entry")
-	proto.RegisterEnum("logpb.ButlerMetadata_ContentType", ButlerMetadata_ContentType_name, ButlerMetadata_ContentType_value)
-	proto.RegisterEnum("logpb.ButlerMetadata_Compression", ButlerMetadata_Compression_name, ButlerMetadata_Compression_value)
 }
 
 func init() {

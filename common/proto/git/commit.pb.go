@@ -5,9 +5,10 @@ package git
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -80,6 +81,7 @@ func (*Commit) ProtoMessage()    {}
 func (*Commit) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d74b2aaad703343, []int{0}
 }
+
 func (m *Commit) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit.Unmarshal(m, b)
 }
@@ -164,6 +166,7 @@ func (*Commit_User) ProtoMessage()    {}
 func (*Commit_User) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d74b2aaad703343, []int{0, 0}
 }
+
 func (m *Commit_User) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_User.Unmarshal(m, b)
 }
@@ -241,6 +244,7 @@ func (*Commit_TreeDiff) ProtoMessage()    {}
 func (*Commit_TreeDiff) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9d74b2aaad703343, []int{0, 1}
 }
+
 func (m *Commit_TreeDiff) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Commit_TreeDiff.Unmarshal(m, b)
 }
@@ -309,10 +313,10 @@ func (m *Commit_TreeDiff) GetNewPath() string {
 }
 
 func init() {
+	proto.RegisterEnum("git.Commit_TreeDiff_ChangeType", Commit_TreeDiff_ChangeType_name, Commit_TreeDiff_ChangeType_value)
 	proto.RegisterType((*Commit)(nil), "git.Commit")
 	proto.RegisterType((*Commit_User)(nil), "git.Commit.User")
 	proto.RegisterType((*Commit_TreeDiff)(nil), "git.Commit.TreeDiff")
-	proto.RegisterEnum("git.Commit_TreeDiff_ChangeType", Commit_TreeDiff_ChangeType_name, Commit_TreeDiff_ChangeType_value)
 }
 
 func init() {

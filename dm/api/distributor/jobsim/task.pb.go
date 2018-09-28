@@ -5,10 +5,11 @@ package jobsim
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -41,6 +42,7 @@ func (*Phrase) ProtoMessage()    {}
 func (*Phrase) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{0}
 }
+
 func (m *Phrase) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Phrase.Unmarshal(m, b)
 }
@@ -104,6 +106,7 @@ func (*ReturnStage) ProtoMessage()    {}
 func (*ReturnStage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{1}
 }
+
 func (m *ReturnStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ReturnStage.Unmarshal(m, b)
 }
@@ -157,6 +160,7 @@ func (*Stage) ProtoMessage()    {}
 func (*Stage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{2}
 }
+
 func (m *Stage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Stage.Unmarshal(m, b)
 }
@@ -338,6 +342,7 @@ func (*FailureStage) ProtoMessage()    {}
 func (*FailureStage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{3}
 }
+
 func (m *FailureStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FailureStage.Unmarshal(m, b)
 }
@@ -378,6 +383,7 @@ func (*StallStage) ProtoMessage()    {}
 func (*StallStage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{4}
 }
+
 func (m *StallStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StallStage.Unmarshal(m, b)
 }
@@ -418,6 +424,7 @@ func (*DepsStage) ProtoMessage()    {}
 func (*DepsStage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{5}
 }
+
 func (m *DepsStage) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DepsStage.Unmarshal(m, b)
 }
@@ -472,6 +479,7 @@ func (*Dependency) ProtoMessage()    {}
 func (*Dependency) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{6}
 }
+
 func (m *Dependency) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Dependency.Unmarshal(m, b)
 }
@@ -631,6 +639,7 @@ func (*SparseRange) ProtoMessage()    {}
 func (*SparseRange) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{7}
 }
+
 func (m *SparseRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SparseRange.Unmarshal(m, b)
 }
@@ -673,6 +682,7 @@ func (*RangeItem) ProtoMessage()    {}
 func (*RangeItem) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{8}
 }
+
 func (m *RangeItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RangeItem.Unmarshal(m, b)
 }
@@ -812,6 +822,7 @@ func (*Range) ProtoMessage()    {}
 func (*Range) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5cdcbaf2009df1de, []int{9}
 }
+
 func (m *Range) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Range.Unmarshal(m, b)
 }

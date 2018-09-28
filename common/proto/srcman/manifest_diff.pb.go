@@ -5,9 +5,10 @@ package srcman
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -87,6 +88,7 @@ func (*ManifestDiff) ProtoMessage()    {}
 func (*ManifestDiff) Descriptor() ([]byte, []int) {
 	return fileDescriptor_36818c0267d64e2d, []int{0}
 }
+
 func (m *ManifestDiff) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff.Unmarshal(m, b)
 }
@@ -166,6 +168,7 @@ func (*ManifestDiff_GitCheckout) ProtoMessage()    {}
 func (*ManifestDiff_GitCheckout) Descriptor() ([]byte, []int) {
 	return fileDescriptor_36818c0267d64e2d, []int{0, 0}
 }
+
 func (m *ManifestDiff_GitCheckout) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff_GitCheckout.Unmarshal(m, b)
 }
@@ -246,6 +249,7 @@ func (*ManifestDiff_Directory) ProtoMessage()    {}
 func (*ManifestDiff_Directory) Descriptor() ([]byte, []int) {
 	return fileDescriptor_36818c0267d64e2d, []int{0, 1}
 }
+
 func (m *ManifestDiff_Directory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ManifestDiff_Directory.Unmarshal(m, b)
 }
@@ -307,12 +311,12 @@ func (m *ManifestDiff_Directory) GetIsolated() ManifestDiff_Stat {
 }
 
 func init() {
+	proto.RegisterEnum("srcman.ManifestDiff_Stat", ManifestDiff_Stat_name, ManifestDiff_Stat_value)
 	proto.RegisterType((*ManifestDiff)(nil), "srcman.ManifestDiff")
 	proto.RegisterMapType((map[string]*ManifestDiff_Directory)(nil), "srcman.ManifestDiff.DirectoriesEntry")
 	proto.RegisterType((*ManifestDiff_GitCheckout)(nil), "srcman.ManifestDiff.GitCheckout")
 	proto.RegisterType((*ManifestDiff_Directory)(nil), "srcman.ManifestDiff.Directory")
 	proto.RegisterMapType((map[string]ManifestDiff_Stat)(nil), "srcman.ManifestDiff.Directory.CipdPackageEntry")
-	proto.RegisterEnum("srcman.ManifestDiff_Stat", ManifestDiff_Stat_name, ManifestDiff_Stat_value)
 }
 
 func init() {

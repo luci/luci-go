@@ -5,8 +5,9 @@ package jobsim
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -35,6 +36,7 @@ func (*Result) ProtoMessage()    {}
 func (*Result) Descriptor() ([]byte, []int) {
 	return fileDescriptor_f53ecbabb0d591b3, []int{0}
 }
+
 func (m *Result) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Result.Unmarshal(m, b)
 }

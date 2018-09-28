@@ -5,9 +5,10 @@ package config
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	proto1 "go.chromium.org/luci/buildbucket/proto"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -37,6 +38,7 @@ func (*ProjectConfig) ProtoMessage()    {}
 func (*ProjectConfig) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{0}
 }
+
 func (m *ProjectConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ProjectConfig.Unmarshal(m, b)
 }
@@ -89,6 +91,7 @@ func (*Notifier) ProtoMessage()    {}
 func (*Notifier) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{1}
 }
+
 func (m *Notifier) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifier.Unmarshal(m, b)
 }
@@ -173,6 +176,7 @@ func (*Notification) ProtoMessage()    {}
 func (*Notification) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{2}
 }
+
 func (m *Notification) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification.Unmarshal(m, b)
 }
@@ -249,6 +253,7 @@ func (*Notification_Email) ProtoMessage()    {}
 func (*Notification_Email) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{2, 0}
 }
+
 func (m *Notification_Email) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Email.Unmarshal(m, b)
 }
@@ -298,6 +303,7 @@ func (*Notification_Blamelist) ProtoMessage()    {}
 func (*Notification_Blamelist) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{2, 1}
 }
+
 func (m *Notification_Blamelist) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notification_Blamelist.Unmarshal(m, b)
 }
@@ -362,6 +368,7 @@ func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{3}
 }
+
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
 }
@@ -417,6 +424,7 @@ func (*Notifications) ProtoMessage()    {}
 func (*Notifications) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{4}
 }
+
 func (m *Notifications) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Notifications.Unmarshal(m, b)
 }
@@ -457,6 +465,7 @@ func (*GitilesCommits) ProtoMessage()    {}
 func (*GitilesCommits) Descriptor() ([]byte, []int) {
 	return fileDescriptor_9a6945a7af0ec43b, []int{5}
 }
+
 func (m *GitilesCommits) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GitilesCommits.Unmarshal(m, b)
 }

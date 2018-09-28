@@ -5,9 +5,10 @@ package crimson
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/machine-db/api/common/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -43,6 +44,7 @@ func (*FindVMSlotsRequest) ProtoMessage()    {}
 func (*FindVMSlotsRequest) Descriptor() ([]byte, []int) {
 	return fileDescriptor_620049fabde60637, []int{0}
 }
+
 func (m *FindVMSlotsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FindVMSlotsRequest.Unmarshal(m, b)
 }
@@ -106,6 +108,7 @@ func (*FindVMSlotsResponse) ProtoMessage()    {}
 func (*FindVMSlotsResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor_620049fabde60637, []int{1}
 }
+
 func (m *FindVMSlotsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FindVMSlotsResponse.Unmarshal(m, b)
 }

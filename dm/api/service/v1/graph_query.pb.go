@@ -5,8 +5,9 @@ package dm
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -69,6 +70,7 @@ func (*GraphQuery) ProtoMessage()    {}
 func (*GraphQuery) Descriptor() ([]byte, []int) {
 	return fileDescriptor_922ae0b01ed267cc, []int{0}
 }
+
 func (m *GraphQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery.Unmarshal(m, b)
 }
@@ -123,6 +125,7 @@ func (*GraphQuery_AttemptRange) ProtoMessage()    {}
 func (*GraphQuery_AttemptRange) Descriptor() ([]byte, []int) {
 	return fileDescriptor_922ae0b01ed267cc, []int{0, 0}
 }
+
 func (m *GraphQuery_AttemptRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_AttemptRange.Unmarshal(m, b)
 }
@@ -262,6 +265,7 @@ func (*GraphQuery_Search) ProtoMessage()    {}
 func (*GraphQuery_Search) Descriptor() ([]byte, []int) {
 	return fileDescriptor_922ae0b01ed267cc, []int{0, 1}
 }
+
 func (m *GraphQuery_Search) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GraphQuery_Search.Unmarshal(m, b)
 }
@@ -316,12 +320,12 @@ func (m *GraphQuery_Search) GetExactFilters() map[string]*PropertyValue {
 }
 
 func init() {
+	proto.RegisterEnum("dm.GraphQuery_Search_Domain", GraphQuery_Search_Domain_name, GraphQuery_Search_Domain_value)
 	proto.RegisterType((*GraphQuery)(nil), "dm.GraphQuery")
 	proto.RegisterType((*GraphQuery_AttemptRange)(nil), "dm.GraphQuery.AttemptRange")
 	proto.RegisterType((*GraphQuery_Search)(nil), "dm.GraphQuery.Search")
 	proto.RegisterMapType((map[string]*MultiPropertyValue)(nil), "dm.GraphQuery.Search.ApproxFiltersEntry")
 	proto.RegisterMapType((map[string]*PropertyValue)(nil), "dm.GraphQuery.Search.ExactFiltersEntry")
-	proto.RegisterEnum("dm.GraphQuery_Search_Domain", GraphQuery_Search_Domain_name, GraphQuery_Search_Domain_value)
 }
 
 func init() {

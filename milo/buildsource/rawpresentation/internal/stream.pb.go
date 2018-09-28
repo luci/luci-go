@@ -5,9 +5,10 @@ package internal
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	milo "go.chromium.org/luci/common/proto/milo"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -39,6 +40,7 @@ func (*CachedStep) ProtoMessage()    {}
 func (*CachedStep) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cb0610adfc09d59c, []int{0}
 }
+
 func (m *CachedStep) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CachedStep.Unmarshal(m, b)
 }

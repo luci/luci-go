@@ -5,10 +5,11 @@ package internal
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -104,6 +105,7 @@ func (*Trigger) ProtoMessage()    {}
 func (*Trigger) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c2ad71048335c7d0, []int{0}
 }
+
 func (m *Trigger) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Trigger.Unmarshal(m, b)
 }
@@ -399,6 +401,7 @@ func (*TriggerList) ProtoMessage()    {}
 func (*TriggerList) Descriptor() ([]byte, []int) {
 	return fileDescriptor_c2ad71048335c7d0, []int{1}
 }
+
 func (m *TriggerList) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TriggerList.Unmarshal(m, b)
 }

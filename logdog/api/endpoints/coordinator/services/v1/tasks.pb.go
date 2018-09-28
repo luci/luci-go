@@ -5,10 +5,11 @@ package logdog
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -78,6 +79,7 @@ func (*ArchiveDispatchTask) ProtoMessage()    {}
 func (*ArchiveDispatchTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cd952f8ecee7e922, []int{0}
 }
+
 func (m *ArchiveDispatchTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveDispatchTask.Unmarshal(m, b)
 }
@@ -169,6 +171,7 @@ func (*ArchiveTask) ProtoMessage()    {}
 func (*ArchiveTask) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cd952f8ecee7e922, []int{1}
 }
+
 func (m *ArchiveTask) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ArchiveTask.Unmarshal(m, b)
 }
@@ -230,9 +233,9 @@ func (m *ArchiveTask) GetDispatchedAt() *timestamp.Timestamp {
 }
 
 func init() {
+	proto.RegisterEnum("logdog.ArchiveDispatchTask_Tag", ArchiveDispatchTask_Tag_name, ArchiveDispatchTask_Tag_value)
 	proto.RegisterType((*ArchiveDispatchTask)(nil), "logdog.ArchiveDispatchTask")
 	proto.RegisterType((*ArchiveTask)(nil), "logdog.ArchiveTask")
-	proto.RegisterEnum("logdog.ArchiveDispatchTask_Tag", ArchiveDispatchTask_Tag_name, ArchiveDispatchTask_Tag_value)
 }
 
 func init() {

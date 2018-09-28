@@ -5,9 +5,10 @@ package configpb
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -111,6 +112,7 @@ func (*Acl) ProtoMessage()    {}
 func (*Acl) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{0}
 }
+
 func (m *Acl) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Acl.Unmarshal(m, b)
 }
@@ -168,6 +170,7 @@ func (*AclSet) ProtoMessage()    {}
 func (*AclSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{1}
 }
+
 func (m *AclSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_AclSet.Unmarshal(m, b)
 }
@@ -394,6 +397,7 @@ func (*Builder) ProtoMessage()    {}
 func (*Builder) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{2}
 }
+
 func (m *Builder) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder.Unmarshal(m, b)
 }
@@ -605,6 +609,7 @@ func (*Builder_CacheEntry) ProtoMessage()    {}
 func (*Builder_CacheEntry) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{2, 0}
 }
+
 func (m *Builder_CacheEntry) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder_CacheEntry.Unmarshal(m, b)
 }
@@ -698,6 +703,7 @@ func (*Builder_Recipe) ProtoMessage()    {}
 func (*Builder_Recipe) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{2, 1}
 }
+
 func (m *Builder_Recipe) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Builder_Recipe.Unmarshal(m, b)
 }
@@ -788,6 +794,7 @@ func (*Swarming) ProtoMessage()    {}
 func (*Swarming) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{3}
 }
+
 func (m *Swarming) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Swarming.Unmarshal(m, b)
 }
@@ -867,6 +874,7 @@ func (*Bucket) ProtoMessage()    {}
 func (*Bucket) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{4}
 }
+
 func (m *Bucket) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Bucket.Unmarshal(m, b)
 }
@@ -934,6 +942,7 @@ func (*BuildbucketCfg) ProtoMessage()    {}
 func (*BuildbucketCfg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_90cd2cb373fa8af0, []int{5}
 }
+
 func (m *BuildbucketCfg) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_BuildbucketCfg.Unmarshal(m, b)
 }
@@ -974,6 +983,8 @@ func (m *BuildbucketCfg) GetBuilderMixins() []*Builder {
 }
 
 func init() {
+	proto.RegisterEnum("buildbucket.Toggle", Toggle_name, Toggle_value)
+	proto.RegisterEnum("buildbucket.Acl_Role", Acl_Role_name, Acl_Role_value)
 	proto.RegisterType((*Acl)(nil), "buildbucket.Acl")
 	proto.RegisterType((*AclSet)(nil), "buildbucket.AclSet")
 	proto.RegisterType((*Builder)(nil), "buildbucket.Builder")
@@ -982,8 +993,6 @@ func init() {
 	proto.RegisterType((*Swarming)(nil), "buildbucket.Swarming")
 	proto.RegisterType((*Bucket)(nil), "buildbucket.Bucket")
 	proto.RegisterType((*BuildbucketCfg)(nil), "buildbucket.BuildbucketCfg")
-	proto.RegisterEnum("buildbucket.Toggle", Toggle_name, Toggle_value)
-	proto.RegisterEnum("buildbucket.Acl_Role", Acl_Role_name, Acl_Role_value)
 }
 
 func init() {

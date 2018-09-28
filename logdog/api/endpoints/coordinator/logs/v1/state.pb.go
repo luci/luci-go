@@ -5,9 +5,10 @@ package logdog
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -49,6 +50,7 @@ func (*LogStreamState) ProtoMessage()    {}
 func (*LogStreamState) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e3bfde41f3abf9e4, []int{0}
 }
+
 func (m *LogStreamState) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamState.Unmarshal(m, b)
 }
@@ -127,6 +129,7 @@ func (*LogStreamState_ArchiveInfo) ProtoMessage()    {}
 func (*LogStreamState_ArchiveInfo) Descriptor() ([]byte, []int) {
 	return fileDescriptor_e3bfde41f3abf9e4, []int{0, 0}
 }
+
 func (m *LogStreamState_ArchiveInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LogStreamState_ArchiveInfo.Unmarshal(m, b)
 }

@@ -5,8 +5,9 @@ package flagpb
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -63,6 +64,7 @@ func (*M1) ProtoMessage()    {}
 func (*M1) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7e62106924695bf0, []int{0}
 }
+
 func (m *M1) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M1.Unmarshal(m, b)
 }
@@ -137,6 +139,7 @@ func (*M2) ProtoMessage()    {}
 func (*M2) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7e62106924695bf0, []int{1}
 }
+
 func (m *M2) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M2.Unmarshal(m, b)
 }
@@ -186,6 +189,7 @@ func (*M3) ProtoMessage()    {}
 func (*M3) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7e62106924695bf0, []int{2}
 }
+
 func (m *M3) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_M3.Unmarshal(m, b)
 }
@@ -254,6 +258,7 @@ func (*MapContainer) ProtoMessage()    {}
 func (*MapContainer) Descriptor() ([]byte, []int) {
 	return fileDescriptor_7e62106924695bf0, []int{3}
 }
+
 func (m *MapContainer) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MapContainer.Unmarshal(m, b)
 }
@@ -294,6 +299,7 @@ func (m *MapContainer) GetSm1() map[string]*M1 {
 }
 
 func init() {
+	proto.RegisterEnum("flagpb.E", E_name, E_value)
 	proto.RegisterType((*M1)(nil), "flagpb.M1")
 	proto.RegisterType((*M2)(nil), "flagpb.M2")
 	proto.RegisterType((*M3)(nil), "flagpb.M3")
@@ -301,7 +307,6 @@ func init() {
 	proto.RegisterMapType((map[int32]int32)(nil), "flagpb.MapContainer.IiEntry")
 	proto.RegisterMapType((map[string]*M1)(nil), "flagpb.MapContainer.Sm1Entry")
 	proto.RegisterMapType((map[string]string)(nil), "flagpb.MapContainer.SsEntry")
-	proto.RegisterEnum("flagpb.E", E_name, E_value)
 }
 
 func init() {

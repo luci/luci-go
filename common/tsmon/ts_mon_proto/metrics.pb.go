@@ -5,8 +5,9 @@ package ts_mon_proto
 
 import (
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
 	math "math"
+
+	proto "github.com/golang/protobuf/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -168,6 +169,7 @@ func (*MetricsPayload) ProtoMessage()    {}
 func (*MetricsPayload) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{0}
 }
+
 func (m *MetricsPayload) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsPayload.Unmarshal(m, b)
 }
@@ -210,6 +212,7 @@ func (*MetricsCollection) ProtoMessage()    {}
 func (*MetricsCollection) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{1}
 }
+
 func (m *MetricsCollection) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsCollection.Unmarshal(m, b)
 }
@@ -365,6 +368,7 @@ func (*MetricsDataSet) ProtoMessage()    {}
 func (*MetricsDataSet) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{2}
 }
+
 func (m *MetricsDataSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsDataSet.Unmarshal(m, b)
 }
@@ -446,6 +450,7 @@ func (*MetricsDataSet_MetricFieldDescriptor) ProtoMessage()    {}
 func (*MetricsDataSet_MetricFieldDescriptor) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{2, 0}
 }
+
 func (m *MetricsDataSet_MetricFieldDescriptor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsDataSet_MetricFieldDescriptor.Unmarshal(m, b)
 }
@@ -500,6 +505,7 @@ func (*MetricsData) ProtoMessage()    {}
 func (*MetricsData) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3}
 }
+
 func (m *MetricsData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData.Unmarshal(m, b)
 }
@@ -749,6 +755,7 @@ func (*MetricsData_MetricField) ProtoMessage()    {}
 func (*MetricsData_MetricField) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 0}
 }
+
 func (m *MetricsData_MetricField) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_MetricField.Unmarshal(m, b)
 }
@@ -931,6 +938,7 @@ func (*MetricsData_Distribution) ProtoMessage()    {}
 func (*MetricsData_Distribution) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 1}
 }
+
 func (m *MetricsData_Distribution) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution.Unmarshal(m, b)
 }
@@ -1158,6 +1166,7 @@ func (*MetricsData_Distribution_LinearOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_LinearOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 0}
 }
+
 func (m *MetricsData_Distribution_LinearOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_LinearOptions.Unmarshal(m, b)
 }
@@ -1216,6 +1225,7 @@ func (*MetricsData_Distribution_ExponentialOptions) ProtoMessage() {}
 func (*MetricsData_Distribution_ExponentialOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 1}
 }
+
 func (m *MetricsData_Distribution_ExponentialOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_ExponentialOptions.Unmarshal(m, b)
 }
@@ -1270,6 +1280,7 @@ func (*MetricsData_Distribution_ExplicitOptions) ProtoMessage()    {}
 func (*MetricsData_Distribution_ExplicitOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 2}
 }
+
 func (m *MetricsData_Distribution_ExplicitOptions) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_ExplicitOptions.Unmarshal(m, b)
 }
@@ -1310,6 +1321,7 @@ func (*MetricsData_Distribution_Exemplar) ProtoMessage()    {}
 func (*MetricsData_Distribution_Exemplar) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{3, 1, 3}
 }
+
 func (m *MetricsData_Distribution_Exemplar) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MetricsData_Distribution_Exemplar.Unmarshal(m, b)
 }
@@ -1365,6 +1377,7 @@ func (*Annotations) ProtoMessage()    {}
 func (*Annotations) Descriptor() ([]byte, []int) {
 	return fileDescriptor_5a1f5514585a4442, []int{4}
 }
+
 func (m *Annotations) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Annotations.Unmarshal(m, b)
 }
@@ -1412,6 +1425,9 @@ func (m *Annotations) GetAnnotation() []*Any {
 }
 
 func init() {
+	proto.RegisterEnum("ts_mon.proto.StreamKind", StreamKind_name, StreamKind_value)
+	proto.RegisterEnum("ts_mon.proto.ValueType", ValueType_name, ValueType_value)
+	proto.RegisterEnum("ts_mon.proto.MetricsDataSet_MetricFieldDescriptor_FieldType", MetricsDataSet_MetricFieldDescriptor_FieldType_name, MetricsDataSet_MetricFieldDescriptor_FieldType_value)
 	proto.RegisterType((*MetricsPayload)(nil), "ts_mon.proto.MetricsPayload")
 	proto.RegisterType((*MetricsCollection)(nil), "ts_mon.proto.MetricsCollection")
 	proto.RegisterType((*MetricsDataSet)(nil), "ts_mon.proto.MetricsDataSet")
@@ -1424,9 +1440,6 @@ func init() {
 	proto.RegisterType((*MetricsData_Distribution_ExplicitOptions)(nil), "ts_mon.proto.MetricsData.Distribution.ExplicitOptions")
 	proto.RegisterType((*MetricsData_Distribution_Exemplar)(nil), "ts_mon.proto.MetricsData.Distribution.Exemplar")
 	proto.RegisterType((*Annotations)(nil), "ts_mon.proto.Annotations")
-	proto.RegisterEnum("ts_mon.proto.StreamKind", StreamKind_name, StreamKind_value)
-	proto.RegisterEnum("ts_mon.proto.ValueType", ValueType_name, ValueType_value)
-	proto.RegisterEnum("ts_mon.proto.MetricsDataSet_MetricFieldDescriptor_FieldType", MetricsDataSet_MetricFieldDescriptor_FieldType_name, MetricsDataSet_MetricFieldDescriptor_FieldType_value)
 }
 
 func init() {
