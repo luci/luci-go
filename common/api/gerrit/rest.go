@@ -103,21 +103,18 @@ func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessReque
 		return nil, err
 	}
 
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#access-check-input
-	input := map[string]string{
-		"account": req.Account,
-		"ref":     req.Ref,
-	}
-	if req.Permission != "" {
-		input["permission"] = req.Permission
-	}
 	var resp struct {
 		Status  int    `json:"status"`
 		Message string `json:"message"`
 	}
 	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
-	path := fmt.Sprintf("/projects/%s/check.access", url.QueryEscape(req.Project))
-	if _, err := c.call(ctx, "POST", path, nil, &input, &resp); err != nil {
+	path := fmt.Sprintf("/projects/%s/check.access?ref=%s&account=%s", url.QueryEscape(req.Project),
+		url.QueryEscape(req.Ref), url.QueryEscape(req.Account))
+	if req.Permission != "" {
+		path += "&perm=" + req.Permission
+	}
+
+	if _, err := c.call(ctx, "GET", path, nil, nil, &resp); err != nil {
 		return nil, err
 	}
 
@@ -127,8 +124,6 @@ func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessReque
 		res.Status = gerritpb.CheckAccessResponse_ALLOWED
 	case 403:
 		res.Status = gerritpb.CheckAccessResponse_FORBIDDEN
-	case 404:
-		res.Status = gerritpb.CheckAccessResponse_PROJECT_NOT_FOUND
 	default:
 		return nil, status.Errorf(codes.Internal, "unexpected AccessCheckInfo.Status %d response", resp.Status)
 	}
