@@ -107,6 +107,36 @@ $(function () {
     })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
 
   crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3EMilo');
+
+(function(window) {
+  let lastWindowScrollTop = window.scrollY;
+
+  function debounce(f, wait) {
+    let timeout;
+    return function(...args) {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      timeout = setTimeout(() => {
+        f(...args);
+        timeout = null;
+      }, wait);
+    };
+  }
+
+  window.addEventListener('scroll', debounce(function(evt) {
+    const delta = window.scrollY - lastWindowScrollTop;
+    lastWindowScrollTop = window.scrollY;
+    const absDelta = Math.abs(delta);
+    const category = window.location.pathname.split('/').slice(0, 2).join('/');
+    ga('send', 'event', category, 'scroll-abs', '', absDelta);
+    if (delta > 0) {
+      ga('send', 'event', category, 'scroll-down', '', absDelta);
+    } else {
+      ga('send', 'event', category, 'scroll-up', '', absDelta);
+    }
+  }, 250));
+})(window);
 </script>
 
 <script>
