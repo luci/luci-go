@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "6764b3aa_7fa42079",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1121710
+      },
+      "writtenOn": "2018-10-01T22:59:02Z",
+      "side": 1,
+      "message": "ah, thanks for the tip. I made it filter this a bit more, just the first two path components (we don\u0027t want every swarming task to be its won category!).",
+      "parentUuid": "53fdaadd_80d1c803",
+      "revId": "565b83af4157c579a6a0d4eafc8377bea061c39d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "999ec6da_c1628ead",
         "filename": "milo/frontend/appengine/templates/includes/base.html",
         "patchSetId": 3
@@ -30,6 +48,24 @@
       "writtenOn": "2018-10-01T21:50:18Z",
       "side": 1,
       "message": "GA isn\u0027t loaded until after this script block (in {{ .Analytics }}), will that be ok?",
+      "revId": "565b83af4157c579a6a0d4eafc8377bea061c39d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8731a94a_d5cd0f3d",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 3
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1121710
+      },
+      "writtenOn": "2018-10-01T22:59:02Z",
+      "side": 1,
+      "message": "GA just has to be loaded by the time this block *executes* (in response to user scrolling, which presumably happens after enough stuff has loaded in the page to make scrolling necessary, which is probably after GA has loaded).",
+      "parentUuid": "999ec6da_c1628ead",
       "revId": "565b83af4157c579a6a0d4eafc8377bea061c39d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
