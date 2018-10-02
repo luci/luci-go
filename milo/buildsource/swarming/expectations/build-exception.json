@@ -4,7 +4,7 @@
       "Label": "2d8d62f6be545b10",
       "URL": ""
     },
-    "Status": "InfraFailure",
+    "Status": "Failure",
     "Source": {
       "Label": "Task 2d8d62f6be545b10",
       "URL": "https://example.com/task?id=2d8d62f6be545b10\u0026show_raw=1\u0026wide_logs=true",
@@ -37,12 +37,12 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 2,
     "Text": [
       "InfraFailure bot_update",
       "InfraFailure Uncaught Exception"
-    ]
+    ],
+    "Children": []
   },
   "Trigger": {
     "AuthorName": "",
@@ -85,9 +85,9 @@
         "Duration": 7000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -123,11 +123,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -163,9 +163,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -201,9 +201,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
-      "Text": null
+      "Text": null,
+      "Children": []
     }
   ],
   "PropertyGroup": [

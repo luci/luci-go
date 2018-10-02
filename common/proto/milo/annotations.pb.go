@@ -5,10 +5,11 @@ package milo
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	srcman "go.chromium.org/luci/common/proto/srcman"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
