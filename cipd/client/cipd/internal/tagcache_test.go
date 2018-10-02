@@ -24,7 +24,7 @@ import (
 	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -54,7 +54,7 @@ func TestTagCacheWorks(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempDir)
 
-		fs := local.NewFileSystem(tempDir, "")
+		fs := fs.NewFileSystem(tempDir, "")
 
 		cannedPin := common.Pin{
 			PackageName: "pkg",

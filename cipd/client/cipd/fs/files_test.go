@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package fs
 
 import (
 	"io/ioutil"
@@ -160,7 +160,9 @@ func TestScanFileSystem(t *testing.T) {
 			writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
 			writeSymlink(tempDir, "some_file", ".cipd/pkgs/0/current/some_file")
 
-			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{})
+			files, err := ScanFileSystem(tempDir, tempDir, nil, ScanOptions{
+				SiteServiceDir: ".cipd",
+			})
 			So(err, ShouldBeNil)
 			So(len(files), ShouldEqual, 2)
 
@@ -258,7 +260,9 @@ func TestWrapFile(t *testing.T) {
 				writeSymlink(tempDir, ".cipd/pkgs/0/current", "deadbeef")
 				writeSymlink(tempDir, "some_executable", ".cipd/pkgs/0/current/some_executable")
 
-				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil, ScanOptions{})
+				out, err := WrapFile(filepath.Join(tempDir, "some_executable"), tempDir, nil, ScanOptions{
+					SiteServiceDir: ".cipd",
+				})
 				So(err, ShouldBeNil)
 				if runtime.GOOS != "windows" {
 					So(out.Executable(), ShouldBeTrue)
