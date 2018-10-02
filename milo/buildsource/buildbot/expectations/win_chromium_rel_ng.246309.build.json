@@ -32,11 +32,11 @@
       "Duration": 1176396231000
     },
     "Type": "Summary",
-    "LevelsDeep": 1,
     "Verbosity": 0,
     "Text": [
       "failed compile (with patch)"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -91,11 +91,11 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": [
         "running steps via annotated script"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -137,11 +137,11 @@
         "Duration": 11593599000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "update_scripts\u003cbr\u003egit - 0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -167,11 +167,11 @@
         "Duration": 5755625000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "setup_properties"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -206,11 +206,11 @@
         "Duration": 1088000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "setup_build\u003cbr\u003erunning recipe: \"chromium_trybot\""
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -236,11 +236,11 @@
         "Duration": 5038333000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "taskkill"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -275,11 +275,11 @@
         "Duration": 137401385000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "bot_update\u003cbr\u003e[165GB/249GB used (66%)]"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -305,11 +305,11 @@
         "Duration": 561000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "ensure_goma"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -344,11 +344,11 @@
         "Duration": 4653000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "ensure_goma.install cipd\u003cbr\u003ecipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -383,11 +383,11 @@
         "Duration": 2074000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "ensure_goma.ensure_installed"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -413,11 +413,11 @@
         "Duration": 5539419000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "swarming.py --version\u003cbr\u003e0.8.4"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -443,11 +443,11 @@
         "Duration": 9678432000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "gclient runhooks (with patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -482,11 +482,11 @@
         "Duration": 10801000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "get compile targets for scripts"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -521,11 +521,11 @@
         "Duration": 781518000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "read test spec (chromium.gpu.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.gpu.json"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -560,11 +560,11 @@
         "Duration": 5016322000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "read test spec (chromium.win.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.win.json"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -590,11 +590,11 @@
         "Duration": 24529000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "ensure git tooling on windows"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -629,11 +629,11 @@
         "Duration": 1429000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "git diff to analyze patch"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -668,11 +668,11 @@
         "Duration": 5124000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "read filter exclusion spec\u003cbr\u003epath: 'testing\\\\buildbot\\\\trybot_analyze_config.json'"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -714,11 +714,11 @@
         "Duration": 24623967000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "analyze"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -744,11 +744,11 @@
         "Duration": 6828000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "cleanup_temp"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -774,11 +774,11 @@
         "Duration": 2295000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "clean isolated files"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -813,11 +813,11 @@
         "Duration": 6081769000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "generate_build_files (with patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -852,11 +852,11 @@
         "Duration": 132432766000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": [
         "compile (with patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -882,11 +882,11 @@
         "Duration": 5053855000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "taskkill (2)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -921,11 +921,11 @@
         "Duration": 64995916000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "bot_update (without patch)\u003cbr\u003e[165GB/249GB used (66%)]"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -951,11 +951,11 @@
         "Duration": 11595619000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "gclient runhooks (without patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -990,11 +990,11 @@
         "Duration": 8347540000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "generate_build_files (without patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -1029,11 +1029,11 @@
         "Duration": 726120607000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "compile (without patch)"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -1059,11 +1059,11 @@
         "Duration": 1095000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "mark: before_tests"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -1098,11 +1098,11 @@
         "Duration": 694000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "Failure reason"
-      ]
+      ],
+      "Children": null
     }
   ],
   "PropertyGroup": [
