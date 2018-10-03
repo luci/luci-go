@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/proto/google"
 
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/common"
@@ -60,7 +61,7 @@ const (
 //
 // Does not validate instance hashes; it is caller's responsibility.
 type InstanceCache struct {
-	fs        local.FileSystem
+	fs        fs.FileSystem
 	stateLock sync.Mutex // synchronizes access to the state file.
 
 	// Defaults to instanceCacheMaxSize, mocked in tests.
@@ -72,7 +73,7 @@ type InstanceCache struct {
 // NewInstanceCache initializes InstanceCache.
 //
 // fs will be the root of the cache.
-func NewInstanceCache(fs local.FileSystem) *InstanceCache {
+func NewInstanceCache(fs fs.FileSystem) *InstanceCache {
 	return &InstanceCache{
 		fs:      fs,
 		maxSize: instanceCacheMaxSize,
@@ -82,7 +83,7 @@ func NewInstanceCache(fs local.FileSystem) *InstanceCache {
 
 type cacheFile struct {
 	*os.File
-	fs local.FileSystem
+	fs fs.FileSystem
 }
 
 // Close removes this file from the cache if corrupt is true.
@@ -354,7 +355,7 @@ func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceC
 		panic("impossible")
 	}
 
-	return local.EnsureFile(ctx, c.fs, statePath, bytes.NewReader(stateBytes))
+	return fs.EnsureFile(ctx, c.fs, statePath, bytes.NewReader(stateBytes))
 }
 
 // withState loads cache state from the state file, calls f and saves it back.

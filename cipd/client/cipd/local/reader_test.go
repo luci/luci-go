@@ -28,6 +28,7 @@ import (
 	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/cipd/common"
@@ -189,18 +190,18 @@ func TestPackageReading(t *testing.T) {
 	Convey("ExtractFiles works", t, func() {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 
-		inFiles := []File{
-			NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
-			NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
-			NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
-			NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
-			NewTestSymlink("rel_symlink", "abc"),
-			NewTestSymlink("abs_symlink", "/abc/def"),
+		inFiles := []fs.File{
+			fs.NewTestFile("testing/qwerty", "12345", fs.TestFileOpts{}),
+			fs.NewTestFile("abc", "duh", fs.TestFileOpts{Executable: true}),
+			fs.NewTestFile("writable", "write me", fs.TestFileOpts{Writable: true}),
+			fs.NewTestFile("timestamped", "I'm old", fs.TestFileOpts{ModTime: testMTime}),
+			fs.NewTestSymlink("rel_symlink", "abc"),
+			fs.NewTestSymlink("abs_symlink", "/abc/def"),
 		}
 		if runtime.GOOS == "windows" {
 			inFiles = append(inFiles,
-				NewWinTestFile("secret", "ninja", WinAttrHidden),
-				NewWinTestFile("system", "machine", WinAttrSystem),
+				fs.NewWinTestFile("secret", "ninja", fs.WinAttrHidden),
+				fs.NewWinTestFile("system", "machine", fs.WinAttrSystem),
 			)
 		}
 
@@ -344,16 +345,16 @@ func TestPackageReading(t *testing.T) {
 		// set, and always have 0 timestamp. During the extraction of such package,
 		// the writable bit should be cleared, and the timestamp should not be reset
 		// to 0 (it will be set to whatever the current time is).
-		inFiles := []File{
-			NewTestFile("testing/qwerty", "12345", TestFileOpts{Writable: true}),
-			NewTestFile("abc", "duh", TestFileOpts{Executable: true, Writable: true}),
-			NewTestSymlink("rel_symlink", "abc"),
-			NewTestSymlink("abs_symlink", "/abc/def"),
+		inFiles := []fs.File{
+			fs.NewTestFile("testing/qwerty", "12345", fs.TestFileOpts{Writable: true}),
+			fs.NewTestFile("abc", "duh", fs.TestFileOpts{Executable: true, Writable: true}),
+			fs.NewTestSymlink("rel_symlink", "abc"),
+			fs.NewTestSymlink("abs_symlink", "/abc/def"),
 		}
 		if runtime.GOOS == "windows" {
 			inFiles = append(inFiles,
-				NewWinTestFile("secret", "ninja", WinAttrHidden),
-				NewWinTestFile("system", "machine", WinAttrSystem),
+				fs.NewWinTestFile("secret", "ninja", fs.WinAttrHidden),
+				fs.NewWinTestFile("system", "machine", fs.WinAttrSystem),
 			)
 		}
 
@@ -492,7 +493,7 @@ type testDestinationFile struct {
 	writable      bool
 	modtime       time.Time
 	symlinkTarget string
-	winAttrs      WinAttrs
+	winAttrs      fs.WinAttrs
 }
 
 func (d *testDestinationFile) Close() error { return nil }
@@ -502,7 +503,7 @@ func (d *testDestination) Begin(context.Context) error {
 	return nil
 }
 
-func (d *testDestination) CreateFile(ctx context.Context, name string, opts CreateFileOptions) (io.WriteCloser, error) {
+func (d *testDestination) CreateFile(ctx context.Context, name string, opts fs.CreateFileOptions) (io.WriteCloser, error) {
 	f := &testDestinationFile{
 		name:       name,
 		executable: opts.Executable,

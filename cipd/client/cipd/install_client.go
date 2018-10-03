@@ -23,11 +23,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
 
-func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
+func (client *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
 	curStat, err := os.Stat(destination)
 	if err != nil {
 		return err

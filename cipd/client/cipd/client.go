@@ -70,6 +70,7 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
@@ -471,7 +472,7 @@ func MaybeUpdateClient(ctx context.Context, opts ClientOptions, targetVersion, c
 	}
 	impl := client.(*clientImpl)
 
-	fs := local.NewFileSystem(opts.Root, filepath.Join(opts.CacheDir, "trash"))
+	fs := fs.NewFileSystem(opts.Root, filepath.Join(opts.CacheDir, "trash"))
 	defer fs.CleanupTrash(ctx)
 
 	pin, err := impl.maybeUpdateClient(ctx, fs, targetVersion, clientExe, digests)
@@ -542,7 +543,7 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 		case client.CacheDir != "":
 			dir = client.CacheDir
 		case client.Root != "":
-			dir = filepath.Join(client.Root, local.SiteServiceDir)
+			dir = filepath.Join(client.Root, fs.SiteServiceDir)
 		default:
 			return
 		}
@@ -550,7 +551,7 @@ func (client *clientImpl) getTagCache() *internal.TagCache {
 		if err != nil {
 			panic(err) // the URL has been validated in NewClient already
 		}
-		client.tagCache = internal.NewTagCache(local.NewFileSystem(dir, ""), parsed.Host)
+		client.tagCache = internal.NewTagCache(fs.NewFileSystem(dir, ""), parsed.Host)
 	})
 	return client.tagCache
 }
@@ -564,7 +565,7 @@ func (client *clientImpl) getInstanceCache(ctx context.Context) *internal.Instan
 			return
 		}
 		path := filepath.Join(client.CacheDir, "instances")
-		client.instanceCache = internal.NewInstanceCache(local.NewFileSystem(path, ""))
+		client.instanceCache = internal.NewInstanceCache(fs.NewFileSystem(path, ""))
 		logging.Infof(ctx, "cipd: using instance cache at %q", path)
 	})
 	return client.instanceCache
@@ -753,7 +754,7 @@ func (client *clientImpl) ResolveVersion(ctx context.Context, packageName, versi
 
 // ensureClientVersionInfo is called only with the specially constructed client,
 // see MaybeUpdateClient function.
-func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.FileSystem, pin common.Pin, clientExe string) {
+func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs fs.FileSystem, pin common.Pin, clientExe string) {
 	expect, err := json.Marshal(version.Info{
 		PackageName: pin.PackageName,
 		InstanceID:  pin.InstanceID,
@@ -783,7 +784,7 @@ func (client *clientImpl) ensureClientVersionInfo(ctx context.Context, fs local.
 
 // maybeUpdateClient is called only with the specially constructed client, see
 // MaybeUpdateClient function.
-func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs local.FileSystem,
+func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSystem,
 	targetVersion, clientExe string, digests *digests.ClientDigestsFile) (common.Pin, error) {
 
 	// currentHashMatches calculates the existing client binary hash and compares

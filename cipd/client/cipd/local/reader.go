@@ -34,6 +34,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -63,7 +64,7 @@ type PackageInstance interface {
 	Pin() common.Pin
 
 	// Files returns a list of files to deploy with the package.
-	Files() []File
+	Files() []fs.File
 
 	// DataReader returns reader that reads raw package data.
 	DataReader() io.ReadSeeker
@@ -156,7 +157,7 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 //
 // If withManifest is WithoutManifest, the function will fail if the manifest is
 // among 'files' (as a precaution against unintended override of manifests).
-func ExtractFiles(ctx context.Context, files []File, dest Destination, withManifest ManifestMode) error {
+func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest ManifestMode) error {
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == ManifestName {
@@ -167,7 +168,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 
 	progress := newProgressReporter(ctx, files)
 
-	extractManifestFile := func(f File) (err error) {
+	extractManifestFile := func(f fs.File) (err error) {
 		defer progress.advance(f)
 		manifest, err := readManifestFile(f)
 		if err != nil {
@@ -200,7 +201,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 			}
 			manifest.Files = append(manifest.Files, fi)
 		}
-		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{})
+		out, err := dest.CreateFile(ctx, f.Name(), fs.CreateFileOptions{})
 		if err != nil {
 			return err
 		}
@@ -212,7 +213,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 		return writeManifest(&manifest, out)
 	}
 
-	extractSymlinkFile := func(f File) error {
+	extractSymlinkFile := func(f fs.File) error {
 		defer progress.advance(f)
 		target, err := f.SymlinkTarget()
 		if err != nil {
@@ -221,9 +222,9 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 		return dest.CreateSymlink(ctx, f.Name(), target)
 	}
 
-	extractRegularFile := func(f File) (err error) {
+	extractRegularFile := func(f fs.File) (err error) {
 		defer progress.advance(f)
-		out, err := dest.CreateFile(ctx, f.Name(), CreateFileOptions{
+		out, err := dest.CreateFile(ctx, f.Name(), fs.CreateFileOptions{
 			Executable: f.Executable(),
 			Writable:   f.Writable(),
 			ModTime:    f.ModTime(),
@@ -246,7 +247,7 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 		return err
 	}
 
-	var manifest File
+	var manifest fs.File
 	var err error
 	for _, f := range files {
 		select {
@@ -292,11 +293,11 @@ func ExtractFiles(ctx context.Context, files []File, dest Destination, withManif
 }
 
 // ExtractFilesTxn is like ExtractFiles, but it also opens and closes
-// the transaction over TransactionalDestination object.
+// the transaction over fs.TransactionalDestination object.
 //
 // It guarantees that if extraction fails for some reason, there'll be no
 // garbage laying around.
-func ExtractFilesTxn(ctx context.Context, files []File, dest TransactionalDestination, withManifest ManifestMode) (err error) {
+func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest ManifestMode) (err error) {
 	if err := dest.Begin(ctx); err != nil {
 		return err
 	}
@@ -330,7 +331,7 @@ type progressReporter struct {
 	prevReport     time.Time // time when we did the last progress report
 }
 
-func newProgressReporter(ctx context.Context, files []File) *progressReporter {
+func newProgressReporter(ctx context.Context, files []fs.File) *progressReporter {
 	r := &progressReporter{ctx: ctx, totalCount: uint64(len(files))}
 	for _, f := range files {
 		if !f.Symlink() {
@@ -346,7 +347,7 @@ func newProgressReporter(ctx context.Context, files []File) *progressReporter {
 }
 
 // advance moves the progress indicator, occasionally logging it.
-func (r *progressReporter) advance(f File) {
+func (r *progressReporter) advance(f fs.File) {
 	if r.totalCount == 0 {
 		return
 	}
@@ -388,7 +389,7 @@ type packageInstance struct {
 	data       InstanceFile
 	instanceID string
 	zip        *zip.Reader
-	files      []File
+	files      []fs.File
 	manifest   Manifest
 }
 
@@ -474,7 +475,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	if err != nil {
 		return err
 	}
-	inst.files = make([]File, len(inst.zip.File))
+	inst.files = make([]fs.File, len(inst.zip.File))
 	for i, zf := range inst.zip.File {
 		fiz := &fileInZip{z: zf}
 		if fiz.Name() == ManifestName {
@@ -506,7 +507,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 			// flag that is stored in lower 16 bits. SetMode does it for us. So we use
 			// SetMode to deal with 'msdosReadOnly' correctly, and then reapply other
 			// Windows attributes.
-			winAttrs := zf.z.ExternalAttrs & uint32(WinAttrsAll)
+			winAttrs := zf.z.ExternalAttrs & uint32(fs.WinAttrsAll)
 			zf.z.SetMode(zf.z.Mode() &^ 0222)
 			zf.z.ExternalAttrs |= winAttrs
 		}
@@ -534,7 +535,7 @@ func (inst *packageInstance) Pin() common.Pin {
 	}
 }
 
-func (inst *packageInstance) Files() []File             { return inst.files }
+func (inst *packageInstance) Files() []fs.File          { return inst.files }
 func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
 
 // IsCorruptionError returns true iff err indicates corruption.
@@ -563,7 +564,7 @@ func getHashAndSize(r io.ReadSeeker, h hash.Hash) (int64, error) {
 }
 
 // readManifestFile decodes manifest file zipped inside the package.
-func readManifestFile(f File) (Manifest, error) {
+func readManifestFile(f fs.File) (Manifest, error) {
 	r, err := f.Open()
 	if err != nil {
 		return Manifest{}, err
@@ -575,8 +576,8 @@ func readManifestFile(f File) (Manifest, error) {
 // makeVersionFile returns File representing a JSON blob with info about package
 // version. It's what's deployed at path specified in 'version_file' stanza in
 // package definition YAML.
-func makeVersionFile(relPath string, versionFile VersionFile) (File, error) {
-	if !isCleanSlashPath(relPath) {
+func makeVersionFile(relPath string, versionFile VersionFile) (fs.File, error) {
+	if !fs.IsCleanSlashPath(relPath) {
 		return nil, fmt.Errorf("invalid version_file: %s", relPath)
 	}
 	blob, err := json.MarshalIndent(versionFile, "", "  ")
@@ -589,7 +590,7 @@ func makeVersionFile(relPath string, versionFile VersionFile) (File, error) {
 	}, nil
 }
 
-// blobFile implements File on top of byte array with file data.
+// blobFile implements fs.File on top of byte array with file data.
 type blobFile struct {
 	name string
 	blob []byte
@@ -602,14 +603,14 @@ func (b *blobFile) Writable() bool                 { return false }
 func (b *blobFile) ModTime() time.Time             { return time.Time{} }
 func (b *blobFile) Symlink() bool                  { return false }
 func (b *blobFile) SymlinkTarget() (string, error) { return "", nil }
-func (b *blobFile) WinAttrs() WinAttrs             { return 0 }
+func (b *blobFile) WinAttrs() fs.WinAttrs          { return 0 }
 
 func (b *blobFile) Open() (io.ReadCloser, error) {
 	return ioutil.NopCloser(bytes.NewReader(b.blob)), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// File interface implementation via zip.File.
+// fs.File interface implementation via zip.File.
 
 type fileInZip struct {
 	z    *zip.File
@@ -632,8 +633,8 @@ func (f *fileInZip) prefetch() error {
 
 func (f *fileInZip) Name() string  { return f.z.Name }
 func (f *fileInZip) Symlink() bool { return (f.z.Mode() & os.ModeSymlink) != 0 }
-func (f *fileInZip) WinAttrs() WinAttrs {
-	return WinAttrs(f.z.ExternalAttrs) & WinAttrsAll
+func (f *fileInZip) WinAttrs() fs.WinAttrs {
+	return fs.WinAttrs(f.z.ExternalAttrs) & fs.WinAttrsAll
 }
 
 func (f *fileInZip) Executable() bool {

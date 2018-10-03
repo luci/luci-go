@@ -25,6 +25,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -129,7 +130,7 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 				return out, fmt.Errorf("'version_file' entry can be used only once")
 			}
 			versionFile = chunk.VersionFile
-			if !isCleanSlashPath(versionFile) {
+			if !fs.IsCleanSlashPath(versionFile) {
 				return out, fmt.Errorf("'version_file' must be a path relative to the package root: %s", versionFile)
 			}
 		}
@@ -146,7 +147,7 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 //
 // It uses a path to package definition file directory ('cwd' argument) to find
 // a root of the package.
-func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
+func (def *PackageDef) FindFiles(cwd string) ([]fs.File, error) {
 	// Root of the package is defined relative to package def YAML file.
 	absCwd, err := filepath.Abs(cwd)
 	if err != nil {
@@ -163,14 +164,14 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 	}
 
 	// Used to skip duplicates.
-	seen := map[string]File{}
-	add := func(f File) {
+	seen := map[string]fs.File{}
+	add := func(f fs.File) {
 		if seen[f.Name()] == nil {
 			seen[f.Name()] = f
 		}
 	}
 
-	scanOpts := ScanOptions{
+	scanOpts := fs.ScanOptions{
 		PreserveModTime:  def.PreserveModTime,
 		PreserveWritable: def.PreserveWritable,
 	}
@@ -183,7 +184,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 
 		// Individual file.
 		if chunk.File != "" {
-			file, err := WrapFile(makeAbs(chunk.File), root, nil, scanOpts)
+			file, err := fs.WrapFile(makeAbs(chunk.File), root, nil, scanOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -201,7 +202,7 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 				return nil, err
 			}
 			// Run the scan.
-			files, err := ScanFileSystem(startDir, root, exclude, scanOpts)
+			files, err := fs.ScanFileSystem(startDir, root, exclude, scanOpts)
 			if err != nil {
 				return nil, err
 			}
@@ -222,8 +223,8 @@ func (def *PackageDef) FindFiles(cwd string) ([]File, error) {
 	}
 	sort.Strings(names)
 
-	// Final sorted array of File.
-	out := make([]File, 0, len(names))
+	// Final sorted array of fs.File.
+	out := make([]fs.File, 0, len(names))
 	for _, n := range names {
 		out = append(out, seen[n])
 	}
@@ -248,7 +249,7 @@ func (def *PackageDef) VersionFile() string {
 // The predicate takes absolute native path, converts it to slash separated path
 // relative to 'startDir' and checks against list of regexps in 'patterns'.
 // Returns true to exclude a path.
-func makeExclusionFilter(startDir string, patterns []string) (ScanFilter, error) {
+func makeExclusionFilter(startDir string, patterns []string) (fs.ScanFilter, error) {
 	if len(patterns) == 0 {
 		return nil, nil
 	}

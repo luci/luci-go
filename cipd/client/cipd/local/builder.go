@@ -28,15 +28,17 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // BuildInstanceOptions defines options for BuildInstance function.
 type BuildInstanceOptions struct {
 	// Input is a list of files to add to the package.
-	Input []File
+	Input []fs.File
 
 	// Output is where to write the package file to.
 	Output io.Writer
@@ -80,8 +82,8 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 			return fmt.Errorf("can't write to %s: %s", PackageServiceDir, f.Name())
 		}
 		// Make sure no files are written to cipd's internal state directory.
-		if strings.HasPrefix(f.Name(), SiteServiceDir+"/") {
-			return fmt.Errorf("can't write to %s: %s", SiteServiceDir, f.Name())
+		if strings.HasPrefix(f.Name(), fs.SiteServiceDir+"/") {
+			return fmt.Errorf("can't write to %s: %s", fs.SiteServiceDir, f.Name())
 		}
 	}
 
@@ -108,7 +110,7 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 
 // zipInputFiles deterministically builds a zip archive out of input files and
 // writes it to the writer. Files are written in the order given.
-func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) error {
+func zipInputFiles(ctx context.Context, files []fs.File, w io.Writer, level int) error {
 	logging.Infof(ctx, "About to zip %d files with compression level %d", len(files), level)
 
 	writer := zip.NewWriter(w)
@@ -181,7 +183,7 @@ func zipInputFiles(ctx context.Context, files []File, w io.Writer, level int) er
 	return nil
 }
 
-func zipRegularFile(dst io.Writer, f File) error {
+func zipRegularFile(dst io.Writer, f fs.File) error {
 	src, err := f.Open()
 	if err != nil {
 		return err
@@ -197,7 +199,7 @@ func zipRegularFile(dst io.Writer, f File) error {
 	return nil
 }
 
-func zipSymlinkFile(dst io.Writer, f File) error {
+func zipSymlinkFile(dst io.Writer, f fs.File) error {
 	target, err := f.SymlinkTarget()
 	if err != nil {
 		return err
@@ -214,7 +216,7 @@ func zipSymlinkFile(dst io.Writer, f File) error {
 //
 // It decides based only on the file name extension. For files that have an
 // optional compression, we assume it is enabled.
-func isLikelyAlreadyCompressed(f File) bool {
+func isLikelyAlreadyCompressed(f fs.File) bool {
 	// TODO(vadimsh): We can sniff MIME type based on the content, e.g via
 	// https://bitbucket.org/taruti/mimemagic/src or http.DetectContentType. Not
 	// sure it's worth it.
@@ -294,13 +296,13 @@ var compressedExt = stringset.NewFromSlice(
 
 type manifestFile []byte
 
-func (m *manifestFile) Name() string       { return ManifestName }
-func (m *manifestFile) Size() uint64       { return uint64(len(*m)) }
-func (m *manifestFile) Executable() bool   { return false }
-func (m *manifestFile) Writable() bool     { return false }
-func (m *manifestFile) ModTime() time.Time { return time.Time{} }
-func (m *manifestFile) Symlink() bool      { return false }
-func (m *manifestFile) WinAttrs() WinAttrs { return 0 }
+func (m *manifestFile) Name() string          { return ManifestName }
+func (m *manifestFile) Size() uint64          { return uint64(len(*m)) }
+func (m *manifestFile) Executable() bool      { return false }
+func (m *manifestFile) Writable() bool        { return false }
+func (m *manifestFile) ModTime() time.Time    { return time.Time{} }
+func (m *manifestFile) Symlink() bool         { return false }
+func (m *manifestFile) WinAttrs() fs.WinAttrs { return 0 }
 
 func (m *manifestFile) SymlinkTarget() (string, error) {
 	return "", fmt.Errorf("not a symlink: %s", m.Name())
@@ -312,8 +314,8 @@ func (m *manifestFile) Open() (io.ReadCloser, error) {
 
 // makeManifestFile generates a package manifest file and returns it as
 // File interface.
-func makeManifestFile(opts BuildInstanceOptions) (File, error) {
-	if opts.VersionFile != "" && !isCleanSlashPath(opts.VersionFile) {
+func makeManifestFile(opts BuildInstanceOptions) (fs.File, error) {
+	if opts.VersionFile != "" && !fs.IsCleanSlashPath(opts.VersionFile) {
 		return nil, fmt.Errorf("version file path should be a clean path relative to a package root: %s", opts.VersionFile)
 	}
 	if err := ValidateInstallMode(opts.InstallMode); err != nil {

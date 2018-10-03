@@ -34,6 +34,7 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
@@ -1313,5 +1314,5 @@ func setupTagCache(cl *clientImpl, tempDir string, c C) {
 			os.RemoveAll(tempDir)
 		})
 	}
-	cl.tagCache = internal.NewTagCache(local.NewFileSystem(tempDir, ""), "service.example.com")
+	cl.tagCache = internal.NewTagCache(fs.NewFileSystem(tempDir, ""), "service.example.com")
 }

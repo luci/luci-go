@@ -31,10 +31,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/common"
 )
 
 // TODO(vadimsh): How to handle path conflicts between two packages? Currently
@@ -194,8 +196,8 @@ func NewDeployer(root string) Deployer {
 	if err != nil {
 		return errDeployer{err}
 	}
-	trashDir := filepath.Join(root, SiteServiceDir, "trash")
-	return &deployerImpl{NewFileSystem(root, trashDir)}
+	trashDir := filepath.Join(root, fs.SiteServiceDir, "trash")
+	return &deployerImpl{fs.NewFileSystem(root, trashDir)}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -229,7 +231,7 @@ func (d errDeployer) CleanupTrash(context.Context) {}
 // Real deployer implementation.
 
 // packagesDir is a subdirectory of site root to extract packages to.
-const packagesDir = SiteServiceDir + "/pkgs"
+const packagesDir = fs.SiteServiceDir + "/pkgs"
 
 // currentSymlink is a name of a symlink that points to latest deployed version.
 // Used on Linux and Mac.
@@ -241,7 +243,7 @@ const currentTxt = "_current.txt"
 
 // deployerImpl implements Deployer interface.
 type deployerImpl struct {
-	fs FileSystem
+	fs fs.FileSystem
 }
 
 func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error) {
@@ -272,9 +274,9 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 
 	// Skip extracting .cipd/* guts if they mistakenly ended up inside the
 	// package. Extracting them clobbers REAL guts.
-	files := make([]File, 0, len(inst.Files()))
+	files := make([]fs.File, 0, len(inst.Files()))
 	for _, f := range inst.Files() {
-		if name := f.Name(); strings.HasPrefix(name, SiteServiceDir+"/") {
+		if name := f.Name(); strings.HasPrefix(name, fs.SiteServiceDir+"/") {
 			logging.Warningf(ctx, "[non-fatal] ignoring internal file: %s", name)
 		} else {
 			files = append(files, f)
@@ -283,7 +285,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractFilesTxn(ctx, files, NewDestination(destPath, d.fs), WithManifest); err != nil {
+	if err := ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), WithManifest); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -557,9 +559,9 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 
 	// repairableFiles is subset of files in 'manifest' we are able to repair,
 	// given data we have.
-	var repairableFiles map[string]File
+	var repairableFiles map[string]fs.File
 	if params.Instance != nil {
-		repairableFiles = make(map[string]File, len(params.Instance.Files()))
+		repairableFiles = make(map[string]fs.File, len(params.Instance.Files()))
 		for _, f := range params.Instance.Files() {
 			// Ignore files not in the manifest (usually .cipd/* guts skipped during
 			// the initial deployment)
@@ -570,7 +572,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	} else {
 		// Without PackageInstance present we can repair only symlinks based on info
 		// in the manifest.
-		repairableFiles = map[string]File{}
+		repairableFiles = map[string]fs.File{}
 		for _, f := range pkg.Manifest.Files {
 			if f.Symlink != "" {
 				repairableFiles[f.Name] = &symlinkFile{name: f.Name, target: f.Symlink}
@@ -591,10 +593,10 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 
 	failed := false
 
-	// Collect corresponding []File entries and extract them into the gut
+	// Collect corresponding []fs.File entries and extract them into the gut
 	// directory. This restores all broken files and symlinks there, but doesn't
 	// yet link them to the site root.
-	repair := make([]File, 0, len(broken))
+	repair := make([]fs.File, 0, len(broken))
 	for _, name := range broken {
 		if f := repairableFiles[name]; f != nil {
 			repair = append(repair, f)
@@ -605,7 +607,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 	if len(repair) != 0 {
 		logging.Infof(ctx, "Repairing %d files...", len(repair))
-		if err := ExtractFiles(ctx, repair, ExistingDestination(pkg.instancePath, d.fs), WithoutManifest); err != nil {
+		if err := ExtractFiles(ctx, repair, fs.ExistingDestination(pkg.instancePath, d.fs), WithoutManifest); err != nil {
 			return err
 		}
 	}
@@ -644,7 +646,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 }
 
 func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, error) {
-	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
+	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), fs.SiteServiceDir, "tmp"))
 	if err != nil {
 		return nil, err
 	}
@@ -652,11 +654,11 @@ func (d *deployerImpl) TempFile(ctx context.Context, prefix string) (*os.File, e
 }
 
 func (d *deployerImpl) TempDir(ctx context.Context, prefix string, mode os.FileMode) (string, error) {
-	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), SiteServiceDir, "tmp"))
+	dir, err := d.fs.EnsureDirectory(ctx, filepath.Join(d.fs.Root(), fs.SiteServiceDir, "tmp"))
 	if err != nil {
 		return "", err
 	}
-	return tempDir(dir, prefix, mode)
+	return fs.TempDir(dir, prefix, mode)
 }
 
 func (d *deployerImpl) CleanupTrash(ctx context.Context) {
@@ -664,7 +666,7 @@ func (d *deployerImpl) CleanupTrash(ctx context.Context) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// Symlink File implementation used by RepairDeployed.
+// Symlink fs.File implementation used by RepairDeployed.
 
 type symlinkFile struct {
 	name   string
@@ -678,7 +680,7 @@ func (f *symlinkFile) Writable() bool                 { return false }
 func (f *symlinkFile) ModTime() time.Time             { return time.Time{} }
 func (f *symlinkFile) Symlink() bool                  { return true }
 func (f *symlinkFile) SymlinkTarget() (string, error) { return f.target, nil }
-func (f *symlinkFile) WinAttrs() WinAttrs             { return 0 }
+func (f *symlinkFile) WinAttrs() fs.WinAttrs          { return 0 }
 func (f *symlinkFile) Open() (io.ReadCloser, error)   { return nil, fmt.Errorf("can't open a symlink") }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -926,7 +928,7 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 		return err
 	}
 	if runtime.GOOS == "windows" {
-		return EnsureFile(
+		return fs.EnsureFile(
 			ctx, d.fs, filepath.Join(packageDir, currentTxt),
 			strings.NewReader(instanceID))
 	}
@@ -1228,7 +1230,7 @@ func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 		if err != nil {
 			return err
 		}
-		if rel == PackageServiceDir || rel == SiteServiceDir {
+		if rel == PackageServiceDir || rel == fs.SiteServiceDir {
 			return filepath.SkipDir
 		}
 		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {

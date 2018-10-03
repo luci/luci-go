@@ -14,14 +14,14 @@
 
 // +build !windows
 
-package local
+package fs
 
-import "os"
+import (
+	"syscall"
+)
 
-func setWinFileAttributes(path string, attrs WinAttrs) error {
-	return nil
-}
-
-func getWinFileAttributes(info os.FileInfo) (WinAttrs, error) {
-	return 0, nil
+func init() {
+	// We explicitly set the Umask for tests so that we can deterministically
+	// check the file modes of created files and directories.
+	syscall.Umask(022)
 }
