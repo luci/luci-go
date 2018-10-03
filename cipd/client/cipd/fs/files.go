@@ -12,22 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package fs
 
 import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/logging"
 
 	"golang.org/x/net/context"
+)
+
+const (
+	// SiteServiceDir is a name of the directory inside an installation root
+	// reserved for cipd stuff.
+	SiteServiceDir = ".cipd"
 )
 
 // File defines a single file to be added or extracted from a package.
@@ -173,6 +177,7 @@ type ScanFilter func(abs string) bool
 type ScanOptions struct {
 	// PreserveModTime when true saves the file's modification time.
 	PreserveModTime bool
+
 	// PreserveWritable when true saves the file's writable bit for either user,
 	// group or world (mask 0222), and converts it to user-only writable bit (mask
 	// 0200).
@@ -201,7 +206,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 	if err != nil {
 		return nil, err
 	}
-	if !isSubpath(dir, root) {
+	if !IsSubpath(dir, root) {
 		return nil, fmt.Errorf("scanned directory must be under root directory")
 	}
 
@@ -213,7 +218,7 @@ func ScanFileSystem(dir string, root string, exclude ScanFilter, scanOpts ScanOp
 			return err
 		}
 
-		// skip the SiteServiceDir entirely
+		// Skip the SiteServiceDir entirely.
 		if abs == svcDir {
 			return filepath.SkipDir
 		}
@@ -263,7 +268,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 	if !filepath.IsAbs(root) {
 		return nil, fmt.Errorf("expecting absolute path, got this: %q", root)
 	}
-	if !isSubpath(abs, root) {
+	if !IsSubpath(abs, root) {
 		return nil, fmt.Errorf("path %q is not under %q", abs, root)
 	}
 
@@ -297,7 +302,7 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			// relative to the symlink file itself. Store other absolute paths as
 			// they are. For example, it allows to package virtual env directory
 			// that symlinks python binary from /usr/bin.
-			if isSubpath(target, root) {
+			if IsSubpath(target, root) {
 				target, err = filepath.Rel(filepath.Dir(abs), target)
 				if err != nil {
 					return nil, err
@@ -307,14 +312,14 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 			// Only relative paths that do not go outside "root" are allowed.
 			// A package must not depend on its installation path.
 			targetAbs = filepath.Clean(filepath.Join(filepath.Dir(abs), target))
-			if !isSubpath(targetAbs, root) {
+			if !IsSubpath(targetAbs, root) {
 				return nil, fmt.Errorf(
 					"Invalid symlink %s: a relative symlink pointing to a file outside of the package root", rel)
 			}
 		}
 
 		// Symlinks with targets within SiteServiceDir get resolved as normal files.
-		if isSubpath(targetAbs, filepath.Join(root, SiteServiceDir)) {
+		if IsSubpath(targetAbs, filepath.Join(root, SiteServiceDir)) {
 			abs = targetAbs
 			info, err = os.Stat(abs)
 			if err != nil {
@@ -350,45 +355,6 @@ func WrapFile(abs string, root string, fileInfo *os.FileInfo, scanOpts ScanOptio
 	}
 
 	return nil, fmt.Errorf("not a regular file or symlink: %s", abs)
-}
-
-// isSubpath returns true if 'path' is 'root' or is inside a subdirectory of
-// 'root'. Both 'path' and 'root' should be given as a native paths. If any of
-// paths can't be converted to an absolute path returns false.
-func isSubpath(path, root string) bool {
-	path, err := filepath.Abs(filepath.Clean(path))
-	if err != nil {
-		return false
-	}
-	root, err = filepath.Abs(filepath.Clean(root))
-	if err != nil {
-		return false
-	}
-	if root == path {
-		return true
-	}
-	if root[len(root)-1] != filepath.Separator {
-		root += string(filepath.Separator)
-	}
-	return strings.HasPrefix(path, root)
-}
-
-// isCleanSlashPath returns true if path is a relative slash-separated path with
-// no '..' or '.' entries and no '\\'. Basically "a/b/c/d".
-func isCleanSlashPath(p string) bool {
-	if p == "" {
-		return false
-	}
-	if strings.ContainsRune(p, '\\') {
-		return false
-	}
-	if p != path.Clean(p) {
-		return false
-	}
-	if p[0] == '/' || p == ".." || strings.HasPrefix(p, "../") {
-		return false
-	}
-	return true
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -450,7 +416,7 @@ func (d *fsDest) numOpenFiles() (n int) {
 // should be put.
 func (d *fsDest) prepareFilePath(ctx context.Context, name string) (string, error) {
 	path := filepath.Clean(filepath.Join(d.dest, filepath.FromSlash(name)))
-	if !isSubpath(path, d.dest) {
+	if !IsSubpath(path, d.dest) {
 		return "", fmt.Errorf("invalid relative file name: %s", name)
 	}
 	if _, err := d.fs.EnsureDirectory(ctx, filepath.Dir(path)); err != nil {
@@ -581,7 +547,7 @@ func (d *fsDest) CreateSymlink(ctx context.Context, name string, target string) 
 	target = filepath.FromSlash(target)
 	if !filepath.IsAbs(target) {
 		targetAbs := filepath.Clean(filepath.Join(filepath.Dir(path), target))
-		if !isSubpath(targetAbs, d.dest) {
+		if !IsSubpath(targetAbs, d.dest) {
 			return fmt.Errorf("relative symlink is pointing outside of the destination dir: %s", name)
 		}
 	}
@@ -639,7 +605,7 @@ func (d *txnFSDest) Begin(ctx context.Context) error {
 	// trim the permissions appropriately. Note that it is not really a "private"
 	// temp dir, since it will be eventually renamed into the "public" destination
 	// that should be readable to everyone (sans umask).
-	tempDir, err := tempDir(filepath.Dir(d.dest), "", 0777)
+	tempDir, err := TempDir(filepath.Dir(d.dest), "", 0777)
 	if err != nil {
 		return err
 	}

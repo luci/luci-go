@@ -21,11 +21,11 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
 
-func (client *clientImpl) installClient(ctx context.Context, fs local.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
+func (client *clientImpl) installClient(ctx context.Context, fs fs.FileSystem, h hash.Hash, fetchURL, destination, hexDigest string) error {
 	return fs.EnsureFile(ctx, destination, func(of *os.File) error {
 		// TODO(iannucci): worry about owner/group/permissions?
 		if err := client.storage.download(ctx, fetchURL, of, h); err != nil {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package fs
 
 import (
 	"io/ioutil"
@@ -379,7 +379,10 @@ func TestReplace(t *testing.T) {
 
 // tempFileSystem returns FileSystem for tests built over a temp directory.
 func tempFileSystem() *tempFileSystemImpl {
-	return &tempFileSystemImpl{NewFileSystem(mkTempDir(), "")}
+	tempDir, err := ioutil.TempDir("", "cipd_test")
+	So(err, ShouldBeNil)
+	Reset(func() { os.RemoveAll(tempDir) })
+	return &tempFileSystemImpl{NewFileSystem(tempDir, "")}
 }
 
 type tempFileSystemImpl struct {

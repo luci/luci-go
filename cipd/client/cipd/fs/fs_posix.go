@@ -14,7 +14,7 @@
 
 // +build !windows
 
-package local
+package fs
 
 import (
 	"os"

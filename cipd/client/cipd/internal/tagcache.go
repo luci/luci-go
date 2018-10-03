@@ -26,8 +26,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
-	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -57,7 +57,7 @@ const (
 // calculates the hash of itself to see if it's actually already at that
 // instance ID.
 type TagCache struct {
-	fs      local.FileSystem
+	fs      fs.FileSystem
 	service string
 
 	lock sync.Mutex
@@ -88,7 +88,7 @@ func makeFileKey(pkg, instance, file string) fileKey {
 // NewTagCache initializes TagCache.
 //
 // fs will be the root of the cache. It will be searched for tagcache.db file.
-func NewTagCache(fs local.FileSystem, service string) *TagCache {
+func NewTagCache(fs fs.FileSystem, service string) *TagCache {
 	return &TagCache{fs: fs, service: service}
 }
 
@@ -389,5 +389,5 @@ func (c *TagCache) dumpToDisk(ctx context.Context, msg *messages.TagCache) error
 		return err
 	}
 
-	return local.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob))
+	return fs.EnsureFile(ctx, c.fs, path, bytes.NewReader(blob))
 }

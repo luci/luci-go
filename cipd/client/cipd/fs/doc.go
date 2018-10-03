@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build windows
-
-package local
-
-import (
-	"os"
-	"syscall"
-)
-
-func setWinFileAttributes(path string, attrs WinAttrs) error {
-	if attrs == 0 {
-		return nil
-	}
-	p, err := syscall.UTF16PtrFromString(path)
-	if err != nil {
-		return err
-	}
-	return syscall.SetFileAttributes(p, uint32(attrs))
-}
-
-func getWinFileAttributes(info os.FileInfo) (WinAttrs, error) {
-	raw := info.Sys().(*syscall.Win32FileAttributeData)
-	return WinAttrs(raw.FileAttributes) & WinAttrsAll, nil
-}
+// Package fs is file-system related utilities used internally by CIPD.
+package fs

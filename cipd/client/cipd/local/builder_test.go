@@ -27,6 +27,8 @@ import (
 
 	"golang.org/x/net/context"
 
+	"go.chromium.org/luci/cipd/client/cipd/fs"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -36,7 +38,7 @@ func TestBuildInstance(t *testing.T) {
 	Convey("Building empty package", t, func() {
 		out := bytes.Buffer{}
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input:            []File{},
+			Input:            []fs.File{},
 			Output:           &out,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -67,15 +69,15 @@ func TestBuildInstance(t *testing.T) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
 			return BuildInstanceOptions{
-				Input: []File{
-					NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
-					NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
-					NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
-					NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
-					NewWinTestFile("sneaky_file", "ninja", WinAttrHidden),
-					NewWinTestFile("special_file", "special", WinAttrSystem),
-					NewTestSymlink("rel_symlink", "abc"),
-					NewTestSymlink("abs_symlink", "/abc/def"),
+				Input: []fs.File{
+					fs.NewTestFile("testing/qwerty", "12345", fs.TestFileOpts{}),
+					fs.NewTestFile("abc", "duh", fs.TestFileOpts{Executable: true}),
+					fs.NewTestFile("writable", "write me", fs.TestFileOpts{Writable: true}),
+					fs.NewTestFile("timestamped", "I'm old", fs.TestFileOpts{ModTime: testMTime}),
+					fs.NewWinTestFile("sneaky_file", "ninja", fs.WinAttrHidden),
+					fs.NewWinTestFile("special_file", "special", fs.WinAttrSystem),
+					fs.NewTestSymlink("rel_symlink", "abc"),
+					fs.NewTestSymlink("abs_symlink", "/abc/def"),
 				},
 				Output:           out,
 				PackageName:      "testing",
@@ -123,14 +125,14 @@ func TestBuildInstance(t *testing.T) {
 				size:     5,
 				mode:     0400,
 				body:     []byte("ninja"),
-				winAttrs: WinAttrHidden,
+				winAttrs: fs.WinAttrHidden,
 			},
 			{
 				name:     "special_file",
 				size:     7,
 				mode:     0400,
 				body:     []byte("special"),
-				winAttrs: WinAttrSystem,
+				winAttrs: fs.WinAttrSystem,
 			},
 			{
 				name: "rel_symlink",
@@ -164,15 +166,15 @@ func TestBuildInstance(t *testing.T) {
 		testMTime := time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)
 		makeOpts := func(out io.Writer, level int) BuildInstanceOptions {
 			return BuildInstanceOptions{
-				Input: []File{
-					NewTestFile("testing/qwerty", "12345", TestFileOpts{}),
-					NewTestFile("abc", "duh", TestFileOpts{Executable: true}),
-					NewTestFile("writable", "write me", TestFileOpts{Writable: true}),
-					NewTestFile("timestamped", "I'm old", TestFileOpts{ModTime: testMTime}),
-					NewWinTestFile("sneaky_file", "ninja", WinAttrHidden),
-					NewWinTestFile("special_file", "special", WinAttrSystem),
-					NewTestSymlink("rel_symlink", "abc"),
-					NewTestSymlink("abs_symlink", "/abc/def"),
+				Input: []fs.File{
+					fs.NewTestFile("testing/qwerty", "12345", fs.TestFileOpts{}),
+					fs.NewTestFile("abc", "duh", fs.TestFileOpts{Executable: true}),
+					fs.NewTestFile("writable", "write me", fs.TestFileOpts{Writable: true}),
+					fs.NewTestFile("timestamped", "I'm old", fs.TestFileOpts{ModTime: testMTime}),
+					fs.NewWinTestFile("sneaky_file", "ninja", fs.WinAttrHidden),
+					fs.NewWinTestFile("special_file", "special", fs.WinAttrSystem),
+					fs.NewTestSymlink("rel_symlink", "abc"),
+					fs.NewTestSymlink("abs_symlink", "/abc/def"),
 				},
 				Output:           out,
 				PackageName:      "testing",
@@ -220,14 +222,14 @@ func TestBuildInstance(t *testing.T) {
 				size:     5,
 				mode:     0400,
 				body:     []byte("ninja"),
-				winAttrs: WinAttrHidden,
+				winAttrs: fs.WinAttrHidden,
 			},
 			{
 				name:     "special_file",
 				size:     7,
 				mode:     0400,
 				body:     []byte("special"),
-				winAttrs: WinAttrSystem,
+				winAttrs: fs.WinAttrSystem,
 			},
 			{
 				name: "rel_symlink",
@@ -259,9 +261,9 @@ func TestBuildInstance(t *testing.T) {
 
 	Convey("Duplicate files fail", t, func() {
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input: []File{
-				NewTestFile("a", "12345", TestFileOpts{}),
-				NewTestFile("a", "12345", TestFileOpts{}),
+			Input: []fs.File{
+				fs.NewTestFile("a", "12345", fs.TestFileOpts{}),
+				fs.NewTestFile("a", "12345", fs.TestFileOpts{}),
 			},
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
@@ -271,8 +273,8 @@ func TestBuildInstance(t *testing.T) {
 
 	Convey("Writing to service dir fails", t, func() {
 		err := BuildInstance(ctx, BuildInstanceOptions{
-			Input: []File{
-				NewTestFile(".cipdpkg/stuff", "12345", TestFileOpts{}),
+			Input: []fs.File{
+				fs.NewTestFile(".cipdpkg/stuff", "12345", fs.TestFileOpts{}),
 			},
 			Output:      &bytes.Buffer{},
 			PackageName: "testing",
@@ -315,7 +317,7 @@ type zippedFile struct {
 	mode     os.FileMode
 	modTime  time.Time
 	body     []byte
-	winAttrs WinAttrs
+	winAttrs fs.WinAttrs
 }
 
 // readZip scans zip directory and returns files it finds.
@@ -344,7 +346,7 @@ func readZip(data []byte) []zippedFile {
 			mode:     zf.Mode(),
 			modTime:  mtime,
 			body:     body,
-			winAttrs: WinAttrs(zf.ExternalAttrs) & WinAttrsAll,
+			winAttrs: fs.WinAttrs(zf.ExternalAttrs) & fs.WinAttrsAll,
 		}
 	}
 	return files

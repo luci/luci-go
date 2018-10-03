@@ -46,6 +46,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -479,7 +480,7 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		}
 
 		// Simply enumerate files in the directory.
-		files, err := local.ScanFileSystem(opts.inputDir, opts.inputDir, nil, local.ScanOptions{
+		files, err := fs.ScanFileSystem(opts.inputDir, opts.inputDir, nil, fs.ScanOptions{
 			PreserveModTime:  opts.preserveModTime,
 			PreserveWritable: opts.preserveWritable,
 		})
@@ -2377,10 +2378,10 @@ func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles 
 				if f.Executable() {
 					flags = append(flags, "+x")
 				}
-				if f.WinAttrs()&local.WinAttrHidden != 0 {
+				if f.WinAttrs()&fs.WinAttrHidden != 0 {
 					flags = append(flags, "+H")
 				}
-				if f.WinAttrs()&local.WinAttrSystem != 0 {
+				if f.WinAttrs()&fs.WinAttrSystem != 0 {
 					flags = append(flags, "+S")
 				}
 				flagText := ""

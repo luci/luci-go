@@ -15,10 +15,14 @@
 package local
 
 import (
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -258,7 +262,7 @@ func TestFindFiles(t *testing.T) {
 				files, err := pkgDef.FindFiles(cwd)
 				So(err, ShouldBeNil)
 				names := make([]string, len(files))
-				byName := make(map[string]File, len(files))
+				byName := make(map[string]fs.File, len(files))
 				for i, f := range files {
 					names[i] = f.Name()
 					byName[f.Name()] = f
@@ -330,4 +334,39 @@ func TestFindFiles(t *testing.T) {
 		})
 
 	})
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func mkDir(root string, path string) {
+	abs := filepath.Join(root, filepath.FromSlash(path))
+	err := os.MkdirAll(abs, 0777)
+	if err != nil {
+		panic("Failed to create a directory under temp directory")
+	}
+}
+
+func writeFile(root string, path string, data string, mode os.FileMode) {
+	abs := filepath.Join(root, filepath.FromSlash(path))
+	os.MkdirAll(filepath.Dir(abs), 0777)
+	err := ioutil.WriteFile(abs, []byte(data), mode)
+	if err != nil {
+		panic("Failed to write a temp file")
+	}
+}
+
+func writeSymlink(root string, path string, target string) {
+	abs := filepath.Join(root, filepath.FromSlash(path))
+	os.MkdirAll(filepath.Dir(abs), 0777)
+	err := os.Symlink(target, abs)
+	if err != nil {
+		panic("Failed to create symlink")
+	}
+}
+
+func ensureSymlinkTarget(file fs.File, target string) {
+	So(file.Symlink(), ShouldBeTrue)
+	discoveredTarget, err := file.SymlinkTarget()
+	So(err, ShouldBeNil)
+	So(discoveredTarget, ShouldEqual, target)
 }

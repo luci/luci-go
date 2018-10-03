@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package fs
 
 import (
 	"crypto/sha1"
@@ -503,7 +503,7 @@ func pseudoRand() string {
 	return digest[:12]
 }
 
-// tempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.
+// TempDir is like ioutil.TempDir(dir, ""), but uses shorter path suffixes.
 //
 // Path length is constraint resource of Windows.
 //
@@ -513,7 +513,7 @@ func pseudoRand() string {
 //
 // Additionally, this allows you to pass mode (which will respect the process
 // umask). To get ioutils.TempDir behavior, pass 0700 for the mode.
-func tempDir(dir string, prefix string, mode os.FileMode) (name string, err error) {
+func TempDir(dir string, prefix string, mode os.FileMode) (name string, err error) {
 	for i := 0; i < 1000; i++ {
 		try := filepath.Join(dir, prefix+pseudoRand())
 		err = os.Mkdir(try, mode)

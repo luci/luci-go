@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -44,7 +44,7 @@ func TestInstanceCache(t *testing.T) {
 
 		now := time.Date(2016, 1, 2, 3, 4, 5, 6, time.UTC)
 
-		fs := local.NewFileSystem(tempDir, "")
+		fs := fs.NewFileSystem(tempDir, "")
 		cache := NewInstanceCache(fs)
 		cache.maxSize = testInstanceCacheMaxSize
 
