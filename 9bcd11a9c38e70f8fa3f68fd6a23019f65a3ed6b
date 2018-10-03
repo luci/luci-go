@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a836c86_0065c58a",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-03T05:57:38Z",
+      "side": 1,
+      "message": "running",
+      "range": {
+        "startLine": 188,
+        "startChar": 30,
+        "endLine": 188,
+        "endChar": 36
+      },
+      "revId": "9bcd11a9c38e70f8fa3f68fd6a23019f65a3ed6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
