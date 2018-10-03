@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "243fbe16_147614e5",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 114,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-03T16:21:58Z",
+      "side": 1,
+      "message": "this does not have to be escaped?\n\nwe have 3 params here with some conditional logic. It might be simpler to use\nhttps://godoc.org/net/url#Values\nit has encoding built in",
+      "range": {
+        "startLine": 114,
+        "startChar": 21,
+        "endLine": 114,
+        "endChar": 35
+      },
+      "revId": "b95001de2283d1421b3f3bb5d4be680a11f2323e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
