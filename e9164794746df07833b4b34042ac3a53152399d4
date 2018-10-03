@@ -22,6 +22,30 @@
       "revId": "e9164794746df07833b4b34042ac3a53152399d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0fef8c6f_7f6be8ad",
+        "filename": "cipd/client/cli/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-03T00:44:37Z",
+      "side": 1,
+      "message": "Yeah, I couldn\u0027t decide where I want SiteServiceDir be defined. In the latest patchset I moved it to \u0027fs\u0027 package, so this field is no longer needed.",
+      "parentUuid": "dcd5c6f8_f420ed49",
+      "range": {
+        "startLine": 486,
+        "startChar": 3,
+        "endLine": 486,
+        "endChar": 42
+      },
+      "revId": "e9164794746df07833b4b34042ac3a53152399d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
