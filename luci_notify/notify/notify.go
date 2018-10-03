@@ -65,19 +65,26 @@ func createEmailTasks(c context.Context, recipients []EmailNotify, input *EmailT
 
 	// Create a task per recipient.
 	// Do not bundle multiple recipients into one task because we don't use BCC.
-	tasks := make([]*tq.Task, len(recipients))
-	for i, r := range recipients {
+	tasks := make([]*tq.Task, 0, len(recipients))
+	seen := stringset.New(len(recipients))
+	for _, r := range recipients {
 		name := r.Template
 		if name == "" {
 			name = defaultTemplate.Name
 		}
 
+		emailKey := fmt.Sprintf("%d-%s-%s", input.Build.Id, name, r.Email)
+		if seen.Has(emailKey) {
+			continue
+		}
+		seen.Add(emailKey)
+
 		task := *taskTemplates[name] // copy
 		task.Recipients = []string{r.Email}
-		tasks[i] = &tq.Task{
-			DeduplicationKey: fmt.Sprintf("%d-%s-%s", input.Build.Id, name, r.Email),
+		tasks = append(tasks, &tq.Task{
+			DeduplicationKey: emailKey,
 			Payload:          &task,
-		}
+		})
 	}
 	return tasks, nil
 }
