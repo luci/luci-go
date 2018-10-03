@@ -116,5 +116,22 @@ func TestNotify(t *testing.T) {
 				},
 			})
 		})
+
+		Convey("createEmailTasks with dup notifies", func() {
+			emailNotify := []EmailNotify{
+				{
+					Email: "jane@example.com",
+				},
+				{
+					Email: "jane@example.com",
+				},
+			}
+			tasks, err := createEmailTasks(c, emailNotify, &EmailTemplateInput{
+				Build:     &build.Build,
+				OldStatus: buildbucketpb.Status_SUCCESS,
+			})
+			So(err, ShouldBeNil)
+			So(tasks, ShouldHaveLength, 1)
+		})
 	})
 }
