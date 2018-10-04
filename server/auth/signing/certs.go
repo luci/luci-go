@@ -154,7 +154,7 @@ func FetchCertificatesForServiceAccount(c context.Context, email string) (*Publi
 		keysAndCerts := map[string]string{}
 		req := internal.Request{
 			Method: "GET",
-			URL:    robotCertURL(c) + url.QueryEscape(email),
+			URL:    robotCertURL(c) + url.PathEscape(email),
 			Out:    &keysAndCerts,
 		}
 		if err := req.Do(c); err != nil {

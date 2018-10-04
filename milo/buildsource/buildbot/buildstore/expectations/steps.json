@@ -8,11 +8,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsetup_build%2F0%2Fstdout"
       ],
       [
         "run_recipe",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
       ]
     ],
     "name": "setup_build",
@@ -40,7 +40,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmakedirs_checkout_path%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmakedirs_checkout_path%2F0%2Fstdout"
       ]
     ],
     "name": "makedirs checkout path",
@@ -66,11 +66,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbot_update%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbot_update%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbot_update%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "bot_update",
@@ -119,11 +119,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fensure_goma%2F0%2Fsteps%2Fensure_installed%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "ensure_goma.ensure_goma.ensure_installed",
@@ -149,7 +149,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fswarming.py_--version%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fswarming.py_--version%2F0%2Fstdout"
       ]
     ],
     "name": "swarming.py --version",
@@ -177,7 +177,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgclient_runhooks__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgclient_runhooks__with_patch_%2F0%2Fstdout"
       ]
     ],
     "name": "gclient runhooks (with patch)",
@@ -203,11 +203,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fget_compile_targets_for_scripts%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "get compile targets for scripts",
@@ -233,11 +233,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_test_spec__chromium.gpu.json_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_test_spec__chromium.gpu.json_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_test_spec__chromium.gpu.json_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_test_spec__chromium.gpu.json_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "read test spec (chromium.gpu.json)",
@@ -265,11 +265,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_test_spec__chromium.linux.json_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_test_spec__chromium.linux.json_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_test_spec__chromium.linux.json_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_test_spec__chromium.linux.json_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "read test spec (chromium.linux.json)",
@@ -297,11 +297,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgit_diff_to_analyze_patch%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgit_diff_to_analyze_patch%2F0%2Fstdout"
       ],
       [
         "files",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgit_diff_to_analyze_patch%2F0%2Flogs%2Ffiles%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgit_diff_to_analyze_patch%2F0%2Flogs%2Ffiles%2F0"
       ]
     ],
     "name": "git diff to analyze patch",
@@ -327,11 +327,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_filter_exclusion_spec%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_filter_exclusion_spec%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fread_filter_exclusion_spec%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fread_filter_exclusion_spec%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "read filter exclusion spec",
@@ -359,15 +359,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fanalyze%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fanalyze%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fanalyze%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fanalyze%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "analyze_details",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fanalyze%2F0%2Flogs%2Fanalyze_details%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fanalyze%2F0%2Flogs%2Fanalyze_details%2F0"
       ]
     ],
     "name": "analyze",
@@ -393,7 +393,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fclean_isolated_files%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fclean_isolated_files%2F0%2Fstdout"
       ]
     ],
     "name": "clean isolated files",
@@ -419,11 +419,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgenerate_build_files__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgenerate_build_files__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming-targets-file.txt",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgenerate_build_files__with_patch_%2F0%2Flogs%2Fswarming-targets-file.txt%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgenerate_build_files__with_patch_%2F0%2Flogs%2Fswarming-targets-file.txt%2F0"
       ]
     ],
     "name": "generate_build_files (with patch)",
@@ -449,7 +449,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcalculate_the_number_of_recommended_jobs%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcalculate_the_number_of_recommended_jobs%2F0%2Fstdout"
       ]
     ],
     "name": "calculate the number of recommended jobs",
@@ -496,7 +496,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fgoma_cache_directory%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fgoma_cache_directory%2F0%2Fstdout"
       ]
     ],
     "name": "preprocess_for_goma.preprocess_for_goma.goma cache directory",
@@ -522,7 +522,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_goma%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_goma%2F0%2Fstdout"
       ],
       [
         "cloudtail",
@@ -552,7 +552,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_cloudtail%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma%2F0%2Fsteps%2Fstart_cloudtail%2F0%2Fstdout"
       ]
     ],
     "name": "preprocess_for_goma.preprocess_for_goma.start cloudtail",
@@ -578,7 +578,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcompile__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcompile__with_patch_%2F0%2Fstdout"
       ]
     ],
     "name": "compile (with patch)",
@@ -604,7 +604,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcompile__with_patch__confirm_no-op%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcompile__with_patch__confirm_no-op%2F0%2Fstdout"
       ]
     ],
     "name": "compile (with patch) confirm no-op",
@@ -651,11 +651,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_jsonstatus%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "postprocess_for_goma.postprocess_for_goma.goma_jsonstatus",
@@ -681,7 +681,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_stat%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fgoma_stat%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma.postprocess_for_goma.goma_stat",
@@ -707,7 +707,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_goma%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_goma%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma.postprocess_for_goma.stop_goma",
@@ -733,11 +733,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fupload_log%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "compiler_proxy_log",
@@ -771,7 +771,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_cloudtail%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma%2F0%2Fsteps%2Fstop_cloudtail%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma.postprocess_for_goma.stop cloudtail",
@@ -797,7 +797,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fremove_build_metadata%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fremove_build_metadata%2F0%2Fstdout"
       ]
     ],
     "name": "remove_build_metadata",
@@ -823,11 +823,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_webkit_layout_tests_exparchive%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_webkit_layout_tests_exparchive%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_webkit_layout_tests_exparchive%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_webkit_layout_tests_exparchive%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "isolate webkit_layout_tests_exparchive",
@@ -853,11 +853,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_tests%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_tests%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_tests%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_tests%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "isolate tests",
@@ -883,7 +883,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmark%3A_before_tests%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmark:_before_tests%2F0%2Fstdout"
       ]
     ],
     "name": "mark: before_tests",
@@ -909,11 +909,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_shell_crash_test__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_shell_crash_test__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_shell_crash_test__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_shell_crash_test__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -945,11 +945,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__telemetry_perf_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__telemetry_perf_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__telemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__telemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1025,11 +1025,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__telemetry_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__telemetry_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__telemetry_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__telemetry_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1073,11 +1073,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_layout_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_layout_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_layout_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_layout_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1129,11 +1129,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__app_shell_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__app_shell_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__app_shell_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__app_shell_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1165,11 +1165,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__blink_heap_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__blink_heap_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__blink_heap_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__blink_heap_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1201,11 +1201,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__blink_platform_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__blink_platform_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__blink_platform_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__blink_platform_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1237,11 +1237,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__browser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__browser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1289,11 +1289,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_browser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_browser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1341,11 +1341,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_browser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_browser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1393,11 +1393,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__chrome_app_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__chrome_app_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__chrome_app_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__chrome_app_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1429,11 +1429,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__components_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__components_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__components_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__components_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1465,11 +1465,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_components_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_components_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1501,11 +1501,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__components_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__components_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__components_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__components_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1537,11 +1537,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_components_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_components_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1573,11 +1573,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1609,11 +1609,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_content_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_content_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1645,11 +1645,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_content_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_content_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1681,11 +1681,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1717,11 +1717,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_content_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_content_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1753,11 +1753,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_content_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_content_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1789,11 +1789,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__extensions_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__extensions_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__extensions_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__extensions_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1825,11 +1825,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1861,11 +1861,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__extensions_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__extensions_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__extensions_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__extensions_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1897,11 +1897,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__headless_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__headless_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__headless_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__headless_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1933,11 +1933,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_headless_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_headless_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -1969,11 +1969,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__headless_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__headless_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__headless_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__headless_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2005,11 +2005,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__interactive_ui_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__interactive_ui_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__interactive_ui_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__interactive_ui_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2041,11 +2041,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2077,11 +2077,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__media_blink_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__media_blink_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__media_blink_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__media_blink_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2113,11 +2113,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__services_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__services_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__services_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__services_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2149,11 +2149,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__sync_integration_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__sync_integration_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__sync_integration_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__sync_integration_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2185,11 +2185,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2221,11 +2221,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__renderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__renderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2257,11 +2257,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__site_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__site_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2293,11 +2293,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_unit_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2329,11 +2329,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2365,11 +2365,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2401,11 +2401,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2437,11 +2437,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2473,11 +2473,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2509,11 +2509,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2545,11 +2545,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2581,11 +2581,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2617,11 +2617,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2653,11 +2653,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2689,11 +2689,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -2725,11 +2725,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheck_network_annotations__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheck_network_annotations__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheck_network_annotations__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheck_network_annotations__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "check_network_annotations (with patch)",
@@ -2755,11 +2755,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheckdeps__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheckdeps__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheckdeps__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheckdeps__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "checkdeps (with patch)",
@@ -2785,11 +2785,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_lint__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_lint__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_lint__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_lint__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "webkit_lint (with patch)",
@@ -2815,11 +2815,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheckperms__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheckperms__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcheckperms__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcheckperms__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "checkperms (with patch)",
@@ -2845,23 +2845,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_shell_crash_test__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -2900,23 +2900,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_perf_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3047,7 +3047,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__telemetry_perf_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__telemetry_perf_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [telemetry_perf_unittests (with patch)]",
@@ -3073,23 +3073,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftelemetry_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3156,7 +3156,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__telemetry_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__telemetry_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [telemetry_unittests (with patch)]",
@@ -3182,23 +3182,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3314,7 +3314,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__webkit_layout_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__webkit_layout_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [webkit_layout_tests (with patch)]",
@@ -3340,7 +3340,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Farchive_webkit_tests_results%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Farchive_webkit_tests_results%2F0%2Fstdout"
       ],
       [
         "layout_test_results",
@@ -3374,15 +3374,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fapp_shell_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3419,7 +3419,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__app_shell_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__app_shell_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [app_shell_unittests (with patch)]",
@@ -3445,15 +3445,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_heap_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3490,7 +3490,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__blink_heap_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__blink_heap_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [blink_heap_unittests (with patch)]",
@@ -3516,15 +3516,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fblink_platform_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3561,7 +3561,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__blink_platform_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__blink_platform_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [blink_platform_unittests (with patch)]",
@@ -3587,15 +3587,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbrowser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3664,7 +3664,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__browser_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__browser_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [browser_tests (with patch)]",
@@ -3690,15 +3690,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_browser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3767,7 +3767,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_browser_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_browser_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_browser_tests (with patch)]",
@@ -3793,15 +3793,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_browser_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3870,7 +3870,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__site_per_process_browser_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__site_per_process_browser_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [site_per_process_browser_tests (with patch)]",
@@ -3896,15 +3896,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fchrome_app_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -3941,7 +3941,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__chrome_app_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__chrome_app_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [chrome_app_unittests (with patch)]",
@@ -3967,15 +3967,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4012,7 +4012,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__components_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__components_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [components_browsertests (with patch)]",
@@ -4038,15 +4038,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4083,7 +4083,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_components_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_components_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_components_browsertests (with patch)]",
@@ -4109,15 +4109,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcomponents_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4154,7 +4154,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__components_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__components_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [components_unittests (with patch)]",
@@ -4180,15 +4180,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_components_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4225,7 +4225,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_components_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_components_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_components_unittests (with patch)]",
@@ -4251,15 +4251,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4296,7 +4296,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__content_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__content_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [content_browsertests (with patch)]",
@@ -4322,15 +4322,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4367,7 +4367,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_content_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_content_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_content_browsertests (with patch)]",
@@ -4393,15 +4393,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4438,7 +4438,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__site_per_process_content_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__site_per_process_content_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [site_per_process_content_browsertests (with patch)]",
@@ -4464,15 +4464,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontent_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4509,7 +4509,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__content_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__content_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [content_unittests (with patch)]",
@@ -4535,15 +4535,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_content_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4580,7 +4580,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_content_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_content_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_content_unittests (with patch)]",
@@ -4606,15 +4606,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_content_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4651,7 +4651,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__site_per_process_content_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__site_per_process_content_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [site_per_process_content_unittests (with patch)]",
@@ -4677,15 +4677,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4722,7 +4722,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__extensions_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__extensions_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [extensions_browsertests (with patch)]",
@@ -4748,15 +4748,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_extensions_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4793,7 +4793,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_extensions_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_extensions_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_extensions_browsertests (with patch)]",
@@ -4819,15 +4819,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fextensions_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4864,7 +4864,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__extensions_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__extensions_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [extensions_unittests (with patch)]",
@@ -4890,15 +4890,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -4935,7 +4935,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__headless_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__headless_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [headless_browsertests (with patch)]",
@@ -4961,15 +4961,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_headless_browsertests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5006,7 +5006,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_headless_browsertests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_headless_browsertests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_headless_browsertests (with patch)]",
@@ -5032,15 +5032,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fheadless_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5077,7 +5077,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__headless_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__headless_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [headless_unittests (with patch)]",
@@ -5103,15 +5103,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finteractive_ui_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5148,7 +5148,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__interactive_ui_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__interactive_ui_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [interactive_ui_tests (with patch)]",
@@ -5174,15 +5174,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_interactive_ui_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5219,7 +5219,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_interactive_ui_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_interactive_ui_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_interactive_ui_tests (with patch)]",
@@ -5245,15 +5245,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmedia_blink_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5290,7 +5290,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__media_blink_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__media_blink_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [media_blink_unittests (with patch)]",
@@ -5316,15 +5316,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fservices_unittests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5361,7 +5361,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__services_unittests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__services_unittests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [services_unittests (with patch)]",
@@ -5387,15 +5387,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsync_integration_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5432,7 +5432,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__sync_integration_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__sync_integration_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [sync_integration_tests (with patch)]",
@@ -5458,15 +5458,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Funit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Funit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Funit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Funit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Funit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Funit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5503,7 +5503,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__unit_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__unit_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [unit_tests (with patch)]",
@@ -5529,15 +5529,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Frenderer_side_navigation_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5574,7 +5574,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_unit_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__renderer_side_navigation_unit_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [renderer_side_navigation_unit_tests (with patch)]",
@@ -5600,15 +5600,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fsite_per_process_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5645,7 +5645,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__site_per_process_unit_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__site_per_process_unit_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [site_per_process_unit_tests (with patch)]",
@@ -5671,15 +5671,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_unit_tests__with_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5716,7 +5716,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__webkit_unit_tests__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__webkit_unit_tests__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [webkit_unit_tests (with patch)]",
@@ -5742,23 +5742,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcontext_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5801,7 +5801,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__context_lost_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [context_lost_tests on NVIDIA GPU on Linux (with patch)]",
@@ -5827,23 +5827,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fdepth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5886,7 +5886,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__depth_capture_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [depth_capture_tests on NVIDIA GPU on Linux (with patch)]",
@@ -5912,23 +5912,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -5971,7 +5971,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__gpu_process_launch_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [gpu_process_launch_tests on NVIDIA GPU on Linux (with patch)]",
@@ -5997,23 +5997,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fhardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6056,7 +6056,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__hardware_accelerated_feature_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [hardware_accelerated_feature_tests on NVIDIA GPU on Linux (with patch)]",
@@ -6082,23 +6082,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Finfo_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6141,7 +6141,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__info_collection_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [info_collection_tests on NVIDIA GPU on Linux (with patch)]",
@@ -6167,23 +6167,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fmaps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6226,7 +6226,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__maps_pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [maps_pixel_test on NVIDIA GPU on Linux (with patch)]",
@@ -6252,23 +6252,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpixel_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6311,7 +6311,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__pixel_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [pixel_test on NVIDIA GPU on Linux (with patch)]",
@@ -6337,23 +6337,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fscreenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6396,7 +6396,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__screenshot_sync_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [screenshot_sync_tests on NVIDIA GPU on Linux (with patch)]",
@@ -6422,23 +6422,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftrace_test_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6481,7 +6481,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__trace_test_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [trace_test on NVIDIA GPU on Linux (with patch)]",
@@ -6507,23 +6507,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6566,7 +6566,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__webgl_conformance_tests_on_NVIDIA_GPU_on_Linux__with_patch__%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [webgl_conformance_tests on NVIDIA GPU on Linux (with patch)]",
@@ -6592,15 +6592,15 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Fstdout"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ftab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -6637,7 +6637,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FUpload_to_test-results__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FUpload_to_test-results__tab_capture_end2end_tests_on_NVIDIA_GPU_on_Linux__with_patch__on_Ubuntu_%2F0%2Fstdout"
       ]
     ],
     "name": "Upload to test-results [tab_capture_end2end_tests on NVIDIA GPU on Linux (with patch) on Ubuntu]",
@@ -6663,11 +6663,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbot_update__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbot_update__without_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fbot_update__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fbot_update__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "bot_update (without patch)",
@@ -6695,7 +6695,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgclient_runhooks__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgclient_runhooks__without_patch_%2F0%2Fstdout"
       ]
     ],
     "name": "gclient runhooks (without patch)",
@@ -6721,7 +6721,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fclean_isolated_files__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fclean_isolated_files__2_%2F0%2Fstdout"
       ]
     ],
     "name": "clean isolated files (2)",
@@ -6747,11 +6747,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgenerate_build_files__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgenerate_build_files__without_patch_%2F0%2Fstdout"
       ],
       [
         "swarming-targets-file.txt",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fgenerate_build_files__without_patch_%2F0%2Flogs%2Fswarming-targets-file.txt%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fgenerate_build_files__without_patch_%2F0%2Flogs%2Fswarming-targets-file.txt%2F0"
       ]
     ],
     "name": "generate_build_files (without patch)",
@@ -6798,7 +6798,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.goma_cache_directory__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.goma_cache_directory__2_%2F0%2Fstdout"
       ]
     ],
     "name": "preprocess_for_goma (2).preprocess_for_goma.goma cache directory (2)",
@@ -6824,7 +6824,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.start_goma__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.start_goma__2_%2F0%2Fstdout"
       ],
       [
         "cloudtail",
@@ -6854,7 +6854,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.start_cloudtail__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpreprocess_for_goma__2_%2F0%2Fsteps%2Fpreprocess_for_goma.start_cloudtail__2_%2F0%2Fstdout"
       ]
     ],
     "name": "preprocess_for_goma (2).preprocess_for_goma.start cloudtail (2)",
@@ -6880,7 +6880,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcompile__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcompile__without_patch_%2F0%2Fstdout"
       ]
     ],
     "name": "compile (without patch)",
@@ -6906,7 +6906,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fcompile__without_patch__confirm_no-op%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fcompile__without_patch__confirm_no-op%2F0%2Fstdout"
       ]
     ],
     "name": "compile (without patch) confirm no-op",
@@ -6953,11 +6953,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_jsonstatus__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_jsonstatus__2_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_jsonstatus__2_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_jsonstatus__2_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "postprocess_for_goma (2).postprocess_for_goma.goma_jsonstatus (2)",
@@ -6983,7 +6983,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_stat__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.goma_stat__2_%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma (2).postprocess_for_goma.goma_stat (2)",
@@ -7009,7 +7009,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.stop_goma__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.stop_goma__2_%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma (2).postprocess_for_goma.stop_goma (2)",
@@ -7035,11 +7035,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.upload_log__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.upload_log__2_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.upload_log__2_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.upload_log__2_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "compiler_proxy_log",
@@ -7073,7 +7073,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.stop_cloudtail__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fpostprocess_for_goma__2_%2F0%2Fsteps%2Fpostprocess_for_goma.stop_cloudtail__2_%2F0%2Fstdout"
       ]
     ],
     "name": "postprocess_for_goma (2).postprocess_for_goma.stop cloudtail (2)",
@@ -7099,11 +7099,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ffind_isolated_targets%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ffind_isolated_targets%2F0%2Fstdout"
       ],
       [
         "glob",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Ffind_isolated_targets%2F0%2Flogs%2Fglob%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Ffind_isolated_targets%2F0%2Flogs%2Fglob%2F0"
       ]
     ],
     "name": "find isolated targets",
@@ -7129,11 +7129,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_webkit_layout_tests_exparchive__2_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_webkit_layout_tests_exparchive__2_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fisolate_webkit_layout_tests_exparchive__2_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fisolate_webkit_layout_tests_exparchive__2_%2F0%2Flogs%2Fjson.output%2F0"
       ]
     ],
     "name": "isolate webkit_layout_tests_exparchive (2)",
@@ -7159,11 +7159,11 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_layout_tests__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_layout_tests__without_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fs__trigger__webkit_layout_tests__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fs__trigger__webkit_layout_tests__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "shard #0",
@@ -7215,23 +7215,23 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Fstdout"
       ],
       [
         "json.output",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fjson.output%2F0"
       ],
       [
         "swarming.summary",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fswarming.summary%2F0"
       ],
       [
         "outdir_json",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Foutdir_json%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Foutdir_json%2F0"
       ],
       [
         "step_metadata",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__without_patch_%2F0%2Flogs%2Fstep_metadata%2F0"
       ],
       [
         "shard #0 isolated out",
@@ -7314,7 +7314,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Fwebkit_layout_tests__retry_summary_%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Fwebkit_layout_tests__retry_summary_%2F0%2Fstdout"
       ]
     ],
     "name": "webkit_layout_tests (retry summary)",
@@ -7514,7 +7514,7 @@
     "logs": [
       [
         "stdout",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2Farchive_retry_summary%2F0%2Fstdout"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2Farchive_retry_summary%2F0%2Fstdout"
       ]
     ],
     "name": "archive_retry_summary",
@@ -7540,7 +7540,7 @@
     "logs": [
       [
         "reason",
-        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F%2B%2Fsteps%2FFailure_reason%2F0%2Flogs%2Freason%2F0"
+        "https://logdog.example.com/v/?s=chromium%2Fprefix%2F+%2Fsteps%2FFailure_reason%2F0%2Flogs%2Freason%2F0"
       ]
     ],
     "name": "Failure reason",
