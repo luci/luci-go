@@ -15,9 +15,8 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 

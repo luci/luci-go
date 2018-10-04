@@ -14,9 +14,7 @@
 
 package signing
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 // Signer holds private key and corresponding cert and can sign blobs.
 //

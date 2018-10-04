@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // StreamState represents the client-side state of the log stream.

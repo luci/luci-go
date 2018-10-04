@@ -15,9 +15,8 @@
 package cipd
 
 import (
+	"context"
 	"os"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/client/cipd/local"
 )

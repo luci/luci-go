@@ -15,11 +15,10 @@
 package buildbucket
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/strpair"
 )

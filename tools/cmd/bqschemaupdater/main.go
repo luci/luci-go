@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -29,7 +30,7 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/auth"

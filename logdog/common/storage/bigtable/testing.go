@@ -16,14 +16,13 @@ package bigtable
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/data/recordio"
 	"go.chromium.org/luci/common/data/treapstore"
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"golang.org/x/net/context"
 )
 
 type storageItem struct {

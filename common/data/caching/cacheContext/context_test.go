@@ -15,10 +15,10 @@
 package cacheContext
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestCacheContext(t *testing.T) {

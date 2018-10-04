@@ -15,6 +15,7 @@
 package memcache
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 	"time"
@@ -32,8 +33,6 @@ import (
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/memcache"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

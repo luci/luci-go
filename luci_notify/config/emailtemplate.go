@@ -15,11 +15,10 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

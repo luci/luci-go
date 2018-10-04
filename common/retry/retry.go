@@ -15,11 +15,11 @@
 package retry
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
 )
 
 // Stop is a sentinel value returned by a Iterator to indicate that no more

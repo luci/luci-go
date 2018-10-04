@@ -15,13 +15,13 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 

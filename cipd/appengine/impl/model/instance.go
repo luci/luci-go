@@ -15,11 +15,10 @@
 package model
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"

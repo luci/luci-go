@@ -15,11 +15,10 @@
 package policy
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/gae/filter/count"

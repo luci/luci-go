@@ -15,10 +15,10 @@
 package cryptorand
 
 import (
+	"context"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestCryptoRand(t *testing.T) {

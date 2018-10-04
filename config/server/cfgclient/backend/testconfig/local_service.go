@@ -15,14 +15,13 @@
 package testconfig
 
 import (
+	"context"
 	"net/url"
 
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
-
-	"golang.org/x/net/context"
 )
 
 // WithCommonClient installs a backend.B into the supplied Context that

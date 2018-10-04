@@ -15,6 +15,7 @@
 package buildbot
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -22,8 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"

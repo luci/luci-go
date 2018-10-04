@@ -15,11 +15,10 @@
 package cipd
 
 import (
+	"context"
 	"fmt"
 	"hash"
 	"os"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"

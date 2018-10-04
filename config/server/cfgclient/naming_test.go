@@ -15,11 +15,10 @@
 package cfgclient
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

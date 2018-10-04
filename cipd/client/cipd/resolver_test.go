@@ -15,13 +15,12 @@
 package cipd
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 

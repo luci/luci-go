@@ -15,6 +15,7 @@
 package caching
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -22,8 +23,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
-
-	"golang.org/x/net/context"
 )
 
 // Schema is the current package's cache schema.

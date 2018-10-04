@@ -15,6 +15,7 @@
 package cfgclient
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"testing"
@@ -22,8 +23,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

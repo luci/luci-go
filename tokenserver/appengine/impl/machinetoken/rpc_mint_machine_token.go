@@ -15,12 +15,13 @@
 package machinetoken
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

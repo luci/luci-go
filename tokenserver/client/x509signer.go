@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -24,8 +25,6 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/data/rand/cryptorand"
-
-	"golang.org/x/net/context"
 )
 
 // TODO(vadimsh): Adding support for ECDSA should be trivial if needed.

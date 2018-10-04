@@ -15,6 +15,7 @@
 package gitiles
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 	"net/url"
@@ -28,8 +29,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/store"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

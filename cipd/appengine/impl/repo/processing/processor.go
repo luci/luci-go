@@ -15,7 +15,7 @@
 package processing
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/cipd/appengine/impl/model"
 )

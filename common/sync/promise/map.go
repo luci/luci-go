@@ -15,9 +15,8 @@
 package promise
 
 import (
+	"context"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // Map is a map from some key to a promise that does something associated

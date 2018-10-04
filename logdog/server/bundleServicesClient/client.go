@@ -15,6 +15,7 @@
 package bundleServicesClient
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -27,8 +28,6 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/api/support/bundler"
 	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
 )
 
 // The maximum, AppEngine request size, minus 1MB for overhead.

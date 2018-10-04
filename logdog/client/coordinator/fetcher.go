@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/fetcher"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 const (

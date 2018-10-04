@@ -15,11 +15,10 @@
 package tumble
 
 import (
+	"context"
 	"testing"
 
 	ds "go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

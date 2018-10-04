@@ -15,10 +15,9 @@
 package main
 
 import (
+	"context"
 	"os"
 	"os/exec"
-
-	"golang.org/x/net/context"
 )
 
 // Runs the command in the given context and returns any error that occurred.

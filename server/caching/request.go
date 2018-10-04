@@ -15,7 +15,7 @@
 package caching
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 )

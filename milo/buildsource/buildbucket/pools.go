@@ -15,11 +15,10 @@
 package buildbucket
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	swarmbucketAPI "go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"

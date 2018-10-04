@@ -15,14 +15,13 @@
 package coordinator
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // QueryTrinary is a 3-value query option type.

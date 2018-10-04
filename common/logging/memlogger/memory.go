@@ -15,13 +15,12 @@
 package memlogger
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"reflect"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 )

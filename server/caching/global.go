@@ -15,10 +15,9 @@
 package caching
 
 import (
+	"context"
 	"errors"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // ErrCacheMiss is returned by BlobCache.Get if the requested item is missing.

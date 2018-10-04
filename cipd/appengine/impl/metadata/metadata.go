@@ -15,7 +15,7 @@
 package metadata
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )

@@ -15,9 +15,8 @@
 package config
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/common/errors"

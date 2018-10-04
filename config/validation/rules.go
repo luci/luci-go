@@ -15,12 +15,11 @@
 package validation
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/text/pattern"
 	"go.chromium.org/luci/common/errors"

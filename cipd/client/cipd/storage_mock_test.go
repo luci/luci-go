@@ -15,13 +15,12 @@
 package cipd
 
 import (
+	"context"
 	"hash"
 	"io"
 	"io/ioutil"
 	"os"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // This file has no tests, but contains definition of a mock for 'storage'

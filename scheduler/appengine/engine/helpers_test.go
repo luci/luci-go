@@ -17,6 +17,7 @@ package engine
 // This file contains helpers used by the rest of tests.
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -24,7 +25,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/impl/memory"

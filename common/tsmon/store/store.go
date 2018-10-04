@@ -16,10 +16,10 @@
 package store
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 // A Store is responsible for handling all metric data.

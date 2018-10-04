@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -22,8 +23,6 @@ import (
 	"os"
 	"regexp"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
 

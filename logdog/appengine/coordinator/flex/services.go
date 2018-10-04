@@ -15,6 +15,7 @@
 package flex
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/appengine/gaeauth/server/gaesigner"
@@ -36,8 +37,6 @@ import (
 	gcst "cloud.google.com/go/storage"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
 )
 
 const (

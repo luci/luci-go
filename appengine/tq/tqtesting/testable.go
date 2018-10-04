@@ -17,12 +17,12 @@
 package tqtesting
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/taskqueue"
 

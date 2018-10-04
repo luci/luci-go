@@ -15,10 +15,9 @@
 package splitter
 
 import (
+	"context"
 	"math/rand"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"

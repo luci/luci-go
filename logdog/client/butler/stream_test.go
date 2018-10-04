@@ -15,6 +15,7 @@
 package butler
 
 import (
+	"context"
 	"errors"
 	"io"
 	"testing"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
-	"golang.org/x/net/context"
 )
 
 type testBundlerStream struct {

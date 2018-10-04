@@ -15,8 +15,9 @@
 package venv
 
 import (
+	"context"
+
 	"github.com/danjacques/gofslock/fslock"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"

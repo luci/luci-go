@@ -17,11 +17,11 @@
 package frontend
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"

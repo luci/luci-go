@@ -15,13 +15,12 @@
 package machinetoken
 
 import (
+	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"math/big"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/auth/signing"

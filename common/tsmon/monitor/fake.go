@@ -15,8 +15,9 @@
 package monitor
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 // Fake is a fake Monitor.

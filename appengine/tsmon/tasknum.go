@@ -15,10 +15,9 @@
 package tsmon
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/service/datastore"

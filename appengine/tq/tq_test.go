@@ -16,12 +16,11 @@ package tq
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/duration"

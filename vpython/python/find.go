@@ -15,13 +15,12 @@
 package python
 
 import (
+	"context"
 	"os/exec"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/filesystem"
-
-	"golang.org/x/net/context"
 )
 
 // LookPathResult is the result of LookPathFunc.

@@ -15,6 +15,7 @@
 package certconfig
 
 import (
+	"context"
 	"crypto/sha1"
 	"crypto/x509/pkix"
 	"encoding/hex"
@@ -22,8 +23,6 @@ import (
 	"math/big"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/caching/lazyslot"

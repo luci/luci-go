@@ -5,12 +5,12 @@
 package gittest
 
 import (
+	context "context"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
 	git "go.chromium.org/luci/common/proto/git"
 	git0 "go.chromium.org/luci/milo/git"
-	context "golang.org/x/net/context"
 )
 
 // MockClient is a mock of Client interface

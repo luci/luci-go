@@ -15,6 +15,7 @@
 package testclock
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -22,7 +23,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

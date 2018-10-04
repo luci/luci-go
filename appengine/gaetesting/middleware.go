@@ -15,9 +15,8 @@
 package gaetesting
 
 import (
+	"context"
 	"flag"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/logging/gologger"

@@ -17,12 +17,11 @@
 package prpctest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http/httptest"
 	"net/url"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/router"

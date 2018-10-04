@@ -15,11 +15,11 @@
 package rpc
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"

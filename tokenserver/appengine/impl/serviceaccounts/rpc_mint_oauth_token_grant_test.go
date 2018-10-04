@@ -15,11 +15,10 @@
 package serviceaccounts
 
 import (
+	"context"
 	"net"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 

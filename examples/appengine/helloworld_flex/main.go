@@ -15,9 +15,8 @@
 package main
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaemiddleware/flex"
 	"go.chromium.org/luci/common/data/rand/mathrand"

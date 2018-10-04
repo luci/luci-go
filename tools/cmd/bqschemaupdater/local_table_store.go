@@ -15,10 +15,11 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"cloud.google.com/go/bigquery"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/googleapi"
 )
 

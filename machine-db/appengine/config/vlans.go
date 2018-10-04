@@ -15,9 +15,8 @@
 package config
 
 import (
+	"context"
 	"net"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

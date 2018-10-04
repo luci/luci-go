@@ -15,6 +15,7 @@
 package services
 
 import (
+	"context"
 	"sync"
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"github.com/golang/protobuf/proto"
-
-	"golang.org/x/net/context"
 )
 
 // The maximum, AppEngine response size, minus 1MB for overhead.

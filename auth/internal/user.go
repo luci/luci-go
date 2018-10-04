@@ -15,10 +15,10 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/gcloud/googleoauth"

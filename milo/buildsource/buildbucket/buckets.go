@@ -15,13 +15,12 @@
 package buildbucket
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/api/buildbucket/swarmbucket/v1"

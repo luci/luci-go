@@ -15,12 +15,11 @@
 package authdb
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/caching/lazyslot"

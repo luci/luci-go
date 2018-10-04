@@ -15,6 +15,7 @@
 package gitiles
 
 import (
+	"context"
 	"regexp"
 	"strings"
 	"sync"
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/config/validation"
-	"golang.org/x/net/context"
 )
 
 // RefSet efficiently resolves many refs, supporting regexps.

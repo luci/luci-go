@@ -15,12 +15,11 @@
 package application
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython/python"
 

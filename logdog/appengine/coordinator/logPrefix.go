@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 const (

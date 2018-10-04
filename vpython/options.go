@@ -15,9 +15,8 @@
 package vpython
 
 import (
+	"context"
 	"os"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"

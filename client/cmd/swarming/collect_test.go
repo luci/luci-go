@@ -15,11 +15,10 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	googleapi "google.golang.org/api/googleapi"
 

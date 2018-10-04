@@ -15,10 +15,9 @@
 package gaemiddleware
 
 import (
+	"context"
 	"net/http"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
 	"go.chromium.org/gae/filter/featureBreaker"

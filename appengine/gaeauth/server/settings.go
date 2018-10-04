@@ -15,13 +15,12 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"html/template"
 	"net/url"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"

@@ -15,6 +15,8 @@
 package registration
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
@@ -23,7 +25,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 

@@ -15,13 +15,13 @@
 package pubsub
 
 import (
+	"context"
+
 	"cloud.google.com/go/pubsub"
 	vkit "cloud.google.com/go/pubsub/apiv1"
 	gax "github.com/googleapis/gax-go"
 	"go.chromium.org/luci/common/logging"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
-
-	"golang.org/x/net/context"
 )
 
 // Publisher is a generic interface to something that can publish Pub/Sub

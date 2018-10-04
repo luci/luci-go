@@ -16,6 +16,7 @@ package streamserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-	"golang.org/x/net/context"
 )
 
 // handshakeProtocol is an implementation of a Butler handshake protocol V1

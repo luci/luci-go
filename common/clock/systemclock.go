@@ -15,9 +15,8 @@
 package clock
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Implementation of Clock that uses Go's standard library.

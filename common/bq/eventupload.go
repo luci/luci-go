@@ -16,6 +16,7 @@ package bq
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"reflect"
@@ -23,8 +24,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/jsonpb"

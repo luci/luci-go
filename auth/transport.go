@@ -15,9 +15,8 @@
 package auth
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 )
 
 // NewModifyingTransport returns a transport that can modify headers of

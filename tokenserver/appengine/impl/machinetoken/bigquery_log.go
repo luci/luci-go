@@ -15,10 +15,10 @@
 package machinetoken
 
 import (
+	"context"
 	"fmt"
 	"net"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/tokenserver/api"

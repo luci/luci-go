@@ -16,6 +16,7 @@ package coordinator
 
 import (
 	"bytes"
+	"context"
 	"testing"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

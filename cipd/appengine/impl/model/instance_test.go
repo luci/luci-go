@@ -15,13 +15,14 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
 	"time"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"

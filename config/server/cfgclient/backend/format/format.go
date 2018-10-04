@@ -19,11 +19,11 @@
 package format
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
-
-	"golang.org/x/net/context"
 )
 
 // Backend is a backend.B implementation that applies Formatter

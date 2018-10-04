@@ -15,12 +15,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/grpc/prpc/talk/buildbot/proto"
-	"golang.org/x/net/context"
 )
 
 func main() {

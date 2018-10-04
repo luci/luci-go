@@ -15,13 +15,13 @@
 package buildstore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
 	"go.chromium.org/luci/common/errors"

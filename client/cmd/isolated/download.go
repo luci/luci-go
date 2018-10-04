@@ -15,12 +15,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"github.com/maruel/subcommands"
 

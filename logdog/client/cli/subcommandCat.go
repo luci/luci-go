@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"context"
 	"io"
 	"os"
 	"strconv"
@@ -34,7 +35,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 var errDatagramNotSupported = errors.New("datagram not supported")

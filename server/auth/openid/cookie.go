@@ -15,6 +15,7 @@
 package openid
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/tokens"
-	"golang.org/x/net/context"
 )
 
 // sessionCookieName is actual cookie name to set.

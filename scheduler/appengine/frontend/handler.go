@@ -23,6 +23,7 @@
 package frontend
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -30,7 +31,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/info"

@@ -15,10 +15,9 @@
 package logging
 
 import (
+	"context"
 	"errors"
 	"flag"
-
-	"golang.org/x/net/context"
 )
 
 // Level is an enumeration consisting of supported log levels.

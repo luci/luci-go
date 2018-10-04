@@ -16,6 +16,7 @@ package venv
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -27,7 +28,6 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/python"

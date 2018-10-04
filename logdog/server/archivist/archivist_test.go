@@ -15,6 +15,7 @@
 package archivist
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -35,7 +36,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 
 	. "github.com/smartystreets/goconvey/convey"

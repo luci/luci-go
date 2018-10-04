@@ -19,12 +19,11 @@
 package cryptorand
 
 import (
+	"context"
 	crypto "crypto/rand"
 	"io"
 	math "math/rand"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 var key = "holds crypto.Reader for cryptorand"

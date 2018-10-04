@@ -15,7 +15,8 @@
 package model
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"

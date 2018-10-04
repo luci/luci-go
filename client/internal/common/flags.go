@@ -15,6 +15,7 @@
 package common
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"io"
@@ -22,8 +23,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"

@@ -15,12 +15,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

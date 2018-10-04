@@ -15,12 +15,12 @@
 package delegation
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

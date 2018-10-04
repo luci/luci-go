@@ -15,11 +15,10 @@
 package pprof
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"html/template"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/portal"
 )

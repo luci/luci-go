@@ -43,12 +43,11 @@
 package distributor
 
 import (
+	"context"
 	"net/http"
 	"time"
 
 	dm "go.chromium.org/luci/dm/api/service/v1"
-
-	"golang.org/x/net/context"
 )
 
 // Token is an opaque token that a distributor should use to

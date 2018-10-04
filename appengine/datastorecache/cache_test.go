@@ -15,6 +15,7 @@
 package datastorecache
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -25,8 +26,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -15,6 +15,8 @@
 package mutate
 
 import (
+	"context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/data/bit_field"
 	"go.chromium.org/luci/common/errors"
@@ -23,7 +25,7 @@ import (
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 )
 

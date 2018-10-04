@@ -15,6 +15,8 @@
 package services
 
 import (
+	"context"
+
 	ds "go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
@@ -27,8 +29,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 // LoadStream loads the log stream state.

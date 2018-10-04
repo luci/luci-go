@@ -15,11 +15,10 @@
 package buildbucket
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"

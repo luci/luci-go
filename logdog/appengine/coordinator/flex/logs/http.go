@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"image/color"
@@ -26,8 +27,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"

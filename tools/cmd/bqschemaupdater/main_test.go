@@ -15,11 +15,11 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"testing"
 
 	"cloud.google.com/go/bigquery"
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"

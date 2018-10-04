@@ -15,6 +15,7 @@
 package deps
 
 import (
+	"context"
 	"os"
 
 	"github.com/golang/protobuf/proto"
@@ -24,7 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )

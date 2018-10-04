@@ -15,11 +15,10 @@
 package templates
 
 import (
+	"context"
 	"errors"
 	"html/template"
 	"io"
-
-	"golang.org/x/net/context"
 )
 
 var (

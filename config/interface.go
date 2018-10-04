@@ -15,10 +15,9 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"net/url"
-
-	"golang.org/x/net/context"
 )
 
 // ErrNoConfig is returned if requested config does not exist.

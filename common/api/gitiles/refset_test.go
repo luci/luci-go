@@ -15,6 +15,7 @@
 package gitiles
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -22,7 +23,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/gitiles"
 	"go.chromium.org/luci/config/validation"
-	"golang.org/x/net/context"
 )
 
 func TestRefSet(t *testing.T) {

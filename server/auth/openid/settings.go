@@ -15,10 +15,9 @@
 package openid
 
 import (
+	"context"
 	"errors"
 	"html/template"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"

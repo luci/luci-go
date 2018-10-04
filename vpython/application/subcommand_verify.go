@@ -15,8 +15,9 @@
 package application
 
 import (
+	"context"
+
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 	"go.chromium.org/luci/vpython/spec"

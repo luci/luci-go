@@ -15,11 +15,11 @@
 package rawpresentation
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"

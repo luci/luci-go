@@ -15,9 +15,8 @@
 package retry
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // ExponentialBackoff is an Iterator implementation that implements exponential

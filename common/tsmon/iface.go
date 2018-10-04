@@ -15,11 +15,10 @@
 package tsmon
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/errors"

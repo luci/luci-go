@@ -15,7 +15,7 @@
 package mapper
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/gae/service/datastore"
 

@@ -15,11 +15,11 @@
 package clock
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestTimerResult(t *testing.T) {

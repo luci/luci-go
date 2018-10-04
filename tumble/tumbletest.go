@@ -15,6 +15,7 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/logging/memlogger"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/settings"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"

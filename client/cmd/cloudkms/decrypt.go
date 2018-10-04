@@ -15,11 +15,12 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"time"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
+
 	cloudkms "google.golang.org/api/cloudkms/v1"
 
 	"go.chromium.org/luci/auth"

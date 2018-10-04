@@ -16,11 +16,10 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 var testTransportKey = "testTransport"

@@ -16,11 +16,10 @@
 package ui
 
 import (
+	"context"
 	"html/template"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 

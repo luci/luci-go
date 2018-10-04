@@ -15,6 +15,7 @@
 package fetcher
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -26,7 +27,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/renderer"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 const (

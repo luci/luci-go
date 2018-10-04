@@ -15,11 +15,10 @@
 package gaeconfig
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/server/settings"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

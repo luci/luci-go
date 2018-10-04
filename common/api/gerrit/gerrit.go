@@ -16,6 +16,7 @@ package gerrit
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,7 +27,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
-	"golang.org/x/net/context"
+
 	"golang.org/x/net/context/ctxhttp"
 )
 

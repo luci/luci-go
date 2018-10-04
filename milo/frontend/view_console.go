@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -26,7 +27,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/gae/service/urlfetch"

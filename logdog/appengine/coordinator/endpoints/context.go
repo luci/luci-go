@@ -14,9 +14,7 @@
 
 package endpoints
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 var servicesKey = "LogDog AppEngine Classic Services"
 

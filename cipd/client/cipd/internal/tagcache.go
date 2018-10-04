@@ -16,12 +16,11 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"os"
 	"sort"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 

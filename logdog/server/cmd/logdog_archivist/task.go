@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -23,7 +24,6 @@ import (
 
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 // pubsubArchiveTask implements the archivist.Task interface for a ArchiveTask

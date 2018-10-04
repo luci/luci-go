@@ -15,6 +15,7 @@
 package buildbot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,8 +25,6 @@ import (
 	"sort"
 	"strconv"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"

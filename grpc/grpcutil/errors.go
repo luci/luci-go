@@ -15,9 +15,8 @@
 package grpcutil
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

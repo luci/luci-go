@@ -15,9 +15,8 @@
 package tumble
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

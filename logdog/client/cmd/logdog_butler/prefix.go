@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -23,7 +24,6 @@ import (
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 const (

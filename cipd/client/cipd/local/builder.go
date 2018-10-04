@@ -18,6 +18,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/flate"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,8 +26,6 @@ import (
 	"path"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"

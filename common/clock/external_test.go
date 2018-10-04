@@ -15,11 +15,11 @@
 package clock
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 // testClock is a Clock implementation used for testing.

@@ -15,6 +15,7 @@
 package services
 
 import (
+	"context"
 	"crypto/subtle"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -32,8 +33,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 func buildLogStreamState(ls *coordinator.LogStream, lst *coordinator.LogStreamState) *logdog.LogStreamState {

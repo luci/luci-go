@@ -15,10 +15,9 @@
 package upload
 
 import (
+	"context"
 	"strconv"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"

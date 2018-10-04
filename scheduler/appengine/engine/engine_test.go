@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -23,7 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/filter/featureBreaker"

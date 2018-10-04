@@ -15,6 +15,7 @@
 package textproto
 
 import (
+	"context"
 	"testing"
 
 	configPB "go.chromium.org/luci/common/proto/config"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/format"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

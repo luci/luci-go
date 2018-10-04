@@ -16,6 +16,7 @@ package collector
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

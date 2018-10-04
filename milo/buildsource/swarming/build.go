@@ -16,6 +16,7 @@ package swarming
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,8 +27,6 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"github.com/golang/protobuf/ptypes"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket/proto"
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"

@@ -15,13 +15,14 @@
 package frontend
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/appengine/gaeauth/server"

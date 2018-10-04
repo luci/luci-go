@@ -20,11 +20,10 @@
 package certchecker
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

@@ -15,12 +15,13 @@
 package delegation
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

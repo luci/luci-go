@@ -16,6 +16,7 @@ package coordinatorTest
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 // TestSecret returns a testing types.StreamPrefix.

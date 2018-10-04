@@ -18,12 +18,12 @@
 package testsecrets
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"sync"
 
 	"go.chromium.org/luci/server/secrets"
-	"golang.org/x/net/context"
 )
 
 // Store implements secrets.Store in the simplest way possible using memory as

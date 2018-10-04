@@ -15,6 +15,7 @@
 package vpython
 
 import (
+	"context"
 	"os"
 	"os/exec"
 
@@ -24,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/exitcode"
-
-	"golang.org/x/net/context"
 )
 
 // systemSpecificLaunch launches the process described by "cmd" while ensuring

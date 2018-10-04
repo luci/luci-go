@@ -15,6 +15,7 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"strconv"
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"
-	"golang.org/x/net/context"
 )
 
 const (

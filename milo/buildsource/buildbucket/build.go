@@ -15,6 +15,7 @@
 package buildbucket
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -22,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

@@ -15,9 +15,11 @@
 package cipd
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"

@@ -15,11 +15,10 @@
 package coordinator
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"golang.org/x/net/context"
 )
 
 // SigningStorage is an interface to storage used by the Coordinator.

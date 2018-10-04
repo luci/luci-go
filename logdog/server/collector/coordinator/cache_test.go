@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -14,9 +14,7 @@
 
 package flex
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 var servicesKey = "LogDog AppEngine Flex Services"
 

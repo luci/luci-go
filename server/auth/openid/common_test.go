@@ -15,13 +15,12 @@
 package openid
 
 import (
+	"context"
 	"crypto/rsa"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/signing/signingtest"
 )

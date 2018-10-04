@@ -15,11 +15,10 @@
 package serviceaccounts
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/luci/common/clock"

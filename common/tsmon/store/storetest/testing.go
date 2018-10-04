@@ -16,6 +16,7 @@
 package storetest
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/common/tsmon/target"
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	pb "go.chromium.org/luci/common/tsmon/ts_mon_proto"

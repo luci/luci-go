@@ -16,6 +16,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
 

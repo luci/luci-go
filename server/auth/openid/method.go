@@ -15,14 +15,13 @@
 package openid
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
