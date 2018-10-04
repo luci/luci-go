@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a8d33b9d_e66dd08d",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-04T20:27:31Z",
+      "side": 1,
+      "message": "You can increment this for substeps.  It only says \"always be 0\" because we didn\u0027t support rendering nested steps before.",
+      "revId": "7396cb670deff5e8608c7945d5d4dfd652433b00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4227fc73_89abd618",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-04T20:27:31Z",
+      "side": 1,
+      "message": "This isn\u0027t always true in Chromium, take this build for example:\nhttps://ci.chromium.org/p/chromium/builders/luci.chromium.try/layout_test_leak_detection/51\n\nWhile some steps are red, the recipe decided that because unpatching and re-running the test also produced a red result, the overall build status is green.\nThis won\u0027t manifest itself in the buildbucket based pages, but will in the swarming, raw pages and the buildinfo endpoint.\n\nI think it\u0027d be safer to not do this for the Summary.  (miloBuildStep is run twice, once for the overall summary, once for steps).",
+      "revId": "7396cb670deff5e8608c7945d5d4dfd652433b00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
