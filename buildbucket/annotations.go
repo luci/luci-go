@@ -288,7 +288,7 @@ func (p *stepConverter) convertLogdogLink(log *annotpb.LogdogStream, viewUrl boo
 	}
 	path := fmt.Sprintf("%s/+/%s", prefix, log.Name)
 	if viewUrl {
-		return fmt.Sprintf("https://%s/v/?s=%s", host, url.QueryEscape(path))
+		return fmt.Sprintf("https://%s/v/?s=%s", host, url.PathEscape(path))
 	}
 	return fmt.Sprintf("logdog://%s/%s", host, path)
 }

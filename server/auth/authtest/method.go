@@ -43,10 +43,10 @@ func (m FakeAuth) Authenticate(context.Context, *http.Request) (*auth.User, erro
 
 // LoginURL returns fake login URL.
 func (m FakeAuth) LoginURL(c context.Context, dest string) (string, error) {
-	return "http://fake.example.com/login?dest=" + url.QueryEscape(dest), nil
+	return "http://fake.example.com/login?dest=" + url.PathEscape(dest), nil
 }
 
 // LogoutURL returns fake logout URL.
 func (m FakeAuth) LogoutURL(c context.Context, dest string) (string, error) {
-	return "http://fake.example.com/logout?dest=" + url.QueryEscape(dest), nil
+	return "http://fake.example.com/logout?dest=" + url.PathEscape(dest), nil
 }

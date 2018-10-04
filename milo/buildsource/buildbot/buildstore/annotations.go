@@ -223,7 +223,7 @@ func (ac *annotationConverter) log(src *miloProto.Link) (*buildbot.Log, error) {
 		if stream.Prefix == "" {
 			stream.Prefix = ac.logdogPrefix
 		}
-		log.URL = fmt.Sprintf("https://%s/v/?s=%s", stream.Server, url.QueryEscape(stream.Prefix+"/+/"+stream.Name))
+		log.URL = fmt.Sprintf("https://%s/v/?s=%s", stream.Server, url.PathEscape(stream.Prefix+"/+/"+stream.Name))
 
 	case *miloProto.Link_Url:
 		log.URL = v.Url
