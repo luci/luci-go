@@ -44,6 +44,8 @@ message Notifier {
 
 // Notification specifies the triggers to watch for and send
 // notifications on. It also specifies email recipients.
+//
+// Next ID: 8.
 message Notification {
   // Email is a message representing a set of mail recipients (email
   // addresses).
@@ -67,21 +69,17 @@ message Notification {
     repeated string repository_whitelist = 1;
   }
 
-  // OnSuccess specifies a trigger to notify recipients on each build success.
-  //
-  // Optional.
+  // Notify on each build success.
   bool on_success = 1;
 
-  // OnFailure specifies a trigger to notify recipients on each build failure.
-  //
-  // Optional.
+  // Notify on each build failure.
   bool on_failure = 2;
 
-  // OnChange specifies a trigger to notify recipients if the builder's
-  // previous build had a different result than the most recent build.
-  //
-  // Optional.
+  // Notify on each build status different than the previous one.
   bool on_change = 3;
+
+  // Notify on each build failure unless the previous build was a failure.
+  bool on_new_failure = 7;
 
   // Email is the set of email addresses to notify.
   //
