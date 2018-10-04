@@ -19,20 +19,6 @@ import (
 )
 
 // Validate returns an error if r is invalid.
-func (r *CheckAccessRequest) Validate() error {
-	switch {
-	case r.Project == "":
-		return errors.New("project is required")
-	case r.Permission == "":
-		return errors.New("permission is required")
-	case r.Account == "":
-		return errors.New("account is required")
-	default:
-		return nil
-	}
-}
-
-// Validate returns an error if r is invalid.
 func (r *GetChangeRequest) Validate() error {
 	switch {
 	case r.Number <= 0:

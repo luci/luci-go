@@ -40,8 +40,8 @@ func TestGetChange(t *testing.T) {
 			srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
 			defer srv.Close()
 
-			_, err := c.CheckAccess(ctx, &gerritpb.CheckAccessRequest{})
-			So(err, ShouldErrLike, "request is invalid: project is required")
+			_, err := c.GetChange(ctx, &gerritpb.GetChangeRequest{})
+			So(err, ShouldErrLike, "number must be positive")
 		})
 
 		req := &gerritpb.GetChangeRequest{Number: 1}
@@ -103,60 +103,6 @@ func TestGetChange(t *testing.T) {
 					[]string{"DETAILED_ACCOUNTS", "ALL_COMMITS"},
 				)
 			})
-		})
-	})
-}
-
-func TestCheckAccess(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
-
-	Convey("CheckAccess validate args", t, func() {
-		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {})
-		defer srv.Close()
-		_, err := c.CheckAccess(ctx, &gerritpb.CheckAccessRequest{})
-		So(err, ShouldErrLike, "project is required")
-
-		_, err = c.CheckAccess(ctx, &gerritpb.CheckAccessRequest{Project: "p"})
-		So(err, ShouldErrLike, "permission is required")
-
-		_, err = c.CheckAccess(ctx, &gerritpb.CheckAccessRequest{Project: "p", Permission: "read"})
-		So(err, ShouldErrLike, "account is required")
-	})
-
-	req := gerritpb.CheckAccessRequest{Project: "foo/bar", Permission: "read", Account: "a@example.com"}
-
-	Convey("CheckAccess lack of ViewAccess permission", t, func() {
-		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(403)
-		})
-		defer srv.Close()
-		_, err := c.CheckAccess(ctx, &req)
-		s, ok := status.FromError(err)
-		So(ok, ShouldBeTrue)
-		So(s.Code(), ShouldEqual, codes.PermissionDenied)
-	})
-
-	Convey("CheckAccess happy path", t, func() {
-		var status int
-		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(200)
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `)]}'{ "status": %d }`, status)
-		})
-		defer srv.Close()
-
-		Convey("Allowed", func() {
-			status = 200
-			res, err := c.CheckAccess(ctx, &req)
-			So(err, ShouldBeNil)
-			So(res.Status, ShouldEqual, gerritpb.CheckAccessResponse_ALLOWED)
-		})
-		Convey("Forbidden", func() {
-			status = 403
-			res, err := c.CheckAccess(ctx, &req)
-			So(err, ShouldBeNil)
-			So(res.Status, ShouldEqual, gerritpb.CheckAccessResponse_FORBIDDEN)
 		})
 	})
 }

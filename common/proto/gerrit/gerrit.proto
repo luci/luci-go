@@ -19,16 +19,6 @@ package gerrit;
 service Gerrit {
   // Loads a change by id.
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
-
-  // Checks if a user has a permission on given repo and ref.
-  //
-  // Using this API requires ViewAccess capability on Gerrit server.
-  // If and only if the caller doesn't have such capability, the result is error
-  // forbidden.
-  //
-  // Note, providing non-existent project name is not an error, but resulting
-  // CheckAccessResponse will state that project was not found.
-  rpc CheckAccess(CheckAccessRequest) returns (CheckAccessResponse) {};
 }
 
 // Specifies what extra information to include in the response.
@@ -115,48 +105,6 @@ message GetChangeRequest {
 
   // What to include in the response.
   repeated QueryOption options = 2;
-}
-
-// Request message for gerrit.CheckAccess.
-message CheckAccessRequest {
-  // Gerrit project, e.g. "chromium/src" part in
-  // https://chromium.googlesource.com/chromium/src/+/master
-  // Required.
-  string project = 1;
-  // The ref for which to check access.
-  // Required for most permissions.
-  string ref = 2;
-  // Gerrit permission.
-  //
-  // Frequently checked permissions are:
-  //  * read
-  //  * push
-  //  * label-<Label>-<Name> (e.g., label-Code-Review)
-  //  * submit
-  // For others, consult Gerrit docs:
-  // https://gerrit-review.googlesource.com/Documentation/access-control.html#access_categories
-  //
-  // Required.
-  string permission = 3;
-  // Gerrit account identifier such as email or account_id.
-  string account = 4;
-}
-
-// Response message for gerrit.CheckAccess.
-message CheckAccessResponse {
-  enum Status {
-    // ALLOWED means user has the permission being checked.
-    ALLOWED = 0;
-    // FORBIDDEN means user does not have the permission being checked.
-    FORBIDDEN = 1;
-    // PROJECT_NOT_FOUND means project doesn't exist.
-    PROJECT_NOT_FOUND = 2;
-  }
-
-  // Status is the status of the inquery.
-  Status status = 1;
-  // Reason is human readable clarifying message if not allowed.
-  string reason = 2;
 }
 
 // Information about an account.
