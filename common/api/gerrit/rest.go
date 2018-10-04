@@ -79,7 +79,6 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	}
 
 	var resp changeInfo
-	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
 	path := fmt.Sprintf("/changes/%d", req.Number)
 
 	params := url.Values{}

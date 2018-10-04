@@ -83,8 +83,7 @@ func (c *client) Log(ctx context.Context, req *gitiles.LogRequest, opts ...grpc.
 	if req.ExcludeAncestorsOf != "" {
 		ref = fmt.Sprintf("%s..%s", req.ExcludeAncestorsOf, req.Committish)
 	}
-	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
-	path := fmt.Sprintf("/%s/+log/%s", url.QueryEscape(req.Project), url.QueryEscape(ref))
+	path := fmt.Sprintf("/%s/+log/%s", url.PathEscape(req.Project), url.PathEscape(ref))
 	var resp struct {
 		Log  []commit `json:"log"`
 		Next string   `json:"next"`
@@ -114,8 +113,7 @@ func (c *client) Refs(ctx context.Context, req *gitiles.RefsRequest, opts ...grp
 
 	refsPath := strings.TrimRight(req.RefsPath, "/")
 
-	// TODO(tandrii): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
-	path := fmt.Sprintf("/%s/+%s", url.QueryEscape(req.Project), url.QueryEscape(refsPath))
+	path := fmt.Sprintf("/%s/+%s", url.PathEscape(req.Project), url.PathEscape(refsPath))
 
 	resp := map[string]struct {
 		Value  string `json:"value"`
