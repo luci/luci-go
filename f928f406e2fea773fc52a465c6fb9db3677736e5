@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8d797590_0f845989",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-04T01:15:56Z",
+      "side": 0,
+      "message": "hanwen@ so if project actually doesn\u0027t exist (or caller itself doesn\u0027t have ACLs to see it), what will happen?",
+      "range": {
+        "startLine": 130,
+        "startChar": 1,
+        "endLine": 131,
+        "endChar": 61
+      },
+      "revId": "f928f406e2fea773fc52a465c6fb9db3677736e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
