@@ -22,6 +22,30 @@
       "revId": "9bcd11a9c38e70f8fa3f68fd6a23019f65a3ed6b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20bd9947_7312768a",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-04T19:48:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a836c86_0065c58a",
+      "range": {
+        "startLine": 188,
+        "startChar": 30,
+        "endLine": 188,
+        "endChar": 36
+      },
+      "revId": "9bcd11a9c38e70f8fa3f68fd6a23019f65a3ed6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
