@@ -15,6 +15,8 @@
 package swarming
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	miloProto "go.chromium.org/luci/common/proto/milo"
@@ -22,8 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
-
-	"golang.org/x/net/context"
 )
 
 // BuildInfoProvider provides build information.

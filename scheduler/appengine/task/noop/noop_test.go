@@ -15,10 +15,9 @@
 package noop
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

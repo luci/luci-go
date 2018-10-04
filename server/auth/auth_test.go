@@ -15,13 +15,12 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/router"
 

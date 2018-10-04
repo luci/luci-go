@@ -85,6 +85,7 @@
 package authcli
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -96,7 +97,6 @@ import (
 	"time"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/integration/localauth"

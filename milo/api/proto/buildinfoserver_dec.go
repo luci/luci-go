@@ -3,8 +3,9 @@
 package milo
 
 import (
+	"context"
+
 	proto "github.com/golang/protobuf/proto"
-	context "golang.org/x/net/context"
 )
 
 type DecoratedBuildInfo struct {

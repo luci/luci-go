@@ -15,11 +15,10 @@
 package notify
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"

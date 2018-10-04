@@ -16,6 +16,7 @@ package swarming
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"strings"
 
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/sync/parallel"
 	sv1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
 	dm "go.chromium.org/luci/dm/api/service/v1"
-	"golang.org/x/net/context"
 )
 
 const prevPath = ".dm/previous_execution.json"

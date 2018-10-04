@@ -15,14 +15,13 @@
 package archivist
 
 import (
+	"context"
 	"io"
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // storageSource is a renderer.Source that pulls log entries from intermediate

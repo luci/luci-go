@@ -15,6 +15,7 @@
 package mutations
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -29,8 +30,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/tumble"
-
-	"golang.org/x/net/context"
 )
 
 // CreateArchiveTask is a tumble Mutation that registers an archive task.

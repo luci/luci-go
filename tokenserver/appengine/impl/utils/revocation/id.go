@@ -15,7 +15,7 @@
 package revocation
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/retry/transient"

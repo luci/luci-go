@@ -15,7 +15,7 @@
 package rpc
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"github.com/Masterminds/squirrel"
 

@@ -16,6 +16,7 @@ package frontend
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -23,8 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 

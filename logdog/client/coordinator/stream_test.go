@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -25,7 +26,6 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
 	"go.chromium.org/luci/logdog/api/logpb"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"

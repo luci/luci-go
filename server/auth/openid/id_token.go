@@ -15,11 +15,10 @@
 package openid
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 )

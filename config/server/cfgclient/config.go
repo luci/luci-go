@@ -15,13 +15,12 @@
 package cfgclient
 
 import (
+	"context"
 	"net/url"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
-
-	"golang.org/x/net/context"
 )
 
 // Authority is the authority on whose behalf a request is operating.

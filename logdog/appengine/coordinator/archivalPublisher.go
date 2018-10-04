@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -25,8 +26,6 @@ import (
 	gcps "cloud.google.com/go/pubsub"
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/metadata"
-
-	"golang.org/x/net/context"
 )
 
 // ArchivalPublisher is capable of publishing archival requests.

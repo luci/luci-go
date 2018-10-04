@@ -15,14 +15,13 @@
 package model
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

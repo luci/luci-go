@@ -15,6 +15,7 @@
 package frontend
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -25,8 +26,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"

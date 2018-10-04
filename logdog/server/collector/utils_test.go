@@ -16,6 +16,7 @@ package collector
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -31,8 +32,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
 	cc "go.chromium.org/luci/logdog/server/collector/coordinator"
-
-	"golang.org/x/net/context"
 )
 
 var testSecret = bytes.Repeat([]byte{0x55}, types.PrefixSecretLength)

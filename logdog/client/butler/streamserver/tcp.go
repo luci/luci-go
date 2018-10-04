@@ -15,13 +15,12 @@
 package streamserver
 
 import (
+	"context"
 	"fmt"
 	"net"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 // tcpStreamServer is a StreamServer implementation that binds to a TCP/IP

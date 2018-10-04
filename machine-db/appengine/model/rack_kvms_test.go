@@ -15,11 +15,10 @@
 package model
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"github.com/DATA-DOG/go-sqlmock"
 

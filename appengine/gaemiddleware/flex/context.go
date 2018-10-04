@@ -15,11 +15,10 @@
 package flex
 
 import (
+	"context"
 	"net/http"
 
 	"go.chromium.org/gae/impl/cloud"
-
-	"golang.org/x/net/context"
 )
 
 // HTTPRequest returns the inbound HTTP request associated with the current

@@ -15,9 +15,10 @@
 package lib
 
 import (
+	"context"
+
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 // RunShared runs the command with the specified context and environment while

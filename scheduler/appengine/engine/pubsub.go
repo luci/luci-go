@@ -15,11 +15,11 @@
 package engine
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/pubsub/v1"
 

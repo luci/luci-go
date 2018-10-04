@@ -15,9 +15,8 @@
 package gaemiddleware
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/memcache"

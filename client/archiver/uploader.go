@@ -16,6 +16,7 @@ package archiver
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -23,8 +24,6 @@ import (
 	"sync"
 
 	"go.chromium.org/luci/common/isolatedclient"
-
-	"golang.org/x/net/context"
 )
 
 // Uploader uploads items to the server.

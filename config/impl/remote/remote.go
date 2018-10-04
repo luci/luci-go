@@ -15,13 +15,13 @@
 package remote
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sort"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
 	configApi "go.chromium.org/luci/common/api/luci_config/config/v1"

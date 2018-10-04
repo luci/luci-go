@@ -27,8 +27,10 @@ var (
 package {{.PackageName}}
 
 import (
+	"context"
+
 	svcmux "go.chromium.org/luci/server/svcmux"
-	context "golang.org/x/net/context"
+
 	{{range .ExtraImports}}
 	{{.Name}} "{{.Path}}"{{end}}
 )

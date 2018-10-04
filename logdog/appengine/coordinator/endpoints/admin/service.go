@@ -15,6 +15,8 @@
 package admin
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/service/info"
 	log "go.chromium.org/luci/common/logging"
@@ -22,7 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/server/auth"
-	"golang.org/x/net/context"
 )
 
 // server is the service implementation for the administrator endpoint.

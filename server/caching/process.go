@@ -15,10 +15,9 @@
 package caching
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/data/caching/lru"

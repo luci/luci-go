@@ -15,9 +15,9 @@
 package deps
 
 import (
+	"context"
 	"fmt"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"github.com/golang/protobuf/proto"

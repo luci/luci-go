@@ -15,12 +15,12 @@
 package authdbimpl
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/info"

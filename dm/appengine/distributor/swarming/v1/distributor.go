@@ -16,6 +16,7 @@ package swarming
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -23,8 +24,6 @@ import (
 	"time"
 
 	"google.golang.org/api/googleapi"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes/duration"

@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -28,8 +29,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // CurrentSchemaVersion is the current schema version of the LogStream.

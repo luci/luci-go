@@ -15,12 +15,12 @@
 package policy
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"

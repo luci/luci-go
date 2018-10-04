@@ -15,6 +15,7 @@
 package archiver
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -22,8 +23,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/text/units"

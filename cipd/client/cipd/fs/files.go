@@ -15,6 +15,7 @@
 package fs
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -24,8 +25,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 const (

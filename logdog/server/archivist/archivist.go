@@ -16,6 +16,7 @@ package archivist
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

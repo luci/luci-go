@@ -15,6 +15,7 @@
 package service
 
 import (
+	"context"
 	"flag"
 	"net/http"
 	"net/url"
@@ -66,7 +67,7 @@ import (
 	"cloud.google.com/go/compute/metadata"
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/api/option"
 )

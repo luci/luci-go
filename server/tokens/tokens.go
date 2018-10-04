@@ -18,6 +18,7 @@ package tokens
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -27,8 +28,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/secrets"

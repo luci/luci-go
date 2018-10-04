@@ -15,6 +15,7 @@
 package streamserver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -25,7 +26,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
-	"golang.org/x/net/context"
 )
 
 // streamParams are parameters representing a negotiated stream ready to

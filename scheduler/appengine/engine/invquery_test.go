@@ -15,10 +15,9 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/impl/memory"

@@ -21,10 +21,9 @@
 package splitter
 
 import (
+	"context"
 	"math"
 	"sort"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 )

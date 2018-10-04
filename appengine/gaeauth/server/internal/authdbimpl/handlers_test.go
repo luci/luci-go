@@ -16,11 +16,10 @@ package authdbimpl
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/server/auth/service"

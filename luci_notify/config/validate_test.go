@@ -15,10 +15,9 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/common/testing/assertions"

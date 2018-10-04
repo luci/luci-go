@@ -16,6 +16,7 @@ package bigtable
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	log "go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 // cacheSchema represents the cache schema used by this version of the tail

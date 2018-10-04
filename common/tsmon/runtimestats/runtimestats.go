@@ -22,9 +22,8 @@
 package runtimestats
 
 import (
+	"context"
 	"runtime"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"

@@ -20,6 +20,7 @@ package memlock
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"time"
 
@@ -27,7 +28,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
-	"golang.org/x/net/context"
 )
 
 // ErrFailedToLock is returned from TryWithLock when it fails to obtain a lock

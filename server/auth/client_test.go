@@ -16,13 +16,13 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	. "github.com/smartystreets/goconvey/convey"

@@ -15,13 +15,12 @@
 package jobsim
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/jsonpb"
 

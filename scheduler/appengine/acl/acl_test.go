@@ -14,6 +14,7 @@
 package acl
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -22,7 +23,6 @@ import (
 	"go.chromium.org/luci/scheduler/appengine/messages"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

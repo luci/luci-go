@@ -15,10 +15,10 @@
 package testclock
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 )
 
 // timer is an implementation of clock.TestTimer that uses a channel

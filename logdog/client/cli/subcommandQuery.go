@@ -16,6 +16,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/client/coordinator"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 const (

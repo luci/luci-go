@@ -15,9 +15,8 @@
 package utils
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/signing"
 )

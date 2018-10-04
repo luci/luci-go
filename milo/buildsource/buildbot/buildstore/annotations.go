@@ -15,6 +15,7 @@
 package buildstore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,7 +26,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

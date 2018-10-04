@@ -15,12 +15,12 @@
 package gologger
 
 import (
+	"context"
 	"io"
 	"os"
 	"sync"
 
 	gol "github.com/op/go-logging"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/terminal"

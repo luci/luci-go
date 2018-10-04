@@ -15,13 +15,12 @@
 package coordinator
 
 import (
+	"context"
 	"sync"
 
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // ConfigProvider is a set of support services used by Coordinator to fetch

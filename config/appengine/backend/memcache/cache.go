@@ -17,6 +17,7 @@
 package memcache
 
 import (
+	"context"
 	"encoding/hex"
 	"time"
 
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
 
 	mc "go.chromium.org/gae/service/memcache"
-
-	"golang.org/x/net/context"
 )
 
 const (

@@ -18,12 +18,11 @@
 package gaetest
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"

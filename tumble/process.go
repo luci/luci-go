@@ -16,6 +16,7 @@ package tumble
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"math"
 	"sync/atomic"
@@ -36,8 +37,6 @@ import (
 	"go.chromium.org/gae/service/datastore/serialize"
 	"go.chromium.org/gae/service/info"
 	mc "go.chromium.org/gae/service/memcache"
-
-	"golang.org/x/net/context"
 )
 
 const (

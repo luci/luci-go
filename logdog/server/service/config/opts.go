@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/appengine/datastorecache"
@@ -24,8 +25,6 @@ import (
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
-
-	"golang.org/x/net/context"
 )
 
 // CacheOptions is the set of configuration options.

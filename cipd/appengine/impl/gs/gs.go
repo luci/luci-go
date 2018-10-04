@@ -15,13 +15,13 @@
 package gs
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"sync"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/storage/v1"

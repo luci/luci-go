@@ -15,10 +15,10 @@
 package git
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"

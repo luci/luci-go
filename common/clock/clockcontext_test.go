@@ -15,11 +15,11 @@
 package clock
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 // manualClock is a partial Clock implementation that allows us to release

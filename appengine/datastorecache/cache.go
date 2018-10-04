@@ -15,6 +15,7 @@
 package datastorecache
 
 import (
+	"context"
 	"math"
 	"time"
 
@@ -28,8 +29,6 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-
-	"golang.org/x/net/context"
 )
 
 const (

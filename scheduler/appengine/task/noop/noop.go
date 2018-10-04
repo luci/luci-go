@@ -17,12 +17,13 @@
 package noop
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/common/clock"

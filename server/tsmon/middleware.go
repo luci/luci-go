@@ -15,13 +15,12 @@
 package tsmon
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"

@@ -15,10 +15,10 @@
 package cfgclient
 
 import (
+	"context"
+
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/config"
-
-	"golang.org/x/net/context"
 )
 
 // ProjectConfigPath is the path of a project's project-wide configuration file.

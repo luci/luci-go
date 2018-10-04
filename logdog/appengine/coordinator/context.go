@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/gae/service/datastore"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/auth"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 

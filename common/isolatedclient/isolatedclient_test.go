@@ -16,6 +16,7 @@ package isolatedclient
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -27,8 +28,6 @@ import (
 	"sync"
 	"testing"
 	"testing/iotest"
-
-	"golang.org/x/net/context"
 
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/isolated"

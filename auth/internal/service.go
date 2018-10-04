@@ -15,12 +15,12 @@
 package internal
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 

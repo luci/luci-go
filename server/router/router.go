@@ -17,11 +17,11 @@
 package router
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 )
 
 // Router is the main type for the package. To create a Router, use New.

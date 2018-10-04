@@ -17,6 +17,7 @@
 package streamserver
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,8 +25,6 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

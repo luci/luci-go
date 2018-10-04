@@ -16,6 +16,7 @@ package bigtable
 
 import (
 	"bytes"
+	"context"
 	"strconv"
 	"testing"
 
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/memory"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

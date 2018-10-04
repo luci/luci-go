@@ -16,11 +16,12 @@ package git
 
 import (
 	"container/heap"
+	"context"
 	"fmt"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

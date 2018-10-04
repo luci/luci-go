@@ -15,14 +15,13 @@
 package lru
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

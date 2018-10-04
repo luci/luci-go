@@ -5,11 +5,10 @@
 package buildsource
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/sync/parallel"

@@ -15,6 +15,7 @@
 package gkelogger
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,7 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
 )
 
 // GetFactory creates a goroutine safe gkelogger that writes into out.

@@ -34,6 +34,7 @@ package bqlog
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -43,7 +44,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"golang.org/x/net/context"
 	bigquery "google.golang.org/api/bigquery/v2"
 	"google.golang.org/api/googleapi"
 

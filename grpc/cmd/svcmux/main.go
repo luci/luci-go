@@ -22,13 +22,12 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
 
 	"go.chromium.org/luci/grpc/internal/svctool"
 	"go.chromium.org/luci/grpc/svcmux"
-
-	"golang.org/x/net/context"
 )
 
 func generate(c context.Context, a *svctool.GeneratorArgs) error {

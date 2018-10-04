@@ -15,12 +15,11 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 var (

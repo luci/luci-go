@@ -15,6 +15,7 @@
 package buildstore
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -22,8 +23,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

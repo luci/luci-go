@@ -15,11 +15,11 @@
 package lib
 
 import (
+	"context"
 	"os"
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 // RunExclusive runs the command with the specified context and environment while

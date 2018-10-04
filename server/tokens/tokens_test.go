@@ -15,6 +15,7 @@
 package tokens
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/server/secrets"
 	"go.chromium.org/luci/server/secrets/testsecrets"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

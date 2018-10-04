@@ -15,6 +15,7 @@
 package mutate
 
 import (
+	"context"
 	"fmt"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/dm/appengine/distributor"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
-
-	"golang.org/x/net/context"
 )
 
 // ScheduleExecution is a placeholder mutation that will be an entry into the

@@ -16,13 +16,13 @@ package gologger
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 
 	gol "github.com/op/go-logging"
 	"go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
 )
 
 const (

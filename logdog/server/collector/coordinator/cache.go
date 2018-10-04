@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 const (

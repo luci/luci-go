@@ -16,6 +16,7 @@ package pubsub
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -34,7 +35,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
 )
 
 // Topic is an interface for a Pub/Sub topic.

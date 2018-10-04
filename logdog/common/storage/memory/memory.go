@@ -18,6 +18,7 @@
 package memory
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -27,8 +28,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 type logStream struct {

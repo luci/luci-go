@@ -17,11 +17,10 @@
 package gaesigner
 
 import (
+	"context"
 	"runtime"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 

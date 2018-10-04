@@ -17,6 +17,7 @@ package machinetoken
 // This file contains common mocks used by unit tests.
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -26,7 +27,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

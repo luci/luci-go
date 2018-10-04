@@ -15,11 +15,10 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/maruel/subcommands"
-
-	"golang.org/x/net/context"
 
 	cloudkms "google.golang.org/api/cloudkms/v1"
 

@@ -16,6 +16,7 @@ package cipd
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

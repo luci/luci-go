@@ -16,10 +16,9 @@
 package demo
 
 import (
+	"context"
 	"fmt"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

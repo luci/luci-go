@@ -15,6 +15,7 @@
 package teelogger
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
@@ -22,7 +23,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/memlogger"
-	"golang.org/x/net/context"
 )
 
 var (

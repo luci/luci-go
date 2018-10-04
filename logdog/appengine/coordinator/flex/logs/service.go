@@ -15,6 +15,8 @@
 package logs
 
 import (
+	"context"
+
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -23,7 +25,7 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 )
 

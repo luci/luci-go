@@ -15,6 +15,7 @@
 package cipd
 
 import (
+	"context"
 	"fmt"
 	"hash"
 	"io"
@@ -23,7 +24,6 @@ import (
 	"os"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
 	"go.chromium.org/luci/common/clock"

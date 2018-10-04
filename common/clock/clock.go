@@ -17,9 +17,8 @@
 package clock
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Clock is an interface to system time.

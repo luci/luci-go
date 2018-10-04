@@ -15,12 +15,11 @@
 package tsmon
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"

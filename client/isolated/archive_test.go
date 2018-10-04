@@ -16,6 +16,7 @@ package isolated
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http/httptest"
@@ -23,8 +24,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/common/isolated"

@@ -15,6 +15,7 @@
 package venv
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -33,8 +34,6 @@ import (
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/testing/testfs"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

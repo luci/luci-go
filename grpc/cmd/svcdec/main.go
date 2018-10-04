@@ -28,10 +28,9 @@
 package main
 
 import (
+	"context"
 	"os"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/grpc/internal/svctool"
 )

@@ -15,12 +15,11 @@
 package store
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"

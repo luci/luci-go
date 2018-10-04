@@ -16,11 +16,11 @@
 package ui
 
 import (
+	"context"
 	"net/url"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

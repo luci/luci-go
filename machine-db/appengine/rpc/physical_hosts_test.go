@@ -15,10 +15,9 @@
 package rpc
 
 import (
+	"context"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 

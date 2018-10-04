@@ -15,11 +15,10 @@
 package engine
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/service/datastore"

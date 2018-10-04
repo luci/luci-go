@@ -15,11 +15,11 @@
 package buildstore
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"strconv"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"

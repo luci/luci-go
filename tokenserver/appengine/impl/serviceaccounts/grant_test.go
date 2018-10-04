@@ -15,11 +15,11 @@
 package serviceaccounts
 
 import (
+	"context"
 	"encoding/base64"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/auth/signing/signingtest"

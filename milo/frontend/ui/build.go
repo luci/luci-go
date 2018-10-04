@@ -19,14 +19,13 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"regexp"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"

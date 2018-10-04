@@ -15,6 +15,7 @@
 package fs
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
@@ -27,8 +28,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 // FileSystem abstracts operations that touch single file system subpath.

@@ -15,10 +15,10 @@
 package tokensigning
 
 import (
+	"context"
 	"encoding/base64"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth/signing"

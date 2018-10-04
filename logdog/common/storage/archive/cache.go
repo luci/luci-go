@@ -15,10 +15,10 @@
 package archive
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/gcloud/gs"
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"golang.org/x/net/context"
 )
 
 // cacheSchema represents the cache schema used by this version of the tail

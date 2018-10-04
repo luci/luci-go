@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io/ioutil"
 	"os"
@@ -22,8 +23,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

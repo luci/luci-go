@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/mmutex/lib"
 

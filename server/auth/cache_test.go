@@ -15,11 +15,10 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

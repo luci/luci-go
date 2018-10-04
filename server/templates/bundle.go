@@ -16,6 +16,7 @@ package templates
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -23,7 +24,6 @@ import (
 	"sync"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 )
 
 // Loader knows how to load template sets.

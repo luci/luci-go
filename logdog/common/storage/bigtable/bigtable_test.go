@@ -15,6 +15,7 @@
 package bigtable
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 
 	"cloud.google.com/go/bigtable"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

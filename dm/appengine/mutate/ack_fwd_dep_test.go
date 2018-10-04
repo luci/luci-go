@@ -15,6 +15,7 @@
 package mutate
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

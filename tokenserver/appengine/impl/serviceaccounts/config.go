@@ -15,6 +15,7 @@
 package serviceaccounts
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,8 +23,6 @@ import (
 	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"

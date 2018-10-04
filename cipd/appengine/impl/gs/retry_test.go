@@ -15,11 +15,11 @@
 package gs
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"

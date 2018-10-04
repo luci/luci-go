@@ -15,8 +15,10 @@
 package access
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/proto/access"

@@ -15,6 +15,7 @@
 package fake
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -38,7 +39,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 // Setup creates a new combination of testing and context objects:

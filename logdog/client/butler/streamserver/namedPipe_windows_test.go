@@ -15,14 +15,13 @@
 package streamserver
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
 	"go.chromium.org/luci/logdog/client/butlerlib/streamclient"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

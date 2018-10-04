@@ -5,11 +5,11 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/common/errors"

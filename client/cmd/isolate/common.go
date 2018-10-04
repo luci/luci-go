@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	"path/filepath"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"

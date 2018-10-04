@@ -23,6 +23,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"flag"
@@ -31,8 +32,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/mathrand"

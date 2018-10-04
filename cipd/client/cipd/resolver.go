@@ -15,9 +15,8 @@
 package cipd
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

@@ -16,6 +16,7 @@ package errors
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -23,8 +24,6 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/data/text/indented"

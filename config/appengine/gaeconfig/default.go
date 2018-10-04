@@ -15,6 +15,7 @@
 package gaeconfig
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -34,8 +35,6 @@ import (
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/gae/service/info"
-
-	"golang.org/x/net/context"
 
 	// Import to register the corresponding formatter.
 	_ "go.chromium.org/luci/config/server/cfgclient/textproto"

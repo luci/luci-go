@@ -15,13 +15,12 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"

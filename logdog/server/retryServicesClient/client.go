@@ -15,6 +15,7 @@
 package retryServicesClient
 
 import (
+	"context"
 	"time"
 
 	log "go.chromium.org/luci/common/logging"
@@ -25,8 +26,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
 )
 
 // client wraps a services.ServicesClient, retrying transient errors.

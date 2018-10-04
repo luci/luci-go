@@ -16,6 +16,7 @@ package tumble
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"encoding/binary"
 	"encoding/gob"
@@ -33,8 +34,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-
-	"golang.org/x/net/context"
 )
 
 var registry = map[string]reflect.Type{}

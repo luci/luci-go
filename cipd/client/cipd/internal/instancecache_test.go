@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,8 +23,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"

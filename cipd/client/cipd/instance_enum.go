@@ -14,9 +14,7 @@
 
 package cipd
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 // InstanceEnumerator emits a list of instances, fetching them in batches.
 //

@@ -19,14 +19,13 @@
 package memory
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"net/url"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/config"

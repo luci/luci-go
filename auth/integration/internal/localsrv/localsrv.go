@@ -19,12 +19,11 @@
 package localsrv
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

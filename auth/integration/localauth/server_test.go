@@ -16,6 +16,7 @@ package localauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

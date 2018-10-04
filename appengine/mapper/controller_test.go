@@ -15,10 +15,9 @@
 package mapper
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

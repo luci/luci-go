@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/config"
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/server/caching"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 // messageCacheKey => proto.Message

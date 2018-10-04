@@ -15,6 +15,7 @@
 package gitiles
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"testing"
@@ -22,7 +23,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

@@ -19,6 +19,7 @@
 package firebase
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -26,7 +27,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

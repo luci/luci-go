@@ -15,10 +15,10 @@
 package serviceaccounts
 
 import (
+	"context"
 	"fmt"
 	"net"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/proto/google"

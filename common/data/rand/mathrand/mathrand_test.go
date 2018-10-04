@@ -15,12 +15,12 @@
 package mathrand
 
 import (
+	"context"
 	"math"
 	"math/rand"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func Test(t *testing.T) {

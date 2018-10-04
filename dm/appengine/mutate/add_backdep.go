@@ -15,10 +15,11 @@
 package mutate
 
 import (
+	"context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
 )
 
 // AddBackDep adds a BackDep (and possibly a BackDepGroup). If NeedsAck

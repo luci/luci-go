@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/url"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/common/errors"

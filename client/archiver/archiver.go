@@ -15,14 +15,13 @@
 package archiver
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/client/internal/progress"

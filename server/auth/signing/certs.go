@@ -15,6 +15,7 @@
 package signing
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
@@ -24,8 +25,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/internal"
 	"go.chromium.org/luci/server/caching"

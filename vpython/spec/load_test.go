@@ -15,6 +15,7 @@
 package spec
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/vpython/api/vpython"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

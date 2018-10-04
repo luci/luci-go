@@ -14,9 +14,7 @@
 
 package clock
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 var clockTagKey = "clock-tag"
 

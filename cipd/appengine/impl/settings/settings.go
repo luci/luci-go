@@ -19,7 +19,7 @@
 package settings
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"

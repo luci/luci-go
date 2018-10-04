@@ -15,9 +15,8 @@
 package database
 
 import (
+	"context"
 	"database/sql"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 )

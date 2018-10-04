@@ -15,13 +15,12 @@
 package delegation
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"

@@ -16,6 +16,7 @@ package logs
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -37,7 +38,6 @@ import (
 	"go.chromium.org/gae/filter/featureBreaker"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

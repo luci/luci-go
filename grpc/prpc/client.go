@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,7 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

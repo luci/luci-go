@@ -15,6 +15,7 @@
 package gitacls
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/milo/api/config"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

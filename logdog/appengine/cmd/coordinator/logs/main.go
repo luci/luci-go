@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -32,8 +33,6 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/router"
-
-	"golang.org/x/net/context"
 )
 
 // Run installs and executes this site.

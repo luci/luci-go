@@ -15,6 +15,7 @@
 package caching
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/config/server/cfgclient/backend"
-
-	"golang.org/x/net/context"
 )
 
 // LRUBackend wraps b, applying the additional cache to its results.

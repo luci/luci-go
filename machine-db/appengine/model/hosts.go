@@ -15,9 +15,8 @@
 package model
 
 import (
+	"context"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

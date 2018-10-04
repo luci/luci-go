@@ -16,6 +16,7 @@ package prpc
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"io/ioutil"
 	"net/http"
@@ -23,7 +24,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/metadata"
 
 	"go.chromium.org/luci/common/clock/testclock"

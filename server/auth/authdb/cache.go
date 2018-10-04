@@ -15,9 +15,8 @@
 package authdb
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/caching/lazyslot"
 	"go.chromium.org/luci/common/data/rand/mathrand"

@@ -15,9 +15,8 @@
 package dmTemplate
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/text/templateproto"
 	"go.chromium.org/luci/config"

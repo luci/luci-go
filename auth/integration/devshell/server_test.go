@@ -16,6 +16,7 @@ package devshell
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -24,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

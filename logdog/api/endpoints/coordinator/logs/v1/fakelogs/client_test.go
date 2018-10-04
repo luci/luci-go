@@ -15,12 +15,12 @@
 package fakelogs
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging/gologger"
 	. "go.chromium.org/luci/common/testing/assertions"

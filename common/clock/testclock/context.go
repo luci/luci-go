@@ -15,10 +15,10 @@
 package testclock
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 )
 
 // TestTimeUTC is an arbitrary time point in UTC for testing.

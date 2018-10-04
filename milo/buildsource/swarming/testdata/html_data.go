@@ -15,6 +15,7 @@
 package testdata
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,7 +26,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/impl/memory"
-	"golang.org/x/net/context"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
 	"go.chromium.org/luci/common/clock/testclock"

@@ -16,11 +16,11 @@ package testclock
 
 import (
 	"container/heap"
+	"context"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 )
 
 // TestClock is a Clock interface with additional methods to help instrument it.

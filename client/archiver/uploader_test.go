@@ -15,6 +15,7 @@
 package archiver
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -22,8 +23,6 @@ import (
 	"reflect"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/isolatedclient"
 )

@@ -16,6 +16,7 @@ package lhttp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -24,8 +25,6 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/retry"
 

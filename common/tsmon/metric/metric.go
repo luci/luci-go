@@ -39,9 +39,8 @@
 package metric
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"

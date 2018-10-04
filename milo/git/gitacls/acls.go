@@ -16,11 +16,10 @@
 package gitacls
 
 import (
+	"context"
 	"net/url"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/data/stringset"

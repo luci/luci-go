@@ -16,11 +16,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/logging/memlogger"

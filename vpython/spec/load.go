@@ -16,6 +16,7 @@ package spec
 
 import (
 	"bufio"
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,8 +28,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	cproto "go.chromium.org/luci/common/proto"
 	"go.chromium.org/luci/common/system/filesystem"
-
-	"golang.org/x/net/context"
 )
 
 // Suffix is the filesystem suffix for a script's partner specification file.

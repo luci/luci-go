@@ -16,10 +16,10 @@
 package standard
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/common/tsmon/target"

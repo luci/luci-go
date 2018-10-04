@@ -15,10 +15,9 @@
 package clock
 
 import (
+	"context"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // ContextDeadlineTag is the tag that will be applied to timers used for Context

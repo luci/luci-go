@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -23,7 +24,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/server/auth"
-	"golang.org/x/net/context"
 )
 
 // IsAdminUser tests whether the current user belongs to the administrative

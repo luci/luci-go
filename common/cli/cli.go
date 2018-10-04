@@ -18,11 +18,11 @@
 package cli
 
 import (
+	"context"
 	"io"
 	"os"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 // ContextModificator takes a context, adds something, and returns a new one.

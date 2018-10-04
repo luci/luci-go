@@ -15,12 +15,12 @@
 package internal
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

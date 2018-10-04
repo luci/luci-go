@@ -15,12 +15,11 @@
 package portal
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // Page controls how some portal section (usually corresponding to a key in

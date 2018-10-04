@@ -15,6 +15,7 @@
 package common
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authtest"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

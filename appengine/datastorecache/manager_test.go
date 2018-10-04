@@ -16,6 +16,7 @@ package datastorecache
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 
 	"go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

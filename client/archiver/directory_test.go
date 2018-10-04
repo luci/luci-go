@@ -15,14 +15,13 @@
 package archiver
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/text/units"

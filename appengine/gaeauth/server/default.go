@@ -15,7 +15,8 @@
 package server
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/appengine"
 
 	"go.chromium.org/luci/server/auth"

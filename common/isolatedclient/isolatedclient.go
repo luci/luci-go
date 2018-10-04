@@ -17,6 +17,7 @@ package isolatedclient
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/base64"
 	"errors"
 	"io"
@@ -24,8 +25,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/isolated"

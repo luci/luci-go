@@ -15,10 +15,9 @@
 package cachingtest
 
 import (
+	"context"
 	"errors"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"

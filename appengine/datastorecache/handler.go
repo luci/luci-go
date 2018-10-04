@@ -15,11 +15,10 @@
 package datastorecache
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
-
-	"golang.org/x/net/context"
 )
 
 // ErrDeleteCacheEntry is a sentinel error value that, if returned from a

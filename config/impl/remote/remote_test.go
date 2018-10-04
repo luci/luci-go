@@ -15,6 +15,7 @@
 package remote
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -22,8 +23,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/config"
 

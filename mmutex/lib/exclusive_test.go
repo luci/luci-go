@@ -15,6 +15,7 @@
 package lib
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/danjacques/gofslock/fslock"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

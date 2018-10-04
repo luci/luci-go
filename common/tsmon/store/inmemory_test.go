@@ -15,11 +15,11 @@
 package store
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/luci/common/tsmon/store/storetest"
 	"go.chromium.org/luci/common/tsmon/target"
-	"golang.org/x/net/context"
 )
 
 func TestInMemory(t *testing.T) {

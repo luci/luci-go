@@ -24,6 +24,7 @@ package archive
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -41,7 +42,6 @@ import (
 
 	cloudStorage "cloud.google.com/go/storage"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 const (

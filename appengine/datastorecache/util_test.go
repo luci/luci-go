@@ -15,6 +15,7 @@
 package datastorecache
 
 import (
+	"context"
 	"flag"
 	"net/http/httptest"
 	"sync/atomic"
@@ -29,8 +30,6 @@ import (
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 var testConsoleLogger = flag.Bool("test.logconsole", false, "Output using a console logger.")

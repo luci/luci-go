@@ -15,11 +15,10 @@
 package gaesettings
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/count"
 	"go.chromium.org/gae/filter/dscache"

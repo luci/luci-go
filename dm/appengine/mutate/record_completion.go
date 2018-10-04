@@ -15,11 +15,12 @@
 package mutate
 
 import (
+	"context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
 )
 
 // Attempt to complete attempts 64-at-a-time. Rely on tumble's

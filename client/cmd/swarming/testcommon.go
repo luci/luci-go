@@ -15,9 +15,8 @@
 package main
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/api/swarming/swarming/v1"
 )

@@ -17,12 +17,11 @@
 package main
 
 import (
+	"context"
 	"os"
 	"syscall"
 
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
-
-	"golang.org/x/net/context"
 )
 
 var platformStreamServerExamples = []string{

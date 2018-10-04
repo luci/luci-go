@@ -15,6 +15,7 @@
 package gaeconfig
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html"
@@ -23,8 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/server/portal"

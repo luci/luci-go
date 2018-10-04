@@ -18,10 +18,9 @@ package analytics
 // the Google Analytics ID and javascript snippets out from the admin settings.
 
 import (
+	"context"
 	"fmt"
 	"html/template"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 )

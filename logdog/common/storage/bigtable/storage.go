@@ -16,6 +16,7 @@ package bigtable
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 
@@ -28,8 +29,6 @@ import (
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	"golang.org/x/net/context"
 )
 
 var (

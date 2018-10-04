@@ -15,9 +15,8 @@
 package rawpresentation
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"

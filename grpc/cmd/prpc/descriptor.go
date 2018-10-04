@@ -15,12 +15,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.chromium.org/luci/grpc/discovery"

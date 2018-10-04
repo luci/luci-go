@@ -15,11 +15,11 @@
 package access
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes/duration"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/access"

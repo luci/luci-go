@@ -15,11 +15,10 @@
 package gitiles
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/proto/gitiles"
 

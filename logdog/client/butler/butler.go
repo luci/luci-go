@@ -15,6 +15,7 @@
 package butler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -34,8 +35,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 const (

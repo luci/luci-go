@@ -15,11 +15,10 @@
 package localsrv
 
 import (
+	"context"
 	"net"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -17,6 +17,7 @@ package svctool
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -29,8 +30,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging/gologger"
 )

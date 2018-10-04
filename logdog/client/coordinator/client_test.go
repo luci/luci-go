@@ -15,10 +15,10 @@
 package coordinator
 
 import (
+	"context"
 	"net/http"
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
-	"golang.org/x/net/context"
 )
 
 type testHTTPError int

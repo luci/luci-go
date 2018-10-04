@@ -15,12 +15,11 @@
 package buildstore
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/buildbucket"
 	"go.chromium.org/luci/buildbucket/proto"

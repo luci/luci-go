@@ -15,13 +15,13 @@
 package authtest
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/auth"
-	"golang.org/x/net/context"
 )
 
 // MemorySessionStore implement auth.SessionStore.

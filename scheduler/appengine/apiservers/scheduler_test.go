@@ -15,6 +15,7 @@
 package apiservers
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -22,8 +23,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"

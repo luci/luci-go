@@ -15,14 +15,14 @@
 package services
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config/appengine/gaeconfig"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-
-	"golang.org/x/net/context"
 )
 
 // GetConfig allows a service to retrieve the current service configuration

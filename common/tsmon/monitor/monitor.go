@@ -17,8 +17,9 @@
 package monitor
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 // A Monitor can send a collection of metrics somewhere.

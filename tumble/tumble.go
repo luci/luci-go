@@ -15,6 +15,7 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 
 	"go.chromium.org/luci/common/clock"
@@ -24,8 +25,6 @@ import (
 
 	"go.chromium.org/gae/filter/txnBuf"
 	ds "go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 // RunMutation immediately runs the Mutation `m` in a transaction. This method

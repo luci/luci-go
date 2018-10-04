@@ -15,10 +15,10 @@
 package monitor
 
 import (
+	"context"
 	"os"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/logging"

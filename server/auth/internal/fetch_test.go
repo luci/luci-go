@@ -15,11 +15,10 @@
 package internal
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

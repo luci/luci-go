@@ -15,10 +15,10 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/common/cli"

@@ -15,6 +15,7 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,8 +33,6 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-
-	"golang.org/x/net/context"
 )
 
 const (

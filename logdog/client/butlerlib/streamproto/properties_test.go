@@ -15,6 +15,7 @@
 package streamproto
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

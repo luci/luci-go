@@ -15,13 +15,14 @@
 package prpc
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

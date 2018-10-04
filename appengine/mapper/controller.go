@@ -15,11 +15,11 @@
 package mapper
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

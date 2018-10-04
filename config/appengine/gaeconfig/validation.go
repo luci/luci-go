@@ -15,9 +15,8 @@
 package gaeconfig
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaeauth/server"

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -38,7 +39,6 @@ import (
 	"go.chromium.org/luci/logdog/server/service"
 
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
 )
 
 var (

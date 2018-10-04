@@ -15,12 +15,11 @@
 package archiver
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	service "go.chromium.org/luci/common/api/isolate/isolateservice/v1"
 	"go.chromium.org/luci/common/isolated"

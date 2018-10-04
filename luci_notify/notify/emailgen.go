@@ -16,13 +16,12 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	html "html/template"
 	"strings"
 	text "text/template"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"

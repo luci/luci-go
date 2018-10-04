@@ -16,13 +16,12 @@ package isolated
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/archiver"
 	"go.chromium.org/luci/common/errors"

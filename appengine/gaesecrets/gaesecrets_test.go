@@ -15,13 +15,12 @@
 package gaesecrets
 
 import (
+	"context"
 	"testing"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/secrets"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

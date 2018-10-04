@@ -15,12 +15,12 @@
 package testutil
 
 import (
+	"context"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"

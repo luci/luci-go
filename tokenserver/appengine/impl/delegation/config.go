@@ -15,11 +15,11 @@
 package delegation
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/config/validation"

@@ -16,6 +16,7 @@ package svctool
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"go/ast"
 	goparser "go/parser"
@@ -23,8 +24,6 @@ import (
 	"go/token"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 )

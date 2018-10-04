@@ -17,6 +17,7 @@ package local
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
@@ -24,8 +25,6 @@ import (
 	"os"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 

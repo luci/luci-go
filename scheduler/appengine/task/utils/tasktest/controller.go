@@ -15,13 +15,13 @@
 package tasktest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth"
 

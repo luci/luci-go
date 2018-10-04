@@ -15,10 +15,9 @@
 package authtest
 
 import (
+	"context"
 	"errors"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 

@@ -2,6 +2,7 @@ package gerrit
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"net/url"
 	"strings"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

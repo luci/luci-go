@@ -15,10 +15,9 @@
 package frontend
 
 import (
+	"context"
 	"fmt"
 	"sort"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/buildbucket/access"

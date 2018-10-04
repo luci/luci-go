@@ -15,9 +15,9 @@
 package parallel
 
 import (
-	"go.chromium.org/luci/common/errors"
+	"context"
 
-	"golang.org/x/net/context"
+	"go.chromium.org/luci/common/errors"
 )
 
 // RunMulti initiates a nested RunMulti operation. It invokes an entry function,

@@ -16,10 +16,10 @@
 package ui
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

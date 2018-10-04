@@ -15,6 +15,7 @@
 package model
 
 import (
+	"context"
 	"crypto/subtle"
 	"encoding/hex"
 	"errors"
@@ -23,8 +24,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"

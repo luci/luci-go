@@ -15,13 +15,12 @@
 package rawpresentation
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-
-	"golang.org/x/net/context"
 
 	miloProto "go.chromium.org/luci/common/proto/milo"
 	"go.chromium.org/luci/milo/common/model"

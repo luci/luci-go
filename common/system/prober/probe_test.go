@@ -15,6 +15,7 @@
 package prober
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,8 +23,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

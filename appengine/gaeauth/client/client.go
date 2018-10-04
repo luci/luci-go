@@ -17,12 +17,12 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/gae/service/info"

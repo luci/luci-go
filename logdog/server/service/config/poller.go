@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -22,8 +23,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/config"
 	"go.chromium.org/luci/config/server/cfgclient"
-
-	"golang.org/x/net/context"
 )
 
 // ChangePoller polls a configuration files for changes. If it changes,

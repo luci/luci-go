@@ -26,6 +26,7 @@
 package lucictx
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,8 +34,6 @@ import (
 	"os"
 	"reflect"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 )

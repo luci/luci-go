@@ -15,12 +15,13 @@
 package client
 
 import (
+	"context"
 	"crypto/x509"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"

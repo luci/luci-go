@@ -17,14 +17,13 @@
 package streamserver
 
 import (
+	"context"
 	"net"
 	"os"
 	"path/filepath"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 // maxPOSIXNamedSocketLength is the maximum length of a UNIX domain socket.

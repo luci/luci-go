@@ -15,12 +15,12 @@
 package git
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/service/memcache"
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
-	"golang.org/x/net/context"
 )
 
 // CLEmail implements Client interface.

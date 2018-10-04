@@ -16,6 +16,7 @@ package venv
 
 import (
 	"archive/zip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"hash"
@@ -27,7 +28,6 @@ import (
 	"time"
 
 	"github.com/danjacques/gofslock/fslock"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/client/cipd"
 	"go.chromium.org/luci/common/errors"

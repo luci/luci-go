@@ -15,6 +15,7 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"strings"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
-
-	"golang.org/x/net/context"
 )
 
 type timestamp int64

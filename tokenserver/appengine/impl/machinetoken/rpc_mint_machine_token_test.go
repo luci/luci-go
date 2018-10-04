@@ -15,12 +15,11 @@
 package machinetoken
 
 import (
+	"context"
 	"crypto/x509"
 	"net"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"

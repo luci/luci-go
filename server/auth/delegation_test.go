@@ -15,11 +15,11 @@
 package auth
 
 import (
+	"context"
 	"math/rand"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"

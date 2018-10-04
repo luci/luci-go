@@ -15,9 +15,8 @@
 package memory
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/config"

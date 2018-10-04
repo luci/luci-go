@@ -15,11 +15,10 @@
 package authtest
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth"
 )

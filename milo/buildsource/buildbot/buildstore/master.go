@@ -15,11 +15,10 @@
 package buildstore
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"

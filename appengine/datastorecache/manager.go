@@ -15,6 +15,7 @@
 package datastorecache
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -32,7 +33,6 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 )
 
 func errHTTPHandler(fn func(c context.Context, req *http.Request, params httprouter.Params) error) router.Handler {

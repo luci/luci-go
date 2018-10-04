@@ -15,6 +15,7 @@
 package engine
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/memcache"

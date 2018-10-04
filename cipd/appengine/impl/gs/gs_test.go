@@ -15,6 +15,7 @@
 package gs
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -23,8 +24,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

@@ -15,6 +15,7 @@
 package fetcher
 
 import (
+	"context"
 	"errors"
 	"io"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/common/testing/assertions"
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 type testSourceCommand struct {

@@ -15,6 +15,7 @@
 package auth
 
 import (
+	"context"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -22,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth/internal"

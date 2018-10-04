@@ -17,9 +17,8 @@
 package cancelcond
 
 import (
+	"context"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // Cond is a wrapper around a sync.Cond that overloads its Wait method to accept

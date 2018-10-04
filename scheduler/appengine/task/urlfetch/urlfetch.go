@@ -17,6 +17,7 @@ package urlfetch
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -26,7 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/urlfetch"

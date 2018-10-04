@@ -15,11 +15,11 @@
 package cancelcond
 
 import (
+	"context"
 	"sync"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 func TestTimeoutCond(t *testing.T) {

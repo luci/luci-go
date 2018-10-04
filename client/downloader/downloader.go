@@ -16,12 +16,11 @@ package downloader
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/internal/common"
 	"go.chromium.org/luci/common/data/stringset"

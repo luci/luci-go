@@ -15,9 +15,8 @@
 package rpc
 
 import (
+	"context"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 	"google.golang.org/grpc/codes"

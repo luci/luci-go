@@ -15,9 +15,8 @@
 package distributor
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/proto"
 	"go.chromium.org/gae/service/info"

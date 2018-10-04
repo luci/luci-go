@@ -16,6 +16,7 @@ package local
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,8 +26,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 

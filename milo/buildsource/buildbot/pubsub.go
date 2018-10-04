@@ -17,12 +17,11 @@ package buildbot
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

@@ -15,12 +15,12 @@
 package localauth
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/auth"

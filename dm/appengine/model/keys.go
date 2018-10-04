@@ -15,10 +15,9 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"math"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	dm "go.chromium.org/luci/dm/api/service/v1"

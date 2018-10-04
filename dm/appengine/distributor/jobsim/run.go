@@ -15,6 +15,7 @@
 package jobsim
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -34,7 +35,6 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/grpc/prpc"
 	authlib "go.chromium.org/luci/server/auth"
-	"golang.org/x/net/context"
 )
 
 // state is the opaque state data that DM will pass between re-executions of the

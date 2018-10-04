@@ -16,13 +16,12 @@ package lucictx
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/system/environ"
 

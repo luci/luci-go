@@ -15,6 +15,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -22,8 +23,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"

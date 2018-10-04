@@ -15,6 +15,7 @@
 package apigen
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,7 @@ import (
 	"path/filepath"
 
 	log "go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
+
 	"gopkg.in/yaml.v2"
 )
 

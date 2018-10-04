@@ -15,7 +15,7 @@
 package venv
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/vpython/api/vpython"
 )

@@ -15,9 +15,8 @@
 package retry
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // defaultIterator defines a template for the default retry parameters that

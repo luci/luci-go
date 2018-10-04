@@ -16,6 +16,7 @@ package bqlog
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -24,7 +25,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	bigquery "google.golang.org/api/bigquery/v2"
 
 	"go.chromium.org/gae/filter/featureBreaker"

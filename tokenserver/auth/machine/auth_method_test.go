@@ -15,6 +15,7 @@
 package machine
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -23,7 +24,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"

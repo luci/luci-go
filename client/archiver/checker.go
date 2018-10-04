@@ -15,12 +15,12 @@
 package archiver
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/support/bundler"
 
 	service "go.chromium.org/luci/common/api/isolate/isolateservice/v1"

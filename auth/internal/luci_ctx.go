@@ -16,6 +16,7 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
@@ -25,7 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
 

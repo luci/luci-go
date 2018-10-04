@@ -15,6 +15,7 @@
 package endpoints
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 
@@ -31,8 +32,6 @@ import (
 	"google.golang.org/appengine"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	"golang.org/x/net/context"
 )
 
 // Services is a set of support services used by AppEngine Classic Coordinator

@@ -15,6 +15,7 @@
 package swarming
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -31,8 +32,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"go.chromium.org/gae/impl/memory"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 

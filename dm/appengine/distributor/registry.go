@@ -15,6 +15,7 @@
 package distributor
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -29,8 +30,6 @@ import (
 	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/proto"
-
-	"golang.org/x/net/context"
 )
 
 var regKey = "holds a DM Distributor Registry"

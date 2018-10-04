@@ -15,10 +15,9 @@
 package client
 
 import (
+	"context"
 	"crypto/x509"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

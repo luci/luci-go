@@ -15,6 +15,8 @@
 package services
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
@@ -22,7 +24,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 )
 

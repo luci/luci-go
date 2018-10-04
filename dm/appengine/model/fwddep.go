@@ -15,9 +15,8 @@
 package model
 
 import (
+	"context"
 	"sort"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/dm/api/service/v1"

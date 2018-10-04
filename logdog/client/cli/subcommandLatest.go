@@ -15,6 +15,7 @@
 package cli
 
 import (
+	"context"
 	"io"
 	"os"
 	"time"
@@ -28,7 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 type latestCommandRun struct {

@@ -15,6 +15,7 @@
 package retry
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -22,7 +23,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"golang.org/x/net/context"
 )
 
 // testIterator is an Iterator implementation used for testing.

@@ -17,14 +17,13 @@ package flex
 import (
 	"bytes"
 	"compress/zlib"
+	"context"
 	"io/ioutil"
 	"time"
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/server/caching"
-
-	"golang.org/x/net/context"
 )
 
 const (

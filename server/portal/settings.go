@@ -15,10 +15,10 @@
 package portal
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/xsrf"

@@ -15,12 +15,11 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	_ "github.com/go-sql-driver/mysql"
 

@@ -5,12 +5,12 @@
 package serviceaccounts
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

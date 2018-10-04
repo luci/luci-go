@@ -15,9 +15,8 @@
 package metric
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon"
 	"go.chromium.org/luci/common/tsmon/distribution"

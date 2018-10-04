@@ -15,6 +15,7 @@
 package bigtable
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/logdog/common/storage"
-	"golang.org/x/net/context"
 )
 
 // DefaultMaxLogAge is the maximum age of a log (7 days).

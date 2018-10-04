@@ -15,13 +15,13 @@
 package logging
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"golang.org/x/net/context"
 )
 
 type stringStruct struct {

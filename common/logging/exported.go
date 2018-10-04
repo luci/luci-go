@@ -14,9 +14,7 @@
 
 package logging
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 // SetError returns a context with its error field set.
 func SetError(c context.Context, err error) context.Context {

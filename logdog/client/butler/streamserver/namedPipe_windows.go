@@ -15,9 +15,8 @@
 package streamserver
 
 import (
+	"context"
 	"net"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	log "go.chromium.org/luci/common/logging"

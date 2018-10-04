@@ -15,6 +15,7 @@
 package logs
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -34,7 +35,6 @@ import (
 
 	ds "go.chromium.org/gae/service/datastore"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 

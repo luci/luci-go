@@ -26,9 +26,7 @@
 // is running.
 package logging
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 // Logger interface is ultimately implemented by underlying logging libraries
 // (like go-logging or GAE logging). It is the least common denominator among

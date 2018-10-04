@@ -15,13 +15,12 @@
 package auth
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/jsontime"

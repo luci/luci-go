@@ -15,13 +15,13 @@
 package buildbucket
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"golang.org/x/net/context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/errors"

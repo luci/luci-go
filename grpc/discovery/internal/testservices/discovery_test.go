@@ -22,9 +22,8 @@ package testservices
 // To break the cycle, we move this test from grpc/discovery.
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/proto/google/descutil"
 	"go.chromium.org/luci/grpc/discovery"

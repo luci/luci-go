@@ -15,10 +15,10 @@
 package model
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"

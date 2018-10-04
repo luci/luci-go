@@ -15,10 +15,9 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	bf "go.chromium.org/luci/common/data/bit_field"

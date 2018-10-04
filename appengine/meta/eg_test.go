@@ -15,14 +15,13 @@
 package meta
 
 import (
+	"context"
 	"errors"
 	"testing"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/impl/memory"
 	ds "go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

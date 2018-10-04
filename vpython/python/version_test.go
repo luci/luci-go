@@ -15,13 +15,12 @@
 package python
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"testing"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -15,13 +15,12 @@
 package coordinator
 
 import (
+	"context"
 	"strings"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 const (

@@ -15,6 +15,7 @@
 package memlock
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -25,8 +26,6 @@ import (
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

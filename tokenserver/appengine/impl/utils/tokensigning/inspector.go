@@ -15,13 +15,13 @@
 package tokensigning
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/retry/transient"

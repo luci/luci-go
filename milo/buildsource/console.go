@@ -15,10 +15,9 @@
 package buildsource
 
 import (
+	"context"
 	"encoding/hex"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

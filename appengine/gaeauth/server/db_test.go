@@ -15,10 +15,9 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaeauth/server/internal/authdbimpl"

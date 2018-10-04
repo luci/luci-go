@@ -16,11 +16,10 @@
 package layered
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/caching/lru"

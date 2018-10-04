@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -37,7 +38,6 @@ import (
 	"go.chromium.org/luci/logdog/server/service"
 
 	"cloud.google.com/go/pubsub"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 

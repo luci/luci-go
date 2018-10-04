@@ -15,9 +15,8 @@
 package notify
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"

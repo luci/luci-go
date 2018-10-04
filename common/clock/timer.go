@@ -15,10 +15,9 @@
 package clock
 
 import (
+	"context"
 	"fmt"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // Timer is a wrapper around the time.Timer structure.

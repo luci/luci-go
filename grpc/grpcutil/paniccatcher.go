@@ -15,7 +15,8 @@
 package grpcutil
 
 import (
-	"golang.org/x/net/context"
+	"context"
+
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/logging"

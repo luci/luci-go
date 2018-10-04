@@ -15,10 +15,10 @@
 package policy
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaetesting"

@@ -15,9 +15,8 @@
 package repo
 
 import (
+	"context"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"

@@ -15,11 +15,10 @@
 package analytics
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"regexp"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/portal"
 	"go.chromium.org/luci/server/settings"

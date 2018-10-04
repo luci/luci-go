@@ -15,10 +15,10 @@
 package serviceaccounts
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/config/validation"
 

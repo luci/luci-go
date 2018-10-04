@@ -15,13 +15,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"google.golang.org/api/googleapi"
 

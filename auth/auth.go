@@ -32,6 +32,7 @@
 package auth
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -41,7 +42,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/compute/metadata"
-	"golang.org/x/net/context"
+
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc/credentials"
 

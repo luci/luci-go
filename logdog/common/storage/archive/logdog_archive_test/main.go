@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -41,7 +42,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )

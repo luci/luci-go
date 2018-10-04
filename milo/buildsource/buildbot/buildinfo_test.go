@@ -15,10 +15,10 @@
 package buildbot
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	miloProto "go.chromium.org/luci/common/proto/milo"

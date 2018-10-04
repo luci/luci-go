@@ -15,13 +15,13 @@
 package coordinatorTest
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"sync"
 
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator"
-	"golang.org/x/net/context"
 )
 
 // ArchivalPublisher is a testing implementation of a

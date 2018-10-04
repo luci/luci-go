@@ -16,11 +16,10 @@ package storage
 
 import (
 	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // CacheKey is a single cache item's key.

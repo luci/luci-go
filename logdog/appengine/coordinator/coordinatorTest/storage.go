@@ -15,6 +15,7 @@
 package coordinatorTest
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/logdog/common/storage/archive"
 	"go.chromium.org/luci/logdog/common/storage/bigtable"
-
-	"golang.org/x/net/context"
 )
 
 // BigTableStorage is a bound BigTable-backed Storage instance.

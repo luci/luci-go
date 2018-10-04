@@ -15,6 +15,7 @@
 package registration
 
 import (
+	"context"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
 	"go.chromium.org/luci/logdog/common/types"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 )
 
