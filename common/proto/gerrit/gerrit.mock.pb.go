@@ -52,24 +52,6 @@ func (mr *MockGerritClientMockRecorder) GetChange(ctx, in interface{}, opts ...i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritClient)(nil).GetChange), varargs...)
 }
 
-// CheckAccess mocks base method
-func (m *MockGerritClient) CheckAccess(ctx context.Context, in *CheckAccessRequest, opts ...grpc.CallOption) (*CheckAccessResponse, error) {
-	varargs := []interface{}{ctx, in}
-	for _, a := range opts {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CheckAccess", varargs...)
-	ret0, _ := ret[0].(*CheckAccessResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckAccess indicates an expected call of CheckAccess
-func (mr *MockGerritClientMockRecorder) CheckAccess(ctx, in interface{}, opts ...interface{}) *gomock.Call {
-	varargs := append([]interface{}{ctx, in}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAccess", reflect.TypeOf((*MockGerritClient)(nil).CheckAccess), varargs...)
-}
-
 // MockGerritServer is a mock of GerritServer interface
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -104,17 +86,4 @@ func (m *MockGerritServer) GetChange(arg0 context.Context, arg1 *GetChangeReques
 // GetChange indicates an expected call of GetChange
 func (mr *MockGerritServerMockRecorder) GetChange(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChange", reflect.TypeOf((*MockGerritServer)(nil).GetChange), arg0, arg1)
-}
-
-// CheckAccess mocks base method
-func (m *MockGerritServer) CheckAccess(arg0 context.Context, arg1 *CheckAccessRequest) (*CheckAccessResponse, error) {
-	ret := m.ctrl.Call(m, "CheckAccess", arg0, arg1)
-	ret0, _ := ret[0].(*CheckAccessResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CheckAccess indicates an expected call of CheckAccess
-func (mr *MockGerritServerMockRecorder) CheckAccess(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAccess", reflect.TypeOf((*MockGerritServer)(nil).CheckAccess), arg0, arg1)
 }
