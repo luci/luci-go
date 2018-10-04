@@ -15,6 +15,7 @@
 package application
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -24,7 +25,6 @@ import (
 
 	"github.com/maruel/subcommands"
 	"github.com/mitchellh/go-homedir"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/vpython"
 	vpythonAPI "go.chromium.org/luci/vpython/api/vpython"

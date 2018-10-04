@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"net/url"
 
 	"go.chromium.org/luci/common/errors"
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-
-	"golang.org/x/net/context"
 )
 
 var (

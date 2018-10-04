@@ -15,11 +15,11 @@
 package rpc
 
 import (
+	"context"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/common/errors"

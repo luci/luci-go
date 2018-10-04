@@ -16,12 +16,12 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"path"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/errors"

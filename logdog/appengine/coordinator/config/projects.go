@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"sort"
 
 	log "go.chromium.org/luci/common/logging"
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // ProjectConfigPath returns the path of the project-specific configuration.

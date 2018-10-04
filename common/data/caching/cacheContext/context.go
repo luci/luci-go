@@ -23,9 +23,8 @@
 package cacheContext
 
 import (
+	"context"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // cacheContext implements a caching context.

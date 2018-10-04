@@ -15,6 +15,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -25,7 +26,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/sortby"

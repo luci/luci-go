@@ -15,6 +15,7 @@
 package gs
 
 import (
+	"context"
 	"io"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
-	"golang.org/x/net/context"
 )
 
 // Writer is an augmented io.WriteCloser instance.

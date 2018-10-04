@@ -15,9 +15,8 @@
 package identityset
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"

@@ -17,6 +17,7 @@ package gitiles
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 var (

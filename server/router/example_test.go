@@ -15,13 +15,12 @@
 package router_test
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/router"
 )

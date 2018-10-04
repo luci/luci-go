@@ -15,6 +15,7 @@
 package access
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -26,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

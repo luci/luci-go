@@ -23,11 +23,11 @@
 package transient
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry"
-	"golang.org/x/net/context"
 )
 
 // transientOnlyIterator is an Iterator implementation that only retries errors

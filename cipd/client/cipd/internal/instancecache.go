@@ -17,14 +17,13 @@ package internal
 import (
 	"bytes"
 	"container/heap"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"

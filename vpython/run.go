@@ -15,6 +15,7 @@
 package vpython
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -24,8 +25,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
-
-	"golang.org/x/net/context"
 )
 
 type runCommand struct {

@@ -15,10 +15,11 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 
 	"cloud.google.com/go/compute/metadata"
-	"golang.org/x/net/context"
+
 	"golang.org/x/oauth2/google"
 
 	"go.chromium.org/luci/common/data/stringset"

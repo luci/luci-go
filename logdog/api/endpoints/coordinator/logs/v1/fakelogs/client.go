@@ -15,12 +15,12 @@
 package fakelogs
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
 	"github.com/golang/protobuf/proto"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/gae/service/datastore"

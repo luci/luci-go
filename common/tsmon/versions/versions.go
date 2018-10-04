@@ -27,12 +27,11 @@
 package versions
 
 import (
+	"context"
 	"sync"
 
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
-
-	"golang.org/x/net/context"
 )
 
 var registry struct {

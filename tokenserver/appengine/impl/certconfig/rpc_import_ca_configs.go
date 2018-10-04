@@ -16,6 +16,7 @@ package certconfig
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"fmt"
 	"sync"
@@ -23,7 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

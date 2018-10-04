@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io"
 	"os"
@@ -37,7 +38,7 @@ import (
 	cloudBT "cloud.google.com/go/bigtable"
 	"github.com/golang/protobuf/proto"
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/option"
 
 	"go.chromium.org/luci/hardcoded/chromeinfra"

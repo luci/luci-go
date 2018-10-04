@@ -15,10 +15,11 @@
 package config
 
 import (
+	"context"
+
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/settings"
-	"golang.org/x/net/context"
 )
 
 // globalConfigSettingsKey is the settings key for the Coordinator instance's

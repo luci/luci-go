@@ -14,9 +14,7 @@
 
 package iam
 
-import (
-	"golang.org/x/net/context"
-)
+import "context"
 
 // Signer implements SignBytes interface on top of IAM client.
 //

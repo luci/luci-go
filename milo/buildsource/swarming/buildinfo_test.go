@@ -15,6 +15,7 @@
 package swarming
 
 import (
+	"context"
 	"testing"
 
 	swarming "go.chromium.org/luci/common/api/swarming/swarming/v1"
@@ -23,8 +24,6 @@ import (
 	"go.chromium.org/luci/milo/buildsource/rawpresentation"
 
 	"go.chromium.org/gae/impl/memory"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

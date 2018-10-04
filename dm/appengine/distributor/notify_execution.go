@@ -15,12 +15,13 @@
 package distributor
 
 import (
+	"context"
+
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
 )
 
 // NotifyExecution is used to finish an execution. Specifically it allows the

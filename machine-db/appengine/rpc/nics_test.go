@@ -15,11 +15,10 @@
 package rpc
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"google.golang.org/genproto/protobuf/field_mask"
 

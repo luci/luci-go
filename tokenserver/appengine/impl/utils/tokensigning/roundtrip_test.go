@@ -15,9 +15,8 @@
 package tokensigning
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/server/auth/signing"

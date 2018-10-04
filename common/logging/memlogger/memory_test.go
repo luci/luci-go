@@ -16,10 +16,9 @@ package memlogger
 
 import (
 	"bytes"
+	"context"
 	"sync"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	cv "github.com/smartystreets/goconvey/convey"
 

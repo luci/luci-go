@@ -15,13 +15,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/tools/internal/apigen"
-	"golang.org/x/net/context"
 )
 
 func main() {

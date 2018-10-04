@@ -15,9 +15,8 @@
 package tsmon
 
 import (
+	"context"
 	"errors"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon/target"
 )

@@ -23,11 +23,10 @@
 package gaesettings
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/filter/dscache"
 	ds "go.chromium.org/gae/service/datastore"

@@ -15,6 +15,7 @@
 package metric
 
 import (
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -22,8 +23,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/tsmon"

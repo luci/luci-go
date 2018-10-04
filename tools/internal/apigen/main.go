@@ -16,6 +16,7 @@ package apigen
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -34,7 +35,6 @@ import (
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/sync/parallel"
-	"golang.org/x/net/context"
 )
 
 const (

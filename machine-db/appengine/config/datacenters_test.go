@@ -15,9 +15,8 @@
 package config
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/config/validation"
 	"go.chromium.org/luci/machine-db/api/common/v1"

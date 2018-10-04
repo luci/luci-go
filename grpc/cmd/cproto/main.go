@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -23,8 +24,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/flag/stringlistflag"
 	"go.chromium.org/luci/common/logging"

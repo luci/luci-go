@@ -15,10 +15,10 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 

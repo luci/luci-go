@@ -15,11 +15,12 @@
 package deps
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"go.chromium.org/luci/common/logging"
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/mutate"
-	"golang.org/x/net/context"
 )
 
 func (d *deps) ActivateExecution(c context.Context, req *dm.ActivateExecutionReq) (ret *empty.Empty, err error) {

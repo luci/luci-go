@@ -16,10 +16,9 @@ package logging
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sort"
-
-	"golang.org/x/net/context"
 )
 
 const (

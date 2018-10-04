@@ -15,9 +15,8 @@
 package secrets
 
 import (
+	"context"
 	"errors"
-
-	"golang.org/x/net/context"
 )
 
 var (

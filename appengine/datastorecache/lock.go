@@ -15,13 +15,12 @@
 package datastorecache
 
 import (
+	"context"
 	"strings"
 
 	"go.chromium.org/luci/appengine/memlock"
 
 	"go.chromium.org/gae/service/info"
-
-	"golang.org/x/net/context"
 )
 
 // ErrFailedToLock is a sentinel error returned by Locker.TryWithLock if the

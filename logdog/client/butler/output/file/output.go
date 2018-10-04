@@ -15,6 +15,7 @@
 package file
 
 import (
+	"context"
 	"os"
 	"sort"
 	"sync"
@@ -24,7 +25,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 // Options is the set of configuration options for the Output.

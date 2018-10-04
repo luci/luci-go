@@ -3,8 +3,9 @@
 package logdog
 
 import (
+	"context"
+
 	proto "github.com/golang/protobuf/proto"
-	context "golang.org/x/net/context"
 
 	empty "github.com/golang/protobuf/ptypes/empty"
 )

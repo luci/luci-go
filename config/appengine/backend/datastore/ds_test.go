@@ -15,6 +15,7 @@
 package datastore
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -39,7 +40,6 @@ import (
 	"go.chromium.org/gae/impl/memory"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

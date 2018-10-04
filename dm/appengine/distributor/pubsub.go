@@ -15,6 +15,7 @@
 package distributor
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,7 +27,6 @@ import (
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/tokens"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
 )
 
 const notifyTopicSuffix = "dm-distributor-notify"

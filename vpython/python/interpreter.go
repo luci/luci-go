@@ -15,6 +15,7 @@
 package python
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 	"sync"
@@ -22,8 +23,6 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
-
-	"golang.org/x/net/context"
 )
 
 // Interpreter represents a system Python interpreter. It exposes the ability

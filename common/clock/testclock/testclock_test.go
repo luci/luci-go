@@ -15,12 +15,12 @@
 package testclock
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 )
 
 func TestTestClock(t *testing.T) {

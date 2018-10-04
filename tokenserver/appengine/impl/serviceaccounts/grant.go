@@ -15,10 +15,10 @@
 package serviceaccounts
 
 import (
+	"context"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/server/auth/signing"

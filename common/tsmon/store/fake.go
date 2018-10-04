@@ -15,10 +15,10 @@
 package store
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 // Fake is a fake Store.

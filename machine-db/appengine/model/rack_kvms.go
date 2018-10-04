@@ -15,9 +15,8 @@
 package model
 
 import (
+	"context"
 	"database/sql"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"sync"
 	"testing"
 	"time"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/config/impl/memory"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
 	"go.chromium.org/luci/logdog/api/config/svcconfig"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

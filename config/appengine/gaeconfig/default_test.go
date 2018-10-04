@@ -15,6 +15,7 @@
 package gaeconfig
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -40,7 +41,6 @@ import (
 	ds "go.chromium.org/gae/service/datastore"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

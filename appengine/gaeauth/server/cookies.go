@@ -15,10 +15,9 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/user"

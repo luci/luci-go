@@ -18,10 +18,9 @@
 package warmup
 
 import (
+	"context"
 	"net/http"
 	"sync"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

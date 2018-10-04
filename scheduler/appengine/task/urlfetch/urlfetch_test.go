@@ -15,13 +15,13 @@
 package urlfetch
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/urlfetch"
 	"go.chromium.org/luci/common/clock"

@@ -21,12 +21,11 @@
 package xsrf
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"net/http"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"

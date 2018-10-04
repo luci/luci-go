@@ -15,9 +15,8 @@
 package testutil
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 

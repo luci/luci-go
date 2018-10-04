@@ -15,12 +15,14 @@
 package admin
 
 import (
+	"context"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	log "go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc/codes"
 )
 

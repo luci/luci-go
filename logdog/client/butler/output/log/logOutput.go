@@ -15,6 +15,7 @@
 package log
 
 import (
+	"context"
 	"encoding/hex"
 	"strconv"
 	"sync"
@@ -25,7 +26,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/common/types"
-	"golang.org/x/net/context"
 )
 
 // logOutput is an Output implementation that logs messages to its contexts'

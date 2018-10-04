@@ -15,9 +15,8 @@
 package clock
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 type systemTimer struct {

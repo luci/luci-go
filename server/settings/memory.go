@@ -15,11 +15,10 @@
 package settings
 
 import (
+	"context"
 	"encoding/json"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // MemoryStorage implements Storage interface, using memory as a backend. Useful

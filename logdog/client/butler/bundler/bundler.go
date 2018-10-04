@@ -16,6 +16,7 @@ package bundler
 
 import (
 	"container/heap"
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // Config is the Bundler configuration.

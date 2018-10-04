@@ -15,9 +15,8 @@
 package authdb
 
 import (
+	"context"
 	"net"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/logging"

@@ -16,12 +16,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"os"
 
 	"github.com/golang/protobuf/jsonpb"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/logging"
 

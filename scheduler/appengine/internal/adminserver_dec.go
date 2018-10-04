@@ -3,8 +3,9 @@
 package internal
 
 import (
+	"context"
+
 	proto "github.com/golang/protobuf/proto"
-	context "golang.org/x/net/context"
 
 	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
 )

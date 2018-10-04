@@ -15,13 +15,13 @@
 package apigen
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	log "go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
 )
 
 const shutdownWait = 20 * time.Second

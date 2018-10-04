@@ -15,12 +15,11 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/signing"
 	"go.chromium.org/luci/server/caching"

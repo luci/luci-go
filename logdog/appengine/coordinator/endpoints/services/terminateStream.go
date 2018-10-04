@@ -15,6 +15,7 @@
 package services
 
 import (
+	"context"
 	"crypto/subtle"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -33,8 +34,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 // TerminateStream is an idempotent stream state terminate operation.

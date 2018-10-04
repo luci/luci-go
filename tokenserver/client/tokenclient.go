@@ -15,11 +15,12 @@
 package client
 
 import (
+	"context"
 	"crypto/x509"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 

@@ -15,11 +15,10 @@
 package ui
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"

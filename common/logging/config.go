@@ -15,9 +15,8 @@
 package logging
 
 import (
+	"context"
 	"flag"
-
-	"golang.org/x/net/context"
 )
 
 // Config is a logging configuration structure.

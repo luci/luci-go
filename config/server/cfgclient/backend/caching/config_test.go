@@ -15,6 +15,7 @@
 package caching
 
 import (
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/client"
 	"go.chromium.org/luci/config/server/cfgclient/backend/testconfig"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -15,6 +15,7 @@
 package python
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,8 +24,6 @@ import (
 
 	"go.chromium.org/luci/common/system/filesystem"
 	"go.chromium.org/luci/common/testing/testfs"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

@@ -15,12 +15,12 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"go.chromium.org/luci/common/clock/clockflag"
 	"go.chromium.org/luci/server/settings"
-	"golang.org/x/net/context"
 )
 
 const (

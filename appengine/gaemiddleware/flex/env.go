@@ -17,6 +17,7 @@
 package flex
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -41,8 +42,6 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"cloud.google.com/go/compute/metadata"
-
-	"golang.org/x/net/context"
 )
 
 var (

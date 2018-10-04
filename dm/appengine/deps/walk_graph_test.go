@@ -15,6 +15,7 @@
 package deps
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -26,8 +27,6 @@ import (
 	dm "go.chromium.org/luci/dm/api/service/v1"
 	"go.chromium.org/luci/dm/appengine/distributor/fake"
 	"go.chromium.org/luci/dm/appengine/model"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"

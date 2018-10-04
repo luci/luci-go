@@ -16,6 +16,7 @@ package cipd
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"io/ioutil"
 	"net/http"
@@ -25,8 +26,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/clock"

@@ -15,11 +15,10 @@
 package tsmon
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon/target"
 

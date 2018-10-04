@@ -15,13 +15,12 @@
 package access
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/proto/access"
 	"go.chromium.org/luci/grpc/prpc"

@@ -15,9 +15,8 @@
 package auth
 
 import (
+	"context"
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // SessionStore keeps user sessions in some permanent storage. SessionStore is

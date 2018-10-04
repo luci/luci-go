@@ -15,13 +15,12 @@
 package tsmon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"html"
 	"html/template"
 	"strconv"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/tsmon/monitor"
 	"go.chromium.org/luci/server/auth"

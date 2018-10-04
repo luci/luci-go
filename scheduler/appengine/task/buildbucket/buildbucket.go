@@ -16,6 +16,7 @@
 package buildbucket
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -25,7 +26,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/gae/service/info"

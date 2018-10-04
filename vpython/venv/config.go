@@ -16,6 +16,7 @@ package venv
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -34,8 +35,6 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/system/environ"
 	"go.chromium.org/luci/common/system/filesystem"
-
-	"golang.org/x/net/context"
 )
 
 // EnvironmentVersion is an environment version string. It must advance each

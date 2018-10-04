@@ -16,6 +16,7 @@ package gsutil
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

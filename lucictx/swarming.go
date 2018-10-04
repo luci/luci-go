@@ -15,9 +15,8 @@
 package lucictx
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 )
 
 // Swarming is a struct that may be used with the "swarming" section of

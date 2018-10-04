@@ -15,13 +15,12 @@
 package dsset
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"sync"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"

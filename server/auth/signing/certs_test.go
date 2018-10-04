@@ -15,13 +15,12 @@
 package signing
 
 import (
+	"context"
 	"encoding/pem"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/caching"
 

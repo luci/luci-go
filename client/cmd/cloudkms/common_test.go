@@ -15,9 +15,8 @@
 package main
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth"
 	. "go.chromium.org/luci/common/testing/assertions"

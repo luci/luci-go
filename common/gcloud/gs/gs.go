@@ -15,6 +15,7 @@
 package gs
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,7 +27,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 
 	gs "cloud.google.com/go/storage"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )

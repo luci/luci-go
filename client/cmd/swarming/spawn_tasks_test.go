@@ -16,10 +16,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"os"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	googleapi "google.golang.org/api/googleapi"
 

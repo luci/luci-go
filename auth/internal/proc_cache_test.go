@@ -15,12 +15,12 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	. "github.com/smartystreets/goconvey/convey"

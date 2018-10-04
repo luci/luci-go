@@ -15,6 +15,7 @@
 package isolate
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -23,8 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/client/archiver"
 	isolateservice "go.chromium.org/luci/common/api/isolate/isolateservice/v1"

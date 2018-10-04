@@ -16,9 +16,8 @@ package testutil
 
 import (
 	"bytes"
+	"context"
 	"io"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/cipd/appengine/impl/gs"
 )

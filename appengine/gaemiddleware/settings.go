@@ -15,9 +15,8 @@
 package gaemiddleware
 
 import (
+	"context"
 	"fmt"
-
-	"golang.org/x/net/context"
 
 	mc "go.chromium.org/gae/service/memcache"
 	"go.chromium.org/luci/common/logging"

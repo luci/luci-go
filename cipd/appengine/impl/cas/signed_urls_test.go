@@ -15,11 +15,11 @@
 package cas
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/luci/cipd/appengine/impl/testutil"

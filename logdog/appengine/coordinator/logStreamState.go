@@ -15,14 +15,13 @@
 package coordinator
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/logdog/common/types"
-
-	"golang.org/x/net/context"
 )
 
 // ArchivalState describes the archival state of a LogStream.

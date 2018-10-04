@@ -15,10 +15,9 @@
 package promise
 
 import (
+	"context"
 	"errors"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 var (

@@ -15,14 +15,13 @@
 package flex
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/logdog/common/storage"
 	"go.chromium.org/luci/server/caching"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

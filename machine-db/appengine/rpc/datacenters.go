@@ -15,7 +15,7 @@
 package rpc
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"

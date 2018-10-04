@@ -15,9 +15,8 @@
 package e2etest
 
 import (
+	"context"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/testing/prpctest"
 

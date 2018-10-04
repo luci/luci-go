@@ -16,11 +16,11 @@ package gs
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 	"google.golang.org/api/googleapi"
 

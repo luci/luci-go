@@ -15,9 +15,8 @@
 package frontend
 
 import (
+	"context"
 	"net/http"
-
-	"golang.org/x/net/context"
 
 	authServer "go.chromium.org/luci/appengine/gaeauth/server"
 	"go.chromium.org/luci/appengine/gaemiddleware"

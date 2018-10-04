@@ -15,6 +15,7 @@
 package local
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -28,8 +29,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/sortby"
 	"go.chromium.org/luci/common/data/stringset"

@@ -15,6 +15,7 @@
 package signingtest
 
 import (
+	"context"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -25,8 +26,6 @@ import (
 	"encoding/pem"
 	"math/big"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/server/auth/signing"
 )

@@ -16,11 +16,11 @@
 package discovery
 
 import (
+	"context"
 	"crypto/sha1"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.chromium.org/luci/grpc/prpc"

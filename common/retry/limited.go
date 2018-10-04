@@ -15,10 +15,10 @@
 package retry
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
-	"golang.org/x/net/context"
 )
 
 // Limited is an Iterator implementation that may be limited by a maximum number

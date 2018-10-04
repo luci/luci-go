@@ -16,6 +16,7 @@ package collector
 
 import (
 	"bytes"
+	"context"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -33,7 +34,6 @@ import (
 	"go.chromium.org/luci/logdog/server/collector/coordinator"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 const (

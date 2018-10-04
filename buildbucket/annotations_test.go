@@ -15,12 +15,12 @@
 package buildbucket
 
 import (
+	"context"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	luci "go.chromium.org/luci/common/proto"

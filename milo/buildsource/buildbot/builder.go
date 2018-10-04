@@ -15,12 +15,11 @@
 package buildbot
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"

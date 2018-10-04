@@ -15,9 +15,8 @@
 package rpc
 
 import (
+	"context"
 	"database/sql"
-
-	"golang.org/x/net/context"
 
 	"github.com/Masterminds/squirrel"
 

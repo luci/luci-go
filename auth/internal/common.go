@@ -17,12 +17,12 @@ package internal
 
 import (
 	"bytes"
+	"context"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 
 	"go.chromium.org/luci/common/clock"

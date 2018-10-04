@@ -15,10 +15,10 @@
 package grpcmon
 
 import (
+	"context"
 	"testing"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"go.chromium.org/luci/common/clock"

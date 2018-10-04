@@ -15,10 +15,9 @@
 package prpc
 
 import (
+	"context"
 	"net/http"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 // Authenticator authenticates incoming pRPC requests.

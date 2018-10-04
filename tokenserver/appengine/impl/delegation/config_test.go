@@ -15,10 +15,10 @@
 package delegation
 
 import (
+	"context"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"

@@ -15,6 +15,7 @@
 package bigtable
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -26,8 +27,6 @@ import (
 
 	"cloud.google.com/go/bigtable"
 	"google.golang.org/grpc/codes"
-
-	"golang.org/x/net/context"
 )
 
 const (

@@ -19,10 +19,9 @@
 package mathrand
 
 import (
+	"context"
 	"math/rand"
 	"sync"
-
-	"golang.org/x/net/context"
 )
 
 var key = "holds a rand.Rand for mathrand"

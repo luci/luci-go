@@ -15,13 +15,12 @@
 package templates
 
 import (
+	"context"
 	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"golang.org/x/net/context"
 )
 
 // AssetsLoader returns Loader that loads templates from the given assets map.

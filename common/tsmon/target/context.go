@@ -15,8 +15,9 @@
 package target
 
 import (
+	"context"
+
 	"go.chromium.org/luci/common/tsmon/types"
-	"golang.org/x/net/context"
 )
 
 type key int

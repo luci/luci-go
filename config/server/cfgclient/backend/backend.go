@@ -15,9 +15,8 @@
 package backend
 
 import (
+	"context"
 	"net/url"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/config"
 )

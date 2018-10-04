@@ -16,13 +16,13 @@ package gologger
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"regexp"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"go.chromium.org/luci/common/logging"
-	"golang.org/x/net/context"
 )
 
 var (

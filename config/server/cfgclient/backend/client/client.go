@@ -16,6 +16,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,8 +27,6 @@ import (
 	"go.chromium.org/luci/config/impl/remote"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/server/auth"
-
-	"golang.org/x/net/context"
 )
 
 // Provider returns a config.Interface for the supplied parameters.

@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"os"
@@ -32,7 +33,6 @@ import (
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 
 	"github.com/maruel/subcommands"
-	"golang.org/x/net/context"
 )
 
 var subcommandRun = &subcommands.Command{

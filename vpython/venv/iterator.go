@@ -15,11 +15,10 @@
 package venv
 
 import (
+	"context"
 	"io"
 	"os"
 	"strings"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"

@@ -21,13 +21,12 @@
 package gaesecrets
 
 import (
+	"context"
 	"crypto/rand"
 	"fmt"
 	"io"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	ds "go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"

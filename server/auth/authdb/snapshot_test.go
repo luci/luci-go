@@ -15,12 +15,11 @@
 package authdb
 
 import (
+	"context"
 	"encoding/json"
 	"net"
 	"net/http"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/internal"

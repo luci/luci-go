@@ -15,10 +15,10 @@
 package gs
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/errors"

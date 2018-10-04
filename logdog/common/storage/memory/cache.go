@@ -15,12 +15,11 @@
 package memory
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/logdog/common/storage"
-
-	"golang.org/x/net/context"
 )
 
 // Cache is an in-memory storage.Cache implementation.

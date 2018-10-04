@@ -17,13 +17,12 @@ package lru
 
 import (
 	"container/list"
+	"context"
 	"sync"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/sync/mutexpool"
-
-	"golang.org/x/net/context"
 )
 
 // snapshot is a snapshot of the contents of the Cache.

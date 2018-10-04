@@ -15,6 +15,8 @@
 package mutate
 
 import (
+	"context"
+
 	"google.golang.org/grpc/codes"
 
 	ds "go.chromium.org/gae/service/datastore"
@@ -24,7 +26,6 @@ import (
 	"go.chromium.org/luci/dm/appengine/model"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/tumble"
-	"golang.org/x/net/context"
 )
 
 // FinishAttempt does a couple things:

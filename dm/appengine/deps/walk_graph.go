@@ -15,13 +15,13 @@
 package deps
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"sort"
 	"sync"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 
 	ds "go.chromium.org/gae/service/datastore"

@@ -16,13 +16,13 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/user"

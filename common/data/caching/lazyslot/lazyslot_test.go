@@ -15,12 +15,11 @@
 package lazyslot
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/common/clock/testclock"
 

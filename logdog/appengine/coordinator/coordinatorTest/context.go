@@ -15,6 +15,7 @@
 package coordinatorTest
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -53,7 +54,6 @@ import (
 	"go.chromium.org/gae/service/info"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 )
 
 // AllAccessProject is the project name that can be used to get a full-access

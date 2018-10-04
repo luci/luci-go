@@ -15,7 +15,7 @@
 package authdbimpl
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/server/auth/service"

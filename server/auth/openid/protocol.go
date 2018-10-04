@@ -15,12 +15,11 @@
 package openid
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"strings"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"

@@ -15,6 +15,7 @@
 package coordinator
 
 import (
+	"context"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -23,7 +24,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
-	"golang.org/x/net/context"
 )
 
 // ErrArchiveTasked is returned by ArchivalParams' PublishTask if the supplied

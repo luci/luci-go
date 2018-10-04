@@ -15,12 +15,11 @@
 package tumble
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	ds "go.chromium.org/gae/service/datastore"
-
-	"golang.org/x/net/context"
 )
 
 func init() {

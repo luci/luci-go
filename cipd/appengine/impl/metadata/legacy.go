@@ -15,6 +15,7 @@
 package metadata
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -22,7 +23,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/auth/identity"

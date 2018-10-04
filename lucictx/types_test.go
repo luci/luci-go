@@ -15,10 +15,9 @@
 package lucictx
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
-
-	"golang.org/x/net/context"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

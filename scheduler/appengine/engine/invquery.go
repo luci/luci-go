@@ -15,11 +15,11 @@
 package engine
 
 import (
+	"context"
 	"encoding/base64"
 	"sort"
 
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/net/context"
 
 	"go.chromium.org/gae/service/datastore"
 

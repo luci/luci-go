@@ -26,6 +26,7 @@
 package access
 
 import (
+	"context"
 	"strings"
 
 	"go.chromium.org/luci/auth/identity"
@@ -36,8 +37,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/textproto"
 	"go.chromium.org/luci/server/auth"
-
-	"golang.org/x/net/context"
 )
 
 // ErrNoAccess is an error returned by CheckAccess if the supplied Authority

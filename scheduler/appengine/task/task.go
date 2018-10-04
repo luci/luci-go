@@ -19,6 +19,7 @@
 package task
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -28,7 +29,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	structpb "github.com/golang/protobuf/ptypes/struct"
-	"golang.org/x/net/context"
+
 	"google.golang.org/api/pubsub/v1"
 
 	"go.chromium.org/luci/scheduler/appengine/internal"

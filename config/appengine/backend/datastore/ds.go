@@ -15,6 +15,7 @@
 package datastore
 
 import (
+	"context"
 	"time"
 
 	"go.chromium.org/luci/appengine/datastorecache"
@@ -25,8 +26,6 @@ import (
 	"go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/server/cfgclient/backend/caching"
-
-	"golang.org/x/net/context"
 )
 
 const (
