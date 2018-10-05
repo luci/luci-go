@@ -32,8 +32,9 @@
     "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap",
-      "Failure build",
-      "Failure build.build"
+      "InfraFailure build",
+      "Failure build.build",
+      "InfraFailure build.upload"
     ]
   },
   "Trigger": null,
@@ -307,15 +308,15 @@
         "URL": "",
         "AriaLabel": "build"
       },
-      "Status": "Failure",
+      "Status": "InfraFailure",
       "PendingTime": {
         "Started": "0001-01-01T00:00:00Z",
         "Finished": "0001-01-01T00:00:00Z",
         "Duration": 0
       },
       "ExecutionTime": {
-        "Started": "2016-11-14T22:37:58.5Z",
-        "Finished": "2016-11-14T22:37:58.5Z",
+        "Started": "2016-11-14T22:38:11.34Z",
+        "Finished": "2016-11-14T22:38:11.34Z",
         "Duration": 0
       },
       "Type": "Step",
@@ -380,6 +381,35 @@
       "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": null
+    },
+    {
+      "Label": {
+        "Label": "build.upload",
+        "URL": "",
+        "AriaLabel": "build.upload"
+      },
+      "Status": "InfraFailure",
+      "MainLink": [
+        {
+          "Label": "stdout",
+          "URL": "/swarming/task/build-nested/steps/build/0/steps/upload/0/stdout",
+          "AriaLabel": "log link for stdout"
+        }
+      ],
+      "PendingTime": {
+        "Started": "0001-01-01T00:00:00Z",
+        "Finished": "0001-01-01T00:00:00Z",
+        "Duration": 0
+      },
+      "ExecutionTime": {
+        "Started": "2016-11-14T22:38:05.44Z",
+        "Finished": "2016-11-14T22:38:11.34Z",
+        "Duration": 5900000000
+      },
+      "Type": "Step",
+      "LevelsDeep": 0,
+      "Verbosity": 2,
+      "Text": null
     }
   ],
   "PropertyGroup": [
@@ -425,6 +455,10 @@
     },
     {
       "GroupName": "build.build",
+      "Property": null
+    },
+    {
+      "GroupName": "build.upload",
       "Property": null
     },
     {
