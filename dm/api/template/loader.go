@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dmTemplate
+package dmtemplate
 
 import (
 	"context"
@@ -55,6 +55,6 @@ func (f *File) Render(spec *templateproto.Specifier) (*dm.Quest_Desc, error) {
 		DistributorConfigName: t.DistributorConfigName,
 		Parameters:            params,
 		DistributorParameters: distribParams,
-		Meta:                  t.Meta,
+		Meta: t.Meta,
 	}, nil
 }

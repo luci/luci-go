@@ -249,7 +249,7 @@ type templateFileKey struct {
 }
 
 type templateFile struct {
-	file    *dmTemplate.File
+	file    *dmtemplate.File
 	version string
 }
 
@@ -259,7 +259,7 @@ func (cache templateFileCache) render(c context.Context, inst *dm.TemplateInstan
 	key := templateFileKey{inst.Project, inst.Ref}
 	f, ok := cache[key]
 	if !ok {
-		f.file, f.version, err = dmTemplate.LoadFile(c, inst.Project, inst.Ref)
+		f.file, f.version, err = dmtemplate.LoadFile(c, inst.Project, inst.Ref)
 		if err != nil {
 			err = fmt.Errorf("failed to load templates %#v: %s", key, err)
 			return
