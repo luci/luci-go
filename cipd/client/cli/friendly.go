@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/local"
 )
 
@@ -86,7 +87,7 @@ func optionalSiteRoot(siteRoot string) (string, error) {
 
 // isSiteRoot returns true if <p>/.cipd exists.
 func isSiteRoot(p string) bool {
-	fi, err := os.Stat(filepath.Join(p, local.SiteServiceDir))
+	fi, err := os.Stat(filepath.Join(p, fs.SiteServiceDir))
 	return err == nil && fi.IsDir()
 }
 
@@ -130,7 +131,7 @@ func (c *installationSiteConfig) write(path string) error {
 // The returned config may have ServiceURL set to "" due to previous buggy
 // version of CIPD not setting it up correctly.
 func readConfig(siteRoot string) (installationSiteConfig, error) {
-	path := filepath.Join(siteRoot, local.SiteServiceDir, "config.json")
+	path := filepath.Join(siteRoot, fs.SiteServiceDir, "config.json")
 	c := installationSiteConfig{}
 	if err := c.read(path); err != nil && !os.IsNotExist(err) {
 		return c, err
@@ -205,7 +206,7 @@ func initInstallationSite(rootDir, defaultServiceURL string, force bool) (*insta
 	}
 
 	// Good to go.
-	if err = os.MkdirAll(filepath.Join(rootDir, local.SiteServiceDir), 0777); err != nil {
+	if err = os.MkdirAll(filepath.Join(rootDir, fs.SiteServiceDir), 0777); err != nil {
 		return nil, err
 	}
 	site, err := getInstallationSite(rootDir, defaultServiceURL)
@@ -236,7 +237,7 @@ func (site *installationSite) initClient(ctx context.Context, authFlags authcli.
 // modifyConfig reads config file, calls callback to mutate it, then writes
 // it back.
 func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) error) error {
-	path := filepath.Join(site.siteRoot, local.SiteServiceDir, "config.json")
+	path := filepath.Join(site.siteRoot, fs.SiteServiceDir, "config.json")
 	c := installationSiteConfig{}
 	if err := c.read(path); err != nil && !os.IsNotExist(err) {
 		return err
