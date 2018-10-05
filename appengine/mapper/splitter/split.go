@@ -70,6 +70,14 @@ func (r Range) Apply(q *datastore.Query) *datastore.Query {
 	return q
 }
 
+// IsEmpty is true if the range represents an empty set.
+func (r Range) IsEmpty() bool {
+	if r.Start == nil || r.End == nil {
+		return false
+	}
+	return !r.Start.Less(r.End)
+}
+
 // SplitIntoRanges returns a list of key ranges (up to 'Shards') that together
 // cover the results of the provided query.
 //
