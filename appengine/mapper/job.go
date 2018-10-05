@@ -151,7 +151,14 @@ type shardState int
 const (
 	shardStateUnknown  shardState = iota // should not really be seen anywhere
 	shardStateStarting                   // the shard was just created
+	shardStateRunning                    // some work (but not all) has been done
+	shardStateSuccess                    // finished successfully
+	shardStateFail                       // failed (perhaps midway)
 )
+
+func (ss shardState) isFinal() bool {
+	return ss == shardStateSuccess || ss == shardStateFail
+}
 
 // shard represents a key range being worked on by a single worker (Start, End].
 //
@@ -174,12 +181,16 @@ type shard struct {
 	Index int `gae:",noindex"`
 	// State is used to track shard's lifecycle, see the enum.
 	State shardState
+	// Error is an error message for failed shards.
+	Error string `gae:",noindex"`
+	// AttemptNum is next expected ProcessShard task attempt number.
+	AttemptNum int64 `gae:",noindex"`
 	// Range is an entity key range covered by this shard.
 	Range splitter.Range `gae:",noindex"`
+	// ResumeFrom is the last processed key or nil if just starting.
+	ResumeFrom *datastore.Key `gae:",noindex"`
 	// Created is when the shard was created, FYI.
 	Created time.Time
 	// Updated is when the shard was last touched, FYI.
 	Updated time.Time
-
-	// TODO: Resumption point.
 }

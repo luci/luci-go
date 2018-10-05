@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/golang/protobuf/proto"
 
@@ -132,6 +133,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 
 	disp.RegisterTask(&tasks.SplitAndLaunch{}, ctl.splitAndLaunchHandler, ctl.ControlQueue, nil)
 	disp.RegisterTask(&tasks.FanOutShards{}, ctl.fanOutShardsHandler, ctl.ControlQueue, nil)
+	disp.RegisterTask(&tasks.ProcessShard{}, ctl.processShardHandler, ctl.MapperQueue, nil)
 }
 
 // tq returns a dispatcher set in Install or panics if not set yet.
@@ -372,10 +374,250 @@ func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Mess
 		return errors.Annotate(err, "in FanOutShards").Err()
 	}
 
-	// TODO: enqueue a bunch of named ProcessShard tasks, one per shard, to
-	// actually launch shard processing.
-	for _, sid := range shardIDs {
-		logging.Infof(c, "TODO: start shard %d", sid)
+	// Enqueue a bunch of named ProcessShard tasks (one per shard) to actually
+	// launch shard processing. This is idempotent operation, so if FanOutShards
+	// crashes midway and later retried, nothing bad happens.
+	tsks := make([]*tq.Task, len(shardIDs))
+	for idx, sid := range shardIDs {
+		tsks[idx] = makeProcessShardTask(job.ID, sid, 0, true)
 	}
-	return nil
+	return ctl.tq().AddTask(c, tsks...)
+}
+
+// processShardHandler reads a bunch of entities (up to PageSize), and hands
+// them to the mapper.
+//
+// After doing this in a loop for 1 min, it checkpoints the state and reenqueues
+// itself to resume mapping in another instance of the task. This makes each
+// processing TQ task relatively small, so it doesn't eat a lot of memory, or
+// produces gigantic unreadable logs. It also makes TQ's "Pause queue" button
+// more handy.
+func (ctl *Controller) processShardHandler(c context.Context, payload proto.Message) error {
+	msg := payload.(*tasks.ProcessShard)
+
+	// Grab the shard, it has information about the unprocessed key range. Skip
+	// unnecessary tries (based on AttemptNum).
+	sh := &shard{ID: msg.ShardId}
+	switch err := datastore.Get(c, sh); {
+	case err == datastore.ErrNoSuchEntity:
+		return errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
+	case err != nil:
+		return errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
+	case sh.State.isFinal():
+		logging.Warningf(c, "The shard is finished already")
+		return nil
+	case sh.AttemptNum != msg.AttemptNum:
+		logging.Warningf(c, "The task is stale, skipping it")
+		return nil
+	}
+
+	// Grab the job config, make sure the job is still active.
+	job, err := ctl.getJob(c, JobID(msg.JobId))
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "in ProcessShard").Err()
+	case job.State != JobStateRunning:
+		logging.Warningf(c, "Skipping the shard, its parent job state is %s, expecting %s", job.State, JobStateRunning)
+		return nil
+	}
+
+	// Fail the shard if the mapper is suddenly gone.
+	mapper, err := ctl.getMapper(job.Config.Mapper)
+	switch {
+	case transient.Tag.In(err):
+		return errors.Annotate(err, "in ProcessShard").Err()
+	case err != nil:
+		return finishShard(c, msg.ShardId, err)
+	}
+
+	logging.Infof(c, "Resuming processing of the shard (launched %s ago)", clock.Now(c).Sub(sh.Created))
+
+	baseQ := job.Config.Query.ToDatastoreQuery()
+	lastKey := sh.ResumeFrom
+	keys := make([]*datastore.Key, 0, job.Config.PageSize)
+
+	shardDone := false // true when finished processing the shard
+	advanced := false  // true if processed at least something
+
+	// A soft deadline when to checkpoint the progress and reenqueue the
+	// processing task. We never abort processing of a page midway (causes too
+	// many complications), so if the mapper is extremely slow, it may end up
+	// running longer than this deadline.
+	deadline := clock.Now(c).Add(time.Minute)
+	for clock.Now(c).Before(deadline) {
+		rng := sh.Range
+		if lastKey != nil {
+			rng.Start = lastKey
+		}
+		if rng.IsEmpty() {
+			shardDone = true
+			break
+		}
+
+		// Fetch next batch of keys. Return an error to the outer scope where it
+		// eventually will bubble up to TQ (so the task is retried with exponential
+		// backoff).
+		logging.Infof(c, "Fetching the next batch...")
+		q := rng.Apply(baseQ).Limit(int32(job.Config.PageSize)).KeysOnly(true)
+		keys = keys[:0]
+		if err = datastore.GetAll(c, q, &keys); err != nil {
+			err = errors.Annotate(err, "when querying for keys").Tag(transient.Tag).Err()
+			break
+		}
+
+		// No results within the range? Processing of the shard is complete!
+		if len(keys) == 0 {
+			shardDone = true
+			break
+		}
+
+		// Let the mapper do its thing. Remember where to resume from.
+		logging.Infof(c,
+			"Processing %d entities: %s - %s",
+			len(keys),
+			keys[0].String(),
+			keys[len(keys)-1].String())
+		if err = mapper.Process(c, job.Config.Params, keys); err != nil {
+			err = errors.Annotate(err, "in the mapper %s", mapper.MapperID()).Err()
+			break
+		}
+		lastKey = keys[len(keys)-1]
+		advanced = true
+
+		// Note: at this point we might try to checkpoint the progress, but we must
+		// be careful not to exceed 1 transaction per second limit. Considering we
+		// also MUST checkpoint the progress at the end of the task, it is a bit
+		// tricky to guarantee no two checkpoints are closer than 1 sec. We can do
+		// silly things like sleep 1 sec before the last checkpoint, but they
+		// provide no guarantees.
+		//
+		// So instead we store the progress after the deadline is up. If the task
+		// crashes midway, up to 1 min of work will be retried. No big deal.
+	}
+
+	// We are done with the shard when either processed all its range or failed
+	// with a fatal error. finishShard would take care of notifying the parent
+	// job about the shard's completion.
+	if shardDone || (err != nil && !transient.Tag.In(err)) {
+		return finishShard(c, msg.ShardId, err)
+	}
+
+	logging.Infof(c, "The shard processing will resume from %s", lastKey)
+
+	// If the shard isn't done, and we made no progress, then we hit a transient
+	// error. Ask TQ to retry.
+	if !advanced {
+		return err
+	}
+
+	// Otherwise need to checkpoint the progress and either to retry this task
+	// (on transient errors, to get an exponential backoff from TQ), or start
+	// a new task.
+	txnErr := shardTxn(c, msg.ShardId, func(c context.Context, sh *shard) (bool, error) {
+		switch {
+		case sh.AttemptNum != msg.AttemptNum:
+			logging.Warningf(c, "Unexpected shard state: its AttemptNum is %d != %d", sh.AttemptNum, msg.AttemptNum)
+			return false, nil // some other task is already running
+		case sh.ResumeFrom != nil && lastKey.Less(sh.ResumeFrom):
+			logging.Warningf(c, "Unexpected shard state: its ResumeFrom is %s >= %s", sh.ResumeFrom, lastKey)
+			return false, nil // someone already claimed to process further, let them proceed
+		}
+
+		sh.State = shardStateRunning
+		sh.ResumeFrom = lastKey
+
+		// If the processing succeeded, transactionally start a new task in the
+		// chain, otherwise just store the progress (TQ will retry the current
+		// task).
+		var tskErr error
+		if err == nil {
+			sh.AttemptNum++
+			tskErr = ctl.tq().AddTask(c, makeProcessShardTask(sh.JobID, sh.ID, sh.AttemptNum, false))
+		}
+		return true, tskErr
+	})
+
+	switch {
+	case err != nil && txnErr == nil:
+		return err
+	case err == nil && txnErr != nil:
+		return errors.Annotate(txnErr, "when storing shard progress").Err()
+	case err != nil && txnErr != nil:
+		return errors.Annotate(txnErr, "when storing shard progress after a transient error (%s)", err).Err()
+	default: // (nil, nil)
+		return nil
+	}
+}
+
+// makeProcessShardTask creates a ProcessShard tq.Task.
+//
+// If 'named' is true, assigns it a name. Tasks are named based on their shard
+// IDs and an index in the chain of ProcessShard tasks (attempt number), so that
+// on retries we don't rekick already finished tasks.
+func makeProcessShardTask(job JobID, shardID, attemptNum int64, named bool) *tq.Task {
+	// Note: strictly speaking including job ID in the task name is redundant,
+	// since shardID is already globally unique, but it doesn't hurt. Useful for
+	// debugging and when looking at logs and pending TQ tasks.
+	t := &tq.Task{
+		Title: fmt.Sprintf("job-%d-shard-%d-attempt-%d", job, shardID, attemptNum),
+		Payload: &tasks.ProcessShard{
+			JobId:      int64(job),
+			ShardId:    shardID,
+			AttemptNum: attemptNum,
+		},
+	}
+	if named {
+		t.DeduplicationKey = fmt.Sprintf("v1-%d-%d-%d", job, shardID, attemptNum)
+	}
+	return t
+}
+
+// finishShard marks the shard as finished (with status based on shardErr).
+func finishShard(c context.Context, shardID int64, shardErr error) error {
+	err := shardTxn(c, shardID, func(c context.Context, sh *shard) (save bool, err error) {
+		// TODO: notify the parent job about shard's completion.
+		runtime := clock.Now(c).Sub(sh.Created)
+		if shardErr != nil {
+			logging.Errorf(c, "The shard processing failed in %s with error: %s", runtime, shardErr)
+			sh.State = shardStateFail
+			sh.Error = shardErr.Error()
+		} else {
+			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
+			sh.State = shardStateSuccess
+		}
+		return true, nil
+	})
+	return errors.Annotate(err, "when marking the shard as finished").Err()
+}
+
+// shardTxnCb examines and optionally mutates the shard.
+//
+// It returns (true, nil) to instruct shardTxn to store the shard, (false, nil)
+// to skip storing, and (..., err) to return the error.
+type shardTxnCb func(c context.Context, sh *shard) (save bool, err error)
+
+// shardTxn fetches the shard and calls the callback to examine or mutate it.
+//
+// Silently skips finished shards.
+func shardTxn(c context.Context, shardID int64, cb shardTxnCb) error {
+	return runTxn(c, func(c context.Context) error {
+		sh := shard{ID: shardID}
+		switch err := datastore.Get(c, &sh); {
+		case err == datastore.ErrNoSuchEntity:
+			return err
+		case err != nil:
+			return transient.Tag.Apply(err)
+		case sh.State.isFinal():
+			return nil // the shard is already marked as done
+		}
+		switch save, err := cb(c, &sh); {
+		case err != nil:
+			return err
+		case !save:
+			return nil
+		default:
+			sh.Updated = clock.Now(c).UTC()
+			return transient.Tag.Apply(datastore.Put(c, &sh))
+		}
+	})
 }
