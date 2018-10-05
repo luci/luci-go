@@ -34,3 +34,16 @@ message SplitAndLaunch {
 message FanOutShards {
   int64 job_id = 1;
 }
+
+
+// ProcessShard sequentially reads the entities belonging to a key range
+// assigned to a shard and applies the mapper to them.
+//
+// Upon reaching 1 min mark, relaunches itself, increasing task_num. Thus
+// ProcessShard is actually a chain of tasks that runs as long as needed to
+// completely process the shard.
+message ProcessShard {
+  int64 job_id = 1;
+  int64 shard_id = 2;
+  int64 task_num = 3;
+}
