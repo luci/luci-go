@@ -124,23 +124,6 @@ var (
 	ErrEnsurePackagesFailed = errors.New("failed to update packages, see the log")
 )
 
-// ParanoidMode specifies how paranoid EnsurePackages should be.
-type ParanoidMode = common.ParanoidMode
-
-const (
-	// NotParanoid indicates that EnsurePackages should trust its metadata
-	// directory: if a package is marked as installed there, it should be
-	// considered correctly installed in the site root too.
-	NotParanoid = common.NotParanoid
-
-	// CheckPresence indicates that CheckDeployed should verify all files
-	// that are supposed to be installed into the site root are indeed present
-	// there, and reinstall ones that are missing.
-	//
-	// Note that it will not check file's content or file mode. Only its presence.
-	CheckPresence = common.CheckPresence
-)
-
 var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
@@ -1473,7 +1456,7 @@ func (client *clientImpl) EnsurePackages(ctx context.Context, allPins common.Pin
 	needsRepair := func(string, common.Pin) *RepairPlan { return nil }
 	if paranoia != NotParanoid {
 		needsRepair = func(subdir string, pin common.Pin) *RepairPlan {
-			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, local.WithoutManifest); {
+			switch state, err := client.deployer.CheckDeployed(ctx, subdir, pin.PackageName, paranoia, WithoutManifest); {
 			case err != nil:
 				// This error is probably non-recoverable, but we'll try anyway and
 				// properly fail later.

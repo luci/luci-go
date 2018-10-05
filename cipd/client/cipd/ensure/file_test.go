@@ -18,8 +18,8 @@ import (
 	"bytes"
 	"testing"
 
+	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/template"
-	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -69,7 +69,7 @@ var fileSerializationTests = []struct {
 		"full file",
 		&File{
 			ServiceURL:       "https://some.example.com",
-			ParanoidMode:     common.CheckPresence,
+			ParanoidMode:     local.CheckPresence,
 			ResolvedVersions: "resolved.versions",
 			PackagesBySubdir: map[string]PackageSlice{
 				"": {

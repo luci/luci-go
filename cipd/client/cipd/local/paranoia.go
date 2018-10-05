@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package common
+package local
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // ParanoidMode specifies how paranoid CIPD client should be.
 type ParanoidMode string

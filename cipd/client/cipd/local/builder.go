@@ -32,6 +32,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
 
 // BuildInstanceOptions defines options for BuildInstance function.
@@ -49,7 +50,7 @@ type BuildInstanceOptions struct {
 	VersionFile string
 
 	// InstallMode defines how to install the package: "copy" or "symlink".
-	InstallMode InstallMode
+	InstallMode cipdpkg.InstallMode
 
 	// CompressionLevel defines deflate compression level in range [0-9].
 	CompressionLevel int
@@ -77,8 +78,8 @@ func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
 	// Sanitize the Inputs.
 	for _, f := range opts.Input {
 		// Make sure no files are written to package service directory.
-		if strings.HasPrefix(f.Name(), PackageServiceDir+"/") {
-			return fmt.Errorf("can't write to %s: %s", PackageServiceDir, f.Name())
+		if strings.HasPrefix(f.Name(), cipdpkg.ServiceDir+"/") {
+			return fmt.Errorf("can't write to %s: %s", cipdpkg.ServiceDir, f.Name())
 		}
 		// Make sure no files are written to cipd's internal state directory.
 		if strings.HasPrefix(f.Name(), fs.SiteServiceDir+"/") {
@@ -295,7 +296,7 @@ var compressedExt = stringset.NewFromSlice(
 
 type manifestFile []byte
 
-func (m *manifestFile) Name() string          { return ManifestName }
+func (m *manifestFile) Name() string          { return cipdpkg.ManifestName }
 func (m *manifestFile) Size() uint64          { return uint64(len(*m)) }
 func (m *manifestFile) Executable() bool      { return false }
 func (m *manifestFile) Writable() bool        { return false }
@@ -317,15 +318,15 @@ func makeManifestFile(opts BuildInstanceOptions) (fs.File, error) {
 	if opts.VersionFile != "" && !fs.IsCleanSlashPath(opts.VersionFile) {
 		return nil, fmt.Errorf("version file path should be a clean path relative to a package root: %s", opts.VersionFile)
 	}
-	if err := ValidateInstallMode(opts.InstallMode); err != nil {
+	if err := cipdpkg.ValidateInstallMode(opts.InstallMode); err != nil {
 		return nil, err
 	}
-	formatVer := ManifestFormatVersion
+	formatVer := cipdpkg.ManifestFormatVersion
 	if opts.overrideFormatVersion != "" {
 		formatVer = opts.overrideFormatVersion
 	}
 	buf := &bytes.Buffer{}
-	err := writeManifest(&Manifest{
+	err := cipdpkg.WriteManifest(&cipdpkg.Manifest{
 		FormatVersion: formatVer,
 		PackageName:   opts.PackageName,
 		VersionFile:   opts.VersionFile,
