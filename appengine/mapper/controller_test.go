@@ -87,7 +87,7 @@ func TestController(t *testing.T) {
 			So(jobID, ShouldEqual, 1)
 
 			// In "starting" state.
-			job, err := ctl.getJob(ctx, jobID)
+			job, err := getJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job, ShouldResemble, &Job{
 				ID:      jobID,
@@ -107,7 +107,7 @@ func TestController(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Switched into "running" state.
-			job, err = ctl.getJob(ctx, jobID)
+			job, err = getJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job.State, ShouldEqual, JobStateRunning)
 
