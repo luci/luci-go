@@ -16,6 +16,7 @@ package local
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
 
 // TODO(vadimsh): How to handle path conflicts between two packages? Currently
@@ -75,11 +77,11 @@ import (
 // ToRedeploy is populated only when CheckDeployed is called in a paranoid mode,
 // and the package needs repairs.
 type DeployedPackage struct {
-	Deployed    bool        // true if the package is deployed (perhaps partially)
-	Pin         common.Pin  // the currently installed pin
-	Subdir      string      // the site subdirectory where the package is installed
-	Manifest    *Manifest   // instance's manifest, if available
-	InstallMode InstallMode // validated install mode, if available
+	Deployed    bool                // true if the package is deployed (perhaps partially)
+	Pin         common.Pin          // the currently installed pin
+	Subdir      string              // the site subdirectory where the package is installed
+	Manifest    *cipdpkg.Manifest   // instance's manifest, if available
+	InstallMode cipdpkg.InstallMode // validated install mode, if available
 
 	// ToRedeploy is a list of files that needs to be reextracted from the
 	// original package and relinked into the site root.
@@ -151,7 +153,7 @@ type Deployer interface {
 	// manifest and install mode. This is optional, since not all callers need it,
 	// and it is pretty heavy operation. Any paranoid mode implies WithManifest
 	// too.
-	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia common.ParanoidMode, manifest ManifestMode) (*DeployedPackage, error)
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia ParanoidMode, manifest ManifestMode) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
 	//
@@ -208,7 +210,7 @@ func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (c
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string, common.ParanoidMode, ManifestMode) (*DeployedPackage, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string, ParanoidMode, ManifestMode) (*DeployedPackage, error) {
 	return nil, d.err
 }
 
@@ -228,6 +230,37 @@ func (d errDeployer) CleanupTrash(context.Context) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Real deployer implementation.
+
+const (
+	// descriptionName is a name of the description file inside the package.
+	descriptionName = "description.json"
+)
+
+// description defines the structure of the description.json file located at
+// .cipd/pkgs/<foo>/description.json.
+type description struct {
+	Subdir      string `json:"subdir,omitempty"`
+	PackageName string `json:"package_name,omitempty"`
+}
+
+// readDescription reads and decodes description JSON from io.Reader.
+func readDescription(r io.Reader) (desc *description, err error) {
+	blob, err := ioutil.ReadAll(r)
+	if err == nil {
+		err = json.Unmarshal(blob, &desc)
+	}
+	return
+}
+
+// writeDescription encodes and writes description JSON to io.Writer.
+func writeDescription(d *description, w io.Writer) error {
+	data, err := json.MarshalIndent(d, "", "  ")
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(data)
+	return err
+}
 
 // packagesDir is a subdirectory of site root to extract packages to.
 const packagesDir = fs.SiteServiceDir + "/pkgs"
@@ -302,7 +335,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	if err != nil {
 		return common.Pin{}, err
 	}
-	installMode, err := checkInstallMode(newManifest.InstallMode)
+	installMode, err := cipdpkg.PickInstallMode(newManifest.InstallMode)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -310,13 +343,13 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	// Remember currently deployed version (to remove it later). Do not freak out
 	// if it's not there (prevInstanceID == "") or broken (err != nil).
 	prevInstanceID, err := d.getCurrentInstanceID(pkgPath)
-	prevManifest := Manifest{}
+	prevManifest := cipdpkg.Manifest{}
 	if err == nil && prevInstanceID != "" {
 		prevManifest, err = d.readManifest(ctx, filepath.Join(pkgPath, prevInstanceID))
 	}
 	if err != nil {
 		logging.Warningf(ctx, "Previous version of the package is broken: %s", err)
-		prevManifest = Manifest{} // to make sure prevManifest.Files == nil.
+		prevManifest = cipdpkg.Manifest{} // to make sure prevManifest.Files == nil.
 	}
 
 	// Install all new files to the site root.
@@ -340,7 +373,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	// When using 'copy' install mode all files (except .cipdpkg/*) are moved away
 	// from 'destPath', leaving only an empty husk with directory structure.
 	// Remove it to save some inodes.
-	if installMode == InstallModeCopy {
+	if installMode == cipdpkg.InstallModeCopy {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -366,7 +399,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 			for _, f := range newManifest.Files {
 				toKeep[f.Name] = true
 			}
-			toKill := []FileInfo{}
+			toKill := []cipdpkg.FileInfo{}
 			for _, f := range prevManifest.Files {
 				if !toKeep[f.Name] {
 					toKill = append(toKill, f)
@@ -377,7 +410,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 
 	// Verify it's all right.
-	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid, WithoutManifest)
+	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, WithoutManifest)
 	switch {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
@@ -394,7 +427,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst P
 	}
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, par common.ParanoidMode, m ManifestMode) (out *DeployedPackage, err error) {
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, par ParanoidMode, m ManifestMode) (out *DeployedPackage, err error) {
 	if err = common.ValidateSubdir(subdir); err != nil {
 		return
 	}
@@ -429,14 +462,14 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 
 	// Read the manifest if asked or if doing any paranoid checks (they need the
 	// list of files from the manifest).
-	if m || par != common.NotParanoid {
+	if m || par != NotParanoid {
 		manifest, err := d.readManifest(ctx, out.instancePath)
 		if err != nil {
 			logging.Errorf(ctx, "Failed to read the manifest of %s: %s", pkg, err)
 			return out, nil // this error MAY be recovered from by reinstalling
 		}
 		out.Manifest = &manifest
-		out.InstallMode, err = checkInstallMode(manifest.InstallMode)
+		out.InstallMode, err = cipdpkg.PickInstallMode(manifest.InstallMode)
 		if err != nil {
 			return nil, err // this is fatal, the manifest has unrecognized mode
 		}
@@ -447,7 +480,7 @@ func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkg string, pa
 	out.Pin = common.Pin{PackageName: pkg, InstanceID: current}
 
 	// checkIntegrity needs DeployedPackage with Pin set, so call it last.
-	if par != common.NotParanoid {
+	if par != NotParanoid {
 		out.ToRedeploy, out.ToRelink = d.checkIntegrity(ctx, out)
 	}
 
@@ -497,7 +530,7 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName string) error {
 	logging.Infof(ctx, "Removing %s from %s(/%s)", packageName, d.fs.Root(), subdir)
 
-	deployed, err := d.CheckDeployed(ctx, subdir, packageName, common.NotParanoid, WithManifest)
+	deployed, err := d.CheckDeployed(ctx, subdir, packageName, NotParanoid, WithManifest)
 	switch {
 	case err != nil:
 		// This error is unrecoverable, we can't even figure out whether the package
@@ -536,7 +569,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 
 	// Check that the package we are repairing is still installed and grab its
 	// manifest (for the install mode and list of files).
-	pkg, err := d.CheckDeployed(ctx, subdir, pin.PackageName, common.NotParanoid, WithManifest)
+	pkg, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, WithManifest)
 	switch {
 	case err != nil:
 		return err
@@ -551,7 +584,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 
 	// manifest contains all files that should be present in a healthy deployment.
-	manifest := make(map[string]FileInfo, len(pkg.Manifest.Files))
+	manifest := make(map[string]cipdpkg.FileInfo, len(pkg.Manifest.Files))
 	for _, f := range pkg.Manifest.Files {
 		manifest[f.Name] = f
 	}
@@ -612,7 +645,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 
 	// Finally relink/move everything into the site root.
-	infos := make([]FileInfo, 0, len(params.ToRedeploy)+len(params.ToRelink))
+	infos := make([]cipdpkg.FileInfo, 0, len(params.ToRedeploy)+len(params.ToRelink))
 	add := func(name string) {
 		if info, ok := manifest[name]; ok {
 			infos = append(infos, info)
@@ -634,7 +667,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 
 	// Cleanup empty directories left in the guts after files have been moved
 	// away, just like DeployInstance does. Best effort.
-	if pkg.InstallMode == InstallModeCopy {
+	if pkg.InstallMode == cipdpkg.InstallModeCopy {
 		removeEmptyTree(pkg.instancePath, func(string) bool { return true })
 	}
 
@@ -738,7 +771,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	}
 
 	seenNumbers, curPkgs := d.resolveValidPackageDirs(ctx, abs)
-	if cur, ok := curPkgs[Description{subdir, pkg}]; ok {
+	if cur, ok := curPkgs[description{subdir, pkg}]; ok {
 		return cur, nil
 	}
 
@@ -768,7 +801,7 @@ func (d *deployerImpl) packagePath(ctx context.Context, subdir, pkg string, allo
 	}
 	defer d.fs.EnsureDirectoryGone(ctx, tmpDir)
 	err = d.fs.EnsureFile(ctx, filepath.Join(tmpDir, descriptionName), func(f *os.File) error {
-		return writeDescription(&Description{Subdir: subdir, PackageName: pkg}, f)
+		return writeDescription(&description{Subdir: subdir, PackageName: pkg}, f)
 	})
 	if err != nil {
 		logging.Errorf(ctx, "Cannot create new pkg description.json: %s", err)
@@ -831,7 +864,7 @@ func (b byLenThenAlpha) Less(i, j int) bool {
 
 // resolveValidPackageDirs scans the .cipd/pkgs dir and returns:
 //   * a numeric set of all number-style directories seen.
-//   * a map of Description (e.g. subdir + pkgname) to the correct pkg folder
+//   * a map of description (e.g. subdir + pkgname) to the correct pkg folder
 //
 // This also will delete (EnsureDirectoryGone) any folders or files in the pkgs
 // directory which are:
@@ -840,14 +873,14 @@ func (b byLenThenAlpha) Less(i, j int) bool {
 //
 // Duplicate detection always prefers the folder with the shortest path name
 // that sorts alphabetically earlier.
-func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir string) (numbered numSet, all map[Description]string) {
+func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir string) (numbered numSet, all map[description]string) {
 	files, err := ioutil.ReadDir(pkgsAbsDir)
 	if err != nil && !os.IsNotExist(err) {
 		logging.Errorf(ctx, "Can't read packages dir %q: %s", pkgsAbsDir, err)
 		return
 	}
 
-	allWithDups := map[Description][]string{}
+	allWithDups := map[description][]string{}
 
 	for _, f := range files {
 		fullPkgPath := filepath.Join(pkgsAbsDir, f.Name())
@@ -865,7 +898,7 @@ func (d *deployerImpl) resolveValidPackageDirs(ctx context.Context, pkgsAbsDir s
 		allWithDups[*description] = append(allWithDups[*description], fullPkgPath)
 	}
 
-	all = make(map[Description]string, len(allWithDups))
+	all = make(map[description]string, len(allWithDups))
 	for desc, possibilities := range allWithDups {
 		sort.Sort(byLenThenAlpha(possibilities))
 
@@ -945,7 +978,7 @@ func (d *deployerImpl) setCurrentInstanceID(ctx context.Context, packageDir, ins
 //
 // Returns (nil, nil) if no description.json exists and there are no instance
 // folders present.
-func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc *Description, err error) {
+func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc *description, err error) {
 	descriptionPath := filepath.Join(pkgDir, descriptionName)
 	r, err := os.Open(descriptionPath)
 	switch {
@@ -976,7 +1009,7 @@ func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc
 		return
 	}
 
-	desc = &Description{
+	desc = &description{
 		PackageName: manifest.PackageName,
 	}
 	// To handle the case where some other user owns these directories, all errors
@@ -993,22 +1026,22 @@ func (d *deployerImpl) readDescription(ctx context.Context, pkgDir string) (desc
 
 // readManifest reads package manifest given a path to a package instance
 // (.cipd/pkgs/<name>/<instance id>).
-func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Manifest, error) {
-	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(ManifestName))
+func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (cipdpkg.Manifest, error) {
+	manifestPath := filepath.Join(instanceDir, filepath.FromSlash(cipdpkg.ManifestName))
 	r, err := os.Open(manifestPath)
 	if err != nil {
-		return Manifest{}, err
+		return cipdpkg.Manifest{}, err
 	}
 	defer r.Close()
-	manifest, err := readManifest(r)
+	manifest, err := cipdpkg.ReadManifest(r)
 	if err != nil {
-		return Manifest{}, err
+		return cipdpkg.Manifest{}, err
 	}
 	// Older packages do not have Files section in the manifest, so reconstruct it
 	// from actual files on disk.
 	if len(manifest.Files) == 0 {
 		if manifest.Files, err = scanPackageDir(ctx, instanceDir); err != nil {
-			return Manifest{}, err
+			return cipdpkg.Manifest{}, err
 		}
 	}
 	return manifest, nil
@@ -1016,7 +1049,7 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (Ma
 
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
-func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []FileInfo, installMode InstallMode, pkgDir, srcDir string) error {
+func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []cipdpkg.FileInfo, installMode cipdpkg.InstallMode, pkgDir, srcDir string) error {
 	for _, f := range files {
 		// e.g. bin/tool
 		relPath := filepath.FromSlash(f.Name)
@@ -1026,7 +1059,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 			logging.Warningf(ctx, "Invalid relative path %q: %s", relPath, err)
 			return err
 		}
-		if installMode == InstallModeSymlink {
+		if installMode == cipdpkg.InstallModeSymlink {
 			// e.g. <base>/.cipd/pkgs/name/_current/bin/tool
 			targetAbs := filepath.Join(pkgDir, currentSymlink, relPath)
 			// e.g. ../.cipd/pkgs/name/_current/bin/tool
@@ -1042,7 +1075,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 				logging.Warningf(ctx, "Failed to create symlink for %s", relPath)
 				return err
 			}
-		} else if installMode == InstallModeCopy {
+		} else if installMode == cipdpkg.InstallModeCopy {
 			// E.g. <base>/.cipd/pkgs/name/<id>/bin/tool.
 			srcAbs := filepath.Join(srcDir, relPath)
 			if err := d.fs.Replace(ctx, srcAbs, destAbs); err != nil {
@@ -1060,7 +1093,7 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 // removeFromSiteRoot deletes files from the site root directory.
 //
 // Best effort. Logs errors and carries on.
-func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []FileInfo) {
+func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []cipdpkg.FileInfo) {
 	dirsToCleanup := stringset.New(0)
 
 	for _, f := range files {
@@ -1092,7 +1125,7 @@ func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, fi
 //
 // If the file can't be checked for some reason, logs the error and returns
 // false.
-func (d *deployerImpl) isPresentInSite(ctx context.Context, subdir string, f FileInfo, followSymlinks bool) bool {
+func (d *deployerImpl) isPresentInSite(ctx context.Context, subdir string, f cipdpkg.FileInfo, followSymlinks bool) bool {
 	absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
 	if err != nil {
 		panic(err) // should not happen for files present in installed packages
@@ -1123,7 +1156,7 @@ func (d *deployerImpl) isPresentInSite(ctx context.Context, subdir string, f Fil
 //
 // If the file can't be checked for some reason, logs the error and returns
 // false.
-func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f FileInfo) bool {
+func (d *deployerImpl) isPresentInGuts(ctx context.Context, instDir string, f cipdpkg.FileInfo) bool {
 	absPath, err := d.fs.RootRelToAbs(filepath.Join(instDir, filepath.FromSlash(f.Name)))
 	if err != nil {
 		panic(err) // should not happen for files present in installed packages
@@ -1154,7 +1187,7 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, pkg *DeployedPackage)
 			continue
 		case f.Symlink == "": // a regular file (not a symlink)
 			switch {
-			case pkg.InstallMode == InstallModeCopy:
+			case pkg.InstallMode == cipdpkg.InstallModeCopy:
 				// In 'copy' mode regular files are stored in the site root directly.
 				// If they are gone, we need to refetch the package to restore them.
 				redeploy = append(redeploy, f.Name)
@@ -1184,7 +1217,7 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, pkg *DeployedPackage)
 			case !d.isPresentInSite(ctx, pkg.Subdir, f, false):
 				// The symlink in the site root is gone, need to restore it.
 				relink = append(relink, f.Name)
-			case pkg.InstallMode == InstallModeSymlink && !d.isPresentInGuts(ctx, pkg.instancePath, f):
+			case pkg.InstallMode == cipdpkg.InstallModeSymlink && !d.isPresentInGuts(ctx, pkg.instancePath, f):
 				// The symlink in the guts is gone, need to restore it.
 				relink = append(relink, f.Name)
 			default:
@@ -1199,28 +1232,13 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, pkg *DeployedPackage)
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
-// checkInstallMode validates the install mode and picks the correct default
-// if no install mode is given.
-func checkInstallMode(im InstallMode) (InstallMode, error) {
-	switch {
-	case runtime.GOOS == "windows":
-		return InstallModeCopy, nil // Windows supports only 'copy' mode
-	case im == "":
-		return InstallModeSymlink, nil // default on other platforms
-	}
-	if err := ValidateInstallMode(im); err != nil {
-		return "", err
-	}
-	return im, nil
-}
-
 // scanPackageDir finds a set of regular files (and symlinks) in a package
 // instance directory and returns them as FileInfo structs (with slash-separated
 // paths relative to dir directory). Skips package service directories (.cipdpkg
 // and .cipd) since they contain package deployer gut files, not something that
 // needs to be deployed.
-func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
-	out := []FileInfo{}
+func scanPackageDir(ctx context.Context, dir string) ([]cipdpkg.FileInfo, error) {
+	out := []cipdpkg.FileInfo{}
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -1229,7 +1247,7 @@ func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 		if err != nil {
 			return err
 		}
-		if rel == PackageServiceDir || rel == fs.SiteServiceDir {
+		if rel == cipdpkg.ServiceDir || rel == fs.SiteServiceDir {
 			return filepath.SkipDir
 		}
 		if info.Mode().IsRegular() || info.Mode()&os.ModeSymlink != 0 {
@@ -1243,7 +1261,7 @@ func scanPackageDir(ctx context.Context, dir string) ([]FileInfo, error) {
 				}
 			}
 			if ok {
-				out = append(out, FileInfo{
+				out = append(out, cipdpkg.FileInfo{
 					Name:       filepath.ToSlash(rel),
 					Size:       uint64(info.Size()),
 					Executable: (info.Mode().Perm() & 0111) != 0,

@@ -28,6 +28,7 @@ import (
 	"go.chromium.org/luci/common/iotools"
 	"go.chromium.org/luci/common/sync/parallel"
 
+	"go.chromium.org/luci/cipd/client/cipd/local"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -35,7 +36,7 @@ import (
 // File is an in-process representation of the 'ensure file' format.
 type File struct {
 	ServiceURL       string
-	ParanoidMode     common.ParanoidMode
+	ParanoidMode     local.ParanoidMode
 	ResolvedVersions string
 
 	PackagesBySubdir map[string]PackageSlice
@@ -129,7 +130,7 @@ type VersionResolver func(pkg, vers string) (common.Pin, error)
 // result of calling File.Resolve.
 type ResolvedFile struct {
 	ServiceURL   string
-	ParanoidMode common.ParanoidMode
+	ParanoidMode local.ParanoidMode
 
 	PackagesBySubdir common.PinSliceBySubdir
 }
@@ -173,7 +174,7 @@ func (f *File) Resolve(rslv VersionResolver, expander template.Expander) (*Resol
 		}
 	}
 
-	ret.ParanoidMode = common.NotParanoid
+	ret.ParanoidMode = local.NotParanoid
 	if f.ParanoidMode != "" {
 		if err := f.ParanoidMode.Validate(); err != nil {
 			return nil, errors.Annotate(err, "bad ParanoidMode").Err()
@@ -311,7 +312,7 @@ func (f *File) Serialize(w io.Writer) error {
 			fmt.Fprintf(w, "$ServiceURL %s", f.ServiceURL)
 			needsNLs = 1
 		}
-		if f.ParanoidMode != "" && f.ParanoidMode != common.NotParanoid {
+		if f.ParanoidMode != "" && f.ParanoidMode != local.NotParanoid {
 			maybeAddNL()
 			fmt.Fprintf(w, "$ParanoidMode %s", f.ParanoidMode)
 			needsNLs = 1

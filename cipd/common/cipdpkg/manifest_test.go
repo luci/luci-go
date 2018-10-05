@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package cipdpkg
 
 import (
 	"bytes"
@@ -23,13 +23,15 @@ import (
 )
 
 func TestReadManifest(t *testing.T) {
+	t.Parallel()
+
 	var goodManifest = `{
   "format_version": "1",
   "package_name": "package/name"
 }`
 
-	Convey("readManifest can read valid manifest", t, func() {
-		manifest, err := readManifest(strings.NewReader(goodManifest))
+	Convey("ReadManifest can read valid manifest", t, func() {
+		manifest, err := ReadManifest(strings.NewReader(goodManifest))
 		So(manifest, ShouldResemble, Manifest{
 			FormatVersion: "1",
 			PackageName:   "package/name",
@@ -37,19 +39,19 @@ func TestReadManifest(t *testing.T) {
 		So(err, ShouldBeNil)
 	})
 
-	Convey("readManifest rejects invalid manifest", t, func() {
-		manifest, err := readManifest(strings.NewReader("I'm not a manifest"))
+	Convey("ReadManifest rejects invalid manifest", t, func() {
+		manifest, err := ReadManifest(strings.NewReader("I'm not a manifest"))
 		So(manifest, ShouldResemble, Manifest{})
 		So(err, ShouldNotBeNil)
 	})
 
-	Convey("writeManifest works", t, func() {
+	Convey("WriteManifest works", t, func() {
 		buf := &bytes.Buffer{}
 		m := Manifest{
 			FormatVersion: "1",
 			PackageName:   "package/name",
 		}
-		So(writeManifest(&m, buf), ShouldBeNil)
+		So(WriteManifest(&m, buf), ShouldBeNil)
 		So(string(buf.Bytes()), ShouldEqual, goodManifest)
 	})
 }
