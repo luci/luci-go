@@ -131,6 +131,7 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 	ctl.disp = disp
 
 	disp.RegisterTask(&tasks.SplitAndLaunch{}, ctl.splitAndLaunchHandler, ctl.ControlQueue, nil)
+	disp.RegisterTask(&tasks.FanOutShards{}, ctl.fanOutShardsHandler, ctl.ControlQueue, nil)
 }
 
 // tq returns a dispatcher set in Install or panics if not set yet.
@@ -247,6 +248,7 @@ func (ctl *Controller) getJob(c context.Context, id JobID) (*Job, error) {
 // process shards.
 func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Message) error {
 	msg := payload.(*tasks.SplitAndLaunch)
+	now := clock.Now(c).UTC()
 
 	// Fetch job details. Make sure it isn't canceled and isn't running already.
 	job, err := ctl.getJob(c, JobID(msg.JobId))
@@ -269,24 +271,111 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		return errors.Annotate(err, "failed to split the query into shards").Tag(transient.Tag).Err()
 	}
 
-	// Log the resulting shards.
+	// Create entities that hold shards state. Each one is in its own entity
+	// group, since the combined write rate to them is O(ShardCount), which can
+	// overcome limits of a single entity group.
+	shards := make([]*shard, len(ranges))
 	for idx, rng := range ranges {
-		l, r := "-inf", "+inf"
-		if rng.Start != nil {
-			l = rng.Start.String()
-		}
-		if rng.End != nil {
-			r = rng.End.String()
-		}
-		logging.Infof(c, "Shard %d: %s - %s", idx, l, r)
-		if ctl.testingRecordSplit != nil {
-			ctl.testingRecordSplit(rng)
+		shards[idx] = &shard{
+			JobID:   job.ID,
+			Index:   idx,
+			State:   shardStateStarting,
+			Range:   rng,
+			Created: now,
+			Updated: now,
 		}
 	}
 
-	// TODO(vadimsh): Do the rest of the magic:
-	// 1. Create a bunch of Shard entities, each with assigned range.
-	// 2. Transactionally assign shards to Job and launch a task that kicks off
-	//    processing of shards.
+	// We use auto-generated keys for shards to make sure crashed SplitAndLaunch
+	// task retries cleanly, even if the underlying key space we are mapping over
+	// changes between the retries (making a naive put using "<job-id>:<index>"
+	// key non-idempotent!).
+	if err := datastore.Put(c, shards); err != nil {
+		return errors.Annotate(err, "failed to store shards").Tag(transient.Tag).Err()
+	}
+
+	// Prepare shardList which is basically a manual fully consistent index for
+	// Job -> [Shard] relation. We can't use a regular index, since shards are all
+	// in different entity groups (see O(ShardCount) argument above).
+	//
+	// Log the resulting shards along the way.
+	shardsEnt := shardList{
+		Parent: datastore.KeyForObj(c, job),
+		Shards: make([]int64, len(shards)),
+	}
+	for idx, s := range shards {
+		shardsEnt.Shards[idx] = s.ID
+
+		l, r := "-inf", "+inf"
+		if s.Range.Start != nil {
+			l = s.Range.Start.String()
+		}
+		if s.Range.End != nil {
+			r = s.Range.End.String()
+		}
+		logging.Infof(c, "Shard #%d is %d: %s - %s", idx, s.ID, l, r)
+	}
+
+	// Transactionally associate shards with the job and launch the TQ task that
+	// kicks off the processing of each individual shard. We use an intermediary
+	// task for this since transactionally launching O(ShardCount) tasks hits TQ
+	// transaction limits.
+	//
+	// If SplitAndLaunch crashes before this transaction lands, there'll be some
+	// orphaned Shard entities, no big deal.
+	return runTxn(c, func(c context.Context) error {
+		job, err := ctl.getJob(c, JobID(msg.JobId))
+		switch {
+		case err != nil:
+			return errors.Annotate(err, "in SplitAndLaunch txn").Err()
+		case job.State != JobStateStarting:
+			logging.Warningf(c, "Skipping the job: its state is %s, expecting %s", job.State, JobStateStarting)
+			return nil
+		}
+
+		job.State = JobStateRunning
+		job.Updated = now
+		if err := datastore.Put(c, job, &shardsEnt); err != nil {
+			return errors.Annotate(err,
+				"when storing Job %d and ShardList with %d shards", job.ID, len(shards),
+			).Tag(transient.Tag).Err()
+		}
+
+		return ctl.tq().AddTask(c, &tq.Task{
+			Title: fmt.Sprintf("job-%d", job.ID),
+			Payload: &tasks.FanOutShards{
+				JobId: int64(job.ID),
+			},
+		})
+	})
+}
+
+// fanOutShardsHandler fetches a list of shards from the job and launches
+// named ProcessShard tasks, one per shard.
+func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Message) error {
+	msg := payload.(*tasks.FanOutShards)
+
+	// Make sure the job isn't canceled yet.
+	job, err := ctl.getJob(c, JobID(msg.JobId))
+	switch {
+	case err != nil:
+		return errors.Annotate(err, "in FanOutShards").Err()
+	case job.State != JobStateRunning:
+		logging.Warningf(c, "Skipping job, its state is %s, expecting %s", job.State, JobStateRunning)
+		return nil
+	}
+
+	// Grab the list of shards created in SplitAndLaunch. It must exist at this
+	// point, since the job is in Running state.
+	shardIDs, err := job.fetchShardIDs(c)
+	if err != nil {
+		return errors.Annotate(err, "in FanOutShards").Err()
+	}
+
+	// TODO: enqueue a bunch of named ProcessShard tasks, one per shard, to
+	// actually launch shard processing.
+	for _, sid := range shardIDs {
+		logging.Infof(c, "TODO: start shard %d", sid)
+	}
 	return nil
 }

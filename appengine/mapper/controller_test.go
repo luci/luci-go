@@ -97,33 +97,57 @@ func TestController(t *testing.T) {
 				Updated: testTime,
 			})
 
-			ranges := make([][]int, 0, cfg.ShardCount)
-			ctl.testingRecordSplit = func(rng splitter.Range) {
-				l, r := -1, -1
-				if rng.Start != nil {
-					l = int(rng.Start.IntID())
-				}
-				if rng.End != nil {
-					r = int(rng.End.IntID())
-				}
-				ranges = append(ranges, []int{l, r})
-			}
-
 			// Roll TQ forward.
 			_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
-				ShouldStopAfter: func(t tqtesting.Task) bool {
-					_, yep := t.Payload.(*tasks.SplitAndLaunch)
+				ShouldStopBefore: func(t tqtesting.Task) bool {
+					_, yep := t.Payload.(*tasks.FanOutShards)
 					return yep
 				},
 			})
 			So(err, ShouldBeNil)
 
-			// Correctly split into 4 shards.
-			So(ranges, ShouldResemble, [][]int{
-				{-1, 136}, {136, 268}, {268, 399}, {399, -1},
+			// Switched into "running" state.
+			job, err = ctl.getJob(ctx, jobID)
+			So(err, ShouldBeNil)
+			So(job.State, ShouldEqual, JobStateRunning)
+
+			expectedShard := func(id int64, idx, l, r int) shard {
+				rng := splitter.Range{}
+				if l != -1 {
+					rng.Start = datastore.KeyForObj(ctx, &intEnt{ID: l})
+				}
+				if r != -1 {
+					rng.End = datastore.KeyForObj(ctx, &intEnt{ID: r})
+				}
+				return shard{
+					ID:      id,
+					JobID:   jobID,
+					Index:   idx,
+					State:   shardStateStarting,
+					Range:   rng,
+					Created: testTime,
+					Updated: testTime,
+				}
+			}
+
+			// Created the shard entities.
+			shards, err := job.fetchShards(ctx)
+			So(err, ShouldBeNil)
+			So(shards, ShouldResemble, []shard{
+				expectedShard(1, 0, -1, 136),
+				expectedShard(2, 1, 136, 268),
+				expectedShard(3, 2, 268, 399),
+				expectedShard(4, 3, 399, -1),
 			})
 
-			// TODO: add more.
+			// Roll TQ forward.
+			_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
+				ShouldStopAfter: func(t tqtesting.Task) bool {
+					_, yep := t.Payload.(*tasks.FanOutShards)
+					return yep
+				},
+			})
+			So(err, ShouldBeNil)
 		})
 	})
 }
