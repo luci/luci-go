@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/common/cipdpkg"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -56,7 +57,7 @@ func TestBuildInstance(t *testing.T) {
 		files := readZip(out.Bytes())
 		So(files, ShouldResemble, []zippedFile{
 			{
-				name: ManifestName,
+				name: cipdpkg.ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
@@ -81,7 +82,7 @@ func TestBuildInstance(t *testing.T) {
 				Output:           out,
 				PackageName:      "testing",
 				VersionFile:      "version.json",
-				InstallMode:      "copy",
+				InstallMode:      cipdpkg.InstallModeCopy,
 				CompressionLevel: level,
 			}
 		}
@@ -146,7 +147,7 @@ func TestBuildInstance(t *testing.T) {
 				body: []byte("/abc/def"),
 			},
 			{
-				name: ManifestName,
+				name: cipdpkg.ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),
@@ -178,7 +179,7 @@ func TestBuildInstance(t *testing.T) {
 				Output:           out,
 				PackageName:      "testing",
 				VersionFile:      "version.json",
-				InstallMode:      "copy",
+				InstallMode:      cipdpkg.InstallModeCopy,
 				CompressionLevel: level,
 			}
 		}
@@ -243,7 +244,7 @@ func TestBuildInstance(t *testing.T) {
 				body: []byte("/abc/def"),
 			},
 			{
-				name: ManifestName,
+				name: cipdpkg.ManifestName,
 				size: uint64(len(goodManifest)),
 				mode: 0400,
 				body: []byte(goodManifest),

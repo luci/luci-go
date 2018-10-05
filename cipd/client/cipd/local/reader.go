@@ -35,6 +35,7 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
+	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
 
 // VerificationMode defines whether to verify hash or not.
@@ -159,7 +160,7 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest ManifestMode) error {
 	if !withManifest {
 		for _, f := range files {
-			if f.Name() == ManifestName {
+			if f.Name() == cipdpkg.ManifestName {
 				return fmt.Errorf("refusing to extract the manifest, it is unexpected here")
 			}
 		}
@@ -173,15 +174,15 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 		if err != nil {
 			return err
 		}
-		manifest.Files = make([]FileInfo, 0, len(files))
+		manifest.Files = make([]cipdpkg.FileInfo, 0, len(files))
 		for _, file := range files {
 			// Do not put info about service .cipdpkg files into the manifest,
 			// otherwise it becomes recursive and "size" property of manifest file
 			// itself is not correct.
-			if strings.HasPrefix(file.Name(), PackageServiceDir+"/") {
+			if strings.HasPrefix(file.Name(), cipdpkg.ServiceDir+"/") {
 				continue
 			}
-			fi := FileInfo{
+			fi := cipdpkg.FileInfo{
 				Name:       file.Name(),
 				Size:       file.Size(),
 				Executable: file.Executable(),
@@ -209,7 +210,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 				err = closeErr
 			}
 		}()
-		return writeManifest(&manifest, out)
+		return cipdpkg.WriteManifest(&manifest, out)
 	}
 
 	extractSymlinkFile := func(f fs.File) error {
@@ -256,7 +257,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 
 		default:
 			switch {
-			case f.Name() == ManifestName:
+			case f.Name() == cipdpkg.ManifestName:
 				// We delay writing the extended manifest until the very end because it
 				// contains values of 'SymlinkTarget' fields of all extracted files.
 				// Fetching 'SymlinkTarget' in general involves seeking inside the zip,
@@ -283,7 +284,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 	// all 'SymlinkTarget' values.
 	if withManifest {
 		if manifest == nil {
-			return fmt.Errorf("no %s file, this is bad", ManifestName)
+			return fmt.Errorf("no %s file, this is bad", cipdpkg.ManifestName)
 		}
 		return extractManifestFile(manifest)
 	}
@@ -389,7 +390,7 @@ type packageInstance struct {
 	instanceID string
 	zip        *zip.Reader
 	files      []fs.File
-	manifest   Manifest
+	manifest   cipdpkg.Manifest
 }
 
 // open reads the package data, verifies the hash and reads manifest.
@@ -477,7 +478,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 	inst.files = make([]fs.File, len(inst.zip.File))
 	for i, zf := range inst.zip.File {
 		fiz := &fileInZip{z: zf}
-		if fiz.Name() == ManifestName {
+		if fiz.Name() == cipdpkg.ManifestName {
 			// The manifest is later read again when extracting, keep it in memory.
 			if err = fiz.prefetch(); err != nil {
 				return err
@@ -514,7 +515,7 @@ func (inst *packageInstance) open(opts OpenInstanceOpts) error {
 
 	// Generate version_file if needed.
 	if inst.manifest.VersionFile != "" {
-		vf, err := makeVersionFile(inst.manifest.VersionFile, VersionFile{
+		vf, err := makeVersionFile(inst.manifest.VersionFile, cipdpkg.VersionFile{
 			PackageName: inst.manifest.PackageName,
 			InstanceID:  inst.instanceID,
 		})
@@ -563,19 +564,19 @@ func getHashAndSize(r io.ReadSeeker, h hash.Hash) (int64, error) {
 }
 
 // readManifestFile decodes manifest file zipped inside the package.
-func readManifestFile(f fs.File) (Manifest, error) {
+func readManifestFile(f fs.File) (cipdpkg.Manifest, error) {
 	r, err := f.Open()
 	if err != nil {
-		return Manifest{}, err
+		return cipdpkg.Manifest{}, err
 	}
 	defer r.Close()
-	return readManifest(r)
+	return cipdpkg.ReadManifest(r)
 }
 
 // makeVersionFile returns File representing a JSON blob with info about package
 // version. It's what's deployed at path specified in 'version_file' stanza in
 // package definition YAML.
-func makeVersionFile(relPath string, versionFile VersionFile) (fs.File, error) {
+func makeVersionFile(relPath string, versionFile cipdpkg.VersionFile) (fs.File, error) {
 	if !fs.IsCleanSlashPath(relPath) {
 		return nil, fmt.Errorf("invalid version_file: %s", relPath)
 	}
