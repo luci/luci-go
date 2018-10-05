@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "8617678a_88e3e3f3",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-05T14:02:06Z",
+      "side": 1,
+      "message": "Currently, I am exploring two approaches in a follow-up CL https://crrev.com/c/1249063:\n* use this field, generate flat structure in HTML with different margin-left values for each element, use non-trivial JS logic for collapsing/expanding (PS1)\n* add hierarchy to the BuildComponent struct, generate hierarchical HTML, use simple JS logic for collapsing/expanding (PS4)\n\nThere are pros and cons for either solution, but I think this decision should not block this CL though and should be discussed in a follow-up. This CL\u0027s purpose is to make sure behavior is consistent with what is used in Buildbucket already.",
+      "parentUuid": "a8d33b9d_e66dd08d",
+      "revId": "7396cb670deff5e8608c7945d5d4dfd652433b00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4227fc73_89abd618",
         "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
         "patchSetId": 4
@@ -33,6 +51,24 @@
       "revId": "7396cb670deff5e8608c7945d5d4dfd652433b00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed2c3291_e7042265",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-05T14:02:06Z",
+      "side": 1,
+      "message": "Agreed. We should not override build status. The confusion comes from the fact that BuildComponent is overloaded too much, i.e. it\u0027s used to represent a step, a substep, an attempt, a recipe and a build summary. Perhaps it should be broken up different types, but this is a much larger refactoring. Here, I\u0027ll just add a flag that disables this logic for summary and move the whole thing to Fix method in a follow-up CL.",
+      "parentUuid": "4227fc73_89abd618",
+      "revId": "7396cb670deff5e8608c7945d5d4dfd652433b00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
