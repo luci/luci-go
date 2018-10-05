@@ -1207,9 +1207,9 @@ func TestFindDeployed(t *testing.T) {
 			_, err = d.DeployInstance(ctx, "", makeTestInstance("broken", nil, InstallModeCopy))
 			So(err, ShouldBeNil)
 			if runtime.GOOS == "windows" {
-				err = os.Remove(filepath.Join(tempDir, SiteServiceDir, "pkgs", "8", "_current.txt"))
+				err = os.Remove(filepath.Join(tempDir, fs.SiteServiceDir, "pkgs", "8", "_current.txt"))
 			} else {
-				err = os.Remove(filepath.Join(tempDir, SiteServiceDir, "pkgs", "8", "_current"))
+				err = os.Remove(filepath.Join(tempDir, fs.SiteServiceDir, "pkgs", "8", "_current"))
 			}
 			So(err, ShouldBeNil)
 
@@ -1608,7 +1608,7 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 		tempDir := mkTempDir()
 
 		d := NewDeployer(tempDir)
-		trashDir := filepath.Join(tempDir, SiteServiceDir, "trash")
+		trashDir := filepath.Join(tempDir, fs.SiteServiceDir, "trash")
 		fs := fs.NewFileSystem(tempDir, trashDir)
 
 		inst := makeTestInstance("test/package", nil, InstallModeSymlink)

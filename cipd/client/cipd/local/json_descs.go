@@ -22,10 +22,6 @@ import (
 )
 
 const (
-	// SiteServiceDir is a name of the directory inside an installation root
-	// reserved for cipd stuff.
-	SiteServiceDir = ".cipd"
-
 	// PackageServiceDir is a name of the directory inside the package
 	// reserved for cipd stuff.
 	PackageServiceDir = ".cipdpkg"
