@@ -23,7 +23,6 @@ import (
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/gcloud/googleoauth"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
@@ -65,15 +64,13 @@ func (p *iamTokenProvider) CacheKey(ctx context.Context) (*CacheKey, error) {
 }
 
 func (p *iamTokenProvider) MintToken(ctx context.Context, base *Token) (*Token, error) {
-	tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
+	tok, err := googleoauth.GetAccessToken(ctx, googleoauth.GenTokenFlowParams{
 		ServiceAccount: p.actAs,
 		Scopes:         p.scopes,
-		Signer: &iam.Client{
-			Client: &http.Client{
-				Transport: &tokenInjectingTransport{
-					transport: p.transport,
-					token:     &base.Token,
-				},
+		Client: &http.Client{
+			Transport: &tokenInjectingTransport{
+				transport: p.transport,
+				token:     &base.Token,
 			},
 		},
 	})

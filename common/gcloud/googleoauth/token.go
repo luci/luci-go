@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -27,29 +26,16 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
-	"go.chromium.org/luci/common/clock"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 )
 
 var (
-	googleTokenEndpoint = "https://www.googleapis.com/oauth2/v4/token"
-	jwtGrantType        = "urn:ietf:params:oauth:grant-type:jwt-bearer"
+	genAccessTokenEndpoint = "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken"
 )
 
-// Signer knows how to sign JWTs with a private key owned by a service account.
-type Signer interface {
-	// SignJWT signs the claim set with some active private key to produce JWT.
-	SignJWT(c context.Context, serviceAccount string, cs *iam.ClaimSet) (keyName, signedJwt string, err error)
-}
-
-// JwtFlowParams describes how to perform GetAccessToken call.
-type JwtFlowParams struct {
+type GenTokenFlowParams struct {
 	// ServiceAccount is a service account name to get an access token for.
 	ServiceAccount string
-
-	// Signer signs JWTs with a private key owned by the service account.
-	Signer Signer
 
 	// Scopes is a list of OAuth2 scopes to claim.
 	Scopes []string
@@ -63,91 +49,62 @@ type JwtFlowParams struct {
 	tokenEndpoint string
 }
 
-// GetAccessToken grabs an access token using a JWT as an authorization grant.
+
+// GetAccessToken grabs an OAuth2 token using IAM generateAccessToken API.
 //
-// It performs same kind of a flow as when using a regular service account
-// private key, except it allows any signer implementation (not necessarily
-// based on local crypto). This is particularly helpful when using 'signBlob'
-// IAM API to sign JWTs, since it allows to mint an access token for accounts we
-// don't have private keys for (but have "roles/iam.serviceAccountActor" role).
+// Behaves like GetAccessToken but using more efficient flow by directly calling
+//   https://cloud.google.com/iam/credentials/reference/rest/v1/projects.serviceAccounts/generateAccessToken
+// in order to obtain an OAuth2 token directly instead of first obtaining a JWT.
 //
-// The returned token usually have 1 hour lifetime.
+// The returned token usually have 1 hour lifetime
 //
 // Does not retry transient errors. Returns signing and HTTP connection errors
 // as is. Unsuccessful HTTP requests result in *googleapi.Error.
-func GetAccessToken(c context.Context, params JwtFlowParams) (*oauth2.Token, error) {
-	// See https://developers.google.com/identity/protocols/OAuth2ServiceAccount#authorizingrequests
-	// Also https://github.com/golang/oauth2/blob/master/jwt/jwt.go.
-
+func GetAccessToken(ctx context.Context, params GenTokenFlowParams) (*oauth2.Token, error) {
 	if params.Client == nil {
 		params.Client = http.DefaultClient
 	}
 	if params.tokenEndpoint == "" {
-		params.tokenEndpoint = googleTokenEndpoint
+		params.tokenEndpoint = fmt.Sprintf(genAccessTokenEndpoint, url.QueryEscape(params.ServiceAccount))
 	}
 
-	// Prepare a claim set to be signed by the service account key. Note that
-	// Google backends seem to ignore Exp field and always give one-hour long
-	// tokens, so we just always request 1h long token too.
-	//
-	// Also revert time back a bit, for the sake of machines whose time is not
-	// perfectly in sync with global time. If client machine's time is in the
-	// future according to Google server clock, the access token request will be
-	// denied. It doesn't complain about slightly late clock though.
-	now := clock.Now(c).Add(-15 * time.Second)
-	claimSet := &iam.ClaimSet{
-		Iat:   now.Unix(),
-		Exp:   now.Add(time.Hour).Unix(),
-		Iss:   params.ServiceAccount,
-		Scope: strings.Join(params.Scopes, " "),
-		Aud:   params.tokenEndpoint,
-	}
-
-	// Sign it, thus obtaining so called 'assertion'. Note that with Google gRPC
-	// endpoints, an assertion by itself can be used as an access token (for an
-	// URL specified in Aud field). It doesn't work for GAE backends though.
-	_, assertion, err := params.Signer.SignJWT(c, params.ServiceAccount, claimSet)
-	if err != nil {
-		return nil, err
-	}
-
-	// Exchange the assertion for the access token.
 	v := url.Values{}
-	v.Set("grant_type", jwtGrantType)
-	v.Set("assertion", assertion)
-	logging.Debugf(c, "POST %s", params.tokenEndpoint)
-	resp, err := ctxhttp.PostForm(c, params.Client, params.tokenEndpoint, v)
+	for _, scope := range params.Scopes {
+		v.Add("scope", scope)
+	}
+	resp, err := ctxhttp.PostForm(ctx, params.Client, params.tokenEndpoint, v)
 	if err != nil {
-		logging.WithError(err).Errorf(c, "POST %s failed", params.tokenEndpoint)
+		logging.WithError(err).Errorf(ctx, "POST %s failed", params.tokenEndpoint)
 		return nil, err
 	}
 	defer googleapi.CloseBody(resp)
 	if err := googleapi.CheckResponse(resp); err != nil {
-		logging.WithError(err).Errorf(c, "POST %s failed", params.tokenEndpoint)
+		logging.WithError(err).Errorf(ctx, "POST %s failed", params.tokenEndpoint)
 		return nil, err
 	}
 	var token struct {
-		AccessToken string `json:"access_token"`
-		TokenType   string `json:"token_type"`
-		ExpiresIn   int64  `json:"expires_in"` // relative seconds from now
+		AccessToken string `json:accessToken`
+		ExpireTime   string `json:expireTime`
+		TokenType string
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
-		logging.WithError(err).Errorf(c, "Bad token endpoint response")
+		logging.WithError(err).Errorf(ctx, "Bad token endpoint response")
 		return nil, err
 	}
 
-	// The Google endpoint always returns positive 'expires_in'.
-	if token.ExpiresIn <= 0 {
-		err = fmt.Errorf("bad 'expires_in': %d", token.ExpiresIn)
-		logging.WithError(err).Errorf(c, "Bad token endpoint response")
+	expires, err := time.Parse(time.RFC3339, token.ExpireTime)
+	if err != nil {
+		err = fmt.Errorf("Unable to parse 'expireTime': %s", token.ExpireTime)
+		logging.WithError(err).Errorf(ctx, "Bad token endpoint response, unable to parse expireTime")
 		return nil, err
 	}
+
 	if token.TokenType == "" {
 		token.TokenType = "Bearer"
 	}
 	return &oauth2.Token{
 		AccessToken: token.AccessToken,
 		TokenType:   token.TokenType,
-		Expiry:      clock.Now(c).Add(time.Duration(token.ExpiresIn) * time.Second).UTC(),
+		Expiry:      expires.UTC(),
 	}, nil
 }

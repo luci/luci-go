@@ -152,13 +152,14 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 
 			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
 			// token exchange endpoint.
-			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
+			tok, err := googleoauth.GetAccessToken2(ctx, googleoauth.JwtFlowParams{
 				ServiceAccount: params.ServiceAccount,
 				Signer: &iam.Client{
 					Client: &http.Client{Transport: asSelf},
 				},
 				Scopes: sortedScopes,
 				Client: cfg.anonymousClient(ctx),
+				UseSimpleFlow: true,
 			})
 
 			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
