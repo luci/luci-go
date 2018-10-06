@@ -16,6 +16,7 @@ package mapper
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
@@ -78,7 +79,26 @@ const (
 	JobStateUnknown  JobState = iota // should not really be seen anywhere
 	JobStateStarting                 // tq task to start the job is enqueued
 	JobStateRunning                  // all shards initiated and running now
+	JobStateSuccess                  // all shards have succeeded
+	JobStateFail                     // some shards have failed
 )
+
+func (js JobState) String() string {
+	switch js {
+	case JobStateUnknown:
+		return "JobStateUnknown"
+	case JobStateStarting:
+		return "JobStateStarting"
+	case JobStateRunning:
+		return "JobStateRunning"
+	case JobStateSuccess:
+		return "JobStateSuccess"
+	case JobStateFail:
+		return "JobStateFail"
+	default:
+		return fmt.Sprintf("JobState_%d", js)
+	}
+}
 
 // JobID identifies a mapping job.
 type JobID int64
@@ -194,6 +214,23 @@ const (
 
 func (ss shardState) isFinal() bool {
 	return ss == shardStateSuccess || ss == shardStateFail
+}
+
+func (ss shardState) String() string {
+	switch ss {
+	case shardStateUnknown:
+		return "shardStateUnknown"
+	case shardStateStarting:
+		return "shardStateStarting"
+	case shardStateRunning:
+		return "shardStateRunning"
+	case shardStateSuccess:
+		return "shardStateSuccess"
+	case shardStateFail:
+		return "shardStateFail"
+	default:
+		return fmt.Sprintf("shardState_%d", ss)
+	}
 }
 
 // shard represents a key range being worked on by a single worker (Start, End].
