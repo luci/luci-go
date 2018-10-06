@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/appengine/tq"
 
@@ -265,10 +266,19 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		shards[idx] = &shard{
 			JobID:   job.ID,
 			Index:   idx,
-			State:   shardStateStarting,
+			State:   ShardStateStarting,
 			Range:   rng,
 			Created: now,
 			Updated: now,
+		}
+	}
+
+	// Calculate number of entities in each shard to track shard processing
+	// progress. Note that this can be very slow if there are many entities.
+	if !job.Config.NoProgress {
+		logging.Infof(c, "Estimating the size of each shard...")
+		if err := fetchShardSizes(c, dq, shards); err != nil {
+			return errors.Annotate(err, "when estimating shard sizes").Err()
 		}
 	}
 
@@ -276,6 +286,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// task retries cleanly, even if the underlying key space we are mapping over
 	// changes between the retries (making a naive put using "<job-id>:<index>"
 	// key non-idempotent!).
+	logging.Infof(c, "Instantiating shards...")
 	if err := datastore.Put(c, shards); err != nil {
 		return errors.Annotate(err, "failed to store shards").Tag(transient.Tag).Err()
 	}
@@ -299,7 +310,11 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		if s.Range.End != nil {
 			r = s.Range.End.String()
 		}
-		logging.Infof(c, "Shard #%d is %d: %s - %s", idx, s.ID, l, r)
+		eta := ""
+		if s.ExpectedCount != 0 {
+			eta = fmt.Sprintf(" (%d entities)", s.ExpectedCount)
+		}
+		logging.Infof(c, "Shard #%d is %d: %s - %s%s", idx, s.ID, l, r, eta)
 	}
 
 	// Transactionally associate shards with the job and launch the TQ task that
@@ -309,6 +324,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	//
 	// If SplitAndLaunch crashes before this transaction lands, there'll be some
 	// orphaned Shard entities, no big deal.
+	logging.Infof(c, "Launching the fan out task...")
 	return runTxn(c, func(c context.Context) error {
 		job, err := getJobInState(c, JobID(msg.JobId), JobStateStarting)
 		if err != nil || job == nil {
@@ -330,6 +346,26 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 			},
 		})
 	})
+}
+
+// fetchShardSizes makes a bunch of Count() queries to figure out size of each
+// shard.
+//
+// Updates ExpectedCount in-place.
+func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard) error {
+	err := parallel.WorkPool(32, func(tasks chan<- func() error) {
+		for _, sh := range shards {
+			sh := sh
+			tasks <- func() error {
+				n, err := datastore.CountBatch(c, 1024, sh.Range.Apply(baseQ))
+				if err == nil {
+					sh.ExpectedCount = n + 1 // +1, so that 0 still can mean "unknown"
+				}
+				return errors.Annotate(err, "for shard #%d", sh.Index).Err()
+			}
+		}
+	})
+	return transient.Tag.Apply(err)
 }
 
 // fanOutShardsHandler fetches a list of shards from the job and launches
@@ -392,15 +428,16 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// Fail the shard if the mapper is suddenly gone.
 	mapper, err := ctl.getMapper(job.Config.Mapper)
 	if err != nil {
-		return ctl.finishShard(c, sh.ID, err)
+		return ctl.finishShard(c, sh.ID, 0, err)
 	}
 
 	baseQ := job.Config.Query.ToDatastoreQuery()
 	lastKey := sh.ResumeFrom
 	keys := make([]*datastore.Key, 0, job.Config.PageSize)
 
-	shardDone := false // true when finished processing the shard
-	pageCount := 0     // how many pages processed successfully
+	shardDone := false    // true when finished processing the shard
+	pageCount := 0        // how many pages processed successfully
+	itemCount := int64(0) // how many entities processed successfully
 
 	// A soft deadline when to checkpoint the progress and reenqueue the
 	// processing task. We never abort processing of a page midway (causes too
@@ -459,6 +496,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		}
 		lastKey = keys[len(keys)-1]
 		pageCount++
+		itemCount += int64(len(keys))
 
 		// Note: at this point we might try to checkpoint the progress, but we must
 		// be careful not to exceed 1 transaction per second limit. Considering we
@@ -475,7 +513,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// with a fatal error. finishShard would take care of notifying the parent
 	// job about the shard's completion.
 	if shardDone || (err != nil && !transient.Tag.In(err)) {
-		return ctl.finishShard(c, sh.ID, err)
+		return ctl.finishShard(c, sh.ID, itemCount, err)
 	}
 
 	logging.Infof(c, "The shard processing will resume from %s", lastKey)
@@ -499,8 +537,9 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 			return false, nil // someone already claimed to process further, let them proceed
 		}
 
-		sh.State = shardStateRunning
+		sh.State = ShardStateRunning
 		sh.ResumeFrom = lastKey
+		sh.ProcessedCount += itemCount
 
 		// If the processing failed, just store the progress, but do not start a
 		// new TQ task. Retry the current task instead (to get exponential backoff).
@@ -529,17 +568,18 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 
 // finishShard marks the shard as finished (with status based on shardErr) and
 // emits a task to update the parent job's status.
-func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr error) error {
+func (ctl *Controller) finishShard(c context.Context, shardID, processedCount int64, shardErr error) error {
 	err := shardTxn(c, shardID, func(c context.Context, sh *shard) (save bool, err error) {
 		runtime := clock.Now(c).Sub(sh.Created)
 		if shardErr != nil {
 			logging.Errorf(c, "The shard processing failed in %s with error: %s", runtime, shardErr)
-			sh.State = shardStateFail
+			sh.State = ShardStateFail
 			sh.Error = shardErr.Error()
 		} else {
 			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
-			sh.State = shardStateSuccess
+			sh.State = ShardStateSuccess
 		}
+		sh.ProcessedCount += processedCount
 		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
 	})
 	return errors.Annotate(err, "when marking the shard as finished").Err()
@@ -630,17 +670,17 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 	}
 
 	// Switch the job into a final state only when all shards are done running.
-	perState := make(map[shardState]int, 5)
+	perState := make(map[ShardState]int, 5)
 	for _, sh := range shards {
 		logging.Infof(c, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
 		perState[sh.State]++
 	}
-	if perState[shardStateSuccess]+perState[shardStateFail] != len(shards) {
+	if perState[ShardStateSuccess]+perState[ShardStateFail] != len(shards) {
 		return nil
 	}
 
 	jobState := JobStateSuccess
-	if perState[shardStateFail] != 0 {
+	if perState[ShardStateFail] != 0 {
 		jobState = JobStateFail
 	}
 
@@ -657,9 +697,9 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 		if job.State == JobStateSuccess {
 			logging.Infof(c, "The job finished successfully in %s", runtime)
 		} else {
-			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[shardStateFail], runtime)
+			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[ShardStateFail], runtime)
 			for _, sh := range shards {
-				if sh.State == shardStateFail {
+				if sh.State == ShardStateFail {
 					logging.Errorf(c, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
 				}
 			}

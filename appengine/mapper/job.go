@@ -63,6 +63,7 @@ type JobConfig struct {
 
 	PagesPerTask int           // how many pages to process inside a TQ task, default unlimited
 	TaskDuration time.Duration // how long to run a single mapping TQ task, default 1 min
+	NoProgress   bool          // set to true to disable progress tracking, by default it is enabled
 }
 
 // Validate returns an error of the config is invalid.
@@ -92,6 +93,10 @@ const (
 	JobStateSuccess                  // all shards have succeeded
 	JobStateFail                     // some shards have failed
 )
+
+func (js JobState) IsFinal() bool {
+	return js == JobStateSuccess || js == JobStateFail
+}
 
 func (js JobState) String() string {
 	switch js {
@@ -130,6 +135,108 @@ type Job struct {
 	Created time.Time
 	// Updated is when the job was last touched, FYI.
 	Updated time.Time
+}
+
+// Progress is summary of mapping progress or a shard or a job.
+type Progress struct {
+	Total     int64         // total number of items or -1 if unknown
+	Processed int64         // items processed thus far
+	Runtime   time.Duration // how long the task is running
+	Rate      float64       // processing rate, items per second
+	ETA       time.Time     // expected completion time or time.Time{} if unknown
+}
+
+func (p *Progress) calcRateAndETA(now time.Time) {
+	if p.Runtime < time.Second || p.Processed == 0 {
+		p.Rate = 0
+		p.ETA = time.Time{}
+		return
+	}
+	p.Rate = float64(p.Processed) / p.Runtime.Seconds()
+	if left := p.Total - p.Processed; left > 0 {
+		p.ETA = now.Add(time.Duration(float64(left) * float64(time.Second) / p.Rate))
+	} else {
+		p.ETA = time.Time{}
+	}
+}
+
+// ShardProgres is progress of one shard.
+type ShardProgress struct {
+	Progress
+
+	State ShardState
+	Error string
+}
+
+// JobProgress is overall job progress and per-shard progress.
+type JobProgress struct {
+	Progress
+
+	State  JobState
+	Shards []ShardProgress
+}
+
+// FetchProgress fetches progress of the job (including all its shards).
+func (j *Job) FetchProgress(c context.Context) (*JobProgress, error) {
+	now := clock.Now(c)
+	jobP := &JobProgress{State: j.State}
+
+	finished := now
+	if j.State.IsFinal() {
+		finished = j.Updated
+	}
+	jobP.Runtime = finished.Sub(j.Created)
+
+	// Jobs in Starting state have no shards yet.
+	if j.State == JobStateStarting {
+		return jobP, nil
+	}
+
+	shards, err := j.fetchShards(c)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range shards {
+		finished := now
+		if s.State.IsFinal() {
+			finished = s.Updated
+		}
+
+		shardP := ShardProgress{
+			Progress: Progress{
+				Total:     s.ExpectedCount - 1,
+				Processed: s.ProcessedCount,
+				Runtime:   finished.Sub(s.Created),
+			},
+			State: s.State,
+			Error: s.Error,
+		}
+		shardP.calcRateAndETA(now)
+
+		jobP.Shards = append(jobP.Shards, shardP)
+		jobP.Processed += shardP.Processed
+		if shardP.Total >= 0 && jobP.Total != -1 {
+			jobP.Total += shardP.Total
+		} else {
+			jobP.Total = -1 // unknown, since size of some shard is unknown
+		}
+	}
+
+	jobP.calcRateAndETA(now) // ... but mostly rate
+
+	// ETA of a job is actually ETA of a longest shard, since shards do not
+	// steal work from each other.
+	if jobP.Total != -1 {
+		jobP.ETA = time.Time{}
+		for _, s := range jobP.Shards {
+			if jobP.ETA.IsZero() || s.ETA.After(jobP.ETA) {
+				jobP.ETA = s.ETA
+			}
+		}
+	}
+
+	return jobP, nil
 }
 
 // shardList is an entity with a list of shard IDs associated with a job.
@@ -211,35 +318,35 @@ func getJobInState(c context.Context, id JobID, state JobState) (*Job, error) {
 	}
 }
 
-// shardState defines a state of one mapping shard.
-type shardState int
+// ShardState defines a state of one mapping shard.
+type ShardState int
 
 const (
-	shardStateUnknown  shardState = iota // should not really be seen anywhere
-	shardStateStarting                   // the shard was just created
-	shardStateRunning                    // some work (but not all) has been done
-	shardStateSuccess                    // finished successfully
-	shardStateFail                       // failed (perhaps midway)
+	ShardStateUnknown  ShardState = iota // should not really be seen anywhere
+	ShardStateStarting                   // the shard was just created
+	ShardStateRunning                    // some work (but not all) has been done
+	ShardStateSuccess                    // finished successfully
+	ShardStateFail                       // failed (perhaps midway)
 )
 
-func (ss shardState) isFinal() bool {
-	return ss == shardStateSuccess || ss == shardStateFail
+func (ss ShardState) IsFinal() bool {
+	return ss == ShardStateSuccess || ss == ShardStateFail
 }
 
-func (ss shardState) String() string {
+func (ss ShardState) String() string {
 	switch ss {
-	case shardStateUnknown:
-		return "shardStateUnknown"
-	case shardStateStarting:
-		return "shardStateStarting"
-	case shardStateRunning:
-		return "shardStateRunning"
-	case shardStateSuccess:
-		return "shardStateSuccess"
-	case shardStateFail:
-		return "shardStateFail"
+	case ShardStateUnknown:
+		return "ShardStateUnknown"
+	case ShardStateStarting:
+		return "ShardStateStarting"
+	case ShardStateRunning:
+		return "ShardStateRunning"
+	case ShardStateSuccess:
+		return "ShardStateSuccess"
+	case ShardStateFail:
+		return "ShardStateFail"
 	default:
-		return fmt.Sprintf("shardState_%d", ss)
+		return fmt.Sprintf("ShardState_%d", ss)
 	}
 }
 
@@ -263,13 +370,17 @@ type shard struct {
 	// Index is the index of the shard in the job's shards list.
 	Index int `gae:",noindex"`
 	// State is used to track shard's lifecycle, see the enum.
-	State shardState
+	State ShardState
 	// Error is an error message for failed shards.
 	Error string `gae:",noindex"`
 	// ProcessTaskNum is next expected ProcessShard task number.
 	ProcessTaskNum int64 `gae:",noindex"`
 	// Range is an entity key range covered by this shard.
 	Range splitter.Range `gae:",noindex"`
+	// ExpectedCount is expected number of entities in the shard +1, 0 if unknown.
+	ExpectedCount int64 `gae:",noindex"`
+	// ProcessedCount is number of processed entities thus far.
+	ProcessedCount int64 `gae:",noindex"`
 	// ResumeFrom is the last processed key or nil if just starting.
 	ResumeFrom *datastore.Key `gae:",noindex"`
 	// Created is when the shard was created, FYI.
@@ -293,7 +404,7 @@ func getActiveShard(c context.Context, shardID, taskNum int64) (*shard, error) {
 		return nil, errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
-	case sh.State.isFinal():
+	case sh.State.IsFinal():
 		logging.Warningf(c, "The shard is finished already")
 		return nil, nil
 	case sh.ProcessTaskNum != taskNum:
@@ -321,7 +432,7 @@ func shardTxn(c context.Context, shardID int64, cb shardTxnCb) error {
 			return err
 		case err != nil:
 			return transient.Tag.Apply(err)
-		case sh.State.isFinal():
+		case sh.State.IsFinal():
 			return nil // the shard is already marked as done
 		}
 		switch save, err := cb(c, &sh); {
