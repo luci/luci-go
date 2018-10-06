@@ -209,6 +209,10 @@ func TestController(t *testing.T) {
 				})
 
 				assertAllSeen()
+
+				job, err := getJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, JobStateSuccess)
 			})
 
 			Convey("One shard fails", func() {
@@ -240,6 +244,10 @@ func TestController(t *testing.T) {
 
 				// There are 5 pages per shard. We aborted on second. So 3 are skipped.
 				So(processed, ShouldEqual, len(entities)-3*cfg.PageSize)
+
+				job, err := getJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, JobStateFail)
 			})
 
 			Convey("Job aborted midway", func() {
