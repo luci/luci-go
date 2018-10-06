@@ -22,6 +22,8 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock/testclock"
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/tq"
@@ -35,13 +37,25 @@ import (
 
 var testTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
-type testMapper struct{}
+// shardIndex extracts the index of the shard processed by the mapper.
+func shardIndex(c context.Context) int {
+	return c.Value(&shardIndexKey).(int)
+}
 
-func (tm *testMapper) MapperID() ID                                            { return "test-mapper" }
-func (tm *testMapper) Process(context.Context, Params, []*datastore.Key) error { return nil }
+type testMapper struct {
+	process func(context.Context, Params, []*datastore.Key) error
+}
+
+func (tm *testMapper) MapperID() ID { return "test-mapper" }
+func (tm *testMapper) Process(c context.Context, p Params, k []*datastore.Key) error {
+	if tm.process == nil {
+		return nil
+	}
+	return tm.process(c, p, k)
+}
 
 type intEnt struct {
-	ID int `gae:"$id"`
+	ID int64 `gae:"$id"`
 }
 
 func TestController(t *testing.T) {
@@ -69,14 +83,15 @@ func TestController(t *testing.T) {
 		So(datastore.Put(ctx, entities), ShouldBeNil)
 		datastore.GetTestable(ctx).CatchupIndexes()
 
-		Convey("LaunchJob splits key range", func() {
+		Convey("LaunchJob works", func() {
 			cfg := JobConfig{
 				Query: Query{
 					Kind: "intEnt",
 				},
-				Mapper:     mapper.MapperID(),
-				ShardCount: 4,
-				PageSize:   64,
+				Mapper:       mapper.MapperID(),
+				ShardCount:   4,
+				PageSize:     33, // make it weird to trigger "incomplete" pages
+				PagesPerTask: 2,  // to trigger multiple mapping tasks in a chain
 				Params: Params{
 					"k1": "v1",
 				},
@@ -87,7 +102,7 @@ func TestController(t *testing.T) {
 			So(jobID, ShouldEqual, 1)
 
 			// In "starting" state.
-			job, err := ctl.getJob(ctx, jobID)
+			job, err := getJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job, ShouldResemble, &Job{
 				ID:      jobID,
@@ -107,11 +122,11 @@ func TestController(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Switched into "running" state.
-			job, err = ctl.getJob(ctx, jobID)
+			job, err = getJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job.State, ShouldEqual, JobStateRunning)
 
-			expectedShard := func(id int64, idx, l, r int) shard {
+			expectedShard := func(id int64, idx int, l, r int64) shard {
 				rng := splitter.Range{}
 				if l != -1 {
 					rng.Start = datastore.KeyForObj(ctx, &intEnt{ID: l})
@@ -140,14 +155,149 @@ func TestController(t *testing.T) {
 				expectedShard(4, 3, 399, -1),
 			})
 
-			// Roll TQ forward.
-			_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
-				ShouldStopAfter: func(t tqtesting.Task) bool {
-					_, yep := t.Payload.(*tasks.FanOutShards)
-					return yep
-				},
+			spinUntilDone := func(expectErrors bool) {
+				for {
+					_, _, err := tqt.RunSimulation(ctx, nil)
+					if err == nil {
+						return
+					}
+					if !expectErrors {
+						So(err, ShouldBeNil)
+					}
+				}
+			}
+
+			visitShards := func(cb func(s shard)) {
+				shards, err := job.fetchShards(ctx)
+				So(err, ShouldBeNil)
+				So(shards, ShouldHaveLength, cfg.ShardCount)
+				for _, s := range shards {
+					cb(s)
+				}
+			}
+
+			seen := make(map[int64]struct{}, len(entities))
+
+			updateSeen := func(keys []*datastore.Key) {
+				for _, k := range keys {
+					_, ok := seen[k.IntID()]
+					So(ok, ShouldBeFalse)
+					seen[k.IntID()] = struct{}{}
+				}
+			}
+
+			assertAllSeen := func() {
+				So(len(seen), ShouldEqual, len(entities))
+				for _, e := range entities {
+					_, ok := seen[e.ID]
+					So(ok, ShouldBeTrue)
+				}
+			}
+
+			Convey("No errors when processing shards", func() {
+				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+					So(len(keys), ShouldBeLessThanOrEqualTo, cfg.PageSize)
+					updateSeen(keys)
+					return nil
+				}
+
+				spinUntilDone(false)
+
+				visitShards(func(s shard) {
+					So(s.State, ShouldEqual, shardStateSuccess)
+					So(s.ProcessTaskNum, ShouldEqual, 2)
+				})
+
+				assertAllSeen()
 			})
-			So(err, ShouldBeNil)
+
+			Convey("One shard fails", func() {
+				page := 0
+				processed := 0
+
+				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+					if shardIndex(c) == 1 {
+						page++
+						if page == 2 {
+							return errors.New("boom")
+						}
+					}
+					processed += len(keys)
+					return nil
+				}
+
+				spinUntilDone(true)
+
+				visitShards(func(s shard) {
+					if s.Index == 1 {
+						So(s.State, ShouldEqual, shardStateFail)
+						So(s.Error, ShouldEqual, `in the mapper "test-mapper": boom`)
+					} else {
+						So(s.State, ShouldEqual, shardStateSuccess)
+						So(s.ProcessTaskNum, ShouldEqual, 2)
+					}
+				})
+
+				// There are 5 pages per shard. We aborted on second. So 3 are skipped.
+				So(processed, ShouldEqual, len(entities)-3*cfg.PageSize)
+			})
+
+			Convey("Job aborted midway", func() {
+				processed := 0
+
+				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+					processed += len(keys)
+
+					job, err := getJob(ctx, jobID)
+					So(err, ShouldBeNil)
+					job.State = JobStateFail
+					So(datastore.Put(c, job), ShouldBeNil)
+
+					return nil
+				}
+
+				spinUntilDone(false)
+
+				// All shards are left in whatever state they were in. We don't bother
+				// changing their state: Shards owned by an aborted job are
+				// automatically considered aborted.
+				visitShards(func(s shard) {
+					if s.Index == 0 {
+						// Zeroth shard did manage to run for a bit.
+						So(s.State, ShouldEqual, shardStateRunning)
+					} else {
+						So(s.State, ShouldEqual, shardStateStarting)
+					}
+				})
+
+				// Processed 2 pages (instead of 1), since processShardHandler doesn't
+				// check job state inside the processing loop (only at the beginning).
+				So(processed, ShouldEqual, 2*cfg.PageSize)
+			})
+
+			Convey("processShardHandler saves state on transient errors", func() {
+				pages := 0
+
+				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+					pages++
+					if pages == 2 {
+						return errors.New("boom", transient.Tag)
+					}
+					return nil
+				}
+
+				err := ctl.processShardHandler(ctx, &tasks.ProcessShard{
+					JobId:   int64(job.ID),
+					ShardId: shards[0].ID,
+				})
+				So(transient.Tag.In(err), ShouldBeTrue)
+
+				// Shard's resume point is updated. Its taskNum is left unchanged, since
+				// we are going to retry the task.
+				sh, err := getActiveShard(ctx, shards[0].ID, shards[0].ProcessTaskNum)
+				So(err, ShouldBeNil)
+				So(sh.ResumeFrom, ShouldNotBeNil)
+			})
 		})
 	})
 }

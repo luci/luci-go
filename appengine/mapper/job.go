@@ -19,7 +19,9 @@ import (
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/appengine/mapper/splitter"
@@ -54,6 +56,12 @@ type JobConfig struct {
 	Params     Params // JSON-serializable parameters for the mapper
 	ShardCount int    // number of shards to split the key range into
 	PageSize   int    // how many entities to process at once in each shard
+
+	// Optional parameters below for fine tunning. They have reasonable defaults,
+	// and should generally be not touched.
+
+	PagesPerTask int           // how many pages to process inside a TQ task, default unlimited
+	TaskDuration time.Duration // how long to run a single mapping TQ task, default 1 min
 }
 
 // Validate returns an error of the config is invalid.
@@ -65,6 +73,10 @@ func (jc *JobConfig) Validate() error {
 		return errors.Reason("ShardCount should be >= 1, try 8").Err()
 	case jc.PageSize <= 0:
 		return errors.Reason("PageSize should be > 0, try 256").Err()
+	case jc.PagesPerTask < 0:
+		return errors.Reason("PagesPerTask should be >= 0, keep 0 for default").Err()
+	case jc.TaskDuration < 0:
+		return errors.Reason("TaskDuration should be >= 0, keep 0 for default").Err()
 	}
 	return nil
 }
@@ -76,6 +88,8 @@ const (
 	JobStateUnknown  JobState = iota // should not really be seen anywhere
 	JobStateStarting                 // tq task to start the job is enqueued
 	JobStateRunning                  // all shards initiated and running now
+	JobStateSuccess                  // all shards have succeeded
+	JobStateFail                     // some shards have failed
 )
 
 // JobID identifies a mapping job.
@@ -145,13 +159,54 @@ func (j *Job) fetchShards(c context.Context) ([]shard, error) {
 	return shards, nil
 }
 
+// getJob fetches a Job entity.
+//
+// Recognizes and tags transient errors.
+func getJob(c context.Context, id JobID) (*Job, error) {
+	job := &Job{ID: id}
+	switch err := datastore.Get(c, job); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errors.Reason("no mapping job with ID %d", id).Err()
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch Job entity with ID %d", id).Tag(transient.Tag).Err()
+	default:
+		return job, nil
+	}
+}
+
+// getJobInState fetches a Job entity and checks its state.
+//
+// Returns:
+//   (*Job, nil) if the job is there and its state matches 'state'.
+//   (nil, nil) if the job is there, but in a different state.
+//   (nil, transient error) on datastore fetch errors.
+//   (nil, fatal error) if there's no such job at all.
+func getJobInState(c context.Context, id JobID, state JobState) (*Job, error) {
+	switch job, err := getJob(c, id); {
+	case err != nil:
+		return nil, err
+	case job.State != state:
+		logging.Warningf(c, "Skipping the job: its state is %s, expecting %s", job.State, state)
+		return nil, nil
+	default:
+		return job, nil
+	}
+}
+
 // shardState defines a state of one mapping shard.
 type shardState int
 
 const (
 	shardStateUnknown  shardState = iota // should not really be seen anywhere
 	shardStateStarting                   // the shard was just created
+	shardStateRunning                    // some work (but not all) has been done
+	shardStateSuccess                    // finished successfully
+	shardStateFail                       // failed (perhaps midway)
 )
+
+func (ss shardState) isFinal() bool {
+	return ss == shardStateSuccess || ss == shardStateFail
+}
 
 // shard represents a key range being worked on by a single worker (Start, End].
 //
@@ -174,12 +229,74 @@ type shard struct {
 	Index int `gae:",noindex"`
 	// State is used to track shard's lifecycle, see the enum.
 	State shardState
+	// Error is an error message for failed shards.
+	Error string `gae:",noindex"`
+	// ProcessTaskNum is next expected ProcessShard task number.
+	ProcessTaskNum int64 `gae:",noindex"`
 	// Range is an entity key range covered by this shard.
 	Range splitter.Range `gae:",noindex"`
+	// ResumeFrom is the last processed key or nil if just starting.
+	ResumeFrom *datastore.Key `gae:",noindex"`
 	// Created is when the shard was created, FYI.
 	Created time.Time
 	// Updated is when the shard was last touched, FYI.
 	Updated time.Time
+}
 
-	// TODO: Resumption point.
+// getActiveShard returns shard entity with given ID if its still in active
+// state and its ProcessTaskNum matches the given taskNum.
+//
+// Returns:
+//   (*shard, nil) if the shard is there and matches the criteria.
+//   (nil, nil) if the shard is there, but it doesn't match the criteria.
+//   (nil, transient error) on datastore fetch errors.
+//   (nil, fatal error) if there's no such shard at all.
+func getActiveShard(c context.Context, shardID, taskNum int64) (*shard, error) {
+	sh := &shard{ID: shardID}
+	switch err := datastore.Get(c, sh); {
+	case err == datastore.ErrNoSuchEntity:
+		return nil, errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
+	case err != nil:
+		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
+	case sh.State.isFinal():
+		logging.Warningf(c, "The shard is finished already")
+		return nil, nil
+	case sh.ProcessTaskNum != taskNum:
+		logging.Warningf(c, "The task is stale (shard's task_num is %d, but task's is %d). Skipping it", sh.ProcessTaskNum, taskNum)
+		return nil, nil
+	default:
+		return sh, nil
+	}
+}
+
+// shardTxnCb examines and optionally mutates the shard.
+//
+// It returns (true, nil) to instruct shardTxn to store the shard, (false, nil)
+// to skip storing, and (..., err) to return the error.
+type shardTxnCb func(c context.Context, sh *shard) (save bool, err error)
+
+// shardTxn fetches the shard and calls the callback to examine or mutate it.
+//
+// Silently skips finished shards.
+func shardTxn(c context.Context, shardID int64, cb shardTxnCb) error {
+	return runTxn(c, func(c context.Context) error {
+		sh := shard{ID: shardID}
+		switch err := datastore.Get(c, &sh); {
+		case err == datastore.ErrNoSuchEntity:
+			return err
+		case err != nil:
+			return transient.Tag.Apply(err)
+		case sh.State.isFinal():
+			return nil // the shard is already marked as done
+		}
+		switch save, err := cb(c, &sh); {
+		case err != nil:
+			return err
+		case !save:
+			return nil
+		default:
+			sh.Updated = clock.Now(c).UTC()
+			return transient.Tag.Apply(datastore.Put(c, &sh))
+		}
+	})
 }
