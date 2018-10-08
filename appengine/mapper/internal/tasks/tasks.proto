@@ -47,3 +47,23 @@ message ProcessShard {
   int64 shard_id = 2;
   int64 task_num = 3;
 }
+
+
+// RequestJobStateUpdate is transactionally emitted by ProcessShard when shard's
+// state changes.
+//
+// It eventually (with some throttling) causes UpdateJobState to be emitted,
+// which updates the job state based on states of the shards.
+message RequestJobStateUpdate {
+  int64 job_id = 1;
+  int64 shard_id = 2; // mostly FYI
+}
+
+
+// UpdateJobState is emitted after one or more shards have changed their state.
+//
+// It recalculates the job's state based on state of all its shards. Throttled
+// to 0.5 QPS.
+message UpdateJobState {
+  int64 job_id = 1;
+}
