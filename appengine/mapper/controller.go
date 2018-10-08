@@ -135,6 +135,8 @@ func (ctl *Controller) Install(disp *tq.Dispatcher) {
 	disp.RegisterTask(&tasks.SplitAndLaunch{}, ctl.splitAndLaunchHandler, ctl.ControlQueue, nil)
 	disp.RegisterTask(&tasks.FanOutShards{}, ctl.fanOutShardsHandler, ctl.ControlQueue, nil)
 	disp.RegisterTask(&tasks.ProcessShard{}, ctl.processShardHandler, ctl.MapperQueue, nil)
+	disp.RegisterTask(&tasks.RequestJobStateUpdate{}, ctl.requestJobStateUpdateHandler, ctl.ControlQueue, nil)
+	disp.RegisterTask(&tasks.UpdateJobState{}, ctl.updateJobStateHandler, ctl.ControlQueue, nil)
 }
 
 // tq returns a dispatcher set in Install or panics if not set yet.
@@ -529,7 +531,6 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 // emits a task to update the parent job's status.
 func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr error) error {
 	err := shardTxn(c, shardID, func(c context.Context, sh *shard) (save bool, err error) {
-		// TODO: notify the parent job about shard's completion.
 		runtime := clock.Now(c).Sub(sh.Created)
 		if shardErr != nil {
 			logging.Errorf(c, "The shard processing failed in %s with error: %s", runtime, shardErr)
@@ -539,7 +540,7 @@ func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr er
 			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
 			sh.State = shardStateSuccess
 		}
-		return true, nil
+		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
 	})
 	return errors.Annotate(err, "when marking the shard as finished").Err()
 }
@@ -574,4 +575,96 @@ func makeProcessShardTask(job JobID, shardID, taskNum int64, named bool) *tq.Tas
 		t.DeduplicationKey = fmt.Sprintf("v1-%d-%d-%d", job, shardID, taskNum)
 	}
 	return t
+}
+
+// requestJobStateUpdate submits RequestJobStateUpdate task, which eventually
+// causes updateJobStateHandler to execute.
+func (ctl *Controller) requestJobStateUpdate(c context.Context, jobID JobID, shardID int64) error {
+	return ctl.tq().AddTask(c, &tq.Task{
+		Title: fmt.Sprintf("job-%d-shard-%d", jobID, shardID),
+		Payload: &tasks.RequestJobStateUpdate{
+			JobId:   int64(jobID),
+			ShardId: shardID,
+		},
+	})
+}
+
+// requestJobStateUpdateHandler is called whenever state of some shard changes.
+//
+// It forwards this notification to the job (specifically updateJobStateHandler)
+// throttling the rate to ~0.5 QPS to avoid overwhelming job's entity group with
+// high write rate.
+func (ctl *Controller) requestJobStateUpdateHandler(c context.Context, payload proto.Message) error {
+	msg := payload.(*tasks.RequestJobStateUpdate)
+
+	// Throttle to once per 2 sec (and make sure it is always in the future). We
+	// rely here on a pretty good (< .5s maximum skew) clock sync on GAE.
+	eta := clock.Now(c).Unix()
+	eta = (eta/2 + 1) * 2
+	dedupKey := fmt.Sprintf("update-job-state-v1:%d:%d", msg.JobId, eta)
+
+	err := ctl.tq().AddTask(c, &tq.Task{
+		DeduplicationKey: dedupKey,
+		Title:            fmt.Sprintf("job-%d", msg.JobId),
+		ETA:              time.Unix(eta, 0),
+		Payload:          &tasks.UpdateJobState{JobId: msg.JobId},
+	})
+	return errors.Annotate(err, "when adding UpdateJobState task").Err()
+}
+
+// updateJobStateHandler is called some time later after one or more shards have
+// changed state.
+//
+// It calculates overall job state based on the state of its shards.
+func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Message) error {
+	msg := payload.(*tasks.UpdateJobState)
+
+	// Get the job and all its shards in their most recent state.
+	job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+	if err != nil || job == nil {
+		return errors.Annotate(err, "in UpdateJobState").Err()
+	}
+	shards, err := job.fetchShards(c)
+	if err != nil {
+		return errors.Annotate(err, "failed to fetch shards").Err()
+	}
+
+	// Switch the job into a final state only when all shards are done running.
+	perState := map[shardState]int{}
+	for _, sh := range shards {
+		logging.Infof(c, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
+		perState[sh.State]++
+	}
+	if perState[shardStateSuccess]+perState[shardStateFail] != len(shards) {
+		return nil
+	}
+
+	jobState := JobStateSuccess
+	if perState[shardStateFail] != 0 {
+		jobState = JobStateFail
+	}
+
+	return runTxn(c, func(c context.Context) error {
+		job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+		if err != nil || job == nil {
+			return errors.Annotate(err, "in UpdateJobState txn").Err()
+		}
+
+		job.State = jobState
+		job.Updated = clock.Now(c).UTC()
+
+		runtime := job.Updated.Sub(job.Created)
+		if job.State == JobStateSuccess {
+			logging.Infof(c, "The job finished successfully in %s", runtime)
+		} else {
+			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[shardStateFail], runtime)
+			for _, sh := range shards {
+				if sh.State == shardStateFail {
+					logging.Errorf(c, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
+				}
+			}
+		}
+
+		return transient.Tag.Apply(datastore.Put(c, job))
+	})
 }
