@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4c6fa66a_df1a98ce",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:06:16Z",
+      "side": 1,
+      "message": "Yes, I\u0027m aware of nil noop annotations. This was the intention.",
+      "parentUuid": "98cba1eb_594cc50f",
+      "range": {
+        "startLine": 244,
+        "startChar": 2,
+        "endLine": 244,
+        "endChar": 56
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ae3feee_84f4770b",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de5bfb5e_8cf59fce",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:06:16Z",
+      "side": 1,
+      "message": "It will stall everything. So it\u0027s not useful.",
+      "parentUuid": "5ae3feee_84f4770b",
+      "range": {
+        "startLine": 367,
+        "startChar": 58,
+        "endLine": 367,
+        "endChar": 77
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "b41d948a_6576bfde",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:06:16Z",
+      "side": 1,
+      "message": "I think it\u0027s a premature optimization.",
+      "parentUuid": "5a93f8f1_1b5732a3",
+      "range": {
+        "startLine": 435,
+        "startChar": 36,
+        "endLine": 435,
+        "endChar": 55
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e2c9bd41_dd87e084",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 9
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "8e9f4e05_fa6c1612",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:06:16Z",
+      "side": 1,
+      "message": "Yes. This is already documented.",
+      "parentUuid": "e2c9bd41_dd87e084",
+      "range": {
+        "startLine": 454,
+        "startChar": 11,
+        "endLine": 454,
+        "endChar": 53
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "439d9a9e_c5aa24fd",
         "filename": "appengine/mapper/controller.go",
         "patchSetId": 9
@@ -114,6 +210,30 @@
       "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a85eb282_a1ff86c0",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:06:16Z",
+      "side": 1,
+      "message": "This is a limit on an entity group that holds the state of the single shard. Each shard is in its own entity group.\n\nIIRC, trying to sustain faster transaction rate eventually cases internal errors and \"entity group contention errors\". There\u0027s NO automatic slow down to 1/s. I prefer avoid hitting these errors, I feel working on the edge is not healthy.",
+      "parentUuid": "439d9a9e_c5aa24fd",
+      "range": {
+        "startLine": 462,
+        "startChar": 55,
+        "endLine": 462,
+        "endChar": 60
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
