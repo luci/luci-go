@@ -16,7 +16,6 @@ package mapper
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
@@ -82,34 +81,6 @@ func (jc *JobConfig) Validate() error {
 	return nil
 }
 
-// JobState defines a state of a mapping job.
-type JobState int
-
-const (
-	JobStateUnknown  JobState = iota // should not really be seen anywhere
-	JobStateStarting                 // tq task to start the job is enqueued
-	JobStateRunning                  // all shards initiated and running now
-	JobStateSuccess                  // all shards have succeeded
-	JobStateFail                     // some shards have failed
-)
-
-func (js JobState) String() string {
-	switch js {
-	case JobStateUnknown:
-		return "JobStateUnknown"
-	case JobStateStarting:
-		return "JobStateStarting"
-	case JobStateRunning:
-		return "JobStateRunning"
-	case JobStateSuccess:
-		return "JobStateSuccess"
-	case JobStateFail:
-		return "JobStateFail"
-	default:
-		return fmt.Sprintf("JobState_%d", js)
-	}
-}
-
 // JobID identifies a mapping job.
 type JobID int64
 
@@ -125,7 +96,7 @@ type Job struct {
 	// Config is the configuration of this job. Doesn't change once set.
 	Config JobConfig `gae:",noindex"`
 	// State is used to track job's lifecycle, see the enum.
-	State JobState
+	State State
 	// Created is when the job was created, FYI.
 	Created time.Time
 	// Updated is when the job was last touched, FYI.
@@ -199,7 +170,7 @@ func getJob(c context.Context, id JobID) (*Job, error) {
 //   (nil, nil) if the job is there, but in a different state.
 //   (nil, transient error) on datastore fetch errors.
 //   (nil, fatal error) if there's no such job at all.
-func getJobInState(c context.Context, id JobID, state JobState) (*Job, error) {
+func getJobInState(c context.Context, id JobID, state State) (*Job, error) {
 	switch job, err := getJob(c, id); {
 	case err != nil:
 		return nil, err
@@ -208,38 +179,6 @@ func getJobInState(c context.Context, id JobID, state JobState) (*Job, error) {
 		return nil, nil
 	default:
 		return job, nil
-	}
-}
-
-// shardState defines a state of one mapping shard.
-type shardState int
-
-const (
-	shardStateUnknown  shardState = iota // should not really be seen anywhere
-	shardStateStarting                   // the shard was just created
-	shardStateRunning                    // some work (but not all) has been done
-	shardStateSuccess                    // finished successfully
-	shardStateFail                       // failed (perhaps midway)
-)
-
-func (ss shardState) isFinal() bool {
-	return ss == shardStateSuccess || ss == shardStateFail
-}
-
-func (ss shardState) String() string {
-	switch ss {
-	case shardStateUnknown:
-		return "shardStateUnknown"
-	case shardStateStarting:
-		return "shardStateStarting"
-	case shardStateRunning:
-		return "shardStateRunning"
-	case shardStateSuccess:
-		return "shardStateSuccess"
-	case shardStateFail:
-		return "shardStateFail"
-	default:
-		return fmt.Sprintf("shardState_%d", ss)
 	}
 }
 
@@ -263,7 +202,7 @@ type shard struct {
 	// Index is the index of the shard in the job's shards list.
 	Index int `gae:",noindex"`
 	// State is used to track shard's lifecycle, see the enum.
-	State shardState
+	State State
 	// Error is an error message for failed shards.
 	Error string `gae:",noindex"`
 	// ProcessTaskNum is next expected ProcessShard task number.
@@ -293,7 +232,7 @@ func getActiveShard(c context.Context, shardID, taskNum int64) (*shard, error) {
 		return nil, errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
-	case sh.State.isFinal():
+	case sh.State == State_SUCCESS || sh.State == State_FAIL:
 		logging.Warningf(c, "The shard is finished already")
 		return nil, nil
 	case sh.ProcessTaskNum != taskNum:
@@ -321,7 +260,7 @@ func shardTxn(c context.Context, shardID int64, cb shardTxnCb) error {
 			return err
 		case err != nil:
 			return transient.Tag.Apply(err)
-		case sh.State.isFinal():
+		case sh.State == State_SUCCESS || sh.State == State_FAIL:
 			return nil // the shard is already marked as done
 		}
 		switch save, err := cb(c, &sh); {
