@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3577919f_ff6b6566",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 601,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:15:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3dc9b7bd_1daf646a",
+      "range": {
+        "startLine": 601,
+        "startChar": 30,
+        "endLine": 601,
+        "endChar": 31
+      },
+      "revId": "0d44826c61ff3fee756acbc141d5f62cb34c304d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ebef286_64c6b44d",
         "filename": "appengine/mapper/job.go",
         "patchSetId": 2
@@ -39,6 +63,24 @@
       "revId": "0d44826c61ff3fee756acbc141d5f62cb34c304d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff98361b_64f177c9",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:15:25Z",
+      "side": 1,
+      "message": "Nah, it\u0027s not a big deal. In fact, I removed make(..., 5) to avoid it getting stale. It\u0027s not a performance sensitive code.",
+      "parentUuid": "8ebef286_64c6b44d",
+      "revId": "0d44826c61ff3fee756acbc141d5f62cb34c304d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
