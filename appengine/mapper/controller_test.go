@@ -206,6 +206,9 @@ func TestController(t *testing.T) {
 				visitShards(func(s shard) {
 					So(s.State, ShouldEqual, State_SUCCESS)
 					So(s.ProcessTaskNum, ShouldEqual, 2)
+					So(s.ProcessedCount, ShouldEqual, []int64{
+						136, 132, 131, 113,
+					}[s.Index])
 				})
 
 				assertAllSeen()
@@ -240,6 +243,9 @@ func TestController(t *testing.T) {
 						So(s.State, ShouldEqual, State_SUCCESS)
 						So(s.ProcessTaskNum, ShouldEqual, 2)
 					}
+					So(s.ProcessedCount, ShouldEqual, []int64{
+						136, 33, 131, 113, // the failed shard is incomplete
+					}[s.Index])
 				})
 
 				// There are 5 pages per shard. We aborted on second. So 3 are skipped.
@@ -273,8 +279,10 @@ func TestController(t *testing.T) {
 					if s.Index == 0 {
 						// Zeroth shard did manage to run for a bit.
 						So(s.State, ShouldEqual, State_RUNNING)
+						So(s.ProcessedCount, ShouldEqual, 66)
 					} else {
 						So(s.State, ShouldEqual, State_STARTING)
+						So(s.ProcessedCount, ShouldEqual, 0)
 					}
 				})
 
@@ -305,6 +313,7 @@ func TestController(t *testing.T) {
 				sh, err := getActiveShard(ctx, shards[0].ID, shards[0].ProcessTaskNum)
 				So(err, ShouldBeNil)
 				So(sh.ResumeFrom, ShouldNotBeNil)
+				So(sh.ProcessedCount, ShouldEqual, 33)
 			})
 		})
 	})
