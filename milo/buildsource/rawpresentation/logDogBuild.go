@@ -55,9 +55,9 @@ var statusPrecendence = map[model.Status]int{
 
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignoreChildren bool) []*ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignoreChildren bool) ui.BuildComponent {
 
-	comp := &ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
+	comp := ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = model.Running
@@ -145,9 +145,6 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 	// This should always be a step.
 	comp.Type = ui.Step
 
-	// This should always be 0
-	comp.LevelsDeep = 0
-
 	// Timestamps
 	var start, end time.Time
 	if t, err := ptypes.Timestamp(anno.Started); err == nil {
@@ -162,13 +159,12 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 	comp.Text = append(comp.Text, anno.Text...)
 
 	if ignoreChildren {
-		return []*ui.BuildComponent{comp}
+		return comp
 	}
 
 	ss := anno.GetSubstep()
-	results := []*ui.BuildComponent{}
-	results = append(results, comp)
-	directSubstepStatuses := make([]model.Status, 0, len(ss))
+	comp.Children = make([]*ui.BuildComponent, 0, len(ss))
+
 	// Process nested steps.
 	for _, substep := range ss {
 		var subanno *miloProto.Step
@@ -180,12 +176,8 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		subcomps := miloBuildStep(c, ub, subanno, ignoreChildren)
-		for _, subcomp := range subcomps {
-			results = append(results, subcomp)
-		}
-		// First subcomponent is the direct child, the rest are grandchilden.
-		directSubstepStatuses = append(directSubstepStatuses, subcomps[0].Status)
+		subcomp := miloBuildStep(c, ub, subanno, ignoreChildren)
+		comp.Children = append(comp.Children, &subcomp)
 	}
 
 	// When parent step finishes runing, compute its final status as worst status,
@@ -194,15 +186,30 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 	// TODO(sergiyb): Move this logic to Fix method in frontend/ui/build.go after
 	// we've found a way to preserve step hierarchy in the MiloBuild struct.
 	if comp.Status.Terminal() {
-		for _, substepStatus := range directSubstepStatuses {
-			substepStatusPrecedence, ok := statusPrecendence[substepStatus]
+		for _, substep := range comp.Children {
+			substepStatusPrecedence, ok := statusPrecendence[substep.Status]
 			if ok && substepStatusPrecedence < statusPrecendence[comp.Status] {
-				comp.Status = substepStatus
+				comp.Status = substep.Status
 			}
 		}
 	}
 
-	return results
+	return comp
+}
+
+func addPropGroups(groups *[]*ui.PropertyGroup, bs *ui.BuildComponent, anno *miloProto.Step) {
+	propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
+	for _, prop := range anno.Property {
+		propGroup.Property = append(propGroup.Property, &ui.Property{
+			Key:   prop.Name,
+			Value: prop.Value,
+		})
+	}
+	*groups = append(*groups, propGroup)
+
+	for _, child := range bs.Children {
+		addPropGroups(groups, child, anno)
+	}
 }
 
 // SubStepsToUI converts a slice of annotation substeps to ui.BuildComponent and
@@ -217,18 +224,9 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_S
 			continue
 		}
 
-		bss := miloBuildStep(c, ub, anno, false)
-		for _, bs := range bss {
-			components = append(components, bs)
-			propGroup := &ui.PropertyGroup{GroupName: bs.Label.Label}
-			for _, prop := range anno.Property {
-				propGroup.Property = append(propGroup.Property, &ui.Property{
-					Key:   prop.Name,
-					Value: prop.Value,
-				})
-			}
-			propGroups = append(propGroups, propGroup)
-		}
+		bs := miloBuildStep(c, ub, anno, false)
+		components = append(components, &bs)
+		addPropGroups(&propGroups, &bs, anno)
 	}
 
 	return components, propGroups
@@ -241,7 +239,7 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	build.Summary = *(miloBuildStep(c, ub, mainAnno, true)[0])
+	build.Summary = miloBuildStep(c, ub, mainAnno, true)
 	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep)
 
 	// Take care of properties
