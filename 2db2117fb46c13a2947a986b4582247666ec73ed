@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8b541278_160b391d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T22:03:11Z",
+      "side": 1,
+      "message": "I assume you\u0027ll update this :)\n\nWe follow mostly standard convention of formatting git CLs:\n\n\"\"\"\n\u003cshort one-line title describing what\u0027s in the CL\u003e\n\n\u003cone of more paragraphs of more detailed description, if needed\u003e\n\u003cline size is \u003c80 chars\u003e\n\nR\u003d\u003creviewer1 email\u003e,\u003creviewer 2 email\u003e\nBUG\u003d891092\n\"\"\"\n\n\u0027git cl upload\u0027 understands R\u003d... lines. Gerrit UI understands BUG\u003d... line and will auto-link it to the issue.",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 25
+      },
+      "revId": "2db2117fb46c13a2947a986b4582247666ec73ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21fef6e0_17070d03",
+        "filename": "common/gcloud/googleoauth/token.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T22:03:11Z",
+      "side": 1,
+      "message": "There\u0027s no \"flow\" anymore, it\u0027s just one API call. Consider just adding another method to https://chromium.googlesource.com/infra/luci/luci-go/+/master/common/gcloud/iam/client.go#56. It wraps IAM API already, and generateAccessToken is part of IAM API, seems like a natural place.\n\nAlso all call sites (2 of them) instantiate iam.Client anyway now. Might just as well call it\u0027s GenerateAccessToken, instead of using it as a signer.",
+      "range": {
+        "startLine": 37,
+        "startChar": 5,
+        "endLine": 37,
+        "endChar": 23
+      },
+      "revId": "2db2117fb46c13a2947a986b4582247666ec73ed",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
