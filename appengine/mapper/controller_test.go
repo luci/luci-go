@@ -126,7 +126,7 @@ func TestController(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(job.State, ShouldEqual, JobStateRunning)
 
-			expectedShard := func(id int64, idx int, l, r int64) shard {
+			expectedShard := func(id int64, idx int, l, r, expected int64) shard {
 				rng := splitter.Range{}
 				if l != -1 {
 					rng.Start = datastore.KeyForObj(ctx, &intEnt{ID: l})
@@ -135,13 +135,14 @@ func TestController(t *testing.T) {
 					rng.End = datastore.KeyForObj(ctx, &intEnt{ID: r})
 				}
 				return shard{
-					ID:      id,
-					JobID:   jobID,
-					Index:   idx,
-					State:   shardStateStarting,
-					Range:   rng,
-					Created: testTime,
-					Updated: testTime,
+					ID:            id,
+					JobID:         jobID,
+					Index:         idx,
+					State:         ShardStateStarting,
+					Range:         rng,
+					ExpectedCount: expected,
+					Created:       testTime,
+					Updated:       testTime,
 				}
 			}
 
@@ -149,10 +150,10 @@ func TestController(t *testing.T) {
 			shards, err := job.fetchShards(ctx)
 			So(err, ShouldBeNil)
 			So(shards, ShouldResemble, []shard{
-				expectedShard(1, 0, -1, 136),
-				expectedShard(2, 1, 136, 268),
-				expectedShard(3, 2, 268, 399),
-				expectedShard(4, 3, 399, -1),
+				expectedShard(1, 0, -1, 136, 137),
+				expectedShard(2, 1, 136, 268, 133),
+				expectedShard(3, 2, 268, 399, 132),
+				expectedShard(4, 3, 399, -1, 114),
 			})
 
 			spinUntilDone := func(expectErrors bool) {
@@ -204,7 +205,7 @@ func TestController(t *testing.T) {
 				spinUntilDone(false)
 
 				visitShards(func(s shard) {
-					So(s.State, ShouldEqual, shardStateSuccess)
+					So(s.State, ShouldEqual, ShardStateSuccess)
 					So(s.ProcessTaskNum, ShouldEqual, 2)
 				})
 
@@ -213,6 +214,54 @@ func TestController(t *testing.T) {
 				job, err := getJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, JobStateSuccess)
+
+				// Progress report works.
+				prog, err := job.FetchProgress(ctx)
+				So(err, ShouldBeNil)
+				So(prog, ShouldResemble, &JobProgress{
+					Progress: Progress{
+						Total:     512,
+						Processed: 512,
+						Runtime:   2 * time.Second,
+						Rate:      256,
+						ETA:       -1,
+					},
+					State: JobStateSuccess,
+					Shards: []ShardProgress{
+						{
+							Progress: Progress{
+								Total:     136,
+								Processed: 136,
+								ETA:       -1,
+							},
+							State: ShardStateSuccess,
+						},
+						{
+							Progress: Progress{
+								Total:     132,
+								Processed: 132,
+								ETA:       -1,
+							},
+							State: ShardStateSuccess,
+						},
+						{
+							Progress: Progress{
+								Total:     131,
+								Processed: 131,
+								ETA:       -1,
+							},
+							State: ShardStateSuccess,
+						},
+						{
+							Progress: Progress{
+								Total:     113,
+								Processed: 113,
+								ETA:       -1,
+							},
+							State: ShardStateSuccess,
+						},
+					},
+				})
 			})
 
 			Convey("One shard fails", func() {
@@ -234,10 +283,10 @@ func TestController(t *testing.T) {
 
 				visitShards(func(s shard) {
 					if s.Index == 1 {
-						So(s.State, ShouldEqual, shardStateFail)
+						So(s.State, ShouldEqual, ShardStateFail)
 						So(s.Error, ShouldEqual, `in the mapper "test-mapper": boom`)
 					} else {
-						So(s.State, ShouldEqual, shardStateSuccess)
+						So(s.State, ShouldEqual, ShardStateSuccess)
 						So(s.ProcessTaskNum, ShouldEqual, 2)
 					}
 				})
@@ -272,9 +321,9 @@ func TestController(t *testing.T) {
 				visitShards(func(s shard) {
 					if s.Index == 0 {
 						// Zeroth shard did manage to run for a bit.
-						So(s.State, ShouldEqual, shardStateRunning)
+						So(s.State, ShouldEqual, ShardStateRunning)
 					} else {
-						So(s.State, ShouldEqual, shardStateStarting)
+						So(s.State, ShouldEqual, ShardStateStarting)
 					}
 				})
 
@@ -305,6 +354,7 @@ func TestController(t *testing.T) {
 				sh, err := getActiveShard(ctx, shards[0].ID, shards[0].ProcessTaskNum)
 				So(err, ShouldBeNil)
 				So(sh.ResumeFrom, ShouldNotBeNil)
+				So(sh.ProcessedCount, ShouldEqual, 33)
 			})
 		})
 	})
