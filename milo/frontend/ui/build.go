@@ -321,17 +321,15 @@ type BuildComponent struct {
 	// This is either "RECIPE" or "STEP".  An attempt is considered a recipe.
 	Type ComponentType
 
-	// Specifies if this is a top level or a dependency.  Manifests itself as an
-	// indentation level.  Valid options are 0 and 1.  Anything more than 1 is
-	// automatically truncated to 1.
-	LevelsDeep uint32
-
 	// Verbosity indicates how important this step is.
 	Verbosity Verbosity
 
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
 	Text []string
+
+	// Children of the current build component. Used to define steps hierarchy.
+	Children []*BuildComponent
 }
 
 var rLineBreak = regexp.MustCompile("<br */?>")
