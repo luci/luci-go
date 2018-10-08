@@ -32,11 +32,11 @@
       "Duration": 1176396231000
     },
     "Type": "Summary",
-    "LevelsDeep": 1,
     "Verbosity": 0,
     "Text": [
       "failed compile (with patch)"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -84,11 +84,11 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": [
         "line 1\u003cbr\u003e\u003cbr\u003eline 3"
-      ]
+      ],
+      "Children": null
     }
   ],
   "PropertyGroup": [
