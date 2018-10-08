@@ -15,12 +15,10 @@
 package googleoauth
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,64 +28,54 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/clock/testclock"
-	"go.chromium.org/luci/common/gcloud/iam"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 type token struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int64  `json:"expires_in"`
+	AccessToken string `json:"accessToken"`
+	ExpireTime  string `json:"expireTime"`
+	TokenType   string
 }
 
 func TestGetAccessToken(t *testing.T) {
 	ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
-	issuedAt := testclock.TestRecentTimeLocal.Add(-15 * time.Second).Unix()
 
 	Convey("Happy path", t, func() {
-		req, tok, url, err := call(ctx, JwtFlowParams{
+		expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
+		So(err, ShouldBeNil)
+		_, tok, _, err := call(ctx, GenTokenFlowParams{
 			ServiceAccount: "account@example.com",
 			Scopes:         []string{"a", "b"},
-		}, 200, token{"abc", "Bearer", 3600})
-
+		}, 200, token{"abc", expireTime.Format(time.RFC3339), "Bearer"})
 		So(err, ShouldBeNil)
-
-		// Request parameters are valid.
-		So(req.Get("grant_type"), ShouldEqual, "urn:ietf:params:oauth:grant-type:jwt-bearer")
-		claims := deconstructJWT(req.Get("assertion"))
-		So(claims, ShouldResemble, iam.ClaimSet{
-			Iss:   "account@example.com",
-			Scope: "a b",
-			Aud:   url,
-			Iat:   issuedAt,
-			Exp:   issuedAt + 3600,
-		})
 
 		// Response is understood.
 		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "abc",
 			TokenType:   "Bearer",
-			Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
+			Expiry:      expireTime,
 		})
 	})
 
 	Convey("Uses Bearer as default", t, func() {
-		_, tok, _, err := call(ctx, JwtFlowParams{
+		expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
+		So(err, ShouldBeNil)
+		_, tok, _, err := call(ctx, GenTokenFlowParams{
 			ServiceAccount: "account@example.com",
 			Scopes:         []string{"a", "b"},
-		}, 200, token{"def", "", 3600})
+		}, 200, token{"def", expireTime.Format(time.RFC3339), ""})
 
 		So(err, ShouldBeNil)
 		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "def",
 			TokenType:   "Bearer",
-			Expiry:      clock.Now(ctx).Add(time.Hour).UTC(),
+			Expiry:      expireTime,
 		})
 	})
 
 	Convey("Bad HTTP code", t, func() {
-		_, _, _, err := call(ctx, JwtFlowParams{
+		_, _, _, err := call(ctx, GenTokenFlowParams{
 			ServiceAccount: "account@example.com",
 			Scopes:         []string{"a", "b"},
 		}, 403, nil)
@@ -95,24 +83,8 @@ func TestGetAccessToken(t *testing.T) {
 		So(err.(*googleapi.Error).Code, ShouldEqual, 403)
 	})
 
-	Convey("Zero 'expires_in'", t, func() {
-		_, _, _, err := call(ctx, JwtFlowParams{
-			ServiceAccount: "account@example.com",
-			Scopes:         []string{"a", "b"},
-		}, 200, token{"zzz", "", 0})
-		So(err, ShouldNotBeNil)
-	})
-
-	Convey("Negative 'expires_in'", t, func() {
-		_, _, _, err := call(ctx, JwtFlowParams{
-			ServiceAccount: "account@example.com",
-			Scopes:         []string{"a", "b"},
-		}, 200, token{"zzz", "", -100})
-		So(err, ShouldNotBeNil)
-	})
-
 	Convey("Not valid JSON", t, func() {
-		_, _, _, err := call(ctx, JwtFlowParams{
+		_, _, _, err := call(ctx, GenTokenFlowParams{
 			ServiceAccount: "account@example.com",
 			Scopes:         []string{"a", "b"},
 		}, 200, "zzzzzz")
@@ -120,7 +92,7 @@ func TestGetAccessToken(t *testing.T) {
 	})
 }
 
-func call(ctx context.Context, params JwtFlowParams, status int, resp interface{}) (url.Values, *oauth2.Token, string, error) {
+func call(ctx context.Context, params GenTokenFlowParams, status int, resp interface{}) (url.Values, *oauth2.Token, string, error) {
 	values := make(chan url.Values, 1)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -137,33 +109,8 @@ func call(ctx context.Context, params JwtFlowParams, status int, resp interface{
 	defer ts.Close()
 
 	params.tokenEndpoint = ts.URL
-	params.Signer = fakeSigner{}
 
 	tok, err := GetAccessToken(ctx, params)
 	req := <-values
 	return req, tok, ts.URL, err
-}
-
-func deconstructJWT(token string) (claims iam.ClaimSet) {
-	parts := strings.Split(token, ".") // <header>.<claims>.<signature>
-	So(len(parts), ShouldEqual, 3)
-
-	// We are interested only in claim set. The headers and signature are mocked
-	// by fakeSigner, no sense it checking them.
-	claimsBin, err := base64.RawURLEncoding.DecodeString(parts[1])
-	So(err, ShouldBeNil)
-	So(json.Unmarshal(claimsBin, &claims), ShouldBeNil)
-
-	return
-}
-
-type fakeSigner struct{}
-
-func (fakeSigner) SignJWT(c context.Context, serviceAccount string, cs *iam.ClaimSet) (keyName, signedJwt string, err error) {
-	blob, err := json.Marshal(cs)
-	if err != nil {
-		return "", "", err
-	}
-	claimsB64 := base64.RawURLEncoding.EncodeToString(blob)
-	return "unused key id", "fake_hdr." + claimsB64 + ".fake_sig", nil
 }

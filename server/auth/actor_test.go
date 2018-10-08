@@ -15,10 +15,10 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -43,24 +43,20 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 		ctx = caching.WithEmptyProcessCache(ctx)
 
 		returnedToken := "token1"
+		generateTokenUrl := fmt.Sprintf("https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/%s:generateAccessToken",
+			url.QueryEscape("abc@example.com"))
 		transport := &clientRPCTransportMock{
 			cb: func(r *http.Request, body string) string {
+				expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
+				if err != nil {
+					t.Fatalf("Unable to parse/format time: %v", err)
+				}
 				switch r.URL.String() {
-				// IAM request to sign the assertion.
-				case "https://iam.googleapis.com/v1/projects/-/serviceAccounts/abc@example.com:signJwt?alt=json":
-					// Check the valid claimset is being passed.
-					var req struct {
-						Payload string `json:"payload"`
-					}
-					json.Unmarshal([]byte(body), &req)
-					claimSet := map[string]interface{}{}
-					json.Unmarshal([]byte(req.Payload), &claimSet)
-					So(claimSet["iss"], ShouldEqual, "abc@example.com")
-					So(claimSet["scope"], ShouldEqual, "scope_a scope_b")
-					return `{"keyId":"key_id","signature":"c2lnbmF0dXJl"}`
-				// Exchange of the assertion for the access token.
-				case "https://www.googleapis.com/oauth2/v4/token":
-					return fmt.Sprintf(`{"access_token":"%s","token_type":"Bearer","expires_in":3600}`, returnedToken)
+				// Exchange with IAM generateAccessToken
+				case generateTokenUrl:
+					tok := fmt.Sprintf(`{"accessToken":"%s","expireTime":"%s"}`, returnedToken, expireTime.Format(time.RFC3339))
+					fmt.Printf("Generating token: %s\n", tok)
+					return tok
 				default:
 					t.Fatalf("Unexpected request to %s", r.URL)
 					return "unknown URL"
@@ -79,10 +75,14 @@ func TestMintAccessTokenForServiceAccount(t *testing.T) {
 			Scopes:         []string{"scope_b", "scope_a"},
 		})
 		So(err, ShouldBeNil)
+
+		expectedExpireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
+		So(err, ShouldBeNil)
+
 		So(tok, ShouldResemble, &oauth2.Token{
 			AccessToken: "token1",
 			TokenType:   "Bearer",
-			Expiry:      clock.Now(ctx).Add(3600 * time.Second).UTC(),
+			Expiry:      expectedExpireTime,
 		})
 
 		// Cached now.

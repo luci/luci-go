@@ -16,7 +16,6 @@ package auth
 
 import (
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
@@ -28,7 +27,6 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/jsontime"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/caching"
@@ -145,18 +143,14 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
 			// Need an authenticating transport to talk to IAM.
-			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
 
 			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
 			// token exchange endpoint.
-			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
+			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.GenTokenFlowParams{
 				ServiceAccount: params.ServiceAccount,
-				Signer: &iam.Client{
-					Client: &http.Client{Transport: asSelf},
-				},
 				Scopes: sortedScopes,
 				Client: cfg.anonymousClient(ctx),
 			})
