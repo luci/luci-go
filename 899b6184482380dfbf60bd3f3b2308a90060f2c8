@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "98cba1eb_594cc50f",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:43:54Z",
+      "side": 1,
+      "message": "this may annotate `nil` in the case where `err \u003d\u003d nil \u0026\u0026 job \u003d\u003d nil`. Annotating `nil` is a noop. I assume that\u0027s what you intend here (to return nil), but just in case that\u0027s not what you intend, that\u0027s what\u0027s gonna happen :p.",
+      "range": {
+        "startLine": 244,
+        "startChar": 2,
+        "endLine": 244,
+        "endChar": 56
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ae3feee_84f4770b",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 367,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:43:54Z",
+      "side": 1,
+      "message": "is the \"delete everything\" button safe/useful too?",
+      "range": {
+        "startLine": 367,
+        "startChar": 58,
+        "endLine": 367,
+        "endChar": 77
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a93f8f1_1b5732a3",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:43:54Z",
+      "side": 1,
+      "message": "so this comes directly from the user; they might set PageSize very low (e.g. because it\u0027s \"easier to implement the mapper function\"). However it would be reasonable to FETCH more than they specify, wouldn\u0027t it? Or is that a useless microoptimization? Or it\u0027s just a PEBKAC footgun?",
+      "range": {
+        "startLine": 435,
+        "startChar": 36,
+        "endLine": 435,
+        "endChar": 55
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2c9bd41_dd87e084",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 454,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:43:54Z",
+      "side": 1,
+      "message": "IIUC, mapper has to process ALL keys in a batch. Failure to do so results in a stuck mapper. (and so the correct thing to do is tune the batch size down so that you can ~always complete it)",
+      "range": {
+        "startLine": 454,
+        "startChar": 11,
+        "endLine": 454,
+        "endChar": 53
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "439d9a9e_c5aa24fd",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:43:54Z",
+      "side": 1,
+      "message": "it\u0027s not really a limit though, right? Won\u0027t the transactions just slow down to a max rate of 1/s? Or progress entity is shared across ALL shards, and so the nominal rate here would be \u003e\u003e\u003e 1tps?",
+      "range": {
+        "startLine": 462,
+        "startChar": 55,
+        "endLine": 462,
+        "endChar": 60
+      },
+      "revId": "899b6184482380dfbf60bd3f3b2308a90060f2c8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
