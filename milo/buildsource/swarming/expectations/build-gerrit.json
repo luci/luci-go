@@ -37,11 +37,11 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -97,9 +97,9 @@
         "Duration": 7198000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     }
   ],
   "PropertyGroup": [
