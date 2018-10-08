@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3dc9b7bd_1daf646a",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 601,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:56:10Z",
+      "side": 1,
+      "message": "(\u003c .5s maximum skew)",
+      "range": {
+        "startLine": 601,
+        "startChar": 30,
+        "endLine": 601,
+        "endChar": 31
+      },
+      "revId": "0d44826c61ff3fee756acbc141d5f62cb34c304d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ebef286_64c6b44d",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-08T19:56:10Z",
+      "side": 1,
+      "message": "if you want to be cute, you could have `shardStateEnumSize \u003d iota - 1` as the last item, then allocate maps as `map(map[shardState]..., maxStateEnumSize)`. Maybe it\u0027s too cute though.",
+      "revId": "0d44826c61ff3fee756acbc141d5f62cb34c304d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
