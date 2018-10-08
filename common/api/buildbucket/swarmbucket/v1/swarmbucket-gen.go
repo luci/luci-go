@@ -277,13 +277,15 @@ func (s *SwarmingSwarmbucketApiGetTaskDefinitionRequestMessage) MarshalJSON() ([
 }
 
 type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
+	SwarmingHost string `json:"swarming_host,omitempty"`
+
 	TaskDefinition string `json:"task_definition,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "TaskDefinition") to
+	// ForceSendFields is a list of field names (e.g. "SwarmingHost") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -291,13 +293,12 @@ type SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "TaskDefinition") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "SwarmingHost") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -347,8 +348,9 @@ type GetBuildersCall struct {
 	header_      http.Header
 }
 
-// GetBuilders: Returns defined swarmbucket builders. Can be used to
-// discover builders.
+// GetBuilders: Returns defined swarmbucket builders. Returns legacy
+// bucket names, e.g. "luci.chromium.try", not "chromium/try". Can be
+// used to discover builders.
 func (s *Service) GetBuilders() *GetBuildersCall {
 	c := &GetBuildersCall{s: s, urlParams_: make(gensupport.URLParams)}
 	return c
@@ -454,7 +456,7 @@ func (c *GetBuildersCall) Do(opts ...googleapi.CallOption) (*SwarmingSwarmbucket
 	}
 	return ret, nil
 	// {
-	//   "description": "Returns defined swarmbucket builders. Can be used to discover builders.",
+	//   "description": "Returns defined swarmbucket builders. Returns legacy bucket names, e.g. \"luci.chromium.try\", not \"chromium/try\". Can be used to discover builders.",
 	//   "httpMethod": "GET",
 	//   "id": "swarmbucket.get_builders",
 	//   "parameters": {

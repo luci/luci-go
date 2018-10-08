@@ -359,6 +359,15 @@
         "https://www.googleapis.com/auth/userinfo.email"
       ]
     },
+    "reput_builds": {
+      "description": "Reputs every build, recomputing its properties.",
+      "httpMethod": "POST",
+      "id": "buildbucket.reput_builds",
+      "path": "reput_builds",
+      "scopes": [
+        "https://www.googleapis.com/auth/userinfo.email"
+      ]
+    },
     "reset": {
       "description": "Forcibly unleases a build and resets its state to SCHEDULED.",
       "httpMethod": "POST",
