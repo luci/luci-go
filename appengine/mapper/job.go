@@ -62,6 +62,7 @@ type JobConfig struct {
 
 	PagesPerTask int           // how many pages to process inside a TQ task, default unlimited
 	TaskDuration time.Duration // how long to run a single mapping TQ task, default 1 min
+	NoProgress   bool          // set to true to disable progress tracking, by default it is enabled
 }
 
 // Validate returns an error of the config is invalid.
@@ -209,6 +210,8 @@ type shard struct {
 	ProcessTaskNum int64 `gae:",noindex"`
 	// Range is an entity key range covered by this shard.
 	Range splitter.Range `gae:",noindex"`
+	// ExpectedCount is expected number of entities in the shard, -1 if unknown.
+	ExpectedCount int64 `gae:",noindex"`
 	// ProcessedCount is number entities processed by the shard thus far.
 	ProcessedCount int64 `gae:",noindex"`
 	// ResumeFrom is the last processed key or nil if just starting.
