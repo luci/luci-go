@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44458e32_2c6a9e92",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-08T21:42:55Z",
+      "side": 1,
+      "message": "actually, hold one a sec, I\u0027ll move this to a *.proto, since I want to return it from RPC.",
+      "range": {
+        "startLine": 141,
+        "startChar": 5,
+        "endLine": 141,
+        "endChar": 13
+      },
+      "revId": "da723a47a11a2bf8ada5225ea3b4765172d3602b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
