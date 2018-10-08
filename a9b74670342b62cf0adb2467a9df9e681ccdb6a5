@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d6edba3c_5f00b847",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-10-08T22:00:23Z",
+      "side": 1,
+      "message": "hasErrors is unnecessary since you return immediately. You could put this before \"hasErrors :\u003d false\" or after \"if hasErrors { return 1 }\". Maybe after is better so you can see result-specific errors if there are any?",
+      "revId": "a9b74670342b62cf0adb2467a9df9e681ccdb6a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
