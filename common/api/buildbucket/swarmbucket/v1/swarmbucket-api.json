@@ -21,7 +21,7 @@
   "kind": "discovery#restDescription",
   "methods": {
     "get_builders": {
-      "description": "Returns defined swarmbucket builders. Can be used to discover builders.",
+      "description": "Returns defined swarmbucket builders. Returns legacy bucket names, e.g. \"luci.chromium.try\", not \"chromium/try\". Can be used to discover builders.",
       "httpMethod": "GET",
       "id": "swarmbucket.get_builders",
       "parameters": {
@@ -243,6 +243,9 @@
     "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage": {
       "id": "SwarmingSwarmbucketApiGetTaskDefinitionResponseMessage",
       "properties": {
+        "swarming_host": {
+          "type": "string"
+        },
         "task_definition": {
           "type": "string"
         }
