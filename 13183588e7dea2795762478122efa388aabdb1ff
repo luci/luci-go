@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "513f2c61_59a1be8b",
+        "filename": "milo/buildsource/swarming/expectations/build-nested.json",
+        "patchSetId": 11
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-08T17:14:32Z",
+      "side": 1,
+      "message": "Note that this only lists top-level failed steps, not all failed steps. IMHO it\u0027s better this way, but please let me know if you\u0027d like me to change that to list all steps including nested.",
+      "revId": "13183588e7dea2795762478122efa388aabdb1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05081a93_d1e4fbb5",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 11
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-08T17:14:32Z",
+      "side": 1,
+      "message": "Most of this component is just copied from below except the {{ if .Children }} section, which was added.",
+      "revId": "13183588e7dea2795762478122efa388aabdb1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "941e415f_874d6980",
+        "filename": "milo/frontend/expectations/swarming.build-build-nested.html",
+        "patchSetId": 11
+      },
+      "lineNbr": 336,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-08T17:14:32Z",
+      "side": 1,
+      "message": "Most of the changes in this file are whitespace changes, but this is where we actually make relevant HTML modifications.",
+      "revId": "13183588e7dea2795762478122efa388aabdb1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "08bf931b_fbc35ee8",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-08T17:14:32Z",
+      "side": 1,
+      "message": "This is moved as-is from the logDogBuild.go above.",
+      "revId": "13183588e7dea2795762478122efa388aabdb1ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
