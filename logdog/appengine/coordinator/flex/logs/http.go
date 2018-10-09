@@ -148,8 +148,10 @@ type nopFlusher struct{}
 func (n *nopFlusher) Flush() {} // Do nothing
 
 const (
-	formatRAW  = "raw"
-	formatHTML = "html"
+	formatRAW      = "raw"
+	formatHTML     = "html"
+	formatHTMLLite = "lite"
+	formatHTMLFull = "full"
 )
 
 // userOptions encapsulate the entirety of input parameters to the log viewer.
@@ -159,24 +161,35 @@ type userOptions struct {
 	// path is the full path (prefix + name) of the requested log stream.
 	path types.StreamPath
 	// format indicates the format the user wants the data back in.
-	// Valid formats are "raw" and "html".
+	// Valid formats are "raw", "lite", and "full.
+	// If the user specifies "?format=html",
+	// it will get resolved to either "lite" or "full" depending on:
+	//   * What cookies are set.
+	//   * Whether or not a URL fragment is in the path.
 	format string
 }
 
-// resolveFormat resolves the output format to serve to the user.  This could be "html" or "raw".
+// resolveFormat resolves the output format to serve to the user.
+// This could be "html", "lite", "full", or "raw".
 // Here we try to be smart, and detect if the user is a web browser, or a CLI tool (E.G. cURL).
 // For web browsers, default to HTML mode, unless ?format=raw is specified.
 // For CLI tools, default to raw mode, unless ?format=html is specified.
-// If we can't figure anything out, default to HTML mode.
+// HTML mode has two modes, "lite" and "full".  Lite is default, unless:
+//   * The user has a cookie specifying preference to full mode.
+//   * A URL fragment is detected in the path.
+// If we can't figure anything out, default to HTML lite mode.
 // We do this before path parsing to figure out which mode we want
 // to render parsing errors in.
 func resolveFormat(request *http.Request) string {
 	// If a known format is specified, return it.
 	format := request.URL.Query().Get("format")
 	switch f := strings.ToLower(format); f {
-	case formatHTML, formatRAW:
+	case formatHTMLLite, formatHTMLFull, formatRAW:
 		return f
+	case formatHTML:
+
 	}
+	// TODO(hinoka): Check accept header first.
 	// User Agents are basically formatted as "<Type>/<Version> <other stuff>"
 	// We really only care about the very first <Type> string.
 	// from there we can basically differentiate between major classes of user agents. (Browser vs CLI)
@@ -185,7 +198,7 @@ func resolveFormat(request *http.Request) string {
 	case "curl", "wget", "python-urllib":
 		return formatRAW
 	default:
-		return formatHTML
+		return formatHTMLLite
 	}
 }
 
