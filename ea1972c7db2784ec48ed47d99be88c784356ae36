@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc4d4b23_ff37da12",
+        "filename": "appengine/mapper/messages.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-09T19:44:39Z",
+      "side": 1,
+      "message": "probably not needed",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 36
+      },
+      "revId": "ea1972c7db2784ec48ed47d99be88c784356ae36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "de487b84_c203856c",
+        "filename": "appengine/mapper/messages.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-09T19:44:39Z",
+      "side": 1,
+      "message": "human-readable, I assume? (i.e. \"don\u0027t parse this field\")",
+      "range": {
+        "startLine": 38,
+        "startChar": 24,
+        "endLine": 38,
+        "endChar": 29
+      },
+      "revId": "ea1972c7db2784ec48ed47d99be88c784356ae36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fbc4cf8c_fec286a6",
+        "filename": "appengine/mapper/messages.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-09T19:44:39Z",
+      "side": 1,
+      "message": "only if the ETA feature is turned on",
+      "revId": "ea1972c7db2784ec48ed47d99be88c784356ae36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
