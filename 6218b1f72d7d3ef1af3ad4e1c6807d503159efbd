@@ -69,6 +69,30 @@
       "revId": "6218b1f72d7d3ef1af3ad4e1c6807d503159efbd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a0f813c_27fd8a4f",
+        "filename": "appengine/mapper/job.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-09T00:44:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cdd9a715_d84ebab3",
+      "range": {
+        "startLine": 65,
+        "startChar": 73,
+        "endLine": 65,
+        "endChar": 97
+      },
+      "revId": "6218b1f72d7d3ef1af3ad4e1c6807d503159efbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
