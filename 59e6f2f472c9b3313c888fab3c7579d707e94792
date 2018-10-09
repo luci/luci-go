@@ -22,6 +22,30 @@
       "revId": "59e6f2f472c9b3313c888fab3c7579d707e94792",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f03e1ea2_9c3f7c20",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-09T19:45:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6722300e_6ace95ef",
+      "range": {
+        "startLine": 240,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 41
+      },
+      "revId": "59e6f2f472c9b3313c888fab3c7579d707e94792",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
