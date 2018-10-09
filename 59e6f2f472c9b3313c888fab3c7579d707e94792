@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6722300e_6ace95ef",
+        "filename": "appengine/mapper/controller.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-09T02:39:16Z",
+      "side": 1,
+      "message": "I also considered hiding Job{...} struct completely and expose something else (which would be almost an exact copy of Job), but decided a simple warning not to mess with the datastore directly would suffice.",
+      "range": {
+        "startLine": 240,
+        "startChar": 1,
+        "endLine": 241,
+        "endChar": 41
+      },
+      "revId": "59e6f2f472c9b3313c888fab3c7579d707e94792",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
