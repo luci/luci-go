@@ -211,7 +211,7 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 		now := clock.Now(c).UTC()
 		job = Job{
 			Config:  *j,
-			State:   JobStateStarting,
+			State:   State_STARTING,
 			Created: now,
 			Updated: now,
 		}
@@ -241,7 +241,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	now := clock.Now(c).UTC()
 
 	// Fetch job details. Make sure it isn't canceled and isn't running already.
-	job, err := getJobInState(c, JobID(msg.JobId), JobStateStarting)
+	job, err := getJobInState(c, JobID(msg.JobId), State_STARTING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in SplitAndLaunch").Err()
 	}
@@ -265,7 +265,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		shards[idx] = &shard{
 			JobID:   job.ID,
 			Index:   idx,
-			State:   shardStateStarting,
+			State:   State_STARTING,
 			Range:   rng,
 			Created: now,
 			Updated: now,
@@ -310,12 +310,12 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// If SplitAndLaunch crashes before this transaction lands, there'll be some
 	// orphaned Shard entities, no big deal.
 	return runTxn(c, func(c context.Context) error {
-		job, err := getJobInState(c, JobID(msg.JobId), JobStateStarting)
+		job, err := getJobInState(c, JobID(msg.JobId), State_STARTING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in SplitAndLaunch txn").Err()
 		}
 
-		job.State = JobStateRunning
+		job.State = State_RUNNING
 		job.Updated = now
 		if err := datastore.Put(c, job, &shardsEnt); err != nil {
 			return errors.Annotate(err,
@@ -338,7 +338,7 @@ func (ctl *Controller) fanOutShardsHandler(c context.Context, payload proto.Mess
 	msg := payload.(*tasks.FanOutShards)
 
 	// Make sure the job isn't canceled yet.
-	job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in FanOutShards").Err()
 	}
@@ -384,7 +384,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		clock.Now(c).Sub(sh.Created))
 
 	// Grab the job config, make sure the job is still active.
-	job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in ProcessShard").Err()
 	}
@@ -499,7 +499,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 			return false, nil // someone already claimed to process further, let them proceed
 		}
 
-		sh.State = shardStateRunning
+		sh.State = State_RUNNING
 		sh.ResumeFrom = lastKey
 
 		// If the processing failed, just store the progress, but do not start a
@@ -534,11 +534,11 @@ func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr er
 		runtime := clock.Now(c).Sub(sh.Created)
 		if shardErr != nil {
 			logging.Errorf(c, "The shard processing failed in %s with error: %s", runtime, shardErr)
-			sh.State = shardStateFail
+			sh.State = State_FAIL
 			sh.Error = shardErr.Error()
 		} else {
 			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
-			sh.State = shardStateSuccess
+			sh.State = State_SUCCESS
 		}
 		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
 	})
@@ -620,7 +620,7 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 	msg := payload.(*tasks.UpdateJobState)
 
 	// Get the job and all its shards in their most recent state.
-	job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+	job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING)
 	if err != nil || job == nil {
 		return errors.Annotate(err, "in UpdateJobState").Err()
 	}
@@ -630,22 +630,22 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 	}
 
 	// Switch the job into a final state only when all shards are done running.
-	perState := map[shardState]int{}
+	perState := make(map[State]int, len(State_name))
 	for _, sh := range shards {
 		logging.Infof(c, "Shard #%d (%d) is in state %s", sh.Index, sh.ID, sh.State)
 		perState[sh.State]++
 	}
-	if perState[shardStateSuccess]+perState[shardStateFail] != len(shards) {
+	if perState[State_SUCCESS]+perState[State_FAIL] != len(shards) {
 		return nil
 	}
 
-	jobState := JobStateSuccess
-	if perState[shardStateFail] != 0 {
-		jobState = JobStateFail
+	jobState := State_SUCCESS
+	if perState[State_FAIL] != 0 {
+		jobState = State_FAIL
 	}
 
 	return runTxn(c, func(c context.Context) error {
-		job, err := getJobInState(c, JobID(msg.JobId), JobStateRunning)
+		job, err := getJobInState(c, JobID(msg.JobId), State_RUNNING)
 		if err != nil || job == nil {
 			return errors.Annotate(err, "in UpdateJobState txn").Err()
 		}
@@ -654,12 +654,12 @@ func (ctl *Controller) updateJobStateHandler(c context.Context, payload proto.Me
 		job.Updated = clock.Now(c).UTC()
 
 		runtime := job.Updated.Sub(job.Created)
-		if job.State == JobStateSuccess {
+		if job.State == State_SUCCESS {
 			logging.Infof(c, "The job finished successfully in %s", runtime)
 		} else {
-			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[shardStateFail], runtime)
+			logging.Errorf(c, "The job finished with %d shards failing in %s", perState[State_FAIL], runtime)
 			for _, sh := range shards {
-				if sh.State == shardStateFail {
+				if sh.State == State_FAIL {
 					logging.Errorf(c, "Shard #%d (%d) error - %s", sh.Index, sh.ID, sh.Error)
 				}
 			}

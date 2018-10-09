@@ -107,7 +107,7 @@ func TestController(t *testing.T) {
 			So(job, ShouldResemble, &Job{
 				ID:      jobID,
 				Config:  cfg,
-				State:   JobStateStarting,
+				State:   State_STARTING,
 				Created: testTime,
 				Updated: testTime,
 			})
@@ -124,7 +124,7 @@ func TestController(t *testing.T) {
 			// Switched into "running" state.
 			job, err = getJob(ctx, jobID)
 			So(err, ShouldBeNil)
-			So(job.State, ShouldEqual, JobStateRunning)
+			So(job.State, ShouldEqual, State_RUNNING)
 
 			expectedShard := func(id int64, idx int, l, r int64) shard {
 				rng := splitter.Range{}
@@ -138,7 +138,7 @@ func TestController(t *testing.T) {
 					ID:      id,
 					JobID:   jobID,
 					Index:   idx,
-					State:   shardStateStarting,
+					State:   State_STARTING,
 					Range:   rng,
 					Created: testTime,
 					Updated: testTime,
@@ -204,7 +204,7 @@ func TestController(t *testing.T) {
 				spinUntilDone(false)
 
 				visitShards(func(s shard) {
-					So(s.State, ShouldEqual, shardStateSuccess)
+					So(s.State, ShouldEqual, State_SUCCESS)
 					So(s.ProcessTaskNum, ShouldEqual, 2)
 				})
 
@@ -212,7 +212,7 @@ func TestController(t *testing.T) {
 
 				job, err := getJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, JobStateSuccess)
+				So(job.State, ShouldEqual, State_SUCCESS)
 			})
 
 			Convey("One shard fails", func() {
@@ -234,10 +234,10 @@ func TestController(t *testing.T) {
 
 				visitShards(func(s shard) {
 					if s.Index == 1 {
-						So(s.State, ShouldEqual, shardStateFail)
+						So(s.State, ShouldEqual, State_FAIL)
 						So(s.Error, ShouldEqual, `in the mapper "test-mapper": boom`)
 					} else {
-						So(s.State, ShouldEqual, shardStateSuccess)
+						So(s.State, ShouldEqual, State_SUCCESS)
 						So(s.ProcessTaskNum, ShouldEqual, 2)
 					}
 				})
@@ -247,7 +247,7 @@ func TestController(t *testing.T) {
 
 				job, err := getJob(ctx, jobID)
 				So(err, ShouldBeNil)
-				So(job.State, ShouldEqual, JobStateFail)
+				So(job.State, ShouldEqual, State_FAIL)
 			})
 
 			Convey("Job aborted midway", func() {
@@ -258,7 +258,7 @@ func TestController(t *testing.T) {
 
 					job, err := getJob(ctx, jobID)
 					So(err, ShouldBeNil)
-					job.State = JobStateFail
+					job.State = State_FAIL
 					So(datastore.Put(c, job), ShouldBeNil)
 
 					return nil
@@ -272,9 +272,9 @@ func TestController(t *testing.T) {
 				visitShards(func(s shard) {
 					if s.Index == 0 {
 						// Zeroth shard did manage to run for a bit.
-						So(s.State, ShouldEqual, shardStateRunning)
+						So(s.State, ShouldEqual, State_RUNNING)
 					} else {
-						So(s.State, ShouldEqual, shardStateStarting)
+						So(s.State, ShouldEqual, State_STARTING)
 					}
 				})
 
