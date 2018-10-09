@@ -26,8 +26,10 @@ enum State {
   STATE_UNSPECIFIED = 0;
   STARTING          = 1;
   RUNNING           = 2;
-  SUCCESS           = 3;
-  FAIL              = 4;
+  ABORTING          = 3;
+  SUCCESS           = 4;
+  FAIL              = 5;
+  ABORTED           = 6;
 }
 
 
