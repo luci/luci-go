@@ -102,12 +102,17 @@ func TestController(t *testing.T) {
 				TrackProgress: true,
 			}
 
+			// Before we start, there' no job with ID 1.
+			j, err := ctl.GetJob(ctx, 1)
+			So(err, ShouldEqual, ErrNoSuchJob)
+			So(j, ShouldBeNil)
+
 			jobID, err := ctl.LaunchJob(ctx, &cfg)
 			So(err, ShouldBeNil)
 			So(jobID, ShouldEqual, 1)
 
 			// In "starting" state.
-			job, err := getJob(ctx, jobID)
+			job, err := ctl.GetJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job, ShouldResemble, &Job{
 				ID:      jobID,
@@ -138,7 +143,7 @@ func TestController(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			// Switched into "running" state.
-			job, err = getJob(ctx, jobID)
+			job, err = ctl.GetJob(ctx, jobID)
 			So(err, ShouldBeNil)
 			So(job.State, ShouldEqual, State_RUNNING)
 
@@ -257,7 +262,7 @@ func TestController(t *testing.T) {
 
 				assertAllSeen()
 
-				job, err := getJob(ctx, jobID)
+				job, err := ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_SUCCESS)
 
@@ -325,7 +330,7 @@ func TestController(t *testing.T) {
 				// There are 5 pages per shard. We aborted on second. So 3 are skipped.
 				So(processed, ShouldEqual, len(entities)-3*cfg.PageSize)
 
-				job, err := getJob(ctx, jobID)
+				job, err := ctl.GetJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_FAIL)
 			})
@@ -336,7 +341,7 @@ func TestController(t *testing.T) {
 				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
 					processed += len(keys)
 
-					job, err := getJob(ctx, jobID)
+					job, err := ctl.GetJob(ctx, jobID)
 					So(err, ShouldBeNil)
 					job.State = State_FAIL
 					So(datastore.Put(c, job), ShouldBeNil)
