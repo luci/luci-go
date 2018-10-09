@@ -57,3 +57,7 @@ func runTxn(c context.Context, cb func(context.Context) error) error {
 
 	return nil
 }
+
+func isFinalState(s State) bool {
+	return s == State_SUCCESS || s == State_FAIL || s == State_ABORTED
+}
