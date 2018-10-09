@@ -392,15 +392,16 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// Fail the shard if the mapper is suddenly gone.
 	mapper, err := ctl.getMapper(job.Config.Mapper)
 	if err != nil {
-		return ctl.finishShard(c, sh.ID, err)
+		return ctl.finishShard(c, sh.ID, 0, err)
 	}
 
 	baseQ := job.Config.Query.ToDatastoreQuery()
 	lastKey := sh.ResumeFrom
 	keys := make([]*datastore.Key, 0, job.Config.PageSize)
 
-	shardDone := false // true when finished processing the shard
-	pageCount := 0     // how many pages processed successfully
+	shardDone := false    // true when finished processing the shard
+	pageCount := 0        // how many pages processed successfully
+	itemCount := int64(0) // how many entities processed successfully
 
 	// A soft deadline when to checkpoint the progress and reenqueue the
 	// processing task. We never abort processing of a page midway (causes too
@@ -459,6 +460,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		}
 		lastKey = keys[len(keys)-1]
 		pageCount++
+		itemCount += int64(len(keys))
 
 		// Note: at this point we might try to checkpoint the progress, but we must
 		// be careful not to exceed 1 transaction per second limit. Considering we
@@ -475,7 +477,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	// with a fatal error. finishShard would take care of notifying the parent
 	// job about the shard's completion.
 	if shardDone || (err != nil && !transient.Tag.In(err)) {
-		return ctl.finishShard(c, sh.ID, err)
+		return ctl.finishShard(c, sh.ID, itemCount, err)
 	}
 
 	logging.Infof(c, "The shard processing will resume from %s", lastKey)
@@ -501,6 +503,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 
 		sh.State = State_RUNNING
 		sh.ResumeFrom = lastKey
+		sh.ProcessedCount += itemCount
 
 		// If the processing failed, just store the progress, but do not start a
 		// new TQ task. Retry the current task instead (to get exponential backoff).
@@ -529,7 +532,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 
 // finishShard marks the shard as finished (with status based on shardErr) and
 // emits a task to update the parent job's status.
-func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr error) error {
+func (ctl *Controller) finishShard(c context.Context, shardID, processedCount int64, shardErr error) error {
 	err := shardTxn(c, shardID, func(c context.Context, sh *shard) (save bool, err error) {
 		runtime := clock.Now(c).Sub(sh.Created)
 		if shardErr != nil {
@@ -540,6 +543,7 @@ func (ctl *Controller) finishShard(c context.Context, shardID int64, shardErr er
 			logging.Infof(c, "The shard processing finished successfully in %s", runtime)
 			sh.State = State_SUCCESS
 		}
+		sh.ProcessedCount += processedCount
 		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
 	})
 	return errors.Annotate(err, "when marking the shard as finished").Err()

@@ -209,6 +209,8 @@ type shard struct {
 	ProcessTaskNum int64 `gae:",noindex"`
 	// Range is an entity key range covered by this shard.
 	Range splitter.Range `gae:",noindex"`
+	// ProcessedCount is number entities processed by the shard thus far.
+	ProcessedCount int64 `gae:",noindex"`
 	// ResumeFrom is the last processed key or nil if just starting.
 	ResumeFrom *datastore.Key `gae:",noindex"`
 	// Created is when the shard was created, FYI.
