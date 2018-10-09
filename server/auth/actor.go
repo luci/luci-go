@@ -17,21 +17,21 @@ package auth
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 	"time"
+	"net/http"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/jsontime"
-	"go.chromium.org/luci/common/gcloud/googleoauth"
-	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/caching"
+	iamclient "go.chromium.org/luci/common/gcloud/iam"
+
 )
 
 // MintAccessTokenParams is passed to MintAccessTokenForServiceAccount.
@@ -145,23 +145,15 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 		// Mint is called on cache miss, under the lock.
 		Mint: func(ctx context.Context) (t *cachedToken, err error, label string) {
 			// Need an authenticating transport to talk to IAM.
-			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iam.OAuthScope))
+			asSelf, err := GetRPCTransport(ctx, AsSelf, WithScopes(iamclient.OAuthScope))
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
 
-			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
-			// token exchange endpoint.
-			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
-				ServiceAccount: params.ServiceAccount,
-				Signer: &iam.Client{
-					Client: &http.Client{Transport: asSelf},
-				},
-				Scopes: sortedScopes,
-				Client: cfg.anonymousClient(ctx),
-			})
+			client := &iamclient.Client{Client: &http.Client{Transport: asSelf}}
+			tok, err := client.GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, nil, nil)
 
-			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
+			// Both iam.GenerateAccessToken returns googleapi.Error
 			// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
 			// (stuff like connection timeouts, deadlines, etc) are transient errors.
 			if err != nil {
