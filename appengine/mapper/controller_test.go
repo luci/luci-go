@@ -88,13 +88,14 @@ func TestController(t *testing.T) {
 				Query: Query{
 					Kind: "intEnt",
 				},
-				Mapper:       mapper.MapperID(),
-				ShardCount:   4,
-				PageSize:     33, // make it weird to trigger "incomplete" pages
-				PagesPerTask: 2,  // to trigger multiple mapping tasks in a chain
+				Mapper: mapper.MapperID(),
 				Params: Params{
 					"k1": "v1",
 				},
+				ShardCount:    4,
+				PageSize:      33, // make it weird to trigger "incomplete" pages
+				PagesPerTask:  2,  // to trigger multiple mapping tasks in a chain
+				TrackProgress: true,
 			}
 
 			jobID, err := ctl.LaunchJob(ctx, &cfg)
@@ -126,7 +127,7 @@ func TestController(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(job.State, ShouldEqual, State_RUNNING)
 
-			expectedShard := func(id int64, idx int, l, r int64) shard {
+			expectedShard := func(id int64, idx int, l, r, expected int64) shard {
 				rng := splitter.Range{}
 				if l != -1 {
 					rng.Start = datastore.KeyForObj(ctx, &intEnt{ID: l})
@@ -135,13 +136,14 @@ func TestController(t *testing.T) {
 					rng.End = datastore.KeyForObj(ctx, &intEnt{ID: r})
 				}
 				return shard{
-					ID:      id,
-					JobID:   jobID,
-					Index:   idx,
-					State:   State_STARTING,
-					Range:   rng,
-					Created: testTime,
-					Updated: testTime,
+					ID:            id,
+					JobID:         jobID,
+					Index:         idx,
+					State:         State_STARTING,
+					Range:         rng,
+					ExpectedCount: expected,
+					Created:       testTime,
+					Updated:       testTime,
 				}
 			}
 
@@ -149,10 +151,10 @@ func TestController(t *testing.T) {
 			shards, err := job.fetchShards(ctx)
 			So(err, ShouldBeNil)
 			So(shards, ShouldResemble, []shard{
-				expectedShard(1, 0, -1, 136),
-				expectedShard(2, 1, 136, 268),
-				expectedShard(3, 2, 268, 399),
-				expectedShard(4, 3, 399, -1),
+				expectedShard(1, 0, -1, 136, 136),
+				expectedShard(2, 1, 136, 268, 132),
+				expectedShard(3, 2, 268, 399, 131),
+				expectedShard(4, 3, 399, -1, 113),
 			})
 
 			spinUntilDone := func(expectErrors bool) {

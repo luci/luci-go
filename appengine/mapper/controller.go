@@ -29,6 +29,7 @@ import (
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 
 	"go.chromium.org/luci/appengine/tq"
 
@@ -263,12 +264,22 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	shards := make([]*shard, len(ranges))
 	for idx, rng := range ranges {
 		shards[idx] = &shard{
-			JobID:   job.ID,
-			Index:   idx,
-			State:   State_STARTING,
-			Range:   rng,
-			Created: now,
-			Updated: now,
+			JobID:         job.ID,
+			Index:         idx,
+			State:         State_STARTING,
+			Range:         rng,
+			ExpectedCount: -1,
+			Created:       now,
+			Updated:       now,
+		}
+	}
+
+	// Calculate number of entities in each shard to track shard processing
+	// progress. Note that this can be very slow if there are many entities.
+	if job.Config.TrackProgress {
+		logging.Infof(c, "Estimating the size of each shard...")
+		if err := fetchShardSizes(c, dq, shards); err != nil {
+			return errors.Annotate(err, "when estimating shard sizes").Err()
 		}
 	}
 
@@ -276,6 +287,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	// task retries cleanly, even if the underlying key space we are mapping over
 	// changes between the retries (making a naive put using "<job-id>:<index>"
 	// key non-idempotent!).
+	logging.Infof(c, "Instantiating shards...")
 	if err := datastore.Put(c, shards); err != nil {
 		return errors.Annotate(err, "failed to store shards").Tag(transient.Tag).Err()
 	}
@@ -299,7 +311,11 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		if s.Range.End != nil {
 			r = s.Range.End.String()
 		}
-		logging.Infof(c, "Shard #%d is %d: %s - %s", idx, s.ID, l, r)
+		count := ""
+		if s.ExpectedCount != 0 {
+			count = fmt.Sprintf(" (%d entities)", s.ExpectedCount)
+		}
+		logging.Infof(c, "Shard #%d is %d: %s - %s%s", idx, s.ID, l, r, count)
 	}
 
 	// Transactionally associate shards with the job and launch the TQ task that
@@ -309,6 +325,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 	//
 	// If SplitAndLaunch crashes before this transaction lands, there'll be some
 	// orphaned Shard entities, no big deal.
+	logging.Infof(c, "Updating the job and launching the fan out task...")
 	return runTxn(c, func(c context.Context) error {
 		job, err := getJobInState(c, JobID(msg.JobId), State_STARTING)
 		if err != nil || job == nil {
@@ -330,6 +347,26 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 			},
 		})
 	})
+}
+
+// fetchShardSizes makes a bunch of Count() queries to figure out size of each
+// shard.
+//
+// Updates ExpectedCount in-place.
+func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard) error {
+	err := parallel.WorkPool(32, func(tasks chan<- func() error) {
+		for _, sh := range shards {
+			sh := sh
+			tasks <- func() error {
+				n, err := datastore.CountBatch(c, 1024, sh.Range.Apply(baseQ))
+				if err == nil {
+					sh.ExpectedCount = n
+				}
+				return errors.Annotate(err, "for shard #%d", sh.Index).Err()
+			}
+		}
+	})
+	return transient.Tag.Apply(err)
 }
 
 // fanOutShardsHandler fetches a list of shards from the job and launches
