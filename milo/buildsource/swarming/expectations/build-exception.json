@@ -37,12 +37,12 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 2,
     "Text": [
       "InfraFailure bot_update",
       "InfraFailure Uncaught Exception"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -85,9 +85,9 @@
         "Duration": 7000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -123,11 +123,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -163,9 +163,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -201,9 +201,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
-      "Text": null
+      "Text": null,
+      "Children": []
     }
   ],
   "PropertyGroup": [

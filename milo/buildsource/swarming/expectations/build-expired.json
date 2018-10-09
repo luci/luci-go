@@ -49,11 +49,11 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 0,
     "Text": [
       "Task expired"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",

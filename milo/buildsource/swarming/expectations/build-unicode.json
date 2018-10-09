@@ -37,11 +37,11 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 1,
     "Text": [
       "Running bot_update"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": null,
   "Components": [
@@ -70,9 +70,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -108,11 +108,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -139,9 +139,9 @@
         "Duration": 7195000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     }
   ],
   "PropertyGroup": [
