@@ -28,14 +28,12 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap",
-      "InfraFailure build",
-      "Failure build.build",
-      "InfraFailure build.upload"
-    ]
+      "Failure build"
+    ],
+    "Children": null
   },
   "Trigger": null,
   "Components": [
@@ -64,9 +62,9 @@
         "Duration": -21206166000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -102,11 +100,11 @@
         "Duration": 49999872
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": [
         "running recipe: \"magenta\""
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -142,11 +140,11 @@
         "Duration": 430000128
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba"
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -182,9 +180,9 @@
         "Duration": 229999872
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -211,9 +209,9 @@
         "Duration": 380000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -240,9 +238,9 @@
         "Duration": 29999872
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -269,9 +267,9 @@
         "Duration": 0
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -298,9 +296,9 @@
         "Duration": 59940000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     },
     {
       "Label": {
@@ -320,96 +318,97 @@
         "Duration": 0
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
-      "Text": null
-    },
-    {
-      "Label": {
-        "Label": "build.cleanup",
-        "URL": "",
-        "AriaLabel": "build.cleanup"
-      },
-      "Status": "Success",
-      "MainLink": [
+      "Text": null,
+      "Children": [
         {
-          "Label": "stdout",
-          "URL": "/swarming/task/build-nested/steps/build/0/steps/cleanup/0/stdout",
-          "AriaLabel": "log link for stdout"
-        }
-      ],
-      "PendingTime": {
-        "Started": "0001-01-01T00:00:00Z",
-        "Finished": "0001-01-01T00:00:00Z",
-        "Duration": 0
-      },
-      "ExecutionTime": {
-        "Started": "2016-11-14T22:37:14.78Z",
-        "Finished": "2016-11-14T22:37:16.329999872Z",
-        "Duration": 1549999872
-      },
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Verbosity": 0,
-      "Text": null
-    },
-    {
-      "Label": {
-        "Label": "build.build",
-        "URL": "",
-        "AriaLabel": "build.build"
-      },
-      "Status": "Failure",
-      "MainLink": [
+          "Label": {
+            "Label": "cleanup",
+            "URL": "",
+            "AriaLabel": "build.cleanup"
+          },
+          "Status": "Success",
+          "MainLink": [
+            {
+              "Label": "stdout",
+              "URL": "/swarming/task/build-nested/steps/build/0/steps/cleanup/0/stdout",
+              "AriaLabel": "log link for stdout"
+            }
+          ],
+          "PendingTime": {
+            "Started": "0001-01-01T00:00:00Z",
+            "Finished": "0001-01-01T00:00:00Z",
+            "Duration": 0
+          },
+          "ExecutionTime": {
+            "Started": "2016-11-14T22:37:14.78Z",
+            "Finished": "2016-11-14T22:37:16.329999872Z",
+            "Duration": 1549999872
+          },
+          "Type": "Step",
+          "Verbosity": 0,
+          "Text": null,
+          "Children": []
+        },
         {
-          "Label": "stdout",
-          "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/stdout",
-          "AriaLabel": "log link for stdout"
-        }
-      ],
-      "PendingTime": {
-        "Started": "0001-01-01T00:00:00Z",
-        "Finished": "0001-01-01T00:00:00Z",
-        "Duration": 0
-      },
-      "ExecutionTime": {
-        "Started": "2016-11-14T22:37:16.329999872Z",
-        "Finished": "2016-11-14T22:37:58.5Z",
-        "Duration": 42170000128
-      },
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Verbosity": 2,
-      "Text": null
-    },
-    {
-      "Label": {
-        "Label": "build.upload",
-        "URL": "",
-        "AriaLabel": "build.upload"
-      },
-      "Status": "InfraFailure",
-      "MainLink": [
+          "Label": {
+            "Label": "build",
+            "URL": "",
+            "AriaLabel": "build.build"
+          },
+          "Status": "Failure",
+          "MainLink": [
+            {
+              "Label": "stdout",
+              "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/stdout",
+              "AriaLabel": "log link for stdout"
+            }
+          ],
+          "PendingTime": {
+            "Started": "0001-01-01T00:00:00Z",
+            "Finished": "0001-01-01T00:00:00Z",
+            "Duration": 0
+          },
+          "ExecutionTime": {
+            "Started": "2016-11-14T22:37:16.329999872Z",
+            "Finished": "2016-11-14T22:37:58.5Z",
+            "Duration": 42170000128
+          },
+          "Type": "Step",
+          "Verbosity": 2,
+          "Text": null,
+          "Children": []
+        },
         {
-          "Label": "stdout",
-          "URL": "/swarming/task/build-nested/steps/build/0/steps/upload/0/stdout",
-          "AriaLabel": "log link for stdout"
+          "Label": {
+            "Label": "upload",
+            "URL": "",
+            "AriaLabel": "build.upload"
+          },
+          "Status": "InfraFailure",
+          "MainLink": [
+            {
+              "Label": "stdout",
+              "URL": "/swarming/task/build-nested/steps/build/0/steps/upload/0/stdout",
+              "AriaLabel": "log link for stdout"
+            }
+          ],
+          "PendingTime": {
+            "Started": "0001-01-01T00:00:00Z",
+            "Finished": "0001-01-01T00:00:00Z",
+            "Duration": 0
+          },
+          "ExecutionTime": {
+            "Started": "2016-11-14T22:38:05.44Z",
+            "Finished": "2016-11-14T22:38:11.34Z",
+            "Duration": 5900000000
+          },
+          "Type": "Step",
+          "Verbosity": 2,
+          "Text": null,
+          "Children": []
         }
-      ],
-      "PendingTime": {
-        "Started": "0001-01-01T00:00:00Z",
-        "Finished": "0001-01-01T00:00:00Z",
-        "Duration": 0
-      },
-      "ExecutionTime": {
-        "Started": "2016-11-14T22:38:05.44Z",
-        "Finished": "2016-11-14T22:38:11.34Z",
-        "Duration": 5900000000
-      },
-      "Type": "Step",
-      "LevelsDeep": 0,
-      "Verbosity": 2,
-      "Text": null
+      ]
     }
   ],
   "PropertyGroup": [

@@ -60,6 +60,47 @@ type MiloBuild struct {
 	Blame []*Commit
 }
 
+var statusPrecendence = map[model.Status]int{
+	model.Cancelled:    0,
+	model.Expired:      1,
+	model.Exception:    2,
+	model.InfraFailure: 3,
+	model.Failure:      4,
+	model.Warning:      5,
+	model.Success:      6,
+}
+
+func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string) {
+	// If the build is finished but the step is not finished.
+	if !buildFinished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
+		// Then set the finish time to be the same as the build finish time.
+		comp.ExecutionTime.Finished = buildFinished
+		comp.Status = model.InfraFailure
+	}
+
+	// Fix substeps recursively.
+	for _, substep := range comp.Children {
+		fixComponent(substep, buildFinished, stripPrefix+comp.Label.String()+".")
+	}
+
+	// When parent step finishes running, compute its final status as worst
+	// status, as determined by statusPrecendence map above, among direct children
+	// and its own status.
+	if comp.Status.Terminal() {
+		for _, substep := range comp.Children {
+			substepStatusPrecedence, ok := statusPrecendence[substep.Status]
+			if ok && substepStatusPrecedence < statusPrecendence[comp.Status] {
+				comp.Status = substep.Status
+			}
+		}
+	}
+
+	// Strip parent component name from the title.
+	if comp.Label != nil {
+		comp.Label.Label = strings.TrimPrefix(comp.Label.Label, stripPrefix)
+	}
+}
+
 // Fix fixes various inconsistencies that users expect to see as part of the Build,
 // but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
@@ -70,14 +111,9 @@ func (b *MiloBuild) Fix() {
 	case model.Success, model.Running, model.NotRun:
 		b.Summary.Verbosity = Hidden
 	}
+
 	for _, comp := range b.Components {
-		finished := b.Summary.ExecutionTime.Finished
-		// If the build is finished but the step is not finished.
-		if !finished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
-			// Then set the finish time to be the same as the build finish time.
-			comp.ExecutionTime.Finished = finished
-			comp.Status = model.InfraFailure
-		}
+		fixComponent(comp, b.Summary.ExecutionTime.Finished, "")
 	}
 }
 
@@ -321,17 +357,15 @@ type BuildComponent struct {
 	// This is either "RECIPE" or "STEP".  An attempt is considered a recipe.
 	Type ComponentType
 
-	// Specifies if this is a top level or a dependency.  Manifests itself as an
-	// indentation level.  Valid options are 0 and 1.  Anything more than 1 is
-	// automatically truncated to 1.
-	LevelsDeep uint32
-
 	// Verbosity indicates how important this step is.
 	Verbosity Verbosity
 
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
 	Text []string
+
+	// Children of the step. Undefined for other types of build components.
+	Children []*BuildComponent
 }
 
 var rLineBreak = regexp.MustCompile("<br */?>")

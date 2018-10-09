@@ -47,6 +47,47 @@
 
 {{end}}
 
+{{define "component"}}
+<li class="verbosity-{{.Verbosity.String}}">
+  <div class="status-{{.Status}} result">
+      {{ template "interval" .ExecutionTime }}
+    <b>{{.Label.HTML}}</b>
+    <span>
+      {{ range .TextBR -}}
+        <div class="step-text">
+          {{- if . -}}{{- . -}}{{- else -}}&nbsp;{{- end -}}
+        </div>
+      {{- end }}
+    </span>
+  </div>
+  <ul>
+    {{ if .MainLink }}
+      <li class="sublink">{{.MainLink.HTML}}</li>
+      {{- if eq .Verbosity.String "Interesting" -}}
+        {{ range .MainLink }}
+          <link rel="prerender" href="{{.URL}}">
+          <link rel="prefetch" href="{{.URL}}">
+        {{ end }}
+      {{ end }}
+    {{- end }}
+    {{ range .SubLink }}
+      <li class="sublink">{{.HTML}}</li>
+    {{ end }}
+    {{ if not (or .MainLink .SubLink) }}
+      <li class="sublink"> - no logs - </li>
+    {{ end }}
+  </ul>
+  {{ if .Children }}
+    <ol class="substeps">
+    {{ range .Children  }}
+      {{ template "component" . }}
+    {{ end }}
+    </ol>
+  {{ end }}
+</li>
+{{ end }}
+
+
 {{define "body"}}
   <div class="content">
     <h1>
@@ -185,36 +226,7 @@
           {{ end }}
 
           {{ range .Build.Components  }}
-          <li class="verbosity-{{.Verbosity.String}}">
-            <div class="status-{{.Status}} result">
-                {{ template "interval" .ExecutionTime }}
-              <b>{{.Label.HTML}}</b>
-              <span>
-                {{ range .TextBR -}}
-                  <div class="step-text">
-                    {{- if . -}}{{- . -}}{{- else -}}&nbsp;{{- end -}}
-                  </div>
-                {{- end }}
-              </span>
-            </div>
-            <ul>
-              {{ if .MainLink }}
-                <li class="sublink">{{.MainLink.HTML}}</li>
-                {{- if eq .Verbosity.String "Interesting" -}}
-                  {{ range .MainLink }}
-                    <link rel="prerender" href="{{.URL}}">
-                    <link rel="prefetch" href="{{.URL}}">
-                  {{ end }}
-                {{ end }}
-              {{- end }}
-              {{ range .SubLink }}
-                <li class="sublink">{{.HTML}}</li>
-              {{ end }}
-              {{ if not (or .MainLink .SubLink) }}
-                <li class="sublink"> - no logs - </li>
-              {{ end }}
-            </ul>
-          </li>
+            {{ template "component" . }}
           {{ end }}
         </ol>
       {{ end }} <!-- if .Build.Components -->

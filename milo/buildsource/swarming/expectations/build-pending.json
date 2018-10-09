@@ -28,9 +28,9 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 1,
-    "Text": null
+    "Text": null,
+    "Children": null
   },
   "Trigger": null,
   "Components": [],
