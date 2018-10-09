@@ -25,4 +25,15 @@
     show: false,
     hide: false
   });
+
+  function setMode(isFull) {
+    const mode = isFull ? "full" : "lite";
+    return function() {
+      document.cookie = "html-mode=" + mode + "; path=/";
+      location.reload(true);  // Changing modes require a force refresh.
+    };
+  }
+
+  $("#to-full").click(setMode(true));
+  $("#to-lite").click(setMode(false));
 }());
