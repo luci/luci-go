@@ -656,6 +656,10 @@ li {
   padding: 0.1em 1em 0.1em 1em;
 }
 
+ol.substeps {
+  padding-left: 2em;
+}
+
 .file {
   font-weight: bold;
 }

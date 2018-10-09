@@ -115,8 +115,7 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 		ExecutionTime: ui.NewInterval(c, b.Times.Start.Time, b.Times.Finish.Time),
 		Bot:           bot,
 		Source:        source,
-		Type:          ui.Summary, // This is more or less ignored.
-		LevelsDeep:    1,
+		Type:          ui.Summary,        // This is more or less ignored.
 		Text:          mergeText(b.Text), // Status messages.  Eg "This build failed on..xyz"
 	}
 

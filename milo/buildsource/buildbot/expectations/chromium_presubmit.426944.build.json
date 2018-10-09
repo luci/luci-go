@@ -43,11 +43,11 @@
       "Duration": 209390011000
     },
     "Type": "Summary",
-    "LevelsDeep": 1,
     "Verbosity": 0,
     "Text": [
       "build successful"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -121,11 +121,11 @@
         "Duration": 209367607000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "running steps via annotated script"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -160,11 +160,11 @@
         "Duration": 13503485000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "update_scripts\u003cbr\u003egit - 7f1967a10defc60c719bb24cd27f9631d3d71849"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -190,11 +190,11 @@
         "Duration": 3596000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "setup_properties"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -220,11 +220,11 @@
         "Duration": 2081000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "LogDog Bootstrap"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -259,11 +259,11 @@
         "Duration": 5527000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "setup_build\u003cbr\u003erunning recipe: \"run_presubmit\""
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -298,11 +298,11 @@
         "Duration": 159856291000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "bot_update\u003cbr\u003e[291GB/492GB used (59%)]"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -330,11 +330,11 @@
         "Duration": 3857000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "commit-git-patch"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -362,11 +362,11 @@
         "Duration": 12091522000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "gclient runhooks"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -394,11 +394,11 @@
         "Duration": 1449000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "presubmit"
-      ]
+      ],
+      "Children": null
     },
     {
       "Label": {
@@ -433,11 +433,11 @@
         "Duration": 1735000
       },
       "Type": "Recipe",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "recipe result"
-      ]
+      ],
+      "Children": null
     }
   ],
   "PropertyGroup": [

@@ -21,11 +21,11 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 1,
     "Text": [
       "Running Waiting..."
-    ]
+    ],
+    "Children": null
   },
   "Trigger": {
     "AuthorName": "",
@@ -60,11 +60,11 @@
         "Duration": 0
       },
       "Type": "Summary",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "waiting for annotation stream"
-      ]
+      ],
+      "Children": null
     }
   ],
   "PropertyGroup": null,

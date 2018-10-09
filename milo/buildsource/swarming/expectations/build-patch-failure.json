@@ -37,11 +37,11 @@
       "Duration": 7199000000000
     },
     "Type": "Recipe",
-    "LevelsDeep": 0,
     "Verbosity": 2,
     "Text": [
       "Failure Patch failure"
-    ]
+    ],
+    "Children": null
   },
   "Trigger": null,
   "Components": [
@@ -79,11 +79,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "git - 1fb19c56e954ada4c990ed04cf8a004e16def555"
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -119,11 +119,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 1,
       "Text": [
         "running recipe: \"infra/infra_repo_trybot\""
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -166,11 +166,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
       "Text": [
         "[21GB/295GB used (7%)] PATCH FAILED"
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -197,11 +197,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 2,
       "Text": [
         "Check the bot_update step for details"
-      ]
+      ],
+      "Children": []
     },
     {
       "Label": {
@@ -237,9 +237,9 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "LevelsDeep": 0,
       "Verbosity": 0,
-      "Text": null
+      "Text": null,
+      "Children": []
     }
   ],
   "PropertyGroup": [
