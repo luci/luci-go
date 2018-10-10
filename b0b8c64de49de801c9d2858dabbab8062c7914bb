@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "149bf16a_586b222e",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 15
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T20:41:09Z",
+      "side": 1,
+      "message": "URL",
+      "range": {
+        "startLine": 76,
+        "startChar": 79,
+        "endLine": 76,
+        "endChar": 83
+      },
+      "revId": "b0b8c64de49de801c9d2858dabbab8062c7914bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
