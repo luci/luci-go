@@ -263,20 +263,22 @@ func getJob(c context.Context, id JobID) (*Job, error) {
 // getJobInState fetches a Job entity and checks its state.
 //
 // Returns:
-//   (*Job, nil) if the job is there and its state matches 'state'.
+//   (*Job, nil) if the job is there and its state matches one of given states.
 //   (nil, nil) if the job is there, but in a different state.
 //   (nil, transient error) on datastore fetch errors.
 //   (nil, fatal error) if there's no such job at all.
-func getJobInState(c context.Context, id JobID, state State) (*Job, error) {
-	switch job, err := getJob(c, id); {
-	case err != nil:
+func getJobInState(c context.Context, id JobID, states ...State) (*Job, error) {
+	job, err := getJob(c, id)
+	if err != nil {
 		return nil, errors.Reason("failed to fetch job with ID %d", id).Err()
-	case job.State != state:
-		logging.Warningf(c, "Skipping the job: its state is %s, expecting %s", job.State, state)
-		return nil, nil
-	default:
-		return job, nil
 	}
+	for _, s := range states {
+		if job.State == s {
+			return job, nil
+		}
+	}
+	logging.Warningf(c, "Skipping the job: its state is %s, expecting one of %q", job.State, states)
+	return nil, nil
 }
 
 // shard represents a key range being worked on by a single worker (Start, End].
@@ -359,7 +361,7 @@ func getActiveShard(c context.Context, shardID, taskNum int64) (*shard, error) {
 		return nil, errors.Annotate(err, "no such shard, aborting").Err() // fatal, no retries
 	case err != nil:
 		return nil, errors.Annotate(err, "failed to fetch the shard").Tag(transient.Tag).Err()
-	case sh.State == State_SUCCESS || sh.State == State_FAIL:
+	case isFinalState(sh.State):
 		logging.Warningf(c, "The shard is finished already")
 		return nil, nil
 	case sh.ProcessTaskNum != taskNum:
@@ -387,7 +389,7 @@ func shardTxn(c context.Context, shardID int64, cb shardTxnCb) error {
 			return err
 		case err != nil:
 			return transient.Tag.Apply(err)
-		case sh.State == State_SUCCESS || sh.State == State_FAIL:
+		case isFinalState(sh.State):
 			return nil // the shard is already marked as done
 		}
 		switch save, err := cb(c, &sh); {
