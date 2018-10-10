@@ -27,7 +27,6 @@ import (
 
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/jsontime"
-	"go.chromium.org/luci/common/gcloud/googleoauth"
 	"go.chromium.org/luci/common/gcloud/iam"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -149,19 +148,10 @@ func MintAccessTokenForServiceAccount(ctx context.Context, params MintAccessToke
 			if err != nil {
 				return nil, err, "ERROR_NO_TRANSPORT"
 			}
+			client := &iam.Client{Client: &http.Client{Transport: asSelf}}
+			tok, err := client.GenerateAccessToken(ctx, params.ServiceAccount, sortedScopes, nil, 0)
 
-			// This will do two HTTP calls: one to 'signBytes' IAM API, another to the
-			// token exchange endpoint.
-			tok, err := googleoauth.GetAccessToken(ctx, googleoauth.JwtFlowParams{
-				ServiceAccount: params.ServiceAccount,
-				Signer: &iam.Client{
-					Client: &http.Client{Transport: asSelf},
-				},
-				Scopes: sortedScopes,
-				Client: cfg.anonymousClient(ctx),
-			})
-
-			// Both iam.Signer and googleoauth.GetAccessToken return googleapi.Error
+			// iam.GenerateAccessToken returns googleapi.Error
 			// on HTTP-level responses. Recognize fatal HTTP errors. Everything else
 			// (stuff like connection timeouts, deadlines, etc) are transient errors.
 			if err != nil {

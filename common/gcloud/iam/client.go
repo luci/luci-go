@@ -21,18 +21,36 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"time"
 
 	"golang.org/x/net/context/ctxhttp"
+	"golang.org/x/oauth2"
 	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/luci/common/logging"
 )
 
 const (
-	// DefaultBasePath is root of IAM API.
-	DefaultBasePath = "https://iam.googleapis.com/"
 	// OAuthScope is an OAuth scope required by IAM API.
 	OAuthScope = "https://www.googleapis.com/auth/iam"
+
+	// Token type for generated OAauth2 tokens
+	tokenType = "Bearer"
+)
+
+var (
+	// DefaultIamBaseURL resembles IAM's core API endpoint.
+	DefaultIamBaseURL = &url.URL{
+		Scheme: "https",
+		Host:   "iam.googleapis.com",
+	}
+
+	// DefaultAccountCredentialsBaseURL resembles IAM's account credentials API endpoint.
+	DefaultAccountCredentialsBaseURL = &url.URL{
+		Scheme: "https",
+		Host:   "iamcredentials.googleapis.com",
+	}
 )
 
 // ClaimSet contains information about the JWT signature including the
@@ -55,7 +73,7 @@ type ClaimSet struct {
 // Client knows how to perform IAM API v1 calls.
 type Client struct {
 	Client   *http.Client // client to use to make calls
-	BasePath string       // replaceable in tests, DefaultBasePath by default.
+	BasePath string       // replaceable in tests, DefaultIamBaseURL / DefaultAccountCredentials by default.
 }
 
 // SignBlob signs a blob using a service account's system-managed key.
@@ -74,13 +92,13 @@ func (cl *Client) SignBlob(c context.Context, serviceAccount string, blob []byte
 	}
 	request.BytesToSign = blob
 	var response struct {
-		KeyId     string `json:"keyId"`
+		KeyID     string `json:"keyId"`
 		Signature []byte `json:"signature"`
 	}
-	if err = cl.apiRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", &request, &response); err != nil {
+	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signBlob", &request, &response); err != nil {
 		return "", nil, err
 	}
-	return response.KeyId, response.Signature, nil
+	return response.KeyID, response.Signature, nil
 }
 
 // SignJWT signs a claim set using a service account's system-managed key.
@@ -110,13 +128,13 @@ func (cl *Client) SignJWT(c context.Context, serviceAccount string, cs *ClaimSet
 	}
 	request.Payload = string(blob) // yep, this is JSON inside JSON
 	var response struct {
-		KeyId     string `json:"keyId"`
+		KeyID     string `json:"keyId"`
 		SignedJwt string `json:"signedJwt"`
 	}
-	if err = cl.apiRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", &request, &response); err != nil {
+	if err = cl.iamAPIRequest(c, "projects/-/serviceAccounts/"+serviceAccount, "signJwt", &request, &response); err != nil {
 		return "", "", err
 	}
-	return response.KeyId, response.SignedJwt, nil
+	return response.KeyID, response.SignedJwt, nil
 }
 
 // GetIAMPolicy fetches an IAM policy of a resource.
@@ -124,7 +142,7 @@ func (cl *Client) SignJWT(c context.Context, serviceAccount string, cs *ClaimSet
 // On non-success HTTP status codes returns googleapi.Error.
 func (cl *Client) GetIAMPolicy(c context.Context, resource string) (*Policy, error) {
 	response := &Policy{}
-	if err := cl.apiRequest(c, resource, "getIamPolicy", nil, response); err != nil {
+	if err := cl.iamAPIRequest(c, resource, "getIamPolicy", nil, response); err != nil {
 		return nil, err
 	}
 	return response, nil
@@ -139,7 +157,7 @@ func (cl *Client) SetIAMPolicy(c context.Context, resource string, p Policy) (*P
 	}
 	request.Policy = &p
 	response := &Policy{}
-	if err := cl.apiRequest(c, resource, "setIamPolicy", &request, response); err != nil {
+	if err := cl.iamAPIRequest(c, resource, "setIamPolicy", &request, response); err != nil {
 		return nil, err
 	}
 	return response, nil
@@ -169,8 +187,84 @@ func (cl *Client) ModifyIAMPolicy(c context.Context, resource string, cb func(*P
 	return err
 }
 
-// apiRequest performs HTTP POST to an IAM API endpoint.
-func (cl *Client) apiRequest(c context.Context, resource, action string, body, resp interface{}) error {
+// GenerateAccessToken creates a service account OAuth token using IAM's
+// :generateAccessToken API.
+//
+// On non-success HTTP status codes returns googleapi.Error.
+func (cl *Client) GenerateAccessToken(c context.Context, serviceAccount string, scopes []string, delegates []string, lifetime time.Duration) (*oauth2.Token, error) {
+	var body struct {
+		Delegates []string `json:"delegates"`
+		Scope     []string `json:"scope"`
+		Lifetime  string   `json:"lifetime"`
+	}
+
+	body.Scope = scopes
+	body.Delegates = delegates
+
+	// Default lifetime is 3600 seconds according to API documentation.
+	// Requesting longer lifetime will cause an API error which is
+	// forwarded to the caller.
+	if lifetime > 0 {
+		body.Lifetime = lifetime.String()
+	}
+
+	var resp struct {
+		AccessToken string `json:"accessToken"`
+		ExpireTime  string `json:"expireTime"`
+	}
+	if err := cl.credentialsAPIRequest(c, fmt.Sprintf("projects/-/serviceAccounts/%s", url.QueryEscape(serviceAccount)), "generateAccessToken", &body, &resp); err != nil {
+		return nil, err
+	}
+
+	expires, err := time.Parse(time.RFC3339, resp.ExpireTime)
+	if err != nil {
+		err = fmt.Errorf("Unable to parse 'expireTime': %s", resp.ExpireTime)
+		logging.WithError(err).Errorf(c, "Bad token endpoint response, unable to parse expireTime")
+		return nil, err
+	}
+
+	return &oauth2.Token{
+		AccessToken: resp.AccessToken,
+		TokenType:   tokenType,
+		Expiry:      expires.UTC(),
+	}, nil
+
+}
+
+// iamAPIRequest performs HTTP POST to the core IAM API endpoint.
+func (cl *Client) iamAPIRequest(c context.Context, resource, action string, body, resp interface{}) error {
+	if cl.BasePath != "" {
+		// We are in "testing"
+		base, err := url.Parse(cl.BasePath)
+		if err != nil {
+			return err
+		}
+		return cl.genericAPIRequest(c, base, resource, action, body, resp)
+	}
+	return cl.genericAPIRequest(c, DefaultIamBaseURL, resource, action, body, resp)
+}
+
+// credentialsAPIRequest performs HTTP POST to the IAM credentials API endpoint.
+func (cl *Client) credentialsAPIRequest(c context.Context, resource, action string, body, resp interface{}) error {
+	if cl.BasePath != "" {
+		// We are in "testing"
+		base, err := url.Parse(cl.BasePath)
+		if err != nil {
+			return err
+		}
+		return cl.genericAPIRequest(c, base, resource, action, body, resp)
+	}
+	return cl.genericAPIRequest(c, DefaultAccountCredentialsBaseURL, resource, action, body, resp)
+}
+
+// genericAPIRequest performs HTTP POST to an IAM API endpoint.
+func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, action string, body, resp interface{}) error {
+	query, err := url.Parse(fmt.Sprintf("v1/%s:%s?alt=json", resource, action))
+	if err != nil {
+		return err
+	}
+	endpoint := base.ResolveReference(query)
+
 	// Serialize the body.
 	var reader io.Reader
 	if body != nil {
@@ -181,16 +275,8 @@ func (cl *Client) apiRequest(c context.Context, resource, action string, body, r
 		reader = bytes.NewReader(blob)
 	}
 
-	// Prepare the request.
-	base := cl.BasePath
-	if base == "" {
-		base = DefaultBasePath
-	}
-	if base[len(base)-1] != '/' {
-		base += "/"
-	}
-	url := fmt.Sprintf("%sv1/%s:%s?alt=json", base, resource, action)
-	req, err := http.NewRequest("POST", url, reader)
+	// Issue the request
+	req, err := http.NewRequest("POST", endpoint.String(), reader)
 	if err != nil {
 		return err
 	}
@@ -200,14 +286,14 @@ func (cl *Client) apiRequest(c context.Context, resource, action string, body, r
 
 	// Send and handle errors. This is roughly how google-api-go-client calls
 	// methods. CheckResponse returns *googleapi.Error.
-	logging.Debugf(c, "POST %s", url)
+	logging.Debugf(c, "POST %s", endpoint)
 	res, err := ctxhttp.Do(c, cl.Client, req)
 	if err != nil {
 		return err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		logging.WithError(err).Errorf(c, "POST %s failed", url)
+		logging.WithError(err).Errorf(c, "POST %s failed", endpoint)
 		return err
 	}
 	return json.NewDecoder(res.Body).Decode(resp)
