@@ -232,6 +232,16 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 	return job.ID, nil
 }
 
+// GetJob fetches a previously launched job given its ID.
+//
+// Returns ErrNoSuchJob if not found. All other possible errors are transient
+// and they are marked as such.
+func (ctl *Controller) GetJob(c context.Context, id JobID) (*Job, error) {
+	// Even though we could have made getJob public, we want to force API users
+	// to use Controller as a single facade.
+	return getJob(c, id)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Task queue tasks handlers.
 
