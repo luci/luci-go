@@ -16,6 +16,24 @@
       "revId": "a9b74670342b62cf0adb2467a9df9e681ccdb6a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8ce6a5a_1bb8e11c",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T15:20:56Z",
+      "side": 1,
+      "message": "oops. The intention was to check both top-level error and result-level errors. They actually cannot be set both, but ideally this code doesn\u0027t assume that. It doesn\u0027t hurt to check both. See the diff",
+      "parentUuid": "d6edba3c_5f00b847",
+      "revId": "a9b74670342b62cf0adb2467a9df9e681ccdb6a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
