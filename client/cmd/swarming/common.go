@@ -35,6 +35,7 @@ import (
 	"go.chromium.org/luci/common/isolatedclient"
 	"go.chromium.org/luci/common/lhttp"
 	"go.chromium.org/luci/common/logging/gologger"
+	"go.chromium.org/luci/common/retry"
 	"go.chromium.org/luci/common/retry/transient"
 )
 
@@ -62,16 +63,28 @@ type swarmingServiceImpl struct {
 	*swarming.Service
 }
 
-func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (*swarming.SwarmingRpcsTaskRequestMetadata, error) {
-	return s.Service.Tasks.New(req).Context(c).Do()
+func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
+	err = retryGoogleRPC(c, "NewTask", func() (ierr error) {
+		res, ierr = s.Service.Tasks.New(req).Context(c).Do()
+		return
+	})
+	return
 }
 
-func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (*swarming.SwarmingRpcsTaskResult, error) {
-	return s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(c).Do()
+func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, perf bool) (res *swarming.SwarmingRpcsTaskResult, err error) {
+	err = retryGoogleRPC(c, "GetTaskResult", func() (ierr error) {
+		res, ierr = s.Service.Task.Result(taskID).IncludePerformanceStats(perf).Context(c).Do()
+		return
+	})
+	return
 }
 
-func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (*swarming.SwarmingRpcsTaskOutput, error) {
-	return s.Service.Task.Stdout(taskID).Context(c).Do()
+func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
+	err = retryGoogleRPC(c, "GetTaskResult", func() (ierr error) {
+		res, ierr = s.Service.Task.Stdout(taskID).Context(c).Do()
+		return
+	})
+	return
 }
 
 func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDir string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
@@ -187,4 +200,15 @@ func tagTransientGoogleAPIError(err error) error {
 
 func printError(a subcommands.Application, err error) {
 	fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+}
+
+// retryGoogleRPC retries an RPC on transient errors, such as HTTP 500.
+func retryGoogleRPC(ctx context.Context, rpcName string, rpc func() error) error {
+	return retry.Retry(ctx, transient.Only(retry.Default), func() error {
+		err := rpc()
+		if gerr, ok := err.(*googleapi.Error); ok && gerr.Code >= 500 {
+			err = transient.Tag.Apply(err)
+		}
+		return err
+	}, retry.LogCallback(ctx, rpcName))
 }
