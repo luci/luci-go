@@ -19,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
+
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/common/clock/testclock"
@@ -81,6 +83,19 @@ func TestController(t *testing.T) {
 
 		tqt := tqtesting.GetTestable(ctx, dispatcher)
 		tqt.CreateQueues()
+
+		spinUntilDone := func(expectErrors bool) (executed []proto.Message) {
+			for {
+				tasks, _, err := tqt.RunSimulation(ctx, nil)
+				executed = append(executed, tasks.Payloads()...)
+				if err == nil {
+					return
+				}
+				if !expectErrors {
+					So(err, ShouldBeNil)
+				}
+			}
+		}
 
 		// Create a bunch of entities to run the mapper over.
 		entities := make([]intEnt, 512)
@@ -203,18 +218,6 @@ func TestController(t *testing.T) {
 					expectedShardInfo(3, 113),
 				},
 			})
-
-			spinUntilDone := func(expectErrors bool) {
-				for {
-					_, _, err := tqt.RunSimulation(ctx, nil)
-					if err == nil {
-						return
-					}
-					if !expectErrors {
-						So(err, ShouldBeNil)
-					}
-				}
-			}
 
 			visitShards := func(cb func(s shard)) {
 				shards, err := job.fetchShards(ctx)
@@ -341,29 +344,30 @@ func TestController(t *testing.T) {
 				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
 					processed += len(keys)
 
-					job, err := ctl.GetJob(ctx, jobID)
+					job, err := ctl.AbortJob(ctx, jobID)
 					So(err, ShouldBeNil)
-					job.State = State_FAIL
-					So(datastore.Put(c, job), ShouldBeNil)
+					So(job.State, ShouldEqual, State_ABORTING)
 
 					return nil
 				}
 
 				spinUntilDone(false)
 
-				// All shards are left in whatever state they were in. We don't bother
-				// changing their state: Shards owned by an aborted job are
-				// automatically considered aborted.
+				// All shards eventually discovered that the job was aborted.
 				visitShards(func(s shard) {
+					So(s.State, ShouldEqual, State_ABORTED)
 					if s.Index == 0 {
 						// Zeroth shard did manage to run for a bit.
-						So(s.State, ShouldEqual, State_RUNNING)
 						So(s.ProcessedCount, ShouldEqual, 66)
 					} else {
-						So(s.State, ShouldEqual, State_STARTING)
 						So(s.ProcessedCount, ShouldEqual, 0)
 					}
 				})
+
+				// And the job itself eventually switched into ABORTED state.
+				job, err := ctl.GetJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, State_ABORTED)
 
 				// Processed 2 pages (instead of 1), since processShardHandler doesn't
 				// check job state inside the processing loop (only at the beginning).
@@ -393,6 +397,64 @@ func TestController(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(sh.ResumeFrom, ShouldNotBeNil)
 				So(sh.ProcessedCount, ShouldEqual, 33)
+			})
+		})
+
+		Convey("With simple starting job", func() {
+			cfg := JobConfig{
+				Query:      Query{Kind: "intEnt"},
+				Mapper:     mapper.MapperID(),
+				ShardCount: 4,
+				PageSize:   64,
+			}
+
+			jobID, err := ctl.LaunchJob(ctx, &cfg)
+			So(err, ShouldBeNil)
+			So(jobID, ShouldEqual, 1)
+
+			// In "starting" state initially.
+			job, err := ctl.GetJob(ctx, jobID)
+			So(err, ShouldBeNil)
+			So(job.State, ShouldEqual, State_STARTING)
+
+			Convey("Abort right after start", func() {
+				job, err := ctl.AbortJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, State_ABORTED) // aborted right away
+
+				// Didn't actually launch any shards.
+				So(spinUntilDone(false), ShouldResemble, []proto.Message{
+					&tasks.SplitAndLaunch{JobId: int64(jobID)},
+				})
+			})
+
+			Convey("Abort after shards are created", func() {
+				// Stop right after we created the shards, before we launch them.
+				_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
+					ShouldStopBefore: func(t tqtesting.Task) bool {
+						_, yep := t.Payload.(*tasks.FanOutShards)
+						return yep
+					},
+				})
+				So(err, ShouldBeNil)
+
+				job, err := ctl.AbortJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, State_ABORTING) // waits for shards to die
+
+				spinUntilDone(false)
+
+				job, err = ctl.AbortJob(ctx, jobID)
+				So(err, ShouldBeNil)
+				So(job.State, ShouldEqual, State_ABORTED) // all shards are dead now
+
+				// Dead indeed.
+				info, err := job.FetchInfo(ctx)
+				So(err, ShouldBeNil)
+				So(info.Shards, ShouldHaveLength, 4)
+				for _, s := range info.Shards {
+					So(s.State, ShouldEqual, State_ABORTED)
+				}
 			})
 		})
 	})
