@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ee3e286d_062be0cf",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "nit: \"Default(AccountCredentials)BasePath\"\n\nTo indicate that there are two different possible base paths based on a call.",
+      "range": {
+        "startLine": 68,
+        "startChar": 48,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a34b73cd_22208516",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "Just \"[]string\" and \"time.Duration\". nil is a valid value for a slice (it just means it is empty). \n\nIn go it\u0027s atypical to use pointers to \"primitive\" types like slices and time.Duration (which is just int64 in disguise) to indicate optional values. Usually a zero value (nil for slices, 0 for duration, etc) is used for that purpose (assuming 0 doesn\u0027t have a meaning on its own in the context of the call). Pointers are more often used to represent \"optional\" structs (since to get a zero value for a struct involves a lot more typing than just \u0027nil\u0027 or \u00270\u0027).\n\nI think it would be sufficient just to document that if lifetime is zero, a default lifetime of 1h is used.",
+      "range": {
+        "startLine": 186,
+        "startChar": 97,
+        "endLine": 186,
+        "endChar": 141
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2efdf58_9e655071",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "does this need `json:\"tokenType\"` annotation? I think by default Go will be searching for \"TokenType\" JSON field, and not finding it.",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 20
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee3a3fbd_217b5217",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "Strictly speaking we can \"compute\" it once, instead of doing this on each call, e.g.\n\nvar (\n  DefaultBaseURL \u003d \u0026url.URL{\n    Scheme: \"https\",\n    Host: \"iam.googleapis.com\",\n  },\n  ...\n)\n\n\ntype Client struct {\n  ...\n  BaseURL *url.URL\n}\n\nReparsing same constant over and over again seems wasteful. I acknowledge that it\u0027s not a big deal, so as you prefer. (Though with url.URL constant, code will be somewhat shorter too).",
+      "range": {
+        "startLine": 248,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 2
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0910fe23_3c7d22ea",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "nit: we prefer not to alias imports unless there\u0027s a conflict or some possible confusion. iam.Client{} looks good enough.",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 10
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "539b75cc_df62fec8",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "nit: \"Both\" is no longer needed here, there\u0027s only one call.",
+      "range": {
+        "startLine": 155,
+        "startChar": 6,
+        "endLine": 155,
+        "endChar": 10
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "07269ae7_4dbde1e1",
+        "filename": "server/auth/actor_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-10T01:03:12Z",
+      "side": 1,
+      "message": "nit: this \u0027switch\u0027 with one \u0027case\u0027 can now be simplified to just\n\n  if r.URL.String() \u003d\u003d generateTokenUrl {\n    ...\n    return tok\n  }\n  t.Fatalf(...)",
+      "range": {
+        "startLine": 54,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 12
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
