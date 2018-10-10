@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a67f4715_31c31860",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee3e286d_062be0cf",
+      "range": {
+        "startLine": 68,
+        "startChar": 48,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a34b73cd_22208516",
         "filename": "common/gcloud/iam/client.go",
         "patchSetId": 11
@@ -45,6 +69,30 @@
       "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f28d7398_fe38ad98",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a34b73cd_22208516",
+      "range": {
+        "startLine": 186,
+        "startChar": 97,
+        "endLine": 186,
+        "endChar": 141
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9728fa59_e0645d42",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "TokenType is not part of the API protocol, so changed to set tokenType explicitly in the final token struct.",
+      "parentUuid": "e2efdf58_9e655071",
+      "range": {
+        "startLine": 208,
+        "startChar": 2,
+        "endLine": 208,
+        "endChar": 20
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee3a3fbd_217b5217",
         "filename": "common/gcloud/iam/client.go",
         "patchSetId": 11
@@ -91,6 +163,30 @@
       "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3f635f1_35f1781f",
+        "filename": "common/gcloud/iam/client.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 252,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. I adopted a hybrid solution: vars are defined and re-used in normal code flow whereas parsing still happens with the test flows so the tests don\u0027t have to create URL structures.",
+      "parentUuid": "ee3a3fbd_217b5217",
+      "range": {
+        "startLine": 248,
+        "startChar": 1,
+        "endLine": 252,
+        "endChar": 2
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "fa8e9b1d_da697331",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0910fe23_3c7d22ea",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 30,
+        "endChar": 10
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "539b75cc_df62fec8",
         "filename": "server/auth/actor.go",
         "patchSetId": 11
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "6133681e_ba126795",
+        "filename": "server/auth/actor.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "539b75cc_df62fec8",
+      "range": {
+        "startLine": 155,
+        "startChar": 6,
+        "endLine": 155,
+        "endChar": 10
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07269ae7_4dbde1e1",
         "filename": "server/auth/actor_test.go",
         "patchSetId": 11
@@ -160,6 +304,30 @@
       "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff24a847_d3b5a53f",
+        "filename": "server/auth/actor_test.go",
+        "patchSetId": 11
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1307247
+      },
+      "writtenOn": "2018-10-10T18:31:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "07269ae7_4dbde1e1",
+      "range": {
+        "startLine": 54,
+        "startChar": 4,
+        "endLine": 59,
+        "endChar": 12
+      },
+      "revId": "183177108876b22e37a1e6db0b5907fe6173bd69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
