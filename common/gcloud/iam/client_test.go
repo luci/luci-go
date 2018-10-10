@@ -22,6 +22,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/clock/testclock"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -151,5 +155,41 @@ func TestClient(t *testing.T) {
 			return nil
 		})
 		So(err, ShouldBeNil)
+	})
+
+	Convey("GenerateAccessToken works", t, func(c C) {
+		ctx, _ := testclock.UseTime(context.Background(), testclock.TestRecentTimeLocal)
+		expireTime, err := time.Parse(time.RFC3339, clock.Now(ctx).Add(time.Hour).UTC().Format(time.RFC3339))
+		So(err, ShouldBeNil)
+
+		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != "POST" {
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+
+			switch r.URL.Path {
+			case "/v1/projects/-/serviceAccounts/abc@example.com:generateAccessToken":
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				resp := fmt.Sprintf(`{"accessToken":"%s","expireTime":"%s"}`, "token1", expireTime.Format(time.RFC3339))
+				w.Write([]byte(resp))
+
+			default:
+				c.Printf("Unknown URL: %q\n", r.URL.Path)
+				w.WriteHeader(404)
+			}
+		}))
+		defer ts.Close()
+
+		cl := Client{
+			Client:   http.DefaultClient,
+			BasePath: ts.URL,
+		}
+
+		token, err := cl.GenerateAccessToken(context.Background(), "abc@example.com", []string{"a", "b"}, nil, 0)
+		So(err, ShouldBeNil)
+		So(token.AccessToken, ShouldResemble, "token1")
+		So(token.Expiry, ShouldResemble, expireTime)
 	})
 }
