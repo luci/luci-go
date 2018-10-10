@@ -15,7 +15,10 @@
 package mapper
 
 import (
+	"encoding/base64"
 	"encoding/json"
+
+	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/errors"
@@ -64,3 +67,40 @@ func (p *Params) FromProperty(prop datastore.Property) error {
 }
 
 var _ datastore.PropertyConverter = (*Params)(nil)
+
+// SetProto stores a proto message as serialized string under the given key.
+//
+// Returns an error if the proto can't be serialized.
+func (p *Params) SetProto(key string, msg proto.Message) error {
+	blob, err := proto.Marshal(msg)
+	if err != nil {
+		return errors.Annotate(err, "failed to serialize proto under key %q", key).Err()
+	}
+	if *p == nil {
+		*p = make(Params, 1)
+	}
+	(*p)[key] = base64.RawStdEncoding.EncodeToString(blob)
+	return nil
+}
+
+// GetProto reads a proto message previously stored with SetProto.
+//
+// Returns an error if there's no such key or the proto can't be deserialized.
+func (p *Params) GetProto(key string, msg proto.Message) error {
+	val, ok := (*p)[key]
+	if !ok {
+		return errors.Reason("no property %q in props", key).Err()
+	}
+	b64, ok := val.(string)
+	if !ok {
+		return errors.Reason("property under key %q is not a string", key).Err()
+	}
+	blob, err := base64.RawStdEncoding.DecodeString(b64)
+	if err != nil {
+		return errors.Annotate(err, "failed to base64-decode proto under key %q", key).Err()
+	}
+	if err := proto.Unmarshal(blob, msg); err != nil {
+		return errors.Annotate(err, "failed to deserialized proto under key %q", key).Err()
+	}
+	return nil
+}

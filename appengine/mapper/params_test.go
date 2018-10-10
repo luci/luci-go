@@ -17,6 +17,8 @@ package mapper
 import (
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
 
@@ -49,5 +51,16 @@ func TestParams(t *testing.T) {
 		roundTrip(Params{})
 		roundTrip(Params{"a": "b"})
 		roundTrip(Params{"a": map[string]interface{}{"b": "c"}})
+
+		withProto := Params{}
+		So(withProto.SetProto("p", &timestamp.Timestamp{Seconds: 123}), ShouldBeNil)
+
+		So(datastore.Put(ctx, &paramsEntity{P: withProto}), ShouldBeNil)
+		e := paramsEntity{}
+		So(datastore.Get(ctx, &e), ShouldBeNil)
+
+		ts := timestamp.Timestamp{}
+		So(e.P.GetProto("p", &ts), ShouldBeNil)
+		So(ts.Seconds, ShouldEqual, 123)
 	})
 }
