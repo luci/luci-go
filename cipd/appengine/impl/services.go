@@ -22,6 +22,7 @@ package impl
 import (
 	"go.chromium.org/luci/appengine/tq"
 
+	"go.chromium.org/luci/cipd/appengine/impl/admin"
 	"go.chromium.org/luci/cipd/appengine/impl/cas"
 	"go.chromium.org/luci/cipd/appengine/impl/repo"
 )
@@ -45,4 +46,8 @@ var (
 	// PublicRepo is ACL-protected implementation of cipd.RepositoryServer that
 	// can be exposed as a public API.
 	PublicRepo = repo.Public(InternalCAS, &TQ)
+
+	// AdminAPI is ACL-protected implementation of cipd.AdminServer that can be
+	// expose as a public API (i.e. admins can use it via external RPC calls).
+	AdminAPI = admin.AdminAPI(&TQ)
 )
