@@ -18,6 +18,8 @@ package appengine.mapper.messages;
 
 option go_package = "mapper";
 
+import "google/protobuf/timestamp.proto";
+
 
 // State of a job or one of its shards.
 enum State {
@@ -28,3 +30,35 @@ enum State {
   FAIL              = 4;
 }
 
+
+// Information about some single shard of a job.
+message ShardInfo {
+  int32 index  = 1;  // zero-based index of the shard
+  State state  = 2;
+  string error = 3;  // human readable error message, for failed shards only
+
+  google.protobuf.Timestamp created = 4;  // when it was created
+  google.protobuf.Timestamp updated = 5;  // when it was updated last time
+  google.protobuf.Timestamp eta     = 6;  // when it finishes (if tracking progress)
+
+  int64 processed_entities = 7;  // number of processed entities thus far
+  int64 total_entities     = 8;  // total number of entities or -1 if unknown
+  float entities_per_sec   = 9;  // rate of processing, entities per second
+}
+
+
+// Information about a job.
+message JobInfo {
+  int64 id    = 1;  // unique job identifier
+  State state = 2;  // overall state of the job
+
+  google.protobuf.Timestamp created = 3;  // when it was created
+  google.protobuf.Timestamp updated = 4;  // when it was updated last time
+  google.protobuf.Timestamp eta     = 5;  // when it finishes (if tracking progress)
+
+  int64 processed_entities = 6;  // number of processed entities thus far
+  int64 total_entities     = 7;  // total number of entities or -1 if unknown
+  float entities_per_sec   = 8;  // rate of processing, entities per second
+
+  repeated ShardInfo shards = 20;  // state of all job's shards
+}

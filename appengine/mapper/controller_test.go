@@ -23,6 +23,7 @@ import (
 
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/appengine/gaetesting"
@@ -35,7 +36,10 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-var testTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
+var (
+	testTime        = testclock.TestRecentTimeUTC.Round(time.Millisecond)
+	testTimeAsProto = google.NewTimestamp(testTime)
+)
 
 // shardIndex extracts the index of the shard processed by the mapper.
 func shardIndex(c context.Context) int {
@@ -113,6 +117,17 @@ func TestController(t *testing.T) {
 				Updated: testTime,
 			})
 
+			// No shards in the info yet.
+			info, err := job.FetchInfo(ctx)
+			So(err, ShouldBeNil)
+			So(info, ShouldResemble, &JobInfo{
+				Id:            int64(jobID),
+				State:         State_STARTING,
+				Created:       testTimeAsProto,
+				Updated:       testTimeAsProto,
+				TotalEntities: -1,
+			})
+
 			// Roll TQ forward.
 			_, _, err = tqt.RunSimulation(ctx, &tqtesting.SimulationParams{
 				ShouldStopBefore: func(t tqtesting.Task) bool {
@@ -155,6 +170,33 @@ func TestController(t *testing.T) {
 				expectedShard(2, 1, 136, 268, 132),
 				expectedShard(3, 2, 268, 399, 131),
 				expectedShard(4, 3, 399, -1, 113),
+			})
+
+			// Shards also appear in the info now.
+			info, err = job.FetchInfo(ctx)
+			So(err, ShouldBeNil)
+
+			expectedShardInfo := func(idx, total int) *ShardInfo {
+				return &ShardInfo{
+					Index:         int32(idx),
+					State:         State_STARTING,
+					Created:       testTimeAsProto,
+					Updated:       testTimeAsProto,
+					TotalEntities: int64(total),
+				}
+			}
+			So(info, ShouldResemble, &JobInfo{
+				Id:            int64(jobID),
+				State:         State_RUNNING,
+				Created:       testTimeAsProto,
+				Updated:       testTimeAsProto,
+				TotalEntities: 512,
+				Shards: []*ShardInfo{
+					expectedShardInfo(0, 136),
+					expectedShardInfo(1, 132),
+					expectedShardInfo(2, 131),
+					expectedShardInfo(3, 113),
+				},
 			})
 
 			spinUntilDone := func(expectErrors bool) {
@@ -218,6 +260,36 @@ func TestController(t *testing.T) {
 				job, err := getJob(ctx, jobID)
 				So(err, ShouldBeNil)
 				So(job.State, ShouldEqual, State_SUCCESS)
+
+				info, err := job.FetchInfo(ctx)
+				So(err, ShouldBeNil)
+
+				expectedShardInfo := func(idx, total int) *ShardInfo {
+					return &ShardInfo{
+						Index:             int32(idx),
+						State:             State_SUCCESS,
+						Created:           testTimeAsProto,
+						Updated:           testTimeAsProto,
+						TotalEntities:     int64(total),
+						ProcessedEntities: int64(total),
+					}
+				}
+				So(info, ShouldResemble, &JobInfo{
+					Id:      int64(jobID),
+					State:   State_SUCCESS,
+					Created: testTimeAsProto,
+					// There's 2 sec delay before UpdateJobState task.
+					Updated:           google.NewTimestamp(testTime.Add(2 * time.Second)),
+					TotalEntities:     512,
+					ProcessedEntities: 512,
+					EntitiesPerSec:    256,
+					Shards: []*ShardInfo{
+						expectedShardInfo(0, 136),
+						expectedShardInfo(1, 132),
+						expectedShardInfo(2, 131),
+						expectedShardInfo(3, 113),
+					},
+				})
 			})
 
 			Convey("One shard fails", func() {

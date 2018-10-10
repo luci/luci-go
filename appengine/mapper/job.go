@@ -18,10 +18,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 
 	"go.chromium.org/luci/appengine/mapper/splitter"
@@ -170,6 +173,72 @@ func (j *Job) fetchShards(c context.Context) ([]shard, error) {
 	return shards, nil
 }
 
+// FetchInfo fetches information about the job (including all shards).
+func (j *Job) FetchInfo(c context.Context) (*JobInfo, error) {
+	info := &JobInfo{
+		Id:            int64(j.ID),
+		State:         j.State,
+		Created:       google.NewTimestamp(j.Created),
+		Updated:       google.NewTimestamp(j.Updated),
+		TotalEntities: -1, // assume unknown, will be replaced below if known
+	}
+
+	// Jobs in STARTING state have no shards yet.
+	if j.State == State_STARTING {
+		return info, nil
+	}
+
+	shards, err := j.fetchShards(c)
+	if err != nil {
+		return nil, err
+	}
+
+	haveProgress := true // false if at least one shard has unknown ETA
+	updated := j.Updated // will be max(Updated of each shard)
+
+	info.Shards = make([]*ShardInfo, len(shards))
+	for i, s := range shards {
+		sh := s.info()
+		info.Shards[i] = sh
+		info.ProcessedEntities += sh.ProcessedEntities
+		if ts := google.TimeFromProto(sh.Updated); ts.After(updated) {
+			updated = ts
+		}
+		if sh.TotalEntities == -1 {
+			haveProgress = false
+		}
+	}
+
+	// Calculate the overall rate from scratch, do NOT sum rates of shards,
+	// since it will also sum estimation errors too (which can be wild).
+	info.Updated = google.NewTimestamp(updated)
+	if runtime := updated.Sub(j.Created); runtime > 0 {
+		info.EntitiesPerSec = float32(float64(info.ProcessedEntities) / runtime.Seconds())
+	}
+
+	if haveProgress {
+		maxETA := time.Time{}
+
+		info.TotalEntities = 0
+		for _, s := range info.Shards {
+			info.TotalEntities += s.TotalEntities
+			if s.Eta != nil {
+				if ts := google.TimeFromProto(s.Eta); maxETA.IsZero() || ts.After(maxETA) {
+					maxETA = ts
+				}
+			}
+		}
+
+		// The job completes when its longest shard does. Shards do not pass work
+		// to each other.
+		if !maxETA.IsZero() {
+			info.Eta = google.NewTimestamp(maxETA)
+		}
+	}
+
+	return info, nil
+}
+
 // getJob fetches a Job entity.
 //
 // Recognizes and tags transient errors.
@@ -241,6 +310,32 @@ type shard struct {
 	Created time.Time
 	// Updated is when the shard was last touched, FYI.
 	Updated time.Time
+}
+
+// info returns a proto message with information about the shard.
+func (s *shard) info() *ShardInfo {
+	var rate float64
+	var eta *timestamp.Timestamp
+
+	if runtime := s.Updated.Sub(s.Created); runtime > 0 {
+		rate = float64(s.ProcessedCount) / runtime.Seconds()
+		if s.ExpectedCount != -1 {
+			secs := float64(s.ExpectedCount) / rate
+			eta = google.NewTimestamp(s.Created.Add(time.Duration(float64(time.Second) * secs)))
+		}
+	}
+
+	return &ShardInfo{
+		Index:             int32(s.Index),
+		State:             s.State,
+		Error:             s.Error,
+		Created:           google.NewTimestamp(s.Created),
+		Updated:           google.NewTimestamp(s.Updated),
+		Eta:               eta, // nil if unknown
+		ProcessedEntities: s.ProcessedCount,
+		TotalEntities:     s.ExpectedCount, // -1 if unknown
+		EntitiesPerSec:    float32(rate),   // 0 if unknown
+	}
 }
 
 // getActiveShard returns shard entity with given ID if its still in active
