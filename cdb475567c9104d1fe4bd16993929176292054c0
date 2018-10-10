@@ -1,0 +1,228 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d0f31fe3_88d8efb4",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/viewer.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "can we use `html-mode\u003d${mode}; path\u003d/` ?",
+      "range": {
+        "startLine": 32,
+        "startChar": 24,
+        "endLine": 32,
+        "endChar": 56
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d41ca077_655e9ef5",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/viewer.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "are we allowed to use modern js here?\n\n  .click(() \u003d\u003e setMode(\"full\"))",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 35
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "284a19f9_7921462a",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "are two spaces intentional?",
+      "range": {
+        "startLine": 89,
+        "startChar": 16,
+        "endLine": 89,
+        "endChar": 18
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1544137_2206dc5b",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "is \"lines\" duplicated in the prefix intentionally? A css selector can write \"#lines.full\" or \"#lines.lite\"",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 35
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "759ae354_2df52fe1",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "why do we need both class and id \"lines\"?",
+      "range": {
+        "startLine": 104,
+        "startChar": 23,
+        "endLine": 104,
+        "endChar": 28
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "480e1fc4_ecb53d36",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "unused?",
+      "range": {
+        "startLine": 156,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 24
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57c43d24_6a2a88ea",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "*userOptions\n?\notherwise the struct is copied to do the check\n\nor, a slightly cleaner API might be to add a type for format\n\n  type format string\n\nand `func (f format) isHTML() bool`\n\nthen you don\u0027t have to document \"valid formats\" in L168 or L181 because the type would be `format`",
+      "range": {
+        "startLine": 176,
+        "startChar": 9,
+        "endLine": 176,
+        "endChar": 20
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec7f85b6_0f7a5e46",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "why lite is default?",
+      "range": {
+        "startLine": 185,
+        "startChar": 48,
+        "endLine": 185,
+        "endChar": 52
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cedfec2e_4ed61843",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "formatHTMLFull",
+      "range": {
+        "startLine": 214,
+        "startChar": 79,
+        "endLine": 214,
+        "endChar": 84
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45e34cef_7c349a66",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-10T02:22:42Z",
+      "side": 1,
+      "message": "what if content type is not text? in L482 we check both contentType and data.options.format. Why this check is inconsistent?",
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
