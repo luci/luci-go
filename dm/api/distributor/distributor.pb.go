@@ -5,11 +5,10 @@ package distributor
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	jobsim "go.chromium.org/luci/dm/api/distributor/jobsim"
 	v1 "go.chromium.org/luci/dm/api/distributor/swarming/v1"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
