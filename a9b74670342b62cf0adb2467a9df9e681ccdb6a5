@@ -34,6 +34,24 @@
       "revId": "a9b74670342b62cf0adb2467a9df9e681ccdb6a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dbaefb5_a5e2b962",
+        "filename": "buildbucket/client/cmd/buildbucket/put.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-10-11T21:09:03Z",
+      "side": 1,
+      "message": "Yeah that\u0027s good, now you can see result-specific errors.",
+      "parentUuid": "c8ce6a5a_1bb8e11c",
+      "revId": "a9b74670342b62cf0adb2467a9df9e681ccdb6a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
