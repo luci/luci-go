@@ -105,6 +105,13 @@ func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcomma
 	}
 
 	hasErrors := false
+
+	if res.Error != nil {
+		hasErrors = true
+		logging.Errorf(ctx, "Failed to schedule builds (reason: %s): %s",
+			res.Error.Reason, res.Error.Message)
+	}
+
 	for i, r := range res.Results {
 		if r.Error != nil {
 			hasErrors = true
