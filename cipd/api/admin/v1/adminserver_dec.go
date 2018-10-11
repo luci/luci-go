@@ -25,17 +25,47 @@ type DecoratedAdmin struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedAdmin) SayHello(c context.Context, req *empty.Empty) (rsp *empty.Empty, err error) {
+func (s *DecoratedAdmin) LaunchJob(c context.Context, req *JobConfig) (rsp *JobID, err error) {
 	var newCtx context.Context
 	if s.Prelude != nil {
-		newCtx, err = s.Prelude(c, "SayHello", req)
+		newCtx, err = s.Prelude(c, "LaunchJob", req)
 	}
 	if err == nil {
 		c = newCtx
-		rsp, err = s.Service.SayHello(c, req)
+		rsp, err = s.Service.LaunchJob(c, req)
 	}
 	if s.Postlude != nil {
-		err = s.Postlude(c, "SayHello", rsp, err)
+		err = s.Postlude(c, "LaunchJob", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedAdmin) AbortJob(c context.Context, req *JobID) (rsp *empty.Empty, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "AbortJob", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.AbortJob(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "AbortJob", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedAdmin) GetJobState(c context.Context, req *JobID) (rsp *JobState, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "GetJobState", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.GetJobState(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "GetJobState", rsp, err)
 	}
 	return
 }
