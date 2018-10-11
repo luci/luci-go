@@ -62,7 +62,7 @@
         "Duration": -21206166000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
+      "Verbosity": 1,
       "Text": null,
       "Children": []
     },
@@ -100,7 +100,7 @@
         "Duration": 49999872
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": [
         "running recipe: \"magenta\""
       ],
@@ -318,7 +318,7 @@
         "Duration": 0
       },
       "Type": "Step",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": null,
       "Children": [
         {
@@ -375,7 +375,7 @@
             "Duration": 42170000128
           },
           "Type": "Step",
-          "Verbosity": 2,
+          "Verbosity": 1,
           "Text": null,
           "Children": []
         },
@@ -404,7 +404,7 @@
             "Duration": 5900000000
           },
           "Type": "Step",
-          "Verbosity": 2,
+          "Verbosity": 1,
           "Text": null,
           "Children": []
         }

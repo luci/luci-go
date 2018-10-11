@@ -60,7 +60,7 @@
         "Duration": 0
       },
       "Type": "Summary",
-      "Verbosity": 0,
+      "Verbosity": 1,
       "Text": [
         "waiting for annotation stream"
       ],

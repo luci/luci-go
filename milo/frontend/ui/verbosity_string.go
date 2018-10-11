@@ -4,9 +4,9 @@ package ui
 
 import "strconv"
 
-const _Verbosity_name = "NormalHiddenInteresting"
+const _Verbosity_name = "NormalInteresting"
 
-var _Verbosity_index = [...]uint8{0, 6, 12, 23}
+var _Verbosity_index = [...]uint8{0, 6, 17}
 
 func (i Verbosity) String() string {
 	if i < 0 || i >= Verbosity(len(_Verbosity_index)-1) {

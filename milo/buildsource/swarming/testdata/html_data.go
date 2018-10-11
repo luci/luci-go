@@ -254,7 +254,7 @@ func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn)
 		}
 		results = append(results, common.TestBundle{
 			Description: tc.Name,
-			Data:        templates.Args{"Build": build},
+			Data:        templates.Args{"Build": build, "ShowPref": "non-green"},
 		})
 	}
 	return results

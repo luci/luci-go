@@ -35,14 +35,6 @@ type URLBuilder interface {
 	BuildLink(l *miloProto.Link) *ui.Link
 }
 
-// HACK(hinoka): This should be a part of recipes, but just hardcoding a list
-// of unimportant things for now.
-var builtIn = map[string]struct{}{
-	"recipe bootstrap": {},
-	"setup_build":      {},
-	"recipe result":    {},
-}
-
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
 func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignoreChildren bool) ui.BuildComponent {
@@ -81,16 +73,6 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 		// Missing the case of waiting on unfinished dependency...
 	default:
 		comp.Status = model.NotRun
-	}
-
-	// Hide the unimportant steps, highlight the interesting ones.
-	switch comp.Status {
-	case model.Success:
-		if _, ok := builtIn[anno.Name]; ok {
-			comp.Verbosity = ui.Hidden
-		}
-	case model.InfraFailure, model.Failure:
-		comp.Verbosity = ui.Interesting
 	}
 
 	// Main link is a link to the stdout.

@@ -145,9 +145,21 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 		return err
 	}
 
+	showPrefCookie, err := c.Request.Cookie("buildShowPref")
+	var showPref string
+	switch err {
+	case nil:
+		showPref = showPrefCookie.Value
+	case http.ErrNoCookie:
+		showPref = "collapsed"
+	default:
+		return err
+	}
+
 	build.Fix()
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
-		"Build": build,
+		"Build":    build,
+		"ShowPref": showPref,
 	})
 	return nil
 }
