@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d7191d56_e062ba3f",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 2
+      },
+      "lineNbr": 668,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-11T22:13:53Z",
+      "side": 1,
+      "message": "nit: maybe a bit of padding? eg. padding-right: 4px;\n\nhttps://screenshot.googleplex.com/fkYCdDdfADi",
+      "revId": "fd0c8c6038e91e07408a98c3c7b41c1bded37d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcf1c43e_a0651ff2",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-11T22:13:53Z",
+      "side": 1,
+      "message": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals will look better.",
+      "revId": "fd0c8c6038e91e07408a98c3c7b41c1bded37d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11e865c4_b1ffef1f",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-11T22:13:53Z",
+      "side": 1,
+      "message": "I feel like this is a bit messy (ie this + the .C in the template).\n\nI\u0027d actually prefer adding a new fields to the ui/build.go struct.\neg. add the preference there, and then add parent pointers in buildComponent up to build\nand then expose a \"showPerf\" method that returns the preference from buildComponent.\n\nThis principle here is that if we\u0027re going to make a mess somewhere, it\u0027s better to do it in Go code rather than in the templating code.  Templating code is more prone to errors.\n\nMoreover, the ui/build struct exists only as an in-memory object that represents the interfacing between the template and the backend (ie the \"controller\" of a MVC model).  So it\u0027s appropriate to mold that however you wish.",
+      "revId": "fd0c8c6038e91e07408a98c3c7b41c1bded37d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb421fd7_eb37cecb",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-11T22:13:53Z",
+      "side": 1,
+      "message": "To keep renderBuild() small, I\u0027d prefer if this was in a separate function, and just called at L162 as showPerf(c.Request)\n\nTo deal with the error, assume that the case in L155 never happens (it shouldn\u0027t happen according to https://golang.org/src/net/http/request.go?s\u003d13801:13855#L380)\nAnd if it does, just log the error instead of returning an error.",
+      "revId": "fd0c8c6038e91e07408a98c3c7b41c1bded37d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "980ee9f5_e94587a7",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-11T22:13:53Z",
+      "side": 1,
+      "message": "nit: \nswitch showPerfCookie, err :\u003d c.Request.Cookie(...); err {\n  ...\n}",
+      "revId": "fd0c8c6038e91e07408a98c3c7b41c1bded37d6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
