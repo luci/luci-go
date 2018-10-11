@@ -195,7 +195,7 @@ func (cl *Client) GenerateAccessToken(c context.Context, serviceAccount string, 
 	var body struct {
 		Delegates []string `json:"delegates"`
 		Scope     []string `json:"scope"`
-		Lifetime  string   `json:"lifetime"`
+		Lifetime  string   `json:"lifetime,omitempty"`
 	}
 
 	body.Scope = scopes
