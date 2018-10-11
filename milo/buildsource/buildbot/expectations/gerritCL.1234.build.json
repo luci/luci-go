@@ -84,7 +84,7 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
+      "Verbosity": 0,
       "Text": [
         "line 1\u003cbr\u003e\u003cbr\u003eline 3"
       ],

@@ -63,7 +63,7 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
+    "Verbosity": 1,
     "Text": [
       "Task timed out"
     ],
@@ -110,7 +110,7 @@
         "Duration": 2000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": null,
       "Children": []
     },
@@ -148,7 +148,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": [
         "running recipe: \"v8\""
       ],

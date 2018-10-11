@@ -91,7 +91,7 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
+      "Verbosity": 0,
       "Text": [
         "running steps via annotated script"
       ],
@@ -852,7 +852,7 @@
         "Duration": 132432766000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
+      "Verbosity": 0,
       "Text": [
         "compile (with patch)"
       ],

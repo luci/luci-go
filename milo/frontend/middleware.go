@@ -62,6 +62,7 @@ var funcMap = template.FuncMap{
 	"startswith":       strings.HasPrefix,
 	"sub":              sub,
 	"toLower":          strings.ToLower,
+	"dict":             dict,
 }
 
 // localTime returns a <span> element with t in human format
@@ -393,6 +394,24 @@ func faviconMIMEType(fileURL string) string {
 		return "image/gif"
 	}
 	return ""
+}
+
+func dict(values ...interface{}) (map[string]interface{}, error) {
+	// Based on https://stackoverflow.com/a/18276968.
+	if len(values)%2 != 0 {
+		return nil, errors.New("num args to dict must be even")
+	}
+
+	d := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			return nil, errors.New("dict keys must be strings")
+		}
+		d[key] = values[i+1]
+	}
+
+	return d, nil
 }
 
 // getTemplateBundles is used to render HTML templates. It provides base args

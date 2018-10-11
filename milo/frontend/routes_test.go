@@ -158,7 +158,8 @@ func buildbotBuildTestData() []common.TestBundle {
 		bundles = append(bundles, common.TestBundle{
 			Description: fmt.Sprintf("Debug page: %s/%d", tc.Builder, tc.Build),
 			Data: templates.Args{
-				"Build": build,
+				"Build":    build,
+				"ShowPref": "collapsed",
 			},
 		})
 	}

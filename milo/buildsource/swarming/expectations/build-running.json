@@ -70,7 +70,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": null,
       "Children": []
     },
@@ -108,7 +108,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -139,7 +139,7 @@
         "Duration": 7195000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
+      "Verbosity": 1,
       "Text": null,
       "Children": []
     }

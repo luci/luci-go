@@ -99,17 +99,19 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	if comp.Label != nil {
 		comp.Label.Label = strings.TrimPrefix(comp.Label.Label, stripPrefix)
 	}
+
+	// Mark steps that have not succeeded as interesting.
+	if comp.Status != model.Success {
+		comp.Verbosity = Interesting
+	}
 }
 
 // Fix fixes various inconsistencies that users expect to see as part of the Build,
 // but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
 func (b *MiloBuild) Fix() {
-	switch b.Summary.Status {
-	case model.InfraFailure, model.Failure:
+	if b.Summary.Status != model.Success {
 		b.Summary.Verbosity = Interesting
-	case model.Success, model.Running, model.NotRun:
-		b.Summary.Verbosity = Hidden
 	}
 
 	for _, comp := range b.Components {
@@ -275,9 +277,6 @@ type Verbosity int
 const (
 	// Normal items are displayed as usual.  This is the default.
 	Normal Verbosity = iota
-
-	// Hidden items are by default not displayed.
-	Hidden
 
 	// Interesting items are a signal that they should be annuciated, or
 	// pre-fetched.

@@ -16,6 +16,10 @@
   {{- end }}
 {{end}}
 
+{{define "head"}}
+<script src="/static/common/js/build.js"></script>
+{{end}}
+
 {{define "interval"}}
   {{ if .Started }}
     <span class="duration"
@@ -48,12 +52,17 @@
 {{end}}
 
 {{define "component"}}
-<li class="verbosity-{{.Verbosity.String}}">
-  <div class="status-{{.Status}} result">
-      {{ template "interval" .ExecutionTime }}
-    <b>{{.Label.HTML}}</b>
+<li class="verbosity-{{.C.Verbosity.String}}">
+  <div class="status-{{.C.Status}} result">
+      {{ template "interval" .C.ExecutionTime }}
+    {{ if .C.Children -}}
+      <div class='nested-indicator'>
+        {{- if eq .ShowPref "collapsed" }}&#9654;{{ else }}&#9660;{{ end -}}
+      </div>
+    {{- end -}}
+    <b>{{.C.Label.HTML}}</b>
     <span>
-      {{ range .TextBR -}}
+      {{ range .C.TextBR -}}
         <div class="step-text">
           {{- if . -}}{{- . -}}{{- else -}}&nbsp;{{- end -}}
         </div>
@@ -61,26 +70,26 @@
     </span>
   </div>
   <ul>
-    {{ if .MainLink }}
-      <li class="sublink">{{.MainLink.HTML}}</li>
-      {{- if eq .Verbosity.String "Interesting" -}}
-        {{ range .MainLink }}
+    {{ if .C.MainLink }}
+      <li class="sublink">{{.C.MainLink.HTML}}</li>
+      {{- if eq .C.Verbosity.String "Interesting" -}}
+        {{ range .C.MainLink }}
           <link rel="prerender" href="{{.URL}}">
           <link rel="prefetch" href="{{.URL}}">
         {{ end }}
       {{ end }}
     {{- end }}
-    {{ range .SubLink }}
+    {{ range .C.SubLink }}
       <li class="sublink">{{.HTML}}</li>
     {{ end }}
-    {{ if not (or .MainLink .SubLink) }}
+    {{ if not (or .C.MainLink .C.SubLink) }}
       <li class="sublink"> - no logs - </li>
     {{ end }}
   </ul>
-  {{ if .Children }}
-    <ol class="substeps">
-    {{ range .Children  }}
-      {{ template "component" . }}
+  {{ if .C.Children }}
+    <ol class="substeps {{- if eq .ShowPref "collapsed"}} collapsed{{ end }}">
+    {{ range .C.Children  }}
+      {{ template "component" dict "C" . "ShowPref" $.ShowPref }}
     {{ end }}
     </ol>
   {{ end }}
@@ -201,13 +210,18 @@
       {{ if or .Build.Components .Build.Summary.SubLink }}
         <h2>Steps and Logfiles:</h2>
         Show:
-        <input type="radio" name="hider" id="showAll">
-          <label for="showAll">All</label>
-        <input type="radio" name="hider" id="showStandard" checked>
-          <label for="showStandard">Standard</label>
-        <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Non-Green Only</label>
-        <ol id="steps" class="standard">
+        <input type="radio" name="hider" id="showExpanded"
+               {{- if eq .ShowPref "expanded" }} checked{{ end }}>
+        <label for="showExpanded">Expanded</label>
+        <input type="radio" name="hider" id="showCollapsed"
+               {{- if eq .ShowPref "collapsed" }} checked{{ end }}>
+        <label for="showCollased">Collapsed</label>
+        <input type="radio" name="hider" id="showNonGreen"
+               {{- if eq .ShowPref "non-green" }} checked{{ end }}>
+        <label for="showNonGreen">Non-Green</label>
+
+        <ol id="steps"
+            {{- if eq .ShowPref "non-green" }} class="non-green"{{ end }}>
 
           {{ with .Build.Summary }}
             {{ if .SubLink }}
@@ -225,8 +239,8 @@
             {{ end }}
           {{ end }}
 
-          {{ range .Build.Components  }}
-            {{ template "component" . }}
+          {{ range .Build.Components }}
+            {{ template "component" dict "C" . "ShowPref" $.ShowPref}}
           {{ end }}
         </ol>
       {{ end }} <!-- if .Build.Components -->
@@ -353,28 +367,4 @@
     {{ end }}
   </div>
 </div>
-<script language="javascript">
-$(document).ready(function() {
-
-  var check = function(className) {
-    $("#steps").removeClass("all standard interesting").addClass(className)
-  }
-
-  $("#showInteresting").click(function(e) {
-    check("interesting");
-  });
-  $("#showStandard").click(function(e) {
-    check("standard");
-  });
-  $("#showAll").click(function(e) {
-    check("all");
-  });
-
-  $("input[name='hider']").each(function(){
-    if ($(this).prop("checked")) {
-      $(this).click();
-    }
-  });
-});
-</script>
 {{end}}

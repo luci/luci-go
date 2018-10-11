@@ -660,6 +660,15 @@ ol.substeps {
   padding-left: 2em;
 }
 
+ol.collapsed > li {
+  display: none;
+}
+
+.nested-indicator {
+  display: inline;
+}
+
+
 .file {
   font-weight: bold;
 }
@@ -858,14 +867,6 @@ div.step-text:first-child {
     display: inline;
 }
 
-.standard .verbosity-Hidden {
-  display: none;
-}
-
-.interesting .verbosity-Hidden {
-  display: none;
-}
-
-.interesting .verbosity-Normal {
+.non-green .verbosity-Normal {
   display: none;
 }

@@ -37,7 +37,7 @@
       "Duration": 7199000000000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
+    "Verbosity": 1,
     "Text": [
       "Failure Patch failure"
     ],
@@ -119,7 +119,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": [
         "running recipe: \"infra/infra_repo_trybot\""
       ],
@@ -197,7 +197,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": [
         "Check the bot_update step for details"
       ],

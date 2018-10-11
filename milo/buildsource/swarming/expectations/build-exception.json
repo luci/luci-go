@@ -37,7 +37,7 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
+    "Verbosity": 1,
     "Text": [
       "InfraFailure bot_update",
       "InfraFailure Uncaught Exception"
@@ -85,7 +85,7 @@
         "Duration": 7000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": null,
       "Children": []
     },
@@ -123,7 +123,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
+      "Verbosity": 0,
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -163,7 +163,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": null,
       "Children": []
     },
@@ -201,7 +201,7 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": null,
       "Children": []
     }

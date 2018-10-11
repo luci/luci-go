@@ -49,7 +49,7 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 0,
+    "Verbosity": 1,
     "Text": [
       "Task expired"
     ],
