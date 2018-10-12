@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "b42b59d9_179ce74b",
+        "filename": "cipd/api/admin/v1/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-12T01:08:41Z",
+      "side": 1,
+      "message": "map[reflect.Type] is ok, but getting this reflect.Type out of *JobConfig is not OK. Try it. It needs two levels of reflecting indirection to get to the underlying oneof type, due to how absolutely retarded oneofs are in Go.",
+      "parentUuid": "2368b732_3bb8a971",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 49,
+        "endChar": 22
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd6f9320_696e30fe",
         "filename": "cipd/appengine/impl/admin/mappers.go",
         "patchSetId": 1
