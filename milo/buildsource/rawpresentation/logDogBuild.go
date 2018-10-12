@@ -35,19 +35,14 @@ type URLBuilder interface {
 	BuildLink(l *miloProto.Link) *ui.Link
 }
 
-// HACK(hinoka): This should be a part of recipes, but just hardcoding a list
-// of unimportant things for now.
-var builtIn = map[string]struct{}{
-	"recipe bootstrap": {},
-	"setup_build":      {},
-	"recipe result":    {},
-}
-
 // miloBuildStep converts a logdog/milo step to a BuildComponent struct.
 // buildCompletedTime must be zero if build did not complete yet.
-func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignoreChildren bool) ui.BuildComponent {
+func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, includeChildren bool, mb *ui.MiloBuild) ui.BuildComponent {
 
-	comp := ui.BuildComponent{Label: ui.NewLink(anno.Name, "", anno.Name)}
+	comp := ui.BuildComponent{
+		ParentBuild: mb,
+		Label:       ui.NewLink(anno.Name, "", anno.Name),
+	}
 	switch anno.Status {
 	case miloProto.Status_RUNNING:
 		comp.Status = model.Running
@@ -81,16 +76,6 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 		// Missing the case of waiting on unfinished dependency...
 	default:
 		comp.Status = model.NotRun
-	}
-
-	// Hide the unimportant steps, highlight the interesting ones.
-	switch comp.Status {
-	case model.Success:
-		if _, ok := builtIn[anno.Name]; ok {
-			comp.Verbosity = ui.Hidden
-		}
-	case model.InfraFailure, model.Failure:
-		comp.Verbosity = ui.Interesting
 	}
 
 	// Main link is a link to the stdout.
@@ -148,7 +133,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 	// This should be the exact same thing.
 	comp.Text = append(comp.Text, anno.Text...)
 
-	if ignoreChildren {
+	if !includeChildren {
 		return comp
 	}
 
@@ -166,7 +151,7 @@ func miloBuildStep(c context.Context, ub URLBuilder, anno *miloProto.Step, ignor
 		default:
 			panic(fmt.Errorf("Unknown type %v", s))
 		}
-		subcomp := miloBuildStep(c, ub, subanno, ignoreChildren)
+		subcomp := miloBuildStep(c, ub, subanno, includeChildren, mb)
 		comp.Children = append(comp.Children, &subcomp)
 	}
 
@@ -190,7 +175,7 @@ func addPropGroups(groups *[]*ui.PropertyGroup, bs *ui.BuildComponent, anno *mil
 
 // SubStepsToUI converts a slice of annotation substeps to ui.BuildComponent and
 // slice of ui.PropertyGroups.
-func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_Substep) ([]*ui.BuildComponent, []*ui.PropertyGroup) {
+func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_Substep, mb *ui.MiloBuild) ([]*ui.BuildComponent, []*ui.PropertyGroup) {
 	components := make([]*ui.BuildComponent, 0, len(substeps))
 	propGroups := make([]*ui.PropertyGroup, 0, len(substeps)+1) // This is the max number or property groups.
 	for _, substepContainer := range substeps {
@@ -200,7 +185,7 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_S
 			continue
 		}
 
-		bs := miloBuildStep(c, ub, anno, false)
+		bs := miloBuildStep(c, ub, anno, true, mb)
 		components = append(components, &bs)
 		addPropGroups(&propGroups, &bs, anno)
 	}
@@ -215,8 +200,8 @@ func AddLogDogToBuild(
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
-	build.Summary = miloBuildStep(c, ub, mainAnno, true)
-	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep)
+	build.Summary = miloBuildStep(c, ub, mainAnno, false, nil)
+	build.Components, build.PropertyGroup = SubStepsToUI(c, ub, mainAnno.Substep, build)
 
 	// Take care of properties
 	propGroup := &ui.PropertyGroup{GroupName: "Main"}
