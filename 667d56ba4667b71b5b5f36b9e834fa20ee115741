@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "c0ae75fb_966991ec",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T14:50:10Z",
+      "side": 1,
+      "message": "I\u0027ve decided to change ignoreChildren into includeChildren to be consistent with https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/buildsource/buildbot/build.go?l\u003d408\u0026rcl\u003d4ecce4047b80a3e7949ed93b156f76ca7c4a26f0",
+      "range": {
+        "startLine": 40,
+        "startChar": 75,
+        "endLine": 40,
+        "endChar": 90
+      },
+      "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8613fe4e_689d17a0",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T14:50:10Z",
+      "side": 1,
+      "message": "I\u0027ve considered converting this into an enum if you prefer, but I am not very impressed with Go\u0027s enums (they are not fully type safe since it\u0027s essentially an int and a bunch of consts) and it would also require adding maps and functions code for parsing strings into enum values and vice versa. Given the above, I\u0027ve chosen to keep this a plain string, but please let me know if you\u0027d prefer it otherwise.",
+      "range": {
+        "startLine": 63,
+        "startChar": 1,
+        "endLine": 63,
+        "endChar": 16
+      },
+      "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "cc33b1e4_d9601bfe",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T14:50:10Z",
+      "side": 1,
+      "message": "Happy to move this into Fix() method above if you think it\u0027s better. The call site will look like this:\n\n  build.Fix(c)\n\nand the showPref will move to frontend/ui/build.go",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 164,
+        "endChar": 29
+      },
+      "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
