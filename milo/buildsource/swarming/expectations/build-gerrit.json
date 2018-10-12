@@ -97,7 +97,7 @@
         "Duration": 7198000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
+      "Verbosity": 1,
       "Text": null,
       "Children": []
     }
@@ -112,5 +112,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

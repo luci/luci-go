@@ -58,6 +58,9 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+
+	// Mode to render the steps: "collapsed" (default), "expanded", "non-green".
+	ShowPref string
 }
 
 var statusPrecendence = map[model.Status]int{
@@ -99,22 +102,26 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	if comp.Label != nil {
 		comp.Label.Label = strings.TrimPrefix(comp.Label.Label, stripPrefix)
 	}
+
+	// Mark steps that have not succeeded as interesting.
+	if comp.Status != model.Success {
+		comp.Verbosity = Interesting
+	}
 }
 
 // Fix fixes various inconsistencies that users expect to see as part of the Build,
 // but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
-func (b *MiloBuild) Fix() {
-	switch b.Summary.Status {
-	case model.InfraFailure, model.Failure:
+func (b *MiloBuild) Fix(showPref string) {
+	if b.Summary.Status != model.Success {
 		b.Summary.Verbosity = Interesting
-	case model.Success, model.Running, model.NotRun:
-		b.Summary.Verbosity = Hidden
 	}
 
 	for _, comp := range b.Components {
 		fixComponent(comp, b.Summary.ExecutionTime.Finished, "")
 	}
+
+	b.ShowPref = showPref
 }
 
 // BuildSummary returns the BuildSummary representation of the MiloBuild.  This
@@ -276,9 +283,6 @@ const (
 	// Normal items are displayed as usual.  This is the default.
 	Normal Verbosity = iota
 
-	// Hidden items are by default not displayed.
-	Hidden
-
 	// Interesting items are a signal that they should be annuciated, or
 	// pre-fetched.
 	Interesting
@@ -312,6 +316,9 @@ func NewInterval(c context.Context, start, end time.Time) Interval {
 
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
+	// Build that this component builds to. Only defined for steps and substeps.
+	ParentBuild *MiloBuild `json:"-"`
+
 	// The parent of this component.  For buildbot and swarmbucket builds, this
 	// refers to the builder.  For DM, this refers to whatever triggered the Quest.
 	ParentLabel *Link `json:",omitempty"`
@@ -377,6 +384,13 @@ func (bc *BuildComponent) TextBR() []string {
 		result = append(result, rLineBreak.Split(t, -1)...)
 	}
 	return result
+}
+
+func (bc *BuildComponent) ShowPref() string {
+	if bc.ParentBuild == nil {
+		return ""
+	}
+	return bc.ParentBuild.ShowPref
 }
 
 // Navigation is the top bar of the page, used for navigating out of the page.

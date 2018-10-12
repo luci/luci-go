@@ -32,7 +32,7 @@
       "Duration": 1176396231000
     },
     "Type": "Summary",
-    "Verbosity": 0,
+    "Verbosity": 1,
     "Text": [
       "failed compile (with patch)"
     ],
@@ -91,7 +91,7 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": [
         "running steps via annotated script"
       ],
@@ -852,7 +852,7 @@
         "Duration": 132432766000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
+      "Verbosity": 1,
       "Text": [
         "compile (with patch)"
       ],
@@ -1345,5 +1345,6 @@
       "CommitURL": "",
       "File": []
     }
-  ]
+  ],
+  "ShowPref": "collapsed"
 }

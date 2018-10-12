@@ -124,13 +124,14 @@ func summary(c context.Context, b *buildbot.Build) ui.BuildComponent {
 
 // components takes a full buildbot build struct and extract step info from all
 // of the steps and returns it as a list of milo Build Components.
-func components(c context.Context, b *buildbot.Build) (result []*ui.BuildComponent) {
+func components(c context.Context, b *buildbot.Build, mb *ui.MiloBuild) (result []*ui.BuildComponent) {
 	for _, step := range b.Steps {
 		if step.Hidden == true {
 			continue
 		}
 		bc := &ui.BuildComponent{
-			Label: ui.NewEmptyLink(step.Name),
+			ParentBuild: mb,
+			Label:       ui.NewEmptyLink(step.Name),
 		}
 		// Step text sometimes contains <br>, which we want to parse into new lines.
 		bc.Text = step.Text
@@ -140,11 +141,6 @@ func components(c context.Context, b *buildbot.Build) (result []*ui.BuildCompone
 			bc.Status = model.NotRun
 		} else {
 			bc.Status = step.Results.Status()
-		}
-
-		// Raise the interesting-ness if the step is not "Success".
-		if bc.Status != model.Success {
-			bc.Verbosity = ui.Interesting
 		}
 
 		remainingAliases := stringset.New(len(step.Aliases))
@@ -412,7 +408,7 @@ func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool
 	}
 	if includeStepsAndProps {
 		result.PropertyGroup = properties(b)
-		result.Components = components(c, b)
+		result.Components = components(c, b, result)
 	}
 	return result
 }
