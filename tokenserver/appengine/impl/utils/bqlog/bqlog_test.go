@@ -25,7 +25,8 @@ import (
 	"testing"
 	"time"
 
-	bigquery "google.golang.org/api/bigquery/v2"
+	"cloud.google.com/go/bigquery"
+	bqapi "google.golang.org/api/bigquery/v2"
 
 	"go.chromium.org/gae/filter/featureBreaker"
 	"go.chromium.org/gae/service/taskqueue"
@@ -48,6 +49,15 @@ var testingLog = Log{
 	DumpEntriesToLogger: true,
 }
 
+type testEntry struct {
+	InsertID string
+	Data     map[string]bigquery.Value
+}
+
+func (e testEntry) Save() (map[string]bigquery.Value, string, error) {
+	return e.Data, e.InsertID, nil
+}
+
 func TestInsert(t *testing.T) {
 	Convey("With mock context", t, func() {
 		ctx := gaetesting.TestingContext()
@@ -57,15 +67,16 @@ func TestInsert(t *testing.T) {
 		tq.CreatePullQueue("pull-queue")
 
 		Convey("simple insert works", func() {
-			entries := []Entry{
-				{
+			err := testingLog.Insert(ctx,
+				testEntry{
 					InsertID: "abc",
+					Data: map[string]bigquery.Value{
+						"a": map[string]bigquery.Value{"b": "c"},
+					},
 				},
-				{
+				testEntry{
 					InsertID: "def",
-				},
-			}
-			err := testingLog.Insert(ctx, entries...)
+				})
 			So(err, ShouldBeNil)
 
 			tasks := tq.GetScheduledTasks()["pull-queue"]
@@ -76,9 +87,23 @@ func TestInsert(t *testing.T) {
 				break
 			}
 
-			decoded := []Entry{}
+			decoded := []apiRawEntry{}
 			So(gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&decoded), ShouldBeNil)
-			So(decoded, ShouldResemble, entries)
+			So(decoded, ShouldResemble, []apiRawEntry{
+				{
+					InsertID: "abc",
+					// Note that outter bigquery.Value deserializes into bqapi.JsonValue,
+					// but the inner one don't. This is fine, since at the end bqapi just
+					// encodes the whole thing to JSON and it doesn't matter what alias
+					// of interface{} is used for that.
+					Data: map[string]bqapi.JsonValue{
+						"a": map[string]bigquery.Value{"b": "c"},
+					},
+				},
+				{
+					InsertID: "def",
+				},
+			})
 		})
 
 		Convey("null insert works", func() {
@@ -105,14 +130,14 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 20
 
 			for i := 0; i < 3; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
-			reqs := []*bigquery.TableDataInsertAllRequest{}
+			reqs := []*bqapi.TableDataInsertAllRequest{}
 			mockInsertAll(&testingLog, &reqs)
 
 			count, err := testingLog.Flush(ctx)
@@ -163,14 +188,14 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 2
 
 			for i := 0; i < 20; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
-			reqs := []*bigquery.TableDataInsertAllRequest{}
+			reqs := []*bqapi.TableDataInsertAllRequest{}
 			mockInsertAll(&testingLog, &reqs)
 
 			count, err := testingLog.Flush(ctx)
@@ -203,8 +228,8 @@ func TestFlush(t *testing.T) {
 			testingLog.FlushTimeout = 5 * time.Second
 
 			for i := 0; i < 10; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
@@ -215,7 +240,7 @@ func TestFlush(t *testing.T) {
 				tc.Add(time.Second)
 			}
 
-			reqs := []*bigquery.TableDataInsertAllRequest{}
+			reqs := []*bqapi.TableDataInsertAllRequest{}
 			mockInsertAll(&testingLog, &reqs)
 
 			// First batch (until timeout).
@@ -242,14 +267,14 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 2
 
 			for i := 0; i < 20; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
-			testingLog.insertMock = func(_ context.Context, r *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error) {
+			testingLog.insertMock = func(_ context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
 				return nil, fmt.Errorf("omg, error")
 			}
 
@@ -270,14 +295,14 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 2
 
 			for i := 0; i < 20; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
-			testingLog.insertMock = func(_ context.Context, r *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error) {
+			testingLog.insertMock = func(_ context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
 				return nil, errors.New("omg, transient error", transient.Tag)
 			}
 
@@ -303,14 +328,14 @@ func TestFlush(t *testing.T) {
 			testingLog.BatchesPerRequest = 2
 
 			for i := 0; i < 20; i++ {
-				err := testingLog.Insert(ctx, Entry{
-					Data: map[string]interface{}{"i": i},
+				err := testingLog.Insert(ctx, testEntry{
+					Data: map[string]bigquery.Value{"i": i},
 				})
 				So(err, ShouldBeNil)
 				tc.Add(time.Millisecond) // emulate passage of time to sort entries
 			}
 
-			testingLog.insertMock = func(_ context.Context, r *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error) {
+			testingLog.insertMock = func(_ context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
 				panic("must not be called")
 			}
 
@@ -333,12 +358,12 @@ func TestFlush(t *testing.T) {
 	})
 }
 
-func mockInsertAll(l *Log, reqs *[]*bigquery.TableDataInsertAllRequest) {
+func mockInsertAll(l *Log, reqs *[]*bqapi.TableDataInsertAllRequest) {
 	lock := sync.Mutex{}
-	l.insertMock = func(ctx context.Context, r *bigquery.TableDataInsertAllRequest) (*bigquery.TableDataInsertAllResponse, error) {
+	l.insertMock = func(ctx context.Context, r *bqapi.TableDataInsertAllRequest) (*bqapi.TableDataInsertAllResponse, error) {
 		lock.Lock()
 		defer lock.Unlock()
 		*reqs = append(*reqs, r)
-		return &bigquery.TableDataInsertAllResponse{}, nil
+		return &bqapi.TableDataInsertAllResponse{}, nil
 	}
 }

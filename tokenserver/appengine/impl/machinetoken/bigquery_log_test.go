@@ -19,9 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/proto/google"
+
 	"go.chromium.org/luci/tokenserver/api"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -55,19 +59,19 @@ func TestMintedTokenInfo(t *testing.T) {
 			RequestID: "gae-request-id",
 		}
 
-		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
-			"ca_common_name":      "Fake CA: fake.ca",
-			"ca_config_rev":       "cfg-updated-rev",
-			"cert_serial_number":  "4096",
-			"expiration":          1.422939906e+09,
-			"fingerprint":         "2d6ccd34ad7af363159ed4bbe18c0e43",
-			"gae_request_id":      "gae-request-id",
-			"issued_at":           1.422936306e+09,
-			"machine_fqdn":        "luci-token-server-test-1.fake.domain",
-			"peer_ip":             "127.10.10.10",
-			"service_version":     "unit-tests/mocked-ver",
-			"signature_algorithm": "SHA256_RSA_ALGO",
-			"token_type":          "LUCI_MACHINE_TOKEN",
+		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.MachineToken{
+			CaCommonName:       "Fake CA: fake.ca",
+			CaConfigRev:        "cfg-updated-rev",
+			CertSerialNumber:   "4096",
+			Expiration:         &timestamp.Timestamp{Seconds: 1422939906},
+			Fingerprint:        "2d6ccd34ad7af363159ed4bbe18c0e43",
+			GaeRequestId:       "gae-request-id",
+			IssuedAt:           &timestamp.Timestamp{Seconds: 1422936306},
+			MachineFqdn:        "luci-token-server-test-1.fake.domain",
+			PeerIp:             "127.10.10.10",
+			ServiceVersion:     "unit-tests/mocked-ver",
+			SignatureAlgorithm: minter.SignatureAlgorithm_SHA256_RSA_ALGO,
+			TokenType:          tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
 		})
 	})
 }

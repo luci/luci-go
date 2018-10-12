@@ -19,13 +19,16 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/appengine"
 
-	"go.chromium.org/luci/common/proto/google"
+	"go.chromium.org/luci/common/bq"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
@@ -53,33 +56,33 @@ type MintedGrantInfo struct {
 	AuthDBRev int64                               // revision of groups database (or 0 if unknown)
 }
 
-// toBigQueryRow returns a JSON-ish map to upload to BigQuery.
-//
-// Its schema must match 'bq/tables/oauth_token_grants.schema'.
-func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
-	issuedAt := google.TimeFromProto(i.GrantBody.IssuedAt)
-	return map[string]interface{}{
+// toBigQueryMessage returns a message to upload to BigQuery.
+func (i *MintedGrantInfo) toBigQueryMessage() *bqpb.OAuthTokenGrant {
+	return &bqpb.OAuthTokenGrant{
 		// Information about the produced token.
-		"fingerprint":       utils.TokenFingerprint(i.Response.GrantToken),
-		"token_id":          fmt.Sprintf("%d", i.GrantBody.TokenId),
-		"service_account":   i.GrantBody.ServiceAccount,
-		"proxy_identity":    i.GrantBody.Proxy,
-		"end_user_identity": i.GrantBody.EndUser,
-		"issued_at":         float64(issuedAt.Unix()),
-		"expiration":        float64(issuedAt.Unix() + i.GrantBody.ValidityDuration),
+		Fingerprint:     utils.TokenFingerprint(i.Response.GrantToken),
+		TokenId:         fmt.Sprintf("%d", i.GrantBody.TokenId),
+		ServiceAccount:  i.GrantBody.ServiceAccount,
+		ProxyIdentity:   i.GrantBody.Proxy,
+		EndUserIdentity: i.GrantBody.EndUser,
+		IssuedAt:        i.GrantBody.IssuedAt,
+		Expiration: &timestamp.Timestamp{
+			Seconds: i.GrantBody.IssuedAt.Seconds + i.GrantBody.ValidityDuration,
+			Nanos:   i.GrantBody.IssuedAt.Nanos,
+		},
 
 		// Information supplied by the caller.
-		"audit_tags": i.Request.AuditTags,
+		AuditTags: i.Request.AuditTags,
 
 		// Information about the service account rule used.
-		"config_rev":  i.ConfigRev,
-		"config_rule": i.Rule.Name,
+		ConfigRev:  i.ConfigRev,
+		ConfigRule: i.Rule.Name,
 
 		// Information about the request handler environment.
-		"peer_ip":         i.PeerIP.String(),
-		"service_version": i.Response.ServiceVersion,
-		"gae_request_id":  i.RequestID,
-		"auth_db_rev":     i.AuthDBRev,
+		PeerIp:         i.PeerIP.String(),
+		ServiceVersion: i.Response.ServiceVersion,
+		GaeRequestId:   i.RequestID,
+		AuthDbRev:      i.AuthDBRev,
 	}
 }
 
@@ -92,7 +95,9 @@ func (i *MintedGrantInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogGrant(c context.Context, i *MintedGrantInfo) error {
-	return oauthTokenGrantsLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	return oauthTokenGrantsLog.Insert(c, &bq.Row{
+		Message: i.toBigQueryMessage(),
+	})
 }
 
 // FlushGrantsLog sends all buffered logged grants to BigQuery.

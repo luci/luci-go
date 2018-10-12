@@ -19,9 +19,13 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/common/bq"
+
 	"go.chromium.org/luci/tokenserver/api"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
@@ -50,35 +54,32 @@ type MintedTokenInfo struct {
 	RequestID string                        // GAE request ID that handled the RPC
 }
 
-// toBigQueryRow returns a JSON-ish map to upload to BigQuery.
-//
-// Its schema must match 'bq/tables/machine_tokens.schema'.
-func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
+// toBigQueryMessage returns a message to upload to BigQuery.
+func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.MachineToken {
 	// LUCI_MACHINE_TOKEN is the only supported type currently.
 	if i.Request.TokenType != tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN {
 		panic("unknown token type")
 	}
-
-	return map[string]interface{}{
+	return &bqpb.MachineToken{
 		// Identifier of the token body.
-		"fingerprint": utils.TokenFingerprint(i.Response.GetLuciMachineToken().MachineToken),
+		Fingerprint: utils.TokenFingerprint(i.Response.GetLuciMachineToken().MachineToken),
 
 		// Information about the token.
-		"machine_fqdn":        i.TokenBody.MachineFqdn,
-		"token_type":          i.Request.TokenType.String(),
-		"issued_at":           float64(i.TokenBody.IssuedAt),
-		"expiration":          float64(i.TokenBody.IssuedAt + i.TokenBody.Lifetime),
-		"cert_serial_number":  fmt.Sprintf("%d", i.TokenBody.CertSn),
-		"signature_algorithm": i.Request.SignatureAlgorithm.String(),
+		MachineFqdn:        i.TokenBody.MachineFqdn,
+		TokenType:          i.Request.TokenType,
+		IssuedAt:           &timestamp.Timestamp{Seconds: int64(i.TokenBody.IssuedAt)},
+		Expiration:         &timestamp.Timestamp{Seconds: int64(i.TokenBody.IssuedAt + i.TokenBody.Lifetime)},
+		CertSerialNumber:   fmt.Sprintf("%d", i.TokenBody.CertSn),
+		SignatureAlgorithm: i.Request.SignatureAlgorithm,
 
 		// Information about the CA used to authorize this request.
-		"ca_common_name": i.CA.CN,
-		"ca_config_rev":  i.CA.UpdatedRev,
+		CaCommonName: i.CA.CN,
+		CaConfigRev:  i.CA.UpdatedRev,
 
 		// Information about the request handler.
-		"peer_ip":         i.PeerIP.String(),
-		"service_version": i.Response.ServiceVersion,
-		"gae_request_id":  i.RequestID,
+		PeerIp:         i.PeerIP.String(),
+		ServiceVersion: i.Response.ServiceVersion,
+		GaeRequestId:   i.RequestID,
 	}
 }
 
@@ -91,7 +92,9 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogToken(c context.Context, i *MintedTokenInfo) error {
-	return machineTokensLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	return machineTokensLog.Insert(c, &bq.Row{
+		Message: i.toBigQueryMessage(),
+	})
 }
 
 // FlushTokenLog sends all buffered logged tokens to BigQuery.

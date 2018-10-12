@@ -19,10 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -60,21 +63,21 @@ func TestMintedGrantInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
-			"audit_tags":        []string{"k1:v1", "k2:v2"},
-			"auth_db_rev":       int64(123),
-			"config_rev":        "config-rev",
-			"config_rule":       "rule-name",
-			"end_user_identity": "user:end-user@example.com",
-			"expiration":        1.422939906e+09,
-			"fingerprint":       "8b7df143d91c716ecfa5fc1730022f6b",
-			"gae_request_id":    "gae-request-id",
-			"issued_at":         1.422936306e+09,
-			"peer_ip":           "127.10.10.10",
-			"proxy_identity":    "user:proxy@example.com",
-			"service_account":   "service-account@robots.com",
-			"service_version":   "unit-tests/mocked-ver",
-			"token_id":          "1234",
+		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.OAuthTokenGrant{
+			AuditTags:       []string{"k1:v1", "k2:v2"},
+			AuthDbRev:       123,
+			ConfigRev:       "config-rev",
+			ConfigRule:      "rule-name",
+			EndUserIdentity: "user:end-user@example.com",
+			Expiration:      &timestamp.Timestamp{Seconds: 1422939906},
+			Fingerprint:     "8b7df143d91c716ecfa5fc1730022f6b",
+			GaeRequestId:    "gae-request-id",
+			IssuedAt:        &timestamp.Timestamp{Seconds: 1422936306},
+			PeerIp:          "127.10.10.10",
+			ProxyIdentity:   "user:proxy@example.com",
+			ServiceAccount:  "service-account@robots.com",
+			ServiceVersion:  "unit-tests/mocked-ver",
+			TokenId:         "1234",
 		})
 	})
 }
