@@ -5,11 +5,10 @@ package internal
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	v1 "go.chromium.org/luci/scheduler/api/scheduler/v1"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

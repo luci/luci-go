@@ -5,11 +5,10 @@ package dmTemplate
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	templateproto "go.chromium.org/luci/common/data/text/templateproto"
 	v1 "go.chromium.org/luci/dm/api/service/v1"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

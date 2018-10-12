@@ -5,10 +5,9 @@ package config
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	proto1 "go.chromium.org/luci/buildbucket/proto"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

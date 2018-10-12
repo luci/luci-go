@@ -5,10 +5,9 @@ package srcman
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

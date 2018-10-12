@@ -5,10 +5,9 @@ package crimson
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	field_mask "google.golang.org/genproto/protobuf/field_mask"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.

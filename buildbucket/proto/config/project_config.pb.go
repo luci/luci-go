@@ -5,10 +5,9 @@ package configpb
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	wrappers "github.com/golang/protobuf/ptypes/wrappers"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -320,19 +319,21 @@ type Builder struct {
 	// Each tag will end up in "swarming_tag" buildbucket tag, for example
 	// "swarming_tag:builder:release"
 	SwarmingTags []string `protobuf:"bytes,2,rep,name=swarming_tags,json=swarmingTags,proto3" json:"swarming_tags,omitempty"`
-	// Colon-delimited key-value pair of task dimensions.
+	// A requirement for a bot to execute the build.
+	//
 	// Supports 3 forms:
-	// - "<key>:" - exclude the defaults for the key. Mutually exclusive with other
-	//     forms.
-	// - "<key>:<value>" - require a bot with this dimension
+	// - "<key>:" - exclude the defaults for the key.
+	//   Mutually exclusive with other forms.
+	// - "<key>:<value>" - require a bot with this dimension.
 	//   This is a shortcut for "0:<key>:<value>", see below.
-	// - "<expiration_secs>:<key>:<value>" -  wait for up to expiration_secs
+	// - "<expiration_secs>:<key>:<value>" - wait for up to expiration_secs.
 	//   for a bot with the dimension.
-	//   There must be at most one dimension for a given key and expiration_secs.
+	//   Supports mutliple values for different keys and expiration_secs.
+	//   expiration_secs must be a multiple of 60.
 	//
 	// When merging a set of dimensions S1 into S2, all dimensions in S1 with a
-	// key K replace all dimensions in S2 with K. This logic is used in mixins
-	// and when applying dimensions in a build request to the ones in a config.
+	// key K replace all dimensions in S2 with K. This logic is used when applying
+	// builder mixins and dimensions specified in a build request.
 	//
 	// If this builder is defined in a bucket, dimension "pool" is defaulted
 	// to the name of the bucket. See Bucket message below.
