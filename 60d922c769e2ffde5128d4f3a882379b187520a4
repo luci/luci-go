@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d4a7e2a4_b13bdbe0",
+        "filename": "cipd/api/admin/v1/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T00:37:46Z",
+      "side": 1,
+      "message": "this assumes no mapper will have parameters. Consider a oneof with concrete messages instead\n\n  oneof kind {\n    google.protobuf.Empty enumerate_packages \u003d 1;\n  }",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 49,
+        "endChar": 22
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd6f9320_696e30fe",
+        "filename": "cipd/appengine/impl/admin/mappers.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T00:37:46Z",
+      "side": 1,
+      "message": "where is GetProto defined?\nhttps://godoc.org/go.chromium.org/luci/appengine/mapper#Params",
+      "range": {
+        "startLine": 61,
+        "startChar": 27,
+        "endLine": 61,
+        "endChar": 35
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
