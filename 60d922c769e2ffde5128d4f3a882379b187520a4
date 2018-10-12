@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "868a5093_9b6b1ee3",
+        "filename": "cipd/api/admin/v1/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-12T00:47:31Z",
+      "side": 1,
+      "message": "I tried that first. It requires an awkward reflection to implement an analogue of map[MapperKind]mapperDef (since \u0027MapperKind\u0027 now not an enum, by a type).",
+      "parentUuid": "d4a7e2a4_b13bdbe0",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 49,
+        "endChar": 22
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd6f9320_696e30fe",
         "filename": "cipd/appengine/impl/admin/mappers.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d8dbba08_ac743069",
+        "filename": "cipd/appengine/impl/admin/mappers.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-12T00:47:31Z",
+      "side": 1,
+      "message": "In https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1273928",
+      "parentUuid": "bd6f9320_696e30fe",
+      "range": {
+        "startLine": 61,
+        "startChar": 27,
+        "endLine": 61,
+        "endChar": 35
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
