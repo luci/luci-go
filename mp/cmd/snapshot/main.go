@@ -18,7 +18,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/api/compute/v1"
@@ -27,6 +29,7 @@ import (
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
 	"go.chromium.org/luci/common/errors"
+	luciflag "go.chromium.org/luci/common/flag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
@@ -38,6 +41,8 @@ type flags struct {
 	authOpts auth.Options
 	// disk is the name of the disk to create a snapshot of.
 	disk string
+	// labels is a map to attach to the snapshot as labels.
+	labels map[string]string
 	// name is the name to give the created snapshot.
 	name string
 	// project is the name of the project where the disk exists, and to create the snapshot in.
@@ -54,8 +59,10 @@ func parseFlags(c context.Context, args []string) (*flags, error) {
 	opts.Scopes = []string{"https://www.googleapis.com/auth/compute"}
 	a.Register(s, opts)
 
+	var labels []string
 	f := flags{}
 	s.StringVar(&f.disk, "disk", "", "Disk to create a snapshot of.")
+	s.Var(luciflag.StringSlice(&labels), "label", "Label to attach to a snapshot.")
 	s.StringVar(&f.name, "name", "", "Name to give the created snapshot.")
 	s.StringVar(&f.project, "project", "", "Project where the disk exists, and to create the snapshot in.")
 	s.StringVar(&f.zone, "zone", "", "Zone where the disk exists.")
@@ -65,6 +72,17 @@ func parseFlags(c context.Context, args []string) (*flags, error) {
 
 	if f.disk == "" {
 		return nil, errors.New("-disk is required")
+	}
+	f.labels = make(map[string]string, len(labels))
+	for _, label := range labels {
+		parts := strings.SplitN(label, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.New(fmt.Sprintf("-label %q must be in key:value form", label))
+		}
+		if _, ok := f.labels[parts[0]]; ok {
+			return nil, errors.New(fmt.Sprintf("-label %q has duplicate key", label))
+		}
+		f.labels[parts[0]] = parts[1]
 	}
 	if f.name == "" {
 		return nil, errors.New("-name is required")
@@ -115,7 +133,8 @@ func Main(args []string) int {
 
 	logging.Infof(c, "Creating snapshot.")
 	snapshot := &compute.Snapshot{
-		Name: flags.name,
+		Labels: flags.labels,
+		Name:   flags.name,
 	}
 	op, err := compute.NewDisksService(service).CreateSnapshot(flags.project, flags.zone, flags.disk, snapshot).Context(c).Do()
 	for {
