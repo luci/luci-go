@@ -92,6 +92,30 @@
       "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d32df244_f5524e8f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T15:45:24Z",
+      "side": 1,
+      "message": "In fact, I\u0027ve decided to go on and make this change. Unfortunately this means I\u0027ll have to copy my other comments to the newest patchset. Otherwise, it\u0027s really easy to miss them. I really wish there was a way to move comments to a newer patchset. Even better would be to be able to mark them as \u0027sticky\u0027 and have Gerrit automatically figure out where to place them based on the diff... but I guess this is rather error prone.",
+      "parentUuid": "b5cf2459_f5c843aa",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 164,
+        "endChar": 29
+      },
+      "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

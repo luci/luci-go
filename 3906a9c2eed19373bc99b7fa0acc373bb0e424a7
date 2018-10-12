@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "889fca4b_7c7ca707",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T15:45:24Z",
+      "side": 1,
+      "message": "I\u0027ve decided to change ignoreChildren into includeChildren to be consistent with https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/milo/buildsource/buildbot/build.go?l\u003d408\u0026rcl\u003d4ecce4047b80a3e7949ed93b156f76ca7c4a26f0",
+      "range": {
+        "startLine": 40,
+        "startChar": 75,
+        "endLine": 40,
+        "endChar": 95
+      },
+      "revId": "3906a9c2eed19373bc99b7fa0acc373bb0e424a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d1b11145_fdaa199d",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T15:45:24Z",
+      "side": 1,
+      "message": "I\u0027ve considered converting this into an enum, but I am not very impressed with Go\u0027s enums: they are not fully type safe since it\u0027s essentially an int and a bunch of consts. It would also require adding string-to-enum and enum-to-string maps and a bunch of new functions: FromString() to be used when parsing cookie, String() to be used to when rendering HTML templates, UnmarshalJSON() and MarshalJSON() for generating and reading JSON expectation files. Given the above, I\u0027ve chosen to keep this as a plain string, but please let me know if you\u0027d prefer it otherwise.",
+      "range": {
+        "startLine": 62,
+        "startChar": 30,
+        "endLine": 62,
+        "endChar": 77
+      },
+      "revId": "3906a9c2eed19373bc99b7fa0acc373bb0e424a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
