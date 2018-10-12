@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "2368b732_3bb8a971",
+        "filename": "cipd/api/admin/v1/admin.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T00:59:52Z",
+      "side": 1,
+      "message": "where? in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1277970/1/cipd/appengine/impl/admin/admin.go#69\n?\nis a type-switch with N cases there worse than N initMapper calls? i don\u0027t know. I think map[reflect.Type] is ok. Not a big deal though",
+      "parentUuid": "868a5093_9b6b1ee3",
+      "range": {
+        "startLine": 49,
+        "startChar": 2,
+        "endLine": 49,
+        "endChar": 22
+      },
+      "revId": "60d922c769e2ffde5128d4f3a882379b187520a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "bd6f9320_696e30fe",
         "filename": "cipd/appengine/impl/admin/mappers.go",
         "patchSetId": 1
