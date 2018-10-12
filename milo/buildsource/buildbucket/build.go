@@ -448,13 +448,14 @@ func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull boo
 	if b.StartedTs != 0 {
 		if addr, step, err := getStep(c, b); err == nil {
 			ub := rawpresentation.NewURLBuilder(addr)
-			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep)
+			mb.Components, mb.PropertyGroup = rawpresentation.SubStepsToUI(c, ub, step.Substep, mb)
 		} else if b.Status == bbv1.StatusCompleted {
 			// TODO(hinoka): This might be better placed in a error butterbar.
 			mb.Components = append(mb.Components, &ui.BuildComponent{
-				Label:  ui.NewEmptyLink("Failed to fetch step information from LogDog"),
-				Text:   strings.Split(err.Error(), "\n"),
-				Status: model.InfraFailure,
+				ParentBuild: mb,
+				Label:       ui.NewEmptyLink("Failed to fetch step information from LogDog"),
+				Text:        strings.Split(err.Error(), "\n"),
+				Status:      model.InfraFailure,
 			})
 		}
 	}
