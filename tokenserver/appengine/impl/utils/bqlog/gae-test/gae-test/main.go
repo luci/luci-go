@@ -23,6 +23,9 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
+
+	"cloud.google.com/go/bigquery"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
@@ -38,13 +41,26 @@ var goatTeleportations = bqlog.Log{
 	TableID:   "teleportations",
 }
 
+type goatTeleportationEvent struct {
+	GoatID     int
+	InstanceID string
+	Time       time.Time
+}
+
+// Save is part of bigquery.ValueSaver interface.
+func (e *goatTeleportationEvent) Save() (map[string]bigquery.Value, string, error) {
+	return map[string]bigquery.Value{
+		"goat_id":     e.GoatID,
+		"instance_id": e.InstanceID,
+		"time":        float64(e.Time.UnixNano()) / 1e9,
+	}, "", nil
+}
+
 func goatTeleported(ctx context.Context, id int) error {
-	return goatTeleportations.Insert(ctx, bqlog.Entry{
-		Data: map[string]interface{}{
-			"goat_id":     id,
-			"instance_id": info.InstanceID(ctx),
-			"time":        float64(clock.Now(ctx).UnixNano()) / 1e9,
-		},
+	return goatTeleportations.Insert(ctx, &goatTeleportationEvent{
+		GoatID:     id,
+		InstanceID: info.InstanceID(ctx),
+		Time:       clock.Now(ctx),
 	})
 }
 

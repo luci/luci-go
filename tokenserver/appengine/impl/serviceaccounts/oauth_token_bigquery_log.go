@@ -21,11 +21,14 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
@@ -53,37 +56,35 @@ type MintedOAuthTokenInfo struct {
 	AuthDBRev   int64                                  // revision of groups database (or 0 if unknown)
 }
 
-// toBigQueryRow returns a JSON-ish map to upload to BigQuery.
-//
-// Its schema must match 'bq/tables/oauth_tokens.schema'.
-func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
-	return map[string]interface{}{
-		"fingerprint":       utils.TokenFingerprint(i.Response.AccessToken),
-		"grant_fingerprint": utils.TokenFingerprint(i.Request.GrantToken),
-		"service_account":   i.GrantBody.ServiceAccount,
-		"oauth_scopes":      i.Request.OauthScope,
-		"proxy_identity":    i.GrantBody.Proxy,
-		"end_user_identity": i.GrantBody.EndUser,
+// toBigQueryMessage returns a message to upload to BigQuery.
+func (i *MintedOAuthTokenInfo) toBigQueryMessage() *bqpb.OAuthToken {
+	return &bqpb.OAuthToken{
+		Fingerprint:      utils.TokenFingerprint(i.Response.AccessToken),
+		GrantFingerprint: utils.TokenFingerprint(i.Request.GrantToken),
+		ServiceAccount:   i.GrantBody.ServiceAccount,
+		OauthScopes:      i.Request.OauthScope,
+		ProxyIdentity:    i.GrantBody.Proxy,
+		EndUserIdentity:  i.GrantBody.EndUser,
 
 		// Note: we are not using 'issued_at' because the returned token is often
 		// fetched from cache (and thus it was issued some time ago, not now). This
 		// timestamp is not preserved in the cache, since it can be calculated from
 		// 'expiration' if necessary.
-		"requested_at": float64(i.RequestedAt.Unix()),
-		"expiration":   float64(google.TimeFromProto(i.Response.Expiry).Unix()),
+		RequestedAt: google.NewTimestamp(i.RequestedAt),
+		Expiration:  i.Response.Expiry,
 
 		// Information supplied by the caller.
-		"audit_tags": i.Request.AuditTags,
+		AuditTags: i.Request.AuditTags,
 
 		// Information about the service account rule used.
-		"config_rev":  i.ConfigRev,
-		"config_rule": i.Rule.Name,
+		ConfigRev:  i.ConfigRev,
+		ConfigRule: i.Rule.Name,
 
 		// Information about the request handler environment.
-		"peer_ip":         i.PeerIP.String(),
-		"service_version": i.Response.ServiceVersion,
-		"gae_request_id":  i.RequestID,
-		"auth_db_rev":     i.AuthDBRev,
+		PeerIp:         i.PeerIP.String(),
+		ServiceVersion: i.Response.ServiceVersion,
+		GaeRequestId:   i.RequestID,
+		AuthDbRev:      i.AuthDBRev,
 	}
 }
 
@@ -96,7 +97,9 @@ func (i *MintedOAuthTokenInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogOAuthToken(c context.Context, i *MintedOAuthTokenInfo) error {
-	return oauthTokensLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	return oauthTokensLog.Insert(c, &bq.Row{
+		Message: i.toBigQueryMessage(),
+	})
 }
 
 // FlushOAuthTokensLog sends all buffered logged tokens to BigQuery.

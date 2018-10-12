@@ -19,10 +19,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/common/proto/google"
 
 	"go.chromium.org/luci/tokenserver/api"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -63,22 +66,22 @@ func TestMintedOAuthTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
-			"audit_tags":        []string{"k1:v1", "k2:v2"},
-			"auth_db_rev":       int64(123),
-			"config_rev":        "config-rev",
-			"config_rule":       "rule-name",
-			"end_user_identity": "user:end-user@example.com",
-			"expiration":        1.422759784e+09,
-			"fingerprint":       "3f16bed7089f4653e5ef21bfd2824d7f",
-			"gae_request_id":    "gae-request-id",
-			"grant_fingerprint": "6d2bfc0147054b3d0ad9dac8d06b6f65",
-			"oauth_scopes":      []string{"https://scope1", "https://scope2"},
-			"peer_ip":           "127.10.10.10",
-			"proxy_identity":    "user:proxy@example.com",
-			"requested_at":      1.422757984e+09,
-			"service_account":   "service-account@robots.com",
-			"service_version":   "unit-tests/mocked-ver",
+		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.OAuthToken{
+			AuditTags:        []string{"k1:v1", "k2:v2"},
+			AuthDbRev:        123,
+			ConfigRev:        "config-rev",
+			ConfigRule:       "rule-name",
+			EndUserIdentity:  "user:end-user@example.com",
+			Expiration:       &timestamp.Timestamp{Seconds: 1422759784, Nanos: 5},
+			Fingerprint:      "3f16bed7089f4653e5ef21bfd2824d7f",
+			GaeRequestId:     "gae-request-id",
+			GrantFingerprint: "6d2bfc0147054b3d0ad9dac8d06b6f65",
+			OauthScopes:      []string{"https://scope1", "https://scope2"},
+			PeerIp:           "127.10.10.10",
+			ProxyIdentity:    "user:proxy@example.com",
+			RequestedAt:      &timestamp.Timestamp{Seconds: 1422757984, Nanos: 5},
+			ServiceAccount:   "service-account@robots.com",
+			ServiceVersion:   "unit-tests/mocked-ver",
 		})
 	})
 }

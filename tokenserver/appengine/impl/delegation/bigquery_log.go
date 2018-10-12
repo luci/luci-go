@@ -19,10 +19,14 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
+
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
@@ -49,45 +53,36 @@ type MintedTokenInfo struct {
 	AuthDBRev int64                               // revision of groups database (or 0 if unknown)
 }
 
-// toBigQueryRow returns a JSON-ish map to upload to BigQuery.
-//
-// Its schema must match 'bq/tables/delegation_tokens.schema'.
-func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
+// toBigQueryMessage returns a message to upload to BigQuery.
+func (i *MintedTokenInfo) toBigQueryMessage() *bqpb.DelegationToken {
 	subtok := i.Response.DelegationSubtoken
-
-	row := map[string]interface{}{
+	return &bqpb.DelegationToken{
 		// Information about the produced token.
-		"fingerprint":        utils.TokenFingerprint(i.Response.Token),
-		"token_kind":         subtok.Kind.String(),
-		"token_id":           fmt.Sprintf("%d", subtok.SubtokenId),
-		"delegated_identity": subtok.DelegatedIdentity,
-		"requestor_identity": subtok.RequestorIdentity,
-		"issued_at":          float64(subtok.CreationTime),
-		"expiration":         float64(subtok.CreationTime + int64(subtok.ValidityDuration)),
-		"target_audience":    subtok.Audience,
-		"target_services":    subtok.Services,
+		Fingerprint:       utils.TokenFingerprint(i.Response.Token),
+		TokenKind:         subtok.Kind,
+		TokenId:           fmt.Sprintf("%d", subtok.SubtokenId),
+		DelegatedIdentity: subtok.DelegatedIdentity,
+		RequestorIdentity: subtok.RequestorIdentity,
+		IssuedAt:          &timestamp.Timestamp{Seconds: subtok.CreationTime},
+		Expiration:        &timestamp.Timestamp{Seconds: subtok.CreationTime + int64(subtok.ValidityDuration)},
+		TargetAudience:    subtok.Audience,
+		TargetServices:    subtok.Services,
 
 		// Information about the request.
-		"requested_validity": int(i.Request.ValidityDuration),
-		"requested_intent":   i.Request.Intent,
+		RequestedValidity: i.Request.ValidityDuration,
+		RequestedIntent:   i.Request.Intent,
+		Tags:              subtok.Tags,
 
 		// Information about the delegation rule used.
-		"config_rev":  i.ConfigRev,
-		"config_rule": i.Rule.Name,
+		ConfigRev:  i.ConfigRev,
+		ConfigRule: i.Rule.Name,
 
 		// Information about the request handler environment.
-		"peer_ip":         i.PeerIP.String(),
-		"service_version": i.Response.ServiceVersion,
-		"gae_request_id":  i.RequestID,
-		"auth_db_rev":     i.AuthDBRev,
+		PeerIp:         i.PeerIP.String(),
+		ServiceVersion: i.Response.ServiceVersion,
+		GaeRequestId:   i.RequestID,
+		AuthDbRev:      i.AuthDBRev,
 	}
-
-	// Bigquery doesn't like empty lists or nulls. Omit the column completely.
-	if len(subtok.Tags) != 0 {
-		row["tags"] = subtok.Tags
-	}
-
-	return row
 }
 
 // LogToken records information about the token in the BigQuery.
@@ -99,7 +94,9 @@ func (i *MintedTokenInfo) toBigQueryRow() map[string]interface{} {
 // On dev server, logs to the GAE log only, not to BigQuery (to avoid
 // accidentally pushing fake data to real BigQuery dataset).
 func LogToken(c context.Context, i *MintedTokenInfo) error {
-	return delegationTokensLog.Insert(c, bqlog.Entry{Data: i.toBigQueryRow()})
+	return delegationTokensLog.Insert(c, &bq.Row{
+		Message: i.toBigQueryMessage(),
+	})
 }
 
 // FlushTokenLog sends all buffered logged tokens to BigQuery.

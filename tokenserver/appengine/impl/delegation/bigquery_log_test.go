@@ -18,8 +18,11 @@ import (
 	"net"
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"go.chromium.org/luci/server/auth/delegation/messages"
 	"go.chromium.org/luci/tokenserver/api/admin/v1"
+	bqpb "go.chromium.org/luci/tokenserver/api/bq"
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -59,25 +62,25 @@ func TestMintedTokenInfo(t *testing.T) {
 			AuthDBRev: 123,
 		}
 
-		So(info.toBigQueryRow(), ShouldResemble, map[string]interface{}{
-			"auth_db_rev":        int64(123), // convey is pedantic about types
-			"config_rev":         "config-rev",
-			"config_rule":        "rule-name",
-			"delegated_identity": "user:delegated@example.com",
-			"expiration":         1.422939906e+09,
-			"fingerprint":        "8b7df143d91c716ecfa5fc1730022f6b",
-			"gae_request_id":     "gae-request-id",
-			"issued_at":          1.422936306e+09,
-			"peer_ip":            "127.10.10.10",
-			"requested_intent":   "intent string",
-			"requested_validity": int(3600),
-			"requestor_identity": "user:requestor@example.com",
-			"service_version":    "unit-tests/mocked-ver",
-			"tags":               []string{"k:v"},
-			"target_audience":    []string{"user:audience@example.com"},
-			"target_services":    []string{"*"},
-			"token_id":           "1234",
-			"token_kind":         "BEARER_DELEGATION_TOKEN",
+		So(info.toBigQueryMessage(), ShouldResemble, &bqpb.DelegationToken{
+			AuthDbRev:         123,
+			ConfigRev:         "config-rev",
+			ConfigRule:        "rule-name",
+			DelegatedIdentity: "user:delegated@example.com",
+			Expiration:        &timestamp.Timestamp{Seconds: 1422939906},
+			Fingerprint:       "8b7df143d91c716ecfa5fc1730022f6b",
+			GaeRequestId:      "gae-request-id",
+			IssuedAt:          &timestamp.Timestamp{Seconds: 1422936306},
+			PeerIp:            "127.10.10.10",
+			RequestedIntent:   "intent string",
+			RequestedValidity: 3600,
+			RequestorIdentity: "user:requestor@example.com",
+			ServiceVersion:    "unit-tests/mocked-ver",
+			Tags:              []string{"k:v"},
+			TargetAudience:    []string{"user:audience@example.com"},
+			TargetServices:    []string{"*"},
+			TokenId:           "1234",
+			TokenKind:         messages.Subtoken_BEARER_DELEGATION_TOKEN,
 		})
 	})
 }
