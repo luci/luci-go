@@ -22,6 +22,30 @@
       "revId": "7cf0e20246d860d92cb95415861b962e9f823ad3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36a09ae4_31c39af5",
+        "filename": "tokenserver/appengine/impl/machinetoken/bigquery_log_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-12T22:40:38Z",
+      "side": 1,
+      "message": "ShouldResemble also works in this case. ShouldResembleProto is required if proto struct was deserialized (it has some extra fields in).",
+      "parentUuid": "5df1d8e6_191a05f9",
+      "range": {
+        "startLine": 62,
+        "startChar": 31,
+        "endLine": 62,
+        "endChar": 45
+      },
+      "revId": "7cf0e20246d860d92cb95415861b962e9f823ad3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
