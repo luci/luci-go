@@ -17,6 +17,7 @@ package machinetoken
 import (
 	"crypto/x509/pkix"
 	"math/big"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,7 +67,7 @@ func TestInspectMachineTokenRPC(t *testing.T) {
 		Convey("Broken signature", func() {
 			reply, err := impl.InspectMachineToken(ctx, &admin.InspectMachineTokenRequest{
 				TokenType: tokenserver.MachineTokenType_LUCI_MACHINE_TOKEN,
-				Token:     tok[:len(tok)-11] + "0" + tok[len(tok)-10:],
+				Token:     tok[:len(tok)-16] + strings.Repeat("0", 16),
 			})
 			So(err, ShouldBeNil)
 			So(reply, ShouldResemble, &admin.InspectMachineTokenResponse{
