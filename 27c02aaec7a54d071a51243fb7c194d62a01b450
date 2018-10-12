@@ -25,6 +25,254 @@
     },
     {
       "key": {
+        "uuid": "fcfbe066_3207b42a",
+        "filename": "milo/buildsource/rawpresentation/logDogBuild.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "it is also positive, which is generally easier to understand",
+      "parentUuid": "19e7550a_f999e138",
+      "range": {
+        "startLine": 40,
+        "startChar": 75,
+        "endLine": 40,
+        "endChar": 95
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a42c80b_87539042",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "we don\u0027t reassign parentStepTitle. Why is it not a const?\nsame below",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 7
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52e9b66e_3eb2feed",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "i believe these 26 lines of js can be replaced with simpler CSS\n\n.step.collapsed::before {\n  content: \"▶\";\n}\n\n.step.expanded::before {\n  content: \"▼\";\n}",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 5
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5315e7f4_0919b4f1",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "why we are changing a bunch of nodes instead of removing a class from a container and letting the CSS engine propagate the change down? CSS supports stuff like\n\n  #mycontainer.collapsed .substeps {\n  }\n\nthis applies to all .substeps nodes under #mycontainer if the latter has collapsed class",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 46
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "458f1d13_ae98b061",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "CSS engine should do this kind of stuff",
+      "range": {
+        "startLine": 38,
+        "startChar": 4,
+        "endLine": 38,
+        "endChar": 79
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67b93bff_1f4cb708",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "mix of \u0027 and \"",
+      "range": {
+        "startLine": 39,
+        "startChar": 24,
+        "endLine": 39,
+        "endChar": 25
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e23bd376_a7897642",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "did you mean addClass?",
+      "range": {
+        "startLine": 44,
+        "startChar": 16,
+        "endLine": 44,
+        "endChar": 27
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ac66ae4_d173ee7c",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "this duplication with js wouldn\u0027t be needed if this was implemented as CSS",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6e6e0e7f_ca48ca9e",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "it seems that this line is accountable for a half of the diff in this file which propagates ParentBuild into BuildComponent.\n\ni think all we need is to set collapsed class in #steps. Then this CL will be much smaller.",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2aa34d6d_6711af8a",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "can it be just\n  class\u003d\"{{.Build.ShowPref}}\"\n?",
+      "range": {
+        "startLine": 224,
+        "startChar": 12,
+        "endLine": 224,
+        "endChar": 79
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d31212c8_3d833d65",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "nit: i think the space here was intention, to be consistent with the {{ to the left",
+      "range": {
+        "startLine": 243,
+        "startChar": 37,
+        "endLine": 243,
+        "endChar": 38
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f477ef0b_bad9ed85",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 5
@@ -45,6 +293,173 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "301f6e47_35454ffc",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "you can have a go enum based on string. \n\n  type CollapsingPreference string\n\n  const (\n    Collapsed CollapsingPreference \u003d \"collapsed\"\n    Expanded CollapsingPreference  \u003d \"expanded\"\n    NonGreen CollapsingPreference \u003d \"non-green\"\n  )\n\nthis is how other Go code is written in cases like this, so I think this code should follow that too",
+      "parentUuid": "f477ef0b_bad9ed85",
+      "range": {
+        "startLine": 62,
+        "startChar": 31,
+        "endLine": 62,
+        "endChar": 77
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9995367_b9247efe",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "looking at https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1277348/5/milo/buildsource/rawpresentation/logDogBuild.go\n\nit seems that now \n\n  (verbosity \u003d\u003d interesting) \u003c\u003d\u003e (status !\u003d success)\n\ni.e. do we set verbosity anywhere else? if no, then why is it still a field as opposed to a pure function?\n\ngiven that Hidden is removed, should it become boolean then?\nmy suggestions would make the CL larger, but that cause of that is CL combines refactoring of Verbosity with the new feature",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6f33fca2_c96df07a",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "why is added here? The responsibility of Fix is to fix inconsistencies. How assigning a ShowPref related to this responsibility?",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ca5d3dc_731238fb",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "belongs?",
+      "range": {
+        "startLine": 319,
+        "startChar": 30,
+        "endLine": 319,
+        "endChar": 36
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20e64b99_6c8754eb",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "is this a valid value for ShowPref? should it be one of the constants above?",
+      "range": {
+        "startLine": 391,
+        "startChar": 9,
+        "endLine": 391,
+        "endChar": 11
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9a02a806_dc71bed3",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "nit: this name is a bit abstract in this context. How one reading this code is supposed to realize that this is about collapsing steps? Please choose a name that conveys the meaning better",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 13
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "461166ab_1728e7aa",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "should be a const",
+      "range": {
+        "startLine": 153,
+        "startChar": 8,
+        "endLine": 153,
+        "endChar": 19
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4e2aa50_c49bca52",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-12T20:05:21Z",
+      "side": 1,
+      "message": "i think we should set pref in this method, not inside Fix",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
