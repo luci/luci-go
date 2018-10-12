@@ -68,6 +68,30 @@
       "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b5cf2459_f5c843aa",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-12T15:38:38Z",
+      "side": 1,
+      "message": "Actually, it would make writing tests harder, therefore showPerf will continue to live here and the callsite will look like this:\n\n  build.Fix(showPref(c))\n\nThis will also allow updating tests to generate correct ShowPref value in the json expectations above rather than \"\". Please let me know if you\u0027re okay with such a plan and I\u0027ll make the necessary changes.",
+      "parentUuid": "cc33b1e4_d9601bfe",
+      "range": {
+        "startLine": 164,
+        "startChar": 1,
+        "endLine": 164,
+        "endChar": 29
+      },
+      "revId": "667d56ba4667b71b5b5f36b9e834fa20ee115741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
