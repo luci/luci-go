@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9792dbc1_9aa8f0dd",
+        "filename": "mp/cmd/snapshot/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-12T01:43:56Z",
+      "side": 1,
+      "message": "map?",
+      "range": {
+        "startLine": 44,
+        "startChar": 14,
+        "endLine": 44,
+        "endChar": 23
+      },
+      "revId": "0faca722a2fde5468b2b27a92e7dbcd77624e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ec279b2e_edb72147",
+        "filename": "mp/cmd/snapshot/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-12T01:43:56Z",
+      "side": 1,
+      "message": "maybe error out if key:v1 and key:v2 are both specified?",
+      "range": {
+        "startLine": 82,
+        "startChar": 2,
+        "endLine": 82,
+        "endChar": 31
+      },
+      "revId": "0faca722a2fde5468b2b27a92e7dbcd77624e4f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
