@@ -87,9 +87,9 @@ func TestInsert(t *testing.T) {
 				break
 			}
 
-			decoded := []apiRawEntry{}
+			decoded := []rawEntry{}
 			So(gob.NewDecoder(bytes.NewReader(task.Payload)).Decode(&decoded), ShouldBeNil)
-			So(decoded, ShouldResemble, []apiRawEntry{
+			So(decoded, ShouldResemble, []rawEntry{
 				{
 					InsertID: "abc",
 					// Note that outter bigquery.Value deserializes into bqapi.JsonValue,
@@ -97,7 +97,7 @@ func TestInsert(t *testing.T) {
 					// encodes the whole thing to JSON and it doesn't matter what alias
 					// of interface{} is used for that.
 					Data: map[string]bqapi.JsonValue{
-						"a": map[string]bigquery.Value{"b": "c"},
+						"a": json.RawMessage(`{"b":"c"}`),
 					},
 				},
 				{
@@ -210,7 +210,7 @@ func TestFlush(t *testing.T) {
 			for _, req := range reqs {
 				for _, row := range req.Rows {
 					ids.Add(row.InsertId)
-					ints.Add(string(row.Json["i"].(int)))
+					ints.Add(string(row.Json["i"].(json.RawMessage)))
 				}
 			}
 			So(ints.Len(), ShouldEqual, 20)

@@ -202,23 +202,35 @@ type Log struct {
 // It gets gob-serialized and put into Task Queue.
 type rawEntry struct {
 	InsertID string
-	Data     map[string]bigquery.Value
-}
-
-// apiRawEntry must have exact same form as rawEntry.
-//
-// It is what rawEntry gets gob-deserialized to, before it gets send to BQ API.
-//
-// bigquery.Value and bqapi.JsonValue are both just interface{} and thus
-// compatible with each other. By deserializing rawEntry as apiRawEntry we avoid
-// allocating unnecessary array just to convert []rawEntry into []apiRawEntry.
-type apiRawEntry struct {
-	InsertID string
-	Data     map[string]bqapi.JsonValue
+	Data     map[string]bqapi.JsonValue // more like map[string]json.RawMessage
 }
 
 func init() {
-	gob.Register(map[string]bigquery.Value{})
+	gob.Register(json.RawMessage{})
+}
+
+// valuesToJSON converts bigquery.Value map to a simplest JSON-marshallable
+// bqapi.JsonValue map.
+//
+// bigquery.Value can actually be pretty complex (e.g. time.Time, big.Rat),
+// which makes it difficult to put into gob-encodable rawEntry.
+//
+// So instead we convert it to JSON before putting into Gob (bqapi library does
+// it later anyway). But since BigQuery API wants a map[string]bqapi.JsonValue
+// we return map[string]json.RawMessage instead of complete raw []byte.
+func valuesToJSON(in map[string]bigquery.Value) (map[string]bqapi.JsonValue, error) {
+	if len(in) == 0 {
+		return nil, nil
+	}
+	out := make(map[string]bqapi.JsonValue, len(in))
+	for k, v := range in {
+		blob, err := json.Marshal(v)
+		if err != nil {
+			return nil, errors.Annotate(err, "failed to JSON-serialize key %q", k).Err()
+		}
+		out[k] = json.RawMessage(blob)
+	}
+	return out, nil
 }
 
 // Insert adds a bunch of entries to the buffer of pending entries.
@@ -236,10 +248,14 @@ func (l *Log) Insert(ctx context.Context, rows ...bigquery.ValueSaver) (err erro
 
 	entries := make([]rawEntry, len(rows))
 	for i, r := range rows {
-		entries[i].Data, entries[i].InsertID, err = r.Save()
+		values, iid, err := r.Save()
 		if err != nil {
 			return errors.Annotate(err, "failure when saving row #%d", i).Err()
 		}
+		if entries[i].Data, err = valuesToJSON(values); err != nil {
+			return errors.Annotate(err, "failure when serializing row #%d", i).Err()
+		}
+		entries[i].InsertID = iid
 	}
 
 	if l.DumpEntriesToLogger && logging.IsLogging(ctx, logging.Debug) {
@@ -567,7 +583,7 @@ func (f *asyncFlusher) upload(ctx context.Context, chunk chunk) (int, error) {
 	// 'biquery.Value{}' in Data. They are compatible. This cheat avoids to do
 	// a lot of allocations just to appease the type checker.
 	var rows []*bqapi.TableDataInsertAllRequestRows
-	entries := []apiRawEntry{}
+	var entries []rawEntry
 
 	for _, task := range chunk.Tasks {
 		ctx := logging.SetField(ctx, "name", task.Name)
