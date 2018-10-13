@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ee4d5ed_c01238a8",
+        "filename": "tokenserver/appengine/impl/utils/bqlog/bqlog.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-13T00:32:35Z",
+      "side": 1,
+      "message": "nit: JSON",
+      "range": {
+        "startLine": 221,
+        "startChar": 13,
+        "endLine": 221,
+        "endChar": 17
+      },
+      "revId": "e7ae4dfa1b4ec5e48cf35b7b7fa25aa92150aa04",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
