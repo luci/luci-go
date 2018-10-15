@@ -21,7 +21,6 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": [
       "Running Waiting..."
     ],
@@ -60,7 +59,6 @@
         "Duration": 0
       },
       "Type": "Summary",
-      "Verbosity": 0,
       "Text": [
         "waiting for annotation stream"
       ],
@@ -68,5 +66,6 @@
     }
   ],
   "PropertyGroup": null,
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

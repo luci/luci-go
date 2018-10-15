@@ -21,7 +21,6 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
     "Text": null,
     "Children": null
   },
@@ -58,7 +57,6 @@
         "Duration": 3616635310000
       },
       "Type": "Summary",
-      "Verbosity": 2,
       "Text": [
         "Job likely failed to start."
       ],
@@ -76,5 +74,6 @@
       ]
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

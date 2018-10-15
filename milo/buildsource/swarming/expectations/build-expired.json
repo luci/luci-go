@@ -49,7 +49,6 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 0,
     "Text": [
       "Task expired"
     ],
@@ -77,5 +76,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

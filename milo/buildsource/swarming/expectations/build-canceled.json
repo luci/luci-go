@@ -63,7 +63,6 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
     "Text": [
       "Task cancelled by user"
     ],
@@ -110,7 +109,6 @@
         "Duration": 2000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": null,
       "Children": []
     },
@@ -148,7 +146,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -195,5 +192,6 @@
       ]
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

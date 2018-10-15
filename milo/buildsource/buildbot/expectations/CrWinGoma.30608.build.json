@@ -32,7 +32,6 @@
       "Duration": 930372274000
     },
     "Type": "Summary",
-    "Verbosity": 0,
     "Text": [
       "build successful"
     ],
@@ -129,7 +128,6 @@
         "Duration": 930361415000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "running steps via annotated script"
       ],
@@ -168,7 +166,6 @@
         "Duration": 24792523000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "update_scripts",
         "git - 94dbe001292dcec3423c5d1b0374826ff89a8f46"
@@ -199,7 +196,6 @@
         "Duration": 6026451000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_properties"
       ],
@@ -238,7 +234,6 @@
         "Duration": 1961000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_build",
         "running recipe: \"chromium\""
@@ -269,7 +264,6 @@
         "Duration": 11061463000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "taskkill"
       ],
@@ -308,7 +302,6 @@
         "Duration": 64068097000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "bot_update",
         "[133GB/2047GB used (6%)]"
@@ -339,7 +332,6 @@
         "Duration": 2182000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma"
       ],
@@ -378,7 +370,6 @@
         "Duration": 5138000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.install cipd",
         "cipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
@@ -418,7 +409,6 @@
         "Duration": 4837000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.ensure_installed"
       ],
@@ -448,7 +438,6 @@
         "Duration": 15240266000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "gclient runhooks"
       ],
@@ -487,7 +476,6 @@
         "Duration": 2008540000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "get compile targets for scripts"
       ],
@@ -526,7 +514,6 @@
         "Duration": 10048793000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "read test spec",
         "path: C:\\b\\build\\slave\\CrWinGoma\\build\\src\\testing\\buildbot\\chromium.fyi.json"
@@ -557,7 +544,6 @@
         "Duration": 12412000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "cleanup_temp"
       ],
@@ -587,7 +573,6 @@
         "Duration": 45870953000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "generate_build_files"
       ],
@@ -626,7 +611,6 @@
         "Duration": 662301324000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "compile"
       ],
@@ -656,7 +640,6 @@
         "Duration": 35905665000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "base_unittests",
         "base_unittests",
@@ -689,7 +672,6 @@
         "Duration": 40790079000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "content_unittests",
         "content_unittests",
@@ -721,7 +703,6 @@
         "Duration": 2631000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "process_dumps"
       ],
@@ -760,7 +741,6 @@
         "Duration": 86822000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "recipe result"
       ],
@@ -1139,5 +1119,6 @@
         "tools/gn/variables.cc"
       ]
     }
-  ]
+  ],
+  "ShowPref": "collapsed"
 }
