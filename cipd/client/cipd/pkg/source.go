@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows
-
-package local
+package pkg
 
 import (
-	"syscall"
+	"context"
+	"io"
 )
 
-func init() {
-	// We explicitly set the Umask for tests so that we can deterministically
-	// check the file modes of created files and directories.
-	syscall.Umask(022)
+// Source is an underlying data source with CIPD package data.
+type Source interface {
+	io.ReadSeeker
+
+	// Close can be used to indicate to the storage (filesystem and/or cache)
+	// layer that this instance is actually bad. The storage layer can then
+	// evict/revoke, etc. the bad file.
+	Close(ctx context.Context, corrupt bool) error
 }

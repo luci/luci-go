@@ -21,7 +21,7 @@ import (
 
 	"go.chromium.org/luci/common/errors"
 
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 )
@@ -76,7 +76,7 @@ func verifyParser(_ *itemParserState, f *File, val string) error {
 }
 
 func paranoidModeParser(_ *itemParserState, f *File, val string) error {
-	p := local.ParanoidMode(val)
+	p := deployer.ParanoidMode(val)
 	if err := p.Validate(); err != nil {
 		return fmt.Errorf("bad $ParanoidMode: %s", err)
 	}

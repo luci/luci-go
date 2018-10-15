@@ -31,8 +31,8 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/local"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ func (site *installationSite) modifyConfig(cb func(cfg *installationSiteConfig) 
 //
 // If pkgs is empty array, it returns list of all installed packages.
 func (site *installationSite) installedPackages(ctx context.Context) (map[string][]pinInfo, error) {
-	d := local.NewDeployer(site.siteRoot)
+	d := deployer.New(site.siteRoot)
 
 	allPins, err := d.FindDeployed(ctx)
 	if err != nil {
@@ -301,7 +301,7 @@ func (site *installationSite) installPackage(ctx context.Context, pkgName, versi
 	// Already installed?
 	doInstall := true
 	if !force {
-		d := local.NewDeployer(site.siteRoot)
+		d := deployer.New(site.siteRoot)
 		switch state, err := d.CheckDeployed(ctx, "", pkgName, cipd.NotParanoid, cipd.WithoutManifest); {
 		case err != nil:
 			logging.Errorf(ctx, "Failed to check installed package state - %s", err)

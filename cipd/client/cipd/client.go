@@ -68,11 +68,12 @@ import (
 	"go.chromium.org/luci/grpc/prpc"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -202,7 +203,7 @@ type Client interface {
 	// 'timeout' specifies for how long to wait until the instance hash is
 	// verified by the storage backend. If 0, default CASFinalizationTimeout will
 	// be used.
-	RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error
+	RegisterInstance(ctx context.Context, instance pkg.Instance, timeout time.Duration) error
 
 	// DescribeInstance returns information about a package instance.
 	//
@@ -231,7 +232,7 @@ type Client interface {
 	//
 	// It returns an InstanceFile pointing to the raw package data. The caller
 	// must close it when done.
-	FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error)
+	FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error)
 
 	// FetchInstanceTo downloads a package instance file into the given writer.
 	//
@@ -423,7 +424,7 @@ func NewClient(opts ClientOptions) (Client, error) {
 		cas:           cas,
 		repo:          repo,
 		storage:       storage,
-		deployer:      local.NewDeployer(opts.Root),
+		deployer:      deployer.New(opts.Root),
 	}, nil
 }
 
@@ -480,7 +481,7 @@ type clientImpl struct {
 	// storage knows how to upload and download raw binaries using signed URLs.
 	storage storage
 	// deployer knows how to install packages to local file system. Thread safe.
-	deployer local.Deployer
+	deployer deployer.Deployer
 
 	// tagCache is a file-system based cache of resolved tags.
 	tagCache     *internal.TagCache
@@ -909,7 +910,7 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, instance local.PackageInstance, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, instance pkg.Instance, timeout time.Duration) error {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
@@ -1226,7 +1227,7 @@ func (client *clientImpl) FetchPackageRefs(ctx context.Context, packageName stri
 	return refs, nil
 }
 
-func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
+func (client *clientImpl) FetchInstance(ctx context.Context, pin common.Pin) (pkg.Source, error) {
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return nil, err
 	}
@@ -1265,7 +1266,7 @@ func (client *clientImpl) FetchInstanceTo(ctx context.Context, pin common.Pin, o
 	return err
 }
 
-func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (local.InstanceFile, error) {
+func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.Pin) (pkg.Source, error) {
 	// Use temp file for storing package data. Delete it when the caller is done
 	// with it.
 	f, err := client.deployer.TempFile(ctx, pin.InstanceID)
@@ -1295,7 +1296,7 @@ func (client *clientImpl) fetchInstanceNoCache(ctx context.Context, pin common.P
 	return tmp, nil
 }
 
-func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (local.InstanceFile, error) {
+func (client *clientImpl) fetchInstanceWithCache(ctx context.Context, pin common.Pin, cache *internal.InstanceCache) (pkg.Source, error) {
 	attempt := 0
 	for {
 		attempt++
@@ -1389,7 +1390,7 @@ func (client *clientImpl) remoteFetchInstance(ctx context.Context, pin common.Pi
 // thus the callback should be idempotent.
 //
 // Any other error from the callback is propagated as is.
-func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb func(local.PackageInstance) error) error {
+func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb func(pkg.Instance) error) error {
 	if err := common.ValidatePin(pin, common.KnownHash); err != nil {
 		return err
 	}
@@ -1402,7 +1403,7 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 		}
 
 		defer func() {
-			corrupt := local.IsCorruptionError(err)
+			corrupt := deployer.IsCorruptionError(err)
 			if clErr := instanceFile.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
 				logging.Warningf(ctx, "cipd: failed to close the package file - %s", clErr)
 			}
@@ -1410,8 +1411,8 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 
 		// Open the instance. This reads its manifest. 'FetchInstance' has verified
 		// the hash already, so skip the verification.
-		instance, err := local.OpenInstance(ctx, instanceFile, local.OpenInstanceOpts{
-			VerificationMode: local.SkipHashVerification,
+		instance, err := deployer.OpenInstance(ctx, instanceFile, deployer.OpenInstanceOpts{
+			VerificationMode: deployer.SkipHashVerification,
 			InstanceID:       pin.InstanceID,
 		})
 		if err != nil {
@@ -1426,7 +1427,7 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 	}
 
 	err := doit()
-	if err != nil && local.IsCorruptionError(err) {
+	if err != nil && deployer.IsCorruptionError(err) {
 		logging.WithError(err).Warningf(ctx, "cipd: unpacking failed, retrying.")
 		err = doit()
 	}
@@ -1437,7 +1438,7 @@ func (client *clientImpl) FetchAndDeployInstance(ctx context.Context, subdir str
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return err
 	}
-	return client.fetchAndDo(ctx, pin, func(instance local.PackageInstance) error {
+	return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
 		_, err := client.deployer.DeployInstance(ctx, subdir, instance)
 		return err
 	})
@@ -1588,15 +1589,15 @@ func (client *clientImpl) repairDeployed(ctx context.Context, subdir string, pin
 	// missing. Skip this if we only need to restore symlinks.
 	if len(plan.ToRedeploy) != 0 {
 		logging.Infof(ctx, "Getting %q to extract %d missing file(s) from it", pin.PackageName, len(plan.ToRedeploy))
-		return client.fetchAndDo(ctx, pin, func(instance local.PackageInstance) error {
-			return client.deployer.RepairDeployed(ctx, subdir, pin, local.RepairParams{
+		return client.fetchAndDo(ctx, pin, func(instance pkg.Instance) error {
+			return client.deployer.RepairDeployed(ctx, subdir, pin, deployer.RepairParams{
 				Instance:   instance,
 				ToRedeploy: plan.ToRedeploy,
 				ToRelink:   plan.ToRelink,
 			})
 		})
 	}
-	return client.deployer.RepairDeployed(ctx, subdir, pin, local.RepairParams{
+	return client.deployer.RepairDeployed(ctx, subdir, pin, deployer.RepairParams{
 		ToRelink: plan.ToRelink,
 	})
 }
