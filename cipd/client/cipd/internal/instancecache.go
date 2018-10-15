@@ -32,7 +32,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -90,7 +90,7 @@ type cacheFile struct {
 // This will be true if the cached file is determined to be broken at a higher
 // level.
 //
-// This implements local.InstanceFile
+// This implements pkg.Source.
 func (f *cacheFile) Close(ctx context.Context, corrupt bool) error {
 	var err error
 	if err = f.File.Close(); err != nil && err != os.ErrClosed {
@@ -123,7 +123,7 @@ func (f *cacheFile) UnderlyingFile() *os.File {
 // Get searches for the instance in the cache and opens it for reading.
 //
 // If the instance is not found, returns an os.IsNotExists error.
-func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (local.InstanceFile, error) {
+func (c *InstanceCache) Get(ctx context.Context, pin common.Pin, now time.Time) (pkg.Source, error) {
 	if err := common.ValidatePin(pin, common.AnyHash); err != nil {
 		return nil, err
 	}

@@ -19,24 +19,24 @@ package cipd
 // dependency cycles.
 
 import (
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 )
 
 // ParanoidMode specifies how paranoid EnsurePackages should be.
-type ParanoidMode = local.ParanoidMode
+type ParanoidMode = deployer.ParanoidMode
 
 const (
 	// NotParanoid indicates that EnsurePackages should trust its metadata
 	// directory: if a package is marked as installed there, it should be
 	// considered correctly installed in the site root too.
-	NotParanoid = local.NotParanoid
+	NotParanoid = deployer.NotParanoid
 
 	// CheckPresence indicates that CheckDeployed should verify all files
 	// that are supposed to be installed into the site root are indeed present
 	// there, and reinstall ones that are missing.
 	//
 	// Note that it will not check file's content or file mode. Only its presence.
-	CheckPresence = local.CheckPresence
+	CheckPresence = deployer.CheckPresence
 )
 
 // ManifestMode is used to indicate presence of absence of manifest when calling
@@ -44,11 +44,11 @@ const (
 //
 // Just to improve code readability, since Func(..., WithManifest) is less
 // cryptic than Func(..., true).
-type ManifestMode = local.ManifestMode
+type ManifestMode = deployer.ManifestMode
 
 const (
 	// WithoutManifest indicates the function should skip manifest.
-	WithoutManifest = local.WithoutManifest
+	WithoutManifest = deployer.WithoutManifest
 	// WithManifest indicates the function should handle manifest.
-	WithManifest = local.WithManifest
+	WithManifest = deployer.WithManifest
 )
