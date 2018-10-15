@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7aa52251_9bb3dfe5",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T17:08:25Z",
+      "side": 1,
+      "message": "bit: extra indentation?",
+      "range": {
+        "startLine": 221,
+        "startChar": 10,
+        "endLine": 221,
+        "endChar": 12
+      },
+      "revId": "33bf3e5c9eb474ca2890da225a582fe3cfe09491",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1c557d2_c1c63f44",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T17:08:25Z",
+      "side": 1,
+      "message": "return ShowPref(showPref)\n\nshowPrefValue is not needed\n\nhowever, stepping back, I don\u0027t think we need ShowPref type in the first place, see another comment",
+      "range": {
+        "startLine": 49,
+        "startChar": 1,
+        "endLine": 52,
+        "endChar": 17
+      },
+      "revId": "33bf3e5c9eb474ca2890da225a582fe3cfe09491",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
