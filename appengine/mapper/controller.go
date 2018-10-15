@@ -235,7 +235,7 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 			return errors.Annotate(err, "failed to store Job entity").Tag(transient.Tag).Err()
 		}
 		return disp.AddTask(c, &tq.Task{
-			Title: fmt.Sprintf("job-%d", job.ID),
+			Title: fmt.Sprintf("split:job-%d", job.ID),
 			Payload: &tasks.SplitAndLaunch{
 				JobId: int64(job.ID),
 			},
@@ -405,7 +405,7 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 		}
 
 		return ctl.tq().AddTask(c, &tq.Task{
-			Title: fmt.Sprintf("job-%d", job.ID),
+			Title: fmt.Sprintf("fanout:job-%d", job.ID),
 			Payload: &tasks.FanOutShards{
 				JobId: int64(job.ID),
 			},
@@ -680,7 +680,7 @@ func makeProcessShardTask(job JobID, shardID, taskNum int64, named bool) *tq.Tas
 	// since shardID is already globally unique, but it doesn't hurt. Useful for
 	// debugging and when looking at logs and pending TQ tasks.
 	t := &tq.Task{
-		Title: fmt.Sprintf("job-%d-shard-%d-task-%d", job, shardID, taskNum),
+		Title: fmt.Sprintf("map:job-%d-shard-%d-task-%d", job, shardID, taskNum),
 		Payload: &tasks.ProcessShard{
 			JobId:   int64(job),
 			ShardId: shardID,
@@ -697,7 +697,7 @@ func makeProcessShardTask(job JobID, shardID, taskNum int64, named bool) *tq.Tas
 // causes updateJobStateHandler to execute.
 func (ctl *Controller) requestJobStateUpdate(c context.Context, jobID JobID, shardID int64) error {
 	return ctl.tq().AddTask(c, &tq.Task{
-		Title: fmt.Sprintf("job-%d-shard-%d", jobID, shardID),
+		Title: fmt.Sprintf("notify:job-%d-shard-%d", jobID, shardID),
 		Payload: &tasks.RequestJobStateUpdate{
 			JobId:   int64(jobID),
 			ShardId: shardID,
@@ -721,7 +721,7 @@ func (ctl *Controller) requestJobStateUpdateHandler(c context.Context, payload p
 
 	err := ctl.tq().AddTask(c, &tq.Task{
 		DeduplicationKey: dedupKey,
-		Title:            fmt.Sprintf("job-%d", msg.JobId),
+		Title:            fmt.Sprintf("update:job-%d", msg.JobId),
 		ETA:              time.Unix(eta, 0),
 		Payload:          &tasks.UpdateJobState{JobId: msg.JobId},
 	})
