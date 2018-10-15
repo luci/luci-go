@@ -59,7 +59,7 @@ func (q *Query) ToDatastoreQuery() *datastore.Query {
 type JobConfig struct {
 	Query      Query  // a query identifying a set of entities
 	Mapper     ID     // ID of a registered mapper to apply to entities
-	Params     Params // JSON-serializable parameters for the mapper
+	Params     []byte // arbitrary user-provided data to pass to the mapper
 	ShardCount int    // number of shards to split the key range into
 	PageSize   int    // how many entities to process at once in each shard
 

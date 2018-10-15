@@ -49,11 +49,11 @@ func shardIndex(c context.Context) int {
 }
 
 type testMapper struct {
-	process func(context.Context, Params, []*datastore.Key) error
+	process func(context.Context, []byte, []*datastore.Key) error
 }
 
 func (tm *testMapper) MapperID() ID { return "test-mapper" }
-func (tm *testMapper) Process(c context.Context, p Params, k []*datastore.Key) error {
+func (tm *testMapper) Process(c context.Context, p []byte, k []*datastore.Key) error {
 	if tm.process == nil {
 		return nil
 	}
@@ -107,10 +107,8 @@ func TestController(t *testing.T) {
 				Query: Query{
 					Kind: "intEnt",
 				},
-				Mapper: mapper.MapperID(),
-				Params: Params{
-					"k1": "v1",
-				},
+				Mapper:        mapper.MapperID(),
+				Params:        []byte("zzz"),
 				ShardCount:    4,
 				PageSize:      33, // make it weird to trigger "incomplete" pages
 				PagesPerTask:  2,  // to trigger multiple mapping tasks in a chain
@@ -247,8 +245,9 @@ func TestController(t *testing.T) {
 			}
 
 			Convey("No errors when processing shards", func() {
-				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
 					So(len(keys), ShouldBeLessThanOrEqualTo, cfg.PageSize)
+					So(p, ShouldResemble, cfg.Params)
 					updateSeen(keys)
 					return nil
 				}
@@ -304,7 +303,7 @@ func TestController(t *testing.T) {
 				page := 0
 				processed := 0
 
-				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
 					if shardIndex(c) == 1 {
 						page++
 						if page == 2 {
@@ -341,7 +340,7 @@ func TestController(t *testing.T) {
 			Convey("Job aborted midway", func() {
 				processed := 0
 
-				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
 					processed += len(keys)
 
 					job, err := ctl.AbortJob(ctx, jobID)
@@ -377,7 +376,7 @@ func TestController(t *testing.T) {
 			Convey("processShardHandler saves state on transient errors", func() {
 				pages := 0
 
-				mapper.process = func(c context.Context, p Params, keys []*datastore.Key) error {
+				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
 					pages++
 					if pages == 2 {
 						return errors.New("boom", transient.Tag)
