@@ -327,7 +327,7 @@ func (s *shard) info() *ShardInfo {
 
 	if runtime := s.Updated.Sub(s.Created); runtime > 0 {
 		rate = float64(s.ProcessedCount) / runtime.Seconds()
-		if s.ExpectedCount != -1 {
+		if s.ExpectedCount != -1 && rate > 0.0001 {
 			secs := float64(s.ExpectedCount) / rate
 			eta = google.NewTimestamp(s.Created.Add(time.Duration(float64(time.Second) * secs)))
 		}
