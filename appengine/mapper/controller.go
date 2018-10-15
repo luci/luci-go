@@ -71,7 +71,7 @@ type Mapper interface {
 	//
 	// The function is called outside of any transactions, so it can start its own
 	// if needed.
-	Process(c context.Context, p Params, keys []*datastore.Key) error
+	Process(c context.Context, params []byte, keys []*datastore.Key) error
 }
 
 // Controller is responsible for starting, progressing and finishing mapping

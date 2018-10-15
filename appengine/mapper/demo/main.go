@@ -36,7 +36,7 @@ func (dumpingMapper) MapperID() mapper.ID {
 	return "dumping/v1"
 }
 
-func (dumpingMapper) Process(c context.Context, params mapper.Params, keys []*datastore.Key) error {
+func (dumpingMapper) Process(c context.Context, params []byte, keys []*datastore.Key) error {
 	logging.Infof(c, "Got %d keys:", len(keys))
 	for _, k := range keys {
 		logging.Infof(c, "%s", k)
