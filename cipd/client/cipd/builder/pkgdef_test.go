@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package builder
 
 import (
 	"io/ioutil"
@@ -28,6 +28,8 @@ import (
 )
 
 func TestLoadPackageDef(t *testing.T) {
+	t.Parallel()
+
 	Convey("LoadPackageDef empty works", t, func() {
 		body := strings.NewReader(`{"package": "package/name"}`)
 		def, err := LoadPackageDef(body, nil)
@@ -182,6 +184,8 @@ func TestLoadPackageDef(t *testing.T) {
 }
 
 func TestExclusion(t *testing.T) {
+	t.Parallel()
+
 	Convey("makeExclusionFilter works", t, func() {
 		filter, err := makeExclusionFilter("a/b/c", []string{
 			".*\\.pyc",
@@ -224,6 +228,8 @@ func TestExclusion(t *testing.T) {
 }
 
 func TestFindFiles(t *testing.T) {
+	t.Parallel()
+
 	Convey("Given a temp directory", t, func() {
 		tempDir := mkTempDir()
 
@@ -337,6 +343,13 @@ func TestFindFiles(t *testing.T) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+func mkTempDir() string {
+	tempDir, err := ioutil.TempDir("", "cipd_test")
+	So(err, ShouldBeNil)
+	Reset(func() { os.RemoveAll(tempDir) })
+	return tempDir
+}
 
 func mkDir(root string, path string) {
 	abs := filepath.Join(root, filepath.FromSlash(path))

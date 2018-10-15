@@ -12,18 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
-
-// ManifestMode is used to indicate presence of absence of manifest when calling
-// various functions.
-//
-// Just to improve code readability, since Func(..., WithManifest) is less
-// cryptic than Func(..., true).
-type ManifestMode bool
-
-const (
-	// WithoutManifest indicates the function should skip manifest.
-	WithoutManifest ManifestMode = false
-	// WithManifest indicates the function should handle manifest.
-	WithManifest ManifestMode = true
-)
+// Package pkg contains interfaces and struct related to CIPD package files.
+package pkg

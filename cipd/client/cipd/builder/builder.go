@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package builder
 
 import (
 	"archive/zip"
@@ -35,8 +35,8 @@ import (
 	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
 
-// BuildInstanceOptions defines options for BuildInstance function.
-type BuildInstanceOptions struct {
+// Options defines options for BuildInstance function.
+type Options struct {
 	// Input is a list of files to add to the package.
 	Input []fs.File
 
@@ -55,11 +55,11 @@ type BuildInstanceOptions struct {
 	// CompressionLevel defines deflate compression level in range [0-9].
 	CompressionLevel int
 
-	// overrideFormatVersion, if set, will override the default format version put
+	// OverrideFormatVersion, if set, will override the default format version put
 	// into the manifest file.
 	//
-	// This is useful for testing.
-	overrideFormatVersion string
+	// This is useful for testing. Should not be normally used by other code.
+	OverrideFormatVersion string
 }
 
 // BuildInstance builds a new package instance.
@@ -69,7 +69,7 @@ type BuildInstanceOptions struct {
 //
 // The final binary is written to opts.Output. Some output may be written even
 // if BuildInstance eventually returns an error.
-func BuildInstance(ctx context.Context, opts BuildInstanceOptions) error {
+func BuildInstance(ctx context.Context, opts Options) error {
 	err := common.ValidatePackageName(opts.PackageName)
 	if err != nil {
 		return err
@@ -314,7 +314,7 @@ func (m *manifestFile) Open() (io.ReadCloser, error) {
 
 // makeManifestFile generates a package manifest file and returns it as
 // File interface.
-func makeManifestFile(opts BuildInstanceOptions) (fs.File, error) {
+func makeManifestFile(opts Options) (fs.File, error) {
 	if opts.VersionFile != "" && !fs.IsCleanSlashPath(opts.VersionFile) {
 		return nil, fmt.Errorf("version file path should be a clean path relative to a package root: %s", opts.VersionFile)
 	}
@@ -322,8 +322,8 @@ func makeManifestFile(opts BuildInstanceOptions) (fs.File, error) {
 		return nil, err
 	}
 	formatVer := cipdpkg.ManifestFormatVersion
-	if opts.overrideFormatVersion != "" {
-		formatVer = opts.overrideFormatVersion
+	if opts.OverrideFormatVersion != "" {
+		formatVer = opts.OverrideFormatVersion
 	}
 	buf := &bytes.Buffer{}
 	err := cipdpkg.WriteManifest(&cipdpkg.Manifest{

@@ -44,10 +44,12 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd"
+	"go.chromium.org/luci/cipd/client/cipd/builder"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipdpkg"
@@ -455,10 +457,10 @@ func (opts *inputOptions) registerFlags(f *flag.FlagSet) {
 }
 
 // prepareInput processes inputOptions by collecting all files to be added to
-// a package and populating BuildInstanceOptions. Caller is still responsible to
-// fill out Output field of BuildInstanceOptions.
-func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
-	empty := local.BuildInstanceOptions{}
+// a package and populating builder.Options. Caller is still responsible to fill
+// out Output field of Options.
+func (opts *inputOptions) prepareInput() (builder.Options, error) {
+	empty := builder.Options{}
 
 	if opts.compressionLevel < 0 || opts.compressionLevel > 9 {
 		return empty, makeCLIError("invalid -compression-level: must be in [0-9] set")
@@ -488,7 +490,7 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		if err != nil {
 			return empty, err
 		}
-		return local.BuildInstanceOptions{
+		return builder.Options{
 			Input:            files,
 			PackageName:      packageName,
 			InstallMode:      opts.installMode,
@@ -517,7 +519,7 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 			return empty, err
 		}
 		defer f.Close()
-		pkgDef, err := local.LoadPackageDef(f, opts.vars)
+		pkgDef, err := builder.LoadPackageDef(f, opts.vars)
 		if err != nil {
 			return empty, err
 		}
@@ -529,7 +531,7 @@ func (opts *inputOptions) prepareInput() (local.BuildInstanceOptions, error) {
 		if err != nil {
 			return empty, err
 		}
-		return local.BuildInstanceOptions{
+		return builder.Options{
 			Input:            files,
 			PackageName:      pkgDef.Package,
 			VersionFile:      pkgDef.VersionFile(),
@@ -2171,7 +2173,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 	buildOpts.Output = out
 
 	// Build the package.
-	err = local.BuildInstance(ctx, buildOpts)
+	err = builder.BuildInstance(ctx, buildOpts)
 	out.Close()
 	if err != nil {
 		os.Remove(instanceFile)
@@ -2215,8 +2217,8 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
-		VerificationMode: local.CalculateHash,
+	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
@@ -2225,7 +2227,7 @@ func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo
 	defer closer()
 	inspectInstance(ctx, inst, false)
 
-	d := local.NewDeployer(root)
+	d := deployer.New(root)
 	defer d.CleanupTrash(ctx)
 
 	// TODO(iannucci): add subdir arg to deployRun
@@ -2305,8 +2307,8 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 	// the hash.
 	out.Close()
 	ok = true
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
-		VerificationMode: local.SkipHashVerification,
+	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+		VerificationMode: deployer.SkipHashVerification,
 		InstanceID:       pin.InstanceID,
 	})
 	if err != nil {
@@ -2350,8 +2352,8 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.HashAlgo, listFiles bool) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
-		VerificationMode: local.CalculateHash,
+	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
@@ -2362,7 +2364,7 @@ func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.
 	return inst.Pin(), nil
 }
 
-func inspectInstance(ctx context.Context, inst local.PackageInstance, listFiles bool) {
+func inspectInstance(ctx context.Context, inst pkg.Instance, listFiles bool) {
 	fmt.Printf("Instance: %s\n", inst.Pin())
 	if listFiles {
 		fmt.Println("Package files:")
@@ -2440,8 +2442,8 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, closer, err := local.OpenInstanceFile(ctx, instanceFile, local.OpenInstanceOpts{
-		VerificationMode: local.CalculateHash,
+	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         opts.hashAlgo(),
 	})
 	if err != nil {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package deployer
 
 import (
 	"context"
@@ -36,6 +36,7 @@ import (
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
@@ -113,7 +114,7 @@ type RepairParams struct {
 	// Instance holds the original package data.
 	//
 	// Must be present if ToRedeploy is not empty. Otherwise not used.
-	Instance PackageInstance
+	Instance pkg.Instance
 
 	// ToRedeploy is a list of files that needs to be extracted from the instance
 	// and relinked into the site root.
@@ -136,7 +137,7 @@ type Deployer interface {
 	// Due to a historical bug, if inst contains any files which are intended to
 	// be deployed to `.cipd/*`, they will not be extracted and you'll see
 	// warnings logged.
-	DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error)
+	DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (common.Pin, error)
 
 	// CheckDeployed checks whether a given package is deployed at the given
 	// subdir.
@@ -186,8 +187,8 @@ type Deployer interface {
 	CleanupTrash(ctx context.Context)
 }
 
-// NewDeployer return default Deployer implementation.
-func NewDeployer(root string) Deployer {
+// New return default Deployer implementation.
+func New(root string) Deployer {
 	var err error
 	if root == "" {
 		err = fmt.Errorf("site root path is not provided")
@@ -206,7 +207,7 @@ func NewDeployer(root string) Deployer {
 
 type errDeployer struct{ err error }
 
-func (d errDeployer) DeployInstance(context.Context, string, PackageInstance) (common.Pin, error) {
+func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance) (common.Pin, error) {
 	return common.Pin{}, d.err
 }
 
@@ -278,7 +279,7 @@ type deployerImpl struct {
 	fs fs.FileSystem
 }
 
-func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst PackageInstance) (common.Pin, error) {
+func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst pkg.Instance) (common.Pin, error) {
 	if err := common.ValidateSubdir(subdir); err != nil {
 		return common.Pin{}, err
 	}
@@ -602,7 +603,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 			}
 		}
 	} else {
-		// Without PackageInstance present we can repair only symlinks based on info
+		// Without pkg.Instance present we can repair only symlinks based on info
 		// in the manifest.
 		repairableFiles = map[string]fs.File{}
 		for _, f := range pkg.Manifest.Files {

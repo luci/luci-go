@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package deployer
 
 import (
 	"bytes"
@@ -27,7 +27,9 @@ import (
 	"time"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/builder"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/cipd/common"
@@ -61,14 +63,14 @@ func shouldBeSameJSONDict(actual interface{}, expected ...interface{}) string {
 	return ShouldEqual(actualNorm, expectedNorm)
 }
 
-type bytesInstanceFile struct {
+type bytesSource struct {
 	*bytes.Reader
 }
 
-func (bytesInstanceFile) Close(context.Context, bool) error { return nil }
+func (bytesSource) Close(context.Context, bool) error { return nil }
 
-func bytesFile(data []byte) InstanceFile {
-	return bytesInstanceFile{bytes.NewReader(data)}
+func bytesFile(data []byte) pkg.Source {
+	return bytesSource{bytes.NewReader(data)}
 }
 
 func TestPackageReading(t *testing.T) {
@@ -77,7 +79,7 @@ func TestPackageReading(t *testing.T) {
 	Convey("Open empty package works", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := BuildInstance(ctx, BuildInstanceOptions{
+		err := builder.BuildInstance(ctx, builder.Options{
 			Output:           &out,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -119,7 +121,7 @@ func TestPackageReading(t *testing.T) {
 	Convey("Open empty package with unexpected instance ID", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := BuildInstance(ctx, BuildInstanceOptions{
+		err := builder.BuildInstance(ctx, builder.Options{
 			Output:           &out,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -168,7 +170,7 @@ func TestPackageReading(t *testing.T) {
 		defer os.Remove(tempFilePath)
 
 		// Write empty package to it.
-		err = BuildInstance(ctx, BuildInstanceOptions{
+		err = builder.BuildInstance(ctx, builder.Options{
 			Output:           tempFile,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -205,7 +207,7 @@ func TestPackageReading(t *testing.T) {
 		}
 
 		out := bytes.Buffer{}
-		err := BuildInstance(ctx, BuildInstanceOptions{
+		err := builder.BuildInstance(ctx, builder.Options{
 			Input:            inFiles,
 			Output:           &out,
 			PackageName:      "testing",
@@ -358,13 +360,13 @@ func TestPackageReading(t *testing.T) {
 		}
 
 		out := bytes.Buffer{}
-		err := BuildInstance(ctx, BuildInstanceOptions{
+		err := builder.BuildInstance(ctx, builder.Options{
 			Input:                 inFiles,
 			Output:                &out,
 			PackageName:           "testing",
 			VersionFile:           "subpath/version.json",
 			CompressionLevel:      5,
-			overrideFormatVersion: "1",
+			OverrideFormatVersion: "1",
 		})
 		So(err, ShouldBeNil)
 

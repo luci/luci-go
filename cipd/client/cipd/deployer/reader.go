@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package local
+package deployer
 
 import (
 	"archive/zip"
@@ -34,6 +34,7 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
@@ -58,28 +59,6 @@ const (
 // ErrHashMismatch is an error when package hash doesn't match.
 var ErrHashMismatch = errors.New("package hash mismatch")
 
-// PackageInstance represents a binary CIPD package file (with manifest inside).
-type PackageInstance interface {
-	// Pin identifies package name and concreted instance ID of this package file.
-	Pin() common.Pin
-
-	// Files returns a list of files to deploy with the package.
-	Files() []fs.File
-
-	// DataReader returns reader that reads raw package data.
-	DataReader() io.ReadSeeker
-}
-
-// InstanceFile is an underlying data file for a PackageInstance.
-type InstanceFile interface {
-	io.ReadSeeker
-
-	// Close is a bit non-standard, and can be used to indicate to the storage
-	// (filesystem and/or cache) layer that this instance is actually bad. The
-	// storage layer can then evict/revoke, etc. the bad file.
-	Close(ctx context.Context, corrupt bool) error
-}
-
 // OpenInstanceOpts is passed to OpenInstance and OpenInstanceFile.
 type OpenInstanceOpts struct {
 	// VerificationMode specifies what to do with the hash of the instance file.
@@ -95,7 +74,7 @@ type OpenInstanceOpts struct {
 	//
 	// Passing CalculateHash instructs OpenPackage to calculate the hash of the
 	// instance file using the given HashAlgo, and use the resulting digest
-	// as an instance ID of the new PackageInstance object. InstanceID is ignored
+	// as an instance ID of the new pkg.Instance object. InstanceID is ignored
 	// in this case and should be "".
 	VerificationMode VerificationMode
 
@@ -111,7 +90,7 @@ type OpenInstanceOpts struct {
 }
 
 // OpenInstance prepares the package for extraction.
-func OpenInstance(ctx context.Context, r InstanceFile, opts OpenInstanceOpts) (PackageInstance, error) {
+func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg.Instance, error) {
 	out := &packageInstance{data: r}
 	if err := out.open(opts); err != nil {
 		return nil, err
@@ -129,7 +108,7 @@ func (d dummyInstance) Close(context.Context, bool) error { return d.File.Close(
 //
 // The caller of this function must call closer() if err != nil to close the
 // underlying file.
-func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (inst PackageInstance, closer func() error, err error) {
+func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (inst pkg.Instance, closer func() error, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return
@@ -383,10 +362,10 @@ func (r *progressReporter) advance(f fs.File) {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// PackageInstance implementation.
+// pkg.Instance implementation.
 
 type packageInstance struct {
-	data       InstanceFile
+	data       pkg.Source
 	instanceID string
 	zip        *zip.Reader
 	files      []fs.File

@@ -18,12 +18,12 @@ import (
 	"context"
 	"os"
 
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 )
 
 // deleteOnClose is os.File that self-deletes once it closes.
 //
-// Implements local.InstanceFile interface. Used by fetchInstanceNoCache.
+// Implements pkg.Source interface. Used by fetchInstanceNoCache.
 type deleteOnClose struct {
 	*os.File
 }
@@ -45,7 +45,7 @@ func (d deleteOnClose) UnderlyingFile() *os.File {
 }
 
 // underlyingFile is only used by tests.
-func underlyingFile(i local.InstanceFile) *os.File {
+func underlyingFile(i pkg.Source) *os.File {
 	return i.(interface {
 		UnderlyingFile() *os.File
 	}).UnderlyingFile()

@@ -34,10 +34,12 @@ import (
 	"go.chromium.org/luci/common/clock/testclock"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/client/cipd/builder"
+	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
-	"go.chromium.org/luci/cipd/client/cipd/local"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
@@ -1242,20 +1244,20 @@ type bytesInstanceFile struct {
 
 func (bytesInstanceFile) Close(context.Context, bool) error { return nil }
 
-func bytesInstance(data []byte) local.InstanceFile {
+func bytesInstance(data []byte) pkg.Source {
 	return bytesInstanceFile{bytes.NewReader(data)}
 }
 
-func fakeInstance(name string) local.PackageInstance {
+func fakeInstance(name string) pkg.Instance {
 	ctx := context.Background()
 	out := bytes.Buffer{}
-	err := local.BuildInstance(ctx, local.BuildInstanceOptions{
+	err := builder.BuildInstance(ctx, builder.Options{
 		Output:      &out,
 		PackageName: name,
 	})
 	So(err, ShouldBeNil)
-	inst, err := local.OpenInstance(ctx, bytesInstance(out.Bytes()), local.OpenInstanceOpts{
-		VerificationMode: local.CalculateHash,
+	inst, err := deployer.OpenInstance(ctx, bytesInstance(out.Bytes()), deployer.OpenInstanceOpts{
+		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         api.HashAlgo_SHA256,
 	})
 	So(err, ShouldBeNil)
