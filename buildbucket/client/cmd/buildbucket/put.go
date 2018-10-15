@@ -99,6 +99,8 @@ func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcomma
 		return r.done(ctx, err)
 	}
 
+	fmt.Printf("%s\n", resBytes)
+
 	var res buildbucket.ApiPutBatchResponseMessage
 	if err := json.Unmarshal(resBytes, &res); err != nil {
 		return r.done(ctx, err)
@@ -119,11 +121,9 @@ func (r *putBatchRun) Run(a subcommands.Application, args []string, env subcomma
 				i, r.Error.Reason, r.Error.Message)
 		}
 	}
+
 	if hasErrors {
 		return 1
 	}
-
-	fmt.Printf("%s\n", resBytes)
 	return 0
-
 }
