@@ -46,33 +46,35 @@ import (
 // reuse them when adding new mappers or significantly changing existing ones.
 type ID string
 
-// Mapper knows how to apply some function to a slice of entities.
+// Mapper applies some function to the given slice of entities, given by
+// their keys.
 //
-// Mappers are supplied by the users of the library and registered in the
-// controller via RegisterMapper call.
-type Mapper interface {
-	// MapperID uniquely identifies this mapper.
-	//
-	// It will be used as identifier of the mapper across process boundaries.
-	MapperID() ID
+// May be called multiple times for same key (thus should be idempotent).
+//
+// Returning a transient error indicates that the processing of this batch of
+// keys should be retried (even if some keys were processed successfully).
+//
+// Returning a fatal error causes the entire shard (and eventually the entire
+// job) to be marked as failed. The processing of the failed shard stops right
+// away, but other shards are kept running until completion (or their own
+// failure).
+//
+// The function is called outside of any transactions, so it can start its own
+// if needed.
+type Mapper func(c context.Context, keys []*datastore.Key) error
 
-	// Process applies some function to the given slice of entities, given by
-	// their keys.
-	//
-	// May be called multiple times for same key (thus should be idempotent).
-	//
-	// Returning a transient error indicates that the processing of this batch of
-	// keys should be retried (even if some keys were processed successfully).
-	//
-	// Returning a fatal error causes the entire shard (and eventually the entire
-	// job) to be marked as failed. The processing of the failed shard stops right
-	// away, but other shards are kept running until completion (or their own
-	// failure).
-	//
-	// The function is called outside of any transactions, so it can start its own
-	// if needed.
-	Process(c context.Context, params []byte, keys []*datastore.Key) error
-}
+// Factory knows how to construct instances of Mapper.
+//
+// Factory is supplied by the users of the library and registered in the
+// controller via RegisterFactory call.
+//
+// It is used to get a mapper to process a set of pages within a shard. It takes
+// a Job (including its Config and Params) and a shard index, so it can prepare
+// the mapper for processing of this specific shard.
+//
+// Returning a transient error triggers an eventual retry. Returning a fatal
+// error causes the shard (eventually the entire job) to be marked as failed.
+type Factory func(c context.Context, j *Job, shardIdx int) (Mapper, error)
 
 // Controller is responsible for starting, progressing and finishing mapping
 // jobs.
@@ -106,7 +108,7 @@ type Controller struct {
 	ControlQueue string
 
 	m       sync.RWMutex
-	mappers map[ID]Mapper
+	mappers map[ID]Factory
 	disp    *tq.Dispatcher
 
 	// Called in splitAndLaunchHandler during tests.
@@ -152,18 +154,16 @@ func (ctl *Controller) tq() *tq.Dispatcher {
 	return ctl.disp
 }
 
-// RegisterMapper adds the given mapper to the internal registry.
+// RegisterFactory adds the given mapper factory to the internal registry.
 //
 // Intended to be used during init() time or early during the process
-// initialization. Panics if a mapper with such ID has already been registered.
+// initialization. Panics if a factory with such ID has already been registered.
 //
 // The mapper ID will be used internally to identify which mapper a job should
-// be using. If a mapper disappears while the job is running (e.g. if the
+// be using. If a factory disappears while the job is running (e.g. if the
 // service binary is updated and new binary doesn't have the mapper registered
 // anymore), the job ends with a failure.
-func (ctl *Controller) RegisterMapper(m Mapper) {
-	id := m.MapperID()
-
+func (ctl *Controller) RegisterFactory(id ID, m Factory) {
 	ctl.m.Lock()
 	defer ctl.m.Unlock()
 
@@ -172,21 +172,36 @@ func (ctl *Controller) RegisterMapper(m Mapper) {
 	}
 
 	if ctl.mappers == nil {
-		ctl.mappers = make(map[ID]Mapper, 1)
+		ctl.mappers = make(map[ID]Factory, 1)
 	}
 	ctl.mappers[id] = m
 }
 
-// getMapper returns a registered mapper or an error.
+// getFactory returns a registered mapper factory or an error.
 //
 // Grabs the reader lock inside. Can return only fatal errors.
-func (ctl *Controller) getMapper(id ID) (Mapper, error) {
+func (ctl *Controller) getFactory(id ID) (Factory, error) {
 	ctl.m.RLock()
 	defer ctl.m.RUnlock()
 	if m, ok := ctl.mappers[id]; ok {
 		return m, nil
 	}
-	return nil, errors.Reason("no mapper with ID %q registered", id).Err()
+	return nil, errors.Reason("no mapper factory with ID %q registered", id).Err()
+}
+
+// initMapper instantiates a Mapper through a registered factory.
+//
+// May return fatal and transient errors.
+func (ctl *Controller) initMapper(c context.Context, j *Job, shardIdx int) (Mapper, error) {
+	f, err := ctl.getFactory(j.Config.Mapper)
+	if err != nil {
+		return nil, errors.Annotate(err, "when initializing mapper").Err()
+	}
+	m, err := f(c, j, shardIdx)
+	if err != nil {
+		return nil, errors.Annotate(err, "error from mapper factory %q", j.Config.Mapper).Err()
+	}
+	return m, nil
 }
 
 // LaunchJob launches a new mapping job, returning its ID (that can be used to
@@ -199,7 +214,7 @@ func (ctl *Controller) LaunchJob(c context.Context, j *JobConfig) (JobID, error)
 	if err := j.Validate(); err != nil {
 		return 0, errors.Annotate(err, "bad job config").Err()
 	}
-	if _, err := ctl.getMapper(j.Mapper); err != nil {
+	if _, err := ctl.getFactory(j.Mapper); err != nil {
 		return 0, errors.Annotate(err, "bad job config").Err()
 	}
 
@@ -467,7 +482,7 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 	if err != nil || sh == nil {
 		return errors.Annotate(err, "when fetching shard state").Err()
 	}
-	c = withShardIndex(c, sh.Index)
+	c = logging.SetField(c, "shardIdx", sh.Index)
 
 	logging.Infof(c,
 		"Resuming processing of the shard (launched %s ago)",
@@ -486,9 +501,13 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 		return ctl.finishShard(c, sh.ID, 0, errJobAborted)
 	}
 
-	// Fail the shard if the mapper is suddenly gone.
-	mapper, err := ctl.getMapper(job.Config.Mapper)
-	if err != nil {
+	// Prepare the mapper by giving the factory job parameters.
+	mapper, err := ctl.initMapper(c, job, sh.Index)
+	switch {
+	case transient.Tag.In(err):
+		return errors.Annotate(err, "transient error when instantiating a mapper").Err()
+	case err != nil:
+		// Kill the shard if the factory returns a fatal error.
 		return ctl.finishShard(c, sh.ID, 0, err)
 	}
 
@@ -551,8 +570,8 @@ func (ctl *Controller) processShardHandler(c context.Context, payload proto.Mess
 			len(keys),
 			keys[0].String(),
 			keys[len(keys)-1].String())
-		if err = mapper.Process(c, job.Config.Params, keys); err != nil {
-			err = errors.Annotate(err, "in the mapper %q", mapper.MapperID()).Err()
+		if err = mapper(c, keys); err != nil {
+			err = errors.Annotate(err, "while mapping %d keys", len(keys)).Err()
 			break
 		}
 		lastKey = keys[len(keys)-1]
@@ -649,15 +668,6 @@ func (ctl *Controller) finishShard(c context.Context, shardID, processedCount in
 		return true, ctl.requestJobStateUpdate(c, sh.JobID, sh.ID)
 	})
 	return errors.Annotate(err, "when marking the shard as finished").Err()
-}
-
-var shardIndexKey = "mapper.ShardIndexForTest"
-
-// withShardIndex puts the shard index into the context for logging and tests.
-func withShardIndex(c context.Context, idx int) context.Context {
-	c = logging.SetField(c, "shardIdx", idx)
-	c = context.WithValue(c, &shardIndexKey, idx)
-	return c
 }
 
 // makeProcessShardTask creates a ProcessShard tq.Task.

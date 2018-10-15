@@ -43,23 +43,6 @@ var (
 	testTimeAsProto = google.NewTimestamp(testTime)
 )
 
-// shardIndex extracts the index of the shard processed by the mapper.
-func shardIndex(c context.Context) int {
-	return c.Value(&shardIndexKey).(int)
-}
-
-type testMapper struct {
-	process func(context.Context, []byte, []*datastore.Key) error
-}
-
-func (tm *testMapper) MapperID() ID { return "test-mapper" }
-func (tm *testMapper) Process(c context.Context, p []byte, k []*datastore.Key) error {
-	if tm.process == nil {
-		return nil
-	}
-	return tm.process(c, p, k)
-}
-
 type intEnt struct {
 	ID int64 `gae:"$id"`
 }
@@ -72,14 +55,25 @@ func TestController(t *testing.T) {
 		ctx, _ = testclock.UseTime(ctx, testTime)
 
 		dispatcher := &tq.Dispatcher{}
-		mapper := &testMapper{}
 
 		ctl := Controller{
 			MapperQueue:  "mapper-queue",
 			ControlQueue: "control-queue",
 		}
-		ctl.RegisterMapper(mapper)
 		ctl.Install(dispatcher)
+
+		// mapperFunc is set by test cases.
+		var mapperFunc func(params []byte, shardIdx int, keys []*datastore.Key) error
+
+		const testMapperID ID = "test-mapper"
+		ctl.RegisterFactory(testMapperID, func(_ context.Context, j *Job, idx int) (Mapper, error) {
+			return func(_ context.Context, keys []*datastore.Key) error {
+				if mapperFunc == nil {
+					return nil
+				}
+				return mapperFunc(j.Config.Params, idx, keys)
+			}, nil
+		})
 
 		tqt := tqtesting.GetTestable(ctx, dispatcher)
 		tqt.CreateQueues()
@@ -107,7 +101,7 @@ func TestController(t *testing.T) {
 				Query: Query{
 					Kind: "intEnt",
 				},
-				Mapper:        mapper.MapperID(),
+				Mapper:        testMapperID,
 				Params:        []byte("zzz"),
 				ShardCount:    4,
 				PageSize:      33, // make it weird to trigger "incomplete" pages
@@ -245,9 +239,9 @@ func TestController(t *testing.T) {
 			}
 
 			Convey("No errors when processing shards", func() {
-				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
+				mapperFunc = func(params []byte, shardIdx int, keys []*datastore.Key) error {
 					So(len(keys), ShouldBeLessThanOrEqualTo, cfg.PageSize)
-					So(p, ShouldResemble, cfg.Params)
+					So(params, ShouldResemble, cfg.Params)
 					updateSeen(keys)
 					return nil
 				}
@@ -303,8 +297,8 @@ func TestController(t *testing.T) {
 				page := 0
 				processed := 0
 
-				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
-					if shardIndex(c) == 1 {
+				mapperFunc = func(_ []byte, shardIdx int, keys []*datastore.Key) error {
+					if shardIdx == 1 {
 						page++
 						if page == 2 {
 							return errors.New("boom")
@@ -319,7 +313,7 @@ func TestController(t *testing.T) {
 				visitShards(func(s shard) {
 					if s.Index == 1 {
 						So(s.State, ShouldEqual, State_FAIL)
-						So(s.Error, ShouldEqual, `in the mapper "test-mapper": boom`)
+						So(s.Error, ShouldEqual, `while mapping 33 keys: boom`)
 					} else {
 						So(s.State, ShouldEqual, State_SUCCESS)
 						So(s.ProcessTaskNum, ShouldEqual, 2)
@@ -340,7 +334,7 @@ func TestController(t *testing.T) {
 			Convey("Job aborted midway", func() {
 				processed := 0
 
-				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
+				mapperFunc = func(_ []byte, shardIdx int, keys []*datastore.Key) error {
 					processed += len(keys)
 
 					job, err := ctl.AbortJob(ctx, jobID)
@@ -376,7 +370,7 @@ func TestController(t *testing.T) {
 			Convey("processShardHandler saves state on transient errors", func() {
 				pages := 0
 
-				mapper.process = func(c context.Context, p []byte, keys []*datastore.Key) error {
+				mapperFunc = func(_ []byte, shardIdx int, keys []*datastore.Key) error {
 					pages++
 					if pages == 2 {
 						return errors.New("boom", transient.Tag)
@@ -402,7 +396,7 @@ func TestController(t *testing.T) {
 		Convey("With simple starting job", func() {
 			cfg := JobConfig{
 				Query:      Query{Kind: "intEnt"},
-				Mapper:     mapper.MapperID(),
+				Mapper:     testMapperID,
 				ShardCount: 4,
 				PageSize:   64,
 			}
