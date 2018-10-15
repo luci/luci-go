@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b0216298_6c19759d",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/viewer.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0f31fe3_88d8efb4",
+      "range": {
+        "startLine": 32,
+        "startChar": 24,
+        "endLine": 32,
+        "endChar": 56
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d41ca077_655e9ef5",
         "filename": "logdog/appengine/cmd/coordinator/static/static/js/viewer.js",
         "patchSetId": 7
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "4ed1063f_e942b9f8",
+        "filename": "logdog/appengine/cmd/coordinator/static/static/js/viewer.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "I\u0027m not a huge fan of this syntax (I feel like using new fancy features, especially in web FE, make things harder to read), but I\u0027ll do it.",
+      "parentUuid": "d41ca077_655e9ef5",
+      "range": {
+        "startLine": 37,
+        "startChar": 22,
+        "endLine": 37,
+        "endChar": 35
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "284a19f9_7921462a",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -68,6 +116,30 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8734a52d_d1e5db36",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "Nope",
+      "parentUuid": "284a19f9_7921462a",
+      "range": {
+        "startLine": 89,
+        "startChar": 16,
+        "endLine": 89,
+        "endChar": 18
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +189,54 @@
     },
     {
       "key": {
+        "uuid": "4d992262_f81ceea5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "actually ID isn\u0027t needed.",
+      "parentUuid": "759ae354_2df52fe1",
+      "range": {
+        "startLine": 104,
+        "startChar": 23,
+        "endLine": 104,
+        "endChar": 28
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a0a11528_36d4d017",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "It was an intentional stylistic choice since this goes into the global namespace, I felt like \"full\" and \"lite\" were too generic to go into the namespace since they\u0027re only important in the lines context.  But putting them in global is fine too.",
+      "parentUuid": "a1544137_2206dc5b",
+      "range": {
+        "startLine": 104,
+        "startChar": 29,
+        "endLine": 104,
+        "endChar": 35
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "480e1fc4_ecb53d36",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -137,6 +257,30 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b09ac79_4902c5ac",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "hm what do you know, it\u0027s not used.  I guess that\u0027s because passing in ?format\u003dgarbage becomes the same as passing in ?format\u003dhtml.",
+      "parentUuid": "480e1fc4_ecb53d36",
+      "range": {
+        "startLine": 156,
+        "startChar": 1,
+        "endLine": 156,
+        "endChar": 24
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "d500d6ee_9d9e4c02",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "I think the jury is out on which one is cheaper, but I think for structs with little data (in this case it\u0027s 3 strings, which means 3 pointer) it\u0027s better to pass by value, because otherwise you have to do a nil check\n\nfunc (uo *userOptions) formatHTML() bool {\n  if uo \u003d\u003d nil {\n    return false\n  }\n  return ...\n}\n\nAlso according to the Go FAQ: https://golang.org/doc/faq#methods_on_values_or_pointers\n\"For types such as basic types, slices, and small structs, a value receiver is very cheap so unless the semantics of the method requires a pointer, a value receiver is efficient and clear.\"\n\nisHTML() is a better name, I\u0027ll use that.",
+      "parentUuid": "57c43d24_6a2a88ea",
+      "range": {
+        "startLine": 176,
+        "startChar": 9,
+        "endLine": 176,
+        "endChar": 20
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec7f85b6_0f7a5e46",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -183,6 +351,30 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a66cb9bd_9ca1b966",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "Because thakis said so, and dpranke (who is technically my TL) told me to go with thakis.",
+      "parentUuid": "ec7f85b6_0f7a5e46",
+      "range": {
+        "startLine": 185,
+        "startChar": 48,
+        "endLine": 185,
+        "endChar": 52
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "ec79a148_8eb151e5",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cedfec2e_4ed61843",
+      "range": {
+        "startLine": 214,
+        "startChar": 79,
+        "endLine": 214,
+        "endChar": 84
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "45e34cef_7c349a66",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -223,6 +439,24 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c476089c_5fb13b44",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-15T19:42:02Z",
+      "side": 1,
+      "message": "1. We\u0027ll still render the HTML header if it is not text, but the user asks for HTML (ie if it\u0027s binary or datagram, ?format\u003dhtml essentially means \"please pretty print my data\").\n2. Datagrams aren\u0027t supported ATM (check done in L285), so at the moment the L482 check is actually useless.  But even if we did support datagrams, I think this is correct, because if the raw format is requested, we don\u0027t write the HTML header, and if HTML format is requested, we always write the HTML header.",
+      "parentUuid": "45e34cef_7c349a66",
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
