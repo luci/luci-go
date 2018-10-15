@@ -32,7 +32,6 @@
       "Duration": 1176396231000
     },
     "Type": "Summary",
-    "Verbosity": 0,
     "Text": [
       "failed compile (with patch)"
     ],
@@ -91,7 +90,6 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
       "Text": [
         "running steps via annotated script"
       ],
@@ -137,7 +135,6 @@
         "Duration": 11593599000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "update_scripts\u003cbr\u003egit - 0a2c62a48b28ce87da2409b08cdf2c6d50d75bc1"
       ],
@@ -167,7 +164,6 @@
         "Duration": 5755625000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_properties"
       ],
@@ -206,7 +202,6 @@
         "Duration": 1088000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_build\u003cbr\u003erunning recipe: \"chromium_trybot\""
       ],
@@ -236,7 +231,6 @@
         "Duration": 5038333000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "taskkill"
       ],
@@ -275,7 +269,6 @@
         "Duration": 137401385000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "bot_update\u003cbr\u003e[165GB/249GB used (66%)]"
       ],
@@ -305,7 +298,6 @@
         "Duration": 561000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma"
       ],
@@ -344,7 +336,6 @@
         "Duration": 4653000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.install cipd\u003cbr\u003ecipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
       ],
@@ -383,7 +374,6 @@
         "Duration": 2074000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.ensure_installed"
       ],
@@ -413,7 +403,6 @@
         "Duration": 5539419000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "swarming.py --version\u003cbr\u003e0.8.4"
       ],
@@ -443,7 +432,6 @@
         "Duration": 9678432000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "gclient runhooks (with patch)"
       ],
@@ -482,7 +470,6 @@
         "Duration": 10801000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "get compile targets for scripts"
       ],
@@ -521,7 +508,6 @@
         "Duration": 781518000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "read test spec (chromium.gpu.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.gpu.json"
       ],
@@ -560,7 +546,6 @@
         "Duration": 5016322000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "read test spec (chromium.win.json)\u003cbr\u003epath: E:\\b\\build\\slave\\win\\build\\src\\testing\\buildbot\\chromium.win.json"
       ],
@@ -590,7 +575,6 @@
         "Duration": 24529000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure git tooling on windows"
       ],
@@ -629,7 +613,6 @@
         "Duration": 1429000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "git diff to analyze patch"
       ],
@@ -668,7 +651,6 @@
         "Duration": 5124000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "read filter exclusion spec\u003cbr\u003epath: 'testing\\\\buildbot\\\\trybot_analyze_config.json'"
       ],
@@ -714,7 +696,6 @@
         "Duration": 24623967000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "analyze"
       ],
@@ -744,7 +725,6 @@
         "Duration": 6828000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "cleanup_temp"
       ],
@@ -774,7 +754,6 @@
         "Duration": 2295000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "clean isolated files"
       ],
@@ -813,7 +792,6 @@
         "Duration": 6081769000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "generate_build_files (with patch)"
       ],
@@ -852,7 +830,6 @@
         "Duration": 132432766000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
       "Text": [
         "compile (with patch)"
       ],
@@ -882,7 +859,6 @@
         "Duration": 5053855000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "taskkill (2)"
       ],
@@ -921,7 +897,6 @@
         "Duration": 64995916000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "bot_update (without patch)\u003cbr\u003e[165GB/249GB used (66%)]"
       ],
@@ -951,7 +926,6 @@
         "Duration": 11595619000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "gclient runhooks (without patch)"
       ],
@@ -990,7 +964,6 @@
         "Duration": 8347540000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "generate_build_files (without patch)"
       ],
@@ -1029,7 +1002,6 @@
         "Duration": 726120607000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "compile (without patch)"
       ],
@@ -1059,7 +1031,6 @@
         "Duration": 1095000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "mark: before_tests"
       ],
@@ -1098,7 +1069,6 @@
         "Duration": 694000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "Failure reason"
       ],
@@ -1345,5 +1315,6 @@
       "CommitURL": "",
       "File": []
     }
-  ]
+  ],
+  "ShowPref": "collapsed"
 }

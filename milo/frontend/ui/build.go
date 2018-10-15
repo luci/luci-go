@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type=Verbosity
 //go:generate stringer -type=ComponentType
 
 package ui
@@ -30,6 +29,14 @@ import (
 	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
+)
+
+type ShowPref string
+
+const (
+	Collapsed ShowPref = "collapsed"
+	Expanded  ShowPref = "expanded"
+	NonGreen  ShowPref = "non-green"
 )
 
 // MiloBuild denotes a full renderable Milo build page.
@@ -58,6 +65,9 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+
+	// Mode to render the steps. Default is Collapsed.
+	ShowPref ShowPref
 }
 
 var statusPrecendence = map[model.Status]int{
@@ -101,17 +111,11 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	}
 }
 
-// Fix fixes various inconsistencies that users expect to see as part of the Build,
-// but didn't make sense as part of the individual components, including:
+// Fix fixes various inconsistencies that users expect to see as part of the
+// Build, but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
+// * Parent steps containing failed steps should also be marked as failed.
 func (b *MiloBuild) Fix() {
-	switch b.Summary.Status {
-	case model.InfraFailure, model.Failure:
-		b.Summary.Verbosity = Interesting
-	case model.Success, model.Running, model.NotRun:
-		b.Summary.Verbosity = Hidden
-	}
-
 	for _, comp := range b.Components {
 		fixComponent(comp, b.Summary.ExecutionTime.Finished, "")
 	}
@@ -268,22 +272,6 @@ type LogoBanner struct {
 	Device []Logo
 }
 
-// Verbosity can be tagged onto a BuildComponent to indicate whether it should
-// be hidden or annuciated.
-type Verbosity int
-
-const (
-	// Normal items are displayed as usual.  This is the default.
-	Normal Verbosity = iota
-
-	// Hidden items are by default not displayed.
-	Hidden
-
-	// Interesting items are a signal that they should be annuciated, or
-	// pre-fetched.
-	Interesting
-)
-
 // Interval is a time interval which has a start, an end and a duration.
 type Interval struct {
 	// Started denotes the start time of this interval.
@@ -312,6 +300,9 @@ func NewInterval(c context.Context, start, end time.Time) Interval {
 
 // BuildComponent represents a single Step, subsetup, attempt, or recipe.
 type BuildComponent struct {
+	// Build that this component belongs to. Only defined for steps and substeps.
+	ParentBuild *MiloBuild `json:"-"`
+
 	// The parent of this component.  For buildbot and swarmbucket builds, this
 	// refers to the builder.  For DM, this refers to whatever triggered the Quest.
 	ParentLabel *Link `json:",omitempty"`
@@ -357,9 +348,6 @@ type BuildComponent struct {
 	// This is either "RECIPE" or "STEP".  An attempt is considered a recipe.
 	Type ComponentType
 
-	// Verbosity indicates how important this step is.
-	Verbosity Verbosity
-
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
 	Text []string
@@ -377,6 +365,13 @@ func (bc *BuildComponent) TextBR() []string {
 		result = append(result, rLineBreak.Split(t, -1)...)
 	}
 	return result
+}
+
+func (bc *BuildComponent) ShowPref() ShowPref {
+	if bc.ParentBuild == nil {
+		return Collapsed
+	}
+	return bc.ParentBuild.ShowPref
 }
 
 // Navigation is the top bar of the page, used for navigating out of the page.

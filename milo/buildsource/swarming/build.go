@@ -529,9 +529,8 @@ func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.Swarmin
 	}
 	build.Summary.ExecutionTime = ui.NewInterval(c, started, ended)
 	infoComp := infoComponent(model.InfraFailure,
-		"LogDog stream not found", "Job likely failed to start.")
+		"LogDog stream not found", "Job likely failed to start.", build)
 	infoComp.ExecutionTime = build.Summary.ExecutionTime
-	infoComp.Verbosity = ui.Interesting
 	build.Components = append(build.Components, infoComp)
 	return addTaskToBuild(c, host, res, build)
 }
@@ -588,7 +587,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 	if fr.log != "" {
 		lds, err := streamsFromAnnotatedLog(c, fr.log)
 		if err != nil {
-			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error())
+			comp := infoComponent(model.InfraFailure, "Milo annotation parser", err.Error(), &build)
 			comp.SubLink = append(comp.SubLink, ui.LinkSet{
 				ui.NewLink("swarming task", taskURL.String(), ""),
 			})
@@ -662,19 +661,19 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 		}
 		logging.WithError(err).Errorf(c, "User cannot access stream.")
 		build.Components = append(build.Components, infoComponent(model.Running,
-			"Waiting...", "waiting for annotation stream"))
+			"Waiting...", "waiting for annotation stream", &build))
 
 	case coordinator.ErrNoAccess:
 		logging.WithError(err).Errorf(c, "User cannot access stream.")
 		build.Components = append(build.Components, infoComponent(model.Failure,
-			"No Access", "no access to annotation stream"))
+			"No Access", "no access to annotation stream", &build))
 	case nil:
 		// continue
 
 	default:
 		logging.WithError(err).Errorf(c, "Failed to load LogDog annotation stream.")
 		build.Components = append(build.Components, infoComponent(model.InfraFailure,
-			"Error", "failed to load annotation stream: "+err.Error()))
+			"Error", "failed to load annotation stream: "+err.Error(), &build))
 	}
 
 	// Skip these steps if the LogDog stream doesn't exist.
@@ -700,12 +699,13 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 
 // infoComponent is a helper function to return a resp build step with the
 // given status, label, and step text.
-func infoComponent(st model.Status, label, text string) *ui.BuildComponent {
+func infoComponent(st model.Status, label, text string, mb *ui.MiloBuild) *ui.BuildComponent {
 	return &ui.BuildComponent{
-		Type:   ui.Summary,
-		Label:  ui.NewEmptyLink(label),
-		Text:   []string{text},
-		Status: st,
+		ParentBuild: mb,
+		Type:        ui.Summary,
+		Label:       ui.NewEmptyLink(label),
+		Text:        []string{text},
+		Status:      st,
 	}
 }
 

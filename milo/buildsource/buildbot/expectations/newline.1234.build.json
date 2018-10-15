@@ -32,7 +32,6 @@
       "Duration": 1176396231000
     },
     "Type": "Summary",
-    "Verbosity": 0,
     "Text": [
       "failed compile (with patch)"
     ],
@@ -80,7 +79,6 @@
         "Duration": 1176393917000
       },
       "Type": "Recipe",
-      "Verbosity": 2,
       "Text": [
         "line 1\u003cbr\u003e\u003cbr\u003eline 3"
       ],
@@ -88,5 +86,6 @@
     }
   ],
   "PropertyGroup": null,
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

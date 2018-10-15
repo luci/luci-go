@@ -28,7 +28,6 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": null,
     "Children": null
   },
@@ -54,5 +53,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

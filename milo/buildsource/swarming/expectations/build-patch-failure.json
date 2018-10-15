@@ -37,7 +37,6 @@
       "Duration": 7199000000000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
     "Text": [
       "Failure Patch failure"
     ],
@@ -79,7 +78,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": [
         "git - 1fb19c56e954ada4c990ed04cf8a004e16def555"
       ],
@@ -119,7 +117,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": [
         "running recipe: \"infra/infra_repo_trybot\""
       ],
@@ -166,7 +163,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": [
         "[21GB/295GB used (7%)] PATCH FAILED"
       ],
@@ -197,7 +193,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 2,
       "Text": [
         "Check the bot_update step for details"
       ],
@@ -237,7 +232,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
       "Children": []
     }
@@ -323,5 +317,6 @@
       ]
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }

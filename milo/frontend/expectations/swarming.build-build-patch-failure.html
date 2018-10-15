@@ -23,6 +23,8 @@
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
 
 
+<script src="/static/common/js/build.js"></script>
+
 
 <body class="interface">
   <header>
@@ -55,7 +57,6 @@
         </p>
        
 
-
         
 
       
@@ -82,17 +83,18 @@
       
         <h2>Steps and Logfiles:</h2>
         Show:
-        <input type="radio" name="hider" id="showAll">
-          <label for="showAll">All</label>
-        <input type="radio" name="hider" id="showStandard" checked>
-          <label for="showStandard">Standard</label>
-        <input type="radio" name="hider" id="showInteresting">
-          <label for="showInteresting">Non-Green Only</label>
-        <ol id="steps" class="standard">
+        <input type="radio" name="hider" id="showExpanded">
+        <label for="showExpanded">Expanded</label>
+        <input type="radio" name="hider" id="showCollapsed">
+        <label for="showCollased">Collapsed</label>
+        <input type="radio" name="hider" id="showNonGreen" checked>
+        <label for="showNonGreen">Non-Green</label>
+
+        <ol id="steps" class="non-green">
 
           
             
-            <li class="verbosity-Interesting">
+            <li>
               <div class="status-Failure result">
                 
   
@@ -115,7 +117,7 @@
 
           
             
-<li class="verbosity-Normal">
+<li class="green">
   <div class="status-Success result">
       
   
@@ -143,7 +145,7 @@
 
           
             
-<li class="verbosity-Hidden">
+<li class="green">
   <div class="status-Success result">
       
   
@@ -171,7 +173,7 @@
 
           
             
-<li class="verbosity-Normal">
+<li class="green">
   <div class="status-Success result">
       
   
@@ -201,7 +203,7 @@
 
           
             
-<li class="verbosity-Interesting">
+<li class="">
   <div class="status-Failure result">
       
   
@@ -231,7 +233,7 @@
 
           
             
-<li class="verbosity-Normal">
+<li class="green">
   <div class="status-Success result">
       
   
@@ -401,30 +403,6 @@
     
   </div>
 </div>
-<script language="javascript">
-$(document).ready(function() {
-
-  var check = function(className) {
-    $("#steps").removeClass("all standard interesting").addClass(className)
-  }
-
-  $("#showInteresting").click(function(e) {
-    check("interesting");
-  });
-  $("#showStandard").click(function(e) {
-    check("standard");
-  });
-  $("#showAll").click(function(e) {
-    check("all");
-  });
-
-  $("input[name='hider']").each(function(){
-    if ($(this).prop("checked")) {
-      $(this).click();
-    }
-  });
-});
-</script>
 
   <footer>
     <hr>

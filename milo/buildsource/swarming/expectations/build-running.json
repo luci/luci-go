@@ -37,7 +37,6 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": [
       "Running bot_update"
     ],
@@ -70,7 +69,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": null,
       "Children": []
     },
@@ -108,7 +106,6 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
       ],
@@ -139,7 +136,6 @@
         "Duration": 7195000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
       "Children": []
     }
@@ -179,5 +175,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "ShowPref": "collapsed"
 }
