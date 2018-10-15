@@ -80,7 +80,7 @@ func (s *swarmingServiceImpl) GetTaskResult(c context.Context, taskID string, pe
 }
 
 func (s *swarmingServiceImpl) GetTaskOutput(c context.Context, taskID string) (res *swarming.SwarmingRpcsTaskOutput, err error) {
-	err = retryGoogleRPC(c, "GetTaskResult", func() (ierr error) {
+	err = retryGoogleRPC(c, "GetTaskOutput", func() (ierr error) {
 		res, ierr = s.Service.Task.Stdout(taskID).Context(c).Do()
 		return
 	})
