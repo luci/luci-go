@@ -35,7 +35,7 @@ const AdminGroup = "administrators"
 // be exposed as a public API (i.e. admins can use it via external RPCs).
 func AdminAPI(d *tq.Dispatcher) api.AdminServer {
 	impl := &adminImpl{tq: d}
-	impl.registerTasks()
+	impl.init()
 	return &api.DecoratedAdmin{
 		Service: impl,
 		Prelude: checkAdminPrelude,

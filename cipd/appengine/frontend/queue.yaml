@@ -16,3 +16,10 @@ queue:
   rate: 50/s
   retry_parameters:
     task_age_limit: 24h
+
+
+# Used to run mapping tasks, see impl/admin/admin.go.
+- name: mappers
+  target: backend
+  bucket_size: 500
+  rate: 100/s
