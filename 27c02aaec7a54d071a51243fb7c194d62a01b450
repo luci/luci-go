@@ -461,6 +461,30 @@
     },
     {
       "key": {
+        "uuid": "e1930357_8bbcf599",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T17:33:19Z",
+      "side": 1,
+      "message": "I understand your suggestion, but it\u0027s not as easy due to use of recursive template invocation and inability to pass multiple arguments to templates in html/template lib. We have 2 arguments to pass on each call: substep itself and the collapsed property. In fact I\u0027ve implemented this in PS2 based on  https://stackoverflow.com/a/18276968, but Ryan said that it\u0027s too messy in the template and suggested to bake the data into BuildComponents instead. See his comment here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1277348/2/milo/frontend/middleware.go#65.",
+      "parentUuid": "c469328f_7d84ca84",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2aa34d6d_6711af8a",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
