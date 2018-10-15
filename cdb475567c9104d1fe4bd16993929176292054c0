@@ -331,6 +331,30 @@
     },
     {
       "key": {
+        "uuid": "2d651edc_0f936ea0",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T22:35:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "d500d6ee_9d9e4c02",
+      "range": {
+        "startLine": 176,
+        "startChar": 9,
+        "endLine": 176,
+        "endChar": 20
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ec7f85b6_0f7a5e46",
         "filename": "logdog/appengine/coordinator/flex/logs/http.go",
         "patchSetId": 7
@@ -366,6 +390,30 @@
       "side": 1,
       "message": "Because thakis said so, and dpranke (who is technically my TL) told me to go with thakis.",
       "parentUuid": "ec7f85b6_0f7a5e46",
+      "range": {
+        "startLine": 185,
+        "startChar": 48,
+        "endLine": 185,
+        "endChar": 52
+      },
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "938779d4_635ebe88",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 185,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T22:35:47Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a66cb9bd_9ca1b966",
       "range": {
         "startLine": 185,
         "startChar": 48,
@@ -457,6 +505,24 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "25d288f9_e313a776",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T22:35:47Z",
+      "side": 1,
+      "message": "this makes sense.\n\nThen why \n\n\tif contentType \u003d\u003d \"text/plain\" \u0026\u0026 data.options.formatHTML() {\n\t\tcontentType \u003d \"text/html\"\n\t}\n\nchecks contentType is \"text/plain\". Like you said, even if the underlying content type is not text, we return HTML. That means this check should be\n\n\tif data.options.formatHTML() {\n\t\tcontentType \u003d \"text/html\"\n\t}",
+      "parentUuid": "c476089c_5fb13b44",
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
