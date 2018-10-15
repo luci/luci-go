@@ -509,6 +509,30 @@
     },
     {
       "key": {
+        "uuid": "23fcead2_3e65eeea",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-15T20:20:34Z",
+      "side": 1,
+      "message": "thinking about this more, Fix() would be a perfect place for code that looks at Build.ShowPref and updates Collapsed accordingly",
+      "parentUuid": "afb009b5_38069ffd",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "2aa34d6d_6711af8a",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
