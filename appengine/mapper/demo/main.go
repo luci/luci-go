@@ -30,18 +30,14 @@ import (
 	"go.chromium.org/luci/appengine/tq"
 )
 
-type dumpingMapper struct{}
-
-func (dumpingMapper) MapperID() mapper.ID {
-	return "dumping/v1"
-}
-
-func (dumpingMapper) Process(c context.Context, params []byte, keys []*datastore.Key) error {
-	logging.Infof(c, "Got %d keys:", len(keys))
-	for _, k := range keys {
-		logging.Infof(c, "%s", k)
-	}
-	return nil
+func makeDumpingMapper(c context.Context, j *mapper.Job, shardIdx int) (mapper.Mapper, error) {
+	return func(c context.Context, keys []*datastore.Key) error {
+		logging.Infof(c, "Got %d keys:", len(keys))
+		for _, k := range keys {
+			logging.Infof(c, "%s", k)
+		}
+		return nil
+	}, nil
 }
 
 type TestEntity struct {
@@ -57,7 +53,7 @@ func init() {
 	tasks := tq.Dispatcher{}
 
 	mappers := mapper.Controller{}
-	mappers.RegisterMapper(dumpingMapper{})
+	mappers.RegisterFactory("dumping/v1", makeDumpingMapper)
 	mappers.Install(&tasks)
 
 	tasks.InstallRoutes(r, base)
@@ -77,7 +73,7 @@ func init() {
 			Query: mapper.Query{
 				Kind: "TestEntity",
 			},
-			Mapper:     (dumpingMapper{}).MapperID(),
+			Mapper:     "dumping/v1",
 			ShardCount: 8,
 			PageSize:   64,
 		})
