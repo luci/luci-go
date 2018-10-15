@@ -24,7 +24,7 @@ type Source interface {
 	io.ReadSeeker
 
 	// Close can be used to indicate to the storage (filesystem and/or cache)
-	// layer that this instance is actually bad. The storage layer can then
-	// evict/revoke, etc. the bad file.
+	// layer that this source is actually bad. The storage layer can then evict
+	// the bad file.
 	Close(ctx context.Context, corrupt bool) error
 }

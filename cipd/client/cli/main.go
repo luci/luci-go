@@ -2217,14 +2217,15 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo) (common.Pin, error) {
-	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
 		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer closer()
+	defer inst.Close(ctx, false)
+
 	inspectInstance(ctx, inst, false)
 
 	d := deployer.New(root)
@@ -2303,11 +2304,12 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 		return common.Pin{}, err
 	}
 
-	// Print information about the instance. 'FetchInstanceTo' already verified
-	// the hash.
 	out.Close()
 	ok = true
-	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+
+	// Print information about the instance. 'FetchInstanceTo' already verified
+	// the hash.
+	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
 		VerificationMode: deployer.SkipHashVerification,
 		InstanceID:       pin.InstanceID,
 	})
@@ -2315,7 +2317,7 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 		os.Remove(instanceFile)
 		return common.Pin{}, err
 	}
-	defer closer()
+	defer inst.Close(ctx, false)
 	inspectInstance(ctx, inst, false)
 	return inst.Pin(), nil
 }
@@ -2352,14 +2354,14 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.HashAlgo, listFiles bool) (common.Pin, error) {
-	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
 		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer closer()
+	defer inst.Close(ctx, false)
 	inspectInstance(ctx, inst, listFiles)
 	return inst.Pin(), nil
 }
@@ -2442,14 +2444,14 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, closer, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
+	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
 		VerificationMode: deployer.CalculateHash,
 		HashAlgo:         opts.hashAlgo(),
 	})
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer closer()
+	defer inst.Close(ctx, false)
 	client, err := opts.clientOptions.makeCIPDClient(ctx)
 	if err != nil {
 		return common.Pin{}, err
