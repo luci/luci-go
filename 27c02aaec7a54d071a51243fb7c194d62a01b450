@@ -72,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "8183f7ff_2f4c9cf0",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a42c80b_87539042",
+      "range": {
+        "startLine": 16,
+        "startChar": 4,
+        "endLine": 16,
+        "endChar": 7
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "52e9b66e_3eb2feed",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 5
@@ -92,6 +116,30 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c28ce08e_d6647d94",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Nice. Didn\u0027t know about :before selector. Done.",
+      "parentUuid": "52e9b66e_3eb2feed",
+      "range": {
+        "startLine": 12,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 5
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -118,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "fa19515d_db3ccfad",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Because we want to allow to manually collapse/expand steps by clicking on the step name while also allowing collapsing/expanding everything with Show selector on top. A single class would not allow to collapse/expand individual steps.",
+      "parentUuid": "5315e7f4_0919b4f1",
+      "range": {
+        "startLine": 36,
+        "startChar": 4,
+        "endLine": 36,
+        "endChar": 46
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "458f1d13_ae98b061",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 5
@@ -138,6 +210,30 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8074af89_9c5817ae",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "458f1d13_ae98b061",
+      "range": {
+        "startLine": 38,
+        "startChar": 4,
+        "endLine": 38,
+        "endChar": 79
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -164,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "91a24032_01f6708a",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67b93bff_1f4cb708",
+      "range": {
+        "startLine": 39,
+        "startChar": 24,
+        "endLine": 39,
+        "endChar": 25
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e23bd376_a7897642",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 5
@@ -187,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "f313a35a_ce04cf79",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "No, that\u0027s correct. We want to show all steps here, no just failed ones. This will do nothing if previous value was \"Show: Expanded\", but is still necessary in case we were previously on \"Show: Non-Green\" setting.",
+      "parentUuid": "e23bd376_a7897642",
+      "range": {
+        "startLine": 44,
+        "startChar": 16,
+        "endLine": 44,
+        "endChar": 27
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ac66ae4_d173ee7c",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
@@ -201,6 +345,24 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d574d9c2_bff91c40",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ac66ae4_d173ee7c",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -227,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "0f9ac85e_6cc76f37",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "We still need separate classes per \u003col\u003e element to allow users collapsing/expanding individual steps as explained above. Much of the diff changes in this CL is actually caused by the modifications to the build.html template that affect all test expectations and not just ones with nested steps, e.g. removal of JS code from the template code, adding script tag for build.js, changes to the Show selector etc.",
+      "parentUuid": "6e6e0e7f_ca48ca9e",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2aa34d6d_6711af8a",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
@@ -250,6 +436,30 @@
     },
     {
       "key": {
+        "uuid": "8e73512c_3f70ad1f",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "No, because we only add \"non-green\" when the ShowPref\u003d\u003d\"non-green\". Other values such as \"collapsed\" and \"expanded\" are not applicable here as they are instead applied to individual \u003col\u003e elements containing substeps. The top-level \u003col\u003e can not be collapsed/expanded.",
+      "parentUuid": "2aa34d6d_6711af8a",
+      "range": {
+        "startLine": 224,
+        "startChar": 12,
+        "endLine": 224,
+        "endChar": 79
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d31212c8_3d833d65",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
@@ -270,6 +480,30 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b1d0749_e549e22f",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Yes, this was unintentional edit. Done",
+      "parentUuid": "d31212c8_3d833d65",
+      "range": {
+        "startLine": 243,
+        "startChar": 37,
+        "endLine": 243,
+        "endChar": 38
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -320,6 +554,30 @@
     },
     {
       "key": {
+        "uuid": "0d95f819_d1f18237",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "This still requires a map and 2 functions to convert string-to-enum. But given the type safety that this adds, it\u0027s probably worth it. Done",
+      "parentUuid": "301f6e47_35454ffc",
+      "range": {
+        "startLine": 62,
+        "startChar": 31,
+        "endLine": 62,
+        "endChar": 77
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a9995367_b9247efe",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 5
@@ -337,6 +595,24 @@
     },
     {
       "key": {
+        "uuid": "6df95243_adab77fc",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "You are right. I don\u0027t think Verbosity is needed at this point. It\u0027s sufficient to use Status in the template logic to determine whether a step is green or not.",
+      "parentUuid": "a9995367_b9247efe",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6f33fca2_c96df07a",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 5
@@ -351,6 +627,24 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bb9b77e5_9bfe7434",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 124,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "My idea was to make Fix function be used to make all last-minute modifications to build. However, in that case we\u0027d probably have to rename it to something like Postprocess. I\u0027ve undone my changes. You can also see my self-debate on this here: https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1277348/3/milo/frontend/view_build.go#164 :)",
+      "parentUuid": "6f33fca2_c96df07a",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -377,6 +671,30 @@
     },
     {
       "key": {
+        "uuid": "f4de7ff7_c260a859",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ca5d3dc_731238fb",
+      "range": {
+        "startLine": 319,
+        "startChar": 30,
+        "endLine": 319,
+        "endChar": 36
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "20e64b99_6c8754eb",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 5
@@ -397,6 +715,30 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15bd7ece_5ce08139",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20e64b99_6c8754eb",
+      "range": {
+        "startLine": 391,
+        "startChar": 9,
+        "endLine": 391,
+        "endChar": 11
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -423,6 +765,30 @@
     },
     {
       "key": {
+        "uuid": "e7f98d93_32f660f1",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "This setting is not just about nested steps, but also about showing all/non-green steps. Hence, \"show preference\", which is abbreviated as ShowPref here was used. I\u0027ve renamed the function to getShowPrefCookie to make it more clear what it does, but if you still think there is a better name, please let me know and I\u0027ll be happy to rename it again.",
+      "parentUuid": "9a02a806_dc71bed3",
+      "range": {
+        "startLine": 142,
+        "startChar": 5,
+        "endLine": 142,
+        "endChar": 13
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "461166ab_1728e7aa",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 5
@@ -446,6 +812,30 @@
     },
     {
       "key": {
+        "uuid": "c586f083_503251fd",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "461166ab_1728e7aa",
+      "range": {
+        "startLine": 153,
+        "startChar": 8,
+        "endLine": 153,
+        "endChar": 19
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b4e2aa50_c49bca52",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 5
@@ -460,6 +850,24 @@
       "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7869bfb6_d158eed1",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-15T14:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4e2aa50_c49bca52",
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
