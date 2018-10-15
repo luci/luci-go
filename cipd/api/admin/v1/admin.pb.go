@@ -9,6 +9,7 @@ import (
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
+	mapper "go.chromium.org/luci/appengine/mapper"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 	math "math"
@@ -25,21 +26,219 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+// Supported mapping jobs.
+type MapperKind int32
+
+const (
+	MapperKind_MAPPER_KIND_UNSPECIFIED MapperKind = 0
+	// Dump names of all packages to GAE logs, to test mapping jobs framework.
+	MapperKind_ENUMERATE_PACKAGES MapperKind = 1
+)
+
+var MapperKind_name = map[int32]string{
+	0: "MAPPER_KIND_UNSPECIFIED",
+	1: "ENUMERATE_PACKAGES",
+}
+
+var MapperKind_value = map[string]int32{
+	"MAPPER_KIND_UNSPECIFIED": 0,
+	"ENUMERATE_PACKAGES":      1,
+}
+
+func (x MapperKind) String() string {
+	return proto.EnumName(MapperKind_name, int32(x))
+}
+
+func (MapperKind) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_d3c583be32ae6c76, []int{0}
+}
+
+// Defines what a mapping job should do.
+type JobConfig struct {
+	Kind                 MapperKind `protobuf:"varint,1,opt,name=kind,proto3,enum=cipd.MapperKind" json:"kind,omitempty"`
+	Comment              string     `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	DryRun               bool       `protobuf:"varint,3,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
+	XXX_unrecognized     []byte     `json:"-"`
+	XXX_sizecache        int32      `json:"-"`
+}
+
+func (m *JobConfig) Reset()         { *m = JobConfig{} }
+func (m *JobConfig) String() string { return proto.CompactTextString(m) }
+func (*JobConfig) ProtoMessage()    {}
+func (*JobConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d3c583be32ae6c76, []int{0}
+}
+
+func (m *JobConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JobConfig.Unmarshal(m, b)
+}
+func (m *JobConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JobConfig.Marshal(b, m, deterministic)
+}
+func (m *JobConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobConfig.Merge(m, src)
+}
+func (m *JobConfig) XXX_Size() int {
+	return xxx_messageInfo_JobConfig.Size(m)
+}
+func (m *JobConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_JobConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JobConfig proto.InternalMessageInfo
+
+func (m *JobConfig) GetKind() MapperKind {
+	if m != nil {
+		return m.Kind
+	}
+	return MapperKind_MAPPER_KIND_UNSPECIFIED
+}
+
+func (m *JobConfig) GetComment() string {
+	if m != nil {
+		return m.Comment
+	}
+	return ""
+}
+
+func (m *JobConfig) GetDryRun() bool {
+	if m != nil {
+		return m.DryRun
+	}
+	return false
+}
+
+// Identifies an instance of a mapping job.
+type JobID struct {
+	JobId                int64    `protobuf:"varint,1,opt,name=job_id,json=jobId,proto3" json:"job_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *JobID) Reset()         { *m = JobID{} }
+func (m *JobID) String() string { return proto.CompactTextString(m) }
+func (*JobID) ProtoMessage()    {}
+func (*JobID) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d3c583be32ae6c76, []int{1}
+}
+
+func (m *JobID) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JobID.Unmarshal(m, b)
+}
+func (m *JobID) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JobID.Marshal(b, m, deterministic)
+}
+func (m *JobID) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobID.Merge(m, src)
+}
+func (m *JobID) XXX_Size() int {
+	return xxx_messageInfo_JobID.Size(m)
+}
+func (m *JobID) XXX_DiscardUnknown() {
+	xxx_messageInfo_JobID.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JobID proto.InternalMessageInfo
+
+func (m *JobID) GetJobId() int64 {
+	if m != nil {
+		return m.JobId
+	}
+	return 0
+}
+
+// Details about a mapping job.
+type JobState struct {
+	// Original job config, exactly as it was submitted to LaunchJob.
+	Config *JobConfig `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	// Current state of the job and all its shards.
+	Info                 *mapper.JobInfo `protobuf:"bytes,2,opt,name=info,proto3" json:"info,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *JobState) Reset()         { *m = JobState{} }
+func (m *JobState) String() string { return proto.CompactTextString(m) }
+func (*JobState) ProtoMessage()    {}
+func (*JobState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_d3c583be32ae6c76, []int{2}
+}
+
+func (m *JobState) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JobState.Unmarshal(m, b)
+}
+func (m *JobState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JobState.Marshal(b, m, deterministic)
+}
+func (m *JobState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JobState.Merge(m, src)
+}
+func (m *JobState) XXX_Size() int {
+	return xxx_messageInfo_JobState.Size(m)
+}
+func (m *JobState) XXX_DiscardUnknown() {
+	xxx_messageInfo_JobState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JobState proto.InternalMessageInfo
+
+func (m *JobState) GetConfig() *JobConfig {
+	if m != nil {
+		return m.Config
+	}
+	return nil
+}
+
+func (m *JobState) GetInfo() *mapper.JobInfo {
+	if m != nil {
+		return m.Info
+	}
+	return nil
+}
+
+func init() {
+	proto.RegisterEnum("cipd.MapperKind", MapperKind_name, MapperKind_value)
+	proto.RegisterType((*JobConfig)(nil), "cipd.JobConfig")
+	proto.RegisterType((*JobID)(nil), "cipd.JobID")
+	proto.RegisterType((*JobState)(nil), "cipd.JobState")
+}
+
 func init() {
 	proto.RegisterFile("go.chromium.org/luci/cipd/api/admin/v1/admin.proto", fileDescriptor_d3c583be32ae6c76)
 }
 
 var fileDescriptor_d3c583be32ae6c76 = []byte{
-	// 144 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x32, 0x4a, 0xcf, 0xd7, 0x4b,
-	0xce, 0x28, 0xca, 0xcf, 0xcd, 0x2c, 0xcd, 0xd5, 0xcb, 0x2f, 0x4a, 0xd7, 0xcf, 0x29, 0x4d, 0xce,
-	0xd4, 0x4f, 0xce, 0x2c, 0x48, 0xd1, 0x4f, 0x2c, 0xc8, 0xd4, 0x4f, 0x4c, 0xc9, 0xcd, 0xcc, 0xd3,
-	0x2f, 0x33, 0x84, 0x30, 0xf4, 0x0a, 0x8a, 0xf2, 0x4b, 0xf2, 0x85, 0x58, 0x40, 0xd2, 0x52, 0xd2,
-	0xe9, 0xf9, 0xf9, 0xe9, 0x39, 0xa9, 0xfa, 0x60, 0xb1, 0xa4, 0xd2, 0x34, 0xfd, 0xd4, 0xdc, 0x82,
-	0x92, 0x4a, 0x88, 0x12, 0x23, 0x67, 0x2e, 0x56, 0x47, 0x90, 0x0e, 0x21, 0x2b, 0x2e, 0x8e, 0xe0,
-	0xc4, 0x4a, 0x8f, 0xd4, 0x9c, 0x9c, 0x7c, 0x21, 0x31, 0x3d, 0x88, 0x16, 0x3d, 0x98, 0x16, 0x3d,
-	0x57, 0x90, 0x16, 0x29, 0x1c, 0xe2, 0x4e, 0xac, 0x51, 0xcc, 0x89, 0x05, 0x99, 0x49, 0x6c, 0x60,
-	0x61, 0x63, 0x40, 0x00, 0x00, 0x00, 0xff, 0xff, 0x32, 0x92, 0xba, 0x80, 0xab, 0x00, 0x00, 0x00,
+	// 418 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x51, 0x5d, 0x6b, 0xdb, 0x30,
+	0x14, 0x9d, 0x97, 0x8f, 0x26, 0x37, 0xd0, 0x05, 0xc1, 0xda, 0x90, 0xc2, 0x08, 0x61, 0xb0, 0xac,
+	0x0f, 0x12, 0xf3, 0xc6, 0xde, 0xbd, 0xc4, 0x2b, 0x4e, 0x96, 0x10, 0x94, 0xf5, 0x65, 0x2f, 0xc6,
+	0xb2, 0x65, 0x57, 0x6d, 0xad, 0x6b, 0x14, 0x7b, 0x90, 0x5f, 0xb1, 0xbf, 0x3c, 0x2c, 0xaf, 0xde,
+	0x07, 0x7b, 0xd3, 0xbd, 0xe7, 0xdc, 0x7b, 0xcf, 0xd1, 0x01, 0x37, 0x43, 0x1a, 0xdf, 0x19, 0xcc,
+	0x55, 0x95, 0x53, 0x34, 0x19, 0x7b, 0xac, 0x62, 0xc5, 0x62, 0x55, 0x24, 0x2c, 0x2a, 0x14, 0x8b,
+	0x92, 0x5c, 0x69, 0xf6, 0xfd, 0x5d, 0xf3, 0xa0, 0x85, 0xc1, 0x12, 0x49, 0xb7, 0x86, 0xa7, 0x57,
+	0x19, 0x62, 0xf6, 0x28, 0x99, 0xed, 0x89, 0x2a, 0x65, 0x32, 0x2f, 0xca, 0x53, 0x43, 0x99, 0x7e,
+	0xf8, 0xef, 0xda, 0xa8, 0x28, 0xa4, 0xce, 0x94, 0x96, 0x2c, 0xaf, 0x9f, 0x86, 0xe5, 0xf2, 0x78,
+	0x8c, 0x32, 0x79, 0x6c, 0xa6, 0xe6, 0x09, 0x0c, 0xd7, 0x28, 0x96, 0xa8, 0x53, 0x95, 0x91, 0xd7,
+	0xd0, 0x7d, 0x50, 0x3a, 0x99, 0x38, 0x33, 0x67, 0x71, 0xee, 0x8e, 0x69, 0x7d, 0x94, 0x6e, 0xed,
+	0xdc, 0x46, 0xe9, 0x84, 0x5b, 0x94, 0x4c, 0xe0, 0x2c, 0xc6, 0x3c, 0x97, 0xba, 0x9c, 0x3c, 0x9f,
+	0x39, 0x8b, 0x21, 0x7f, 0x2a, 0xc9, 0x25, 0x9c, 0x25, 0xe6, 0x14, 0x9a, 0x4a, 0x4f, 0x3a, 0x33,
+	0x67, 0x31, 0xe0, 0xfd, 0xc4, 0x9c, 0x78, 0xa5, 0xe7, 0xaf, 0xa0, 0xb7, 0x46, 0x11, 0xac, 0xc8,
+	0x4b, 0xe8, 0xdf, 0xa3, 0x08, 0x55, 0x73, 0xa3, 0xc3, 0x7b, 0xf7, 0x28, 0x82, 0x64, 0xfe, 0x00,
+	0x83, 0x35, 0x8a, 0x43, 0x19, 0x95, 0x92, 0xbc, 0x81, 0x7e, 0x6c, 0xe5, 0x58, 0xca, 0xc8, 0x7d,
+	0xd1, 0xc8, 0x68, 0x55, 0xf2, 0x5f, 0x30, 0xf9, 0x08, 0x5d, 0xa5, 0x53, 0xb4, 0x22, 0x46, 0xee,
+	0x9c, 0xb6, 0x56, 0x69, 0x63, 0x95, 0xb6, 0x56, 0xeb, 0xdb, 0x3a, 0x45, 0x6e, 0xf9, 0xd7, 0x1e,
+	0xc0, 0x6f, 0x4f, 0xe4, 0x0a, 0x2e, 0xb7, 0xde, 0x7e, 0xef, 0xf3, 0x70, 0x13, 0xec, 0x56, 0xe1,
+	0xed, 0xee, 0xb0, 0xf7, 0x97, 0xc1, 0xe7, 0xc0, 0x5f, 0x8d, 0x9f, 0x91, 0x0b, 0x20, 0xfe, 0xee,
+	0x76, 0xeb, 0x73, 0xef, 0xab, 0x1f, 0xee, 0xbd, 0xe5, 0xc6, 0xbb, 0xf1, 0x0f, 0x63, 0xc7, 0xfd,
+	0xe1, 0x40, 0xcf, 0xab, 0xe3, 0x21, 0x6f, 0x61, 0xf8, 0x25, 0xaa, 0x74, 0x7c, 0xb7, 0x46, 0x41,
+	0xfe, 0x95, 0x3a, 0x1d, 0xb5, 0x8d, 0x60, 0x45, 0x18, 0x0c, 0x3c, 0x81, 0xa6, 0xac, 0x99, 0x7f,
+	0x02, 0xd3, 0x0b, 0xda, 0xe4, 0x4a, 0x9f, 0x72, 0xa5, 0x7e, 0x9d, 0x2b, 0xb9, 0x86, 0xd1, 0x8d,
+	0x2c, 0xdb, 0x8f, 0xf9, 0x6b, 0xe6, 0xbc, 0x2d, 0x2c, 0xf8, 0xa9, 0xf7, 0xad, 0x13, 0x15, 0x4a,
+	0xf4, 0xed, 0x8a, 0xf7, 0x3f, 0x03, 0x00, 0x00, 0xff, 0xff, 0xf0, 0x97, 0x52, 0x15, 0x64, 0x02,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -54,7 +253,12 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AdminClient interface {
-	SayHello(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Launches a mapping job that examines and/or fixes datastore entities.
+	LaunchJob(ctx context.Context, in *JobConfig, opts ...grpc.CallOption) (*JobID, error)
+	// Initiates an abort of a mapping job.
+	AbortJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Returns state of a mapping job.
+	GetJobState(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobState, error)
 }
 type adminPRPCClient struct {
 	client *prpc.Client
@@ -64,9 +268,27 @@ func NewAdminPRPCClient(client *prpc.Client) AdminClient {
 	return &adminPRPCClient{client}
 }
 
-func (c *adminPRPCClient) SayHello(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *adminPRPCClient) LaunchJob(ctx context.Context, in *JobConfig, opts ...grpc.CallOption) (*JobID, error) {
+	out := new(JobID)
+	err := c.client.Call(ctx, "cipd.Admin", "LaunchJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminPRPCClient) AbortJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.client.Call(ctx, "cipd.Admin", "SayHello", in, out, opts...)
+	err := c.client.Call(ctx, "cipd.Admin", "AbortJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminPRPCClient) GetJobState(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobState, error) {
+	out := new(JobState)
+	err := c.client.Call(ctx, "cipd.Admin", "GetJobState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +303,27 @@ func NewAdminClient(cc *grpc.ClientConn) AdminClient {
 	return &adminClient{cc}
 }
 
-func (c *adminClient) SayHello(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*empty.Empty, error) {
+func (c *adminClient) LaunchJob(ctx context.Context, in *JobConfig, opts ...grpc.CallOption) (*JobID, error) {
+	out := new(JobID)
+	err := c.cc.Invoke(ctx, "/cipd.Admin/LaunchJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) AbortJob(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*empty.Empty, error) {
 	out := new(empty.Empty)
-	err := c.cc.Invoke(ctx, "/cipd.Admin/SayHello", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/cipd.Admin/AbortJob", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminClient) GetJobState(ctx context.Context, in *JobID, opts ...grpc.CallOption) (*JobState, error) {
+	out := new(JobState)
+	err := c.cc.Invoke(ctx, "/cipd.Admin/GetJobState", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,27 +332,68 @@ func (c *adminClient) SayHello(ctx context.Context, in *empty.Empty, opts ...grp
 
 // AdminServer is the server API for Admin service.
 type AdminServer interface {
-	SayHello(context.Context, *empty.Empty) (*empty.Empty, error)
+	// Launches a mapping job that examines and/or fixes datastore entities.
+	LaunchJob(context.Context, *JobConfig) (*JobID, error)
+	// Initiates an abort of a mapping job.
+	AbortJob(context.Context, *JobID) (*empty.Empty, error)
+	// Returns state of a mapping job.
+	GetJobState(context.Context, *JobID) (*JobState, error)
 }
 
 func RegisterAdminServer(s prpc.Registrar, srv AdminServer) {
 	s.RegisterService(&_Admin_serviceDesc, srv)
 }
 
-func _Admin_SayHello_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(empty.Empty)
+func _Admin_LaunchJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobConfig)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdminServer).SayHello(ctx, in)
+		return srv.(AdminServer).LaunchJob(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/cipd.Admin/SayHello",
+		FullMethod: "/cipd.Admin/LaunchJob",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminServer).SayHello(ctx, req.(*empty.Empty))
+		return srv.(AdminServer).LaunchJob(ctx, req.(*JobConfig))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_AbortJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).AbortJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Admin/AbortJob",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).AbortJob(ctx, req.(*JobID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admin_GetJobState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServer).GetJobState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/cipd.Admin/GetJobState",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServer).GetJobState(ctx, req.(*JobID))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -122,8 +403,16 @@ var _Admin_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*AdminServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SayHello",
-			Handler:    _Admin_SayHello_Handler,
+			MethodName: "LaunchJob",
+			Handler:    _Admin_LaunchJob_Handler,
+		},
+		{
+			MethodName: "AbortJob",
+			Handler:    _Admin_AbortJob_Handler,
+		},
+		{
+			MethodName: "GetJobState",
+			Handler:    _Admin_GetJobState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

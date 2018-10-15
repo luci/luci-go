@@ -17,25 +17,101 @@ package admin
 import (
 	"context"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
+	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/retry/transient"
+
+	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/logging"
+
+	api "go.chromium.org/luci/cipd/api/admin/v1"
 )
 
 // adminImpl implements cipd.AdminServer, with an assumption that auth check has
 // already been done by the decorator setup in AdminAPI(), see acl.go.
 type adminImpl struct {
-	tq *tq.Dispatcher
+	tq  *tq.Dispatcher
+	ctl *mapper.Controller
 }
 
-// registerTasks adds tasks to the tq Dispatcher.
-func (impl *adminImpl) registerTasks() {
-	// TODO(vadimsh): Nothing here for now.
+// init initializes mapper controller and registers mapping tasks.
+func (impl *adminImpl) init() {
+	impl.ctl = &mapper.Controller{
+		MapperQueue:  "mappers", // see queue.yaml
+		ControlQueue: "default",
+	}
+	for _, m := range mappers { // see mappers.go
+		impl.ctl.RegisterFactory(m.mapperID(), m.newMapper)
+	}
+	impl.ctl.Install(impl.tq)
 }
 
-// SayHello implements the corresponding RPC method, see the proto doc.
-func (impl *adminImpl) SayHello(c context.Context, _ *empty.Empty) (*empty.Empty, error) {
-	logging.Infof(c, "Hello!")
+// toStatus converts an error from mapper.Controller to an grpc status.
+//
+// Passes nil as is.
+func toStatus(err error) error {
+	switch {
+	case err == mapper.ErrNoSuchJob:
+		return status.Errorf(codes.NotFound, "no such mapping job")
+	case transient.Tag.In(err):
+		return status.Errorf(codes.Internal, err.Error())
+	case err != nil:
+		return status.Errorf(codes.InvalidArgument, err.Error())
+	default:
+		return nil
+	}
+}
+
+// LaunchJob implements the corresponding RPC method, see the proto doc.
+func (impl *adminImpl) LaunchJob(c context.Context, cfg *api.JobConfig) (*api.JobID, error) {
+	def, ok := mappers[cfg.Kind] // see mappers.go
+	if !ok {
+		return nil, status.Errorf(codes.InvalidArgument, "unknown mapper kind")
+	}
+
+	cfgBlob, err := proto.Marshal(cfg)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to marshal JobConfig - %s", err)
+	}
+
+	launchCfg := def.Config
+	launchCfg.Mapper = def.mapperID()
+	launchCfg.Params = cfgBlob
+
+	jid, err := impl.ctl.LaunchJob(c, &launchCfg)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+
+	return &api.JobID{JobId: int64(jid)}, nil
+}
+
+// AbortJob implements the corresponding RPC method, see the proto doc.
+func (impl *adminImpl) AbortJob(c context.Context, id *api.JobID) (*empty.Empty, error) {
+	_, err := impl.ctl.AbortJob(c, mapper.JobID(id.JobId))
+	if err != nil {
+		return nil, toStatus(err)
+	}
 	return &empty.Empty{}, nil
+}
+
+// GetJobState implements the corresponding RPC method, see the proto doc.
+func (impl *adminImpl) GetJobState(c context.Context, id *api.JobID) (*api.JobState, error) {
+	job, err := impl.ctl.GetJob(c, mapper.JobID(id.JobId))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	cfg := &api.JobConfig{}
+	if err := proto.Unmarshal(job.Config.Params, cfg); err != nil {
+		return nil, toStatus(errors.Annotate(err, "failed to unmarshal JobConfig").Err())
+	}
+	info, err := job.FetchInfo(c)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &api.JobState{Config: cfg, Info: info}, nil
 }

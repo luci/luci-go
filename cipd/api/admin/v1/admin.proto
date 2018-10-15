@@ -1,4 +1,4 @@
-// Copyright 2017 The LUCI Authors.
+// Copyright 2018 The LUCI Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package cipd;
 option go_package = "api";
 
 import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/appengine/mapper/messages.proto";
 
 
 // Administrative API used by CIPD service administrators for internal needs.
@@ -26,5 +27,41 @@ import "google/protobuf/empty.proto";
 // ACLed to administrators. Must not be used by end clients. There's no backward
 // compatibility promises.
 service Admin {
-  rpc SayHello(google.protobuf.Empty) returns (google.protobuf.Empty);
+  // Launches a mapping job that examines and/or fixes datastore entities.
+  rpc LaunchJob(JobConfig) returns (JobID);
+  // Initiates an abort of a mapping job.
+  rpc AbortJob(JobID) returns (google.protobuf.Empty);
+  // Returns state of a mapping job.
+  rpc GetJobState(JobID) returns (JobState);
+}
+
+
+// Supported mapping jobs.
+enum MapperKind {
+  MAPPER_KIND_UNSPECIFIED = 0;
+  // Dump names of all packages to GAE logs, to test mapping jobs framework.
+  ENUMERATE_PACKAGES = 1;
+}
+
+
+// Defines what a mapping job should do.
+message JobConfig {
+  MapperKind kind = 1;
+  string comment = 2;  // arbitrary human readable string
+  bool dry_run = 3;
+}
+
+
+// Identifies an instance of a mapping job.
+message JobID {
+  int64 job_id = 1;
+}
+
+
+// Details about a mapping job.
+message JobState {
+  // Original job config, exactly as it was submitted to LaunchJob.
+  JobConfig config = 1;
+  // Current state of the job and all its shards.
+  appengine.mapper.messages.JobInfo info = 2;
 }
