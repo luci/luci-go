@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2204c66e_806cdc3b",
+        "filename": "cipd/common/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 138,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-16T22:14:02Z",
+      "side": 1,
+      "message": "because regexps become unreadable veeeeery fast\n\n[A-Za-z0-9$()*+,\\-./:;\u003c\u003d\u003e@\\\\_{}~][A-Za-z0-9$()*+,\\-./:;\u003c\u003d\u003e@\\\\_{}~ ]*[A-Za-z0-9$()*+,\\-./:;\u003c\u003d\u003e@\\\\_{}~]\n\nnope, nope, nope...",
+      "range": {
+        "startLine": 138,
+        "startChar": 6,
+        "endLine": 138,
+        "endChar": 76
+      },
+      "revId": "3816d87afce37fb143c605e585596335836c9371",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
