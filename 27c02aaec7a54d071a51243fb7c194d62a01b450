@@ -533,6 +533,30 @@
     },
     {
       "key": {
+        "uuid": "0d01d3c5_b9cf84be",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T11:19:55Z",
+      "side": 1,
+      "message": "That\u0027s true. I misread your comment. However, we still won\u0027t be able to get rid of the ShowPref field on MiloBuild because it is used to set \"non-green\" class on the \u003col id\u003d\"steps\"\u003e element and to set \"checked\" property on the correct input.",
+      "parentUuid": "23fcead2_3e65eeea",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2aa34d6d_6711af8a",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
