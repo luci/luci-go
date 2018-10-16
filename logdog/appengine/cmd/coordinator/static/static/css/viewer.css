@@ -49,9 +49,14 @@ header {
 .error {
   color: red;
 }
-.line {
+.lines.lite {
+  white-space: pre;
+}
+.lines {
   font-family: Courier New, Courier, monospace;
   font-size: 16px;
+}
+.full .line {
   white-space: nowrap;
 }
 .line:target {
@@ -68,4 +73,9 @@ footer {
 }
 .text {
   white-space: pre;
+}
+#to-lite, #to-full {
+  color: #0000EE;
+  cursor: pointer;
+  text-decoration: underline;
 }
