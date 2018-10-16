@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fe437d54_09ebe91c",
+        "filename": "cipd/api/admin/v1/pb.discovery.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-16T20:57:15Z",
+      "side": 1,
+      "message": ":-/",
+      "parentUuid": "7d91846d_8549d3e8",
+      "range": {
+        "startLine": 412,
+        "startChar": 27,
+        "endLine": 412,
+        "endChar": 40
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "713938ef_c21baa93",
         "filename": "cipd/appengine/impl/admin/find_malformed_tags.go",
         "patchSetId": 4
@@ -39,6 +63,24 @@
       "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "59e54943_9bf23d4e",
+        "filename": "cipd/appengine/impl/admin/find_malformed_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-16T20:57:15Z",
+      "side": 1,
+      "message": "I\u0027m expecting more jobs that use visitAndMarkTags. And each job lives in its own *.go file.",
+      "parentUuid": "713938ef_c21baa93",
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "ca475b89_09bf623a",
+        "filename": "cipd/appengine/impl/admin/marked_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-16T20:57:15Z",
+      "side": 1,
+      "message": "\u003e Could map over Tag to add a processing_generation\u003d0 property\n\nNope. The core problem is that naively updating all Tag entities in the mapper immediately hits entity group write QPS limit, since many tags are naturally in the same entity group (each package and all its instances and tags in a single entity group).",
+      "parentUuid": "c93b1735_62bd6dce",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 14
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "04fa272f_38d42c6d",
         "filename": "cipd/appengine/impl/admin/marked_tags.go",
         "patchSetId": 4
@@ -85,6 +151,30 @@
       "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e814b98f_e29556da",
+        "filename": "cipd/appengine/impl/admin/marked_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-16T20:57:15Z",
+      "side": 1,
+      "message": "Done. I was planning to have more stuff there initially. But can be added later.",
+      "parentUuid": "04fa272f_38d42c6d",
+      "range": {
+        "startLine": 78,
+        "startChar": 82,
+        "endLine": 78,
+        "endChar": 112
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
