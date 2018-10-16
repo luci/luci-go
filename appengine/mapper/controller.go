@@ -418,6 +418,9 @@ func (ctl *Controller) splitAndLaunchHandler(c context.Context, payload proto.Me
 //
 // Updates ExpectedCount in-place.
 func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard) error {
+	c, cancel := clock.WithTimeout(c, 10*time.Minute)
+	defer cancel()
+
 	err := parallel.WorkPool(32, func(tasks chan<- func() error) {
 		for _, sh := range shards {
 			sh := sh
@@ -430,6 +433,7 @@ func fetchShardSizes(c context.Context, baseQ *datastore.Query, shards []*shard)
 			}
 		}
 	})
+
 	return transient.Tag.Apply(err)
 }
 
