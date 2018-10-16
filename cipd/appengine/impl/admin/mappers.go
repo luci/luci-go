@@ -46,7 +46,7 @@ func initMapper(d mapperDef) {
 // shards, etc), and the actual mapping function.
 type mapperDef struct {
 	Kind   api.MapperKind // also used to derive mapper.ID
-	Func   func(context.Context, *api.JobConfig, []*datastore.Key) error
+	Func   func(context.Context, mapper.JobID, *api.JobConfig, []*datastore.Key) error
 	Config mapper.JobConfig // note: Params will be overwritten
 }
 
@@ -62,6 +62,6 @@ func (m *mapperDef) newMapper(c context.Context, j *mapper.Job, shardIdx int) (m
 		return nil, errors.Annotate(err, "failed to unmarshal JobConfig").Err()
 	}
 	return func(c context.Context, keys []*datastore.Key) error {
-		return m.Func(c, cfg, keys)
+		return m.Func(c, j.ID, cfg, keys)
 	}, nil
 }

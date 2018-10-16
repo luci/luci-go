@@ -41,6 +41,8 @@ enum MapperKind {
   MAPPER_KIND_UNSPECIFIED = 0;
   // Dump names of all packages to GAE logs, to test mapping jobs framework.
   ENUMERATE_PACKAGES = 1;
+  // Find tags that don't pass ValidateInstanceTag and marks them.
+  FIND_MALFORMED_TAGS = 2;
 }
 
 
