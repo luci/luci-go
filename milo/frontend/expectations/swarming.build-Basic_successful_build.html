@@ -23,6 +23,8 @@
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
 
 
+<script src="/static/common/js/build.js"></script>
+
 
 <body class="interface">
   <header>
@@ -55,7 +57,6 @@
         
         </p>
        
-
 
         
 
@@ -112,30 +113,6 @@
     
   </div>
 </div>
-<script language="javascript">
-$(document).ready(function() {
-
-  var check = function(className) {
-    $("#steps").removeClass("all standard interesting").addClass(className)
-  }
-
-  $("#showInteresting").click(function(e) {
-    check("interesting");
-  });
-  $("#showStandard").click(function(e) {
-    check("standard");
-  });
-  $("#showAll").click(function(e) {
-    check("all");
-  });
-
-  $("input[name='hider']").each(function(){
-    if ($(this).prop("checked")) {
-      $(this).click();
-    }
-  });
-});
-</script>
 
   <footer>
     <hr>
