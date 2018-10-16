@@ -63,10 +63,13 @@ type header struct {
 	UserPicture string
 	UserEmail   string
 	Path        string
+	IsFull      bool // Full or Lite HTML mode.
 }
 
 // The stylesheet is inlined because static_dir isn't supported in flex.
 // IMPORTANT: js/css assets are served via the "static" module/service.
+// Note that in lite mode, <div id="lines"> has whitespace: pre; set,
+// So whitespaces need to be added carefully.
 var headerTemplate = template.Must(template.New("header").Parse(`
 <!DOCTYPE html>
 <head>
@@ -85,7 +88,8 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
 <div>
-<a href="/v/?s={{.Path}}">Use the old viewer</a> |
+{{ if .IsFull }}<a id="to-lite">Switch to lite
+{{ else }}<a id="to-full">Switch to full{{ end }} mode</a> |
 	{{ if .IsAnonymous }}
 		<a href="{{.LoginURL}}" alt="Login">Login</a>
 	{{ else }}
@@ -95,9 +99,9 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 		{{ .UserEmail }} |
 		<a href="{{.LogoutURL}}" alt="Logout">Logout</a>
 	{{ end }}
-</div></header><hr><div id="lines" class="lines">
+</div></header><hr>
 <script src="/static/js/viewer.js"></script>
-`))
+<div class="lines {{ if .IsFull }}full{{ else }}lite{{ end }}">`))
 
 type footer struct {
 	Message  string
@@ -148,8 +152,9 @@ type nopFlusher struct{}
 func (n *nopFlusher) Flush() {} // Do nothing
 
 const (
-	formatRAW  = "raw"
-	formatHTML = "html"
+	formatRAW      = "raw"
+	formatHTMLLite = "lite"
+	formatHTMLFull = "full"
 )
 
 // userOptions encapsulate the entirety of input parameters to the log viewer.
@@ -159,34 +164,56 @@ type userOptions struct {
 	// path is the full path (prefix + name) of the requested log stream.
 	path types.StreamPath
 	// format indicates the format the user wants the data back in.
-	// Valid formats are "raw" and "html".
+	// Valid formats are "raw", "lite", and "full.
+	// If the user specifies "?format=html",
+	// it will get resolved to either "lite" or "full" depending on:
+	//   * What cookies are set.
+	//   * Whether or not a URL fragment is in the path.
 	format string
 }
 
-// resolveFormat resolves the output format to serve to the user.  This could be "html" or "raw".
+func (uo userOptions) isHTML() bool {
+	return uo.format == formatHTMLLite || uo.format == formatHTMLFull
+}
+
+// resolveFormat resolves the output format to serve to the user.
+// This could be "html", "lite", "full", or "raw".
 // Here we try to be smart, and detect if the user is a web browser, or a CLI tool (E.G. cURL).
 // For web browsers, default to HTML mode, unless ?format=raw is specified.
 // For CLI tools, default to raw mode, unless ?format=html is specified.
-// If we can't figure anything out, default to HTML mode.
+// HTML mode has two modes, "lite" and "full".  Lite is default, unless:
+//   * The user has a cookie specifying preference to full mode.
+//   * A URL fragment is detected in the path.
+// If we can't figure anything out, default to HTML lite mode.
 // We do this before path parsing to figure out which mode we want
 // to render parsing errors in.
 func resolveFormat(request *http.Request) string {
 	// If a known format is specified, return it.
 	format := request.URL.Query().Get("format")
 	switch f := strings.ToLower(format); f {
-	case formatHTML, formatRAW:
+	case formatHTMLLite, formatHTMLFull, formatRAW:
 		return f
 	}
+	// TODO(hinoka): Check accept header first.
 	// User Agents are basically formatted as "<Type>/<Version> <other stuff>"
 	// We really only care about the very first <Type> string.
 	// from there we can basically differentiate between major classes of user agents. (Browser vs CLI)
-	clientType := strings.SplitN(request.UserAgent(), "/", 2)[0]
-	switch strings.ToLower(clientType) {
-	case "curl", "wget", "python-urllib":
-		return formatRAW
-	default:
-		return formatHTML
+	if format == "" {
+		clientType := strings.SplitN(request.UserAgent(), "/", 2)[0]
+		switch strings.ToLower(clientType) {
+		case "curl", "wget", "python-urllib":
+			return formatRAW
+		}
 	}
+
+	// Default to some sort of HTML mode, decide if it's full or lite.
+	if request.URL.Fragment != "" {
+		return formatHTMLFull // URL fragment requires full mode.
+	}
+	if cookie, err := request.Cookie("html-mode"); err == nil && cookie.Value == formatHTMLFull {
+		return formatHTMLFull
+	}
+	return formatHTMLLite
 }
 
 // resolveOptions takes the request path and http request, and returns the
@@ -255,7 +282,7 @@ func startFetch(c context.Context, request *http.Request, pathStr string) (data 
 
 	// If the user requested HTML format, check to see if the stream is a binary or datagram stream.
 	// If so, then this mode is not supported, and instead just render a link to the supported mode.
-	if data.options.format == formatHTML {
+	if data.options.isHTML() {
 		switch ls.StreamType {
 		case logpb.StreamType_BINARY, logpb.StreamType_DATAGRAM:
 			err = errRawRedirect
@@ -436,6 +463,7 @@ func writeHTMLHeader(ctx *router.Context, data logData) {
 		LogoutURL:   logoutURL,
 		UserPicture: user.Picture,
 		UserEmail:   user.Email,
+		IsFull:      data.options.format == formatHTMLFull,
 	}); err != nil {
 		fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
 	}
@@ -450,12 +478,12 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	ctx.Writer.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 	// Set the correct content type based off the log stream and format.
 	contentType := data.logStream.ContentType
-	if contentType == "text/plain" && data.options.format == formatHTML {
+	if data.options.isHTML() {
 		contentType = "text/html"
 	}
 	ctx.Writer.Header().Set("Content-Type", contentType)
 	ctx.Writer.WriteHeader(http.StatusOK)
-	if data.options.format == formatHTML {
+	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
 	}
 }
@@ -480,13 +508,13 @@ func writeErrHeaders(ctx *router.Context, err error, data logData) {
 		message = "Error: " + err.Error()
 		ctx.Writer.WriteHeader(grpcutil.CodeStatus(code))
 	}
-	if data.options.format == formatHTML {
+	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
 	}
 	fmt.Fprintf(ctx.Writer, message)
 }
 
-func writeFooter(ctx *router.Context, start time.Time, err error, format string) {
+func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
 	var message string
 	switch {
 	case err == nil:
@@ -497,15 +525,14 @@ func writeFooter(ctx *router.Context, start time.Time, err error, format string)
 		message = fmt.Sprintf("ERROR: %s", err)
 	}
 
-	switch format {
-	case formatHTML:
+	if isHTML {
 		if err := footerTemplate.ExecuteTemplate(ctx.Writer, "footer", footer{
 			Message:  message,
 			Duration: fmt.Sprintf("%.2fs", clock.Now(ctx.Context).Sub(start).Seconds()),
 		}); err != nil {
 			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
 		}
-	default:
+	} else {
 		fmt.Fprintf(ctx.Writer, message)
 	}
 	// TODO(hinoka): If there is an error, we can signal an error
@@ -658,7 +685,9 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 		}
 
 		for i, line := range log.GetText().GetLines() {
-			if data.options.format == formatHTML {
+			// For html full mode, we wrap each line with a div.
+			// For html lite and raw mode, we just regurgitate the lines.
+			if data.options.format == formatHTMLFull {
 				lt := logLineStruct{
 					// Note: We want to use PrefixIndex because we might be viewing more than 1 stream.
 					ID:   fmt.Sprintf("L%d_%d", log.PrefixIndex, i),
@@ -706,5 +735,5 @@ func GetHandler(ctx *router.Context) {
 	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to serve logs")
 	}
-	writeFooter(ctx, start, err, data.options.format)
+	writeFooter(ctx, start, err, data.options.isHTML())
 }

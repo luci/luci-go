@@ -25,4 +25,12 @@
     show: false,
     hide: false
   });
+
+  function setMode(mode) {
+    document.cookie = `html-mode=${mode}; path=/`;
+    location.reload(true);  // Changing modes require a force refresh.
+  }
+
+  $("#to-full").click(() => setMode("full"));
+  $("#to-lite").click(() => setMode("lite"));
 }());
