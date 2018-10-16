@@ -19,27 +19,30 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/mapper"
-	"go.chromium.org/luci/common/logging"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/common"
 )
 
 func init() {
 	initMapper(mapperDef{
-		Kind: api.MapperKind_ENUMERATE_PACKAGES,
-		Func: enumPackagesMapper,
+		Kind: api.MapperKind_FIND_MALFORMED_TAGS,
+		Func: findMalformedTagsMapper,
 		Config: mapper.JobConfig{
-			Query:         mapper.Query{Kind: "Package"},
-			ShardCount:    8,
-			PageSize:      256,
+			Query:         mapper.Query{Kind: "InstanceTag"},
+			ShardCount:    512,
+			PageSize:      256, // note: 500 is a strict limit imposed by GetMulti
 			TrackProgress: true,
 		},
 	})
 }
 
-func enumPackagesMapper(c context.Context, _ mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
-	for _, k := range keys {
-		logging.Infof(c, "Found package: %s", k.StringID())
-	}
-	return nil
+func findMalformedTagsMapper(c context.Context, job mapper.JobID, _ *api.JobConfig, keys []*datastore.Key) error {
+	return visitAndMarkTags(c, job, keys, func(t *model.Tag) string {
+		if err := common.ValidateInstanceTag(t.Tag); err != nil {
+			return err.Error()
+		}
+		return ""
+	})
 }
