@@ -70,6 +70,7 @@ type header struct {
 // IMPORTANT: js/css assets are served via the "static" module/service.
 // Note that in lite mode, <div id="lines"> has whitespace: pre; set,
 // So whitespaces need to be added carefully.
+// Link to raw log is constructed to strip out query params and fragments.
 var headerTemplate = template.Must(template.New("header").Parse(`
 <!DOCTYPE html>
 <head>
@@ -87,9 +88,8 @@ var headerTemplate = template.Must(template.New("header").Parse(`
 <title>{{ .Title }} | LogDog </title></head>
 <header>
 <div>{{ if .Link }}<a href="{{ .Link }}">Back to build</a>{{ end }}</div>
-<div>
-{{ if .IsFull }}<a id="to-lite">Switch to lite
-{{ else }}<a id="to-full">Switch to full{{ end }} mode</a> |
+<div><a href="/logs/{{ .Path }}?format=raw">raw |
+{{ if .IsFull }}<a id="to-lite">lite{{ else }}<a id="to-full">full{{ end }}</a> |
 	{{ if .IsAnonymous }}
 		<a href="{{.LoginURL}}" alt="Login">Login</a>
 	{{ else }}
