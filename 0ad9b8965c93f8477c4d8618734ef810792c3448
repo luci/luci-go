@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7d91846d_8549d3e8",
+        "filename": "cipd/api/admin/v1/pb.discovery.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-16T19:55:46Z",
+      "side": 1,
+      "message": "this looks wrong...",
+      "range": {
+        "startLine": 412,
+        "startChar": 27,
+        "endLine": 412,
+        "endChar": 40
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "713938ef_c21baa93",
+        "filename": "cipd/appengine/impl/admin/find_malformed_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-16T19:55:46Z",
+      "side": 1,
+      "message": "nit/opinion: it would be more obvious to have all the functionality of mapper X contained in one file; Having this little header file doesn\u0027t buy a lot",
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c93b1735_62bd6dce",
+        "filename": "cipd/appengine/impl/admin/marked_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-16T19:55:46Z",
+      "side": 1,
+      "message": "too bad you can\u0027t query for entities-missing-a-property :(. Could map over Tag to add a processing_generation\u003d0 property, then you could include it in the query to do sweeps over all Tags (and then also set a property like \u0027marked\u0027, which you can query later).",
+      "range": {
+        "startLine": 42,
+        "startChar": 5,
+        "endLine": 42,
+        "endChar": 14
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "04fa272f_38d42c6d",
+        "filename": "cipd/appengine/impl/admin/marked_tags.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-10-16T19:55:46Z",
+      "side": 1,
+      "message": "why not just have the callback return the \u0027why\u0027 string (or empty)?",
+      "range": {
+        "startLine": 78,
+        "startChar": 82,
+        "endLine": 78,
+        "endChar": 112
+      },
+      "revId": "0ad9b8965c93f8477c4d8618734ef810792c3448",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
