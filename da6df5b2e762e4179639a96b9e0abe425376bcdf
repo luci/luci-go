@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7c016fed_af9252ca",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 667,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4db81742_bcf79819",
+      "range": {
+        "startLine": 667,
+        "startChar": 21,
+        "endLine": 667,
+        "endChar": 22
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c66b9f2f_5517fb7c",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 9
@@ -45,6 +69,30 @@
       "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1aba67e1_0d530a99",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 9
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c66b9f2f_5517fb7c",
+      "range": {
+        "startLine": 20,
+        "startChar": 4,
+        "endLine": 20,
+        "endChar": 7
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "ac1cb88c_621305cb",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:09:20Z",
+      "side": 1,
+      "message": "As discussed offline, I\u0027ll rename this to StepDisplayPref",
+      "parentUuid": "1df9487a_e560c9c6",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 13
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a17ccf15_b1729f84",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 9
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "cd02274e_98b3e5ef",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a17ccf15_b1729f84",
+      "range": {
+        "startLine": 74,
+        "startChar": 30,
+        "endLine": 74,
+        "endChar": 51
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "8ddf69b9_68b6cb4f",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 9
@@ -114,6 +210,30 @@
       "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e6a6ba49_98c1ff3d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:09:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ddf69b9_68b6cb4f",
+      "range": {
+        "startLine": 143,
+        "startChar": 1,
+        "endLine": 154,
+        "endChar": 1
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
