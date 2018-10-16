@@ -118,6 +118,29 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	}
 }
 
+// fixComponentDuration makes all parent steps have the max duration of all
+// of its children.
+func fixComponentDuration(comp *BuildComponent) Interval {
+	// Leaf nodes do not require fixing.
+	if len(comp.Children) == 0 {
+		return comp.ExecutionTime
+	}
+	var start, fin time.Time
+	for _, subcomp := range comp.Children {
+		i := fixComponentDuration(subcomp)
+		if start.IsZero() || i.Started.Before(start) {
+			start = i.Started
+		}
+		if fin.IsZero() || i.Finished.After(fin) {
+			fin = i.Finished
+		}
+	}
+	comp.ExecutionTime.Started = start
+	comp.ExecutionTime.Finished = fin
+	comp.ExecutionTime.Duration = fin.Sub(start)
+	return comp.ExecutionTime
+}
+
 // Fix fixes various inconsistencies that users expect to see as part of the
 // Build, but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
@@ -125,6 +148,7 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 // * Components' Collapsed field is set based on StepDisplayPref field.
 // * Parent step name prefix is trimmed from the nested substeps.
 // * Enforce correct values for StepDisplayPref (set to Collapsed if incorrect).
+// * Set parent step durations to be the combination of all children.
 func (b *MiloBuild) Fix() {
 	if b.StepDisplayPref != Expanded && b.StepDisplayPref != NonGreen {
 		b.StepDisplayPref = Collapsed
@@ -134,6 +158,9 @@ func (b *MiloBuild) Fix() {
 		fixComponent(
 			comp, b.Summary.ExecutionTime.Finished, "",
 			b.StepDisplayPref == Collapsed)
+		// Run duration fixing after component fixing to make sure all of the
+		// end times are set correctly.
+		fixComponentDuration(comp)
 	}
 }
 
