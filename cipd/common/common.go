@@ -27,21 +27,31 @@ import (
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
-// packageNameRe is a regular expression for a superset of a set of allowed
-// package names.
-//
-// Package names must be lower case and have form "<word>/<word/<word>". See
-// ValidatePackageName for the full spec of how the package name can look.
-//
-// Note: do NOT ever add '+' as allowed character. It will break various URL
-// parsers that use '/+/' to separate parameters.
-var packageNameRe = regexp.MustCompile(`^([a-z0-9_\-\.]+/)*[a-z0-9_\-\.]+$`)
+var (
+	// packageNameRe is a regular expression for a superset of a set of allowed
+	// package names.
+	//
+	// Package names must be lower case and have form "<word>/<word/<word>". See
+	// ValidatePackageName for the full spec of how the package name can look.
+	//
+	// Note: do NOT ever add '+' as allowed character. It will break various URL
+	// parsers that use '/+/' to separate parameters.
+	packageNameRe = regexp.MustCompile(`^([a-z0-9_\-\.]+/)*[a-z0-9_\-\.]+$`)
 
-// instanceTagKeyRe is a regular expression for a tag key.
-var instanceTagKeyRe = regexp.MustCompile(`^[a-z0-9_\-]+$`)
+	// A regular expression for a tag key.
+	tagKeyReStr = `^[a-z0-9_\-]+$`
+	tagKeyRe    = regexp.MustCompile(tagKeyReStr)
 
-// packageRefRe is a regular expression for a ref.
-var packageRefRe = regexp.MustCompile(`^[a-z0-9_./\-]{1,256}$`)
+	// A regular expression for tag values.
+	//
+	// Basically printable non-whitespace ASCII, except symbols that have meaning
+	// in command line or URL contexts (!"#$%&?'^|).
+	tagValReStr = `^[A-Za-z0-9$()*+,\-./:;<=>@\\_{}~]+$`
+	tagValRe    = regexp.MustCompile(tagValReStr)
+
+	// packageRefRe is a regular expression for a ref.
+	packageRefRe = regexp.MustCompile(`^[a-z0-9_./\-]{1,256}$`)
+)
 
 // Pin uniquely identifies an instance of some package.
 type Pin struct {
@@ -115,20 +125,21 @@ func ValidateInstanceTag(t string) error {
 
 // ParseInstanceTag takes "k:v" string and returns its proto representation.
 func ParseInstanceTag(t string) (*api.Tag, error) {
-	chunks := strings.SplitN(t, ":", 2)
-	if len(chunks) != 2 {
+	switch chunks := strings.SplitN(t, ":", 2); {
+	case len(chunks) != 2:
 		return nil, fmt.Errorf("%q doesn't look like a tag (a key:value pair)", t)
+	case len(t) > 400:
+		return nil, fmt.Errorf("the tag is too long, should be <=400 chars: %q", t)
+	case !tagKeyRe.MatchString(chunks[0]):
+		return nil, fmt.Errorf("invalid tag key in %q (should match %q)", t, tagKeyReStr)
+	case !tagValRe.MatchString(chunks[1]):
+		return nil, fmt.Errorf("invalid tag value in %q (should match %q)", t, tagValReStr)
+	default:
+		return &api.Tag{
+			Key:   chunks[0],
+			Value: chunks[1],
+		}, nil
 	}
-	if len(t) > 400 {
-		return nil, fmt.Errorf("the tag is too long: %q", t)
-	}
-	if !instanceTagKeyRe.MatchString(chunks[0]) {
-		return nil, fmt.Errorf("invalid tag key in %q (should be a lowercase word)", t)
-	}
-	return &api.Tag{
-		Key:   chunks[0],
-		Value: chunks[1],
-	}, nil
 }
 
 // MustParseInstanceTag takes "k:v" string returns its proto representation or

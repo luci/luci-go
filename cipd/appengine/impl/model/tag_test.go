@@ -204,7 +204,7 @@ func TestTags(t *testing.T) {
 			})
 
 			Convey("No such tag", func() {
-				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:???"))
+				_, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:zzz"))
 				So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 				So(err, ShouldErrLike, "no such tag")
 			})
