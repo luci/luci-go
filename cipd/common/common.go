@@ -44,9 +44,12 @@ var (
 
 	// A regular expression for tag values.
 	//
-	// Basically printable non-whitespace ASCII, except symbols that have meaning
-	// in command line or URL contexts (!"#$%&?'^|).
-	tagValReStr = `^[A-Za-z0-9$()*+,\-./:;<=>@\\_{}~]+$`
+	// Basically printable ASCII (plus space), except symbols that have meaning in
+	// command line or URL contexts (!"#$%&?'^|).
+	//
+	// Additionally, spaces are allowed only inside the value, not as a prefix or
+	// a suffix.
+	tagValReStr = `^[A-Za-z0-9$()*+,\-./:;<=>@\\_{}~ ]+$`
 	tagValRe    = regexp.MustCompile(tagValReStr)
 
 	// packageRefRe is a regular expression for a ref.
@@ -132,6 +135,8 @@ func ParseInstanceTag(t string) (*api.Tag, error) {
 		return nil, fmt.Errorf("the tag is too long, should be <=400 chars: %q", t)
 	case !tagKeyRe.MatchString(chunks[0]):
 		return nil, fmt.Errorf("invalid tag key in %q (should match %q)", t, tagKeyReStr)
+	case strings.HasPrefix(chunks[1], " ") || strings.HasSuffix(chunks[1], " "):
+		return nil, fmt.Errorf("invalid tag value in %q (should not start or end with ' ')", t)
 	case !tagValRe.MatchString(chunks[1]):
 		return nil, fmt.Errorf("invalid tag value in %q (should match %q)", t, tagValReStr)
 	default:
