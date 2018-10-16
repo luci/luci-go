@@ -89,10 +89,13 @@ func TestValidateInstanceTag(t *testing.T) {
 		So(ValidateInstanceTag("notapair"), ShouldNotBeNil)
 		So(ValidateInstanceTag(strings.Repeat("long", 200)+":abc"), ShouldNotBeNil)
 		So(ValidateInstanceTag("BADKEY:value"), ShouldNotBeNil)
+		So(ValidateInstanceTag("empty_val:"), ShouldNotBeNil)
+		So(ValidateInstanceTag("space:a b"), ShouldNotBeNil)
+		So(ValidateInstanceTag("newline:a\n"), ShouldNotBeNil)
+		So(ValidateInstanceTag("tab:a\tb"), ShouldNotBeNil)
 		So(ValidateInstanceTag("good:tag"), ShouldBeNil)
-		So(ValidateInstanceTag("good_tag:"), ShouldBeNil)
 		So(ValidateInstanceTag("good:tag:blah"), ShouldBeNil)
-		So(ValidateInstanceTag("good_tag:asdad/asdad/adad/a\\asdasdad"), ShouldBeNil)
+		So(ValidateInstanceTag("good_tag:Aa0$()*+,-./:;<=>@\\_{}~"), ShouldBeNil)
 	})
 }
 
@@ -107,13 +110,6 @@ func TestParseInstanceTag(t *testing.T) {
 			Value: "tag",
 		})
 
-		t, err = ParseInstanceTag("good_tag:")
-		So(err, ShouldBeNil)
-		So(t, ShouldResemble, &api.Tag{
-			Key:   "good_tag",
-			Value: "",
-		})
-
 		t, err = ParseInstanceTag("good:tag:blah")
 		So(err, ShouldBeNil)
 		So(t, ShouldResemble, &api.Tag{
@@ -121,11 +117,11 @@ func TestParseInstanceTag(t *testing.T) {
 			Value: "tag:blah",
 		})
 
-		t, err = ParseInstanceTag("good_tag:asdad/asdad/adad/a\\asdasdad")
+		t, err = ParseInstanceTag("good_tag:Aa0$()*+,-./:;<=>@\\_{}~")
 		So(err, ShouldBeNil)
 		So(t, ShouldResemble, &api.Tag{
 			Key:   "good_tag",
-			Value: "asdad/asdad/adad/a\\asdasdad",
+			Value: "Aa0$()*+,-./:;<=>@\\_{}~",
 		})
 
 		t, err = ParseInstanceTag("")
