@@ -67,6 +67,11 @@ func init() {
 	r.GET("/", router.MiddlewareChain{}, func(c *router.Context) {
 		http.Redirect(c.Writer, c.Request, "/app/", http.StatusFound)
 	})
+	// Redirect "/v/?s=..." to "/logs/..."
+	r.GET("/v/", router.MiddlewareChain{}, func(c *router.Context) {
+		path := "/logs/" + c.Request.URL.Query().Get("s")
+		http.Redirect(c.Writer, c.Request, path, http.StatusFound)
+	})
 
 	http.Handle("/", r)
 }

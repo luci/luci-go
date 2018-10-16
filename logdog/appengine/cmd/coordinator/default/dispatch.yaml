@@ -16,9 +16,6 @@ dispatch:
   - url: "*/app/*"
     service: static
 
-  - url: "*/v/*"
-    service: static
-
   - url: "*/static/*"
     service: static
 
