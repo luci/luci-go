@@ -37,11 +37,11 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap"
     ],
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -97,9 +97,9 @@
         "Duration": 7198000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     }
   ],
   "PropertyGroup": [
@@ -112,5 +112,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }

@@ -75,6 +75,7 @@ func TestBuild(t *testing.T) {
 			for _, tc := range TestCases {
 				fmt.Printf("Generating expectations for %s/%d\n", tc.Builder, tc.Build)
 				build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
+				build.Fix()
 				So(err, ShouldBeNil)
 				buildJSON, err := json.MarshalIndent(build, "", "  ")
 				So(err, ShouldBeNil)
@@ -96,6 +97,7 @@ func TestBuild(t *testing.T) {
 			for _, tc := range TestCases {
 				Convey(fmt.Sprintf("Test Case: %s/%d", tc.Builder, tc.Build), func() {
 					build, err := DebugBuild(c, ".", tc.Builder, tc.Build)
+					build.Fix()
 					So(err, ShouldBeNil)
 					fname := fmt.Sprintf("%s.%d.build.json", tc.Builder, tc.Build)
 					So(build, shouldMatchExpectationsFor, fname)

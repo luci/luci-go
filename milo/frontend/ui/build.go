@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate stringer -type=Verbosity
 //go:generate stringer -type=ComponentType
 
 package ui
@@ -30,6 +29,19 @@ import (
 	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/milo/common/model"
+)
+
+// StepDisplayPref is the display preference for the steps.
+type StepDisplayPref string
+
+const (
+	// Collapsed means that all steps are visible, nested steps are collapsed.
+	Collapsed StepDisplayPref = "collapsed"
+	// Expanded means that all steps are visible, nested steps are expanded.
+	Expanded StepDisplayPref = "expanded"
+	// NonGreen means that only non-green steps are visible, nested steps are
+	// expanded.
+	NonGreen StepDisplayPref = "non-green"
 )
 
 // MiloBuild denotes a full renderable Milo build page.
@@ -58,6 +70,9 @@ type MiloBuild struct {
 	// Blame is a list of people and commits that is likely to be in relation to
 	// the thing displayed on this page.
 	Blame []*Commit
+
+	// Mode to render the steps. Default is Collapsed.
+	StepDisplayPref StepDisplayPref
 }
 
 var statusPrecendence = map[model.Status]int{
@@ -70,7 +85,7 @@ var statusPrecendence = map[model.Status]int{
 	model.Success:      6,
 }
 
-func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string) {
+func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string, collapsed bool) {
 	// If the build is finished but the step is not finished.
 	if !buildFinished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
 		// Then set the finish time to be the same as the build finish time.
@@ -78,9 +93,11 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 		comp.Status = model.InfraFailure
 	}
 
+	comp.Collapsed = collapsed
+
 	// Fix substeps recursively.
 	for _, substep := range comp.Children {
-		fixComponent(substep, buildFinished, stripPrefix+comp.Label.String()+".")
+		fixComponent(substep, buildFinished, stripPrefix+comp.Label.String()+".", collapsed)
 	}
 
 	// When parent step finishes running, compute its final status as worst
@@ -101,19 +118,22 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	}
 }
 
-// Fix fixes various inconsistencies that users expect to see as part of the Build,
-// but didn't make sense as part of the individual components, including:
+// Fix fixes various inconsistencies that users expect to see as part of the
+// Build, but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
+// * Parent steps containing failed steps should also be marked as failed.
+// * Components' Collapsed field is set based on StepDisplayPref field.
+// * Parent step name prefix is trimmed from the nested substeps.
+// * Enforce correct values for StepDisplayPref (set to Collapsed if incorrect).
 func (b *MiloBuild) Fix() {
-	switch b.Summary.Status {
-	case model.InfraFailure, model.Failure:
-		b.Summary.Verbosity = Interesting
-	case model.Success, model.Running, model.NotRun:
-		b.Summary.Verbosity = Hidden
+	if b.StepDisplayPref != Expanded && b.StepDisplayPref != NonGreen {
+		b.StepDisplayPref = Collapsed
 	}
 
 	for _, comp := range b.Components {
-		fixComponent(comp, b.Summary.ExecutionTime.Finished, "")
+		fixComponent(
+			comp, b.Summary.ExecutionTime.Finished, "",
+			b.StepDisplayPref == Collapsed)
 	}
 }
 
@@ -268,22 +288,6 @@ type LogoBanner struct {
 	Device []Logo
 }
 
-// Verbosity can be tagged onto a BuildComponent to indicate whether it should
-// be hidden or annuciated.
-type Verbosity int
-
-const (
-	// Normal items are displayed as usual.  This is the default.
-	Normal Verbosity = iota
-
-	// Hidden items are by default not displayed.
-	Hidden
-
-	// Interesting items are a signal that they should be annuciated, or
-	// pre-fetched.
-	Interesting
-)
-
 // Interval is a time interval which has a start, an end and a duration.
 type Interval struct {
 	// Started denotes the start time of this interval.
@@ -357,15 +361,16 @@ type BuildComponent struct {
 	// This is either "RECIPE" or "STEP".  An attempt is considered a recipe.
 	Type ComponentType
 
-	// Verbosity indicates how important this step is.
-	Verbosity Verbosity
-
 	// Arbitrary text to display below links.  One line per entry,
 	// newlines are stripped.
 	Text []string
 
 	// Children of the step. Undefined for other types of build components.
 	Children []*BuildComponent
+
+	// Render a step as collapsed or expanded. Undefined for other types of build
+	// components.
+	Collapsed bool
 }
 
 var rLineBreak = regexp.MustCompile("<br */?>")

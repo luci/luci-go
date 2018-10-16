@@ -21,9 +21,9 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
     "Text": null,
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -58,11 +58,11 @@
         "Duration": 3616635310000
       },
       "Type": "Summary",
-      "Verbosity": 2,
       "Text": [
         "Job likely failed to start."
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     }
   ],
   "PropertyGroup": [
@@ -76,5 +76,6 @@
       ]
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }

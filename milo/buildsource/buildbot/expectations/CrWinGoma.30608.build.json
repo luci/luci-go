@@ -32,11 +32,11 @@
       "Duration": 930372274000
     },
     "Type": "Summary",
-    "Verbosity": 0,
     "Text": [
       "build successful"
     ],
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -129,11 +129,11 @@
         "Duration": 930361415000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "running steps via annotated script"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -168,12 +168,12 @@
         "Duration": 24792523000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "update_scripts",
         "git - 94dbe001292dcec3423c5d1b0374826ff89a8f46"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -199,11 +199,11 @@
         "Duration": 6026451000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_properties"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -238,12 +238,12 @@
         "Duration": 1961000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "setup_build",
         "running recipe: \"chromium\""
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -269,11 +269,11 @@
         "Duration": 11061463000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "taskkill"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -308,12 +308,12 @@
         "Duration": 64068097000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "bot_update",
         "[133GB/2047GB used (6%)]"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -339,11 +339,11 @@
         "Duration": 2182000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -378,12 +378,12 @@
         "Duration": 5138000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.install cipd",
         "cipd instance_id: bccdb9a605037e3dd2a8a64e79e08f691a6f159d"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -418,11 +418,11 @@
         "Duration": 4837000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "ensure_goma.ensure_installed"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -448,11 +448,11 @@
         "Duration": 15240266000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "gclient runhooks"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -487,11 +487,11 @@
         "Duration": 2008540000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "get compile targets for scripts"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -526,12 +526,12 @@
         "Duration": 10048793000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "read test spec",
         "path: C:\\b\\build\\slave\\CrWinGoma\\build\\src\\testing\\buildbot\\chromium.fyi.json"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -557,11 +557,11 @@
         "Duration": 12412000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "cleanup_temp"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -587,11 +587,11 @@
         "Duration": 45870953000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "generate_build_files"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -626,11 +626,11 @@
         "Duration": 662301324000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "compile"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -656,14 +656,14 @@
         "Duration": 35905665000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "base_unittests",
         "base_unittests",
         "36 disabled",
         "2 flaky"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -689,13 +689,13 @@
         "Duration": 40790079000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "content_unittests",
         "content_unittests",
         "10 disabled"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -721,11 +721,11 @@
         "Duration": 2631000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "process_dumps"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     },
     {
       "Label": {
@@ -760,11 +760,11 @@
         "Duration": 86822000
       },
       "Type": "Recipe",
-      "Verbosity": 0,
       "Text": [
         "recipe result"
       ],
-      "Children": null
+      "Children": null,
+      "Collapsed": true
     }
   ],
   "PropertyGroup": [
@@ -1139,5 +1139,6 @@
         "tools/gn/variables.cc"
       ]
     }
-  ]
+  ],
+  "StepDisplayPref": "collapsed"
 }

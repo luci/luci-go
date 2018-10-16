@@ -656,8 +656,22 @@ li {
   padding: 0.1em 1em 0.1em 1em;
 }
 
-ol.substeps {
+li.substeps > ol {
   padding-left: 2em;
+}
+
+li.collapsed ol {
+  display: none;
+}
+
+li.substeps.collapsed > div.result > b:before {
+  content: "\25B6";
+  padding-right: 4px;
+}
+
+li.substeps > div.result > b:before {
+  content: "\25BC";
+  padding-right: 4px;
 }
 
 .file {
@@ -858,14 +872,6 @@ div.step-text:first-child {
     display: inline;
 }
 
-.standard .verbosity-Hidden {
-  display: none;
-}
-
-.interesting .verbosity-Hidden {
-  display: none;
-}
-
-.interesting .verbosity-Normal {
+.non-green li.green {
   display: none;
 }
