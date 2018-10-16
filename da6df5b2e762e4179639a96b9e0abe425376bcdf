@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4db81742_bcf79819",
+        "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
+        "patchSetId": 9
+      },
+      "lineNbr": 667,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T15:57:10Z",
+      "side": 1,
+      "message": "nit: please surround \u003e with spaces\nsee https://developer.mozilla.org/en-US/docs/Web/CSS/Child_selectors\nand L659\n\nbelow too",
+      "range": {
+        "startLine": 667,
+        "startChar": 21,
+        "endLine": 667,
+        "endChar": 22
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c66b9f2f_5517fb7c",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 9
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T15:57:10Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 20,
+        "startChar": 4,
+        "endLine": 20,
+        "endChar": 7
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1df9487a_e560c9c6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T15:57:10Z",
+      "side": 1,
+      "message": "nit: name ShowPref does not entail anything about steps being collapsed or expanded.\nConsider a name that better entails the meaning\n\nsame for field name and cookie name",
+      "range": {
+        "startLine": 35,
+        "startChar": 5,
+        "endLine": 35,
+        "endChar": 13
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a17ccf15_b1729f84",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T15:57:10Z",
+      "side": 1,
+      "message": "where this default is implemented? i think the right place for it is Fix()\n\n--\n\nfound it: in the cookie parsing. If it was in Fix() instead, you wouldn\u0027t have to update all tests to set ShowPref to collapsed",
+      "range": {
+        "startLine": 74,
+        "startChar": 30,
+        "endLine": 74,
+        "endChar": 51
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ddf69b9_68b6cb4f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T15:57:10Z",
+      "side": 1,
+      "message": "nit: consider a switch with 3 cases",
+      "range": {
+        "startLine": 143,
+        "startChar": 1,
+        "endLine": 154,
+        "endChar": 1
+      },
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
