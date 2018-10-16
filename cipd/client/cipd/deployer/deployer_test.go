@@ -32,7 +32,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	. "go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/common/cipdpkg"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -128,19 +127,19 @@ func TestDeployInstance(t *testing.T) {
 
 		Convey("Try to deploy package instance with bad package name", func() {
 			_, err := New(tempDir).DeployInstance(
-				ctx, "", makeTestInstance("../test/package", nil, cipdpkg.InstallModeCopy))
+				ctx, "", makeTestInstance("../test/package", nil, pkg.InstallModeCopy))
 			So(err, ShouldErrLike, "invalid package name")
 		})
 
 		Convey("Try to deploy package instance with bad instance ID", func() {
-			inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeCopy)
+			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			inst.instanceID = "../000000000"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldErrLike, "not a valid package instance ID")
 		})
 
 		Convey("Try to deploy package instance in bad subdir", func() {
-			inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeCopy)
+			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			inst.instanceID = "../000000000"
 			_, err := New(tempDir).DeployInstance(ctx, "/abspath", inst)
 			So(err, ShouldErrLike, "bad subdir")
@@ -161,7 +160,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
-			inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeSymlink)
+			inst := makeTestInstance("test/package", nil, pkg.InstallModeSymlink)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(info, ShouldResemble, inst.Pin())
@@ -198,7 +197,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(scanDir(tempDir), ShouldResemble, []string{
@@ -263,7 +262,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst)
@@ -323,7 +322,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestSymlink("symlink unchanged", "target"),
 				fs.NewTestSymlink("symlink changed", "old target"),
 				fs.NewTestSymlink("symlink removed", "target"),
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			oldPkg.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			newPkg := makeTestInstance("test/package", []fs.File{
@@ -333,7 +332,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile("mode change 2", "data d", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("symlink unchanged", "target"),
 				fs.NewTestSymlink("symlink changed", "new target"),
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg)
@@ -407,7 +406,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg1 file", "data c", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			pkg1.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			// Nesting in package names is allowed.
@@ -415,7 +414,7 @@ func TestDeployInstanceSymlinkMode(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a new", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b new", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg2 file", "data d", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeSymlink)
+			}, pkg.InstallModeSymlink)
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1)
@@ -506,7 +505,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
-			inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeCopy)
+			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(info, ShouldResemble, inst.Pin())
@@ -518,7 +517,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 			})
 
 			Convey("in subdir", func() {
-				inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeCopy)
+				inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 				info, err := New(tempDir).DeployInstance(ctx, "subdir", inst)
 				So(err, ShouldBeNil)
 				So(info, ShouldResemble, inst.Pin())
@@ -541,7 +540,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(scanDir(tempDir), ShouldResemble, []string{
@@ -580,7 +579,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst)
@@ -631,7 +630,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestSymlink("symlink unchanged", "target"),
 				fs.NewTestSymlink("symlink changed", "old target"),
 				fs.NewTestSymlink("symlink removed", "target"),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			oldPkg.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			newPkg := makeTestInstance("test/package", []fs.File{
@@ -641,7 +640,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile("mode change 2", "data d", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("symlink unchanged", "target"),
 				fs.NewTestSymlink("symlink changed", "new target"),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg)
@@ -697,7 +696,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg1 file", "data c", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			pkg1.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			// Nesting in package names is allowed.
@@ -705,7 +704,7 @@ func TestDeployInstanceCopyModePosix(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a new", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b new", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg2 file", "data d", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1)
@@ -774,7 +773,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 		tempDir := mkTempDir()
 
 		Convey("DeployInstance new empty package instance", func() {
-			inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeCopy)
+			inst := makeTestInstance("test/package", nil, pkg.InstallModeCopy)
 			info, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(info, ShouldResemble, inst.Pin())
@@ -813,7 +812,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile(".cipd/pkg/0/description.json", "{}", fs.TestFileOpts{}), // should be ignored
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			So(scanDir(tempDir), ShouldResemble, []string{
@@ -854,7 +853,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 			inst := makeTestInstance("test/package", []fs.File{
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b", fs.TestFileOpts{Executable: true}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 			_, err = New(tempDir).DeployInstance(ctx, "", inst)
@@ -905,7 +904,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				fs.NewTestFile("old only", "data c old", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("mode change 1", "data d", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("mode change 2", "data e", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			oldPkg.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			newPkg := makeTestInstance("test/package", []fs.File{
@@ -913,7 +912,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				fs.NewTestFile("some/executable", "data b new", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("mode change 1", "data d", fs.TestFileOpts{}),
 				fs.NewTestFile("mode change 2", "data d", fs.TestFileOpts{Executable: true}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", oldPkg)
@@ -969,7 +968,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a old", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b old", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg1 file", "data c", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			pkg1.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			// Nesting in package names is allowed.
@@ -977,7 +976,7 @@ func TestDeployInstanceCopyModeWindows(t *testing.T) {
 				fs.NewTestFile("some/file/path", "data a new", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data b new", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("pkg2 file", "data d", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			pkg2.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 
 			_, err := New(tempDir).DeployInstance(ctx, "", pkg1)
@@ -1060,12 +1059,12 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 		}
 
 		Convey("InstallModeCopy => InstallModeSymlink", func() {
-			inst := makeTestInstance("test/package", files, cipdpkg.InstallModeCopy)
+			inst := makeTestInstance("test/package", files, pkg.InstallModeCopy)
 			inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
-			inst = makeTestInstance("test/package", files, cipdpkg.InstallModeSymlink)
+			inst = makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err = New(tempDir).DeployInstance(ctx, "", inst)
 
@@ -1084,12 +1083,12 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 			})
 
 			Convey("in subidr", func() {
-				inst := makeTestInstance("test/package", files, cipdpkg.InstallModeCopy)
+				inst := makeTestInstance("test/package", files, pkg.InstallModeCopy)
 				inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst)
 				So(err, ShouldBeNil)
 
-				inst = makeTestInstance("test/package", files, cipdpkg.InstallModeSymlink)
+				inst = makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 				inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst)
 
@@ -1119,12 +1118,12 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 		})
 
 		Convey("InstallModeSymlink => InstallModeCopy", func() {
-			inst := makeTestInstance("test/package", files, cipdpkg.InstallModeSymlink)
+			inst := makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 			inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := New(tempDir).DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
-			inst = makeTestInstance("test/package", files, cipdpkg.InstallModeCopy)
+			inst = makeTestInstance("test/package", files, pkg.InstallModeCopy)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err = New(tempDir).DeployInstance(ctx, "", inst)
 
@@ -1140,12 +1139,12 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 			})
 
 			Convey("in subdir", func() {
-				inst := makeTestInstance("test/package", files, cipdpkg.InstallModeSymlink)
+				inst := makeTestInstance("test/package", files, pkg.InstallModeSymlink)
 				inst.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err := New(tempDir).DeployInstance(ctx, "subdir", inst)
 				So(err, ShouldBeNil)
 
-				inst = makeTestInstance("test/package", files, cipdpkg.InstallModeCopy)
+				inst = makeTestInstance("test/package", files, pkg.InstallModeCopy)
 				inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 				_, err = New(tempDir).DeployInstance(ctx, "subdir", inst)
 
@@ -1188,25 +1187,25 @@ func TestFindDeployed(t *testing.T) {
 			d := New(tempDir)
 
 			// Deploy a bunch of stuff.
-			_, err := d.DeployInstance(ctx, "", makeTestInstance("test/pkg/123", nil, cipdpkg.InstallModeCopy))
+			_, err := d.DeployInstance(ctx, "", makeTestInstance("test/pkg/123", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg/456", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg/456", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "", makeTestInstance("test/pkg", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "", makeTestInstance("test", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "", makeTestInstance("test", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/123", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/123", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/456", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg/456", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test/pkg", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
-			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "subdir", makeTestInstance("test", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
 
 			// including some broken packages
-			_, err = d.DeployInstance(ctx, "", makeTestInstance("broken", nil, cipdpkg.InstallModeCopy))
+			_, err = d.DeployInstance(ctx, "", makeTestInstance("broken", nil, pkg.InstallModeCopy))
 			So(err, ShouldBeNil)
 			if runtime.GOOS == "windows" {
 				err = os.Remove(filepath.Join(tempDir, fs.SiteServiceDir, "pkgs", "8", "_current.txt"))
@@ -1270,7 +1269,7 @@ func TestRemoveDeployedPosix(t *testing.T) {
 			inst := makeTestInstance("test/package/123", []fs.File{
 				fs.NewTestFile("some/file/path1", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable1", "data b", fs.TestFileOpts{Executable: true}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
@@ -1280,7 +1279,7 @@ func TestRemoveDeployedPosix(t *testing.T) {
 				fs.NewTestFile("some/to-be-empty-dir/file", "data", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable2", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestSymlink("some/symlink", "executable"),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2)
 			So(err, ShouldBeNil)
 
@@ -1351,7 +1350,7 @@ func TestRemoveDeployedWindows(t *testing.T) {
 			inst := makeTestInstance("test/package/123", []fs.File{
 				fs.NewTestFile("some/file/path1", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable1", "data b", fs.TestFileOpts{Executable: true}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err := d.DeployInstance(ctx, "", inst)
 			So(err, ShouldBeNil)
 
@@ -1360,7 +1359,7 @@ func TestRemoveDeployedWindows(t *testing.T) {
 				fs.NewTestFile("some/file/path2", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable2", "data b", fs.TestFileOpts{Executable: true}),
 				fs.NewTestFile("some/to-be-empty-dir/file", "data", fs.TestFileOpts{}),
-			}, cipdpkg.InstallModeCopy)
+			}, pkg.InstallModeCopy)
 			_, err = d.DeployInstance(ctx, "", inst2)
 			So(err, ShouldBeNil)
 
@@ -1419,7 +1418,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 		tempDir := mkTempDir()
 		dep := New(tempDir)
 
-		deployInst := func(mode cipdpkg.InstallMode, f ...fs.File) pkg.Instance {
+		deployInst := func(mode pkg.InstallMode, f ...fs.File) pkg.Instance {
 			inst := makeTestInstance("test/package", f, mode)
 			inst.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
 			_, err := dep.DeployInstance(ctx, "subdir", inst)
@@ -1461,7 +1460,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 		}
 
 		Convey("Copy install mode, no symlinks", func() {
-			inst := deployInst(cipdpkg.InstallModeCopy,
+			inst := deployInst(pkg.InstallModeCopy,
 				fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 				fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
 				fs.NewTestFile("some/executable", "data c", fs.TestFileOpts{Executable: true}),
@@ -1471,7 +1470,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 				Deployed:     true,
 				Pin:          inst.Pin(),
 				Subdir:       "subdir",
-				InstallMode:  cipdpkg.InstallModeCopy,
+				InstallMode:  pkg.InstallModeCopy,
 				packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
 				instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 			})
@@ -1487,7 +1486,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 
 		if runtime.GOOS != "windows" {
 			Convey("Copy install mode, with symlink files", func() {
-				inst := deployInst(cipdpkg.InstallModeCopy,
+				inst := deployInst(pkg.InstallModeCopy,
 					fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 					fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
 					fs.NewTestFile("some/executable", "data c", fs.TestFileOpts{Executable: true}),
@@ -1503,7 +1502,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					Deployed:     true,
 					Pin:          inst.Pin(),
 					Subdir:       "subdir",
-					InstallMode:  cipdpkg.InstallModeCopy,
+					InstallMode:  pkg.InstallModeCopy,
 					packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
 					instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
@@ -1539,7 +1538,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 			})
 
 			Convey("Symlink install mode", func() {
-				inst := deployInst(cipdpkg.InstallModeSymlink,
+				inst := deployInst(pkg.InstallModeSymlink,
 					fs.NewTestFile("some/file/path", "data a", fs.TestFileOpts{}),
 					fs.NewTestFile("another-file", "data b", fs.TestFileOpts{}),
 					fs.NewTestFile("some/executable", "data c", fs.TestFileOpts{Executable: true}),
@@ -1552,7 +1551,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 					Deployed:     true,
 					Pin:          inst.Pin(),
 					Subdir:       "subdir",
-					InstallMode:  cipdpkg.InstallModeSymlink,
+					InstallMode:  pkg.InstallModeSymlink,
 					packagePath:  filepath.Join(tempDir, ".cipd/pkgs/0"),
 					instancePath: filepath.Join(tempDir, ".cipd/pkgs/0/"+inst.Pin().InstanceID),
 				})
@@ -1613,7 +1612,7 @@ func TestUpgradeOldPkgDir(t *testing.T) {
 		trashDir := filepath.Join(tempDir, fs.SiteServiceDir, "trash")
 		fs := fs.NewFileSystem(tempDir, trashDir)
 
-		inst := makeTestInstance("test/package", nil, cipdpkg.InstallModeSymlink)
+		inst := makeTestInstance("test/package", nil, pkg.InstallModeSymlink)
 		_, err := d.DeployInstance(ctx, "", inst)
 		So(err, ShouldBeNil)
 
@@ -1935,22 +1934,22 @@ type testPackageInstance struct {
 	packageName string
 	instanceID  string
 	files       []fs.File
-	installMode cipdpkg.InstallMode
+	installMode pkg.InstallMode
 }
 
 // makeTestInstance returns pkg.Instance implementation with mocked guts.
-func makeTestInstance(name string, files []fs.File, installMode cipdpkg.InstallMode) *testPackageInstance {
+func makeTestInstance(name string, files []fs.File, installMode pkg.InstallMode) *testPackageInstance {
 	// Generate and append manifest file.
 	out := bytes.Buffer{}
-	err := cipdpkg.WriteManifest(&cipdpkg.Manifest{
-		FormatVersion: cipdpkg.ManifestFormatVersion,
+	err := pkg.WriteManifest(&pkg.Manifest{
+		FormatVersion: pkg.ManifestFormatVersion,
 		PackageName:   name,
 		InstallMode:   installMode,
 	}, &out)
 	if err != nil {
 		panic("Failed to write a manifest")
 	}
-	files = append(files, fs.NewTestFile(cipdpkg.ManifestName, string(out.Bytes()), fs.TestFileOpts{}))
+	files = append(files, fs.NewTestFile(pkg.ManifestName, string(out.Bytes()), fs.TestFileOpts{}))
 	return &testPackageInstance{
 		packageName: name,
 		instanceID:  "-wEu41lw0_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC", // some "representative" SHA256 IID
