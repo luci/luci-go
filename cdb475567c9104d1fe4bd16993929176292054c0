@@ -523,6 +523,24 @@
       "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5122c2f5_e15b4014",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 487,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-16T16:57:34Z",
+      "side": 1,
+      "message": "oh right I see what you mean now.",
+      "parentUuid": "25d288f9_e313a776",
+      "revId": "cdb475567c9104d1fe4bd16993929176292054c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
