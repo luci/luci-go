@@ -160,7 +160,9 @@ type testableImpl struct {
 
 func (t *testableImpl) CreateQueues() {
 	for _, q := range t.d.GetAllQueues() {
-		t.tqt.CreateQueue(q)
+		if q != "default" { // "default" queue always exists
+			t.tqt.CreateQueue(q)
+		}
 	}
 }
 
