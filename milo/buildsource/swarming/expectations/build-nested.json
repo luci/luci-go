@@ -28,12 +28,12 @@
       "Duration": 7198149290000
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": [
       "Running recipe bootstrap",
       "Failure build"
     ],
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": null,
   "Components": [
@@ -62,9 +62,9 @@
         "Duration": -21206166000000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -100,11 +100,11 @@
         "Duration": 49999872
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": [
         "running recipe: \"magenta\""
       ],
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -140,11 +140,11 @@
         "Duration": 430000128
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": [
         "cipd instance_id: d1ec9d904caee34beffec0a691a79991122037ba"
       ],
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -180,9 +180,9 @@
         "Duration": 229999872
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -209,9 +209,9 @@
         "Duration": 380000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -238,9 +238,9 @@
         "Duration": 29999872
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -267,9 +267,9 @@
         "Duration": 0
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -296,9 +296,9 @@
         "Duration": 59940000000
       },
       "Type": "Step",
-      "Verbosity": 0,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -318,7 +318,6 @@
         "Duration": 0
       },
       "Type": "Step",
-      "Verbosity": 2,
       "Text": null,
       "Children": [
         {
@@ -346,9 +345,9 @@
             "Duration": 1549999872
           },
           "Type": "Step",
-          "Verbosity": 0,
           "Text": null,
-          "Children": []
+          "Children": [],
+          "Collapsed": true
         },
         {
           "Label": {
@@ -375,9 +374,9 @@
             "Duration": 42170000128
           },
           "Type": "Step",
-          "Verbosity": 2,
           "Text": null,
-          "Children": []
+          "Children": [],
+          "Collapsed": true
         },
         {
           "Label": {
@@ -404,11 +403,12 @@
             "Duration": 5900000000
           },
           "Type": "Step",
-          "Verbosity": 2,
           "Text": null,
-          "Children": []
+          "Children": [],
+          "Collapsed": true
         }
-      ]
+      ],
+      "Collapsed": true
     }
   ],
   "PropertyGroup": [
@@ -465,5 +465,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }

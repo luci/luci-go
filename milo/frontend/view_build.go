@@ -13,6 +13,7 @@ import (
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
@@ -138,6 +139,18 @@ func handleRawPresentationBuild(c *router.Context) error {
 	return renderBuild(c, build, err)
 }
 
+func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
+	switch cookie, err := c.Request.Cookie("stepDisplayPref"); err {
+	case nil:
+		return ui.StepDisplayPref(cookie.Value)
+	case http.ErrNoCookie:
+		return ui.Collapsed
+	default:
+		logging.WithError(err).Errorf(c.Context, "failed to read stepDisplayPref cookie")
+		return ui.Collapsed
+	}
+}
+
 // renderBuild is a shortcut for rendering build or returning err if it is not
 // nil. Also calls build.Fix().
 func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
@@ -145,6 +158,7 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 		return err
 	}
 
+	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix()
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": build,

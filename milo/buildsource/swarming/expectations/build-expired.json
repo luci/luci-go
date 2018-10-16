@@ -49,11 +49,11 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 0,
     "Text": [
       "Task expired"
     ],
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -77,5 +77,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }

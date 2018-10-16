@@ -28,9 +28,9 @@
       "Duration": 0
     },
     "Type": "Recipe",
-    "Verbosity": 1,
     "Text": null,
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -54,5 +54,6 @@
       "Property": null
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }

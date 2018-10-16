@@ -531,7 +531,6 @@ func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.Swarmin
 	infoComp := infoComponent(model.InfraFailure,
 		"LogDog stream not found", "Job likely failed to start.")
 	infoComp.ExecutionTime = build.Summary.ExecutionTime
-	infoComp.Verbosity = ui.Interesting
 	build.Components = append(build.Components, infoComp)
 	return addTaskToBuild(c, host, res, build)
 }

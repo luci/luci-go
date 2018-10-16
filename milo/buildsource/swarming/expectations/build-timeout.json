@@ -63,11 +63,11 @@
       "Duration": 3616635310000
     },
     "Type": "Recipe",
-    "Verbosity": 2,
     "Text": [
       "Task timed out"
     ],
-    "Children": null
+    "Children": null,
+    "Collapsed": false
   },
   "Trigger": {
     "AuthorName": "",
@@ -110,9 +110,9 @@
         "Duration": 2000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": null,
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     },
     {
       "Label": {
@@ -148,11 +148,11 @@
         "Duration": 1000000000
       },
       "Type": "Step",
-      "Verbosity": 1,
       "Text": [
         "running recipe: \"v8\""
       ],
-      "Children": []
+      "Children": [],
+      "Collapsed": true
     }
   ],
   "PropertyGroup": [
@@ -199,5 +199,6 @@
       ]
     }
   ],
-  "Blame": null
+  "Blame": null,
+  "StepDisplayPref": "collapsed"
 }
