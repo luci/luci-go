@@ -61,6 +61,7 @@ var (
 				"../buildsource/swarming",
 				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
 					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
+					build.ShowPref = ui.Expanded
 					build.Fix()
 					return build, err
 				})
@@ -154,6 +155,7 @@ func buildbotBuildTestData() []common.TestBundle {
 				"Encountered error while building debug/%s/%d.\n%s",
 				tc.Builder, tc.Build, err))
 		}
+		build.ShowPref = ui.Collapsed
 		build.Fix()
 		bundles = append(bundles, common.TestBundle{
 			Description: fmt.Sprintf("Debug page: %s/%d", tc.Builder, tc.Build),
