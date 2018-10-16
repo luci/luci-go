@@ -557,6 +557,30 @@
     },
     {
       "key": {
+        "uuid": "52cf8e29_6db115d7",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 5
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-16T16:12:10Z",
+      "side": 1,
+      "message": "yes, a field at the build has to stay. I didn\u0027t mean to remove it",
+      "parentUuid": "0d01d3c5_b9cf84be",
+      "range": {
+        "startLine": 90,
+        "startChar": 34,
+        "endLine": 90,
+        "endChar": 43
+      },
+      "revId": "27c02aaec7a54d071a51243fb7c194d62a01b450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2aa34d6d_6711af8a",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 5
