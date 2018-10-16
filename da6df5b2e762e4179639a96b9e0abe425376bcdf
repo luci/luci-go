@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "bdadec86_1c283f98",
+        "filename": "milo/buildsource/swarming/build_test.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-10-16T18:11:40Z",
+      "side": 1,
+      "message": "This was incorrectly placed after call to Fix. Now that we default to Collapsed inside Fix, the expectations are updated to reflect the correct value for the Collapsed property.",
+      "revId": "da6df5b2e762e4179639a96b9e0abe425376bcdf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4db81742_bcf79819",
         "filename": "milo/frontend/appengine/static/buildbot/css/default.css",
         "patchSetId": 9
