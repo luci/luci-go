@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "311ac589_45158ab0",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1181690
+      },
+      "writtenOn": "2018-10-17T23:52:45Z",
+      "side": 1,
+      "message": "So this will add top-level properties\n\n  foo: \"bar\"\n  qux: 1\n\nand not\n\n  \"foo\": \"bar\"\n  \"qux\": 1\n\ni.e., the quotes won\u0027t be in the property name?",
+      "revId": "0957cea7351a00f4bc56d49517f5bec7765ee10d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b2896462_d835b9ee",
         "filename": "buildbucket/proto/config/project_config.proto",
         "patchSetId": 2
