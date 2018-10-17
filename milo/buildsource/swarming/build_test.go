@@ -76,7 +76,7 @@ func TestBuild(t *testing.T) {
 			if err != nil {
 				panic(fmt.Errorf("Could not run swarmingBuildImpl for %s: %s", tc, err))
 			}
-			build.Fix()
+			build.Fix(c)
 			buildJSON, err := json.MarshalIndent(build, "", "  ")
 			if err != nil {
 				panic(fmt.Errorf("Could not JSON marshal %s: %s", tc.Name, err))
@@ -109,7 +109,7 @@ func TestBuild(t *testing.T) {
 
 				build, err := SwarmingBuildImpl(c, tc, tc.Name)
 				So(err, ShouldBeNil)
-				build.Fix()
+				build.Fix(c)
 				So(build, shouldMatchExpectationsFor, tc.Name+".json")
 			})
 		}

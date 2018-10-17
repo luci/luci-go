@@ -159,7 +159,7 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 	}
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
-	build.Fix()
+	build.Fix(c.Context)
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": build,
 	})
