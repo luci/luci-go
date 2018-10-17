@@ -313,9 +313,9 @@
         "Duration": 0
       },
       "ExecutionTime": {
-        "Started": "2016-11-14T22:38:11.34Z",
+        "Started": "2016-11-14T22:37:14.78Z",
         "Finished": "2016-11-14T22:38:11.34Z",
-        "Duration": 0
+        "Duration": 56560000000
       },
       "Type": "Step",
       "Text": null,
