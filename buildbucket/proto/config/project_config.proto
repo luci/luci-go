@@ -184,12 +184,27 @@ message Builder {
     // is typically (but not always) a symbolic ref for `refs/heads/master`.
     string cipd_version = 5;
 
+    // A JSON Object with build properties.
+    // Will be available to the build script (recipe) at runtime.
+    // In text proto files use heredocs:
+    //
+    //   properties: <<END
+    //   {
+    //      "foo": "bar",
+    //      "qux": 1
+    //   }
+    //   END
+    //
+    // DEPRECATED FORMAT
+    //
     // Colon-separated build properties to set.
     // A property can be overriden by "properties" build parameter.
     //
     // Use this field for string properties and use properties_j for other
     // types.
     repeated string properties = 3;
+    // DEPRECATED, use properties (above).
+    //
     // Same as properties, but the value must valid JSON. For example
     //   properties_j: "a:1"
     // means property a is a number 1, not string "1".

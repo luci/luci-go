@@ -687,12 +687,27 @@ type Builder_Recipe struct {
 	// The default is `head`, which corresponds to the git repo's HEAD ref. This
 	// is typically (but not always) a symbolic ref for `refs/heads/master`.
 	CipdVersion string `protobuf:"bytes,5,opt,name=cipd_version,json=cipdVersion,proto3" json:"cipd_version,omitempty"`
+	// A JSON Object with build properties.
+	// Will be available to the build script (recipe) in runtime.
+	// In text proto files use heredocs:
+	//
+	//   properties: <<END
+	//   {
+	//      "foo": "bar",
+	//      "qux": 1
+	//   }
+	//   END
+	//
+	// DEPRECATED FORMAT
+	//
 	// Colon-separated build properties to set.
 	// A property can be overriden by "properties" build parameter.
 	//
 	// Use this field for string properties and use properties_j for other
 	// types.
 	Properties []string `protobuf:"bytes,3,rep,name=properties,proto3" json:"properties,omitempty"`
+	// DEPRECATED, use properties (above).
+	//
 	// Same as properties, but the value must valid JSON. For example
 	//   properties_j: "a:1"
 	// means property a is a number 1, not string "1".
