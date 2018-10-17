@@ -85,13 +85,12 @@ steps: <
   name: "substeps"
   status: STARTED
   start_time: < seconds: 1500000000 >
-  end_time: < seconds: 1500001000 >
 >
 steps: <
   name: "substeps|child"
   status: INFRA_FAILURE
   start_time: < seconds: 1500000000 >
-  end_time: < seconds: 1500001000 >
+  end_time: < seconds: 1500002000 >
 >
 steps: <
   name: "substeps|child|descendant0"
@@ -102,8 +101,17 @@ steps: <
 steps: <
   name: "substeps|child|descendant1"
   status: INFRA_FAILURE
+  start_time: < seconds: 1500001000 >
+  end_time: < seconds: 1500002000 >
 >
 steps: <
   name: "substeps|child2"
   status: SUCCESS
+  start_time: < seconds: 1500002000 >
+  end_time: < seconds: 1500003000 >
+>
+steps: <
+  name: "substeps|child3_unfinished"
+  status: STARTED
+  start_time: < seconds: 1500003000 >
 >
