@@ -33,6 +33,9 @@ service Admin {
   rpc AbortJob(JobID) returns (google.protobuf.Empty);
   // Returns state of a mapping job.
   rpc GetJobState(JobID) returns (JobState);
+
+  // Fixes (right inside the handler) tags marked by the given mapper job.
+  rpc FixMarkedTags(JobID) returns (TagFixReport);
 }
 
 
@@ -66,4 +69,16 @@ message JobState {
   JobConfig config = 1;
   // Current state of the job and all its shards.
   appengine.mapper.messages.JobInfo info = 2;
+}
+
+
+// Result of running FixMarkedTags.
+message TagFixReport {
+  message Tag {
+    string pkg = 1;
+    string instance = 2;
+    string broken_tag = 3;
+    string fixed_tag = 4; // or "" if it was deleted
+  }
+  repeated Tag fixed = 1;
 }

@@ -69,3 +69,18 @@ func (s *DecoratedAdmin) GetJobState(c context.Context, req *JobID) (rsp *JobSta
 	}
 	return
 }
+
+func (s *DecoratedAdmin) FixMarkedTags(c context.Context, req *JobID) (rsp *TagFixReport, err error) {
+	var newCtx context.Context
+	if s.Prelude != nil {
+		newCtx, err = s.Prelude(c, "FixMarkedTags", req)
+	}
+	if err == nil {
+		c = newCtx
+		rsp, err = s.Service.FixMarkedTags(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "FixMarkedTags", rsp, err)
+	}
+	return
+}

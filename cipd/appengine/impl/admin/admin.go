@@ -115,3 +115,12 @@ func (impl *adminImpl) GetJobState(c context.Context, id *api.JobID) (*api.JobSt
 	}
 	return &api.JobState{Config: cfg, Info: info}, nil
 }
+
+// GetJobState implements the corresponding RPC method, see the proto doc.
+func (impl *adminImpl) FixMarkedTags(c context.Context, id *api.JobID) (*api.TagFixReport, error) {
+	tags, err := fixMarkedTags(c, mapper.JobID(id.JobId))
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return &api.TagFixReport{Fixed: tags}, nil
+}

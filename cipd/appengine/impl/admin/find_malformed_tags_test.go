@@ -15,6 +15,7 @@
 package admin
 
 import (
+	"sort"
 	"strings"
 	"testing"
 
@@ -26,29 +27,45 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestFindMalformedTags(t *testing.T) {
+func TestFixMalformedTags(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
 		ctx, admin := SetupTest()
 
+		iid := strings.Repeat("a", 40)
 		instanceKey := func(pkg string) *datastore.Key {
 			return datastore.KeyForObj(ctx, &model.Instance{
-				InstanceID: strings.Repeat("a", 40),
+				InstanceID: iid,
 				Package:    model.PackageKey(ctx, pkg),
 			})
+		}
+
+		allTags := func(pkg string) (tags []string) {
+			t := []model.Tag{}
+			q := datastore.NewQuery("InstanceTag").Ancestor(model.PackageKey(ctx, pkg))
+			So(datastore.GetAll(ctx, q, &t), ShouldBeNil)
+			for _, e := range t {
+				tags = append(tags, e.Tag)
+			}
+			return
 		}
 
 		// Create a bunch of Tag entities manually, since AttachTags API won't allow
 		// us to create invalid tags. Note that for this test the exact form of
 		// entity keys is irrelevant.
 		tags := []*model.Tag{
-			{ID: "t1", Instance: instanceKey("a"), Tag: "good1:tag"},
-			{ID: "t2", Instance: instanceKey("a"), Tag: "bad1:"},
-			{ID: "t3", Instance: instanceKey("b"), Tag: "good2:tag"},
-			{ID: "t4", Instance: instanceKey("b"), Tag: "bad2:"},
+			{ID: "t1", Instance: instanceKey("a"), Tag: "good_a:tag"},
+			{ID: "t2", Instance: instanceKey("a"), Tag: "bad_a:"},
+			{ID: "t3", Instance: instanceKey("a"), Tag: "bad_a:fixable\n"},
+			{ID: "t4", Instance: instanceKey("b"), Tag: "good_b:tag"},
+			{ID: "t5", Instance: instanceKey("b"), Tag: "bad_b:"},
+			{ID: "t6", Instance: instanceKey("c"), Tag: "bad_c:fixable\n"},
 		}
 		So(datastore.Put(ctx, tags), ShouldBeNil)
+
+		// Make sure allTags actually works too.
+		So(allTags("a"), ShouldResemble, []string{"good_a:tag", "bad_a:", "bad_a:fixable\n"})
 
 		jobID, err := RunMapper(ctx, admin, &api.JobConfig{
 			Kind: api.MapperKind_FIND_MALFORMED_TAGS,
@@ -58,10 +75,34 @@ func TestFindMalformedTags(t *testing.T) {
 		// Verify all bad tags (and only them) were marked.
 		var marked []markedTag
 		So(datastore.GetAll(ctx, queryMarkedTags(jobID), &marked), ShouldBeNil)
-		So(marked, ShouldHaveLength, 2)
-		So(marked[0].Tag, ShouldEqual, "bad2:")
-		So(marked[0].Key, ShouldResemble, datastore.KeyForObj(ctx, tags[3]))
-		So(marked[1].Tag, ShouldEqual, "bad1:")
-		So(marked[1].Key, ShouldResemble, datastore.KeyForObj(ctx, tags[1]))
+		var badTags []string
+		for _, t := range marked {
+			badTags = append(badTags, t.Tag)
+		}
+		So(badTags, ShouldResemble, []string{
+			"bad_c:fixable\n",
+			"bad_b:",
+			"bad_a:fixable\n",
+			"bad_a:",
+		})
+
+		// Fix fixable tags and delete unfixable.
+		report, err := fixMarkedTags(ctx, jobID)
+		So(err, ShouldBeNil)
+
+		sort.Slice(report, func(i, j int) bool {
+			return report[i].BrokenTag < report[j].BrokenTag
+		})
+		So(report, ShouldResemble, []*api.TagFixReport_Tag{
+			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:", FixedTag: ""},
+			{Pkg: "a", Instance: iid, BrokenTag: "bad_a:fixable\n", FixedTag: "bad_a:fixable"},
+			{Pkg: "b", Instance: iid, BrokenTag: "bad_b:", FixedTag: ""},
+			{Pkg: "c", Instance: iid, BrokenTag: "bad_c:fixable\n", FixedTag: "bad_c:fixable"},
+		})
+
+		// Verify the changes actually landed in the datastore.
+		So(allTags("a"), ShouldResemble, []string{"bad_a:fixable", "good_a:tag"})
+		So(allTags("b"), ShouldResemble, []string{"good_b:tag"})
+		So(allTags("c"), ShouldResemble, []string{"bad_c:fixable"})
 	})
 }

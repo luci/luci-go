@@ -68,12 +68,17 @@ func queryMarkedTags(job mapper.JobID) *datastore.Query {
 	return datastore.NewQuery("mapper.MarkedTag").Eq("Job", job)
 }
 
-// visitAndMarkTags fetches Tag entities given their keys and passes them to
-// the callback, which may choose to mark a tag by returning non-empty string
-// with the human-readable reason why the tag was marked.
+// multiGetTags fetches a bunch of tags using GetMulti.
 //
-// Such marked tags are then stored in the datastore and later can be queried.
-func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
+// On overall RPC error returns a transient error.
+//
+// If it managed to fetch something, calls cb(key, tag) sequentially for
+// all tags there were found (silently skipping missing ones). If a tag was not
+// fetched for some other reason, returns the error right away.
+//
+// If the callback returns an error this error is returned immediately by
+// multiGetTags.
+func multiGetTags(c context.Context, keys []*datastore.Key, cb func(*datastore.Key, *model.Tag) error) error {
 	tags := make([]model.Tag, len(keys))
 	for i, k := range keys {
 		tags[i] = model.Tag{
@@ -91,24 +96,42 @@ func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key
 		errAt = func(idx int) error { return merr[idx] }
 	}
 
-	var marked []*markedTag
 	for i, t := range tags {
 		switch err := errAt(i); {
 		case err == datastore.ErrNoSuchEntity:
-			continue // just skip, no big deal
+			continue
 		case err != nil:
 			return errors.Annotate(err, "failed to fetch tag entity with key %s", keys[i]).Err()
 		}
-		if why := cb(&t); why != "" {
+		if err := cb(keys[i], &t); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// visitAndMarkTags fetches Tag entities given their keys and passes them to
+// the callback, which may choose to mark a tag by returning non-empty string
+// with the human-readable reason why the tag was marked.
+//
+// Such marked tags are then stored in the datastore and later can be queried.
+func visitAndMarkTags(c context.Context, job mapper.JobID, keys []*datastore.Key, cb func(*model.Tag) string) error {
+	var marked []*markedTag
+	err := multiGetTags(c, keys, func(key *datastore.Key, tag *model.Tag) error {
+		if why := cb(tag); why != "" {
 			mt := &markedTag{
 				Job: job,
-				Key: keys[i],
-				Tag: t.Tag,
+				Key: key,
+				Tag: tag.Tag,
 				Why: why,
 			}
 			mt.genID()
 			marked = append(marked, mt)
 		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	if err := datastore.Put(c, marked); err != nil {
