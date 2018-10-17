@@ -24,7 +24,7 @@
   {{ if .Started }}
     <span class="duration"
           data-starttime="{{ .Started | formatTime }}"
-          {{ if .Finished -}}
+          {{ if not .Finished.IsZero -}}
             data-endtime="{{ .Finished | formatTime }}"
           {{- end }}>
           ( {{ .Duration | humanDuration }} )</span>

@@ -85,11 +85,19 @@ var statusPrecendence = map[model.Status]int{
 	model.Success:      6,
 }
 
+// fixComponent fixes possible display inconsistencies with the build, including:
+//
+// * If the build is complete, all open steps should be closed.
+// * Parent steps containing failed steps should also be marked as failed.
+// * Components' Collapsed field is set based on StepDisplayPref field.
+// * Parent step name prefix is trimmed from the nested substeps.
+// * Enforce correct values for StepDisplayPref (set to Collapsed if incorrect).
 func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string, collapsed bool) {
 	// If the build is finished but the step is not finished.
 	if !buildFinished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
 		// Then set the finish time to be the same as the build finish time.
 		comp.ExecutionTime.Finished = buildFinished
+		comp.ExecutionTime.Duration = buildFinished.Sub(comp.ExecutionTime.Started)
 		comp.Status = model.InfraFailure
 	}
 
@@ -118,6 +126,41 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	}
 }
 
+var (
+	farFutureTime = time.Date(2038, time.January, 19, 3, 14, 07, 0, time.UTC)
+	farPastTime   = time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC)
+)
+
+// fixComponentDuration makes all parent steps have the max duration of all
+// of its children.
+func fixComponentDuration(c context.Context, comp *BuildComponent) Interval {
+	// Leaf nodes do not require fixing.
+	if len(comp.Children) == 0 {
+		return comp.ExecutionTime
+	}
+	// Set start and end times to be out of bounds.
+	// Each variable can have 3 states:
+	// 1. Undefined.  In which case they're set to farFuture/PastTime
+	// 2. Current (fin only).  In which case it's set to zero time (time.Time{})
+	// 3. Definite.  In which case it's set to a time that isn't either of the above.
+	start := farFutureTime
+	fin := farPastTime
+	for _, subcomp := range comp.Children {
+		i := fixComponentDuration(c, subcomp)
+		if i.Started.Before(start) {
+			start = i.Started
+		}
+		switch {
+		case fin.IsZero():
+			continue // fin is current, it can't get any farther in the future than that.
+		case i.Finished.IsZero(), i.Finished.After(fin):
+			fin = i.Finished // Both of these cased are considered "after".
+		}
+	}
+	comp.ExecutionTime = NewInterval(c, start, fin)
+	return comp.ExecutionTime
+}
+
 // Fix fixes various inconsistencies that users expect to see as part of the
 // Build, but didn't make sense as part of the individual components, including:
 // * If the build is complete, all open steps should be closed.
@@ -125,7 +168,8 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 // * Components' Collapsed field is set based on StepDisplayPref field.
 // * Parent step name prefix is trimmed from the nested substeps.
 // * Enforce correct values for StepDisplayPref (set to Collapsed if incorrect).
-func (b *MiloBuild) Fix() {
+// * Set parent step durations to be the combination of all children.
+func (b *MiloBuild) Fix(c context.Context) {
 	if b.StepDisplayPref != Expanded && b.StepDisplayPref != NonGreen {
 		b.StepDisplayPref = Collapsed
 	}
@@ -134,6 +178,9 @@ func (b *MiloBuild) Fix() {
 		fixComponent(
 			comp, b.Summary.ExecutionTime.Finished, "",
 			b.StepDisplayPref == Collapsed)
+		// Run duration fixing after component fixing to make sure all of the
+		// end times are set correctly.
+		fixComponentDuration(c, comp)
 	}
 }
 
