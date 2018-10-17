@@ -158,12 +158,14 @@ func validateEmailTemplateFile(ctx *validation.Context, configSet, path string, 
 	if err != nil {
 		ctx.Error(err)
 	} else {
-		if _, err = text.New("subject").Parse(subject); err != nil {
+		// Note: Parse does not return an error if the template attempts to
+		// call an undefined template, e.g. {{template "does-not-exist"}}
+		if _, err = text.New("subject").Funcs(EmailTemplateFuncs).Parse(subject); err != nil {
 			ctx.Error(err) // error includes template name
 		}
 		// Due to luci-config limitation, we cannot detect an invalid reference to
 		// a sub-template defined in a different file.
-		if _, err = html.New("body").Parse(body); err != nil {
+		if _, err = html.New("body").Funcs(EmailTemplateFuncs).Parse(body); err != nil {
 			ctx.Error(err) // error includes template name
 		}
 	}

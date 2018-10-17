@@ -21,10 +21,6 @@ import (
 	html "html/template"
 	"strings"
 	text "text/template"
-	"time"
-
-	"github.com/golang/protobuf/ptypes"
-	"github.com/golang/protobuf/ptypes/timestamp"
 
 	"go.chromium.org/gae/service/datastore"
 
@@ -40,13 +36,6 @@ import (
 type EmailTemplateInput struct {
 	*buildbucketpb.Build
 	OldStatus buildbucketpb.Status
-}
-
-var templateFuncs = map[string]interface{}{
-	"time": func(ts *timestamp.Timestamp) time.Time {
-		t, _ := ptypes.Timestamp(ts)
-		return t
-	},
 }
 
 // errorBodyTemplate is used when a user-defined email template fails.
@@ -235,8 +224,8 @@ func getBundle(c context.Context, projectId string) (*bundle, error) {
 		b := &bundle{
 			revision: project.Revision,
 			defURLs:  make(map[string]string, len(templates)),
-			subjects: text.New("").Funcs(templateFuncs),
-			bodies:   html.New("").Funcs(templateFuncs),
+			subjects: text.New("").Funcs(config.EmailTemplateFuncs),
+			bodies:   html.New("").Funcs(config.EmailTemplateFuncs),
 		}
 		for _, t := range templates {
 			b.defURLs[t.Name] = t.DefinitionURL
