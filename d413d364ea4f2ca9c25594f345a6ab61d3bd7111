@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "affcdee0_adfd70ec",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-17T20:18:03Z",
+      "side": 1,
+      "message": "It was, the problem is that there are 3 states:\n1. (farPastTime) fin is undefined, will take the first time.\n2. fin is \"current\".  Using time.Time{} for this state\n3. fin is a definite time.\n\nI realize this was not obvious, I\u0027ll add comments.",
+      "parentUuid": "94ba1407_a52b2216",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 136,
+        "endChar": 19
+      },
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a0fe87c3_7891358c",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 4
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "06430903_5105c4f2",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-17T20:18:03Z",
+      "side": 1,
+      "message": "Good catch, I don\u0027t want to assume the first child is always the earliest time (imagine out-of-order operation where the first item had a long pending time).",
+      "parentUuid": "a0fe87c3_7891358c",
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b1c5ade3_4b3198bd",
         "filename": "milo/frontend/ui/build.go",
         "patchSetId": 4
@@ -56,6 +98,24 @@
       "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dddd6ed7_4f227d4b",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-10-17T20:18:03Z",
+      "side": 1,
+      "message": "Strictly speaking, it can go into fixComponent(), but I thought separating it out was cleaner that making a mega-giant function.\n\nboth functions do a traversal, but the traversals are subtly different (fixComponentDuration will always bail out on leaf nodes, leaving ExecutionTime untouched).  Codifying that into fixComponent() is doable but would be confusing to read.\n\nIf anything, I would probably want to split out fixComponent() into multiple functions, for readability.",
+      "parentUuid": "b1c5ade3_4b3198bd",
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
