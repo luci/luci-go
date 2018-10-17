@@ -19,7 +19,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
 
@@ -27,6 +30,13 @@ import (
 	"go.chromium.org/luci/common/logging"
 	configInterface "go.chromium.org/luci/config"
 )
+
+var EmailTemplateFuncs = map[string]interface{}{
+	"time": func(ts *timestamp.Timestamp) time.Time {
+		t, _ := ptypes.Timestamp(ts)
+		return t
+	},
+}
 
 // emailTemplateFilenameRegexp returns a regular expression for email template
 // file names.
