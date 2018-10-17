@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "94ba1407_a52b2216",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-17T18:19:28Z",
+      "side": 1,
+      "message": "was time.Time{} considered?\nit is before others too\nhttps://play.golang.org/p/O_Gd-CbStlx",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 136,
+        "endChar": 19
+      },
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a0fe87c3_7891358c",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-17T18:19:28Z",
+      "side": 1,
+      "message": "strictly speaking, there may be a child that we haven\u0027t visited yet that has start time before current `start`.\nif we assume that children are ordered by start time, then there is no need to do L139 check. We can just do\n\n  start \u003d comp.Children[0].Started",
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1c5ade3_4b3198bd",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-17T18:19:28Z",
+      "side": 1,
+      "message": "why do we need a separate function, as opposed to integrating the new functionality into L100-103?",
+      "revId": "d413d364ea4f2ca9c25594f345a6ab61d3bd7111",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
