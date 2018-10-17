@@ -125,6 +125,8 @@ substep: <
             name: "descendant1"
             status: FAILURE
             failure_details: < type: EXCEPTION >
+            started: < seconds: 1500001000 >
+            ended: < seconds: 1500002000 >
           >
         >
       >
@@ -134,6 +136,16 @@ substep: <
       step: <
         name: "child2"
         status: SUCCESS
+        started: < seconds: 1500002000 >
+        ended: < seconds: 1500003000 >
+      >
+    >
+
+    substep: <
+      step: <
+        name: "child3_unfinished"
+        status: RUNNING
+        started: < seconds: 1500003000 >
       >
     >
   >

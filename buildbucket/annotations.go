@@ -151,11 +151,18 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	bb.Status = p.convertStatus(ann, bbSubsteps)
 
 	// Ensure parent step start/end time is not after/before of its children.
+	noEndTime := false
 	for _, ss := range bbSubsteps {
 		if ss.StartTime != nil && (bb.StartTime == nil || cmpTs(bb.StartTime, ss.StartTime) > 0) {
 			bb.StartTime = ss.StartTime
 		}
-		if ss.EndTime != nil && (bb.EndTime == nil || cmpTs(bb.EndTime, ss.EndTime) < 0) {
+		switch {
+		case ss.EndTime == nil:
+			noEndTime = true
+			bb.EndTime = nil
+		case noEndTime:
+
+		case bb.EndTime == nil || cmpTs(bb.EndTime, ss.EndTime) < 0:
 			bb.EndTime = ss.EndTime
 		}
 	}
