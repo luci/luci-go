@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aacc4e44_72ab6d34",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1409,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-17T17:08:33Z",
+      "side": 1,
+      "message": "err is already available in L1398. Why pass it?",
+      "range": {
+        "startLine": 1409,
+        "startChar": 43,
+        "endLine": 1409,
+        "endChar": 54
+      },
+      "revId": "03b54576d4644f129a794070abe6c43f8ad092ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
