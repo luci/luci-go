@@ -80,7 +80,7 @@ message Text {
   /* Contiguous text lines and their delimiters. */
   message Line {
     /* The line's text content, not including its delimiter. */
-    string value = 1;
+    bytes value = 1;
 
     /*
      * The line's delimiter string.

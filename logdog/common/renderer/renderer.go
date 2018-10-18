@@ -106,7 +106,7 @@ func (r *Renderer) bufferNext() error {
 					r.buf.WriteString(r.TextPrefix(le, line))
 				}
 
-				r.buf.WriteString(line.Value)
+				r.buf.Write(line.Value)
 				if !r.Raw {
 					r.buf.WriteRune('\n')
 				} else {

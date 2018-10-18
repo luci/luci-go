@@ -128,7 +128,7 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		}
 
 		txt.Lines = append(txt.Lines, &logpb.Text_Line{
-			Value:     p.buf.String(),
+			Value:     append([]byte(nil), p.buf.Bytes()...), // Make a copy.
 			Delimiter: newline,
 		})
 		p.Consume(int64(p.buf.Len() + len(newline)))

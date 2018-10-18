@@ -691,7 +691,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 				lt := logLineStruct{
 					// Note: We want to use PrefixIndex because we might be viewing more than 1 stream.
 					ID:   fmt.Sprintf("L%d_%d", log.PrefixIndex, i),
-					Text: line.GetValue(),
+					Text: string(line.GetValue()),
 				}
 				// Add in timestamp information, if available.
 				if duration, ierr := ptypes.Duration(log.GetTimeOffset()); ierr == nil {

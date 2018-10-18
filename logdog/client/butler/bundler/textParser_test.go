@@ -52,8 +52,12 @@ func (o *textTestOutput) testLines() logpb.Text {
 			delim = posixNewline
 		}
 
+		val := []byte(line[:len(line)-len(delim)])
+		if len(val) == 0 {
+			val = nil
+		}
 		t.Lines = append(t.Lines, &logpb.Text_Line{
-			Value:     line[:len(line)-len(delim)],
+			Value:     val,
 			Delimiter: delim,
 		})
 	}

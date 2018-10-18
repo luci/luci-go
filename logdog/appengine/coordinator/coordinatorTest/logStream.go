@@ -157,7 +157,7 @@ func (ts *TestStream) LogEntry(c context.Context, i int) *logpb.LogEntry {
 			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
 					{
-						Value:     message,
+						Value:     []byte(message),
 						Delimiter: "\n",
 					},
 				},

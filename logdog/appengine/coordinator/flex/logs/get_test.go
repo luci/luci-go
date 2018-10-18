@@ -109,7 +109,7 @@ func testGetImpl(t *testing.T, archived bool) {
 		for _, v := range []int{0, 1, 2, 4, 5, 7} {
 			le := tls.LogEntry(c, v)
 			le.GetText().Lines = append(le.GetText().Lines, &logpb.Text_Line{
-				Value: "another line of text",
+				Value: []byte("another line of text"),
 			})
 			entries = append(entries, le)
 
@@ -599,8 +599,8 @@ func testGetImpl(t *testing.T, archived bool) {
 
 					So(resp.Logs[0].GetText(), ShouldResemble, &logpb.Text{
 						Lines: []*logpb.Text_Line{
-							{Value: "log entry #0", Delimiter: "\n"},
-							{Value: "another line of text", Delimiter: ""},
+							{Value: []byte("log entry #0"), Delimiter: "\n"},
+							{Value: []byte("another line of text"), Delimiter: ""},
 						},
 					})
 				})

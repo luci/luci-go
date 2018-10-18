@@ -221,7 +221,7 @@ func (b *bundleBuilder) logEntry(idx int) *logpb.LogEntry {
 			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
 					{
-						Value:     fmt.Sprintf("Line #%d", idx),
+						Value:     []byte(fmt.Sprintf("Line #%d", idx)),
 						Delimiter: "\n",
 					},
 				},

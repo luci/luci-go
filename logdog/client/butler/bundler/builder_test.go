@@ -48,7 +48,7 @@ func parse(desc string) (*logpb.ButlerLogBundle_Entry, []*logpb.LogEntry) {
 		le := &logpb.LogEntry{
 			Content: &logpb.LogEntry_Text{Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
-					{Value: key},
+					{Value: []byte(key)},
 				},
 			}},
 		}
@@ -58,7 +58,7 @@ func parse(desc string) (*logpb.ButlerLogBundle_Entry, []*logpb.LogEntry) {
 			missing := size - protoSize(le)
 			if missing > 0 {
 				le.GetText().Lines = append(le.GetText().Lines, &logpb.Text_Line{
-					Value: strings.Repeat("!", missing),
+					Value: []byte(strings.Repeat("!", missing)),
 				})
 			}
 		}
@@ -90,7 +90,7 @@ func logEntryName(le *logpb.LogEntry) string {
 	if t == nil || len(t.Lines) == 0 {
 		return ""
 	}
-	return t.Lines[0].Value
+	return string(t.Lines[0].Value)
 }
 
 // "expected" is a notation to express a bundle entry and its keys:
