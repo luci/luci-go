@@ -17,92 +17,67 @@ package main
 
 import (
 	"context"
-	"flag"
-	"fmt"
 	"os"
-	"strings"
-	"time"
 
 	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/googleapi"
+
+	"github.com/maruel/subcommands"
 
 	"go.chromium.org/luci/auth"
 	"go.chromium.org/luci/auth/client/authcli"
-	"go.chromium.org/luci/common/errors"
-	luciflag "go.chromium.org/luci/common/flag"
+	"go.chromium.org/luci/common/cli"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
 
-// flags encapsulates the command line flags used to invoke this tool.
-type flags struct {
-	// authOpts encapsulates the parsed auth options.
-	authOpts auth.Options
-	// disk is the name of the disk to create a snapshot of.
-	disk string
-	// labels is a map to attach to the snapshot as labels.
-	labels map[string]string
-	// name is the name to give the created snapshot.
-	name string
-	// project is the name of the project where the disk exists, and to create the snapshot in.
-	project string
-	// zone is the name of the zone where the disk exists.
-	zone string
+// key is the context key used to retrieve the GCE API client.
+var key = "service"
+
+// getService retrieves the GCE API service embedded in the given context.
+func getService(c context.Context) *compute.Service {
+	return c.Value(&key).(*compute.Service)
 }
 
-// parseFlags parses command line flags, returning a flags struct.
-func parseFlags(c context.Context, args []string) (*flags, error) {
-	a := authcli.Flags{}
-	s := &flag.FlagSet{}
+// cmdRunBase is the base struct all subcommands should embed.
+// Implements cli.ContextModificator.
+type cmdRunBase struct {
+	subcommands.CommandRunBase
+	authFlags authcli.Flags
+}
+
+// Initialize registers common flags.
+func (b *cmdRunBase) Initialize() {
 	opts := chromeinfra.DefaultAuthOptions()
 	opts.Scopes = []string{"https://www.googleapis.com/auth/compute"}
-	a.Register(s, opts)
-
-	var labels []string
-	f := flags{}
-	s.StringVar(&f.disk, "disk", "", "Disk to create a snapshot of.")
-	s.Var(luciflag.StringSlice(&labels), "label", "Label to attach to a snapshot.")
-	s.StringVar(&f.name, "name", "", "Name to give the created snapshot.")
-	s.StringVar(&f.project, "project", "", "Project where the disk exists, and to create the snapshot in.")
-	s.StringVar(&f.zone, "zone", "", "Zone where the disk exists.")
-	if err := s.Parse(args); err != nil {
-		return nil, err
-	}
-
-	if f.disk == "" {
-		return nil, errors.New("-disk is required")
-	}
-	f.labels = make(map[string]string, len(labels))
-	for _, label := range labels {
-		parts := strings.SplitN(label, ":", 2)
-		if len(parts) != 2 {
-			return nil, errors.New(fmt.Sprintf("-label %q must be in key:value form", label))
-		}
-		if _, ok := f.labels[parts[0]]; ok {
-			return nil, errors.New(fmt.Sprintf("-label %q has duplicate key", label))
-		}
-		f.labels[parts[0]] = parts[1]
-	}
-	if f.name == "" {
-		return nil, errors.New("-name is required")
-	}
-	if f.project == "" {
-		return nil, errors.New("-project is required")
-	}
-	if f.zone == "" {
-		return nil, errors.New("-zone is required")
-	}
-	opts, err := a.Options()
-	if err != nil {
-		return nil, err
-	}
-	f.authOpts = opts
-	return &f, nil
+	b.authFlags.Register(b.GetFlags(), opts)
 }
 
-// getClient returns a new Compute Engine API client.
-func getClient(c context.Context, opts auth.Options) (*compute.Service, error) {
+// ModifyContext returns a new context.
+// Configures logging and embeds the GCE API service.
+// Implements cli.ContextModificator.
+func (b *cmdRunBase) ModifyContext(c context.Context) context.Context {
+	c = logging.SetLevel(gologger.StdConfig.Use(c), logging.Debug)
+	opts, err := b.authFlags.Options()
+	if err != nil {
+		logging.Errorf(c, "%s", err.Error())
+		panic("failed to get auth options")
+	}
+	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
+	if err != nil {
+		logging.Errorf(c, "%s", err.Error())
+		panic("failed to get authenticator")
+	}
+	srv, err := compute.New(http)
+	if err != nil {
+		logging.Errorf(c, "%s", err.Error())
+		panic("failed to get GCE API service")
+	}
+	return context.WithValue(c, &key, srv)
+}
+
+// createService returns a new Compute Engine API service.
+func createService(c context.Context, opts auth.Options) (*compute.Service, error) {
 	http, err := auth.NewAuthenticator(c, auth.OptionalLogin, opts).Client()
 	if err != nil {
 		return nil, err
@@ -114,54 +89,18 @@ func getClient(c context.Context, opts auth.Options) (*compute.Service, error) {
 	return service, nil
 }
 
-// Main creates a disk snapshot.
-func Main(args []string) int {
-	c := gologger.StdConfig.Use(context.Background())
-	c = logging.SetLevel(c, logging.Debug)
-
-	flags, err := parseFlags(c, args)
-	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
-		return 1
+// New returns a new snapshot application.
+func New() *cli.Application {
+	return &cli.Application{
+		Name:  "snapshot",
+		Title: "Machine Provider disk snapshot tool",
+		Commands: []*subcommands.Command{
+			subcommands.CmdHelp,
+			getCreateSnapshotCmd(),
+		},
 	}
-
-	service, err := getClient(c, flags.authOpts)
-	if err != nil {
-		logging.Errorf(c, "%s", err.Error())
-		return 1
-	}
-
-	logging.Infof(c, "Creating snapshot.")
-	snapshot := &compute.Snapshot{
-		Labels: flags.labels,
-		Name:   flags.name,
-	}
-	op, err := compute.NewDisksService(service).CreateSnapshot(flags.project, flags.zone, flags.disk, snapshot).Context(c).Do()
-	for {
-		if err != nil {
-			for _, err := range err.(*googleapi.Error).Errors {
-				logging.Errorf(c, "%s", err.Message)
-			}
-			return 1
-		}
-		if op.Status == "DONE" {
-			break
-		}
-		logging.Infof(c, "Waiting for snapshot to be created...")
-		time.Sleep(2 * time.Second)
-		op, err = compute.NewZoneOperationsService(service).Get(flags.project, flags.zone, op.Name).Context(c).Do()
-	}
-	if op.Error != nil {
-		for _, err := range op.Error.Errors {
-			logging.Errorf(c, "%s", err.Message)
-		}
-		return 1
-	}
-	logging.Infof(c, "Created snapshot.")
-
-	return 0
 }
 
 func main() {
-	os.Exit(Main(os.Args[1:]))
+	os.Exit(subcommands.Run(New(), os.Args[1:]))
 }
