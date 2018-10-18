@@ -69,7 +69,8 @@ func (s *Stream) Write(bs []byte) (int, error) {
 		rawLines := bytes.Split(bs, []byte("\n"))
 		lines := make([]*logpb.Text_Line, len(rawLines))
 		for i, line := range rawLines {
-			lines[i] = &logpb.Text_Line{Value: string(line), Delimiter: "\n"}
+			line := append([]byte(nil), line...)
+			lines[i] = &logpb.Text_Line{Value: line, Delimiter: "\n"}
 		}
 
 		entry.Content = &logpb.LogEntry_Text{Text: &logpb.Text{

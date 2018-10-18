@@ -38,7 +38,7 @@ func genLog(idx int64, id string) *logpb.LogEntry {
 		Content: &logpb.LogEntry_Text{
 			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
-					{Value: id},
+					{Value: []byte(id)},
 				},
 			},
 		},

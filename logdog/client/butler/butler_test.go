@@ -114,7 +114,7 @@ func shouldHaveTextLogs(actual interface{}, expected ...interface{}) string {
 		}
 
 		for _, l := range le.GetText().Lines {
-			prev += l.Value
+			prev += string(l.Value)
 			if l.Delimiter != "" {
 				lines = append(lines, prev)
 				prev = ""

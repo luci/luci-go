@@ -43,7 +43,7 @@ func gen(i int) *logpb.LogEntry {
 		Content: &logpb.LogEntry_Text{
 			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
-					{Value: strconv.Itoa(i), Delimiter: "\n"},
+					{Value: []byte(strconv.Itoa(i)), Delimiter: "\n"},
 				},
 			},
 		},

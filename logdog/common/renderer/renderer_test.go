@@ -54,7 +54,7 @@ func (ts *testSource) loadText(line, delim string) {
 			Text: &logpb.Text{
 				Lines: []*logpb.Text_Line{
 					{
-						Value:     line,
+						Value:     []byte(line),
 						Delimiter: delim,
 					},
 				},

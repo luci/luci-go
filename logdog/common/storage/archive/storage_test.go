@@ -59,7 +59,7 @@ func (g *logStreamGenerator) lineFromEntry(e *storage.Entry) string {
 	if text == nil || len(text.Lines) != 1 {
 		panic(fmt.Errorf("bad generated log entry: %#v", le))
 	}
-	return text.Lines[0].Value
+	return string(text.Lines[0].Value)
 }
 
 func (g *logStreamGenerator) generate(lines ...string) {
@@ -71,7 +71,7 @@ func (g *logStreamGenerator) generate(lines ...string) {
 			Content: &logpb.LogEntry_Text{
 				Text: &logpb.Text{
 					Lines: []*logpb.Text_Line{
-						{Value: line, Delimiter: "\n"},
+						{Value: []byte(line), Delimiter: "\n"},
 					},
 				},
 			},
