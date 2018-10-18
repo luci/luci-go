@@ -26,8 +26,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/common/cipdpkg"
 )
 
 // PackageDef defines how exactly to build a package.
@@ -44,7 +44,7 @@ type PackageDef struct {
 	Root string
 
 	// InstallMode defines how to deploy the package file: "copy" or "symlink".
-	InstallMode cipdpkg.InstallMode `yaml:"install_mode"`
+	InstallMode pkg.InstallMode `yaml:"install_mode"`
 
 	// PreserveModTime instructs CIPD to preserve the mtime of the files.
 	PreserveModTime bool `yaml:"preserve_mtime"`
@@ -102,7 +102,7 @@ func LoadPackageDef(r io.Reader, vars map[string]string) (PackageDef, error) {
 	if err = common.ValidatePackageName(out.Package); err != nil {
 		return PackageDef{}, err
 	}
-	if err = cipdpkg.ValidateInstallMode(out.InstallMode); err != nil {
+	if err = pkg.ValidateInstallMode(out.InstallMode); err != nil {
 		return PackageDef{}, err
 	}
 

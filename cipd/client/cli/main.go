@@ -52,7 +52,6 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/common/cipdpkg"
 	"go.chromium.org/luci/cipd/version"
 )
 
@@ -419,7 +418,7 @@ type inputOptions struct {
 	// Alternative to 'pkg-def'.
 	packageName      string
 	inputDir         string
-	installMode      cipdpkg.InstallMode
+	installMode      pkg.InstallMode
 	preserveModTime  bool
 	preserveWritable bool
 
