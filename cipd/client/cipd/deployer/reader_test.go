@@ -69,8 +69,8 @@ type bytesSource struct {
 
 func (bytesSource) Close(context.Context, bool) error { return nil }
 
-func bytesFile(data []byte) pkg.Source {
-	return bytesSource{bytes.NewReader(data)}
+func bytesFile(buf *bytes.Buffer) pkg.Source {
+	return bytesSource{bytes.NewReader(buf.Bytes())}
 }
 
 func TestPackageReading(t *testing.T) {
@@ -87,12 +87,14 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Open it.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
 		So(inst, ShouldNotBeNil)
 		So(err, ShouldBeNil)
+		defer inst.Close(ctx, false)
+
 		So(inst.Pin(), ShouldResemble, Pin{
 			PackageName: "testing",
 			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
@@ -129,20 +131,21 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Attempt to open it, providing correct instance ID, should work.
-		source := bytesFile(out.Bytes())
-		inst, err := OpenInstance(ctx, source, OpenInstanceOpts{
+		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: VerifyHash,
 			InstanceID:       "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
+		defer inst.Close(ctx, false)
+
 		So(inst.Pin(), ShouldResemble, Pin{
 			PackageName: "testing",
 			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
 
 		// Attempt to open it, providing incorrect instance ID.
-		inst, err = OpenInstance(ctx, source, OpenInstanceOpts{
+		inst, err = OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: VerifyHash,
 			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
@@ -150,12 +153,14 @@ func TestPackageReading(t *testing.T) {
 		So(inst, ShouldBeNil)
 
 		// Open with incorrect instance ID, but skipping the verification..
-		inst, err = OpenInstance(ctx, source, OpenInstanceOpts{
+		inst, err = OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: SkipHashVerification,
 			InstanceID:       "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
 		})
 		So(err, ShouldBeNil)
 		So(inst, ShouldNotBeNil)
+		defer inst.Close(ctx, false)
+
 		So(inst.Pin(), ShouldResemble, Pin{
 			PackageName: "testing",
 			InstanceID:  "ZZZZZZZZ_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
@@ -179,13 +184,13 @@ func TestPackageReading(t *testing.T) {
 		tempFile.Close()
 
 		// Read the package.
-		inst, closer, err := OpenInstanceFile(ctx, tempFilePath, OpenInstanceOpts{
+		inst, err := OpenInstanceFile(ctx, tempFilePath, OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
 		So(err, ShouldBeNil)
-		defer closer()
 		So(inst, ShouldNotBeNil)
+		So(inst.Close(ctx, false), ShouldBeNil)
 	})
 
 	Convey("ExtractFiles works", t, func() {
@@ -217,11 +222,13 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
 		So(err, ShouldBeNil)
+		defer inst.Close(ctx, false)
+
 		dest := &testDestination{}
 		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
 		So(err, ShouldBeNil)
@@ -371,11 +378,13 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// Extract files.
-		inst, err := OpenInstance(ctx, bytesFile(out.Bytes()), OpenInstanceOpts{
+		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
 			VerificationMode: CalculateHash,
 			HashAlgo:         api.HashAlgo_SHA256,
 		})
 		So(err, ShouldBeNil)
+		defer inst.Close(ctx, false)
+
 		dest := &testDestination{}
 		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
 		So(err, ShouldBeNil)

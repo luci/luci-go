@@ -15,13 +15,17 @@
 package pkg
 
 import (
+	"context"
 	"io"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/common"
 )
 
-// Instance represents a binary CIPD package file (with manifest inside).
+// Instance represents an open CIPD package file (with manifest inside).
+//
+// It owns the underlying raw data source and closes it whenever it is closed
+// itself.
 type Instance interface {
 	// Pin identifies package name and concreted instance ID of this package file.
 	Pin() common.Pin
@@ -31,6 +35,11 @@ type Instance interface {
 	// One of them (named ManifestName) is the manifest file.
 	Files() []fs.File
 
-	// DataReader returns reader that reads raw package data.
-	DataReader() io.ReadSeeker
+	// Source returns a reader that reads raw package data.
+	Source() io.ReadSeeker
+
+	// Close can be used to indicate to the storage (filesystem and/or cache)
+	// layer that this instance is actually bad. The storage layer can then
+	// evict/revoke, etc. the bad file.
+	Close(ctx context.Context, corrupt bool) error
 }
