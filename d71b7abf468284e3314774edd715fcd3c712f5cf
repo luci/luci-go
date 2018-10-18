@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "41e13a22_90ad9eb6",
+        "filename": "mp/cmd/snapshot/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-18T01:29:53Z",
+      "side": 1,
+      "message": "ha, panic is the only way. Exceptions are nice, after all :D",
+      "range": {
+        "startLine": 59,
+        "startChar": 53,
+        "endLine": 59,
+        "endChar": 71
+      },
+      "revId": "d71b7abf468284e3314774edd715fcd3c712f5cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
