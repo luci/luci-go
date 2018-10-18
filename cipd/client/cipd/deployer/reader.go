@@ -89,7 +89,13 @@ type OpenInstanceOpts struct {
 	HashAlgo api.HashAlgo
 }
 
-// OpenInstance prepares the package for extraction.
+// OpenInstance opens a package instance by reading it from the given source.
+//
+// The caller is responsible for closing the instance when done with it.
+//
+// On success it takes ownership of the source, closing it when the instance
+// itself is closed. On errors the source is left open. It's a responsibility of
+// the caller to close it in this case.
 func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg.Instance, error) {
 	out := &packageInstance{data: r}
 	if err := out.open(opts); err != nil {
@@ -98,29 +104,27 @@ func OpenInstance(ctx context.Context, r pkg.Source, opts OpenInstanceOpts) (pkg
 	return out, nil
 }
 
-type dummyInstance struct {
+type fileSource struct {
 	*os.File
 }
 
-func (d dummyInstance) Close(context.Context, bool) error { return d.File.Close() }
+func (d fileSource) Close(context.Context, bool) error { return d.File.Close() }
 
-// OpenInstanceFile opens a package instance file on disk.
+// OpenInstanceFile opens a package instance by reading it from a file on disk.
 //
-// The caller of this function must call closer() if err != nil to close the
-// underlying file.
-func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (inst pkg.Instance, closer func() error, err error) {
+// The caller is responsible for closing the instance when done with it. This
+// will close the underlying file too.
+func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (pkg.Instance, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		return
+		return nil, err
 	}
-	inst, err = OpenInstance(ctx, dummyInstance{file}, opts)
+	inst, err := OpenInstance(ctx, fileSource{file}, opts)
 	if err != nil {
-		inst = nil
 		file.Close()
-	} else {
-		closer = file.Close
+		return nil, err
 	}
-	return
+	return inst, nil
 }
 
 // ExtractFiles extracts all given files into a destination, with a progress
@@ -514,8 +518,11 @@ func (inst *packageInstance) Pin() common.Pin {
 	}
 }
 
-func (inst *packageInstance) Files() []fs.File          { return inst.files }
-func (inst *packageInstance) DataReader() io.ReadSeeker { return inst.data }
+func (inst *packageInstance) Files() []fs.File      { return inst.files }
+func (inst *packageInstance) Source() io.ReadSeeker { return inst.data }
+func (inst *packageInstance) Close(ctx context.Context, corrupt bool) error {
+	return inst.data.Close(ctx, corrupt)
+}
 
 // IsCorruptionError returns true iff err indicates corruption.
 func IsCorruptionError(err error) bool {

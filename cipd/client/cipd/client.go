@@ -953,7 +953,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance pkg.Ins
 	}
 
 	// The backend asked us to upload the data to CAS. Do it.
-	if err := client.storage.upload(ctx, uploadOp.UploadUrl, instance.DataReader()); err != nil {
+	if err := client.storage.upload(ctx, uploadOp.UploadUrl, instance.Source()); err != nil {
 		return err
 	}
 	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {
@@ -1402,12 +1402,16 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 			return
 		}
 
-		defer func() {
+		// Notify the underlying object if 'err' is a corruption error.
+		type corruptable interface {
+			Close(ctx context.Context, corrupt bool) error
+		}
+		closeMaybeCorrupted := func(f corruptable) {
 			corrupt := deployer.IsCorruptionError(err)
-			if clErr := instanceFile.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
+			if clErr := f.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
 				logging.Warningf(ctx, "cipd: failed to close the package file - %s", clErr)
 			}
-		}()
+		}
 
 		// Open the instance. This reads its manifest. 'FetchInstance' has verified
 		// the hash already, so skip the verification.
@@ -1416,11 +1420,12 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 			InstanceID:       pin.InstanceID,
 		})
 		if err != nil {
+			closeMaybeCorrupted(instanceFile)
 			return
 		}
 
-		// Opportunistically clean up trashed files.
 		defer client.doBatchAwareOp(ctx, batchAwareOpCleanupTrash)
+		defer closeMaybeCorrupted(instance)
 
 		// Use it. 'defer' will take care of removing the temp file if needed.
 		return cb(instance)
