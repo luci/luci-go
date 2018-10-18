@@ -210,9 +210,9 @@
         <input type="radio" name="hider" id="showExpanded"
                {{- if eq .Build.StepDisplayPref "expanded" }} checked{{ end }}>
         <label for="showExpanded">Expanded</label>
-        <input type="radio" name="hider" id="showCollapsed"
-               {{- if eq .Build.StepDisplayPref "collapsed" }} checked{{ end }}>
-        <label for="showCollased">Collapsed</label>
+        <input type="radio" name="hider" id="showDefault"
+               {{- if eq .Build.StepDisplayPref "default" }} checked{{ end }}>
+        <label for="showDefault">Default</label>
         <input type="radio" name="hider" id="showNonGreen"
                {{- if eq .Build.StepDisplayPref "non-green" }} checked{{ end }}>
         <label for="showNonGreen">Non-Green</label>

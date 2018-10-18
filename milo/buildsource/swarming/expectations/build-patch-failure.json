@@ -201,7 +201,7 @@
         "Check the bot_update step for details"
       ],
       "Children": [],
-      "Collapsed": true
+      "Collapsed": false
     },
     {
       "Label": {
@@ -324,5 +324,5 @@
     }
   ],
   "Blame": null,
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }
