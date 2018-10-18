@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"go.chromium.org/luci/auth"
-	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/rand/cryptorand"
 	"go.chromium.org/luci/common/errors"
 	ps "go.chromium.org/luci/common/gcloud/pubsub"
@@ -213,23 +212,6 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 	}
 	psTopic := psClient.Topic(topic)
 
-	// Assert that our Topic exists.
-	exists, err := retryTopicExists(c, psTopic, cfg.RPCTimeout)
-	if err != nil {
-		log.Fields{
-			log.ErrorKey: err,
-			"project":    proj,
-			"topic":      topic,
-		}.Errorf(c, "Failed to check for Pub/Sub topic.")
-		return nil, errors.New("failed to check for Pub/Sub topic")
-	}
-	if !exists {
-		log.Fields{
-			"fullTopic": fullTopic,
-		}.Errorf(c, "Pub/Sub Topic does not exist.")
-		return nil, errors.New("PubSub topic does not exist")
-	}
-
 	// We own the prefix and all verifiable parameters have been validated.
 	// Successfully return our Output instance.
 	//
@@ -241,27 +223,6 @@ func (cfg *Config) Register(c context.Context) (output.Output, error) {
 		Track:      cfg.Track,
 		RPCTimeout: cfg.RPCTimeout,
 	}), nil
-}
-
-func retryTopicExists(ctx context.Context, t *pubsub.Topic, rpcTimeout time.Duration) (bool, error) {
-	var exists bool
-	err := retry.Retry(ctx, retry.Default, func() (err error) {
-		ctx := ctx
-		if rpcTimeout > 0 {
-			var cancelFunc context.CancelFunc
-			ctx, cancelFunc = clock.WithTimeout(ctx, rpcTimeout)
-			defer cancelFunc()
-		}
-
-		exists, err = t.Exists(ctx)
-		return
-	}, func(err error, d time.Duration) {
-		log.Fields{
-			log.ErrorKey: err,
-			"delay":      d,
-		}.Errorf(ctx, "Failed to check if topic exists; retrying...")
-	})
-	return exists, err
 }
 
 // pubSubTopicWrapper wraps a cloud pubsub package Topic and converts it into
