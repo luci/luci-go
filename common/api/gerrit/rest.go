@@ -97,44 +97,6 @@ func (c *client) GetChange(ctx context.Context, req *gerritpb.GetChangeRequest, 
 	}, nil
 }
 
-func (c *client) CheckAccess(ctx context.Context, req *gerritpb.CheckAccessRequest, opts ...grpc.CallOption) (
-	*gerritpb.CheckAccessResponse, error) {
-	if err := checkArgs(opts, req); err != nil {
-		return nil, err
-	}
-
-	// https://gerrit-review.googlesource.com/Documentation/rest-api-projects.html#access-check-input
-	input := map[string]string{
-		"account": req.Account,
-		"ref":     req.Ref,
-	}
-	if req.Permission != "" {
-		input["permission"] = req.Permission
-	}
-	var resp struct {
-		Status  int    `json:"status"`
-		Message string `json:"message"`
-	}
-	// TODO(tandrii,nodir): s/QueryEscape/PathEscape once AE deployments are Go1.8+.
-	path := fmt.Sprintf("/projects/%s/check.access", url.QueryEscape(req.Project))
-	if _, err := c.call(ctx, "POST", path, nil, &input, &resp); err != nil {
-		return nil, err
-	}
-
-	res := &gerritpb.CheckAccessResponse{Reason: resp.Message}
-	switch resp.Status {
-	case 200:
-		res.Status = gerritpb.CheckAccessResponse_ALLOWED
-	case 403:
-		res.Status = gerritpb.CheckAccessResponse_FORBIDDEN
-	case 404:
-		res.Status = gerritpb.CheckAccessResponse_PROJECT_NOT_FOUND
-	default:
-		return nil, status.Errorf(codes.Internal, "unexpected AccessCheckInfo.Status %d response", resp.Status)
-	}
-	return res, nil
-}
-
 // call executes a request to Gerrit REST API with JSON input/output.
 //
 // call returns HTTP status code and gRPC error.
