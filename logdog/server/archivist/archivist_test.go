@@ -237,7 +237,7 @@ func TestHandleArchive(t *testing.T) {
 					Content: &logpb.LogEntry_Text{&logpb.Text{
 						Lines: []*logpb.Text_Line{
 							{
-								Value:     fmt.Sprintf("line #%d", v),
+								Value:     []byte(fmt.Sprintf("line #%d", v)),
 								Delimiter: "\n",
 							},
 						},
