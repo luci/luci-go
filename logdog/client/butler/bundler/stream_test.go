@@ -168,7 +168,7 @@ func (p *testParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		StreamIndex: p.nextIndex,
 		Content: &logpb.LogEntry_Text{Text: &logpb.Text{
 			Lines: []*logpb.Text_Line{
-				{Value: string(rec.data)},
+				{Value: append([]byte(nil), rec.data...)},
 			},
 		}},
 	}
