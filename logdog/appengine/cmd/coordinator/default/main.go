@@ -21,6 +21,7 @@ package module
 
 import (
 	"net/http"
+	"strings"
 
 	adminPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/admin/v1"
 	logsPb "go.chromium.org/luci/logdog/api/endpoints/coordinator/logs/v1"
@@ -70,6 +71,7 @@ func init() {
 	// Redirect "/v/?s=..." to "/logs/..."
 	r.GET("/v/", router.MiddlewareChain{}, func(c *router.Context) {
 		path := "/logs/" + c.Request.URL.Query().Get("s")
+		path = strings.Replace(path, "+", "%2B", -1)
 		http.Redirect(c.Writer, c.Request, path, http.StatusFound)
 	})
 
