@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "840dfb47_3205e4bf",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-18T15:08:45Z",
+      "side": 1,
+      "message": "outside the package, this will look like ui.Default which is a bit too generic, but I don\u0027t have good suggestions (besides making names long)",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "980a8dbbdd76859d21c1fe7c5ca686f0a85a4c8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5862509e_d095a862",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-18T15:08:45Z",
+      "side": 1,
+      "message": "note that for existing users this will return an invalid string \"collapsed\"\nin general, a user can put any garbage here\ni didn\u0027t find anything that would break though\n\nconsider adding a check that the string is among known ones, otherwise return default.\ngoing forward, it might be simpler to move `return ui.Default` outside the switch",
+      "revId": "980a8dbbdd76859d21c1fe7c5ca686f0a85a4c8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
