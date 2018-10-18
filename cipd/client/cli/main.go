@@ -52,7 +52,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
-	"go.chromium.org/luci/cipd/version"
+	"go.chromium.org/luci/cipd/version/versioncmd"
 )
 
 // TODO(vadimsh): Add some tests.
@@ -2808,7 +2808,7 @@ func GetApplication(params Parameters) *cli.Application {
 
 		Commands: []*subcommands.Command{
 			subcommands.CmdHelp,
-			version.SubcommandVersion,
+			versioncmd.Version,
 
 			// Authentication related commands.
 			{}, // These are spacers so that the commands appear in groups.

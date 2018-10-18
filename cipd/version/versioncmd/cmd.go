@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package version
+// Package versioncmd exposes 'version' subcommand.
+//
+// It prints CIPD package namd and CIPD instance ID a binary was installed from.
+package versioncmd
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/maruel/subcommands"
+
+	"go.chromium.org/luci/cipd/version"
 )
 
-// SubcommandVersion implement subcommand that prints version of CIPD package
-// that contains the executable.
-var SubcommandVersion = &subcommands.Command{
+// Version implement subcommand that prints version of CIPD package that
+// contains the executable.
+var Version = &subcommands.Command{
 	UsageLine:  "version",
 	ShortDesc:  "prints version of CIPD package this exe was installed from",
 	LongDesc:   "Prints version of CIPD package this exe was installed from.",
@@ -35,7 +40,7 @@ type versionRun struct {
 }
 
 func (c *versionRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
-	ver, err := GetStartupVersion()
+	ver, err := version.GetStartupVersion()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return 1
