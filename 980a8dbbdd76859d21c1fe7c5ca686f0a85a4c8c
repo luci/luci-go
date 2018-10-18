@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ec84cef4_0ac535c6",
+        "filename": "milo/frontend/ui/build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-18T22:36:00Z",
+      "side": 1,
+      "message": "SGTM",
+      "parentUuid": "7e4bdaec_483e9d4d",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 8
+      },
+      "revId": "980a8dbbdd76859d21c1fe7c5ca686f0a85a4c8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5862509e_d095a862",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -78,6 +102,24 @@
       "side": 1,
       "message": "Fix will take care of this. See https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1288630/4/milo/frontend/ui/build.go#175.",
       "parentUuid": "5862509e_d095a862",
+      "revId": "980a8dbbdd76859d21c1fe7c5ca686f0a85a4c8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d6a6246f_fde17653",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-18T22:36:00Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "6e632214_5ee7b664",
       "revId": "980a8dbbdd76859d21c1fe7c5ca686f0a85a4c8c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
