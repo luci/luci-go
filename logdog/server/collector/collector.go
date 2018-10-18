@@ -141,6 +141,7 @@ func (c *Collector) Process(ctx context.Context, msg []byte) error {
 		log.Errorf(ctx, "Protocol message did not contain a Butler bundle.")
 		return nil
 	}
+	ctx = log.SetField(ctx, "prefix", pr.Bundle.Prefix)
 
 	tsBundleEntriesPerBundle.Add(ctx, float64(len(pr.Bundle.Entries)))
 	for i, entry := range pr.Bundle.Entries {
