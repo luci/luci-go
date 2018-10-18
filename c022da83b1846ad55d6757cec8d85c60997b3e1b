@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e4963f2b_48e9f94d",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-18T00:36:48Z",
+      "side": 1,
+      "message": "tbh, it\u0027s not clear exactly is deprecated. How about inlining at the beginning of L207?",
+      "range": {
+        "startLine": 205,
+        "startChar": 4,
+        "endLine": 205,
+        "endChar": 24
+      },
+      "revId": "c022da83b1846ad55d6757cec8d85c60997b3e1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "37bcdca2_3e33a011",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-18T00:36:48Z",
+      "side": 1,
+      "message": "remove",
+      "range": {
+        "startLine": 210,
+        "startChar": 0,
+        "endLine": 211,
+        "endChar": 13
+      },
+      "revId": "c022da83b1846ad55d6757cec8d85c60997b3e1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
