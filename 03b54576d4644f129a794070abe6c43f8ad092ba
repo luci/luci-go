@@ -22,6 +22,30 @@
       "revId": "03b54576d4644f129a794070abe6c43f8ad092ba",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "416e77e8_2afeea41",
+        "filename": "cipd/client/cipd/client.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1409,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-18T00:05:48Z",
+      "side": 1,
+      "message": "Thanks, you\u0027ve actually spotted a bug. \u0027defer\u0027 call below captures err at a wrong time.",
+      "parentUuid": "aacc4e44_72ab6d34",
+      "range": {
+        "startLine": 1409,
+        "startChar": 43,
+        "endLine": 1409,
+        "endChar": 54
+      },
+      "revId": "03b54576d4644f129a794070abe6c43f8ad092ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
