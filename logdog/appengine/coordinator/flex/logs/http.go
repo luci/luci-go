@@ -702,7 +702,7 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 				if ierr := lineTemplate.Execute(w, lt); ierr != nil {
 					merr = append(merr, ierr)
 				}
-			} else if _, ierr := fmt.Fprintln(w, line.GetValue()); ierr != nil {
+			} else if _, ierr := fmt.Fprintln(w, string(line.GetValue())); ierr != nil {
 				merr = append(merr, ierr)
 			}
 		}
