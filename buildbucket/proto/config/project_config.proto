@@ -184,12 +184,29 @@ message Builder {
     // is typically (but not always) a symbolic ref for `refs/heads/master`.
     string cipd_version = 5;
 
-    // Colon-separated build properties to set.
-    // A property can be overriden by "properties" build parameter.
+    // A JSON Object with build properties.
+    // Will be available to the build script (recipe) at runtime.
+    // In text proto files use heredocs:
     //
-    // Use this field for string properties and use properties_j for other
-    // types.
+    //   properties: <<END
+    //   {
+    //      "foo": "bar",
+    //      "qux": 1
+    //   }
+    //   END
+    //
+    // This will add properties foo and qux with values "bar" and 1.
+    //
+    // When merging Builder B1 into B2, a property with name K in B1
+    // overwrites a corresponding property with name K in B2.
+    // If both values are JSON objects, the one B1 completely overwrites the one
+    // in B2.
+    //
+    // LEGACY FORMAT: Colon-separated build properties to set.
+    // A property can be overriden by "properties" build parameter.
     repeated string properties = 3;
+    // LEGACY, use properties (above).
+    //
     // Same as properties, but the value must valid JSON. For example
     //   properties_j: "a:1"
     // means property a is a number 1, not string "1".
