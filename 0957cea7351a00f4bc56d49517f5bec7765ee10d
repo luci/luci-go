@@ -105,6 +105,30 @@
       "revId": "0957cea7351a00f4bc56d49517f5bec7765ee10d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "501b5509_efa0bf42",
+        "filename": "buildbucket/proto/config/project_config.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-18T00:47:35Z",
+      "side": 1,
+      "message": "btw this CL does not change the merging logic.",
+      "parentUuid": "8dff209e_7f50a68e",
+      "range": {
+        "startLine": 198,
+        "startChar": 7,
+        "endLine": 198,
+        "endChar": 24
+      },
+      "revId": "0957cea7351a00f4bc56d49517f5bec7765ee10d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
