@@ -35,8 +35,8 @@ import (
 type StepDisplayPref string
 
 const (
-	// Collapsed means that all steps are visible, nested steps are collapsed.
-	Collapsed StepDisplayPref = "collapsed"
+	// Default means that all steps are visible, green steps are collapsed.
+	Default StepDisplayPref = "collapsed"
 	// Expanded means that all steps are visible, nested steps are expanded.
 	Expanded StepDisplayPref = "expanded"
 	// NonGreen means that only non-green steps are visible, nested steps are
@@ -71,7 +71,7 @@ type MiloBuild struct {
 	// the thing displayed on this page.
 	Blame []*Commit
 
-	// Mode to render the steps. Default is Collapsed.
+	// Mode to render the steps.
 	StepDisplayPref StepDisplayPref
 }
 
@@ -85,15 +85,13 @@ var statusPrecendence = map[model.Status]int{
 	model.Success:      6,
 }
 
-func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string, collapsed bool) {
+func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix string, collapseGreen bool) {
 	// If the build is finished but the step is not finished.
 	if !buildFinished.IsZero() && comp.ExecutionTime.Finished.IsZero() {
 		// Then set the finish time to be the same as the build finish time.
 		comp.ExecutionTime.Finished = buildFinished
 		comp.Status = model.InfraFailure
 	}
-
-	comp.Collapsed = collapsed
 
 	// Fix substeps recursively.
 	for _, substep := range comp.Children {
@@ -112,6 +110,8 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 		}
 	}
 
+	comp.Collapsed = collapseGreen && comp.Status != model.Success
+
 	// Strip parent component name from the title.
 	if comp.Label != nil {
 		comp.Label.Label = strings.TrimPrefix(comp.Label.Label, stripPrefix)
@@ -124,16 +124,15 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 // * Parent steps containing failed steps should also be marked as failed.
 // * Components' Collapsed field is set based on StepDisplayPref field.
 // * Parent step name prefix is trimmed from the nested substeps.
-// * Enforce correct values for StepDisplayPref (set to Collapsed if incorrect).
+// * Enforce correct values for StepDisplayPref (set to Default if incorrect).
 func (b *MiloBuild) Fix() {
 	if b.StepDisplayPref != Expanded && b.StepDisplayPref != NonGreen {
-		b.StepDisplayPref = Collapsed
+		b.StepDisplayPref = Default
 	}
 
 	for _, comp := range b.Components {
 		fixComponent(
-			comp, b.Summary.ExecutionTime.Finished, "",
-			b.StepDisplayPref == Collapsed)
+			comp, b.Summary.ExecutionTime.Finished, "", b.StepDisplayPref == Default)
 	}
 }
 
