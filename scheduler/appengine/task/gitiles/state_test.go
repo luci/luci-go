@@ -16,7 +16,7 @@ package gitiles
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -115,7 +115,7 @@ func TestLoadSaveCompression(t *testing.T) {
 		tags := make(map[string]string, many16Ki)
 		for i := 0; i < many16Ki; i++ {
 			ref := "refs/tags/" + strconv.FormatInt(int64(i), 20)
-			hsh := fmt.Sprintf("%x", sha1.Sum([]byte(ref)))
+			hsh := fmt.Sprintf("%x", sha256.Sum256([]byte(ref)))[:40]
 			tags[ref] = hsh
 		}
 

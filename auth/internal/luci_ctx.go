@@ -17,7 +17,7 @@ package internal
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -87,7 +87,7 @@ func NewLUCIContextTokenProvider(ctx context.Context, scopes []string, transport
 	if err != nil {
 		return nil, err
 	}
-	digest := sha1.Sum(blob)
+	digest := sha256.Sum256(blob)
 
 	return &luciContextTokenProvider{
 		localAuth: localAuth,

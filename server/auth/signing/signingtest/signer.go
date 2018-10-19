@@ -19,7 +19,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
@@ -64,7 +63,7 @@ func NewSigner(serviceInfo *signing.ServiceInfo) *Signer {
 
 	// PEM-encode it, derive the name.
 	pemOut := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})
-	keyName := sha1.Sum(der)
+	keyName := sha256.Sum256(der)
 
 	// Put in default service info if necessary.
 	if serviceInfo == nil {
@@ -78,7 +77,7 @@ func NewSigner(serviceInfo *signing.ServiceInfo) *Signer {
 			ServiceAccountName: serviceInfo.ServiceAccountName,
 			Certificates: []signing.Certificate{
 				{
-					KeyName:            hex.EncodeToString(keyName[:]),
+					KeyName:            hex.EncodeToString(keyName[:20]),
 					X509CertificatePEM: string(pemOut),
 				},
 			},

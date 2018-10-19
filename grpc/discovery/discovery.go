@@ -17,7 +17,7 @@ package discovery
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
@@ -70,8 +70,8 @@ func (s *service) Describe(c context.Context, _ *Void) (*DescribeResponse, error
 // and their dependencies.
 func combineDescriptors(serviceNames []string) (*descriptor.FileDescriptorSet, error) {
 	result := &descriptor.FileDescriptorSet{}
-	// seenFiles is a set of descriptor files keyed by SHA1 of their contents..
-	seenFiles := map[[sha1.Size]byte]bool{}
+	// seenFiles is a set of descriptor files keyed by SHA256 of their contents.
+	seenFiles := map[[sha256.Size]byte]bool{}
 
 	for _, s := range serviceNames {
 		desc, err := GetDescriptorSet(s)
@@ -89,7 +89,7 @@ func combineDescriptors(serviceNames []string) (*descriptor.FileDescriptorSet, e
 			if err != nil {
 				return nil, fmt.Errorf("could not marshal description of %s", f.GetName())
 			}
-			hash := sha1.Sum(binary)
+			hash := sha256.Sum256(binary)
 			if !seenFiles[hash] {
 				result.File = append(result.File, f)
 				seenFiles[hash] = true

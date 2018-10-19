@@ -51,7 +51,7 @@ func TestConfigFetcher(t *testing.T) {
 		So(f.FetchTextProto(c, "def.cfg", &ts), ShouldBeNil)
 		So(ts.Seconds, ShouldEqual, 67890)
 
-		So(f.Revision(), ShouldEqual, "cd1e0b1f602d8c639c049c9ecdc1161409a4c75b")
+		So(f.Revision(), ShouldEqual, "20a03c9df37ce4413c01b580a8ae48a0aafce038")
 	})
 
 	Convey("Revision changes midway", t, func() {
@@ -70,8 +70,8 @@ func TestConfigFetcher(t *testing.T) {
 			"def.cfg": "seconds: 12345",
 		})
 		So(f.FetchTextProto(c2, "def.cfg", &ts), ShouldErrLike,
-			`expected config "def.cfg" to be at rev 1cad281302ba31db6b55a2c91399206b29960ca8, `+
-				`but got b7441146400e9980a11a7ad0d9db2068fe180670`)
+			`expected config "def.cfg" to be at rev f4b3d57ff7afec86b3850f40713008ff4a494bda, `+
+				`but got 32c954f97d0dae611fff581a39bca4a56686285b`)
 	})
 }
 

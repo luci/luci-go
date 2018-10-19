@@ -16,7 +16,7 @@ package ui
 
 import (
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -119,7 +119,7 @@ func jobPage(ctx *router.Context) {
 	// fit into memcache key length limits. Use 'v2' scheme for this ('v1' was
 	// used before hashing was added).
 	memcacheKey := func(cursor string) string {
-		blob := sha1.Sum([]byte(job.JobID + ":" + cursor))
+		blob := sha256.Sum256([]byte(job.JobID + ":" + cursor))
 		encoded := base64.StdEncoding.EncodeToString(blob[:])
 		return "v2:cursors:list_invocations:" + encoded
 	}

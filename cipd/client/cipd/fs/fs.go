@@ -16,7 +16,7 @@ package fs
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -495,7 +495,7 @@ func pseudoRand() string {
 	lastUsedTimeLock.Unlock()
 
 	// Hash the state to get a smaller pseudorandom string.
-	h := sha1.New()
+	h := sha256.New()
 	fmt.Fprintf(h, "%v_%v", os.Getpid(), ts)
 	sum := h.Sum(nil)
 	digest := base64.RawURLEncoding.EncodeToString(sum)

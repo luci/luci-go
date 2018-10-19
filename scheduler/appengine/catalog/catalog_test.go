@@ -237,7 +237,7 @@ func TestConfigReading(t *testing.T) {
 		})
 
 		Convey("GetProjectJobs works", func() {
-			const expectedRev = "1075744c09274d3db00cf707729f2058b446f85d"
+			const expectedRev = "b7f431e8f06f458c638959786b5477a6ae3d565b"
 
 			defs, err := cat.GetProjectJobs(ctx, "project1")
 			So(err, ShouldBeNil)
@@ -316,7 +316,7 @@ func TestConfigReading(t *testing.T) {
 						Triggerers: []string{},
 						Readers:    []string{},
 					},
-					Revision:    "469369fef447369fbc3f4c287d416fd233d97d7c",
+					Revision:    "dcac009130d80e97ec6f380baf4f13b73908ce9a",
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "*/10 * * * * * *",
 					Task:        []uint8{10, 0},
@@ -329,7 +329,7 @@ func TestConfigReading(t *testing.T) {
 						Readers:    []string{},
 					},
 					Flavor:      2,
-					Revision:    "469369fef447369fbc3f4c287d416fd233d97d7c",
+					Revision:    "dcac009130d80e97ec6f380baf4f13b73908ce9a",
 					RevisionURL: "https://example.com/view/here/app.cfg",
 					Schedule:    "with 30s interval",
 					Task:        []uint8{10, 0},
