@@ -144,10 +144,10 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	case nil:
 		return ui.StepDisplayPref(cookie.Value)
 	case http.ErrNoCookie:
-		return ui.Collapsed
+		return ui.StepDisplayDefault
 	default:
 		logging.WithError(err).Errorf(c.Context, "failed to read stepDisplayPref cookie")
-		return ui.Collapsed
+		return ui.StepDisplayDefault
 	}
 }
 

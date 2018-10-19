@@ -95,7 +95,7 @@
         "running steps via annotated script"
       ],
       "Children": null,
-      "Collapsed": true
+      "Collapsed": false
     },
     {
       "Label": {
@@ -856,7 +856,7 @@
         "compile (with patch)"
       ],
       "Children": null,
-      "Collapsed": true
+      "Collapsed": false
     },
     {
       "Label": {
@@ -1346,5 +1346,5 @@
       "File": []
     }
   ],
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }

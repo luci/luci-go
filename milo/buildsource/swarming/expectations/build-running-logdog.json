@@ -162,7 +162,7 @@
       "Type": "Step",
       "Text": null,
       "Children": [],
-      "Collapsed": true
+      "Collapsed": false
     }
   ],
   "PropertyGroup": [
@@ -201,5 +201,5 @@
     }
   ],
   "Blame": null,
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }
