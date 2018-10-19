@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dcefe57c_de743fc8",
+        "filename": "cipd/common/hash.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-19T03:26:53Z",
+      "side": 1,
+      "message": "nice!",
+      "range": {
+        "startLine": 33,
+        "startChar": 0,
+        "endLine": 35,
+        "endChar": 79
+      },
+      "revId": "932c90446f5848a38a759b65737de8760438884d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
