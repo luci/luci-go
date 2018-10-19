@@ -685,24 +685,36 @@ func serve(c context.Context, data logData, w http.ResponseWriter) (err error) {
 		}
 
 		for i, line := range log.GetText().GetLines() {
-			// For html full mode, we wrap each line with a div.
-			// For html lite and raw mode, we just regurgitate the lines.
-			if data.options.format == formatHTMLFull {
+			// For html full mode, we escape and wrap each line with a div.
+			// For html lite mode, just escape the line.
+			// For raw mode, we just regurgitate the line.
+			var ierr error
+			switch data.options.format {
+			case formatHTMLFull:
 				lt := logLineStruct{
 					// Note: We want to use PrefixIndex because we might be viewing more than 1 stream.
-					ID:   fmt.Sprintf("L%d_%d", log.PrefixIndex, i),
+					ID: fmt.Sprintf("L%d_%d", log.PrefixIndex, i),
+					// The templating engine below escapes the lines for us.
 					Text: string(line.GetValue()),
 				}
 				// Add in timestamp information, if available.
-				if duration, ierr := ptypes.Duration(log.GetTimeOffset()); ierr == nil {
+				if duration, perr := ptypes.Duration(log.GetTimeOffset()); perr == nil {
 					lt.DataTimestamp = data.logStream.Timestamp.Add(duration).UnixNano() / 1e6
 					lt.DurationInfo = durationInfo(prevDuration, duration)
 					prevDuration = duration
+				} else {
+					logging.WithError(perr).Debugf(c, "Got error while converting duration")
 				}
-				if ierr := lineTemplate.Execute(w, lt); ierr != nil {
-					merr = append(merr, ierr)
-				}
-			} else if _, ierr := fmt.Fprintf(w, "%s\n", line.GetValue()); ierr != nil {
+				ierr = lineTemplate.Execute(w, lt)
+			case formatHTMLLite:
+				text := template.HTMLEscapeString(string(line.GetValue()))
+				_, ierr = fmt.Fprintf(w, "%s\n", text)
+			case formatRAW:
+				_, ierr = fmt.Fprintf(w, "%s%s", line.GetValue(), line.GetDelimiter())
+			default:
+				panic("Impossible")
+			}
+			if ierr != nil {
 				merr = append(merr, ierr)
 			}
 		}
