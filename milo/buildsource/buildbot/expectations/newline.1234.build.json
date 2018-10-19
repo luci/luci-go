@@ -84,10 +84,10 @@
         "line 1\u003cbr\u003e\u003cbr\u003eline 3"
       ],
       "Children": null,
-      "Collapsed": true
+      "Collapsed": false
     }
   ],
   "PropertyGroup": null,
   "Blame": null,
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }

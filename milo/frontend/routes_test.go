@@ -61,7 +61,7 @@ var (
 				"../buildsource/swarming",
 				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
 					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
-					build.StepDisplayPref = ui.Expanded
+					build.StepDisplayPref = ui.StepDisplayExpanded
 					build.Fix(c)
 					return build, err
 				})

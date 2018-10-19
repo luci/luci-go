@@ -27,10 +27,11 @@ $(document).ready(function() {
     updateCookieSetting('expanded');
   });
 
-  $('#showCollapsed').click(function(e) {
-    $('li.substeps').addClass('collapsed');
+  $('#showDefault').click(function(e) {
+    $('li.substeps').removeClass('collapsed');
+    $('li.substeps.green').addClass('collapsed');
     $('#steps').removeClass('non-green');
-    updateCookieSetting('collapsed');
+    updateCookieSetting('default');
   });
 
   $('#showNonGreen').click(function(e) {

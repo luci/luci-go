@@ -249,7 +249,7 @@ func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn)
 		c := tc.InjectLogdogClient(c)
 
 		build, err := swarmingBuildImpl(c, tc, tc.Name)
-		build.StepDisplayPref = ui.NonGreen
+		build.StepDisplayPref = ui.StepDisplayNonGreen
 		build.Fix(c)
 		if err != nil {
 			panic(fmt.Errorf("Error while processing %s: %s", tc.Name, err))
