@@ -72,14 +72,14 @@ func TestImportConfigs(t *testing.T) {
 		// Fetched for the first time.
 		rev, err := p.ImportConfigs(c)
 		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "5ff9f21804de0eb09acc939efe2da14dfccc47ef")
+		So(rev, ShouldEqual, "dc17888617ce2d87e0e33c1ad12034d51127fda3")
 		So(fetchCalls, ShouldEqual, 1)
 		So(prepareCalls, ShouldEqual, 1)
 
 		// No change in configs -> early exit.
 		rev, err = p.ImportConfigs(c)
 		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "5ff9f21804de0eb09acc939efe2da14dfccc47ef")
+		So(rev, ShouldEqual, "dc17888617ce2d87e0e33c1ad12034d51127fda3")
 		So(fetchCalls, ShouldEqual, 2)
 		So(prepareCalls, ShouldEqual, 1)
 
@@ -90,7 +90,7 @@ func TestImportConfigs(t *testing.T) {
 		})
 		rev, err = p.ImportConfigs(c)
 		So(err, ShouldBeNil)
-		So(rev, ShouldEqual, "c012dcea7abf16792b1c728775ea1955ac8f3a20")
+		So(rev, ShouldEqual, "6bc6fb514320d908db4955ff8769f59e2cd0ae09")
 		So(fetchCalls, ShouldEqual, 3)
 		So(prepareCalls, ShouldEqual, 2)
 	})

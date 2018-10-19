@@ -60,18 +60,18 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 		resp, err := rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "1cf48bbdc045f33856894adf9c7d7e4211e28b2a",
+			Revision: "bd386b01fa0aaaa9d39c13bbafc4ef187c96f95b",
 		})
 
 		// Have config now.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
-		So(r.ConfigRevision(), ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
+		So(r.ConfigRevision(), ShouldEqual, "bd386b01fa0aaaa9d39c13bbafc4ef187c96f95b")
 
 		// Noop import.
 		resp, err = rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
-		So(resp.Revision, ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
+		So(resp.Revision, ShouldEqual, "bd386b01fa0aaaa9d39c13bbafc4ef187c96f95b")
 
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)
@@ -80,7 +80,7 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.ConfigRevision(), ShouldEqual, "1cf48bbdc045f33856894adf9c7d7e4211e28b2a")
+		So(r.ConfigRevision(), ShouldEqual, "bd386b01fa0aaaa9d39c13bbafc4ef187c96f95b")
 
 		// Roll time to expire local rules cache.
 		clk.Add(10 * time.Minute)
@@ -101,13 +101,13 @@ func TestImportServiceAccountsConfigs(t *testing.T) {
 		resp, err = rpc.ImportServiceAccountsConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "7d835b8ae2e227099324bf17ee1f2c828011ff1c",
+			Revision: "6c7967b3fb492fda4e4305aa17e6728d4408d344",
 		})
 
 		// It is now active.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
-		So(r.ConfigRevision(), ShouldEqual, "7d835b8ae2e227099324bf17ee1f2c828011ff1c")
+		So(r.ConfigRevision(), ShouldEqual, "6c7967b3fb492fda4e4305aa17e6728d4408d344")
 	})
 }
 

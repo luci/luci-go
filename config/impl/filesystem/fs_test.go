@@ -78,8 +78,8 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/foobar",
 						Path:        "something/file.cfg",
-						ContentHash: "v1:e42874cc28bbba410f56790c24bb6f33e73ab784",
-						Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+						ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
+						Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 						ViewURL:     "file://./something/file.cfg",
 					},
 					Content: "projects/foobar/something/file.cfg",
@@ -98,8 +98,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "services/foosrv",
 							Path:        "something.cfg",
-							ContentHash: "v1:71ecbefbed9d895b71205724d3e693bc2ec12246",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:536a41710e0cb4f21950d5e0e32642bda58fce9a",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./something.cfg",
 						},
 						Content: "services/foosrv/something.cfg",
@@ -113,8 +113,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar/refs/someref",
 							Path:        "file.cfg",
-							ContentHash: "v1:82b0518dd04288c285023ff0534658e5b0df93d4",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:85f257991d9a52621072fdcf9c54648fc0dc65ae",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./file.cfg",
 						},
 						Content: "projects/foobar/refs/someref/file.cfg",
@@ -124,7 +124,7 @@ func TestFSImpl(t *testing.T) {
 				Convey("just meta", func() {
 					cfg, err := client.GetConfig(ctx, "projects/foobar", "something/file.cfg", true)
 					So(err, ShouldBeNil)
-					So(cfg.ContentHash, ShouldEqual, "v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
+					So(cfg.ContentHash, ShouldEqual, "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8")
 					So(cfg.Content, ShouldEqual, "")
 
 					Convey("make sure it doesn't poison the cache", func() {
@@ -142,7 +142,7 @@ func TestFSImpl(t *testing.T) {
 			})
 
 			Convey("GetConfigByHash", func() {
-				cont, err := client.GetConfigByHash(ctx, "v1:e42874cc28bbba410f56790c24bb6f33e73ab784")
+				cont, err := client.GetConfigByHash(ctx, "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8")
 				So(err, ShouldBeNil)
 				So(cont, ShouldEqual, "projects/foobar/something/file.cfg")
 			})
@@ -164,8 +164,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly",
 							Path:        "something/file.cfg",
-							ContentHash: "v1:a3b4b34e5c8dd1dd8dff3e643504ce28f9335e6f",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:5a2f9983dbb615a58e1d267633396e72f6710ef2",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./something/file.cfg",
 						},
 						Content: "projects/doodly/something/file.cfg",
@@ -174,8 +174,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar",
 							Path:        "something/file.cfg",
-							ContentHash: "v1:e42874cc28bbba410f56790c24bb6f33e73ab784",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:72b8fe0ecd5e7560762aed58063aeb3795e69bd8",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./something/file.cfg",
 						},
 						Content: "projects/foobar/something/file.cfg",
@@ -209,8 +209,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly/refs/otherref",
 							Path:        "file.cfg",
-							ContentHash: "v1:0de822c33630b5be0aa78497c0918e0dd773c7cb",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:b6f37a2fa013a9ece56907518c0c832550db27cf",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./file.cfg",
 						},
 						Content: "projects/doodly/refs/otherref/file.cfg",
@@ -218,8 +218,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/doodly/refs/someref",
 							Path:        "file.cfg",
-							ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:fdb2befae2c5c5102d58c3467baa888f04e6d4a7",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./file.cfg",
 						},
 						Content: "projects/doodly/refs/someref/file.cfg",
@@ -227,8 +227,8 @@ func TestFSImpl(t *testing.T) {
 						Meta: config.Meta{
 							ConfigSet:   "projects/foobar/refs/someref",
 							Path:        "file.cfg",
-							ContentHash: "v1:82b0518dd04288c285023ff0534658e5b0df93d4",
-							Revision:    "dc6481ef835f1c7625a8aa64cdfc33e6a975f626",
+							ContentHash: "v1:85f257991d9a52621072fdcf9c54648fc0dc65ae",
+							Revision:    "166cd0b9905bb411204477155f04d9ce8d11423c",
 							ViewURL:     "file://./file.cfg",
 						},
 						Content: "projects/foobar/refs/someref/file.cfg",
@@ -264,8 +264,8 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly/refs/otherref",
 						Path:        "file.cfg",
-						ContentHash: "v1:0de822c33630b5be0aa78497c0918e0dd773c7cb",
-						Revision:    "37c845ce6697d135cfb03392c9589ed79bcb8b6c",
+						ContentHash: "v1:b6f37a2fa013a9ece56907518c0c832550db27cf",
+						Revision:    "a43ec497cc2e05d4ee95bc62a1f009077c313695",
 						ViewURL:     "file://./file.cfg",
 					},
 					Content: "projects/doodly/refs/otherref/file.cfg",
@@ -273,8 +273,8 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly/refs/someref",
 						Path:        "file.cfg",
-						ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
-						Revision:    "37c845ce6697d135cfb03392c9589ed79bcb8b6c",
+						ContentHash: "v1:fdb2befae2c5c5102d58c3467baa888f04e6d4a7",
+						Revision:    "a43ec497cc2e05d4ee95bc62a1f009077c313695",
 						ViewURL:     "file://./file.cfg",
 					},
 					Content: "projects/doodly/refs/someref/file.cfg",
@@ -294,8 +294,8 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly/refs/otherref",
 						Path:        "file.cfg",
-						ContentHash: "v1:4ccb603a6ce7eb3d310e4a7aab1022f5ff57fc0b",
-						Revision:    "4eb3077a22e66ba9ea38dcab2e80b59dffe26de4",
+						ContentHash: "v1:a593942cb7ea9ffcd8ccf2f0fa23c338e23bfecd",
+						Revision:    "bc00a88a260b1ebfe1a84d71adea647afea28372",
 						ViewURL:     "file://./file.cfg",
 					},
 					Content: "blarg",
@@ -303,8 +303,8 @@ func TestFSImpl(t *testing.T) {
 					Meta: config.Meta{
 						ConfigSet:   "projects/doodly/refs/someref",
 						Path:        "file.cfg",
-						ContentHash: "v1:5e9963aa1551a9e9db8e7bebe6164c3b5d8aee97",
-						Revision:    "4eb3077a22e66ba9ea38dcab2e80b59dffe26de4",
+						ContentHash: "v1:fdb2befae2c5c5102d58c3467baa888f04e6d4a7",
+						Revision:    "bc00a88a260b1ebfe1a84d71adea647afea28372",
 						ViewURL:     "file://./file.cfg",
 					},
 					Content: "projects/doodly/refs/someref/file.cfg",

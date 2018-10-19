@@ -58,19 +58,19 @@ func TestImportDelegationConfigs(t *testing.T) {
 		resp, err := rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "780529c8f5e6b219e27482978d792d580f7d4f9d",
+			Revision: "669865709d488bd6fbcec4fd87d6d1070253f42f",
 		})
 
 		// Have config now.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
 		So(r.rules[0].rule.Name, ShouldEqual, "rule 1")
-		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
 
 		// Noop import.
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
-		So(resp.Revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(resp.Revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
 
 		// Try to import completely broken config.
 		ctx = prepareCfg(ctx, `I'm broken`)
@@ -79,7 +79,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
 
 		// Try to import a config that doesn't pass validation.
 		ctx = prepareCfg(ctx, `rules {
@@ -90,7 +90,7 @@ func TestImportDelegationConfigs(t *testing.T) {
 
 		// Old config is not replaced.
 		r, _ = rules.Rules(ctx)
-		So(r.revision, ShouldEqual, "780529c8f5e6b219e27482978d792d580f7d4f9d")
+		So(r.revision, ShouldEqual, "669865709d488bd6fbcec4fd87d6d1070253f42f")
 
 		// Roll time to expire local rules cache.
 		clk.Add(10 * time.Minute)
@@ -109,14 +109,14 @@ func TestImportDelegationConfigs(t *testing.T) {
 		resp, err = rpc.ImportDelegationConfigs(ctx, nil)
 		So(err, ShouldBeNil)
 		So(resp, ShouldResemble, &admin.ImportedConfigs{
-			Revision: "79770d0350b86402f434bf5479a800edeba64255",
+			Revision: "7826cf5f5d3922ff363a2df0c363df088a81f261",
 		})
 
 		// It is now active.
 		r, err = rules.Rules(ctx)
 		So(err, ShouldBeNil)
 		So(r.rules[0].rule.Name, ShouldEqual, "rule 2")
-		So(r.revision, ShouldEqual, "79770d0350b86402f434bf5479a800edeba64255")
+		So(r.revision, ShouldEqual, "7826cf5f5d3922ff363a2df0c363df088a81f261")
 	})
 }
 

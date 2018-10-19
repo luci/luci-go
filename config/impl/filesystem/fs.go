@@ -65,7 +65,7 @@ package filesystem
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -143,12 +143,12 @@ func deriveRevision(c *scannedConfigs) string {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	hsh := sha1.New()
+	hsh := sha256.New()
 	for _, k := range keys {
 		fmt.Fprintf(hsh, "%s\n%s\n", k, c.contentHashMap[k])
 	}
 	digest := hsh.Sum(nil)
-	return hex.EncodeToString(digest[:])
+	return hex.EncodeToString(digest[:])[:40]
 }
 
 // New returns an implementation of the config service which reads configuration
@@ -295,8 +295,8 @@ func scanDirectory(realPath nativePath) (*scannedConfigs, error) {
 
 			content := string(data)
 
-			hsh := sha1.Sum(data)
-			hexHsh := "v1:" + hex.EncodeToString(hsh[:])
+			hsh := sha256.Sum256(data)
+			hexHsh := "v1:" + hex.EncodeToString(hsh[:])[:40]
 
 			ret.contentHashMap[hexHsh] = content
 

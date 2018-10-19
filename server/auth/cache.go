@@ -16,7 +16,7 @@ package auth
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -122,7 +122,7 @@ func (tc *tokenCache) fetchOrMintToken(ctx context.Context, op *fetchOrMintToken
 	// Derive a short unique cache key that also depends on Kind and Version.
 	// op.CacheKey is allowed to be of any length, but global cache keys must be
 	// short-ish.
-	digest := sha1.Sum([]byte(op.CacheKey))
+	digest := sha256.Sum256([]byte(op.CacheKey))
 	cacheKey := fmt.Sprintf("%s/%d/%s",
 		tc.cfg.Kind, tc.cfg.Version, base64.RawURLEncoding.EncodeToString(digest[:]))
 

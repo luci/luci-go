@@ -16,7 +16,7 @@ package internal
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
@@ -97,7 +97,7 @@ func (p *serviceAccountTokenProvider) CacheKey(ctx context.Context) (*CacheKey, 
 	// invocations.
 	pkeyID := cfg.PrivateKeyID
 	if pkeyID == "" {
-		h := sha1.New()
+		h := sha256.New()
 		h.Write(cfg.PrivateKey)
 		pkeyID = "custom:" + hex.EncodeToString(h.Sum(nil))
 	}

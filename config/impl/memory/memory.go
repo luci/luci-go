@@ -20,7 +20,7 @@ package memory
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"net/url"
@@ -213,21 +213,21 @@ func (b Files) rev() string {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	buf := sha1.New()
+	buf := sha256.New()
 	for _, k := range keys {
 		buf.Write([]byte(k))
 		buf.Write([]byte{0})
 		buf.Write([]byte(b[k]))
 		buf.Write([]byte{0})
 	}
-	return hex.EncodeToString(buf.Sum(nil))
+	return hex.EncodeToString(buf.Sum(nil))[:40]
 }
 
 // hash returns generated ContentHash of a config file.
 func hash(body string) string {
-	buf := sha1.New()
+	buf := sha256.New()
 	fmt.Fprintf(buf, "blob %d", len(body))
 	buf.Write([]byte{0})
 	buf.Write([]byte(body))
-	return "v1:" + hex.EncodeToString(buf.Sum(nil))
+	return "v2:" + hex.EncodeToString(buf.Sum(nil))
 }
