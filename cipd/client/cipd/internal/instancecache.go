@@ -273,8 +273,12 @@ func (c *InstanceCache) readState(ctx context.Context, state *messages.InstanceC
 		sync = true
 
 	default:
-		if err := UnmarshalWithSHA1(stateBytes, state); err != nil {
-			logging.Warningf(ctx, "cipd: instance cache file is corrupted - %s", err)
+		if err := UnmarshalWithSHA256(stateBytes, state); err != nil {
+			if err == ErrUnknownSHA256 {
+				logging.Warningf(ctx, "cipd: need to rebuild instance cache index file")
+			} else {
+				logging.Warningf(ctx, "cipd: instance cache file is corrupted - %s", err)
+			}
 			*state = messages.InstanceCache{}
 			sync = true
 		} else {
@@ -344,7 +348,7 @@ func (c *InstanceCache) syncState(ctx context.Context, state *messages.InstanceC
 
 // saveState persists the cache state.
 func (c *InstanceCache) saveState(ctx context.Context, state *messages.InstanceCache) error {
-	stateBytes, err := MarshalWithSHA1(state)
+	stateBytes, err := MarshalWithSHA256(state)
 	if err != nil {
 		return err
 	}

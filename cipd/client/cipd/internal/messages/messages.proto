@@ -8,15 +8,13 @@ package messages;
 
 import "google/protobuf/timestamp.proto";
 
-// BlobWithSHA1 is a wrapper around a binary blob with SHA1 hash to verify
+// BlobWithSHA256 is a wrapper around a binary blob with SHA256 hash to verify
 // its integrity.
-//
-// The hash is used to detect a corruption due to bad disk blocks, etc. This is
-// not a cryptographic application, any decent checksum algorithm would suffice.
-// SHA1 was chosen somewhat arbitrarily.
-message BlobWithSHA1 {
+message BlobWithSHA256 {
+  reserved 2; // was used for 'sha1' field
+
   bytes blob = 1;
-  bytes sha1 = 2;
+  bytes sha256 = 3;
 }
 
 // TagCache stores a mapping (service, package name, tag) -> instance ID to
