@@ -19,6 +19,8 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 
+	"github.com/golang/protobuf/proto"
+
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
@@ -35,18 +37,25 @@ func TestChecksumCheckingWorks(t *testing.T) {
 	}
 
 	Convey("Works", t, func(c C) {
-		buf, err := MarshalWithSHA1(&msg)
+		buf, err := MarshalWithSHA256(&msg)
 		So(err, ShouldBeNil)
 		out := messages.TagCache{}
-		So(UnmarshalWithSHA1(buf, &out), ShouldBeNil)
+		So(UnmarshalWithSHA256(buf, &out), ShouldBeNil)
 		So(&out, ShouldResembleProto, &msg)
 	})
 
 	Convey("Rejects bad msg", t, func(c C) {
-		buf, err := MarshalWithSHA1(&msg)
+		buf, err := MarshalWithSHA256(&msg)
 		So(err, ShouldBeNil)
 		buf[10] = 0
 		out := messages.TagCache{}
-		So(UnmarshalWithSHA1(buf, &out), ShouldNotBeNil)
+		So(UnmarshalWithSHA256(buf, &out), ShouldNotBeNil)
+	})
+
+	Convey("Skips empty sha256", t, func(c C) {
+		buf, err := proto.Marshal(&messages.BlobWithSHA256{Blob: []byte{1, 2, 3}})
+		So(err, ShouldBeNil)
+		out := messages.TagCache{}
+		So(UnmarshalWithSHA256(buf, &out), ShouldEqual, ErrUnknownSHA256)
 	})
 }
