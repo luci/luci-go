@@ -16,7 +16,7 @@ package internal
 
 import (
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha256"
 	"errors"
 
 	"github.com/golang/protobuf/proto"
@@ -24,32 +24,43 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal/messages"
 )
 
-// MarshalWithSHA1 serializes proto message to bytes, calculates SHA1 checksum
-// of it, and returns serialized envelope that contains both.
+// ErrUnknownSHA256 indicates the deserialized message doesn't have SHA256 set.
 //
-// UnmarshalWithSHA1 can then be used to verify SHA1 and deserialized the
+// This can happen when deserializing records in the old format.
+var ErrUnknownSHA256 = errors.New("no sha256 is recorded in the file")
+
+// MarshalWithSHA256 serializes proto message to bytes, calculates SHA256
+// checksum of it, and returns serialized envelope that contains both.
+//
+// UnmarshalWithSHA256 can then be used to verify SHA256 and deserialized the
 // original object.
-func MarshalWithSHA1(pm proto.Message) ([]byte, error) {
+func MarshalWithSHA256(pm proto.Message) ([]byte, error) {
 	blob, err := proto.Marshal(pm)
 	if err != nil {
 		return nil, err
 	}
-	sum := sha1.Sum(blob)
-	envelope := messages.BlobWithSHA1{Blob: blob, Sha1: sum[:]}
+	sum := sha256.Sum256(blob)
+	envelope := messages.BlobWithSHA256{Blob: blob, Sha256: sum[:]}
 	return proto.Marshal(&envelope)
 }
 
-// UnmarshalWithSHA1 is reverse of MarshalWithSHA1.
+// UnmarshalWithSHA256 is reverse of MarshalWithSHA256.
 //
-// It checks SHA1 checksum and deserializes the object if it matches the blob.
-func UnmarshalWithSHA1(buf []byte, pm proto.Message) error {
-	envelope := messages.BlobWithSHA1{}
+// It checks SHA256 checksum and deserializes the object if it matches the blob.
+//
+// If the expected SHA256 is not available in 'buf', returns ErrUnknownSHA256.
+// This can happen when reading blobs in old format that used SHA1.
+func UnmarshalWithSHA256(buf []byte, pm proto.Message) error {
+	envelope := messages.BlobWithSHA256{}
 	if err := proto.Unmarshal(buf, &envelope); err != nil {
 		return err
 	}
-	sum := sha1.Sum(envelope.Blob)
-	if !bytes.Equal(sum[:], envelope.Sha1) {
-		return errors.New("check sum of tag cache file is invalid")
+	if len(envelope.Sha256) == 0 {
+		return ErrUnknownSHA256
+	}
+	sum := sha256.Sum256(envelope.Blob)
+	if !bytes.Equal(sum[:], envelope.Sha256) {
+		return errors.New("sha256 of the file is invalid, it is probably corrupted")
 	}
 	return proto.Unmarshal(envelope.Blob, pm)
 }
