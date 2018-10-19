@@ -15,9 +15,8 @@
 package common
 
 import (
-	"crypto/sha1"
-	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"hash"
 
 	"go.chromium.org/luci/common/errors"
@@ -31,13 +30,21 @@ import (
 const DefaultHashAlgo = api.HashAlgo_SHA256
 
 // Supported algo => its digest length (in hex encoding) + factory function.
-var supportedAlgos = []struct {
+//
+// Actual entries are added in individual hash_*.go files, so that supported
+// hashes can be turned off by build flags or by omitting files when vendoring.
+var supportedAlgos = make([]struct {
 	hash         func() hash.Hash
 	hexDigestLen int
-}{
-	api.HashAlgo_HASH_ALGO_UNSPECIFIED: {},
-	api.HashAlgo_SHA1:                  {sha1.New, sha1.Size * 2},
-	api.HashAlgo_SHA256:                {sha256.New, sha256.Size * 2},
+}, len(api.HashAlgo_value))
+
+// registerHash is used from hash_*.go files to update supportedAlgos.
+func registerHashAlgo(algo api.HashAlgo, h func() hash.Hash, digestSize int) {
+	if supportedAlgos[algo].hash != nil {
+		panic(fmt.Sprintf("hash algo %s is already registered", algo))
+	}
+	supportedAlgos[algo].hash = h
+	supportedAlgos[algo].hexDigestLen = 2 * digestSize
 }
 
 // NewHash returns a hash implementation or an error if the algo is unknown.
@@ -68,7 +75,7 @@ func ValidateHashAlgo(h api.HashAlgo) error {
 	case h == api.HashAlgo_HASH_ALGO_UNSPECIFIED:
 		return errors.Reason("the hash algorithm is not specified or unrecognized").
 			Tag(grpcutil.InvalidArgumentTag).Err()
-	case int(h) >= len(supportedAlgos) || supportedAlgos[h].hexDigestLen == 0:
+	case int(h) >= len(supportedAlgos) || supportedAlgos[h].hash == nil:
 		return errors.Reason("unsupported hash algorithm %d", h).
 			Tag(grpcutil.InvalidArgumentTag).Err()
 	}
