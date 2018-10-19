@@ -64,10 +64,10 @@
         "waiting for annotation stream"
       ],
       "Children": null,
-      "Collapsed": true
+      "Collapsed": false
     }
   ],
   "PropertyGroup": null,
   "Blame": null,
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }

@@ -62,7 +62,7 @@
         "Job likely failed to start."
       ],
       "Children": null,
-      "Collapsed": true
+      "Collapsed": false
     }
   ],
   "PropertyGroup": [
@@ -77,5 +77,5 @@
     }
   ],
   "Blame": null,
-  "StepDisplayPref": "collapsed"
+  "StepDisplayPref": "default"
 }
