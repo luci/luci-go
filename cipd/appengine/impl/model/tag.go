@@ -25,12 +25,12 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 
-	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -105,7 +105,7 @@ func TagID(t *api.Tag) string {
 //    FailedPrecondition if some processors are still running.
 //    Aborted if some processors have failed.
 //    Internal on tag ID collision.
-func AttachTags(c context.Context, inst *Instance, tags []*api.Tag, who identity.Identity) error {
+func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 	return Txn(c, "AttachTags", func(c context.Context) error {
 		if err := CheckInstanceReady(c, inst); err != nil {
 			return err
@@ -115,8 +115,9 @@ func AttachTags(c context.Context, inst *Instance, tags []*api.Tag, who identity
 			return err
 		}
 		now := clock.Now(c).UTC()
+		who := string(auth.CurrentIdentity(c))
 		for _, t := range missing {
-			t.RegisteredBy = string(who)
+			t.RegisteredBy = who
 			t.RegisteredTs = now
 		}
 		return transient.Tag.Apply(datastore.Put(c, missing))

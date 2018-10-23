@@ -55,7 +55,7 @@ func TestVisitAndMarkTags(t *testing.T) {
 		attachTag := func(i *model.Instance, tag string) *datastore.Key {
 			t, err := common.ParseInstanceTag(tag)
 			So(err, ShouldBeNil)
-			So(model.AttachTags(ctx, i, []*api.Tag{t}, ""), ShouldBeNil)
+			So(model.AttachTags(ctx, i, []*api.Tag{t}), ShouldBeNil)
 			return tagKey(i, tag)
 		}
 
