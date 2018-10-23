@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "19a6f885_a1793de7",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-23T23:06:01Z",
+      "side": 1,
+      "message": "i\u0027d use 2xx here, 3xx below and 1xx above.",
+      "range": {
+        "startLine": 32,
+        "startChar": 21,
+        "endLine": 32,
+        "endChar": 24
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "30a5658a_29ee448a",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-23T23:06:01Z",
+      "side": 1,
+      "message": "ed",
+      "range": {
+        "startLine": 60,
+        "startChar": 33,
+        "endLine": 60,
+        "endChar": 36
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "003fc72b_d20dc229",
+        "filename": "cipd/appengine/impl/model/deletion_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-10-23T23:06:01Z",
+      "side": 1,
+      "message": "nit: should probbaly go above?",
+      "range": {
+        "startLine": 29,
+        "startChar": 1,
+        "endLine": 29,
+        "endChar": 43
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
