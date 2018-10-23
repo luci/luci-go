@@ -2010,15 +2010,15 @@ func TestResolveVersion(t *testing.T) {
 		}
 
 		So(datastore.Put(ctx, pkg, inst1, inst2), ShouldBeNil)
-		So(model.SetRef(ctx, "latest", inst2, "user:someone@example.com"), ShouldBeNil)
+		So(model.SetRef(ctx, "latest", inst2), ShouldBeNil)
 		So(model.AttachTags(ctx, inst1, []*api.Tag{
 			{Key: "ver", Value: "1"},
 			{Key: "ver", Value: "ambiguous"},
-		}, "user:someone@example.com"), ShouldBeNil)
+		}), ShouldBeNil)
 		So(model.AttachTags(ctx, inst2, []*api.Tag{
 			{Key: "ver", Value: "2"},
 			{Key: "ver", Value: "ambiguous"},
-		}, "user:someone@example.com"), ShouldBeNil)
+		}), ShouldBeNil)
 
 		Convey("Happy path", func() {
 			inst, err := impl.ResolveVersion(ctx, &api.ResolveVersionRequest{
@@ -2272,9 +2272,13 @@ func TestDescribeInstance(t *testing.T) {
 
 		ctx := gaetesting.TestingContext()
 		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
+
+		as := func(email string) context.Context {
+			return auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:" + email),
+			})
+		}
+		ctx = as("reader@example.com")
 
 		datastore.GetTestable(ctx).AutoIndex(true)
 
@@ -2309,13 +2313,13 @@ func TestDescribeInstance(t *testing.T) {
 		})
 
 		Convey("Happy path, full info", func() {
-			model.AttachTags(ctx, inst, []*api.Tag{
+			model.AttachTags(as("tag@example.com"), inst, []*api.Tag{
 				{Key: "a", Value: "0"},
 				{Key: "a", Value: "1"},
-			}, "user:tag@example.com")
+			})
 
-			model.SetRef(ctx, "ref_a", inst, "user:ref@example.com")
-			model.SetRef(ctx, "ref_b", inst, "user:ref@example.com")
+			model.SetRef(as("ref@example.com"), "ref_a", inst)
+			model.SetRef(as("ref@example.com"), "ref_b", inst)
 
 			inst.ProcessorsSuccess = []string{"proc"}
 			datastore.Put(ctx, inst, &model.ProcessingResult{
@@ -2827,8 +2831,8 @@ func TestLegacyHandlers(t *testing.T) {
 		So(datastore.Put(ctx, &model.Package{Name: "a/b"}, inst1, inst2), ShouldBeNil)
 
 		// Make an ambiguous tag.
-		model.AttachTags(ctx, inst1, []*api.Tag{{Key: "k", Value: "v"}}, "")
-		model.AttachTags(ctx, inst2, []*api.Tag{{Key: "k", Value: "v"}}, "")
+		model.AttachTags(ctx, inst1, []*api.Tag{{Key: "k", Value: "v"}})
+		model.AttachTags(ctx, inst2, []*api.Tag{{Key: "k", Value: "v"}})
 
 		callHandler := func(h router.Handler, f url.Values, ct string) (code int, body string) {
 			rr := httptest.NewRecorder()

@@ -15,6 +15,7 @@
 package model
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -23,9 +24,12 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -43,6 +47,13 @@ func TestTags(t *testing.T) {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, tc := testclock.UseTime(gaetesting.TestingContext(), testTime)
 		datastore.GetTestable(ctx).AutoIndex(true)
+
+		as := func(email string) context.Context {
+			return auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:" + email),
+			})
+		}
+		ctx = as("abc@example.com")
 
 		putInst := func(pkg, iid string, pendingProcs []string) *Instance {
 			inst := &Instance{
@@ -100,26 +111,26 @@ func TestTags(t *testing.T) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach one tag and verify it exist.
-			So(AttachTags(ctx, inst, tags("a:0"), "user:abc@example.com"), ShouldBeNil)
+			So(AttachTags(ctx, inst, tags("a:0")), ShouldBeNil)
 			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", "user:abc@example.com"))
 
 			// Attach few more at once.
-			So(AttachTags(ctx, inst, tags("a:1", "a:2"), "user:abc@example.com"), ShouldBeNil)
+			So(AttachTags(ctx, inst, tags("a:1", "a:2")), ShouldBeNil)
 			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", "user:abc@example.com"))
 			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", "user:abc@example.com"))
 
 			// Try to reattach an existing one (notice the change in the email),
 			// should be ignored.
-			So(AttachTags(ctx, inst, tags("a:0"), "user:def@example.com"), ShouldBeNil)
+			So(AttachTags(as("def@example.com"), inst, tags("a:0")), ShouldBeNil)
 			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", "user:abc@example.com"))
 
 			// Try to reattach a bunch of existing ones at once.
-			So(AttachTags(ctx, inst, tags("a:1", "a:2"), "user:def@example.com"), ShouldBeNil)
+			So(AttachTags(as("def@example.com"), inst, tags("a:1", "a:2")), ShouldBeNil)
 			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", "user:abc@example.com"))
 			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", "user:abc@example.com"))
 
 			// Mixed group with new and existing tags.
-			So(AttachTags(ctx, inst, tags("a:3", "a:0", "a:4", "a:1"), "user:def@example.com"), ShouldBeNil)
+			So(AttachTags(as("def@example.com"), inst, tags("a:3", "a:0", "a:4", "a:1")), ShouldBeNil)
 			So(getTag(inst, "a:3"), ShouldResemble, expectedTag(inst, "a:3", "user:def@example.com"))
 			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", "user:abc@example.com"))
 			So(getTag(inst, "a:4"), ShouldResemble, expectedTag(inst, "a:4", "user:def@example.com"))
@@ -130,7 +141,7 @@ func TestTags(t *testing.T) {
 			inst := putInst("pkg", digest, nil)
 
 			// Attach a bunch of tags first, so we have something to detach.
-			So(AttachTags(ctx, inst, tags("a:0", "a:1", "a:2", "a:3", "a:4"), "user:abc@example.com"), ShouldBeNil)
+			So(AttachTags(ctx, inst, tags("a:0", "a:1", "a:2", "a:3", "a:4")), ShouldBeNil)
 
 			// Detaching one existing.
 			So(getTag(inst, "a:0"), ShouldNotBeNil)
@@ -161,7 +172,7 @@ func TestTags(t *testing.T) {
 		Convey("AttachTags to not ready instance", func() {
 			inst := putInst("pkg", digest, []string{"proc"})
 
-			err := AttachTags(ctx, inst, tags("a:0"), "user:abc@example.com")
+			err := AttachTags(ctx, inst, tags("a:0"))
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the instance is not ready yet")
 		})
@@ -178,7 +189,7 @@ func TestTags(t *testing.T) {
 			}), ShouldBeNil)
 
 			Convey("AttachTags", func() {
-				err := AttachTags(ctx, inst, tags("some:tag"), "user:abc@example.com")
+				err := AttachTags(ctx, inst, tags("some:tag"))
 				So(grpcutil.Code(err), ShouldEqual, codes.Internal)
 				So(err, ShouldErrLike, `tag "some:tag" collides with tag "another:tag", refusing to touch it`)
 			})
@@ -194,8 +205,8 @@ func TestTags(t *testing.T) {
 			inst1 := putInst("pkg", strings.Repeat("1", 40), nil)
 			inst2 := putInst("pkg", strings.Repeat("2", 40), nil)
 
-			AttachTags(ctx, inst1, tags("ver:1", "ver:ambiguous"), "user:abc@example.com")
-			AttachTags(ctx, inst2, tags("ver:2", "ver:ambiguous"), "user:abc@example.com")
+			AttachTags(ctx, inst1, tags("ver:1", "ver:ambiguous"))
+			AttachTags(ctx, inst2, tags("ver:2", "ver:ambiguous"))
 
 			Convey("Happy path", func() {
 				iid, err := ResolveTag(ctx, "pkg", common.MustParseInstanceTag("ver:1"))
@@ -228,7 +239,7 @@ func TestTags(t *testing.T) {
 			inst := putInst("pkg", strings.Repeat("1", 40), nil)
 
 			// Tags registered at the same time are sorted alphabetically.
-			AttachTags(ctx, inst, tags("z:1", "b:2", "b:1"), "user:abc@example.com")
+			AttachTags(ctx, inst, tags("z:1", "b:2", "b:1"))
 			t, err := ListInstanceTags(ctx, inst)
 			So(err, ShouldBeNil)
 			So(asStr(t), ShouldResemble, []string{"b:1", "b:2", "z:1"})
@@ -236,7 +247,7 @@ func TestTags(t *testing.T) {
 			tc.Add(time.Minute)
 
 			// Tags are sorted by key first, and then by timestamp within the key.
-			AttachTags(ctx, inst, tags("y:1", "a:1", "b:3"), "user:abc@example.com")
+			AttachTags(ctx, inst, tags("y:1", "a:1", "b:3"))
 			t, err = ListInstanceTags(ctx, inst)
 			So(err, ShouldBeNil)
 			So(asStr(t), ShouldResemble, []string{

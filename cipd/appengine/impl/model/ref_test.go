@@ -15,6 +15,7 @@
 package model
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -23,9 +24,12 @@ import (
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
+	"go.chromium.org/luci/server/auth"
+	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
@@ -42,6 +46,13 @@ func TestRefs(t *testing.T) {
 		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 		ctx, tc := testclock.UseTime(gaetesting.TestingContext(), testTime)
 		datastore.GetTestable(ctx).AutoIndex(true)
+
+		as := func(email string) context.Context {
+			return auth.WithState(ctx, &authtest.FakeState{
+				Identity: identity.Identity("user:" + email),
+			})
+		}
+		ctx = as("abc@example.com")
 
 		putInst := func(pkg, iid string, pendingProcs []string) {
 			So(datastore.Put(ctx,
@@ -65,7 +76,7 @@ func TestRefs(t *testing.T) {
 			So(SetRef(ctx, "latest", &Instance{
 				InstanceID: digest,
 				Package:    PackageKey(ctx, "pkg"),
-			}, "user:abc@example.com"), ShouldBeNil)
+			}), ShouldBeNil)
 
 			// Exists now.
 			ref, err = GetRef(ctx, "pkg", "latest")
@@ -96,7 +107,7 @@ func TestRefs(t *testing.T) {
 			err := SetRef(ctx, "latest", &Instance{
 				InstanceID: digest,
 				Package:    PackageKey(ctx, "pkg"),
-			}, "user:abc@example.com")
+			})
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
 			So(err, ShouldErrLike, "the instance is not ready yet")
 		})
@@ -107,12 +118,12 @@ func TestRefs(t *testing.T) {
 			So(SetRef(ctx, "latest", &Instance{
 				InstanceID: digest,
 				Package:    PackageKey(ctx, "pkg"),
-			}, "user:abc@example.com"), ShouldBeNil)
+			}), ShouldBeNil)
 
-			So(SetRef(ctx, "latest", &Instance{
+			So(SetRef(as("another@example.com"), "latest", &Instance{
 				InstanceID: digest,
 				Package:    PackageKey(ctx, "pkg"),
-			}, "user:another@example.com"), ShouldBeNil)
+			}), ShouldBeNil)
 
 			ref, err := GetRef(ctx, "pkg", "latest")
 			So(err, ShouldBeNil)
@@ -126,14 +137,14 @@ func TestRefs(t *testing.T) {
 			So(SetRef(ctx, "ref-0", &Instance{
 				InstanceID: digest,
 				Package:    pkgKey,
-			}, "user:abc@example.com"), ShouldBeNil)
+			}), ShouldBeNil)
 
 			tc.Add(time.Minute)
 
 			So(SetRef(ctx, "ref-1", &Instance{
 				InstanceID: digest,
 				Package:    pkgKey,
-			}, "user:abc@example.com"), ShouldBeNil)
+			}), ShouldBeNil)
 
 			refs, err := ListPackageRefs(ctx, "pkg")
 			So(err, ShouldBeNil)
@@ -170,10 +181,10 @@ func TestRefs(t *testing.T) {
 			}
 			putInst("pkg", inst2.InstanceID, nil)
 
-			So(SetRef(ctx, "ref-0", inst1, "user:abc@example.com"), ShouldBeNil)
+			So(SetRef(ctx, "ref-0", inst1), ShouldBeNil)
 			tc.Add(time.Minute)
-			So(SetRef(ctx, "ref-1", inst1, "user:abc@example.com"), ShouldBeNil)
-			So(SetRef(ctx, "another-ref", inst2, "user:abc@example.com"), ShouldBeNil)
+			So(SetRef(ctx, "ref-1", inst1), ShouldBeNil)
+			So(SetRef(ctx, "another-ref", inst2), ShouldBeNil)
 
 			refs, err := ListInstanceRefs(ctx, inst1)
 			So(err, ShouldBeNil)

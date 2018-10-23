@@ -69,11 +69,11 @@ func TestDeletePackage(t *testing.T) {
 				Instance: datastore.KeyForObj(ctx, inst),
 			}), ShouldBeNil)
 
-			So(SetRef(ctx, chr+"-ref", inst, ""), ShouldBeNil)
+			So(SetRef(ctx, chr+"-ref", inst), ShouldBeNil)
 			So(AttachTags(ctx, inst, []*api.Tag{
 				{Key: "k1", Value: chr},
 				{Key: "k2", Value: chr},
-			}, ""), ShouldBeNil)
+			}), ShouldBeNil)
 		}
 
 		// Some unrelated instance in a different package to be left alone.

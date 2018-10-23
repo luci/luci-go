@@ -911,7 +911,7 @@ func (impl *repoImpl) CreateRef(c context.Context, r *api.Ref) (resp *empty.Empt
 		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(c, r.Package),
 	}
-	if err := model.SetRef(c, r.Name, inst, auth.CurrentIdentity(c)); err != nil {
+	if err := model.SetRef(c, r.Name, inst); err != nil {
 		return nil, err
 	}
 	return &empty.Empty{}, nil
@@ -1023,7 +1023,7 @@ func (impl *repoImpl) AttachTags(c context.Context, r *api.AttachTagsRequest) (r
 		InstanceID: common.ObjectRefToInstanceID(r.Instance),
 		Package:    model.PackageKey(c, r.Package),
 	}
-	if err := model.AttachTags(c, inst, r.Tags, auth.CurrentIdentity(c)); err != nil {
+	if err := model.AttachTags(c, inst, r.Tags); err != nil {
 		return nil, err
 	}
 	return &empty.Empty{}, nil
