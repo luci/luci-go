@@ -20,8 +20,6 @@ import (
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/common/clock/testclock"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
@@ -33,9 +31,7 @@ func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx := gaetesting.TestingContext()
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, _ := TestingContext()
 
 		iid := func(i int) string {
 			ch := string([]byte{'0' + byte(i)})

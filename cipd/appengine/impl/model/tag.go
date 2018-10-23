@@ -110,17 +110,32 @@ func AttachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 		if err := CheckInstanceReady(c, inst); err != nil {
 			return err
 		}
+
 		_, missing, err := checkExistingTags(c, inst, tags)
 		if err != nil {
 			return err
 		}
+
+		events := Events{}
 		now := clock.Now(c).UTC()
 		who := string(auth.CurrentIdentity(c))
 		for _, t := range missing {
 			t.RegisteredBy = who
 			t.RegisteredTs = now
+			events.Emit(&api.Event{
+				Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
+				Package:  inst.Package.StringID(),
+				Instance: inst.InstanceID,
+				Tag:      t.Tag,
+				Who:      who,
+				When:     google.NewTimestamp(now),
+			})
 		}
-		return transient.Tag.Apply(datastore.Put(c, missing))
+
+		if err := datastore.Put(c, missing); err != nil {
+			return transient.Tag.Apply(err)
+		}
+		return events.Flush(c)
 	})
 }
 
@@ -136,7 +151,21 @@ func DetachTags(c context.Context, inst *Instance, tags []*api.Tag) error {
 		if err != nil {
 			return err
 		}
-		return transient.Tag.Apply(datastore.Delete(c, existing))
+
+		if err := datastore.Delete(c, existing); err != nil {
+			return transient.Tag.Apply(err)
+		}
+
+		events := Events{}
+		for _, t := range existing {
+			events.Emit(&api.Event{
+				Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
+				Package:  inst.Package.StringID(),
+				Instance: inst.InstanceID,
+				Tag:      t.Tag,
+			})
+		}
+		return events.Flush(c)
 	})
 }
 

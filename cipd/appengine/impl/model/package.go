@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/grpc/grpcutil"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -165,7 +166,16 @@ func SetPackageHidden(c context.Context, pkg string, hidden bool) error {
 		case p.Hidden == hidden:
 			return nil
 		}
+
 		p.Hidden = hidden
-		return transient.Tag.Apply(datastore.Put(c, p))
+		if err := datastore.Put(c, p); err != nil {
+			return transient.Tag.Apply(err)
+		}
+
+		ev := api.EventKind_PACKAGE_HIDDEN
+		if !hidden {
+			ev = api.EventKind_PACKAGE_UNHIDDEN
+		}
+		return EmitEvent(c, &api.Event{Kind: ev, Package: pkg})
 	})
 }
