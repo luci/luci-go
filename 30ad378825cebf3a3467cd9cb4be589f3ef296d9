@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "049678e8_233df2dc",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "did you mean \"related\"?\n\nbelow too",
+      "range": {
+        "startLine": 28,
+        "startChar": 20,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "19a6f885_a1793de7",
         "filename": "cipd/api/cipd/v1/events.proto",
         "patchSetId": 1
@@ -46,6 +69,29 @@
       "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f75d168c_db7d7aa1",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "contain",
+      "range": {
+        "startLine": 53,
+        "startChar": 22,
+        "endLine": 53,
+        "endChar": 30
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
@@ -96,6 +142,29 @@
     },
     {
       "key": {
+        "uuid": "9bb871b1_ed52c44e",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "nit: inconsistent with lines below",
+      "range": {
+        "startLine": 63,
+        "startChar": 54,
+        "endLine": 63,
+        "endChar": 59
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "003fc72b_d20dc229",
         "filename": "cipd/appengine/impl/model/deletion_test.go",
         "patchSetId": 1
@@ -140,6 +209,103 @@
       "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3f56875d_98779ce4",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "how is it going to work for PackageACL entity? it seems we need to generalize this field from Package to Parent which can be Package or PackageACL",
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "21563912_03b4ebaa",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "according to the proto, p.Package can be a package prefix",
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a68a074_c718b9d1",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "note that this assumes existence of an appropriate composite datastore index. Will fail once you add a filter on any of the fields above",
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "40bac77c_681f055d",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "i recommend doing it in a separate cron job, otherwise we would be mixing transactional changes in datastore and non-transaction inserts into bq",
+      "range": {
+        "startLine": 126,
+        "startChar": 50,
+        "endLine": 126,
+        "endChar": 59
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "67106acf_fadb633c",
+        "filename": "cipd/appengine/impl/model/ref.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-24T18:21:32Z",
+      "side": 1,
+      "message": "r?",
+      "range": {
+        "startLine": 141,
+        "startChar": 28,
+        "endLine": 144,
+        "endChar": 3
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
