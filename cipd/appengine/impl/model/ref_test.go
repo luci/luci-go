@@ -15,7 +15,6 @@
 package model
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -23,13 +22,8 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
-	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
@@ -41,18 +35,10 @@ func TestRefs(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		digest := strings.Repeat("a", 40)
+		digestA := strings.Repeat("a", 40)
+		digestB := strings.Repeat("b", 40)
 
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx, tc := testclock.UseTime(gaetesting.TestingContext(), testTime)
-		datastore.GetTestable(ctx).AutoIndex(true)
-
-		as := func(email string) context.Context {
-			return auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:" + email),
-			})
-		}
-		ctx = as("abc@example.com")
+		ctx, tc, as := TestingContext()
 
 		putInst := func(pkg, iid string, pendingProcs []string) {
 			So(datastore.Put(ctx,
@@ -65,7 +51,8 @@ func TestRefs(t *testing.T) {
 		}
 
 		Convey("SetRef+GetRef+DeleteRef happy path", func() {
-			putInst("pkg", digest, nil)
+			putInst("pkg", digestA, nil)
+			putInst("pkg", digestB, nil)
 
 			// Missing initially.
 			ref, err := GetRef(ctx, "pkg", "latest")
@@ -74,7 +61,7 @@ func TestRefs(t *testing.T) {
 
 			// Create.
 			So(SetRef(ctx, "latest", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    PackageKey(ctx, "pkg"),
 			}), ShouldBeNil)
 
@@ -86,26 +73,77 @@ func TestRefs(t *testing.T) {
 				Package: "pkg",
 				Instance: &api.ObjectRef{
 					HashAlgo:  api.HashAlgo_SHA1,
-					HexDigest: digest,
+					HexDigest: digestA,
 				},
-				ModifiedBy: "user:abc@example.com",
+				ModifiedBy: string(testUser),
 				ModifiedTs: google.NewTimestamp(testTime),
 			})
 
+			// Move it to point to something else.
+			tc.Add(time.Second)
+			So(SetRef(ctx, "latest", &Instance{
+				InstanceID: digestB,
+				Package:    PackageKey(ctx, "pkg"),
+			}), ShouldBeNil)
+			ref, err = GetRef(ctx, "pkg", "latest")
+			So(err, ShouldBeNil)
+			So(ref.Proto().Instance.HexDigest, ShouldEqual, digestB)
+
 			// Delete.
+			tc.Add(time.Second)
 			So(DeleteRef(ctx, "pkg", "latest"), ShouldBeNil)
 
 			// Missing now.
 			ref, err = GetRef(ctx, "pkg", "latest")
 			So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
 			So(err, ShouldErrLike, "no such ref")
+
+			// Second delete is silent noop.
+			tc.Add(time.Second)
+			So(DeleteRef(ctx, "pkg", "latest"), ShouldBeNil)
+
+			// Collected all events correctly.
+			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+				{
+					Kind:     api.EventKind_INSTANCE_REF_UNSET,
+					Package:  "pkg",
+					Ref:      "latest",
+					Instance: digestB,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime.Add(2 * time.Second)),
+				},
+				{
+					Kind:     api.EventKind_INSTANCE_REF_SET,
+					Package:  "pkg",
+					Ref:      "latest",
+					Instance: digestB,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime.Add(time.Second + 1)),
+				},
+				{
+					Kind:     api.EventKind_INSTANCE_REF_UNSET,
+					Package:  "pkg",
+					Ref:      "latest",
+					Instance: digestA,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime.Add(time.Second)),
+				},
+				{
+					Kind:     api.EventKind_INSTANCE_REF_SET,
+					Package:  "pkg",
+					Ref:      "latest",
+					Instance: digestA,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime),
+				},
+			})
 		})
 
 		Convey("Instance not ready", func() {
-			putInst("pkg", digest, []string{"proc"})
+			putInst("pkg", digestA, []string{"proc"})
 
 			err := SetRef(ctx, "latest", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    PackageKey(ctx, "pkg"),
 			})
 			So(grpcutil.Code(err), ShouldEqual, codes.FailedPrecondition)
@@ -113,36 +151,36 @@ func TestRefs(t *testing.T) {
 		})
 
 		Convey("Doesn't touch existing ref", func() {
-			putInst("pkg", digest, nil)
+			putInst("pkg", digestA, nil)
 
 			So(SetRef(ctx, "latest", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    PackageKey(ctx, "pkg"),
 			}), ShouldBeNil)
 
 			So(SetRef(as("another@example.com"), "latest", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    PackageKey(ctx, "pkg"),
 			}), ShouldBeNil)
 
 			ref, err := GetRef(ctx, "pkg", "latest")
 			So(err, ShouldBeNil)
-			So(ref.ModifiedBy, ShouldEqual, "user:abc@example.com") // the initial one
+			So(ref.ModifiedBy, ShouldEqual, string(testUser)) // the initial one
 		})
 
 		Convey("ListPackageRefs works", func() {
-			putInst("pkg", digest, nil)
+			putInst("pkg", digestA, nil)
 			pkgKey := PackageKey(ctx, "pkg")
 
 			So(SetRef(ctx, "ref-0", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    pkgKey,
 			}), ShouldBeNil)
 
 			tc.Add(time.Minute)
 
 			So(SetRef(ctx, "ref-1", &Instance{
-				InstanceID: digest,
+				InstanceID: digestA,
 				Package:    pkgKey,
 			}), ShouldBeNil)
 
@@ -152,15 +190,15 @@ func TestRefs(t *testing.T) {
 				{
 					Name:       "ref-1",
 					Package:    pkgKey,
-					InstanceID: digest,
-					ModifiedBy: "user:abc@example.com",
+					InstanceID: digestA,
+					ModifiedBy: string(testUser),
 					ModifiedTs: testTime.Add(time.Minute),
 				},
 				{
 					Name:       "ref-0",
 					Package:    pkgKey,
-					InstanceID: digest,
-					ModifiedBy: "user:abc@example.com",
+					InstanceID: digestA,
+					ModifiedBy: string(testUser),
 					ModifiedTs: testTime,
 				},
 			})
@@ -193,14 +231,14 @@ func TestRefs(t *testing.T) {
 					Name:       "ref-1",
 					Package:    pkgKey,
 					InstanceID: inst1.InstanceID,
-					ModifiedBy: "user:abc@example.com",
+					ModifiedBy: string(testUser),
 					ModifiedTs: testTime.Add(time.Minute),
 				},
 				{
 					Name:       "ref-0",
 					Package:    pkgKey,
 					InstanceID: inst1.InstanceID,
-					ModifiedBy: "user:abc@example.com",
+					ModifiedBy: string(testUser),
 					ModifiedTs: testTime,
 				},
 			})

@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/errors"
@@ -74,6 +76,8 @@ func SetRef(c context.Context, ref string, inst *Instance) error {
 			return err
 		}
 
+		events := Events{}
+
 		// Do not touch the ref's ModifiedBy/ModifiedTs if it already points to the
 		// requested instance. Need to fetch the ref to check this.
 		r := Ref{Name: ref, Package: inst.Package}
@@ -84,15 +88,33 @@ func SetRef(c context.Context, ref string, inst *Instance) error {
 			return errors.Annotate(err, "failed to fetch the ref").Tag(transient.Tag).Err()
 		case r.InstanceID == inst.InstanceID:
 			return nil // already set to the requested instance
+		default:
+			events.Emit(&api.Event{
+				Kind:     api.EventKind_INSTANCE_REF_UNSET,
+				Package:  inst.Package.StringID(),
+				Instance: r.InstanceID,
+				Ref:      ref,
+			})
 		}
 
-		return transient.Tag.Apply(datastore.Put(c, &Ref{
+		events.Emit(&api.Event{
+			Kind:     api.EventKind_INSTANCE_REF_SET,
+			Package:  inst.Package.StringID(),
+			Instance: inst.InstanceID,
+			Ref:      ref,
+		})
+
+		err := datastore.Put(c, &Ref{
 			Name:       ref,
 			Package:    inst.Package,
 			InstanceID: inst.InstanceID,
 			ModifiedBy: string(auth.CurrentIdentity(c)),
 			ModifiedTs: clock.Now(c).UTC(),
-		}))
+		})
+		if err != nil {
+			return transient.Tag.Apply(err)
+		}
+		return events.Flush(c)
 	})
 }
 
@@ -114,10 +136,30 @@ func GetRef(c context.Context, pkg, ref string) (*Ref, error) {
 //
 // Does nothing if there's no such ref or package.
 func DeleteRef(c context.Context, pkg, ref string) error {
-	return transient.Tag.Apply(datastore.Delete(c, &Ref{
-		Name:    ref,
-		Package: PackageKey(c, pkg),
-	}))
+	return Txn(c, "DeleteRef", func(c context.Context) error {
+		r, err := GetRef(c, pkg, ref)
+		switch {
+		case grpcutil.Code(err) == codes.NotFound:
+			return nil
+		case err != nil:
+			return err // transient
+		}
+
+		err = datastore.Delete(c, &Ref{
+			Name:    ref,
+			Package: PackageKey(c, pkg),
+		})
+		if err != nil {
+			return transient.Tag.Apply(err)
+		}
+
+		return EmitEvent(c, &api.Event{
+			Kind:     api.EventKind_INSTANCE_REF_UNSET,
+			Package:  pkg,
+			Instance: r.InstanceID,
+			Ref:      ref,
+		})
+	})
 }
 
 // ListPackageRefs returns all refs in a package, most recently modified first.

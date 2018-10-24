@@ -23,13 +23,16 @@ import (
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/common/sync/parallel"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 )
 
 var (
 	// List of entity kinds to delete when removing a package. We purposefully
 	// do not delete the entire entity group (using kindless datastore query) to
 	// make sure that whoever adds more entity types there is cognizant of the
-	// deletion procedure.
+	// deletion procedure. Additionally, we want to preserve event log entities,
+	// that live in the same entity group.
 	kindsToDelete = []string{
 		"InstanceTag",
 		"PackageInstance",
@@ -134,6 +137,12 @@ func DeletePackage(c context.Context, pkg string) error {
 
 		// Finally, delete the package entity itself. Its absence is a marker that
 		// the package is completely gone (as checked in CheckPackageExists).
-		return datastore.Delete(c, PackageKey(c, pkg))
+		if err := datastore.Delete(c, PackageKey(c, pkg)); err != nil {
+			return transient.Tag.Apply(err)
+		}
+		return EmitEvent(c, &api.Event{
+			Kind:    api.EventKind_PACKAGE_DELETED,
+			Package: pkg,
+		})
 	})
 }

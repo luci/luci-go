@@ -21,12 +21,13 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
+	. "go.chromium.org/luci/common/testing/assertions"
 )
 
 func TestDeletePackage(t *testing.T) {
@@ -37,17 +38,24 @@ func TestDeletePackage(t *testing.T) {
 	deletionBatchSize = 3
 
 	Convey("Works", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := TestingContext()
 
-		// Returns number of entities in an entity group.
+		// Returns number of entities in an entity group, skipping unimportant ones.
 		entitiesCount := func(root *datastore.Key) (count int64) {
 			q := datastore.NewQuery("").Ancestor(root).KeysOnly(true)
 			So(datastore.Run(ctx, q, func(k *datastore.Key) {
+				switch {
 				// Skip magical __entity_group__ entities created by the datastore.
 				// This is roughly same as using GetTestable(ctx).DisableSpecialEntities
 				// except we can't disable them, since we need them for transactions to
 				// work.
-				if !strings.HasPrefix(k.Kind(), "__") {
+				case strings.HasPrefix(k.Kind(), "__"):
+					return
+				// Event log is never deleted. Its entities reside in same entity group
+				// as the rest of CIPD model.
+				case k.Kind() == "Event":
+					return
+				default:
 					count += 1
 				}
 			}), ShouldBeNil)
@@ -93,8 +101,20 @@ func TestDeletePackage(t *testing.T) {
 		So(entitiesCount(PackageKey(ctx, "pkg")), ShouldEqual, 0)
 		So(entitiesCount(PackageKey(ctx, "another-pkg")), ShouldEqual, 2)
 
+		// Have the event in the log as well.
+		events := GetEvents(ctx)
+		So(events[len(events)-1], ShouldResembleProto, &api.Event{
+			Kind:    api.EventKind_PACKAGE_DELETED,
+			Package: "pkg",
+			Who:     string(testUser),
+			When:    google.NewTimestamp(testTime),
+		})
+
 		// And DeletePackage now complains that the package is gone.
 		err := DeletePackage(ctx, "pkg")
 		So(grpcutil.Code(err), ShouldEqual, codes.NotFound)
+
+		// And it didn't generate any new events.
+		So(GetEvents(ctx), ShouldHaveLength, len(events))
 	})
 }

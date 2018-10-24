@@ -1,0 +1,70 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cipd;
+
+option go_package = "api";
+
+import "go.chromium.org/luci/cipd/api/cipd/v1/repo.proto";
+import "google/protobuf/timestamp.proto";
+
+
+enum EventKind {
+  EVENT_KIND_UNSPECIFIED = 0;
+
+  // Prefix events: relate to some CIPD prefix.
+  PREFIX_ACL_CHANGED = 100; // TODO
+
+  // Package events: relate to a package (as a whole).
+  PACKAGE_CREATED  = 200;
+  PACKAGE_DELETED  = 201;
+  PACKAGE_HIDDEN   = 202;
+  PACKAGE_UNHIDDEN = 203;
+
+  // Instance events: relate to a particular package instance.
+  INSTANCE_CREATED      = 300;
+  INSTANCE_DELETED      = 301;
+  INSTANCE_REF_SET      = 302;
+  INSTANCE_REF_UNSET    = 303;
+  INSTANCE_TAG_ATTACHED = 304;
+  INSTANCE_TAG_DETACHED = 305;
+}
+
+
+// Event in a global structured event log.
+//
+// It exists in both BigQuery (for adhoc queries) and in Datastore (for showing
+// in web UI, e.g. for "recent tags" feature).
+//
+// Datastore entities contains serialized Event as is, plus a copy of some of
+// its fields for indexing.
+message Event {
+  EventKind kind = 1;
+  string who = 2;  // an identity string, e.g. "user:<email>"
+
+  // Real time is used only for up to millisecond precisions. Nanoseconds are
+  // abused to order events emitted by a single transaction.
+  google.protobuf.Timestamp when = 3;
+
+  string package = 4;   // a package name or a prefix (for PREFIX_* events)
+  string instance = 5;  // an instance ID for INSTANCE_*
+  string ref = 6;       // a ref name for INSTANCE_REF_*
+  string tag = 7;       // a tag (in 'k:v' form) for INSTANCE_TAG_*
+
+  // An ACL diff for PREFIX_ACL_CHANGED.
+  repeated cipd.PrefixMetadata.ACL granted_role = 8;
+  repeated cipd.PrefixMetadata.ACL revoked_role = 9;
+}
