@@ -24,6 +24,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
@@ -42,6 +43,7 @@ func authPrelude(c context.Context, methodName string, req proto.Message) (conte
 	case !is:
 		return c, status.Errorf(codes.PermissionDenied, "unauthorized user")
 	}
+	logging.Debugf(c, "%s called %q:\n%s", auth.CurrentIdentity(c), methodName, req)
 	return c, nil
 }
 
