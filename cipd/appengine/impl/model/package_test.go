@@ -16,12 +16,15 @@ package model
 
 import (
 	"testing"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
+
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -31,7 +34,7 @@ func TestListPackages(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := TestingContext()
 
 		mk := func(name string, hidden bool) {
 			So(datastore.Put(ctx, &Package{
@@ -96,7 +99,7 @@ func TestCheckPackages(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := TestingContext()
 
 		mk := func(name string, hidden bool) {
 			So(datastore.Put(ctx, &Package{
@@ -160,7 +163,7 @@ func TestSetPackageHidden(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, tc, _ := TestingContext()
 
 		isHidden := func(p string) bool {
 			pkg := Package{Name: p}
@@ -178,11 +181,27 @@ func TestSetPackageHidden(t *testing.T) {
 		So(hide("a"), ShouldBeNil)
 		So(isHidden("a"), ShouldBeTrue)
 
+		tc.Add(time.Second)
 		So(show("a"), ShouldBeNil)
 		So(isHidden("a"), ShouldBeFalse)
 
 		// To test pre-txn check.
 		So(show("a"), ShouldBeNil)
 		So(isHidden("a"), ShouldBeFalse)
+
+		So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+			{
+				Kind:    api.EventKind_PACKAGE_UNHIDDEN,
+				Package: "a",
+				Who:     string(testUser),
+				When:    google.NewTimestamp(testTime.Add(time.Second)),
+			},
+			{
+				Kind:    api.EventKind_PACKAGE_HIDDEN,
+				Package: "a",
+				Who:     string(testUser),
+				When:    google.NewTimestamp(testTime),
+			},
+		})
 	})
 }

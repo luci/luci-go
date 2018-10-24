@@ -96,6 +96,7 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 		// Reset the state in case of a txn retry.
 		reg = false
 		out = nil
+		events := Events{}
 
 		// Such instance is already registered?
 		existing := Instance{
@@ -123,6 +124,10 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 			if err != nil {
 				return errors.Annotate(err, "failed to create the package entity").Tag(transient.Tag).Err()
 			}
+			events.Emit(&api.Event{
+				Kind:    api.EventKind_PACKAGE_CREATED,
+				Package: inst.Package.StringID(),
+			})
 		}
 
 		// Let the caller do more stuff inside this txn, e.g start TQ tasks.
@@ -137,9 +142,15 @@ func RegisterInstance(c context.Context, inst *Instance, cb func(context.Context
 		if err := datastore.Put(c, &toPut); err != nil {
 			return errors.Annotate(err, "failed to create the package instance entity").Tag(transient.Tag).Err()
 		}
+		events.Emit(&api.Event{
+			Kind:     api.EventKind_INSTANCE_CREATED,
+			Package:  inst.Package.StringID(),
+			Instance: inst.InstanceID,
+		})
+
 		reg = true
 		out = &toPut
-		return nil
+		return events.Flush(c)
 	})
 	return
 }

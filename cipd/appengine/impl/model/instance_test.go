@@ -26,12 +26,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
+	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
-	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -41,20 +40,19 @@ func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
-		ts := time.Unix(1525136124, 0).UTC()
+		ctx, _, _ := TestingContext()
 
 		pkg := &Package{
 			Name:         "a/b/c",
 			RegisteredBy: "user:a@example.com",
-			RegisteredTs: ts,
+			RegisteredTs: testTime,
 		}
 
 		inst := &Instance{
 			InstanceID:   strings.Repeat("a", 40),
 			Package:      PackageKey(ctx, "a/b/c"),
 			RegisteredBy: "user:a@example.com",
-			RegisteredTs: ts,
+			RegisteredTs: testTime,
 		}
 
 		Convey("To proto", func() {
@@ -65,7 +63,7 @@ func TestRegisterInstance(t *testing.T) {
 					HexDigest: inst.InstanceID,
 				},
 				RegisteredBy: "user:a@example.com",
-				RegisteredTs: google.NewTimestamp(ts),
+				RegisteredTs: google.NewTimestamp(testTime),
 			})
 		})
 
@@ -96,6 +94,22 @@ func TestRegisterInstance(t *testing.T) {
 
 			So(storedInst, ShouldResemble, expected)
 			So(storedPkg, ShouldResemble, pkg)
+
+			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+				{
+					Kind:     api.EventKind_INSTANCE_CREATED,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime.Add(1)),
+					Package:  pkg.Name,
+					Instance: expected.InstanceID,
+				},
+				{
+					Kind:    api.EventKind_PACKAGE_CREATED,
+					Who:     string(testUser),
+					When:    google.NewTimestamp(testTime),
+					Package: pkg.Name,
+				},
+			})
 		})
 
 		Convey("Existing package, new instance", func() {
@@ -120,6 +134,16 @@ func TestRegisterInstance(t *testing.T) {
 			storedPkg := &Package{Name: "a/b/c"}
 			So(datastore.Get(ctx, storedPkg), ShouldBeNil)
 			So(storedPkg, ShouldResemble, pkg)
+
+			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
+				{
+					Kind:     api.EventKind_INSTANCE_CREATED,
+					Who:      string(testUser),
+					When:     google.NewTimestamp(testTime),
+					Package:  pkg.Name,
+					Instance: inst.InstanceID,
+				},
+			})
 		})
 
 		Convey("Existing instance", func() {
@@ -133,6 +157,8 @@ func TestRegisterInstance(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(reg, ShouldBeFalse)
 			So(out, ShouldResemble, inst) // the original one
+
+			So(GetEvents(ctx), ShouldHaveLength, 0)
 		})
 	})
 }
@@ -141,15 +167,13 @@ func TestListInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ts := time.Unix(1525136124, 0).UTC()
-		ctx := gaetesting.TestingContext()
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, _ := TestingContext()
 
 		inst := func(i int) *Instance {
 			return &Instance{
 				InstanceID:   fmt.Sprintf("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%d", i),
 				Package:      PackageKey(ctx, "a/b"),
-				RegisteredTs: ts.Add(time.Duration(i) * time.Minute),
+				RegisteredTs: testTime.Add(time.Duration(i) * time.Minute),
 			}
 		}
 		for i := 0; i < 4; i++ {
@@ -181,7 +205,7 @@ func TestCheckInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := TestingContext()
 
 		put := func(pkg, iid string, failedProcs, pendingProcs []string) {
 			So(datastore.Put(ctx,
@@ -257,7 +281,7 @@ func TestFetchProcessors(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := TestingContext()
 		ts := time.Unix(1525136124, 0).UTC()
 
 		inst := &Instance{

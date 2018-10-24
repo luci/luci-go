@@ -16,11 +16,9 @@ package model
 
 import (
 	"testing"
-	"time"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -31,8 +29,6 @@ import (
 
 func TestProcessingResult(t *testing.T) {
 	t.Parallel()
-
-	testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 	res := map[string]string{
 		"a": "b",

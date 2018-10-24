@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -34,8 +33,7 @@ func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx := gaetesting.TestingContext()
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, _ := TestingContext()
 
 		pkg := &Package{Name: "pkg"}
 		inst1 := &Instance{
