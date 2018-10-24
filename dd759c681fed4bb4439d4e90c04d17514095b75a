@@ -22,6 +22,30 @@
       "revId": "dd759c681fed4bb4439d4e90c04d17514095b75a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "faaef05c_9d082917",
+        "filename": "machine-db/appengine/rpc/crimson.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-10-24T22:39:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6836a33_b24b90fa",
+      "range": {
+        "startLine": 46,
+        "startChar": 40,
+        "endLine": 46,
+        "endChar": 68
+      },
+      "revId": "dd759c681fed4bb4439d4e90c04d17514095b75a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
