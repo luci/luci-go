@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2af00fd5_1cfc75bb",
+        "filename": "cipd/api/cipd/v1/events.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-24T19:26:12Z",
+      "side": 1,
+      "message": "no, I meant \"relate\". \"Events relate ...\"",
+      "parentUuid": "049678e8_233df2dc",
+      "range": {
+        "startLine": 28,
+        "startChar": 20,
+        "endLine": 28,
+        "endChar": 26
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "19a6f885_a1793de7",
         "filename": "cipd/api/cipd/v1/events.proto",
         "patchSetId": 1
@@ -229,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "91ea9e55_9f745a76",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-24T19:26:12Z",
+      "side": 1,
+      "message": "Metadata changes will be logged under same PackageKey() entity group. Also current structure of Metadata entities will change (they already all called \"legacy\").",
+      "parentUuid": "3f56875d_98779ce4",
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "21563912_03b4ebaa",
         "filename": "cipd/appengine/impl/model/events.go",
         "patchSetId": 1
@@ -283,6 +325,30 @@
       "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "619e87cd_091eb20c",
+        "filename": "cipd/appengine/impl/model/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-24T19:26:12Z",
+      "side": 1,
+      "message": "I\u0027ll be using bqlog library.",
+      "parentUuid": "40bac77c_681f055d",
+      "range": {
+        "startLine": 126,
+        "startChar": 50,
+        "endLine": 126,
+        "endChar": 59
+      },
+      "revId": "30ad378825cebf3a3467cd9cb4be589f3ef296d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
