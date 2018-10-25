@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab205a48_68e2f95b",
+        "filename": "mp/api/suppliers/v1/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-10-25T13:52:39Z",
+      "side": 1,
+      "message": "This will be slightly faster:\n  //go:generate go install go.chromium.org/luci/grpc/cmd/cproto go.chromium.org/luci/grpc/cmd/svcdec",
+      "revId": "c965d22cbd657a81e14fdb025e90d1155a3fc98a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
