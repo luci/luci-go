@@ -32,7 +32,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/server/router"
 
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
+	"go.chromium.org/luci/appengine/bqlog"
 )
 
 var goatTeleportations = bqlog.Log{
