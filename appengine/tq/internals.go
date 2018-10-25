@@ -39,6 +39,10 @@ type internalsImpl struct {
 	*Dispatcher
 }
 
+func (d internalsImpl) GetBaseURL() string {
+	return d.baseURL()
+}
+
 func (d internalsImpl) GetAllQueues() []string {
 	qs := stringset.New(0)
 	d.mu.RLock()
