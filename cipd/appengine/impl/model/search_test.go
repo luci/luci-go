@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/gae/service/datastore"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -31,7 +32,7 @@ func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx, _, _ := TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		iid := func(i int) string {
 			ch := string([]byte{'0' + byte(i)})
@@ -50,7 +51,7 @@ func TestSearchInstances(t *testing.T) {
 			inst := &Instance{
 				InstanceID:   iid,
 				Package:      PackageKey(ctx, "pkg"),
-				RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+				RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 			}
 			ents := make([]*Tag, len(tags))
 			for i, t := range tags {
@@ -58,7 +59,7 @@ func TestSearchInstances(t *testing.T) {
 					ID:           TagID(common.MustParseInstanceTag(t)),
 					Instance:     datastore.KeyForObj(ctx, inst),
 					Tag:          t,
-					RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+					RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 				}
 			}
 			So(datastore.Put(ctx, inst, ents), ShouldBeNil)

@@ -26,6 +26,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,7 +39,7 @@ func TestRefs(t *testing.T) {
 		digestA := strings.Repeat("a", 40)
 		digestB := strings.Repeat("b", 40)
 
-		ctx, tc, as := TestingContext()
+		ctx, tc, as := testutil.TestingContext()
 
 		putInst := func(pkg, iid string, pendingProcs []string) {
 			So(datastore.Put(ctx,
@@ -75,8 +76,8 @@ func TestRefs(t *testing.T) {
 					HashAlgo:  api.HashAlgo_SHA1,
 					HexDigest: digestA,
 				},
-				ModifiedBy: string(testUser),
-				ModifiedTs: google.NewTimestamp(testTime),
+				ModifiedBy: string(testutil.TestUser),
+				ModifiedTs: google.NewTimestamp(testutil.TestTime),
 			})
 
 			// Move it to point to something else.
@@ -109,32 +110,32 @@ func TestRefs(t *testing.T) {
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestB,
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(2 * time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_SET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestB,
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(time.Second + 1)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_UNSET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestA,
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_REF_SET,
 					Package:  "pkg",
 					Ref:      "latest",
 					Instance: digestA,
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime),
 				},
 			})
 		})
@@ -165,7 +166,7 @@ func TestRefs(t *testing.T) {
 
 			ref, err := GetRef(ctx, "pkg", "latest")
 			So(err, ShouldBeNil)
-			So(ref.ModifiedBy, ShouldEqual, string(testUser)) // the initial one
+			So(ref.ModifiedBy, ShouldEqual, string(testutil.TestUser)) // the initial one
 		})
 
 		Convey("ListPackageRefs works", func() {
@@ -191,15 +192,15 @@ func TestRefs(t *testing.T) {
 					Name:       "ref-1",
 					Package:    pkgKey,
 					InstanceID: digestA,
-					ModifiedBy: string(testUser),
-					ModifiedTs: testTime.Add(time.Minute),
+					ModifiedBy: string(testutil.TestUser),
+					ModifiedTs: testutil.TestTime.Add(time.Minute),
 				},
 				{
 					Name:       "ref-0",
 					Package:    pkgKey,
 					InstanceID: digestA,
-					ModifiedBy: string(testUser),
-					ModifiedTs: testTime,
+					ModifiedBy: string(testutil.TestUser),
+					ModifiedTs: testutil.TestTime,
 				},
 			})
 		})
@@ -231,15 +232,15 @@ func TestRefs(t *testing.T) {
 					Name:       "ref-1",
 					Package:    pkgKey,
 					InstanceID: inst1.InstanceID,
-					ModifiedBy: string(testUser),
-					ModifiedTs: testTime.Add(time.Minute),
+					ModifiedBy: string(testutil.TestUser),
+					ModifiedTs: testutil.TestTime.Add(time.Minute),
 				},
 				{
 					Name:       "ref-0",
 					Package:    pkgKey,
 					InstanceID: inst1.InstanceID,
-					ModifiedBy: string(testUser),
-					ModifiedTs: testTime,
+					ModifiedBy: string(testutil.TestUser),
+					ModifiedTs: testutil.TestTime,
 				},
 			})
 		})
