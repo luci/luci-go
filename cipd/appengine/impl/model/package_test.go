@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -34,7 +35,7 @@ func TestListPackages(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx, _, _ := TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		mk := func(name string, hidden bool) {
 			So(datastore.Put(ctx, &Package{
@@ -99,7 +100,7 @@ func TestCheckPackages(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx, _, _ := TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		mk := func(name string, hidden bool) {
 			So(datastore.Put(ctx, &Package{
@@ -163,7 +164,7 @@ func TestSetPackageHidden(t *testing.T) {
 	t.Parallel()
 
 	Convey("Works", t, func() {
-		ctx, tc, _ := TestingContext()
+		ctx, tc, _ := testutil.TestingContext()
 
 		isHidden := func(p string) bool {
 			pkg := Package{Name: p}
@@ -193,14 +194,14 @@ func TestSetPackageHidden(t *testing.T) {
 			{
 				Kind:    api.EventKind_PACKAGE_UNHIDDEN,
 				Package: "a",
-				Who:     string(testUser),
-				When:    google.NewTimestamp(testTime.Add(time.Second)),
+				Who:     string(testutil.TestUser),
+				When:    google.NewTimestamp(testutil.TestTime.Add(time.Second)),
 			},
 			{
 				Kind:    api.EventKind_PACKAGE_HIDDEN,
 				Package: "a",
-				Who:     string(testUser),
-				When:    google.NewTimestamp(testTime),
+				Who:     string(testutil.TestUser),
+				When:    google.NewTimestamp(testutil.TestTime),
 			},
 		})
 	})
