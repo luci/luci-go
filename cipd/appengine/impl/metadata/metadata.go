@@ -77,8 +77,8 @@ type Storage interface {
 	// callback returned.
 	VisitMetadata(c context.Context, prefix string, cb Visitor) error
 
-	// UpdateMetadata transactionally updates or creates metadata of some
-	// prefix and returns it.
+	// UpdateMetadata transactionally (with XG transaction) updates or creates
+	// metadata of some prefix and returns it.
 	//
 	// The prefix may be an empty string, in which case the root metadata will
 	// be updated, if allowed.
