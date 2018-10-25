@@ -21,6 +21,7 @@ import (
 
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/proto/google"
 
@@ -30,7 +31,6 @@ import (
 	"go.chromium.org/luci/tokenserver/api/minter/v1"
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
 
 var oauthTokensLog = bqlog.Log{

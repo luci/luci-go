@@ -22,6 +22,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"google.golang.org/appengine"
 
+	"go.chromium.org/luci/appengine/bqlog"
 	"go.chromium.org/luci/common/bq"
 
 	"go.chromium.org/luci/tokenserver/api"
@@ -30,7 +31,6 @@ import (
 
 	"go.chromium.org/luci/tokenserver/appengine/impl/certconfig"
 	"go.chromium.org/luci/tokenserver/appengine/impl/utils"
-	"go.chromium.org/luci/tokenserver/appengine/impl/utils/bqlog"
 )
 
 var machineTokensLog = bqlog.Log{
