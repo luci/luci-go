@@ -1,0 +1,19 @@
+service: default
+runtime: go
+api_version: go1
+
+automatic_scaling:
+  min_idle_instances: 1
+
+handlers:
+- url: /(internal|admin)/.*
+  script: _go_app
+  secure: always
+  login: admin
+
+- url: /.*
+  script: _go_app
+  secure: always
+
+includes:
+- common

@@ -1,0 +1,38 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package suppliers;
+
+// An entity which can supply resources to fulfill requests.
+message Supplier {
+  // The name of this supplier.
+  // e.g. suppliers/<id>.
+  string name = 1;
+  // The name of a group in the auth service.
+  // Members of the group can act as this supplier.
+  string group = 2;
+}
+
+// A request to create a new supplier.
+message CreateSupplierRequest {
+  // The ID of this supplier.
+  string id = 1;
+  Supplier supplier = 2;
+}
+
+// A request to delete an existing supplier.
+message DeleteSupplierRequest {
+  // The short name of the supplier to delete.
+  // e.g. suppliers/<id>.
+  string name = 1;
+}
+
+// A request to get an existing supplier.
+message GetSupplierRequest {
+  // The short name of the supplier to get.
+  // e.g. suppliers/<id>.
+  string name = 1;
+}
