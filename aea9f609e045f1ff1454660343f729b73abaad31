@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4969068d_c8d5dc20",
+        "filename": "cipd/api/cipd/v1/pb.discovery.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-10-25T15:57:13Z",
+      "side": 1,
+      "message": "I just removed a comment from *.proto... 1600 lines diff :(",
+      "range": {
+        "startLine": 15,
+        "startChar": 3,
+        "endLine": 15,
+        "endChar": 14
+      },
+      "revId": "aea9f609e045f1ff1454660343f729b73abaad31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
