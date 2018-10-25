@@ -31,15 +31,11 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
 	"go.chromium.org/luci/auth/identity"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
-	"go.chromium.org/luci/server/auth"
-	"go.chromium.org/luci/server/auth/authtest"
 	"go.chromium.org/luci/server/router"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
@@ -61,6 +57,8 @@ func TestMetadataFetching(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		_, _, as := testutil.TestingContext()
+
 		meta := testutil.MetadataStore{}
 
 		// ACL.
@@ -89,17 +87,11 @@ func TestMetadataFetching(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		callGet := func(prefix string, user identity.Identity) (*api.PrefixMetadata, error) {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: user,
-			})
-			return impl.GetPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
+			return impl.GetPrefixMetadata(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
 		}
 
 		callGetInherited := func(prefix string, user identity.Identity) ([]*api.PrefixMetadata, error) {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: user,
-			})
-			resp, err := impl.GetInheritedPrefixMetadata(ctx, &api.PrefixRequest{Prefix: prefix})
+			resp, err := impl.GetInheritedPrefixMetadata(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
 			if err != nil {
 				return nil, err
 			}
@@ -178,8 +170,7 @@ func TestMetadataUpdating(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx, tc := testclock.UseTime(context.Background(), testTime)
+		_, tc, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 
@@ -204,10 +195,7 @@ func TestMetadataUpdating(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		callUpdate := func(user identity.Identity, m *api.PrefixMetadata) (*api.PrefixMetadata, error) {
-			ctx := auth.WithState(ctx, &authtest.FakeState{
-				Identity: user,
-			})
-			return impl.UpdatePrefixMetadata(ctx, m)
+			return impl.UpdatePrefixMetadata(as(user.Email()), m)
 		}
 
 		Convey("Happy path", func() {
@@ -225,7 +213,7 @@ func TestMetadataUpdating(t *testing.T) {
 			expected := &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "WZllwc6m8f9C_rfwnspaPIiyPD0",
-				UpdateTime:  google.NewTimestamp(testTime),
+				UpdateTime:  google.NewTimestamp(testutil.TestTime),
 				UpdateUser:  "user:top-owner@example.com",
 				Acls: []*api.PrefixMetadata_ACL{
 					{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
@@ -242,7 +230,7 @@ func TestMetadataUpdating(t *testing.T) {
 			So(meta, ShouldResembleProto, &api.PrefixMetadata{
 				Prefix:      "a/b",
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
-				UpdateTime:  google.NewTimestamp(testTime.Add(time.Hour)),
+				UpdateTime:  google.NewTimestamp(testutil.TestTime.Add(time.Hour)),
 				UpdateUser:  "user:top-owner@example.com",
 			})
 		})
@@ -328,6 +316,8 @@ func TestGetRolesInPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
+		_, _, as := testutil.TestingContext()
+
 		meta := testutil.MetadataStore{}
 
 		meta.Populate("", &api.PrefixMetadata{
@@ -350,10 +340,7 @@ func TestGetRolesInPrefix(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		call := func(prefix string, user identity.Identity) (*api.RolesInPrefixResponse, error) {
-			ctx := auth.WithState(context.Background(), &authtest.FakeState{
-				Identity: user,
-			})
-			return impl.GetRolesInPrefix(ctx, &api.PrefixRequest{Prefix: prefix})
+			return impl.GetRolesInPrefix(as(user.Email()), &api.PrefixRequest{Prefix: prefix})
 		}
 
 		Convey("Happy path", func() {
@@ -400,7 +387,7 @@ func TestListPrefix(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 
@@ -440,8 +427,7 @@ func TestListPrefix(t *testing.T) {
 		impl := repoImpl{meta: &meta}
 
 		call := func(prefix string, recursive, hidden bool, user identity.Identity) (*api.ListPrefixResponse, error) {
-			c := auth.WithState(ctx, &authtest.FakeState{Identity: user})
-			return impl.ListPrefix(c, &api.ListPrefixRequest{
+			return impl.ListPrefix(as(user.Email()), &api.ListPrefixRequest{
 				Prefix:        prefix,
 				Recursive:     recursive,
 				IncludeHidden: hidden,
@@ -618,10 +604,8 @@ func TestHideUnhidePackage(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:owner@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("owner@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -685,13 +669,7 @@ func TestDeletePackage(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
-
-		as := func(email string) context.Context {
-			return auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:" + email),
-			})
-		}
+		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("", &api.PrefixMetadata{
@@ -763,12 +741,8 @@ func TestRegisterInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:owner@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("owner@example.com")
 
 		cas := testutil.MockCAS{}
 
@@ -850,7 +824,7 @@ func TestRegisterInstance(t *testing.T) {
 				Package:      inst.Package,
 				Instance:     inst.Instance,
 				RegisteredBy: "user:owner@example.com",
-				RegisteredTs: google.NewTimestamp(testTime),
+				RegisteredTs: google.NewTimestamp(testutil.TestTime),
 			}
 			resp, err = impl.RegisterInstance(ctx, inst)
 			So(err, ShouldBeNil)
@@ -919,10 +893,7 @@ func TestRegisterInstance(t *testing.T) {
 		})
 
 		Convey("No owner access", func() {
-			ctx = auth.WithState(ctx, &authtest.FakeState{
-				Identity: "user:reader@example.com",
-			})
-			_, err := impl.RegisterInstance(ctx, inst)
+			_, err := impl.RegisterInstance(as("reader@example.com"), inst)
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 			So(err, ShouldErrLike, `caller has no required WRITER role in prefix "a/b"`)
 		})
@@ -938,9 +909,7 @@ func TestProcessors(t *testing.T) {
 	})
 
 	Convey("With mocks", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
+		ctx, _, _ := testutil.TestingContext()
 
 		cas := testutil.MockCAS{}
 		impl := repoImpl{cas: &cas}
@@ -1177,12 +1146,8 @@ func TestListInstances(t *testing.T) {
 
 	Convey("With fakes", t, func() {
 		ts := time.Unix(1525136124, 0).UTC()
-		ctx := gaetesting.TestingContext()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
-
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -1306,13 +1271,8 @@ func TestSearchInstances(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx := gaetesting.TestingContext()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
-
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -1330,7 +1290,7 @@ func TestSearchInstances(t *testing.T) {
 			inst := &model.Instance{
 				InstanceID:   iid,
 				Package:      model.PackageKey(ctx, "a/b"),
-				RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+				RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 			}
 			ents := make([]*model.Tag, len(tags))
 			for i, t := range tags {
@@ -1338,7 +1298,7 @@ func TestSearchInstances(t *testing.T) {
 					ID:           model.TagID(common.MustParseInstanceTag(t)),
 					Instance:     datastore.KeyForObj(ctx, inst),
 					Tag:          t,
-					RegisteredTs: testTime.Add(time.Duration(when) * time.Second),
+					RegisteredTs: testutil.TestTime.Add(time.Duration(when) * time.Second),
 				}
 			}
 			So(datastore.Put(ctx, inst, ents), ShouldBeNil)
@@ -1474,15 +1434,8 @@ func TestRefs(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:writer@example.com",
-		})
-
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("writer@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -1533,7 +1486,7 @@ func TestRefs(t *testing.T) {
 						HexDigest: digest,
 					},
 					ModifiedBy: "user:writer@example.com",
-					ModifiedTs: google.NewTimestamp(testTime),
+					ModifiedTs: google.NewTimestamp(testutil.TestTime),
 				},
 			})
 
@@ -1725,18 +1678,7 @@ func TestTags(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-
-		as := func(email string) context.Context {
-			return auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:" + email),
-			})
-		}
-
-		datastore.GetTestable(ctx).AutoIndex(true)
+		ctx, _, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -1979,12 +1921,8 @@ func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
-		datastore.GetTestable(ctx).AutoIndex(true)
-
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -2107,10 +2045,8 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -2268,19 +2204,8 @@ func TestDescribeInstance(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-
-		ctx := gaetesting.TestingContext()
-		ctx, _ = testclock.UseTime(ctx, testTime)
-
-		as := func(email string) context.Context {
-			return auth.WithState(ctx, &authtest.FakeState{
-				Identity: identity.Identity("user:" + email),
-			})
-		}
+		ctx, _, as := testutil.TestingContext()
 		ctx = as("reader@example.com")
-
-		datastore.GetTestable(ctx).AutoIndex(true)
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -2326,7 +2251,7 @@ func TestDescribeInstance(t *testing.T) {
 				ProcID:    "proc",
 				Instance:  datastore.KeyForObj(ctx, inst),
 				Success:   true,
-				CreatedTs: testTime,
+				CreatedTs: testutil.TestTime,
 			})
 
 			resp, err := impl.DescribeInstance(ctx, &api.DescribeInstanceRequest{
@@ -2344,13 +2269,13 @@ func TestDescribeInstance(t *testing.T) {
 						Key:        "a",
 						Value:      "0",
 						AttachedBy: "user:tag@example.com",
-						AttachedTs: google.NewTimestamp(testTime),
+						AttachedTs: google.NewTimestamp(testutil.TestTime),
 					},
 					{
 						Key:        "a",
 						Value:      "1",
 						AttachedBy: "user:tag@example.com",
-						AttachedTs: google.NewTimestamp(testTime),
+						AttachedTs: google.NewTimestamp(testutil.TestTime),
 					},
 				},
 				Refs: []*api.Ref{
@@ -2359,21 +2284,21 @@ func TestDescribeInstance(t *testing.T) {
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
-						ModifiedTs: google.NewTimestamp(testTime),
+						ModifiedTs: google.NewTimestamp(testutil.TestTime),
 					},
 					{
 						Name:       "ref_b",
 						Package:    "a/pkg",
 						Instance:   inst.Proto().Instance,
 						ModifiedBy: "user:ref@example.com",
-						ModifiedTs: google.NewTimestamp(testTime),
+						ModifiedTs: google.NewTimestamp(testutil.TestTime),
 					},
 				},
 				Processors: []*api.Processor{
 					{
 						Id:         "proc",
 						State:      api.Processor_SUCCEEDED,
-						FinishedTs: google.NewTimestamp(testTime),
+						FinishedTs: google.NewTimestamp(testutil.TestTime),
 					},
 				},
 			})
@@ -2439,11 +2364,8 @@ func TestClientBootstrap(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		ctx := gaetesting.TestingContext()
-
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("", &api.PrefixMetadata{
@@ -2556,9 +2478,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("No access", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-				})
+				ctx = as("someone@example.com")
 				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusForbidden)
 				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
@@ -2658,9 +2578,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("No access", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-				})
+				ctx = as("someone@example.com")
 				_, err := call(goodPkg, goodDigest)
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
 				So(err, ShouldErrLike, "not allowed to see it")
@@ -2754,9 +2672,7 @@ func TestClientBootstrap(t *testing.T) {
 			})
 
 			Convey("No access", func() {
-				ctx = auth.WithState(ctx, &authtest.FakeState{
-					Identity: "user:someone@example.com",
-				})
+				ctx = as("someone@example.com")
 				code, body := call(goodPkg, goodIID, "text")
 				So(code, ShouldEqual, http.StatusForbidden)
 				So(body, ShouldContainSubstring, "not allowed to see it")
@@ -2793,11 +2709,8 @@ func TestLegacyHandlers(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		testTime := testclock.TestRecentTimeUTC.Round(time.Millisecond)
-		ctx := gaetesting.TestingContext()
-		ctx = auth.WithState(ctx, &authtest.FakeState{
-			Identity: "user:reader@example.com",
-		})
+		ctx, _, as := testutil.TestingContext()
+		ctx = as("reader@example.com")
 
 		meta := testutil.MetadataStore{}
 		meta.Populate("a", &api.PrefixMetadata{
@@ -2822,7 +2735,7 @@ func TestLegacyHandlers(t *testing.T) {
 			InstanceID:   strings.Repeat("a", 40),
 			Package:      model.PackageKey(ctx, "a/b"),
 			RegisteredBy: "user:reg@example.com",
-			RegisteredTs: testTime,
+			RegisteredTs: testutil.TestTime,
 		}
 		inst2 := &model.Instance{
 			InstanceID: strings.Repeat("b", 40),

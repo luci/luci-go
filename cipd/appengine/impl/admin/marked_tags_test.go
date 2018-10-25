@@ -19,10 +19,10 @@ import (
 	"testing"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/model"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -32,7 +32,7 @@ func TestVisitAndMarkTags(t *testing.T) {
 	t.Parallel()
 
 	Convey("With a bunch of instances", t, func() {
-		ctx := gaetesting.TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		makeInst := func(pkg, iid string) *model.Instance {
 			i := &model.Instance{

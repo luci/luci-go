@@ -24,6 +24,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -33,7 +34,7 @@ func TestResolveVersion(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx, _, _ := TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		pkg := &Package{Name: "pkg"}
 		inst1 := &Instance{

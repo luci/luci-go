@@ -16,28 +16,22 @@ package admin
 
 import (
 	"context"
-	"time"
 
 	"go.chromium.org/gae/service/datastore"
-	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/appengine/mapper"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/appengine/tq/tqtesting"
-	"go.chromium.org/luci/common/clock/testclock"
 	"go.chromium.org/luci/common/errors"
 
 	api "go.chromium.org/luci/cipd/api/admin/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 )
-
-var testTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
 
 // SetupTest prepares a test environment for running mappers.
 //
 // Puts datastore mock into always consistent mode.
 func SetupTest() (context.Context, *adminImpl) {
-	ctx := gaetesting.TestingContext()
-	ctx, _ = testclock.UseTime(ctx, testTime)
-
+	ctx, _, _ := testutil.TestingContext()
 	datastore.GetTestable(ctx).Consistent(true)
 
 	admin := &adminImpl{

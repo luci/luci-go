@@ -25,6 +25,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -38,7 +39,7 @@ func TestDeletePackage(t *testing.T) {
 	deletionBatchSize = 3
 
 	Convey("Works", t, func() {
-		ctx, _, _ := TestingContext()
+		ctx, _, _ := testutil.TestingContext()
 
 		// Returns number of entities in an entity group, skipping unimportant ones.
 		entitiesCount := func(root *datastore.Key) (count int64) {
@@ -106,8 +107,8 @@ func TestDeletePackage(t *testing.T) {
 		So(events[len(events)-1], ShouldResembleProto, &api.Event{
 			Kind:    api.EventKind_PACKAGE_DELETED,
 			Package: "pkg",
-			Who:     string(testUser),
-			When:    google.NewTimestamp(testTime),
+			Who:     string(testutil.TestUser),
+			When:    google.NewTimestamp(testutil.TestTime),
 		})
 
 		// And DeletePackage now complains that the package is gone.

@@ -22,6 +22,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -67,7 +68,7 @@ func TestProcessingResult(t *testing.T) {
 		Convey("Success", func() {
 			proc := &ProcessingResult{
 				ProcID:    "zzz",
-				CreatedTs: testTime,
+				CreatedTs: testutil.TestTime,
 				Success:   true,
 			}
 			proc.WriteResult(map[string]int{"a": 1})
@@ -77,7 +78,7 @@ func TestProcessingResult(t *testing.T) {
 			So(p, ShouldResembleProto, &api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_SUCCEEDED,
-				FinishedTs: google.NewTimestamp(testTime),
+				FinishedTs: google.NewTimestamp(testutil.TestTime),
 				Result: &structpb.Struct{
 					Fields: map[string]*structpb.Value{
 						"a": {Kind: &structpb.Value_NumberValue{NumberValue: 1}},
@@ -89,14 +90,14 @@ func TestProcessingResult(t *testing.T) {
 		Convey("Failure", func() {
 			p, err := (&ProcessingResult{
 				ProcID:    "zzz",
-				CreatedTs: testTime,
+				CreatedTs: testutil.TestTime,
 				Error:     "blah",
 			}).Proto()
 			So(err, ShouldBeNil)
 			So(p, ShouldResembleProto, &api.Processor{
 				Id:         "zzz",
 				State:      api.Processor_FAILED,
-				FinishedTs: google.NewTimestamp(testTime),
+				FinishedTs: google.NewTimestamp(testutil.TestTime),
 				Error:      "blah",
 			})
 		})

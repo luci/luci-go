@@ -23,6 +23,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -32,7 +33,7 @@ func TestEvents(t *testing.T) {
 	t.Parallel()
 
 	Convey("With datastore", t, func() {
-		ctx, tc, _ := TestingContext()
+		ctx, tc, _ := testutil.TestingContext()
 
 		Convey("Emitting events", func() {
 			// First batch.
@@ -67,28 +68,28 @@ func TestEvents(t *testing.T) {
 				{
 					Kind:    api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package: "x/y/z",
-					Who:     string(testUser),
-					When:    google.NewTimestamp(testTime.Add(time.Second + 1)),
+					Who:     string(testutil.TestUser),
+					When:    google.NewTimestamp(testutil.TestTime.Add(time.Second + 1)),
 				},
 				{
 					Kind:    api.EventKind_INSTANCE_REF_SET,
 					Package: "x/y/z",
-					Who:     string(testUser),
-					When:    google.NewTimestamp(testTime.Add(time.Second)),
+					Who:     string(testutil.TestUser),
+					When:    google.NewTimestamp(testutil.TestTime.Add(time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "a/b/c",
 					Instance: "cccc",
 					Tag:      "k:v",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(1)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(1)),
 				},
 				{
 					Kind:    api.EventKind_PACKAGE_CREATED,
 					Package: "a/b/c",
-					Who:     string(testUser),
-					When:    google.NewTimestamp(testTime),
+					Who:     string(testutil.TestUser),
+					When:    google.NewTimestamp(testutil.TestTime),
 				},
 			})
 		})

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package testutil
 
 import (
 	"context"
@@ -27,18 +27,16 @@ import (
 	"go.chromium.org/luci/server/auth/authtest"
 )
 
-// Testing utilities.
-
-var testTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
-var testUser = identity.Identity("user:u@example.com")
+var TestTime = testclock.TestRecentTimeUTC.Round(time.Millisecond)
+var TestUser = identity.Identity("user:u@example.com")
 
 func TestingContext() (context.Context, testclock.TestClock, func(string) context.Context) {
-	ctx, _ := testclock.UseTime(gaetesting.TestingContext(), testTime)
+	ctx, _ := testclock.UseTime(gaetesting.TestingContext(), TestTime)
 	datastore.GetTestable(ctx).AutoIndex(true)
 	as := func(email string) context.Context {
 		return auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:" + email),
 		})
 	}
-	return as(testUser.Email()), clock.Get(ctx).(testclock.TestClock), as
+	return as(TestUser.Email()), clock.Get(ctx).(testclock.TestClock), as
 }

@@ -27,6 +27,7 @@ import (
 	"go.chromium.org/luci/grpc/grpcutil"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/testutil"
 	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,7 +40,7 @@ func TestTags(t *testing.T) {
 	Convey("With datastore", t, func() {
 		digest := strings.Repeat("a", 40)
 
-		ctx, tc, as := TestingContext()
+		ctx, tc, as := testutil.TestingContext()
 
 		putInst := func(pkg, iid string, pendingProcs []string) *Instance {
 			inst := &Instance{
@@ -78,18 +79,18 @@ func TestTags(t *testing.T) {
 				Instance:     datastore.KeyForObj(ctx, inst),
 				Tag:          tag,
 				RegisteredBy: string(who),
-				RegisteredTs: testTime.Add(time.Duration(secs) * time.Second),
+				RegisteredTs: testutil.TestTime.Add(time.Duration(secs) * time.Second),
 			}
 		}
 
 		Convey("Proto() works", func() {
 			inst := putInst("pkg", digest, nil)
-			t := expectedTag(inst, "k:v", 0, testUser)
+			t := expectedTag(inst, "k:v", 0, testutil.TestUser)
 			So(t.Proto(), ShouldResembleProto, &api.Tag{
 				Key:        "k",
 				Value:      "v",
-				AttachedBy: string(testUser),
-				AttachedTs: google.NewTimestamp(testTime),
+				AttachedBy: string(testutil.TestUser),
+				AttachedTs: google.NewTimestamp(testutil.TestTime),
 			})
 		})
 
@@ -98,31 +99,31 @@ func TestTags(t *testing.T) {
 
 			// Attach one tag and verify it exist.
 			So(AttachTags(ctx, inst, tags("a:0")), ShouldBeNil)
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testUser))
+			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
 
 			// Attach few more at once.
 			tc.Add(time.Second)
 			So(AttachTags(ctx, inst, tags("a:1", "a:2")), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testUser))
-			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testUser))
+			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
+			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testutil.TestUser))
 
 			// Try to reattach an existing one (notice the change in the email),
 			// should be ignored.
 			So(AttachTags(as("def@example.com"), inst, tags("a:0")), ShouldBeNil)
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testUser))
+			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
 
 			// Try to reattach a bunch of existing ones at once.
 			So(AttachTags(as("def@example.com"), inst, tags("a:1", "a:2")), ShouldBeNil)
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testUser))
-			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testUser))
+			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
+			So(getTag(inst, "a:2"), ShouldResemble, expectedTag(inst, "a:2", 1, testutil.TestUser))
 
 			// Mixed group with new and existing tags.
 			tc.Add(time.Second)
 			So(AttachTags(as("def@example.com"), inst, tags("a:3", "a:0", "a:4", "a:1")), ShouldBeNil)
 			So(getTag(inst, "a:3"), ShouldResemble, expectedTag(inst, "a:3", 2, "user:def@example.com"))
-			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testUser))
+			So(getTag(inst, "a:0"), ShouldResemble, expectedTag(inst, "a:0", 0, testutil.TestUser))
 			So(getTag(inst, "a:4"), ShouldResemble, expectedTag(inst, "a:4", 2, "user:def@example.com"))
-			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testUser))
+			So(getTag(inst, "a:1"), ShouldResemble, expectedTag(inst, "a:1", 1, testutil.TestUser))
 
 			// All events have been collected.
 			So(GetEvents(ctx), ShouldResembleProto, []*api.Event{
@@ -132,7 +133,7 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:4",
 					Who:      "user:def@example.com",
-					When:     google.NewTimestamp(testTime.Add(2*time.Second + 1)),
+					When:     google.NewTimestamp(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
@@ -140,31 +141,31 @@ func TestTags(t *testing.T) {
 					Instance: digest,
 					Tag:      "a:3",
 					Who:      "user:def@example.com",
-					When:     google.NewTimestamp(testTime.Add(2 * time.Second)),
+					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:2",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(1*time.Second + 1)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(1*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:1",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(1 * time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(1 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_ATTACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:0",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime),
 				},
 			})
 		})
@@ -210,40 +211,40 @@ func TestTags(t *testing.T) {
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:4",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(3*time.Second + 1)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(3*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:3",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(3 * time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(3 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:2",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(2*time.Second + 1)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(2*time.Second + 1)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:1",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(2 * time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(2 * time.Second)),
 				},
 				{
 					Kind:     api.EventKind_INSTANCE_TAG_DETACHED,
 					Package:  "pkg",
 					Instance: digest,
 					Tag:      "a:0",
-					Who:      string(testUser),
-					When:     google.NewTimestamp(testTime.Add(time.Second)),
+					Who:      string(testutil.TestUser),
+					When:     google.NewTimestamp(testutil.TestTime.Add(time.Second)),
 				},
 			})
 		})
