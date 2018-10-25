@@ -170,7 +170,7 @@ func TestMetadataUpdating(t *testing.T) {
 	t.Parallel()
 
 	Convey("With fakes", t, func() {
-		_, tc, as := testutil.TestingContext()
+		ctx, tc, as := testutil.TestingContext()
 
 		meta := testutil.MetadataStore{}
 
@@ -232,6 +232,31 @@ func TestMetadataUpdating(t *testing.T) {
 				Fingerprint: "oQ2uuVbjV79prXxl4jyJkOpff90",
 				UpdateTime:  google.NewTimestamp(testutil.TestTime.Add(time.Hour)),
 				UpdateUser:  "user:top-owner@example.com",
+			})
+
+			// Have these in the event log as well.
+			datastore.GetTestable(ctx).CatchupIndexes()
+			ev, err := model.QueryEvents(ctx, model.NewEventsQuery())
+			So(err, ShouldBeNil)
+			So(ev, ShouldResembleProto, []*api.Event{
+				{
+					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+					Package: "a/b",
+					Who:     "user:top-owner@example.com",
+					When:    google.NewTimestamp(testutil.TestTime.Add(time.Hour)),
+					RevokedRole: []*api.PrefixMetadata_ACL{
+						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+					},
+				},
+				{
+					Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+					Package: "a/b",
+					Who:     "user:top-owner@example.com",
+					When:    google.NewTimestamp(testutil.TestTime),
+					GrantedRole: []*api.PrefixMetadata_ACL{
+						{Role: api.Role_READER, Principals: []string{"user:reader@example.com"}},
+					},
+				},
 			})
 		})
 
