@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0d665a66_d5621726",
+        "filename": "cipd/appengine/impl/metadata/utils.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-10-25T23:28:43Z",
+      "side": 1,
+      "message": "nit: move to L33",
+      "range": {
+        "startLine": 37,
+        "startChar": 2,
+        "endLine": 37,
+        "endChar": 21
+      },
+      "revId": "e99dc7f5424473982c54f6c4b71abb6f9a8c73c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
