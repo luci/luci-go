@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -114,6 +115,7 @@ type Task struct {
 // modify existing one make sure tq.internalsImpl is modified accordingly. Unit
 // tests will fail if something is not right.
 type dispatcherInternals interface {
+	GetBaseURL() string
 	GetAllQueues() []string
 	GetPayload(blob []byte) (proto.Message, error)
 	GetHandler(payload proto.Message) (cb tq.Handler, q string, err error)
@@ -167,13 +169,17 @@ func (t *testableImpl) CreateQueues() {
 }
 
 func (t *testableImpl) GetScheduledTasks() (out TaskList) {
+	baseURL := t.d.GetBaseURL()
 	for _, tasks := range t.tqt.GetScheduledTasks() {
 		for _, task := range tasks {
-			payload, _ := t.d.GetPayload(task.Payload)
-			out = append(out, Task{
-				Task:    task,
-				Payload: payload,
-			})
+			// Handle only tasks submitted by tq.Dispatcher.
+			if strings.HasPrefix(task.Path, baseURL) {
+				payload, _ := t.d.GetPayload(task.Payload)
+				out = append(out, Task{
+					Task:    task,
+					Payload: payload,
+				})
+			}
 		}
 	}
 	sort.Sort(out)
