@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"go.chromium.org/luci/common/flag/stringlistflag"
+	"go.chromium.org/luci/common/flag/stringmapflag"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/common/system/exitcode"
@@ -34,6 +35,7 @@ import (
 var (
 	verbose          = flag.Bool("verbose", false, "print debug messages to stderr")
 	protoImportPaths = stringlistflag.Flag{}
+	pathMap          = stringmapflag.Value{}
 	withDiscovery    = flag.Bool(
 		"discovery", true,
 		"generate pb.discovery.go file")
@@ -121,7 +123,7 @@ func compile(c context.Context, gopath, importPaths, protoFiles []string, dir, d
 	}
 
 	var params []string
-	for k, v := range googlePackages {
+	for k, v := range pathMap {
 		params = append(params, fmt.Sprintf("M%s=%s", k, v))
 	}
 	params = append(params, "plugins=grpc")
@@ -245,8 +247,19 @@ func main() {
 		"additional proto import paths besides $GOPATH/src; "+
 			"May be relative to CWD; "+
 			"May be specified multiple times.")
+	flag.Var(
+		&pathMap,
+		"map-package",
+		"Maps a proto path to a go package name. "+
+			"May be specified multiple times.")
 	flag.Usage = usage
 	flag.Parse()
+
+	for k, v := range googlePackages {
+		if _, ok := pathMap[k]; !ok {
+			pathMap[k] = v
+		}
+	}
 
 	if flag.NArg() > 1 {
 		flag.Usage()
