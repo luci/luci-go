@@ -223,8 +223,9 @@ func (impl *repoImpl) UpdatePrefixMetadata(c context.Context, r *api.PrefixMetad
 						"changes", r.Prefix, r.Fingerprint, cur.Fingerprint)
 			}
 		}
+		prev := *cur
 		*cur = *r
-		return nil
+		return model.EmitMetadataEvents(c, &prev, cur)
 	})
 }
 

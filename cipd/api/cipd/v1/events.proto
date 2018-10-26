@@ -26,7 +26,7 @@ enum EventKind {
   EVENT_KIND_UNSPECIFIED = 0;
 
   // Prefix events: relate to some CIPD prefix.
-  PREFIX_ACL_CHANGED = 100; // TODO
+  PREFIX_ACL_CHANGED = 100;
 
   // Package events: relate to a package (as a whole).
   PACKAGE_CREATED  = 200;

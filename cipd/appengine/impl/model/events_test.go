@@ -96,6 +96,127 @@ func TestEvents(t *testing.T) {
 	})
 }
 
+func TestEmitMetadataEvents(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		ctx, _, _ := testutil.TestingContext()
+
+		diffACLs := func(before, after []*api.PrefixMetadata_ACL) *api.Event {
+			So(EmitMetadataEvents(ctx,
+				&api.PrefixMetadata{Prefix: "pfx", Acls: before},
+				&api.PrefixMetadata{Prefix: "pfx", Acls: after},
+			), ShouldBeNil)
+			events := GetEvents(ctx)
+			if len(events) == 0 {
+				return nil
+			}
+			So(events, ShouldHaveLength, 1)
+			return events[0]
+		}
+
+		Convey("Empty", func() {
+			So(diffACLs(nil, nil), ShouldBeNil)
+		})
+
+		Convey("Add some", func() {
+			ev := diffACLs(nil, []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"b", "a"},
+				},
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"a"},
+				},
+				{
+					Role: api.Role_WRITER,
+				},
+			})
+			So(ev, ShouldResembleProto, &api.Event{
+				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+				Package: "pfx",
+				Who:     string(testutil.TestUser),
+				When:    google.NewTimestamp(testutil.TestTime),
+				GrantedRole: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_READER,
+						Principals: []string{"a"},
+					},
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"a", "b"}, // sorted here
+					},
+				},
+			})
+		})
+
+		Convey("Remove some", func() {
+			ev := diffACLs([]*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"b", "a"},
+				},
+				{
+					Role:       api.Role_READER,
+					Principals: []string{"a"},
+				},
+				{
+					Role: api.Role_WRITER,
+				},
+			}, nil)
+			So(ev, ShouldResembleProto, &api.Event{
+				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+				Package: "pfx",
+				Who:     string(testutil.TestUser),
+				When:    google.NewTimestamp(testutil.TestTime),
+				RevokedRole: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_READER,
+						Principals: []string{"a"},
+					},
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"a", "b"}, // sorted here
+					},
+				},
+			})
+		})
+
+		Convey("Change some", func() {
+			ev := diffACLs([]*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"b", "a", "c"},
+				},
+			}, []*api.PrefixMetadata_ACL{
+				{
+					Role:       api.Role_OWNER,
+					Principals: []string{"b", "d", "e"},
+				},
+			})
+			So(ev, ShouldResembleProto, &api.Event{
+				Kind:    api.EventKind_PREFIX_ACL_CHANGED,
+				Package: "pfx",
+				Who:     string(testutil.TestUser),
+				When:    google.NewTimestamp(testutil.TestTime),
+				GrantedRole: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"d", "e"}, // sorted here
+					},
+				},
+				RevokedRole: []*api.PrefixMetadata_ACL{
+					{
+						Role:       api.Role_OWNER,
+						Principals: []string{"a", "c"}, // sorted here
+					},
+				},
+			})
+		})
+	})
+}
+
 // GetEvents is a helper for tests, it grabs all events from the datastore,
 // ordering them by timestamp (most recent first).
 //

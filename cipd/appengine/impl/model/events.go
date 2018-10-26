@@ -16,18 +16,22 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"sort"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/common/clock"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
+	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 )
 
 // EventsEpoch is used to calculate timestamps used to order entities in the
@@ -161,4 +165,68 @@ func EmitEvent(c context.Context, e *api.Event) error {
 	ev := Events{}
 	ev.Emit(e)
 	return ev.Flush(c)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+var sortedRoles []api.Role
+
+func init() {
+	sortedRoles = make([]api.Role, 0, len(api.Role_name)-1)
+	for r := range api.Role_name {
+		if role := api.Role(r); role != api.Role_ROLE_UNSPECIFIED {
+			sortedRoles = append(sortedRoles, role)
+		}
+	}
+	sort.Slice(sortedRoles, func(i, j int) bool {
+		return sortedRoles[i] < sortedRoles[j]
+	})
+}
+
+// EmitMetadataEvents compares two metadatum of a prefix and emits events for
+// fields that have changed.
+func EmitMetadataEvents(c context.Context, before, after *api.PrefixMetadata) error {
+	if before.Prefix != after.Prefix {
+		panic(fmt.Sprintf("comparing metadata for different prefixes: %q != %q", before.Prefix, after.Prefix))
+	}
+	prefix := after.Prefix
+
+	prev := metadata.GetACLs(before)
+	next := metadata.GetACLs(after)
+
+	var granted []*api.PrefixMetadata_ACL
+	var revoked []*api.PrefixMetadata_ACL
+
+	for _, role := range sortedRoles {
+		if added := stringSetDiff(next[role], prev[role]); len(added) != 0 {
+			granted = append(granted, &api.PrefixMetadata_ACL{
+				Role:       role,
+				Principals: added,
+			})
+		}
+		if removed := stringSetDiff(prev[role], next[role]); len(removed) != 0 {
+			revoked = append(revoked, &api.PrefixMetadata_ACL{
+				Role:       role,
+				Principals: removed,
+			})
+		}
+	}
+
+	if len(granted) == 0 && len(revoked) == 0 {
+		return nil
+	}
+
+	return EmitEvent(c, &api.Event{
+		Kind:        api.EventKind_PREFIX_ACL_CHANGED,
+		Package:     prefix,
+		GrantedRole: granted,
+		RevokedRole: revoked,
+	})
+}
+
+// stringSetDiff returns sorted(a-b).
+func stringSetDiff(a, b stringset.Set) []string {
+	diff := a.Difference(b).ToSlice()
+	sort.Strings(diff)
+	return diff
 }
