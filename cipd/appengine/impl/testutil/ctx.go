@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/gae/service/taskqueue"
 	"go.chromium.org/luci/appengine/gaetesting"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock"
@@ -33,6 +34,7 @@ var TestUser = identity.Identity("user:u@example.com")
 func TestingContext() (context.Context, testclock.TestClock, func(string) context.Context) {
 	ctx, _ := testclock.UseTime(gaetesting.TestingContext(), TestTime)
 	datastore.GetTestable(ctx).AutoIndex(true)
+	taskqueue.GetTestable(ctx).CreatePullQueue("bqlog-events")
 	as := func(email string) context.Context {
 		return auth.WithState(ctx, &authtest.FakeState{
 			Identity: identity.Identity("user:" + email),

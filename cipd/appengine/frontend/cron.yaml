@@ -5,7 +5,12 @@ cron:
   url: /internal/cron/ts_mon/housekeeping
   schedule: every 1 minutes
 
-- description: "LUCI Config datastore cache periodic refresh"
+- description: LUCI Config datastore cache periodic refresh
   target: backend
   url: /admin/config/cache/manage
   schedule: every 10 minutes
+
+- description: Uploads event log to BigQuery
+  url: /internal/cron/bqlog/events-flush
+  schedule: every 1 minutes
+  target: backend

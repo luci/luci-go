@@ -18,15 +18,29 @@ package backend
 import (
 	"net/http"
 
+	"go.chromium.org/luci/appengine/gaemiddleware"
 	"go.chromium.org/luci/appengine/gaemiddleware/standard"
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/cipd/appengine/impl"
+	"go.chromium.org/luci/cipd/appengine/impl/model"
 )
 
 func init() {
 	r := router.New()
+	base := standard.Base()
+
 	standard.InstallHandlers(r)
-	impl.TQ.InstallRoutes(r, standard.Base())
+	impl.TQ.InstallRoutes(r, base)
+
+	r.GET("/internal/cron/bqlog/events-flush", base.Extend(gaemiddleware.RequireCron),
+		func(c *router.Context) {
+			// FlushEventsToBQ logs errors inside. We also do not retry on errors.
+			// It's fine to wait and flush on the next iteration.
+			model.FlushEventsToBQ(c.Context)
+			c.Writer.WriteHeader(http.StatusOK)
+		},
+	)
+
 	http.DefaultServeMux.Handle("/", r)
 }

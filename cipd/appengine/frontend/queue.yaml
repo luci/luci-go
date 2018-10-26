@@ -23,3 +23,8 @@ queue:
   target: backend
   bucket_size: 500
   rate: 100/s
+
+
+# Used for buffering event logs before sending them to BigQuery.
+- name: bqlog-events
+  mode: pull

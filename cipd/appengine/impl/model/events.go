@@ -20,19 +20,32 @@ import (
 	"sort"
 	"time"
 
+	"cloud.google.com/go/bigquery"
 	"github.com/golang/protobuf/proto"
+	"google.golang.org/appengine"
 
 	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/appengine/bqlog"
+	"go.chromium.org/luci/common/bq"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/retry/transient"
+	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/server/auth"
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/appengine/impl/metadata"
 )
+
+var eventsLog = bqlog.Log{
+	QueueName:           "bqlog-events", // see queues.yaml
+	DatasetID:           "cipd",         // see push_bq_schema.sh
+	TableID:             "events",
+	DumpEntriesToLogger: true,
+	DryRun:              appengine.IsDevAppServer(),
+}
 
 // EventsEpoch is used to calculate timestamps used to order entities in the
 // datastore.
@@ -55,7 +68,7 @@ const NoInstance = "NONE"
 //
 // It exists in both BigQuery (for adhoc queries) and in Datastore (for showing
 // in web UI, e.g. for "recent tags" feature).
-
+//
 // ID as auto-generated. The parent entity is the corresponding Package entity
 // (so that events can be committed transactionally with actual changes).
 type Event struct {
@@ -141,19 +154,31 @@ func (t *Events) Emit(e *api.Event) {
 // Returned errors are tagged as transient. On success, clears the pending
 // events queue.
 func (t *Events) Flush(c context.Context) error {
-	// TODO(vadimsh): Flush to BigQuery too.
+	if len(t.ev) == 0 {
+		return nil
+	}
+
 	when := clock.Now(c).UTC()
 	who := string(auth.CurrentIdentity(c))
+
 	entities := make([]*Event, len(t.ev))
+	rows := make([]bigquery.ValueSaver, len(t.ev))
 	for idx, e := range t.ev {
 		// Make events in a batch ordered by time by abusing nanoseconds precision.
 		e.When = google.NewTimestamp(when.Add(time.Duration(idx)))
 		e.Who = who
 		entities[idx] = (&Event{}).FromProto(c, e)
+		rows[idx] = &bq.Row{Message: e}
 	}
-	if err := datastore.Put(c, entities); err != nil {
+
+	err := parallel.FanOutIn(func(tasks chan<- func() error) {
+		tasks <- func() error { return datastore.Put(c, entities) }
+		tasks <- func() error { return eventsLog.Insert(c, rows...) }
+	})
+	if err != nil {
 		return transient.Tag.Apply(err)
 	}
+
 	t.ev = t.ev[:0]
 	return nil
 }
@@ -165,6 +190,15 @@ func EmitEvent(c context.Context, e *api.Event) error {
 	ev := Events{}
 	ev.Emit(e)
 	return ev.Flush(c)
+}
+
+// FlushEventsToBQ sends all buffered events to BigQuery.
+//
+// It is fine to call FlushEventsToBQ concurrently from multiple request
+// handlers, if necessary (it will effectively parallelize the flush).
+func FlushEventsToBQ(c context.Context) error {
+	_, err := eventsLog.Flush(c)
+	return err
 }
 
 ////////////////////////////////////////////////////////////////////////////////
