@@ -35,7 +35,7 @@ func (val *myType) Set(v string) error {
 }
 
 func (val *myType) String() string {
-	return myTypeEnum.FlagString(val)
+	return myTypeEnum.FlagString(*val)
 }
 
 func (val myType) MarshalJSON() ([]byte, error) {
