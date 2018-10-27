@@ -26,7 +26,7 @@ type DecoratedCertificateAuthorities struct {
 }
 
 func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *FetchCRLRequest) (rsp *FetchCRLResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "FetchCRL", req)
 	}
@@ -41,7 +41,7 @@ func (s *DecoratedCertificateAuthorities) FetchCRL(c context.Context, req *Fetch
 }
 
 func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *empty.Empty) (rsp *ListCAsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListCAs", req)
 	}
@@ -56,7 +56,7 @@ func (s *DecoratedCertificateAuthorities) ListCAs(c context.Context, req *empty.
 }
 
 func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *GetCAStatusRequest) (rsp *GetCAStatusResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetCAStatus", req)
 	}
@@ -71,7 +71,7 @@ func (s *DecoratedCertificateAuthorities) GetCAStatus(c context.Context, req *Ge
 }
 
 func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *IsRevokedCertRequest) (rsp *IsRevokedCertResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "IsRevokedCert", req)
 	}
@@ -86,7 +86,7 @@ func (s *DecoratedCertificateAuthorities) IsRevokedCert(c context.Context, req *
 }
 
 func (s *DecoratedCertificateAuthorities) CheckCertificate(c context.Context, req *CheckCertificateRequest) (rsp *CheckCertificateResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CheckCertificate", req)
 	}

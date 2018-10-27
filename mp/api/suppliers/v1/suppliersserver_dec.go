@@ -26,7 +26,7 @@ type DecoratedSuppliers struct {
 }
 
 func (s *DecoratedSuppliers) Create(c context.Context, req *CreateSupplierRequest) (rsp *Supplier, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Create", req)
 	}
@@ -41,7 +41,7 @@ func (s *DecoratedSuppliers) Create(c context.Context, req *CreateSupplierReques
 }
 
 func (s *DecoratedSuppliers) Delete(c context.Context, req *DeleteSupplierRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Delete", req)
 	}
@@ -56,7 +56,7 @@ func (s *DecoratedSuppliers) Delete(c context.Context, req *DeleteSupplierReques
 }
 
 func (s *DecoratedSuppliers) Get(c context.Context, req *GetSupplierRequest) (rsp *Supplier, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Get", req)
 	}

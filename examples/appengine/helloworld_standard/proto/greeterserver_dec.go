@@ -24,7 +24,7 @@ type DecoratedGreeter struct {
 }
 
 func (s *DecoratedGreeter) SayHello(c context.Context, req *HelloRequest) (rsp *HelloReply, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "SayHello", req)
 	}

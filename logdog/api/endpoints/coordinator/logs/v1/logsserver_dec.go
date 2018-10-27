@@ -24,7 +24,7 @@ type DecoratedLogs struct {
 }
 
 func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (rsp *GetResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Get", req)
 	}
@@ -39,7 +39,7 @@ func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (rsp *GetRespons
 }
 
 func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (rsp *GetResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Tail", req)
 	}
@@ -54,7 +54,7 @@ func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (rsp *GetRespo
 }
 
 func (s *DecoratedLogs) Query(c context.Context, req *QueryRequest) (rsp *QueryResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Query", req)
 	}

@@ -27,7 +27,7 @@ type DecoratedS1 struct {
 }
 
 func (s *DecoratedS1) M(c context.Context, req *M1) (rsp *M2, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "M", req)
 	}
@@ -57,7 +57,7 @@ type DecoratedS2 struct {
 }
 
 func (s *DecoratedS2) Get(c context.Context, req *Void) (rsp *M1, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Get", req)
 	}
@@ -72,7 +72,7 @@ func (s *DecoratedS2) Get(c context.Context, req *Void) (rsp *M1, err error) {
 }
 
 func (s *DecoratedS2) Set(c context.Context, req *M1) (rsp *Void, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Set", req)
 	}
@@ -87,7 +87,7 @@ func (s *DecoratedS2) Set(c context.Context, req *M1) (rsp *Void, err error) {
 }
 
 func (s *DecoratedS2) Imp(c context.Context, req *sub.Sub) (rsp *google_protobuf.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Imp", req)
 	}

@@ -26,7 +26,7 @@ type DecoratedAdmin struct {
 }
 
 func (s *DecoratedAdmin) SetConfig(c context.Context, req *SetConfigRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "SetConfig", req)
 	}

@@ -24,7 +24,7 @@ type DecoratedBuildInfo struct {
 }
 
 func (s *DecoratedBuildInfo) Get(c context.Context, req *BuildInfoRequest) (rsp *BuildInfoResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Get", req)
 	}

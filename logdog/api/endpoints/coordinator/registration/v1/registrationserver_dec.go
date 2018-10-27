@@ -24,7 +24,7 @@ type DecoratedRegistration struct {
 }
 
 func (s *DecoratedRegistration) RegisterPrefix(c context.Context, req *RegisterPrefixRequest) (rsp *RegisterPrefixResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "RegisterPrefix", req)
 	}

@@ -24,7 +24,7 @@ type DecoratedBuildbot struct {
 }
 
 func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *MasterRequest) (rsp *CompressedMasterJSON, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetCompressedMasterJSON", req)
 	}
@@ -39,7 +39,7 @@ func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *Mast
 }
 
 func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *BuildbotBuildRequest) (rsp *BuildbotBuildJSON, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetBuildbotBuildJSON", req)
 	}
@@ -54,7 +54,7 @@ func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *Buildbo
 }
 
 func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(c context.Context, req *BuildbotBuildsRequest) (rsp *BuildbotBuildsJSON, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetBuildbotBuildsJSON", req)
 	}

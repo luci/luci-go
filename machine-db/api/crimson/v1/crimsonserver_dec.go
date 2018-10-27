@@ -26,7 +26,7 @@ type DecoratedCrimson struct {
 }
 
 func (s *DecoratedCrimson) ListDatacenters(c context.Context, req *ListDatacentersRequest) (rsp *ListDatacentersResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListDatacenters", req)
 	}
@@ -41,7 +41,7 @@ func (s *DecoratedCrimson) ListDatacenters(c context.Context, req *ListDatacente
 }
 
 func (s *DecoratedCrimson) ListFreeIPs(c context.Context, req *ListFreeIPsRequest) (rsp *ListIPsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListFreeIPs", req)
 	}
@@ -56,7 +56,7 @@ func (s *DecoratedCrimson) ListFreeIPs(c context.Context, req *ListFreeIPsReques
 }
 
 func (s *DecoratedCrimson) ListKVMs(c context.Context, req *ListKVMsRequest) (rsp *ListKVMsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListKVMs", req)
 	}
@@ -71,7 +71,7 @@ func (s *DecoratedCrimson) ListKVMs(c context.Context, req *ListKVMsRequest) (rs
 }
 
 func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rsp *ListOSesResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListOSes", req)
 	}
@@ -86,7 +86,7 @@ func (s *DecoratedCrimson) ListOSes(c context.Context, req *ListOSesRequest) (rs
 }
 
 func (s *DecoratedCrimson) ListPlatforms(c context.Context, req *ListPlatformsRequest) (rsp *ListPlatformsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListPlatforms", req)
 	}
@@ -101,7 +101,7 @@ func (s *DecoratedCrimson) ListPlatforms(c context.Context, req *ListPlatformsRe
 }
 
 func (s *DecoratedCrimson) ListRacks(c context.Context, req *ListRacksRequest) (rsp *ListRacksResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListRacks", req)
 	}
@@ -116,7 +116,7 @@ func (s *DecoratedCrimson) ListRacks(c context.Context, req *ListRacksRequest) (
 }
 
 func (s *DecoratedCrimson) ListSwitches(c context.Context, req *ListSwitchesRequest) (rsp *ListSwitchesResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListSwitches", req)
 	}
@@ -131,7 +131,7 @@ func (s *DecoratedCrimson) ListSwitches(c context.Context, req *ListSwitchesRequ
 }
 
 func (s *DecoratedCrimson) ListVLANs(c context.Context, req *ListVLANsRequest) (rsp *ListVLANsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListVLANs", req)
 	}
@@ -146,7 +146,7 @@ func (s *DecoratedCrimson) ListVLANs(c context.Context, req *ListVLANsRequest) (
 }
 
 func (s *DecoratedCrimson) CreateMachine(c context.Context, req *CreateMachineRequest) (rsp *Machine, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CreateMachine", req)
 	}
@@ -161,7 +161,7 @@ func (s *DecoratedCrimson) CreateMachine(c context.Context, req *CreateMachineRe
 }
 
 func (s *DecoratedCrimson) DeleteMachine(c context.Context, req *DeleteMachineRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "DeleteMachine", req)
 	}
@@ -176,7 +176,7 @@ func (s *DecoratedCrimson) DeleteMachine(c context.Context, req *DeleteMachineRe
 }
 
 func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequest) (rsp *ListMachinesResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListMachines", req)
 	}
@@ -191,7 +191,7 @@ func (s *DecoratedCrimson) ListMachines(c context.Context, req *ListMachinesRequ
 }
 
 func (s *DecoratedCrimson) RenameMachine(c context.Context, req *RenameMachineRequest) (rsp *Machine, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "RenameMachine", req)
 	}
@@ -206,7 +206,7 @@ func (s *DecoratedCrimson) RenameMachine(c context.Context, req *RenameMachineRe
 }
 
 func (s *DecoratedCrimson) UpdateMachine(c context.Context, req *UpdateMachineRequest) (rsp *Machine, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "UpdateMachine", req)
 	}
@@ -221,7 +221,7 @@ func (s *DecoratedCrimson) UpdateMachine(c context.Context, req *UpdateMachineRe
 }
 
 func (s *DecoratedCrimson) CreateNIC(c context.Context, req *CreateNICRequest) (rsp *NIC, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CreateNIC", req)
 	}
@@ -236,7 +236,7 @@ func (s *DecoratedCrimson) CreateNIC(c context.Context, req *CreateNICRequest) (
 }
 
 func (s *DecoratedCrimson) DeleteNIC(c context.Context, req *DeleteNICRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "DeleteNIC", req)
 	}
@@ -251,7 +251,7 @@ func (s *DecoratedCrimson) DeleteNIC(c context.Context, req *DeleteNICRequest) (
 }
 
 func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rsp *ListNICsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListNICs", req)
 	}
@@ -266,7 +266,7 @@ func (s *DecoratedCrimson) ListNICs(c context.Context, req *ListNICsRequest) (rs
 }
 
 func (s *DecoratedCrimson) UpdateNIC(c context.Context, req *UpdateNICRequest) (rsp *NIC, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "UpdateNIC", req)
 	}
@@ -281,7 +281,7 @@ func (s *DecoratedCrimson) UpdateNIC(c context.Context, req *UpdateNICRequest) (
 }
 
 func (s *DecoratedCrimson) CreateDRAC(c context.Context, req *CreateDRACRequest) (rsp *DRAC, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CreateDRAC", req)
 	}
@@ -296,7 +296,7 @@ func (s *DecoratedCrimson) CreateDRAC(c context.Context, req *CreateDRACRequest)
 }
 
 func (s *DecoratedCrimson) ListDRACs(c context.Context, req *ListDRACsRequest) (rsp *ListDRACsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListDRACs", req)
 	}
@@ -311,7 +311,7 @@ func (s *DecoratedCrimson) ListDRACs(c context.Context, req *ListDRACsRequest) (
 }
 
 func (s *DecoratedCrimson) UpdateDRAC(c context.Context, req *UpdateDRACRequest) (rsp *DRAC, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "UpdateDRAC", req)
 	}
@@ -326,7 +326,7 @@ func (s *DecoratedCrimson) UpdateDRAC(c context.Context, req *UpdateDRACRequest)
 }
 
 func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CreatePhysicalHost", req)
 	}
@@ -341,7 +341,7 @@ func (s *DecoratedCrimson) CreatePhysicalHost(c context.Context, req *CreatePhys
 }
 
 func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysicalHostsRequest) (rsp *ListPhysicalHostsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListPhysicalHosts", req)
 	}
@@ -356,7 +356,7 @@ func (s *DecoratedCrimson) ListPhysicalHosts(c context.Context, req *ListPhysica
 }
 
 func (s *DecoratedCrimson) UpdatePhysicalHost(c context.Context, req *UpdatePhysicalHostRequest) (rsp *PhysicalHost, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "UpdatePhysicalHost", req)
 	}
@@ -371,7 +371,7 @@ func (s *DecoratedCrimson) UpdatePhysicalHost(c context.Context, req *UpdatePhys
 }
 
 func (s *DecoratedCrimson) FindVMSlots(c context.Context, req *FindVMSlotsRequest) (rsp *FindVMSlotsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "FindVMSlots", req)
 	}
@@ -386,7 +386,7 @@ func (s *DecoratedCrimson) FindVMSlots(c context.Context, req *FindVMSlotsReques
 }
 
 func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rsp *VM, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CreateVM", req)
 	}
@@ -401,7 +401,7 @@ func (s *DecoratedCrimson) CreateVM(c context.Context, req *CreateVMRequest) (rs
 }
 
 func (s *DecoratedCrimson) ListVMs(c context.Context, req *ListVMsRequest) (rsp *ListVMsResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ListVMs", req)
 	}
@@ -416,7 +416,7 @@ func (s *DecoratedCrimson) ListVMs(c context.Context, req *ListVMsRequest) (rsp 
 }
 
 func (s *DecoratedCrimson) UpdateVM(c context.Context, req *UpdateVMRequest) (rsp *VM, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "UpdateVM", req)
 	}
@@ -431,7 +431,7 @@ func (s *DecoratedCrimson) UpdateVM(c context.Context, req *UpdateVMRequest) (rs
 }
 
 func (s *DecoratedCrimson) DeleteHost(c context.Context, req *DeleteHostRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "DeleteHost", req)
 	}

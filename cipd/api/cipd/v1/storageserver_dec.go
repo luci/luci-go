@@ -24,7 +24,7 @@ type DecoratedStorage struct {
 }
 
 func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequest) (rsp *ObjectURL, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetObjectURL", req)
 	}
@@ -39,7 +39,7 @@ func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequ
 }
 
 func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "BeginUpload", req)
 	}
@@ -54,7 +54,7 @@ func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadReques
 }
 
 func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "FinishUpload", req)
 	}
@@ -69,7 +69,7 @@ func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequ
 }
 
 func (s *DecoratedStorage) CancelUpload(c context.Context, req *CancelUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "CancelUpload", req)
 	}

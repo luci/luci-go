@@ -26,7 +26,7 @@ type DecoratedServices struct {
 }
 
 func (s *DecoratedServices) GetConfig(c context.Context, req *empty.Empty) (rsp *GetConfigResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "GetConfig", req)
 	}
@@ -41,7 +41,7 @@ func (s *DecoratedServices) GetConfig(c context.Context, req *empty.Empty) (rsp 
 }
 
 func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStreamRequest) (rsp *RegisterStreamResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "RegisterStream", req)
 	}
@@ -56,7 +56,7 @@ func (s *DecoratedServices) RegisterStream(c context.Context, req *RegisterStrea
 }
 
 func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest) (rsp *LoadStreamResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "LoadStream", req)
 	}
@@ -71,7 +71,7 @@ func (s *DecoratedServices) LoadStream(c context.Context, req *LoadStreamRequest
 }
 
 func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStreamRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "TerminateStream", req)
 	}
@@ -86,7 +86,7 @@ func (s *DecoratedServices) TerminateStream(c context.Context, req *TerminateStr
 }
 
 func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "ArchiveStream", req)
 	}
@@ -101,7 +101,7 @@ func (s *DecoratedServices) ArchiveStream(c context.Context, req *ArchiveStreamR
 }
 
 func (s *DecoratedServices) Batch(c context.Context, req *BatchRequest) (rsp *BatchResponse, err error) {
-	var newCtx context.Context
+	newCtx := c
 	if s.Prelude != nil {
 		newCtx, err = s.Prelude(c, "Batch", req)
 	}
