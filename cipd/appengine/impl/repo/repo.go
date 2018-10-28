@@ -280,7 +280,7 @@ func (impl *repoImpl) checkRole(c context.Context, prefix string, role api.Role)
 	case yes:
 		return metas, nil
 	case role == api.Role_READER: // was checking for a reader, and caller is not
-		return nil, noAccessErr(prefix)
+		return nil, noAccessErr(c, prefix)
 	}
 
 	// We end up here if role is something other than READER, and the caller
@@ -290,17 +290,21 @@ func (impl *repoImpl) checkRole(c context.Context, prefix string, role api.Role)
 	case err != nil:
 		return nil, err
 	case yes:
-		return nil, status.Errorf(codes.PermissionDenied, "caller has no required %s role in prefix %q", role, prefix)
+		return nil, status.Errorf(
+			codes.PermissionDenied, "%q has no required %s role in prefix %q",
+			auth.CurrentIdentity(c), role, prefix)
 	default:
-		return nil, noAccessErr(prefix)
+		return nil, noAccessErr(c, prefix)
 	}
 }
 
 // noAccessErr produces a grpc error saying that the given prefix doesn't
 // exist or the caller has no access to it. This is generic error message that
 // should not give away prefix presence to non-readers.
-func noAccessErr(prefix string) error {
-	return status.Errorf(codes.PermissionDenied, "prefix %q doesn't exist or the caller is not allowed to see it", prefix)
+func noAccessErr(c context.Context, prefix string) error {
+	return status.Errorf(
+		codes.PermissionDenied, "prefix %q doesn't exist or %q is not allowed to see it",
+		prefix, auth.CurrentIdentity(c))
 }
 
 // noMetadataErr produces a grpc error saying that the given prefix doesn't have
