@@ -740,7 +740,7 @@ func TestDeletePackage(t *testing.T) {
 				Package: "a/b",
 			})
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
 		Convey("Only root owner can delete", func() {
@@ -914,13 +914,13 @@ func TestRegisterInstance(t *testing.T) {
 				Instance: inst.Instance,
 			})
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, `prefix "some/other/root" doesn't exist or the caller is not allowed to see it`)
+			So(err, ShouldErrLike, `prefix "some/other/root" doesn't exist or "user:owner@example.com" is not allowed to see it`)
 		})
 
 		Convey("No owner access", func() {
 			_, err := impl.RegisterInstance(as("reader@example.com"), inst)
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, `caller has no required WRITER role in prefix "a/b"`)
+			So(err, ShouldErrLike, `"user:reader@example.com" has no required WRITER role in prefix "a/b"`)
 		})
 	})
 }
@@ -1591,7 +1591,7 @@ func TestRefs(t *testing.T) {
 					},
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 			Convey("DeleteRef", func() {
 				_, err := impl.DeleteRef(ctx, &api.DeleteRefRequest{
@@ -1599,14 +1599,14 @@ func TestRefs(t *testing.T) {
 					Package: "z",
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 			Convey("ListRefs", func() {
 				_, err := impl.ListRefs(ctx, &api.ListRefsRequest{
 					Package: "z",
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 		})
 
@@ -1877,7 +1877,7 @@ func TestTags(t *testing.T) {
 					Tags:     tags("good:tag"),
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "caller has no required WRITER role")
+				So(err, ShouldErrLike, "has no required WRITER role")
 			})
 			Convey("DetachTags", func() {
 				_, err := impl.DetachTags(as("writer@example.com"), &api.DetachTagsRequest{
@@ -1886,7 +1886,7 @@ func TestTags(t *testing.T) {
 					Tags:     tags("good:tag"),
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "caller has no required OWNER role")
+				So(err, ShouldErrLike, "has no required OWNER role")
 			})
 		})
 
@@ -2016,7 +2016,7 @@ func TestResolveVersion(t *testing.T) {
 				Version: "latest",
 			})
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
 		Convey("Missing package", func() {
@@ -2140,7 +2140,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 					Instance: inst.Proto().Instance,
 				})
 				So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-				So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+				So(err, ShouldErrLike, "is not allowed to see it")
 			})
 
 			Convey("Missing package", func() {
@@ -2207,7 +2207,7 @@ func TestGetInstanceURLAndDownloads(t *testing.T) {
 			Convey("No access", func() {
 				rr := call("/b/+/live")
 				So(rr.Code, ShouldEqual, http.StatusForbidden)
-				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
+				So(rr.Body.String(), ShouldContainSubstring, "is not allowed to see it")
 			})
 
 			Convey("Missing package", func() {
@@ -2356,7 +2356,7 @@ func TestDescribeInstance(t *testing.T) {
 				Instance: inst.Proto().Instance,
 			})
 			So(grpc.Code(err), ShouldEqual, codes.PermissionDenied)
-			So(err, ShouldErrLike, "doesn't exist or the caller is not allowed to see it")
+			So(err, ShouldErrLike, "is not allowed to see it")
 		})
 
 		Convey("Missing package", func() {
@@ -2506,7 +2506,7 @@ func TestClientBootstrap(t *testing.T) {
 				ctx = as("someone@example.com")
 				rr := call(goodPlat, goodIID)
 				So(rr.Code, ShouldEqual, http.StatusForbidden)
-				So(rr.Body.String(), ShouldContainSubstring, "doesn't exist or the caller is not allowed to see it")
+				So(rr.Body.String(), ShouldContainSubstring, "is not allowed to see it")
 			})
 
 			Convey("Missing ver", func() {
