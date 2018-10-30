@@ -15,6 +15,9 @@ that can be found in the LICENSE file. -->
       padding-top: 10px;
       padding-bottom: 10px;
     }
+    body.anonymous {
+      background-color: #eee;
+    }
     .navbar {
       margin-bottom: 20px;
     }
@@ -36,7 +39,11 @@ that can be found in the LICENSE file. -->
   {{template "head" .}}
 </head>
 
+{{if .IsAnonymous}}
+<body class="anonymous">
+{{else}}
 <body>
+{{end}}
   <div class="container">
     <div class="navbar navbar-default" role="navigation">
       <div class="navbar-header">
