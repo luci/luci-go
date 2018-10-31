@@ -159,6 +159,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 func standardArchivalParams(cfg *config.Config, pcfg *svcconfig.ProjectConfig) *coordinator.ArchivalParams {
 	return &coordinator.ArchivalParams{
 		SettleDelay:    google.DurationFromProto(cfg.Coordinator.ArchiveSettleDelay),
-		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.ArchiveDelayMax, pcfg.MaxStreamAge),
+		CompletePeriod: endpoints.MinDuration(cfg.Coordinator.MaxStreamAge, pcfg.MaxStreamAge),
 	}
 }
