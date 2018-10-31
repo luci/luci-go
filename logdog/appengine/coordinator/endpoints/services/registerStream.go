@@ -78,10 +78,12 @@ func (s *server) RegisterStream(c context.Context, req *logdog.RegisterStreamReq
 
 	path = desc.Path()
 	logStreamID := coordinator.LogStreamID(path)
+	c = log.SetFields(c, log.Fields{
+		"prospectiveID": logStreamID,
+	})
 	log.Fields{
 		"project":       req.Project,
 		"path":          path,
-		"prospectiveID": logStreamID,
 		"terminalIndex": req.TerminalIndex,
 	}.Infof(c, "Registration request for log stream.")
 
