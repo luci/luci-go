@@ -47,7 +47,8 @@ func TestRegisterStream(t *testing.T) {
 		// delay, so it should be used.
 		env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
 			cfg.Coordinator.ArchiveSettleDelay = google.NewDuration(10 * time.Minute)
-			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+			cfg.Coordinator.ArchiveDelayMax = google.NewDuration(2 * time.Hour)
+			cfg.Coordinator.MaxStreamAge = google.NewDuration(24 * time.Hour)
 		})
 
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
