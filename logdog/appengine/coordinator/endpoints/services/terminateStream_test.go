@@ -50,7 +50,8 @@ func TestTerminateStream(t *testing.T) {
 			coord := cfg.Coordinator
 			coord.ArchiveTopic = "projects/test/topics/archive"
 			coord.ArchiveSettleDelay = google.NewDuration(10 * time.Second)
-			coord.ArchiveDelayMax = google.NewDuration(24 * time.Hour)
+			coord.ArchiveDelayMax = google.NewDuration(2 * time.Hour)
+			coord.MaxStreamAge = google.NewDuration(24 * time.Hour)
 		})
 		env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
 			pcfg.MaxStreamAge = google.NewDuration(time.Hour)
@@ -237,7 +238,7 @@ func TestTerminateStream(t *testing.T) {
 
 			Convey(`When there is no service or project config delay.`, func() {
 				env.ModServiceConfig(c, func(cfg *svcconfig.Config) {
-					cfg.Coordinator.ArchiveDelayMax = nil
+					cfg.Coordinator.MaxStreamAge = nil
 				})
 				env.ModProjectConfig(c, "proj-foo", func(pcfg *svcconfig.ProjectConfig) {
 					pcfg.MaxStreamAge = nil

@@ -65,19 +65,18 @@ message Coordinator {
   // time until the log stream has a reasonable expectation of being available.
   google.protobuf.Duration archive_settle_delay = 31;
 
-  // The amount of time before a log stream is candidate for archival regardless
-  // of whether or not it's been terminated or complete.
+  // The amount of time the archivist will wait (since the registration of a stream)
+  // before forcefully terminating a stream.
   //
   // This is a failsafe designed to ensure that log streams with missing records
   // or no terminal record (e.g., Butler crashed) are eventually archived.
-  //
-  // This should be fairly large (days) to avoid prematurely archiving
-  // long-running streams, but should be considerably smaller than the
-  // intermediate storage data retention period.
-  //
-  // If a project's "max_stream_age" is smaller than this value, it will be used
-  // on that project's streams.
   google.protobuf.Duration archive_delay_max = 32;
+
+  // The amount of time after stream registration the pessimistic archival will be scheduled.
+  //
+  // Projects can also set their own max_stream_age.
+  // The shorter of the two will take effect.
+  google.protobuf.Duration max_stream_age = 33;
 }
 
 // Collector is the set of configuration parameters for Collector instances.
