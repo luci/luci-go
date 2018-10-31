@@ -27,12 +27,14 @@ type DecoratedS1 struct {
 }
 
 func (s *DecoratedS1) M(c context.Context, req *M1) (rsp *M2, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "M", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.M(c, req)
 	}
 	if s.Postlude != nil {
@@ -57,12 +59,14 @@ type DecoratedS2 struct {
 }
 
 func (s *DecoratedS2) Get(c context.Context, req *Void) (rsp *M1, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Get", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Get(c, req)
 	}
 	if s.Postlude != nil {
@@ -72,12 +76,14 @@ func (s *DecoratedS2) Get(c context.Context, req *Void) (rsp *M1, err error) {
 }
 
 func (s *DecoratedS2) Set(c context.Context, req *M1) (rsp *Void, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Set", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Set(c, req)
 	}
 	if s.Postlude != nil {
@@ -87,12 +93,14 @@ func (s *DecoratedS2) Set(c context.Context, req *M1) (rsp *Void, err error) {
 }
 
 func (s *DecoratedS2) Imp(c context.Context, req *sub.Sub) (rsp *google_protobuf.Empty, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Imp", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Imp(c, req)
 	}
 	if s.Postlude != nil {

@@ -54,12 +54,14 @@ type {{$StructName}} struct {
 
 {{range .Methods}}
 func (s *{{$StructName}}) {{.Name}}(c context.Context, req {{.InputType}}) (rsp {{.OutputType}}, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "{{.Name}}", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.{{.Name}}(c, req)
 	}
 	if s.Postlude != nil {

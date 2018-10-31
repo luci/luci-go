@@ -24,12 +24,14 @@ type DecoratedBuildbot struct {
 }
 
 func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *MasterRequest) (rsp *CompressedMasterJSON, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetCompressedMasterJSON", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetCompressedMasterJSON(c, req)
 	}
 	if s.Postlude != nil {
@@ -39,12 +41,14 @@ func (s *DecoratedBuildbot) GetCompressedMasterJSON(c context.Context, req *Mast
 }
 
 func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *BuildbotBuildRequest) (rsp *BuildbotBuildJSON, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetBuildbotBuildJSON", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetBuildbotBuildJSON(c, req)
 	}
 	if s.Postlude != nil {
@@ -54,12 +58,14 @@ func (s *DecoratedBuildbot) GetBuildbotBuildJSON(c context.Context, req *Buildbo
 }
 
 func (s *DecoratedBuildbot) GetBuildbotBuildsJSON(c context.Context, req *BuildbotBuildsRequest) (rsp *BuildbotBuildsJSON, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetBuildbotBuildsJSON", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetBuildbotBuildsJSON(c, req)
 	}
 	if s.Postlude != nil {

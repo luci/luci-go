@@ -26,12 +26,14 @@ type DecoratedSuppliers struct {
 }
 
 func (s *DecoratedSuppliers) Create(c context.Context, req *CreateSupplierRequest) (rsp *Supplier, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Create", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Create(c, req)
 	}
 	if s.Postlude != nil {
@@ -41,12 +43,14 @@ func (s *DecoratedSuppliers) Create(c context.Context, req *CreateSupplierReques
 }
 
 func (s *DecoratedSuppliers) Delete(c context.Context, req *DeleteSupplierRequest) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Delete", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Delete(c, req)
 	}
 	if s.Postlude != nil {
@@ -56,12 +60,14 @@ func (s *DecoratedSuppliers) Delete(c context.Context, req *DeleteSupplierReques
 }
 
 func (s *DecoratedSuppliers) Get(c context.Context, req *GetSupplierRequest) (rsp *Supplier, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Get", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Get(c, req)
 	}
 	if s.Postlude != nil {

@@ -24,12 +24,14 @@ type DecoratedLogs struct {
 }
 
 func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (rsp *GetResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Get", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Get(c, req)
 	}
 	if s.Postlude != nil {
@@ -39,12 +41,14 @@ func (s *DecoratedLogs) Get(c context.Context, req *GetRequest) (rsp *GetRespons
 }
 
 func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (rsp *GetResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Tail", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Tail(c, req)
 	}
 	if s.Postlude != nil {
@@ -54,12 +58,14 @@ func (s *DecoratedLogs) Tail(c context.Context, req *TailRequest) (rsp *GetRespo
 }
 
 func (s *DecoratedLogs) Query(c context.Context, req *QueryRequest) (rsp *QueryResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Query", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Query(c, req)
 	}
 	if s.Postlude != nil {

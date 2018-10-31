@@ -24,12 +24,14 @@ type DecoratedBuildInfo struct {
 }
 
 func (s *DecoratedBuildInfo) Get(c context.Context, req *BuildInfoRequest) (rsp *BuildInfoResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "Get", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.Get(c, req)
 	}
 	if s.Postlude != nil {

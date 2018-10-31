@@ -24,12 +24,14 @@ type DecoratedStorage struct {
 }
 
 func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequest) (rsp *ObjectURL, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetObjectURL", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetObjectURL(c, req)
 	}
 	if s.Postlude != nil {
@@ -39,12 +41,14 @@ func (s *DecoratedStorage) GetObjectURL(c context.Context, req *GetObjectURLRequ
 }
 
 func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "BeginUpload", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.BeginUpload(c, req)
 	}
 	if s.Postlude != nil {
@@ -54,12 +58,14 @@ func (s *DecoratedStorage) BeginUpload(c context.Context, req *BeginUploadReques
 }
 
 func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "FinishUpload", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.FinishUpload(c, req)
 	}
 	if s.Postlude != nil {
@@ -69,12 +75,14 @@ func (s *DecoratedStorage) FinishUpload(c context.Context, req *FinishUploadRequ
 }
 
 func (s *DecoratedStorage) CancelUpload(c context.Context, req *CancelUploadRequest) (rsp *UploadOperation, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "CancelUpload", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.CancelUpload(c, req)
 	}
 	if s.Postlude != nil {

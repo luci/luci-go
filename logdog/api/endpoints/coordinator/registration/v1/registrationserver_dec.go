@@ -24,12 +24,14 @@ type DecoratedRegistration struct {
 }
 
 func (s *DecoratedRegistration) RegisterPrefix(c context.Context, req *RegisterPrefixRequest) (rsp *RegisterPrefixResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "RegisterPrefix", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.RegisterPrefix(c, req)
 	}
 	if s.Postlude != nil {
