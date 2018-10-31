@@ -26,12 +26,14 @@ type DecoratedAdmin struct {
 }
 
 func (s *DecoratedAdmin) ImportCAConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "ImportCAConfigs", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.ImportCAConfigs(c, req)
 	}
 	if s.Postlude != nil {
@@ -41,12 +43,14 @@ func (s *DecoratedAdmin) ImportCAConfigs(c context.Context, req *empty.Empty) (r
 }
 
 func (s *DecoratedAdmin) ImportDelegationConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "ImportDelegationConfigs", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.ImportDelegationConfigs(c, req)
 	}
 	if s.Postlude != nil {
@@ -56,12 +60,14 @@ func (s *DecoratedAdmin) ImportDelegationConfigs(c context.Context, req *empty.E
 }
 
 func (s *DecoratedAdmin) ImportServiceAccountsConfigs(c context.Context, req *empty.Empty) (rsp *ImportedConfigs, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "ImportServiceAccountsConfigs", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.ImportServiceAccountsConfigs(c, req)
 	}
 	if s.Postlude != nil {
@@ -71,12 +77,14 @@ func (s *DecoratedAdmin) ImportServiceAccountsConfigs(c context.Context, req *em
 }
 
 func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMachineTokenRequest) (rsp *InspectMachineTokenResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "InspectMachineToken", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.InspectMachineToken(c, req)
 	}
 	if s.Postlude != nil {
@@ -86,12 +94,14 @@ func (s *DecoratedAdmin) InspectMachineToken(c context.Context, req *InspectMach
 }
 
 func (s *DecoratedAdmin) InspectDelegationToken(c context.Context, req *InspectDelegationTokenRequest) (rsp *InspectDelegationTokenResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "InspectDelegationToken", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.InspectDelegationToken(c, req)
 	}
 	if s.Postlude != nil {
@@ -101,12 +111,14 @@ func (s *DecoratedAdmin) InspectDelegationToken(c context.Context, req *InspectD
 }
 
 func (s *DecoratedAdmin) InspectOAuthTokenGrant(c context.Context, req *InspectOAuthTokenGrantRequest) (rsp *InspectOAuthTokenGrantResponse, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "InspectOAuthTokenGrant", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.InspectOAuthTokenGrant(c, req)
 	}
 	if s.Postlude != nil {

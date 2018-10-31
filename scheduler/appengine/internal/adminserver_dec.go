@@ -26,12 +26,14 @@ type DecoratedAdmin struct {
 }
 
 func (s *DecoratedAdmin) GetDebugJobState(c context.Context, req *v1.JobRef) (rsp *DebugJobState, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetDebugJobState", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetDebugJobState(c, req)
 	}
 	if s.Postlude != nil {

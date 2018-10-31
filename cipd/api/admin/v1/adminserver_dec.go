@@ -26,12 +26,14 @@ type DecoratedAdmin struct {
 }
 
 func (s *DecoratedAdmin) LaunchJob(c context.Context, req *JobConfig) (rsp *JobID, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "LaunchJob", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.LaunchJob(c, req)
 	}
 	if s.Postlude != nil {
@@ -41,12 +43,14 @@ func (s *DecoratedAdmin) LaunchJob(c context.Context, req *JobConfig) (rsp *JobI
 }
 
 func (s *DecoratedAdmin) AbortJob(c context.Context, req *JobID) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "AbortJob", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.AbortJob(c, req)
 	}
 	if s.Postlude != nil {
@@ -56,12 +60,14 @@ func (s *DecoratedAdmin) AbortJob(c context.Context, req *JobID) (rsp *empty.Emp
 }
 
 func (s *DecoratedAdmin) GetJobState(c context.Context, req *JobID) (rsp *JobState, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "GetJobState", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.GetJobState(c, req)
 	}
 	if s.Postlude != nil {
@@ -71,12 +77,14 @@ func (s *DecoratedAdmin) GetJobState(c context.Context, req *JobID) (rsp *JobSta
 }
 
 func (s *DecoratedAdmin) FixMarkedTags(c context.Context, req *JobID) (rsp *TagFixReport, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "FixMarkedTags", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.FixMarkedTags(c, req)
 	}
 	if s.Postlude != nil {

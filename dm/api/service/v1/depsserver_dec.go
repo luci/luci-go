@@ -26,12 +26,14 @@ type DecoratedDeps struct {
 }
 
 func (s *DecoratedDeps) EnsureGraphData(c context.Context, req *EnsureGraphDataReq) (rsp *EnsureGraphDataRsp, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "EnsureGraphData", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.EnsureGraphData(c, req)
 	}
 	if s.Postlude != nil {
@@ -41,12 +43,14 @@ func (s *DecoratedDeps) EnsureGraphData(c context.Context, req *EnsureGraphDataR
 }
 
 func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecutionReq) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "ActivateExecution", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.ActivateExecution(c, req)
 	}
 	if s.Postlude != nil {
@@ -56,12 +60,14 @@ func (s *DecoratedDeps) ActivateExecution(c context.Context, req *ActivateExecut
 }
 
 func (s *DecoratedDeps) FinishAttempt(c context.Context, req *FinishAttemptReq) (rsp *empty.Empty, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "FinishAttempt", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.FinishAttempt(c, req)
 	}
 	if s.Postlude != nil {
@@ -71,12 +77,14 @@ func (s *DecoratedDeps) FinishAttempt(c context.Context, req *FinishAttemptReq) 
 }
 
 func (s *DecoratedDeps) WalkGraph(c context.Context, req *WalkGraphReq) (rsp *GraphData, err error) {
-	var newCtx context.Context
 	if s.Prelude != nil {
+		var newCtx context.Context
 		newCtx, err = s.Prelude(c, "WalkGraph", req)
+		if err == nil {
+			c = newCtx
+		}
 	}
 	if err == nil {
-		c = newCtx
 		rsp, err = s.Service.WalkGraph(c, req)
 	}
 	if s.Postlude != nil {
