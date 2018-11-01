@@ -56,6 +56,7 @@ type Change struct {
 	Created                string                  `json:"created"`
 	Updated                string                  `json:"updated"`
 	Mergeable              bool                    `json:"mergeable"`
+	Messages               []ChangeMessageInfo     `json:"messages"`
 	Submitted              string                  `json:"submitted"`
 	SubmitType             string                  `json:"submit_type"`
 	Insertions             int                     `json:"insertions"`
@@ -73,6 +74,18 @@ type Change struct {
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
 	MoreChanges bool `json:"_more_changes"`
+}
+
+// ChangeMessageInfo contains information about a message attached to a change:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
+type ChangeMessageInfo struct {
+	ID              string      `json:"id"`
+	Author          AccountInfo `json:"author,omitempty"`
+	RealAuthor      AccountInfo `json:"real_author,omitempty"`
+	Date            string      `json:"date"`
+	Message         string      `json:"message"`
+	Tag             string      `json:"tag,omitempty"`
+	_RevisionNumber uint        `json:"revision,omitempty"`
 }
 
 // LabelInfo contains information about a label on a change, always corresponding
