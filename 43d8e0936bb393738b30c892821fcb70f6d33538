@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e2657fce_bb5275f0",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-01T20:48:35Z",
+      "side": 1,
+      "message": "ideally this is a custom type, wrapper time.Time, and implementing https://godoc.org/encoding/json#Unmarshaler that unmarshals from gerrit\u0027s timestamp format",
+      "range": {
+        "startLine": 85,
+        "startChar": 17,
+        "endLine": 85,
+        "endChar": 23
+      },
+      "revId": "43d8e0936bb393738b30c892821fcb70f6d33538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b526f89_1c258374",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-01T20:48:35Z",
+      "side": 1,
+      "message": "_revision_number?",
+      "range": {
+        "startLine": 88,
+        "startChar": 36,
+        "endLine": 88,
+        "endChar": 44
+      },
+      "revId": "43d8e0936bb393738b30c892821fcb70f6d33538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3d0b610_de4dd092",
+        "filename": "common/api/gerrit/gerrit.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-01T20:48:35Z",
+      "side": 1,
+      "message": "remove? or if you intend to hide it, why declare the field in the first place?",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 2
+      },
+      "revId": "43d8e0936bb393738b30c892821fcb70f6d33538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
