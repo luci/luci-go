@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6b871af3_3254e21d",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "link doesn\u0027t lead to list of names.\nAlso, are custom machine types supported?",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "13168a3b_a2e56c4b",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "given eventual migration of this to client repos, we\u0027d need to adopt some scheme for bot_id names to ensure that each client side config can be validated on its own. Suppose, we adopt a scheme \"\u003cproject\u003e/\u003cprefix\u003e\" for such configs.\n\nSo, can we ensure that some separator char (\"/\" in my example above) is reserved right now s.t. given a bot id we can always determine whether\n  * it\u0027s globally defined (ie infradata/config)\n  * it\u0027s project-specific (ie say fuchsia smth)\n\nAlternatively, maybe require client-side config from the start?",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bb01b10_7de2f0ed",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "so, what\u0027s top-level config message? Or is it follow up CL? Or do you intend to keep VMs and Kinds in two separate files?\n\nMy take would be to have top-level:\n\nmessage Config {\n  repeated Kind kind \u003d 1;\n  repeated Block vms \u003d 2;\n}\n\nand get rid of VMs and Kinds messages. Then actual .cfg file will look quite readable:\n\nKind {}\nKind {}\nBlock { ...}\nBlock { ...}",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 0
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "47a073aa_371cd01a",
+        "filename": "gce/api/config/v1/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "why? we\u0027ve got cproto in infra\u0027s go env already.",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 61
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d90ddedc_9cba5c02",
+        "filename": "gce/api/config/v1/kinds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "suggestion (but not insistence) for config validation tests: I think having input specified is more concise and I\u0027d argue more useful for whose who try to read code/tests when actually error happens.\n\ntextpb :\u003d `\n  kind { name: \"dup\" }\n  kind { name: \"uniq\" }\n  kind { name: \"dup\" }\n`",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "765f6492_46cb8949",
+        "filename": "gce/api/config/v1/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T02:34:16Z",
+      "side": 1,
+      "message": "ideally (for swarming), we\u0027d also disallow \"substring\" and \"sub\" prefixes in the same config. This will ensure that Block can be resized w/o having to change bots.cfg  of swarming (ie, using bot_id_prefix there instead of enumeration).",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 48
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
