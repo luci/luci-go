@@ -305,11 +305,11 @@ func TestHandlesIndividualFiles(t *testing.T) {
 		wantFiles := map[string]isolated.File{
 			"foo": {
 				Digest: fooHash,
-				Mode:   Int(4),
+				Mode:   4,
 				Size:   Int64(1)},
 			"bar": {
 				Digest: barHash,
-				Mode:   Int(6),
+				Mode:   6,
 				Size:   Int64(2)},
 		}
 

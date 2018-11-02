@@ -41,7 +41,7 @@ func mkFile(data []byte) *isolated.File {
 	size := int64(len(data))
 	return &isolated.File{
 		Digest: isolated.HashBytes(data),
-		Mode:   &mode,
+		Mode:   mode,
 		Size:   &size,
 	}
 }
