@@ -423,6 +423,24 @@
     },
     {
       "key": {
+        "uuid": "f7606333_dbe335e6",
+        "filename": "gce/api/config/v1/kinds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:51:36Z",
+      "side": 1,
+      "message": "then i guess we are disagreeing about the appropriate size of the unit. My view, is that small unit of just \u0027kind\u0027 or \u0027vm\u0027 isn\u0027t worth the extra copy-pasta in tests, and hence, I\u0027d test bigger units, namely Kinds and VMs.",
+      "parentUuid": "89ba9d82_6cd2ba92",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "765f6492_46cb8949",
         "filename": "gce/api/config/v1/vms.go",
         "patchSetId": 1
