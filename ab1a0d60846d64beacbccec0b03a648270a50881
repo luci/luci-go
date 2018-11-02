@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "bb663d6f_547aa32a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:21:33Z",
+      "side": 1,
+      "message": "\u003e  For specific values (including any project-specific custom machine types) you need to call \"list\" (link covers that).\n\nPlease, add this to doc here, to save time for folks.",
+      "parentUuid": "ec34750c_157bec56",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13168a3b_a2e56c4b",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -72,6 +90,30 @@
       "side": 1,
       "message": "/ isn\u0027t a valid character in a GCE VM name. There\u0027s no good character to reserve because only a-zA-Z0-9- are allowed, meaning - is the only viable separator, and there are places where we already use -.\n\nI\u0027m not sure we\u0027re moving to client-side configs any time soon, I think we should revisit later.",
       "parentUuid": "13168a3b_a2e56c4b",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7273c9ea_00386bae",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:21:33Z",
+      "side": 1,
+      "message": "\u003e I\u0027m not sure we\u0027re moving to client-side configs any time soon, I think we should revisit later.\n\nWe aren\u0027t only because nobody took initiative to do so. I\u0027m yet to hear someone objecting to doing this in general.\n\nSo, let\u0027s land this CL as is to unblock you. However, I think we should start discussion with luci-eng@ ASAP wrt to naming machines. We should have design ready before we start migrating to new MP (well, GCE backend).",
+      "parentUuid": "f9ef2ae1_1008f4af",
       "range": {
         "startLine": 67,
         "startChar": 0,
@@ -131,6 +173,30 @@
     },
     {
       "key": {
+        "uuid": "b1729933_38c1eb2a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:21:33Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f871a668_9c588d1d",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 0
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47a073aa_371cd01a",
         "filename": "gce/api/config/v1/generate.go",
         "patchSetId": 1
@@ -178,6 +244,30 @@
     },
     {
       "key": {
+        "uuid": "cfa7106f_a26e3678",
+        "filename": "gce/api/config/v1/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:21:33Z",
+      "side": 1,
+      "message": "up to you (and i guess other file owners :P)\n\n(i agree about advantage, but consider use case rare enough to not care about it :P)",
+      "parentUuid": "3923d462_99396c36",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 61
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d90ddedc_9cba5c02",
         "filename": "gce/api/config/v1/kinds_test.go",
         "patchSetId": 1
@@ -207,6 +297,24 @@
       "side": 1,
       "message": "Makes testing indirect, because only the highest layer sees textproto. For example, if I add kind.Validate for each kind in kinds then I will only be able to test it by calling kinds.Validate on textproto, meaning kind.Validate tests now depend on kinds.Validate working correctly.",
       "parentUuid": "d90ddedc_9cba5c02",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4d1cfd6e_c4d2bed3",
+        "filename": "gce/api/config/v1/kinds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:21:33Z",
+      "side": 1,
+      "message": "\u003e  I will only be able to test it by calling kinds.Validate on textproto\n\nWell, firstly, I\u0027d argue that there is little value in testing individual Kind validation outside of kinds{} block.\nBut, if you see such value, you can still call validate on just a single Kind element of just unmarshaled kinds slice.\n\nanyways, this is just a suggestion. I don\u0027t feel strongly about this.",
+      "parentUuid": "8dcbf29d_6067f36d",
       "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
