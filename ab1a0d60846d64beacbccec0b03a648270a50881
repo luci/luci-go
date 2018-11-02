@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "ec34750c_157bec56",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "GCE supports creating custom machine types, so yes. Link is just a reference on what machine type is. For specific values (including any project-specific custom machine types) you need to call \"list\" (link covers that).",
+      "parentUuid": "6b871af3_3254e21d",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13168a3b_a2e56c4b",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2018-11-02T02:34:16Z",
       "side": 1,
       "message": "given eventual migration of this to client repos, we\u0027d need to adopt some scheme for bot_id names to ensure that each client side config can be validated on its own. Suppose, we adopt a scheme \"\u003cproject\u003e/\u003cprefix\u003e\" for such configs.\n\nSo, can we ensure that some separator char (\"/\" in my example above) is reserved right now s.t. given a bot id we can always determine whether\n  * it\u0027s globally defined (ie infradata/config)\n  * it\u0027s project-specific (ie say fuchsia smth)\n\nAlternatively, maybe require client-side config from the start?",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9ef2ae1_1008f4af",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "/ isn\u0027t a valid character in a GCE VM name. There\u0027s no good character to reserve because only a-zA-Z0-9- are allowed, meaning - is the only viable separator, and there are places where we already use -.\n\nI\u0027m not sure we\u0027re moving to client-side configs any time soon, I think we should revisit later.",
+      "parentUuid": "13168a3b_a2e56c4b",
       "range": {
         "startLine": 67,
         "startChar": 0,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "f871a668_9c588d1d",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "Two separate files, kinds.cfg and vms.cfg. kinds.cfg\u0027s top-level message is Kinds, vms.cfg\u0027s top-level message is VMs.",
+      "parentUuid": "7bb01b10_7de2f0ed",
+      "range": {
+        "startLine": 75,
+        "startChar": 0,
+        "endLine": 80,
+        "endChar": 0
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47a073aa_371cd01a",
         "filename": "gce/api/config/v1/generate.go",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2018-11-02T02:34:16Z",
       "side": 1,
       "message": "why? we\u0027ve got cproto in infra\u0027s go env already.",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 17,
+        "endChar": 61
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3923d462_99396c36",
+        "filename": "gce/api/config/v1/generate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "Copied from other generate.go files. Some have it, others don\u0027t. One thing I like is that it compiles your local copy of cproto and installs that instead of using what\u0027s in the remote repository, so if you are modifying cproto, it incorporates the changes (your preference may be the opposite).",
+      "parentUuid": "47a073aa_371cd01a",
       "range": {
         "startLine": 17,
         "startChar": 0,
@@ -105,6 +195,24 @@
     },
     {
       "key": {
+        "uuid": "8dcbf29d_6067f36d",
+        "filename": "gce/api/config/v1/kinds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "Makes testing indirect, because only the highest layer sees textproto. For example, if I add kind.Validate for each kind in kinds then I will only be able to test it by calling kinds.Validate on textproto, meaning kind.Validate tests now depend on kinds.Validate working correctly.",
+      "parentUuid": "d90ddedc_9cba5c02",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "765f6492_46cb8949",
         "filename": "gce/api/config/v1/vms.go",
         "patchSetId": 1
@@ -125,6 +233,30 @@
       "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4d40a41_9dfb2014",
+        "filename": "gce/api/config/v1/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T03:25:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "765f6492_46cb8949",
+      "range": {
+        "startLine": 30,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 48
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
