@@ -73,6 +73,24 @@
     },
     {
       "key": {
+        "uuid": "39db5f26_28ae0590",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:49:07Z",
+      "side": 1,
+      "message": "one needs to scroll down to the end of the page to see \u0027list\u0027 api. This doc is likely to be read much more frequently than API to list machines being renamed.\nMaybe just link to https://cloud.google.com/compute/docs/reference/rest/v1/machineTypes/list ?",
+      "parentUuid": "f0270664_aa4e8201",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "13168a3b_a2e56c4b",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -156,6 +174,30 @@
       "side": 1,
       "message": "I don\u0027t agree we need the client-side configs design ready before migrating. It\u0027s orthogonal, we can easily rename VMs later to match any desired conclusions from the client-side configs design.",
       "parentUuid": "7273c9ea_00386bae",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5a405945_bd48d828",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-02T23:49:07Z",
+      "side": 1,
+      "message": "Agree it\u0027s orthogonal.\nYes, we can migrate just to service-side configs, and then we can migrate again to client-side configs.\nHowever, this would mean mucking with configs twice, and in either case it requires involvement from our clients.\nSo, why pay this cost twice?",
+      "parentUuid": "18d7f38d_34158f6a",
       "range": {
         "startLine": 67,
         "startChar": 0,
