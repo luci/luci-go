@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "f0270664_aa4e8201",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T23:34:12Z",
+      "side": 1,
+      "message": "Why? The link already states that. If I write it here and the API changes, then my comment will be in conflict with the linked documentation.",
+      "parentUuid": "bb663d6f_547aa32a",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "13168a3b_a2e56c4b",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -114,6 +132,30 @@
       "side": 1,
       "message": "\u003e I\u0027m not sure we\u0027re moving to client-side configs any time soon, I think we should revisit later.\n\nWe aren\u0027t only because nobody took initiative to do so. I\u0027m yet to hear someone objecting to doing this in general.\n\nSo, let\u0027s land this CL as is to unblock you. However, I think we should start discussion with luci-eng@ ASAP wrt to naming machines. We should have design ready before we start migrating to new MP (well, GCE backend).",
       "parentUuid": "f9ef2ae1_1008f4af",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18d7f38d_34158f6a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T23:34:12Z",
+      "side": 1,
+      "message": "I don\u0027t agree we need the client-side configs design ready before migrating. It\u0027s orthogonal, we can easily rename VMs later to match any desired conclusions from the client-side configs design.",
+      "parentUuid": "7273c9ea_00386bae",
       "range": {
         "startLine": 67,
         "startChar": 0,
@@ -318,6 +360,24 @@
       "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "89ba9d82_6cd2ba92",
+        "filename": "gce/api/config/v1/kinds_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-02T23:34:12Z",
+      "side": 1,
+      "message": "The value is ease in reading/writing unit tests. If you change one unit, you only have to update the tests for that one unit. You shouldn\u0027t need to write correct textproto to test a function n levels removed from where textproto is even parsed.",
+      "parentUuid": "4d1cfd6e_c4d2bed3",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
