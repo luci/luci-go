@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/retry/transient"
@@ -56,6 +57,7 @@ type Change struct {
 	Created                string                  `json:"created"`
 	Updated                string                  `json:"updated"`
 	Mergeable              bool                    `json:"mergeable"`
+	Messages               []ChangeMessageInfo     `json:"messages"`
 	Submitted              string                  `json:"submitted"`
 	SubmitType             string                  `json:"submit_type"`
 	Insertions             int                     `json:"insertions"`
@@ -73,6 +75,35 @@ type Change struct {
 	// last Change in a page to set this flag if there are more changes
 	// in the results of a query.
 	MoreChanges bool `json:"_more_changes"`
+}
+
+// ChangeMessageInfo contains information about a message attached to a change:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-message-info
+type ChangeMessageInfo struct {
+	ID         string      `json:"id"`
+	Author     AccountInfo `json:"author,omitempty"`
+	RealAuthor AccountInfo `json:"real_author,omitempty"`
+	Date       Timestamp   `json:"date"`
+	Message    string      `json:"message"`
+	Tag        string      `json:"tag,omitempty"`
+}
+
+// Timestamp is given in UTC and has the format 'yyyy-mm-dd hh:mm:ss.fffffffff' where
+// 'ffffffffff' represents nanoseconds.
+type Timestamp struct {
+	time.Time
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (ts *Timestamp) UnmarshalJSON(input []byte) error {
+	strInput := strings.Trim(string(input), `"`)
+	newTime, err := time.Parse("2006-01-02 15:04:05.000000000", strInput)
+	if err != nil {
+		return err
+	}
+
+	ts.Time = newTime
+	return nil
 }
 
 // LabelInfo contains information about a label on a change, always corresponding
@@ -137,6 +168,25 @@ type RevisionInfo struct {
 
 	// Uploader represents the account which uploaded this patch set.
 	Uploader AccountInfo `json:"uploader"`
+
+	// The description of this patchset, as displayed in the patchset selector menu.
+	Description string `json:"description,omitempty"`
+
+	// The commit associated with this revision.
+	Commit CommitInfo `json:"commit,omitempty"`
+}
+
+// CommitInfo contains information about a commit.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#commit-info
+//
+// TODO(kjharland): Support remaining fields.
+type CommitInfo struct {
+	Commit    string       `json:"commit,omitempty"`
+	Parents   []CommitInfo `json:"parents,omitempty"`
+	Author    AccountInfo  `json:"author,omitempty"`
+	Committer AccountInfo  `json:"committer,omitempty"`
+	Subject   string       `json:"subject,omitempty"`
+	Message   string       `json:"message,omitempty"`
 }
 
 // Reviewers is a map that maps a type of reviewer to its account info.
