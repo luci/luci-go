@@ -108,7 +108,7 @@ func parseBot(c context.Context, swarmingHost string, botInfo *swarmingAPI.Swarm
 	}
 
 	switch {
-	case botInfo.TaskId != "":
+	case botInfo.TaskId != "" || botInfo.MaintenanceMsg != "":
 		result.Status = model.Busy
 	case botInfo.IsDead || botInfo.Quarantined:
 		result.Status = model.Offline
