@@ -24,8 +24,33 @@ import (
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
-func TestValidateKinds(t *testing.T) {
+func TestKinds(t *testing.T) {
 	t.Parallel()
+
+	Convey("names", t, func() {
+		Convey("empty", func() {
+			k := &Kinds{}
+			So(k.Names(), ShouldBeEmpty)
+		})
+
+		Convey("non-empty", func() {
+			k := &Kinds{
+				Kind: []*Kind{
+					{
+						Name: "duplicated",
+					},
+					{},
+					{
+						Name: "unique",
+					},
+					{
+						Name: "duplicated",
+					},
+				},
+			}
+			So(k.Names(), ShouldResemble, []string{"duplicated", "", "unique", "duplicated"})
+		})
+	})
 
 	Convey("validate", t, func() {
 		c := &validation.Context{Context: context.Background()}
