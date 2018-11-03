@@ -91,6 +91,24 @@
     },
     {
       "key": {
+        "uuid": "f1204510_d8b0f77a",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-03T00:12:13Z",
+      "side": 1,
+      "message": "\"list\" is at the top on the right under \"Contents\", but done.",
+      "parentUuid": "39db5f26_28ae0590",
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "13168a3b_a2e56c4b",
         "filename": "gce/api/config/v1/config.proto",
         "patchSetId": 1
@@ -198,6 +216,30 @@
       "side": 1,
       "message": "Agree it\u0027s orthogonal.\nYes, we can migrate just to service-side configs, and then we can migrate again to client-side configs.\nHowever, this would mean mucking with configs twice, and in either case it requires involvement from our clients.\nSo, why pay this cost twice?",
       "parentUuid": "18d7f38d_34158f6a",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 20
+      },
+      "revId": "ab1a0d60846d64beacbccec0b03a648270a50881",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01cff03a_2b2fc9c2",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-03T00:12:13Z",
+      "side": 1,
+      "message": "It\u0027s never been discussed or even brought to my attention before, it wasn\u0027t explicitly stated as a design goal in either of the two documents I circulated, there\u0027s no timeline for accomplishing it, it has no priority, and there is no proposed design which explains how to actually do it. There is other MP-related work blocked on the redesign which I\u0027d argue is significantly higher priority. I don\u0027t think it\u0027s reasonable to block on a last-minute addition to the set of requirements.\n\nIf we do two migrations, there\u0027s minimal client involvement in the first one, other than telling them about the new config format. Telling them about the new format is not redundant or wasted effort because the new format carries over to client-side configs.",
+      "parentUuid": "5a405945_bd48d828",
       "range": {
         "startLine": 67,
         "startChar": 0,
