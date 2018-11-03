@@ -1,0 +1,80 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+// A description of a disk.
+// https://cloud.google.com/compute/docs/reference/rest/v1/disks.
+message Disk {
+  // The name of an image to use to create this disk.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/images/list.
+  string image = 1;
+
+  // The size of this disk in GiB.
+  int32 size = 2;
+
+  // The name of a disk type to use for this disk.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/diskTypes/list.
+  string type = 3;
+}
+
+// A description of a VM.
+// https://cloud.google.com/compute/docs/reference/rest/v1/instances.
+message VM {
+  // The disks to attach to this VM.
+  repeated Disk disk = 1;
+
+  // The name of a machine type to use for the VM.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/machineTypes/list.
+  string machine_type = 2;
+
+  // The name of a GCP project to create the VM in.
+  string project = 4;
+
+  // The name of a zone to create the VM in.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
+  string zone = 5;
+}
+
+// A kind of VM.
+message Kind {
+  // The attributes of VMs of this kind.
+  VM attributes = 1;
+
+  // The name of this kind of VM.
+  string name = 2;
+}
+
+// A kinds config.
+message Kinds {
+  // Available kinds of VMs.
+  repeated Kind kind = 1;
+}
+
+// A block of VMs.
+message Block {
+  // The amount of VMs in this block.
+  int32 amount = 1;
+
+  // The attributes of VMs in this block.
+  // Attributes here override attributes in the kind.
+  VM attributes = 2;
+
+  // The name of a kind of VM.
+  string kind = 3;
+
+  // The prefix to use when naming VMs in this block.
+  string prefix = 4;
+
+  // The Swarming server VMs in this block should connect to.
+  string swarming = 5;
+}
+
+// A VMs config.
+message VMs {
+  // A block of VMs.
+  repeated Block vms = 1;
+}
