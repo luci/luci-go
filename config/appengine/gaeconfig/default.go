@@ -42,7 +42,7 @@ import (
 
 // ErrNotConfigured is returned by cfgclient methods if the config service URL
 // is not set. Usually happens for new apps.
-var ErrNotConfigured = errors.New("config service URL is not set in settings")
+var ErrNotConfigured = errors.New("config service URL is not set in settings; please visit /admin/portal")
 
 const (
 	// devCfgDir is a name of the directory with config files when running in
