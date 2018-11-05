@@ -99,7 +99,7 @@ func (m *httpMonitor) Send(ctx context.Context, cells []types.Cell) error {
 		// exact same body with exact same timestamps won't help. Return a fatal
 		// error instead.
 		if resp != nil && resp.StatusCode == 429 {
-			return fmt.Errorf("giving up on HTTP 249 status")
+			return fmt.Errorf("giving up on HTTP 429 status")
 		}
 		return oErr
 	})()
