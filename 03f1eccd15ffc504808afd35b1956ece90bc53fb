@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3c243942_f0750816",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-05T22:01:07Z",
+      "side": 1,
+      "message": "not quite true, I would say:\n  \"all archival tasks received by the are VERY LIKELY final, but in the event that they\u0027re not, we\u0027re not willing to wait any longer for them to finish ingestion.\"",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 21
+      },
+      "revId": "03f1eccd15ffc504808afd35b1956ece90bc53fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
