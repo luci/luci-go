@@ -39,6 +39,29 @@
       "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15baf144_d850cfd1",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-06T00:51:33Z",
+      "side": 1,
+      "message": "add documentation to this type. Pertinent questions:\n  * Can I keep a pointer to the log entry?\n  * Could something else modify it?\n  * What happens if I modify it?\n  * What happens if this blocks?\n  * What happens when I return an error?\n  * When is this function called?",
+      "range": {
+        "startLine": 38,
+        "startChar": 32,
+        "endLine": 38,
+        "endChar": 40
+      },
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
