@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -31,7 +32,10 @@ type stream struct {
 	c           io.Closer
 	bs          bundler.Stream
 	isKeepAlive bool
+	callback    StreamCallback
 }
+
+type StreamCallback func(*logpb.LogEntry) error
 
 func (s *stream) readChunk() bool {
 	d := s.bs.LeaseData()

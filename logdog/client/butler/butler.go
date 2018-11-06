@@ -99,6 +99,10 @@ type Config struct {
 	// IOKeepAliveWriter is an io.Writer to send keep-alive updates through. This
 	// must be set for I/O keep-alive to be active.
 	IOKeepAliveWriter io.Writer
+
+	// StreamCallbacks maps streams to a respective callback to execute when receiving a
+	// LogEntry.
+	StreamCallbacks map[types.StreamName]StreamCallback
 }
 
 // Validate validates that the configuration is sufficient to instantiate a
@@ -198,8 +202,16 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 	lb := bundler.New(bc)
 
+	// Copy the butler config so that stream callbacks are fully owned by the instance.
+	c := &Config{}
+	*c = config
+	c.StreamCallbacks = make(map[types.StreamName]StreamCallback, len(config.StreamCallbacks))
+	for k, v := range config.StreamCallbacks {
+		c.StreamCallbacks[k] = v
+	}
+
 	b := &Butler{
-		c:   &config,
+		c:   c,
 		ctx: ctx,
 
 		bundler:         lb,
@@ -483,6 +495,7 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 		r:           reader,
 		c:           rc,
 		isKeepAlive: isKeepAlive,
+		callback:    b.c.StreamCallbacks[types.StreamName(p.Name)],
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "p", so
