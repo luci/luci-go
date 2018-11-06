@@ -16,7 +16,7 @@ that can be found in the LICENSE file. -->
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
 {{ block "favicon" . }}
-<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/milo-32.png">
+<link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/lucy-small.png">
 {{ end -}}
 {{- block "head" .}}{{ end }}
 
@@ -47,7 +47,7 @@ that can be found in the LICENSE file. -->
   {{template "body" .}}
   <footer>
     <hr>
-      <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+      <div><img class="lucy-logo" src="/static/common/favicon/lucy-small.png"></div>
       <div>
         <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
         built: <b>{{.CurrentTime | localTime "" }}</b><br>
