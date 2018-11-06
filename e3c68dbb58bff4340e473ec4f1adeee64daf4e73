@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "1f0d7347_651b6fdf",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-06T00:56:00Z",
+      "side": 1,
+      "message": "this will be OK for the annotation.proto case, but will need to be changed for the proxy case. WDYT about:\n \n  StreamRegistrationCallback func(streamHeader) StreamChunkCallback\n\nWhich would get called whenever a new stream appears, and it could return a function which gets attached to the stream, or nil if the caller doesn\u0027t care about hooking the stream.",
+      "range": {
+        "startLine": 105,
+        "startChar": 27,
+        "endLine": 105,
+        "endChar": 37
+      },
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ca40ea4c_7c22b13e",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 1
