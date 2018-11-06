@@ -10,6 +10,8 @@ automatic_scaling:
   max_pending_latency: 30ms  # default value
   max_concurrent_requests: 10  # default value
 
+default_expiration: "8d"
+
 handlers:
 # For static resources such as css and js files.
 - url: /static
