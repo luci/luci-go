@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4766f064_7af007d0",
+        "filename": "common/isolated/isolated.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-11-06T00:50:15Z",
+      "side": 1,
+      "message": "This works because 0 is not a valid value for Mode.",
+      "revId": "e1c9e4c0923b243b02f8e982b988fd395ce89868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
