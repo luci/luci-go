@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "228fd590_8e78acf5",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-06T00:27:18Z",
+      "side": 1,
+      "message": "nit: a stream",
+      "range": {
+        "startLine": 103,
+        "startChar": 25,
+        "endLine": 103,
+        "endChar": 32
+      },
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ca40ea4c_7c22b13e",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-06T00:27:18Z",
+      "side": 1,
+      "message": "nit: doc?",
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
