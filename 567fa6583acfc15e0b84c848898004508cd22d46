@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fde04f8c_c218e65e",
+        "filename": "milo/frontend/appengine/app.yaml",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-06T18:36:50Z",
+      "side": 1,
+      "message": "why? doesn\u0027t this mean that a user browser will cache static content for 8d and won\u0027t see our changes in static files (e.g. js) for 8d?",
+      "revId": "567fa6583acfc15e0b84c848898004508cd22d46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
