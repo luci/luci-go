@@ -57,6 +57,12 @@ var (
 		nil,
 		field.Bool("successful"))
 
+	// tsCountForceArchive counts the raw number of streams that this instance
+	// has forcefully archived due to passing the complete period.
+	tsCountForceArchive = metric.NewCounter("logdog/archivist/archive/forced_archive",
+		"The streams that were forcefully archived.",
+		nil)
+
 	// tsSize tracks the archive binary file size distribution of completed
 	// archives.
 	//
@@ -329,6 +335,7 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 		if err := staged.checkComplete(c); err != nil {
 			return err
 		}
+		tsCountForceArchive.Add(c, 1)
 	}
 
 	// Archive to staging.
