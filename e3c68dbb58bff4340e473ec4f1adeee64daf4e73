@@ -96,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "702adbc0_ddd46e91",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6cdbddc9_9627edd6",
+      "range": {
+        "startLine": 105,
+        "startChar": 27,
+        "endLine": 105,
+        "endChar": 37
+      },
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ca40ea4c_7c22b13e",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 1
@@ -157,6 +181,48 @@
       "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a3d2d62_a923f976",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ca40ea4c_7c22b13e",
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "6250340e_c01faa5b",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97bf03e1_d4b67255",
+      "range": {
+        "startLine": 38,
+        "startChar": 32,
+        "endLine": 38,
+        "endChar": 40
+      },
+      "revId": "e3c68dbb58bff4340e473ec4f1adeee64daf4e73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

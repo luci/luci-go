@@ -138,6 +138,24 @@
     },
     {
       "key": {
+        "uuid": "639e6256_045ef6ae",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Ah, I see what you mean. Done.",
+      "parentUuid": "04d55d45_f27a5c4d",
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a99399cf_85051511",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -209,6 +227,30 @@
     },
     {
       "key": {
+        "uuid": "641f0c32_f04541bd",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "26d12ca5_3782adec",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "867bfe9b_663010d1",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -256,6 +298,54 @@
     },
     {
       "key": {
+        "uuid": "e2810af3_8c3aa0a6",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "943376f5_7d69d804",
+      "range": {
+        "startLine": 41,
+        "startChar": 30,
+        "endLine": 41,
+        "endChar": 63
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "939b38e1_3706a4ff",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bc308087_1fa9c71d",
+      "range": {
+        "startLine": 41,
+        "startChar": 98,
+        "endLine": 41,
+        "endChar": 98
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88608317_3b12efa8",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -300,6 +390,30 @@
       "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d24e87c_33408e94",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T22:02:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa4e111f_d31984a0",
+      "range": {
+        "startLine": 43,
+        "startChar": 33,
+        "endLine": 43,
+        "endChar": 92
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
