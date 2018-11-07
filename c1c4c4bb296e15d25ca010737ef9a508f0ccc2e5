@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "12b06035_b597979b",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T21:34:13Z",
+      "side": 1,
+      "message": "note if it\u0027s safe to keep a reference to it or not (i.e. will the creator of the LogStreamDescriptor modify it after the return of StreamRegistrationCallback?)",
+      "range": {
+        "startLine": 106,
+        "startChar": 52,
+        "endLine": 106,
+        "endChar": 60
+      },
+      "revId": "c1c4c4bb296e15d25ca010737ef9a508f0ccc2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
