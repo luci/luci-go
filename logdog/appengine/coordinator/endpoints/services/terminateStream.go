@@ -29,8 +29,6 @@ import (
 	"go.chromium.org/luci/logdog/appengine/coordinator"
 	"go.chromium.org/luci/logdog/appengine/coordinator/config"
 	"go.chromium.org/luci/logdog/appengine/coordinator/endpoints"
-	"go.chromium.org/luci/logdog/appengine/coordinator/mutations"
-	"go.chromium.org/luci/tumble"
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
@@ -53,28 +51,11 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 		return nil, grpcutil.Errf(codes.InvalidArgument, "Invalid ID (%s): %s", id, err)
 	}
 
-	// Load our service and project configs.
-	svc := endpoints.GetServices(c)
-	cfg, err := svc.Config(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to load configuration.")
-		return nil, grpcutil.Internal
-	}
-
-	pcfg, err := coordinator.CurrentProjectConfig(c)
-	if err != nil {
-		log.WithError(err).Errorf(c, "Failed to load current project configuration.")
-		return nil, grpcutil.Internal
-	}
-
-	// Initialize our archival parameters.
-	params := standardArchivalParams(cfg, pcfg)
-
 	// Initialize our log stream state.
 	lst := coordinator.NewLogStreamState(c, id)
 
 	// Transactionally validate and update the terminal index.
-	err = ds.RunInTransaction(c, func(c context.Context) error {
+	err := ds.RunInTransaction(c, func(c context.Context) error {
 		if err := ds.Get(c, lst); err != nil {
 			if err == ds.ErrNoSuchEntity {
 				log.Debugf(c, "Log stream state not found.")
@@ -117,32 +98,6 @@ func (s *server) TerminateStream(c context.Context, req *logdog.TerminateStreamR
 				}.Errorf(c, "Failed to Put() LogStream.")
 				return grpcutil.Internal
 			}
-
-			// Replace the pessimistic archive expiration mutation scheduled in
-			// RegisterStream with an optimistic archival mutation.
-			cat := mutations.CreateArchiveTask{
-				ID: id,
-
-				// Optimistic parameters.
-				SettleDelay:    params.SettleDelay,
-				CompletePeriod: params.CompletePeriod,
-
-				// Schedule this mutation to execute after our settle delay.
-				Expiration: now.Add(params.SettleDelay),
-			}
-
-			aeParent, aeName := ds.KeyForObj(c, lst), cat.TaskName(c)
-			if err := tumble.PutNamedMutations(c, aeParent, map[string]tumble.Mutation{aeName: &cat}); err != nil {
-				log.WithError(err).Errorf(c, "Failed to replace archive expiration mutation.")
-				return grpcutil.Internal
-			}
-
-			log.Fields{
-				"terminalIndex":  lst.TerminalIndex,
-				"settleDelay":    cat.SettleDelay,
-				"completePeriod": cat.CompletePeriod,
-				"scheduledAt":    cat.Expiration,
-			}.Debugf(c, "Terminal index was set, and archival mutation was scheduled.")
 			return nil
 		}
 	}, nil)
