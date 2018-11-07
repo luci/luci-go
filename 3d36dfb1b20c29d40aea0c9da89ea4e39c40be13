@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "652713a7_265c1053",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:37:24Z",
+      "side": 1,
+      "message": "Maybe this should say that this is counting logs which are INCOMPLETE, but archived anyway?",
+      "revId": "3d36dfb1b20c29d40aea0c9da89ea4e39c40be13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a737fd21_59c40a7e",
+        "filename": "logdog/server/archivist/archivist.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 333,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:37:24Z",
+      "side": 1,
+      "message": "this comment needs to be rewritten",
+      "range": {
+        "startLine": 331,
+        "startChar": 4,
+        "endLine": 333,
+        "endChar": 63
+      },
+      "revId": "3d36dfb1b20c29d40aea0c9da89ea4e39c40be13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
