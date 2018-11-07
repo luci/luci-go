@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d571e08b_04ca6857",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:30:49Z",
+      "side": 1,
+      "message": "or nil if no callback is desired?\n\nAlso document that the LogStreamDescriptor should not be modified",
+      "range": {
+        "startLine": 105,
+        "startChar": 10,
+        "endLine": 105,
+        "endChar": 28
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a99399cf_85051511",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:30:49Z",
+      "side": 1,
+      "message": "Where do these errors go?",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "867bfe9b_663010d1",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:30:49Z",
+      "side": 1,
+      "message": "I think it\u0027s important to specify that the LogEntry is read only, period. Not just during the callback. In particular it should be guaranteed to the callback that keeping a pointer (indefinitely) to this LogEntry is safe.",
+      "range": {
+        "startLine": 41,
+        "startChar": 30,
+        "endLine": 41,
+        "endChar": 63
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88608317_3b12efa8",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:30:49Z",
+      "side": 1,
+      "message": "there\u0027s other ways to handle this (writing to a channel, etc.) I would instead take the opportunity here to explain what happens if this expectation is violated (i.e. all processing of the butler will wait for this callback to complete).",
+      "range": {
+        "startLine": 43,
+        "startChar": 33,
+        "endLine": 43,
+        "endChar": 92
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
