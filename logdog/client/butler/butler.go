@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -99,6 +100,12 @@ type Config struct {
 	// IOKeepAliveWriter is an io.Writer to send keep-alive updates through. This
 	// must be set for I/O keep-alive to be active.
 	IOKeepAliveWriter io.Writer
+
+	// StreamRegistrationCallback is called on new streams and returns the callback to attach to the
+	// stream or nil if no callback is desired.
+	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and should treat it as
+	// read-only .
+	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) StreamChunkCallback
 }
 
 // Validate validates that the configuration is sufficient to instantiate a
@@ -198,8 +205,11 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 	lb := bundler.New(bc)
 
+	// Copy the butler config so that stream registration is fully owned by the instance.
+	c := config
+
 	b := &Butler{
-		c:   &config,
+		c:   &c,
 		ctx: ctx,
 
 		bundler:         lb,
@@ -483,6 +493,9 @@ func (b *Butler) AddStream(rc io.ReadCloser, p *streamproto.Properties) error {
 		r:           reader,
 		c:           rc,
 		isKeepAlive: isKeepAlive,
+	}
+	if b.c.StreamRegistrationCallback != nil {
+		s.callback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
 	}
 
 	// Register this stream with our Bundler. It will take ownership of "p", so
