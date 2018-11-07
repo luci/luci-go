@@ -60,7 +60,7 @@ const (
 type File struct {
 	Digest HexDigest `json:"h,omitempty"`
 	Link   *string   `json:"l,omitempty"`
-	Mode   int       `json:"m,omitempty"`
+	Mode   *int      `json:"m,omitempty"`
 	Size   *int64    `json:"s,omitempty"`
 	Type   FileType  `json:"t,omitempty"`
 }
@@ -69,7 +69,7 @@ type File struct {
 func BasicFile(d HexDigest, mode int, size int64) File {
 	return File{
 		Digest: d,
-		Mode:   mode,
+		Mode:   &mode,
 		Size:   &size,
 	}
 }
@@ -85,7 +85,7 @@ func SymLink(link string) File {
 func TarFile(d HexDigest, mode int, size int64) File {
 	return File{
 		Digest: d,
-		Mode:   mode,
+		Mode:   &mode,
 		Size:   &size,
 		Type:   TarArchive,
 	}
