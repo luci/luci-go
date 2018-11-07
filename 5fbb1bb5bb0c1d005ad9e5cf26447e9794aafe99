@@ -120,6 +120,24 @@
     },
     {
       "key": {
+        "uuid": "04d55d45_f27a5c4d",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T21:59:40Z",
+      "side": 1,
+      "message": "the config parameter is passed by value. It is already copied by this func, essentially. There is no way the caller can modify it",
+      "parentUuid": "53eaed1c_58ff34f8",
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a99399cf_85051511",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
