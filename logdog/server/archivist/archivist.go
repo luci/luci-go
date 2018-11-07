@@ -57,6 +57,12 @@ var (
 		nil,
 		field.Bool("successful"))
 
+	// tsCountForceArchive counts the raw number of streams that this instance
+	// has forcefully archived due to passing the complete period.
+	tsCountForceArchive = metric.NewCounter("logdog/archivist/archive/forced_archive",
+		"The streams that were forcefully archived.",
+		nil)
+
 	// tsSize tracks the archive binary file size distribution of completed
 	// archives.
 	//
@@ -322,12 +328,14 @@ func (a *Archivist) archiveTaskImpl(c context.Context, task Task) error {
 	}
 
 	// Are we required to archive a complete log stream?
-	if age <= google.DurationFromProto(at.CompletePeriod) {
-		// If we're requiring completeness, perform a keys-only scan of intermediate
-		// storage to ensure that we have all of the records before we bother
-		// streaming to storage only to find that we are missing data.
-		if err := staged.checkComplete(c); err != nil {
+	// If we're requiring completeness, perform a keys-only scan of intermediate
+	// storage to ensure that we have all of the records before we bother
+	// streaming to storage only to find that we are missing data.
+	if err := staged.checkComplete(c); err != nil {
+		if age <= google.DurationFromProto(at.CompletePeriod) {
 			return err
+		} else {
+			tsCountForceArchive.Add(c, 1)
 		}
 	}
 
