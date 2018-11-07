@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a635e36a_0679de05",
+        "filename": "common/proto/milo/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:32:55Z",
+      "side": 1,
+      "message": "all the steps, recursively.",
+      "range": {
+        "startLine": 28,
+        "startChar": 46,
+        "endLine": 28,
+        "endChar": 51
+      },
+      "revId": "171c962d7f9fbcbeea7a04b157ccc59d40808c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db5f4567_adb6cc11",
+        "filename": "common/proto/milo/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-07T06:32:55Z",
+      "side": 1,
+      "message": "maybe \u0027flattens\u0027? This implements a \u0027last top-level property definition wins\u0027, which is not immediately obvious (if you\u0027re not familiar with buildbot/recipes legacy)",
+      "revId": "171c962d7f9fbcbeea7a04b157ccc59d40808c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
