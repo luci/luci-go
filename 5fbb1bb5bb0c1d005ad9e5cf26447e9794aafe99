@@ -102,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "53eaed1c_58ff34f8",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:57:27Z",
+      "side": 1,
+      "message": "Doesn\u0027t base embed a reference to the existing config?\n\nThis change copies (or at least is meant to copy) the config, otherwise the registration callback can be manipulated by something external to the butler instance that has a reference to the config.\n\nDoes this change not do what I mean it to do?",
+      "parentUuid": "2b668945_f3fdae84",
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a99399cf_85051511",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
