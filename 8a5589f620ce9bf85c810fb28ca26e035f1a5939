@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e677e9a1_fbb52b8e",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T07:39:22Z",
+      "side": 1,
+      "message": "please don\u0027t use cfgclient. I\u0027d like to kill it. \nplease use lower-level https://godoc.org/go.chromium.org/luci/config#Interface\ninstead",
+      "range": {
+        "startLine": 45,
+        "startChar": 11,
+        "endLine": 45,
+        "endChar": 20
+      },
+      "revId": "8a5589f620ce9bf85c810fb28ca26e035f1a5939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7822d607_b0479fff",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T07:39:22Z",
+      "side": 1,
+      "message": "this should be attached to https://godoc.org/go.chromium.org/luci/config/validation#Rules\nand follow https://godoc.org/go.chromium.org/luci/config/validation#Func\n\none problem, though, is that config validation is limited to one file and here we have references across files...\n\nbut without attaching to validation.Rules, luci-config would happily a completely wrong config",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 13
+      },
+      "revId": "8a5589f620ce9bf85c810fb28ca26e035f1a5939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2dea75b1_9e5b9363",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T07:39:22Z",
+      "side": 1,
+      "message": "nit: return v.Finalize()\n\"invalid configs\" returned by a function that validates configs does not add value. errors should be annotated with things that the caller doesn\u0027t know about\n\nstepping back, looks like this belongs to L84",
+      "range": {
+        "startLine": 70,
+        "startChar": 1,
+        "endLine": 73,
+        "endChar": 11
+      },
+      "revId": "8a5589f620ce9bf85c810fb28ca26e035f1a5939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
