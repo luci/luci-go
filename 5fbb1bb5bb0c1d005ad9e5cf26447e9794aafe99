@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "75c0ca38_181b3b9f",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:29:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d571e08b_04ca6857",
+      "range": {
+        "startLine": 105,
+        "startChar": 10,
+        "endLine": 105,
+        "endChar": 28
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3943966a_c1b3d91a",
         "filename": "logdog/client/butler/butler.go",
         "patchSetId": 2
@@ -36,6 +60,24 @@
       "writtenOn": "2018-11-07T06:46:37Z",
       "side": 1,
       "message": "undo",
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a6ab791_7e85482f",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:29:41Z",
+      "side": 1,
+      "message": "How do you mean? (Butler.c is a *Config)",
+      "parentUuid": "3943966a_c1b3d91a",
       "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -89,6 +131,30 @@
     },
     {
       "key": {
+        "uuid": "26d12ca5_3782adec",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:29:41Z",
+      "side": 1,
+      "message": "Chatted with Robbie, didn\u0027t know that the callback could access its parent\u0027s context implicitly in golang, which is great and definitely simplifies this. Thanks!",
+      "parentUuid": "ed2a619b_56116147",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "867bfe9b_663010d1",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -112,6 +178,30 @@
     },
     {
       "key": {
+        "uuid": "943376f5_7d69d804",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:29:41Z",
+      "side": 1,
+      "message": "How\u0027s this?",
+      "parentUuid": "867bfe9b_663010d1",
+      "range": {
+        "startLine": 41,
+        "startChar": 30,
+        "endLine": 41,
+        "endChar": 63
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "88608317_3b12efa8",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -123,6 +213,30 @@
       "writtenOn": "2018-11-07T06:30:49Z",
       "side": 1,
       "message": "there\u0027s other ways to handle this (writing to a channel, etc.) I would instead take the opportunity here to explain what happens if this expectation is violated (i.e. all processing of the butler will wait for this callback to complete).",
+      "range": {
+        "startLine": 43,
+        "startChar": 33,
+        "endLine": 43,
+        "endChar": 92
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fa4e111f_d31984a0",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-07T21:29:41Z",
+      "side": 1,
+      "message": "So simply like this?",
+      "parentUuid": "88608317_3b12efa8",
       "range": {
         "startLine": 43,
         "startChar": 33,
