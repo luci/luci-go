@@ -25,6 +25,23 @@
     },
     {
       "key": {
+        "uuid": "3943966a_c1b3d91a",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T06:46:37Z",
+      "side": 1,
+      "message": "undo",
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a99399cf_85051511",
         "filename": "logdog/client/butler/stream.go",
         "patchSetId": 2
@@ -36,6 +53,30 @@
       "writtenOn": "2018-11-07T06:30:49Z",
       "side": 1,
       "message": "Where do these errors go?",
+      "range": {
+        "startLine": 39,
+        "startChar": 3,
+        "endLine": 39,
+        "endChar": 41
+      },
+      "revId": "5fbb1bb5bb0c1d005ad9e5cf26447e9794aafe99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ed2a619b_56116147",
+        "filename": "logdog/client/butler/stream.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T06:46:37Z",
+      "side": 1,
+      "message": "+1\n\nif there is no sensible action that the caller of the callback would take based on the returned error, then it probably shouldn\u0027t ask for an error to be returned. Consider\n\n  type StreamChunkCallback func(*logpb.LogEntry)",
+      "parentUuid": "a99399cf_85051511",
       "range": {
         "startLine": 39,
         "startChar": 3,
