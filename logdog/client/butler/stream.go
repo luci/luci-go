@@ -21,6 +21,7 @@ import (
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/iotools"
 	log "go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 )
 
@@ -31,7 +32,16 @@ type stream struct {
 	c           io.Closer
 	bs          bundler.Stream
 	isKeepAlive bool
+	callback    StreamChunkCallback
 }
+
+// StreamChunkCallback is called synchronously when a complete LogEntry enters the stream.
+// Any error handling is the responsibility of the caller/StreamChunkCallback implementation.
+// Expects:
+// - LogEntry to be read-only, so the callback and others must take care not to
+//   modify the LogEntry and should be able to assume that keeping the reference remains safe;
+// - callback to return quickly as it will block all execution of the Butler until it completes.
+type StreamChunkCallback func(*logpb.LogEntry)
 
 func (s *stream) readChunk() bool {
 	d := s.bs.LeaseData()
