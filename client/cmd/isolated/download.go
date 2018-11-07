@@ -81,31 +81,34 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	common.CancelOnCtrlC(dl)
 	files, err := dl.FetchIsolated(isolated.HexDigest(c.isolated), c.outputDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to call FetchIsolated(): %v", err)
 	}
 	if c.outputFiles != "" {
 		filesData := strings.Join(files, "\n")
 		if len(files) > 0 {
 			filesData += "\n"
 		}
-		return ioutil.WriteFile(c.outputFiles, []byte(filesData), 0664)
+
+		if err := ioutil.WriteFile(c.outputFiles, []byte(filesData), 0664); err != nil {
+			return fmt.Errorf("failed to call WriteFile(%s, ...); %v", c.outputFiles, err)
+		}
 	}
 	return nil
 }
 
 func (c *downloadRun) Run(a subcommands.Application, args []string, _ subcommands.Env) int {
 	if err := c.Parse(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		fmt.Fprintf(a.GetErr(), "%s: failed to call Parse(%s): %v\n", a.GetName(), args, err)
 		return 1
 	}
 	cl, err := c.defaultFlags.StartTracing()
 	if err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		fmt.Fprintf(a.GetErr(), "%s: failed to call StartTracing(): %v\n", a.GetName(), err)
 		return 1
 	}
 	defer cl.Close()
 	if err := c.main(a, args); err != nil {
-		fmt.Fprintf(a.GetErr(), "%s: %s\n", a.GetName(), err)
+		fmt.Fprintf(a.GetErr(), "%s: failed to call main(%s): %v\n", a.GetName(), args, err)
 		return 1
 	}
 	return 0
