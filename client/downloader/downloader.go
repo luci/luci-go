@@ -202,7 +202,11 @@ func (d *Downloader) doFileJob(name string, details *isolated.File, outputDir st
 	}
 
 	// Every other kind of file just fetch the bytes.
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(details.Mode))
+	mode := 0666
+	if details.Mode != nil {
+		mode = *details.Mode
+	}
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE, os.FileMode(mode))
 	if err != nil {
 		d.addError(fileType, name, err)
 		return
