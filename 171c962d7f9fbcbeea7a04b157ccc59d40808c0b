@@ -39,6 +39,48 @@
       "revId": "171c962d7f9fbcbeea7a04b157ccc59d40808c0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2051337_5b24c1e7",
+        "filename": "common/proto/milo/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T06:55:02Z",
+      "side": 1,
+      "message": "done, in different way though",
+      "parentUuid": "a635e36a_0679de05",
+      "range": {
+        "startLine": 28,
+        "startChar": 46,
+        "endLine": 28,
+        "endChar": 51
+      },
+      "revId": "171c962d7f9fbcbeea7a04b157ccc59d40808c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "11041836_64ee212d",
+        "filename": "common/proto/milo/util.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-07T06:55:02Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "db5f4567_adb6cc11",
+      "revId": "171c962d7f9fbcbeea7a04b157ccc59d40808c0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
