@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b88c9df_10b6bfb1",
+        "filename": "client/cmd/isolated/download.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-08T00:05:04Z",
+      "side": 1,
+      "message": "fyi: errors.Annotate(err, \"...\").Err()\n\nexamples https://cs.chromium.org/chromium/infra/go/src/infra/tools/git/git.go?type\u003dcs\u0026q\u003derrors.Annotate\u0026sq\u003dpackage:chromium\u0026g\u003d0\u0026l\u003d366\n\nand as a bonus, you can print the whole stack of relevant funcs",
+      "range": {
+        "startLine": 84,
+        "startChar": 9,
+        "endLine": 84,
+        "endChar": 19
+      },
+      "revId": "22d98cbc294f894b5276757e8cc89167392790d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
