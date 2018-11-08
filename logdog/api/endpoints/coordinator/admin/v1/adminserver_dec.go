@@ -41,3 +41,20 @@ func (s *DecoratedAdmin) SetConfig(c context.Context, req *SetConfigRequest) (rs
 	}
 	return
 }
+
+func (s *DecoratedAdmin) LaunchArchiveTasks(c context.Context, req *ArchiveRequest) (rsp *ArchiveResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "LaunchArchiveTasks", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.LaunchArchiveTasks(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "LaunchArchiveTasks", rsp, err)
+	}
+	return
+}
