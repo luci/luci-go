@@ -20,15 +20,14 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 )
 
-// VMs represents a block of VMs.
-// Root entity. ID is the prefix to use when naming these VMs.
+// VMs is a root entity representing a configured block of VMs.
 type VMs struct {
 	// _extra is where unknown properties are put into memory.
 	// Extra properties are not written to the datastore.
 	_extra datastore.PropertyMap `gae:"-,extra"`
 	// _kind is the entity's kind in the datastore.
 	_kind string `gae:"$kind,VMs"`
-	// ID is the prefix to use when naming these VMs.
+	// ID is the unique identifier for this VMs block.
 	ID string `gae:"$id"`
 	// Config is the config.Block representation of this entity.
 	Config config.Block `gae:"config"`

@@ -9,29 +9,35 @@ package config;
 import "google/protobuf/empty.proto";
 import "go.chromium.org/luci/gce/api/config/v1/config.proto";
 
-// A request to create a VMs block.
-message CreateVMsRequest {
-  Block vm = 1;
-}
-
 // A request to delete a VMs block.
 message DeleteVMsRequest {
-  string prefix = 1;
+  // The id of the VMs block to delete.
+  string id = 1;
+}
+
+// A request to create or update a VMs block.
+message EnsureVMsRequest {
+  // The id of the VMs block to ensure.
+  string id = 1;
+  // The VMs block.
+  Block vms = 2;
 }
 
 // A request to get a VMs block.
 message GetVMsRequest {
-  string prefix = 1;
+  // The id of the VMs block to get.
+  string id = 1;
 }
 
 // A service for manipulating the VMs config.
 service Config {
-  // CreateVMs creates a new VMs block.
-  // Internal API.
-  rpc CreateVMs(CreateVMsRequest) returns (Block);
   // DeleteVMs deletes an existing VMs block.
   // Internal API.
   rpc DeleteVMs(DeleteVMsRequest) returns (google.protobuf.Empty);
+  // EnsureVMs ensures a VMs block exists.
+  // Creates a new VMs block or updates an existing one as necessary.
+  // Internal API.
+  rpc EnsureVMs(EnsureVMsRequest) returns (Block);
   // GetVMs returns a configured VMs block.
   rpc GetVMs(GetVMsRequest) returns (Block);
 }
