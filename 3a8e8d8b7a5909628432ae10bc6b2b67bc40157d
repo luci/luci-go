@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f635d87f_4e260585",
+        "filename": "gce/api/config/v1/block.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-08T21:47:12Z",
+      "side": 1,
+      "message": "read/written",
+      "range": {
+        "startLine": 26,
+        "startChar": 32,
+        "endLine": 26,
+        "endChar": 39
+      },
+      "revId": "3a8e8d8b7a5909628432ae10bc6b2b67bc40157d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5649b4d_ad6ee651",
+        "filename": "gce/appengine/model/vms.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-08T21:47:12Z",
+      "side": 1,
+      "message": "\"Config\" as a name is more appropriate, since it corresponds to substance of the field. The fact that it serializes to proto doesn\u0027t seem as important.",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 6
+      },
+      "revId": "3a8e8d8b7a5909628432ae10bc6b2b67bc40157d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
