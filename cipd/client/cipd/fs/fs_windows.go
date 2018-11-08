@@ -79,3 +79,11 @@ func atomicRename(source, target string) error {
 	}
 	return moveFileEx(lpReplacementFileName, lpReplacedFileName, moveFileReplaceExisting|moveFileWriteThrough)
 }
+
+// "The directory name is invalid".
+const ERROR_DIRECTORY syscall.Errno = 267
+
+func isNotDir(err error) bool {
+	pe, ok := err.(*os.PathError)
+	return ok && pe.Err == ERROR_DIRECTORY
+}
