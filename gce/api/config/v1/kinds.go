@@ -19,6 +19,15 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
+// Names returns the names of VM kinds.
+func (kinds *Kinds) Names() []string {
+	names := make([]string, len(kinds.Kind))
+	for i, k := range kinds.Kind {
+		names[i] = k.Name
+	}
+	return names
+}
+
 // Validate validates VM kinds.
 func (kinds *Kinds) Validate(c *validation.Context) {
 	names := stringset.New(len(kinds.Kind))
