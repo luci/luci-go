@@ -1,0 +1,37 @@
+// Copyright 2018 The LUCI Authors. All rights reserved.
+// Use of this source code is governed under the Apache License, Version 2.0
+// that can be found in the LICENSE file.
+
+syntax = "proto3";
+
+package config;
+
+import "google/protobuf/empty.proto";
+import "go.chromium.org/luci/gce/api/config/v1/config.proto";
+
+// A request to create a VMs block.
+message CreateVMsRequest {
+  Block vm = 1;
+}
+
+// A request to delete a VMs block.
+message DeleteVMsRequest {
+  string prefix = 1;
+}
+
+// A request to get a VMs block.
+message GetVMsRequest {
+  string prefix = 1;
+}
+
+// A service for manipulating the VMs config.
+service Config {
+  // CreateVMs creates a new VMs block.
+  // Internal API.
+  rpc CreateVMs(CreateVMsRequest) returns (Block);
+  // DeleteVMs deletes an existing VMs block.
+  // Internal API.
+  rpc DeleteVMs(DeleteVMsRequest) returns (google.protobuf.Empty);
+  // GetVMs returns a configured VMs block.
+  rpc GetVMs(GetVMsRequest) returns (Block);
+}
