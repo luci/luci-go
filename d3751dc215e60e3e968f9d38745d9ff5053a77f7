@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "76cbbe81_3b46c2b0",
+        "filename": "cipd/client/cipd/fs/fs.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 234,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-08T01:02:07Z",
+      "side": 1,
+      "message": "nit: built",
+      "range": {
+        "startLine": 234,
+        "startChar": 46,
+        "endLine": 234,
+        "endChar": 51
+      },
+      "revId": "d3751dc215e60e3e968f9d38745d9ff5053a77f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d45a0884_4306cf11",
+        "filename": "cipd/client/cipd/fs/fs_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-08T01:02:07Z",
+      "side": 1,
+      "message": "can we also get a test for the inverse? (a directory is replaced with a file)",
+      "range": {
+        "startLine": 88,
+        "startChar": 9,
+        "endLine": 88,
+        "endChar": 56
+      },
+      "revId": "d3751dc215e60e3e968f9d38745d9ff5053a77f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
