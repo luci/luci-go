@@ -267,6 +267,9 @@ func isForbidden(err error) bool {
 }
 
 func isNotFoundError(err error) bool {
+	if err == gs.ErrObjectNotExist {
+		return true
+	}
 	// The storage library doesn't return gs.ErrObjectNotExist when Delete
 	// returns a 404. Catch that explicitly.
 	if t, ok := err.(*googleapi.Error); ok {
