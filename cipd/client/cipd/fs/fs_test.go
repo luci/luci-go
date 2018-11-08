@@ -84,6 +84,14 @@ func TestEnsureDirectory(t *testing.T) {
 		_, err = fs.EnsureDirectory(ctx, fs.join("x/../y/z"))
 		So(err, ShouldBeNil)
 	})
+
+	Convey("EnsureDirectory replaces files with directories", t, func() {
+		fs := tempFileSystem()
+		fs.write("a", "xxx")
+		_, err := fs.EnsureDirectory(ctx, fs.join("a/b/c"))
+		So(err, ShouldBeNil)
+		So(fs.isDir("a/b/c"), ShouldBeTrue)
+	})
 }
 
 func TestEnsureSymlink(t *testing.T) {
@@ -371,6 +379,14 @@ func TestReplace(t *testing.T) {
 		So(fs.Replace(ctx, fs.join("a/123"), fs.join("b/c/d")), ShouldBeNil)
 		So(fs.isMissing("a/123"), ShouldBeTrue)
 		So(fs.read("b/c/d/456"), ShouldEqual, "xxx")
+	})
+
+	Convey("Replace replaces file in dir path with a directory", t, func() {
+		fs := tempFileSystem()
+		fs.write("a/123", "xxx")
+		fs.write("f", "yyy")
+		So(fs.Replace(ctx, fs.join("f"), fs.join("a/123/456")), ShouldBeNil)
+		So(fs.read("a/123/456"), ShouldEqual, "yyy")
 	})
 }
 

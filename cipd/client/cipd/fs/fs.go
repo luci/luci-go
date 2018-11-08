@@ -70,9 +70,11 @@ type FileSystem interface {
 
 	// EnsureDirectory creates a directory at given native path.
 	//
-	// Does nothing it the path already exists. It takes an absolute path or
-	// a path relative to the current working directory and always returns
-	// absolute path.
+	// Does nothing it the path already exists and it is a directory. Replaces
+	// existing file with a directory.
+	//
+	// It takes an absolute path or a path relative to the current working
+	// directory and always returns absolute path.
 	EnsureDirectory(ctx context.Context, path string) (string, error)
 
 	// EnsureSymlink creates a symlink pointing to a target.
@@ -225,11 +227,57 @@ func (f *fsImpl) EnsureDirectory(ctx context.Context, path string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	// MkdirAll returns nil if path already exists.
-	if err = os.MkdirAll(path, 0777); err != nil {
+
+	err = os.MkdirAll(path, 0777)
+
+	// ENOTDIR/ERROR_DIRECTORY happens if 'path' or some of its parents is a not a
+	// directory. We want to delete such file so 'path' can be built up to be
+	// a directory.
+	//
+	// In this scenario IsNotExist is specifically for Windows, which for whatever
+	// reason returns it sometimes instead of ERROR_DIRECTORY.
+	//
+	// See fs_(posix|windows).go for implementation of isNotDir.
+	if os.IsNotExist(err) || isNotDir(err) {
+		cur := path
+		for {
+			fi, err := os.Lstat(cur)
+
+			// If 'cur' doesn't exist yet or some of its parent is not a directory, go
+			// up until we find this non-directory.
+			if os.IsNotExist(err) || isNotDir(err) {
+				dir := filepath.Dir(cur)
+				if dir == cur {
+					break // reached the root, MkdirAll must succeed then
+				}
+				cur = dir
+				continue
+			}
+
+			// Some fatal error in Lstat (most likely permissions)?
+			if err != nil {
+				return "", err
+			}
+
+			// Found no non-directories in 'path', MkdirAll mush succeed then.
+			if fi.IsDir() {
+				break
+			}
+
+			// Found a non-directory element! Delete it and try MkdirAll again, which
+			// should succeed now.
+			if err := f.EnsureFileGone(ctx, cur); err != nil {
+				return "", err
+			}
+			break
+		}
+		// Try again. Once.
+		err = os.MkdirAll(path, 0777)
+	}
+
+	if err != nil {
 		return "", err
 	}
-	// TODO(vadimsh): Do not fail if path already exists and is a regular file?
 	return path, nil
 }
 

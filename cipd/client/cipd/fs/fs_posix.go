@@ -18,6 +18,7 @@ package fs
 
 import (
 	"os"
+	"syscall"
 )
 
 func openFile(path string) (*os.File, error) {
@@ -26,4 +27,9 @@ func openFile(path string) (*os.File, error) {
 
 func atomicRename(source, target string) error {
 	return os.Rename(source, target)
+}
+
+func isNotDir(err error) bool {
+	pe, ok := err.(*os.PathError)
+	return ok && pe.Err == syscall.ENOTDIR
 }
