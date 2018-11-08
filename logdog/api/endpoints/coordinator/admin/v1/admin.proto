@@ -29,9 +29,27 @@ message SetConfigRequest {
   bytes storage_service_account_json = 100;
 }
 
+// ArchivistRequest
+message ArchiveRequest {
+  // Number of days ago to start looking.
+  int64 start_days_ago = 1;
+  // Number of days ago to stop looking.  0 means "until now".
+  int64 end_days_ago = 2;
+  // Number of streams to task archival before we stop.
+  int32 limit = 3;
+  // Number of archivable streams to skip before we start tasking.
+  int32 offset = 4;
+}
+
+message ArchiveResponse {
+  // Number of streams tasked.
+  int64 num_tasked = 3;
+}
+
 // Admin service is an administrative service endpoint for LogDog Coordinator.
 service Admin {
   // SetConfig loads the supplied configuration into a config.GlobalConfig
   // instance.
   rpc SetConfig(SetConfigRequest) returns (google.protobuf.Empty);
+  rpc LaunchArchiveTasks(ArchiveRequest) returns (ArchiveResponse);
 }
