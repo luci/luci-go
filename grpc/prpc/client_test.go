@@ -179,6 +179,23 @@ func TestClient(t *testing.T) {
 				So(log, shouldHaveMessagesLike, expectedCallLogEntry(client))
 			})
 
+			Convey("With outgoing metadata", func(c C) {
+				var receivedHeader http.Header
+				greeter := sayHello(c)
+				client, server := setUp(func(w http.ResponseWriter, r *http.Request) {
+					receivedHeader = r.Header
+					greeter(w, r)
+				})
+				defer server.Close()
+
+				ctx = metadata.NewOutgoingContext(ctx, metadata.Pairs("key", "value"))
+
+				err := client.Call(ctx, "prpc.Greeter", "SayHello", req, res)
+				So(err, ShouldBeNil)
+
+				So(receivedHeader.Get("key"), ShouldEqual, "value")
+			})
+
 			Convey("With a deadline <= now, does not execute.", func(c C) {
 				client, server := setUp(doPanicHandler)
 				defer server.Close()

@@ -153,7 +153,8 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		return nil, err
 	}
 
-	req := prepareRequest(c.Host, serviceName, methodName, len(in), inf, outf, options)
+	md, _ := metadata.FromOutgoingContext(ctx)
+	req := prepareRequest(c.Host, serviceName, methodName, md, len(in), inf, outf, options)
 	ctx = logging.SetFields(ctx, logging.Fields{
 		"host":    c.Host,
 		"service": serviceName,
@@ -352,7 +353,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 
 // prepareRequest creates an HTTP request for an RPC,
 // except it does not set the request body.
-func prepareRequest(host, serviceName, methodName string, contentLength int, inf, outf Format, options *Options) *http.Request {
+func prepareRequest(host, serviceName, methodName string, md metadata.MD, contentLength int, inf, outf Format, options *Options) *http.Request {
 	if host == "" {
 		panic("Host is not set")
 	}
@@ -363,7 +364,7 @@ func prepareRequest(host, serviceName, methodName string, contentLength int, inf
 			Host:   host,
 			Path:   fmt.Sprintf("/prpc/%s/%s", serviceName, methodName),
 		},
-		Header: http.Header{},
+		Header: http.Header(md.Copy()),
 	}
 	if options.Insecure {
 		req.URL.Scheme = "http"
