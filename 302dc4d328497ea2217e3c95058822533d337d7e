@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd009678_b38be69d",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-09T03:16:42Z",
+      "side": 1,
+      "message": "i don\u0027t think we ever check this: when called through proto api, this is guaranteed not nil.\nwhen your other server parts call this method directly, you can ensure it\u0027s not nil.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 73
+      },
+      "revId": "302dc4d328497ea2217e3c95058822533d337d7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
