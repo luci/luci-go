@@ -25,18 +25,13 @@ import (
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	luci "go.chromium.org/luci/common/proto"
 	annotpb "go.chromium.org/luci/common/proto/milo"
+	"go.chromium.org/luci/logdog/common/types"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAnnotations(t *testing.T) {
 	t.Parallel()
-
-	Convey("get converter", t, func() {
-		p, err := stepConverterFromURL("logdog://service.host.example.com/project_id/prefix/+/stream/name")
-		So(err, ShouldBeNil)
-		So(*p, ShouldResemble, stepConverter{"service.host.example.com", "project_id/prefix"})
-	})
 
 	Convey("convert", t, func() {
 		basePath := filepath.Join("testdata", "annotations")
@@ -69,10 +64,15 @@ func TestAnnotations(t *testing.T) {
 		}
 
 		Convey("e2e", func() {
+			streamAddr := &types.StreamAddr{
+				Host:    "logdog.example.com",
+				Project: "project",
+				Path:    "prefix/+/stream",
+			}
 			got, err := ConvertBuildSteps(
 				c,
 				ann.Substep,
-				"logdog://logdog.example.com/project/prefix/+/stream/name",
+				streamAddr,
 			)
 			So(err, ShouldBeNil)
 
