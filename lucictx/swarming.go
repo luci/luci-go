@@ -41,7 +41,11 @@ func GetSwarming(ctx context.Context) *Swarming {
 
 // SetSwarming Sets the Swarming in the LUCI_CONTEXT.
 func SetSwarming(ctx context.Context, swarm *Swarming) context.Context {
-	ctx, err := Set(ctx, "swarming", swarm)
+	var raw interface{}
+	if swarm != nil {
+		raw = swarm
+	}
+	ctx, err := Set(ctx, "swarming", raw)
 	if err != nil {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
