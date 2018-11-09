@@ -47,31 +47,18 @@ const StepSep = "|"
 //   * Step.link,
 //   * Link.isolate_object,
 //   * Link.dm_link.
-func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annURL string) ([]*buildbucketpb.Step, error) {
-	sc, err := stepConverterFromURL(annURL)
-	if err != nil {
-		return nil, err
+func ConvertBuildSteps(c context.Context, annSteps []*annotpb.Step_Substep, annAddr *types.StreamAddr) ([]*buildbucketpb.Step, error) {
+	prefix, _ := annAddr.Path.Split()
+	sc := &stepConverter{
+		defaultLogdogHost:   annAddr.Host,
+		defaultLogdogPrefix: fmt.Sprintf("%s/%s", annAddr.Project, prefix),
 	}
 
 	var bbSteps []*buildbucketpb.Step
-	if _, err = sc.convertSubsteps(c, &bbSteps, annSteps, ""); err != nil {
+	if _, err := sc.convertSubsteps(c, &bbSteps, annSteps, ""); err != nil {
 		return nil, err
 	}
 	return bbSteps, nil
-}
-
-// stepConverterFromURL returns stepConverter given an annotation URL.
-func stepConverterFromURL(annURL string) (*stepConverter, error) {
-	addr, err := types.ParseURL(annURL)
-	if err != nil {
-		return nil, errors.Annotate(err, "could not parse LogDog stream from annotation URL").Err()
-	}
-
-	prefix, _ := addr.Path.Split()
-	return &stepConverter{
-		defaultLogdogHost:   addr.Host,
-		defaultLogdogPrefix: fmt.Sprintf("%s/%s", addr.Project, prefix),
-	}, nil
 }
 
 type stepConverter struct {
