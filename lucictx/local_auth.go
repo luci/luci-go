@@ -63,7 +63,11 @@ func GetLocalAuth(ctx context.Context) *LocalAuth {
 
 // SetLocalAuth sets the LocalAuth in the LUCI_CONTEXT.
 func SetLocalAuth(ctx context.Context, la *LocalAuth) context.Context {
-	ctx, err := Set(ctx, "local_auth", la)
+	var raw interface{}
+	if la != nil {
+		raw = la
+	}
+	ctx, err := Set(ctx, "local_auth", raw)
 	if err != nil {
 		panic(fmt.Errorf("impossible: %s", err))
 	}
