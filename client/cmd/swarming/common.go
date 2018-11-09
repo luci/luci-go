@@ -61,6 +61,8 @@ type swarmingService interface {
 type swarmingServiceImpl struct {
 	*http.Client
 	*swarming.Service
+
+	worker int
 }
 
 func (s *swarmingServiceImpl) NewTask(c context.Context, req *swarming.SwarmingRpcsNewTaskRequest) (res *swarming.SwarmingRpcsTaskRequestMetadata, err error) {
@@ -94,7 +96,7 @@ func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDi
 		return nil, err
 	}
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
-	dl := downloader.New(c, isolatedClient, 8)
+	dl := downloader.New(c, isolatedClient, s.worker)
 	common.CancelOnCtrlC(dl)
 	return dl.FetchIsolated(isolated.HexDigest(ref.Isolated), dir)
 }
@@ -145,6 +147,7 @@ type commonFlags struct {
 	serverURL    string
 
 	parsedAuthOpts auth.Options
+	worker         int
 }
 
 // Init initializes common flags.
@@ -152,6 +155,7 @@ func (c *commonFlags) Init(authOpts auth.Options) {
 	c.defaultFlags.Init(&c.Flags)
 	c.authFlags.Register(&c.Flags, authOpts)
 	c.Flags.StringVar(&c.serverURL, "server", os.Getenv("SWARMING_SERVER"), "Server URL; required. Set $SWARMING_SERVER to set a default.")
+	c.Flags.IntVar(&c.worker, "worker", 8, "Number of workers used to download isolated files.")
 }
 
 // Parse parses the common flags.
@@ -188,7 +192,7 @@ func (c *commonFlags) createSwarmingClient() (swarmingService, error) {
 		return nil, err
 	}
 	s.BasePath = c.serverURL + swarmingAPISuffix
-	return &swarmingServiceImpl{client, s}, nil
+	return &swarmingServiceImpl{client, s, c.worker}, nil
 }
 
 func tagTransientGoogleAPIError(err error) error {
