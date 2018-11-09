@@ -53,6 +53,9 @@ type Stream interface {
 	Close()
 }
 
+// StreamChunkCallback is a callback to invoke on a complete LogEntry. See streamConfig.callback.
+type StreamChunkCallback func(*logpb.LogEntry)
+
 // streamConfig is the set of static configuration parameters for the stream.
 type streamConfig struct {
 	// name is the name of this stream.
@@ -78,6 +81,14 @@ type streamConfig struct {
 	//
 	// The stream's append lock will be held when this method is called.
 	onAppend func(bool)
+
+	// callback is called synchronously when a complete LogEntry enters the stream.
+	// Any error handling is the responsibility of the caller/StreamChunkCallback implementation.
+	// Expects:
+	// - LogEntry to be read-only, so the callback and others must take care not to
+	//   modify the LogEntry and should be able to assume that keeping the reference remains safe;
+	// - callback to return quickly as it will block the stream until it completes.
+	callback StreamChunkCallback
 }
 
 // streamImpl is a Stream implementation that is bound to a Bundler.

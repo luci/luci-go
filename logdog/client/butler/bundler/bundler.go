@@ -54,6 +54,12 @@ type Config struct {
 	// bundled data. Other factors can cause the bundle to be sent before this,
 	// but it is an upper bound.
 	MaxBufferDelay time.Duration
+
+	// StreamRegistrationCallback is called on new streams and returns the
+	// callback to attach to the stream or nil if no callback is desired.
+	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
+	// should treat it as read-only .
+	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) StreamChunkCallback
 }
 
 type bundlerStream interface {
@@ -128,6 +134,10 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 				b.signalStreamUpdate()
 			}
 		},
+	}
+	// TODO(jchinlee): wrap the callback returned here so that it's called only on full LogEntries.
+	if b.c.StreamRegistrationCallback != nil {
+		c.callback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
 	}
 
 	err := error(nil)
