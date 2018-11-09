@@ -22,6 +22,30 @@
       "revId": "302dc4d328497ea2217e3c95058822533d337d7e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "db5d328b_dfe03d1b",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-09T22:23:25Z",
+      "side": 1,
+      "message": "It\u0027s mostly for completeness at the function level, since technically nil is a valid input to the function. I agree config import and prpc code paths will ensure it isn\u0027t nil.",
+      "parentUuid": "cd009678_b38be69d",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 45,
+        "endChar": 73
+      },
+      "revId": "302dc4d328497ea2217e3c95058822533d337d7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
