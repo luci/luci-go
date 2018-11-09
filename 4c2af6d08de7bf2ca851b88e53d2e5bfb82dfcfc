@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9d86c6c4_04487f30",
+        "filename": "logdog/client/butler/bundler/bundler.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-09T23:21:49Z",
+      "side": 1,
+      "message": "nit: format help comments to 80 col",
+      "range": {
+        "startLine": 62,
+        "startChar": 1,
+        "endLine": 62,
+        "endChar": 27
+      },
+      "revId": "4c2af6d08de7bf2ca851b88e53d2e5bfb82dfcfc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
