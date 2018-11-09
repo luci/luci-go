@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/proto/google"
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
+	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -99,6 +100,12 @@ type Config struct {
 	// IOKeepAliveWriter is an io.Writer to send keep-alive updates through. This
 	// must be set for I/O keep-alive to be active.
 	IOKeepAliveWriter io.Writer
+
+	// StreamRegistrationCallback is called on new streams and returns the
+	// callback to attach to the stream or nil if no callback is desired.
+	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
+	// should treat it as read-only.
+	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
 }
 
 // Validate validates that the configuration is sufficient to instantiate a
@@ -184,11 +191,12 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 
 	bc := bundler.Config{
-		Clock:            clock.Get(ctx),
-		Project:          config.Project,
-		Prefix:           config.Prefix,
-		MaxBufferedBytes: streamBufferSize,
-		MaxBundleSize:    config.Output.MaxSize(),
+		Clock:                      clock.Get(ctx),
+		Project:                    config.Project,
+		Prefix:                     config.Prefix,
+		MaxBufferedBytes:           streamBufferSize,
+		MaxBundleSize:              config.Output.MaxSize(),
+		StreamRegistrationCallback: config.StreamRegistrationCallback,
 	}
 	if config.BufferLogs {
 		bc.MaxBufferDelay = config.MaxBufferAge
