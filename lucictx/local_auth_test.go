@@ -70,5 +70,21 @@ func TestLocalAuth(t *testing.T) {
 			So(ctx, ShouldBeNil)
 			So(err, ShouldEqual, ErrNoLocalAuthAccount)
 		})
+
+		Convey("Clearing local auth", func() {
+			c := SetLocalAuth(c, &LocalAuth{
+				DefaultAccountID: "one",
+				Accounts: []LocalAuthAccount{
+					{ID: "some"},
+				},
+			})
+			c = SetLocalAuth(c, nil)
+
+			So(GetLocalAuth(c), ShouldBeNil)
+
+			ctx, err := SwitchLocalAccount(c, "some")
+			So(ctx, ShouldBeNil)
+			So(err, ShouldEqual, ErrNoLocalAuthAccount)
+		})
 	})
 }
