@@ -133,6 +133,13 @@ type Options struct {
 
 	// CloseSteps specified whether outstanding open steps must be closed.
 	CloseSteps bool
+
+	// AnnotationUpdated is synchronously called when the annotation message
+	// changes.
+	// miloStepBinary is binary-serialized milo.Step.
+	// miloStepBinary must not be mutated.
+	// The call blocks writing datagrams to the output stream.
+	AnnotationUpdated func(miloStepBinary []byte)
 }
 
 // Processor consumes data from a list of Stream entries and interacts with the
@@ -517,6 +524,9 @@ func (p *Processor) runAnnotationMeter(s streamclient.Stream, interval time.Dura
 
 		if err := s.WriteDatagram(latest); err != nil {
 			log.WithError(err).Errorf(p.ctx, "Failed to write annotation.")
+		}
+		if p.o.AnnotationUpdated != nil {
+			p.o.AnnotationUpdated(latest)
 		}
 		latest = nil
 	}
