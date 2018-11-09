@@ -25,23 +25,6 @@ type DecoratedConfig struct {
 	Postlude func(c context.Context, methodName string, rsp proto.Message, err error) error
 }
 
-func (s *DecoratedConfig) CreateVMs(c context.Context, req *CreateVMsRequest) (rsp *Block, err error) {
-	if s.Prelude != nil {
-		var newCtx context.Context
-		newCtx, err = s.Prelude(c, "CreateVMs", req)
-		if err == nil {
-			c = newCtx
-		}
-	}
-	if err == nil {
-		rsp, err = s.Service.CreateVMs(c, req)
-	}
-	if s.Postlude != nil {
-		err = s.Postlude(c, "CreateVMs", rsp, err)
-	}
-	return
-}
-
 func (s *DecoratedConfig) DeleteVMs(c context.Context, req *DeleteVMsRequest) (rsp *empty.Empty, err error) {
 	if s.Prelude != nil {
 		var newCtx context.Context
@@ -55,6 +38,23 @@ func (s *DecoratedConfig) DeleteVMs(c context.Context, req *DeleteVMsRequest) (r
 	}
 	if s.Postlude != nil {
 		err = s.Postlude(c, "DeleteVMs", rsp, err)
+	}
+	return
+}
+
+func (s *DecoratedConfig) EnsureVMs(c context.Context, req *EnsureVMsRequest) (rsp *Block, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "EnsureVMs", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.EnsureVMs(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "EnsureVMs", rsp, err)
 	}
 	return
 }

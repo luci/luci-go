@@ -23,30 +23,75 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"go.chromium.org/gae/service/datastore"
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/grpc/grpcutil"
 	"go.chromium.org/luci/server/auth"
 
 	"go.chromium.org/luci/gce/api/config/v1"
+	"go.chromium.org/luci/gce/appengine/model"
 )
 
 // Config implements config.ConfigServer.
 type Config struct {
 }
 
-// CreateVMs handles a request to create a VMs block.
-func (*Config) CreateVMs(c context.Context, req *config.CreateVMsRequest) (*config.Block, error) {
-	return &config.Block{}, nil
+// DeleteVMs handles a request to delete a VMs block.
+// For app-internal use only.
+func (*Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empty.Empty, error) {
+	switch {
+	case req == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "request is required")
+	case req.Id == "":
+		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
+	}
+	if err := datastore.Delete(c, &model.VMs{ID: req.Id}); err != nil {
+		return nil, errors.Annotate(err, "failed to delete VMs block").Err()
+	}
+	return &empty.Empty{}, nil
 }
 
-// DeleteVMs handles a request to delete a VMs block.
-func (*Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
+// EnsureVMs handles a request to create or update a VMs block.
+// For app-internal use only.
+func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*config.Block, error) {
+	switch {
+	case req == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "request is required")
+	case req.Id == "":
+		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
+	case req.Vms == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "VMs block is required")
+	}
+	vms := &model.VMs{
+		ID:     req.Id,
+		Config: *req.Vms,
+	}
+	if err := datastore.Put(c, vms); err != nil {
+		return nil, errors.Annotate(err, "failed to store VMs block").Err()
+	}
+	return &vms.Config, nil
 }
 
 // GetVMs handles a request to get a VMs block.
 func (*Config) GetVMs(c context.Context, req *config.GetVMsRequest) (*config.Block, error) {
-	return &config.Block{}, nil
+	switch {
+	case req == nil:
+		return nil, status.Errorf(codes.InvalidArgument, "request is required")
+	case req.Id == "":
+		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
+	}
+	vms := &model.VMs{
+		ID: req.Id,
+	}
+	switch err := datastore.Get(c, vms); err {
+	case nil:
+		return &vms.Config, nil
+	case datastore.ErrNoSuchEntity:
+		return nil, status.Errorf(codes.NotFound, "no VMs block found with ID %q", req.Id)
+	default:
+		return nil, errors.Annotate(err, "failed to fetch VMs block").Err()
+	}
 }
 
 // authPrelude ensures the user is authorized to use the config API.
