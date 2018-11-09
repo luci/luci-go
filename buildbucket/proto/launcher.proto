@@ -23,5 +23,5 @@ option go_package = "go.chromium.org/luci/buildbucket/proto;buildbucketpb";
 // A collection of build-related secrets we might pass from Buildbucket to Kitchen.
 message BuildSecrets {
   // Token to identify RPCs associated with the same build.
-  bytes build_token = 1;
+  string build_token = 1;
 }
