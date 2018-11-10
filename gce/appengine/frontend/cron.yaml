@@ -1,0 +1,3 @@
+cron:
+- url: /internal/cron/process-config
+  schedule: every 1 minutes
