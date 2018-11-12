@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0124f3ff_79a6aa79",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-12T06:04:56Z",
+      "side": 1,
+      "message": "why not inline to line 61?",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 24
+      },
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eba24ada_7049b5c8",
+        "filename": "gce/appengine/backend/cron_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-12T06:04:56Z",
+      "side": 1,
+      "message": "overlaps with testing.T. maybe \u0027tqt\u0027?",
+      "range": {
+        "startLine": 39,
+        "startChar": 2,
+        "endLine": 39,
+        "endChar": 3
+      },
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bc8a9dcb_ab06f888",
+        "filename": "gce/appengine/backend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-12T06:04:56Z",
+      "side": 1,
+      "message": "missing package doc.\n\nalso, given main.go name, I\u0027d have expected to actually have a service entry point (see also comment for frontend\u0027s main.go)",
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527b1096_5736c11a",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-12T06:04:56Z",
+      "side": 1,
+      "message": "it\u0027s weird to have this in frontend. IIUC, your goal is to have just one GAE service (old \u0027module\u0027), right? If so, than maybe move this main.go into some other package, maybe \u0027default\u0027 (implying \u0027default\u0027 GAE service)",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
