@@ -27,6 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/yosssi/gohtml"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/clock/testclock"
@@ -127,6 +129,7 @@ func TestPages(t *testing.T) {
 						tmplName := "pages/" + p.TemplateName
 						buf, err := templates.Render(c, tmplName, args)
 						So(err, ShouldBeNil)
+						buf = gohtml.FormatBytes(buf)
 						fname := fmt.Sprintf(
 							"%s-%s.html", p.DisplayName, b.Description)
 						if *generate {
