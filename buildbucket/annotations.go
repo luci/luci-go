@@ -183,6 +183,9 @@ func (p *stepConverter) convertStatus(ann *annotpb.Step, bbSubsteps []*buildbuck
 	var bbStatus buildbucketpb.Status
 	switch ann.Status {
 	case annotpb.Status_RUNNING:
+		if ann.Started == nil {
+			return buildbucketpb.Status_SCHEDULED
+		}
 		return buildbucketpb.Status_STARTED
 
 	case annotpb.Status_SUCCESS:

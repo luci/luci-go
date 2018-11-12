@@ -1,6 +1,6 @@
 steps: <
   name: "running step"
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
@@ -38,13 +38,13 @@ END
 steps: <
   name: "text with one line"
   summary_markdown: "a"
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
   name: "text with two lines"
   summary_markdown: "a b"
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
@@ -59,7 +59,7 @@ steps: <
     view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Fstderr"
     url: "logdog://logdog.example.com/project/prefix/+/steps/setup_build/0/stderr"
   >
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
@@ -69,7 +69,7 @@ steps: <
     view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fsetup_build%2F0%2Flogs%2Frun_recipe%2F0"
     url: "logdog://logdog.example.com/project/prefix/+/steps/setup_build/0/logs/run_recipe/0"
   >
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
@@ -78,7 +78,7 @@ steps: <
 * [1](https://example.com/1)
 * [2](https://example.com/2)
 END
-  status: STARTED
+  status: SCHEDULED
 >
 
 steps: <
