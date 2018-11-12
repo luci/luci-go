@@ -15,6 +15,7 @@
 package frontend
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -26,6 +27,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/yosssi/gohtml"
+	"golang.org/x/net/html"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/luci/auth/identity"
@@ -87,6 +91,21 @@ func load(name string) ([]byte, error) {
 	return ioutil.ReadFile(filename)
 }
 
+// formatHTML automatically formats HTML.  Returns an error if the HTML is invalid.
+func formatHTML(buf []byte) ([]byte, error) {
+	var result []byte
+	w := bytes.NewBuffer(result)
+	doc, err := html.Parse(bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+	err = html.Render(w, doc)
+	if err != nil {
+		return nil, err
+	}
+	return gohtml.FormatBytes(w.Bytes()), nil
+}
+
 // mustWrite Writes a buffer into an expectation file.  Should always work or
 // panic.  This is fine because this only runs when -generate is passed in,
 // not during tests.
@@ -126,6 +145,8 @@ func TestPages(t *testing.T) {
 						// This is not a path, but a file key, should always be "/".
 						tmplName := "pages/" + p.TemplateName
 						buf, err := templates.Render(c, tmplName, args)
+						So(err, ShouldBeNil)
+						buf, err = formatHTML(buf)
 						So(err, ShouldBeNil)
 						fname := fmt.Sprintf(
 							"%s-%s.html", p.DisplayName, b.Description)

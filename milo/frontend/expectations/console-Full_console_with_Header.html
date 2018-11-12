@@ -1,419 +1,460 @@
-
 <!DOCTYPE html>
-
 <html lang="en">
-<meta charset="utf-8">
-<meta name="google" value="notranslate">
-<title>Test Console</title>
-<link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
-<link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
-<link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
-<script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
-<script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
-<script src="/static/common/js/time.js"></script>
-<script src="/static/common/third_party/js/jquery.min.js"></script>
-<script src="/static/common/third_party/js/jquery-ui.min.js"></script>
-
-  
-    <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/milo-32.png">
-  
-
-  
-  <link rel="stylesheet" href="/static/common/css/console.css" type="text/css">
-  <script src="/static/common/third_party/js/js.cookie.js"></script>
-
-
-<body class="interface">
-  <header>
-    <div>
-      <a href="/" aria-label="Home page">Home</a> |
-      <a href="/search" aria-label="Search page">Search</a>
-    </div>
-    <div>
-      
-        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">Login</a>
-      
-    </div>
-  </header>
-  <hr>
-  
-
-
-
-<div class="console-title">
-
-
-  <h1>Test</h1>
-</div>
-
-
-
-
-
-
-
-
-
-<div class="console-header">
-  <div class="console-header-column">
-
-    
-    
-    <div class="console-header-group">
-      <div class="console-header-group-title">Oncalls</div>
-      <div class="console-header-groups">
-      
-        <div class="console-header-oncalls-group">
-          <div class="console-header-group-name">
-            Sheriff
-          </div>
-          <div class="console-header-group-content">
-            
-            
-              
-                <span>test<span style="display:none">ohnoyoudont</span>@example.com,</span>
-              
-                <span>watcher<span style="display:none">ohnoyoudont</span>@example.com</span>
-              
-            
-          </div>
-        </div>
-      
-      </div>
-    </div>
-    
-
-    
-    <div class="console-header-group">
-      <div class="console-header-group-title">Links</div>
-      <div class="console-header-groups">
-      
-        <div class="console-header-links-group">
-          <div class="console-header-group-name">Some group</div>
-          <div class="console-header-group-content">
-          
-            <span><a href="something">LiNk</a></span>
-          
-            <span><a href="something2">LiNk2</a></span>
-          
-          </div>
-        </div>
-      
-      </div>
-    </div>
-  </div>
-
-
-  <div class="console-header-column">
-  
-
-    
-    
-    
-    <div class="console-header-group">
-      <div class="console-header-group-title">
-        <a href="something2">bah</a>
-      </div>
-    
-      <div class="console-header-groups">
-      
-        
-        <div class="console-builder-summary-flex">
-          <div class="console-header-name">
-            <a href="something2">hurrah</a>
-          </div>
-          <div class="console-builder-summary-flex">
-        
-
-            
-
-            
-              <a class="console-builder-status"
-                 href="#invalid-build-id"
-                 title=""
-                 aria-label="builder  on console hurrah has last status Success">
-                <div class="console-header-builder status-Success"></div>
-              </a>
-            
-              <a class="console-builder-status"
-                 href="#invalid-build-id"
-                 title=""
-                 aria-label="builder  on console hurrah has last status Success">
-                <div class="console-header-builder status-Success"></div>
-              </a>
-            
-              <a class="console-builder-status"
-                 href="#invalid-build-id"
-                 title=""
-                 aria-label="builder  on console hurrah has last status Failure">
-                <div class="console-header-builder status-Failure"></div>
-              </a>
-            
-          </div>
-        </div>
-      
-      </div>
-    
-    
-    </div>
-    
-
-  
-
-    
-    
-    
-      <div class="console-header-groups">
-      
-        
-        <div class="console-builder-summary-flex">
-          <div class="console-header-name">
-            <a href="something2">hurrah</a>
-          </div>
-          <div class="console-builder-summary-flex">
-        
-
-            
-
-            
-              <a class="console-builder-status"
-                 href="#invalid-build-id"
-                 title=""
-                 aria-label="builder  on console hurrah has last status Success">
-                <div class="console-header-builder status-Success"></div>
-              </a>
-            
-          </div>
-        </div>
-      
-      </div>
-    
-    
-
-  
-  </div>
-
-</div>
-
-
-
-
-<div id="legend">
-  <table>
-    <tr>
-      <td>Legend:&nbsp;&nbsp;</td>
-      <td class="status-Success" title="All tests passed">Passed</td>
-      <td class="status-Failure" title="There is a new failure. Take a look!">Failed</td>
-      <td class="status-Warning" title="It was failing before, and is still failing. Make sure you did not introduce new regressions">Failed&nbsp;Again</td>
-      <td class="status-Running" title="The tests are still running">Running</td>
-      <td class="status-Exception" title="Something went wrong with the test, there is no result">Exception</td>
-    </tr>
-  </table>
-</div>
-<div class="clear"></div>
-
-
-<div id="console" class="console-row collapsed">
-  
-  <div class="console-column console-commits-column">
-    <div class="console-controls">
-      
-(Show:
-<a href="?limit=">default</a>
-<a href="?limit=25">25</a>
-<a href="?limit=50">50</a>
-<a href="?limit=100">100</a>
-<a href="?limit=200">200</a>
-)
-[
-  <a href="#" class="control-expand">expand</a>
-  <a href="#" class="control-collapse" style="display: none;">collapse</a>
-]
-
-    </div>
-    <div class="console-row">
-      <div class="console-commit-column">
-      
-        <div class="console-commit-item">
-          <div class="console-commit-summary">
-            <div class="console-commit-revision">
-              <a href="blah%20blah%20blah" aria-label="revision 12031802">
-                <span class="local-time tooltip-only" data-timestamp="-6418357446871">12031802</span>
-              </a>
-            </div>
-            <div class="console-commit-author">
-              <span title="Me too." aria-label="commit by x@example.com">
-                x@example.com
-              </span>
-            </div>
-          </div>
-          <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                
-                  Me too.<br>
-                
-              </p>
-            </div>
-          </div>
-        </div>
-      
-        <div class="console-commit-item">
-          <div class="console-commit-summary">
-            <div class="console-commit-revision">
-              <a href="blah%20blah%20blah%201" aria-label="revision 12093182">
-                <span class="local-time tooltip-only" data-timestamp="-6418357447871">12093182</span>
-              </a>
-            </div>
-            <div class="console-commit-author">
-              <span title="I did something." aria-label="commit by y@example.com">
-                y@example.com
-              </span>
-            </div>
-          </div>
-          <div class="console-commit-description">
-            <div class="console-commit-description-overlay">
-              <p>
-                
-                  I did something.<br>
-                
-              </p>
-            </div>
-          </div>
-        </div>
-      
-      </div>
-    </div>
-  </div>
-
-  
-  <div class="console-column" style="flex: 1"><div class="console-top-item">cat1</div>
-						<div class="console-top-row"><div class="console-column" style="flex: 1"><div class="console-top-item">cat2</div>
-						<div class="console-top-row"><div class="console-builder-column"><div><span class="console-InfraFailure"><a class="console-builder-item" href="/p/project-foo/builders/luci.project-foo.try/builder-bar" title="builder-bar">tst</a></span></div><div class="console-build-column"><div class="console-cell-container"><a class="console-cell-top status-Success" href="#invalid-build-id" title="builder-bar"></a><div class="console-cell-spacer"></div></div><div class="console-cell-container"><a class="console-cell-middle status-Success" href="#invalid-build-id" title="builder-bar"></a><div class="console-cell-spacer"></div></div></div></div></div></div></div></div>
-</div>
-
-<div class="epiloge" style="margin-top: 1em">
-  
-(Show:
-<a href="?limit=">default</a>
-<a href="?limit=25">25</a>
-<a href="?limit=50">50</a>
-<a href="?limit=100">100</a>
-<a href="?limit=200">200</a>
-)
-[
-  <a href="#" class="control-expand">expand</a>
-  <a href="#" class="control-collapse" style="display: none;">collapse</a>
-]
-
-</div>
-<script>
-$(function () {
-  'use strict';
-  $(".control-expand").click(function(e) {
-    e.preventDefault();
-    $("#console").removeClass("collapsed");
-    let width = 0;
-    $("#console > div").each(function() {
-      width += $(this).width();
-    });
-    const sizes = [];
-    $(".console-commit-description").each(function() {
-      sizes.push($(this).height());
-    });
-    $(".console-build-column").each(function() {
-      const containers = $(this).find(".console-cell-spacer");
-      for (const i in sizes) {
-        $(containers[i]).height(sizes[i]);
-      }
-    });
-    $(".console-commit-description-overlay").width(width);
-    $(".control-collapse").show();
-    $(".control-expand").hide();
-    Cookies.set('expand', 1);
-  });
-  $(".control-collapse").click(function(e) {
-    e.preventDefault();
-    $("#console").addClass("collapsed");
-    $(".control-expand").show();
-    $(".control-collapse").hide();
-    Cookies.remove('expand');
-  });
-  if (Cookies.get('expand')) {
-    $(".control-expand").first().click();
-  }
-});
-</script>
-
-
-  <footer>
-    <hr>
-      <div><img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"></div>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="google" value="notranslate"/>
+    <title>
+      Test Console
+    </title>
+    <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css"/>
+    <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI"/>
+    <script src="/static/common/third_party/js/moment-with-locales.min.js">
+    </script>
+    <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js">
+    </script>
+    <script src="/static/common/js/time.js">
+    </script>
+    <script src="/static/common/third_party/js/jquery.min.js">
+    </script>
+    <script src="/static/common/third_party/js/jquery-ui.min.js">
+    </script>
+    <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/milo-32.png"/>
+    <link rel="stylesheet" href="/static/common/css/console.css" type="text/css"/>
+    <script src="/static/common/third_party/js/js.cookie.js">
+    </script>
+  </head>
+  <body class="interface">
+    <header>
       <div>
-        <a href="https://chromium.googlesource.com/infra/luci">LUCI</a><br>
-        built: <b><span class="local-time " data-timestamp="-6792498672871">Saturday, 03-Feb-01 04:05:06 UTC</span></b><br>
-        version: <b>testVersionID</b><br>
+        <a href="/" aria-label="Home page">
+          Home
+        </a>
+         |
+              
+        <a href="/search" aria-label="Search page">
+          Search
+        </a>
       </div>
-  </footer>
-</body>
-<script>
-$(function () {
-  'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
-  $(document).tooltip({
-    show: false,
-    hide: false
-  });
-});
-</script>
-<script>
-  (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
-    (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
-    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
-
-  crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3EMilo');
-
-(function(window) {
-  let lastWindowScrollTop = window.scrollY;
-
-  function debounce(f, wait) {
-    let timeout;
-    return function(...args) {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      timeout = setTimeout(() => {
-        f(...args);
-        timeout = null;
-      }, wait);
-    };
-  }
-
-  window.addEventListener('scroll', debounce(function(evt) {
-    const delta = window.scrollY - lastWindowScrollTop;
-    lastWindowScrollTop = window.scrollY;
-    const absDelta = Math.abs(delta);
-    const category = window.location.pathname.split('/').slice(0, 2).join('/');
-    ga('send', 'event', category, 'scroll-abs', '', absDelta);
-    if (delta > 0) {
-      ga('send', 'event', category, 'scroll-down', '', absDelta);
-    } else {
-      ga('send', 'event', category, 'scroll-up', '', absDelta);
-    }
-  }, 250));
-})(window);
-</script>
-
-<script>
-	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-	ga('create', 'UA-12345-01', 'auto');
-	ga('send', 'pageview');
-</script>
-
+      <div>
+        <a href="http://fake.example.com/login?dest=%2Ffoobar" alt="Login">
+          Login
+        </a>
+      </div>
+    </header>
+    <hr/>
+    <div class="console-title">
+      <h1>
+        Test
+      </h1>
+    </div>
+    <div class="console-header">
+      <div class="console-header-column">
+        <div class="console-header-group">
+          <div class="console-header-group-title">
+            Oncalls
+          </div>
+          <div class="console-header-groups">
+            <div class="console-header-oncalls-group">
+              <div class="console-header-group-name">
+                            Sheriff
+                          
+              </div>
+              <div class="console-header-group-content">
+                <span>
+                  test
+                  <span style="display:none">
+                    ohnoyoudont
+                  </span>
+                  @example.com,
+                </span>
+                <span>
+                  watcher
+                  <span style="display:none">
+                    ohnoyoudont
+                  </span>
+                  @example.com
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="console-header-group">
+          <div class="console-header-group-title">
+            Links
+          </div>
+          <div class="console-header-groups">
+            <div class="console-header-links-group">
+              <div class="console-header-group-name">
+                Some group
+              </div>
+              <div class="console-header-group-content">
+                <span>
+                  <a href="something">
+                    LiNk
+                  </a>
+                </span>
+                <span>
+                  <a href="something2">
+                    LiNk2
+                  </a>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="console-header-column">
+        <div class="console-header-group">
+          <div class="console-header-group-title">
+            <a href="something2">
+              bah
+            </a>
+          </div>
+          <div class="console-header-groups">
+            <div class="console-builder-summary-flex">
+              <div class="console-header-name">
+                <a href="something2">
+                  hurrah
+                </a>
+              </div>
+              <div class="console-builder-summary-flex">
+                <a class="console-builder-status" href="#invalid-build-id" title="" aria-label="builder  on console hurrah has last status Success">
+                  <div class="console-header-builder status-Success">
+                  </div>
+                </a>
+                <a class="console-builder-status" href="#invalid-build-id" title="" aria-label="builder  on console hurrah has last status Success">
+                  <div class="console-header-builder status-Success">
+                  </div>
+                </a>
+                <a class="console-builder-status" href="#invalid-build-id" title="" aria-label="builder  on console hurrah has last status Failure">
+                  <div class="console-header-builder status-Failure">
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="console-header-groups">
+          <div class="console-builder-summary-flex">
+            <div class="console-header-name">
+              <a href="something2">
+                hurrah
+              </a>
+            </div>
+            <div class="console-builder-summary-flex">
+              <a class="console-builder-status" href="#invalid-build-id" title="" aria-label="builder  on console hurrah has last status Success">
+                <div class="console-header-builder status-Success">
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="legend">
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              Legend:  
+            </td>
+            <td class="status-Success" title="All tests passed">
+              Passed
+            </td>
+            <td class="status-Failure" title="There is a new failure. Take a look!">
+              Failed
+            </td>
+            <td class="status-Warning" title="It was failing before, and is still failing. Make sure you did not introduce new regressions">
+              Failed Again
+            </td>
+            <td class="status-Running" title="The tests are still running">
+              Running
+            </td>
+            <td class="status-Exception" title="Something went wrong with the test, there is no result">
+              Exception
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="clear">
+    </div>
+    <div id="console" class="console-row collapsed">
+      <div class="console-column console-commits-column">
+        <div class="console-controls">
+                
+          (Show:
+          <a href="?limit=">
+            default
+          </a>
+          <a href="?limit=25">
+            25
+          </a>
+          <a href="?limit=50">
+            50
+          </a>
+          <a href="?limit=100">
+            100
+          </a>
+          <a href="?limit=200">
+            200
+          </a>
+          )
+          [
+            
+          <a href="#" class="control-expand">
+            expand
+          </a>
+          <a href="#" class="control-collapse" style="display: none;">
+            collapse
+          </a>
+          ]
+          
+              
+        </div>
+        <div class="console-row">
+          <div class="console-commit-column">
+            <div class="console-commit-item">
+              <div class="console-commit-summary">
+                <div class="console-commit-revision">
+                  <a href="blah%20blah%20blah" aria-label="revision 12031802">
+                    <span class="local-time tooltip-only" data-timestamp="-6418357446871">
+                      12031802
+                    </span>
+                  </a>
+                </div>
+                <div class="console-commit-author">
+                  <span title="Me too." aria-label="commit by x@example.com">
+                                    x@example.com
+                                  
+                  </span>
+                </div>
+              </div>
+              <div class="console-commit-description">
+                <div class="console-commit-description-overlay">
+                  <p>
+                                    
+                                      Me too.
+                    <br/>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="console-commit-item">
+              <div class="console-commit-summary">
+                <div class="console-commit-revision">
+                  <a href="blah%20blah%20blah%201" aria-label="revision 12093182">
+                    <span class="local-time tooltip-only" data-timestamp="-6418357447871">
+                      12093182
+                    </span>
+                  </a>
+                </div>
+                <div class="console-commit-author">
+                  <span title="I did something." aria-label="commit by y@example.com">
+                                    y@example.com
+                                  
+                  </span>
+                </div>
+              </div>
+              <div class="console-commit-description">
+                <div class="console-commit-description-overlay">
+                  <p>
+                                    
+                                      I did something.
+                    <br/>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="console-column" style="flex: 1">
+        <div class="console-top-item">
+          cat1
+        </div>
+        <div class="console-top-row">
+          <div class="console-column" style="flex: 1">
+            <div class="console-top-item">
+              cat2
+            </div>
+            <div class="console-top-row">
+              <div class="console-builder-column">
+                <div>
+                  <span class="console-InfraFailure">
+                    <a class="console-builder-item" href="/p/project-foo/builders/luci.project-foo.try/builder-bar" title="builder-bar">
+                      tst
+                    </a>
+                  </span>
+                </div>
+                <div class="console-build-column">
+                  <div class="console-cell-container">
+                    <a class="console-cell-top status-Success" href="#invalid-build-id" title="builder-bar">
+                    </a>
+                    <div class="console-cell-spacer">
+                    </div>
+                  </div>
+                  <div class="console-cell-container">
+                    <a class="console-cell-middle status-Success" href="#invalid-build-id" title="builder-bar">
+                    </a>
+                    <div class="console-cell-spacer">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="epiloge" style="margin-top: 1em">
+        
+      (Show:
+      <a href="?limit=">
+        default
+      </a>
+      <a href="?limit=25">
+        25
+      </a>
+      <a href="?limit=50">
+        50
+      </a>
+      <a href="?limit=100">
+        100
+      </a>
+      <a href="?limit=200">
+        200
+      </a>
+      )
+      [
+        
+      <a href="#" class="control-expand">
+        expand
+      </a>
+      <a href="#" class="control-collapse" style="display: none;">
+        collapse
+      </a>
+      ]
+    </div>
+    <script>
+      $(function () {
+        'use strict';
+        $(".control-expand").click(function(e) {
+          e.preventDefault();
+          $("#console").removeClass("collapsed");
+          let width = 0;
+          $("#console > div").each(function() {
+            width += $(this).width();
+          });
+          const sizes = [];
+          $(".console-commit-description").each(function() {
+            sizes.push($(this).height());
+          });
+          $(".console-build-column").each(function() {
+            const containers = $(this).find(".console-cell-spacer");
+            for (const i in sizes) {
+              $(containers[i]).height(sizes[i]);
+            }
+          });
+          $(".console-commit-description-overlay").width(width);
+          $(".control-collapse").show();
+          $(".control-expand").hide();
+          Cookies.set('expand', 1);
+        });
+        $(".control-collapse").click(function(e) {
+          e.preventDefault();
+          $("#console").addClass("collapsed");
+          $(".control-expand").show();
+          $(".control-collapse").hide();
+          Cookies.remove('expand');
+        });
+        if (Cookies.get('expand')) {
+          $(".control-expand").first().click();
+        }
+      });
+    </script>
+    <footer>
+      <hr/>
+      <div>
+        <img class="lucy-logo" src="https://storage.googleapis.com/chrome-infra/lucy-small.png"/>
+      </div>
+      <div>
+        <a href="https://chromium.googlesource.com/infra/luci">
+          LUCI
+        </a>
+        <br/>
+                built: 
+        <b>
+          <span class="local-time " data-timestamp="-6792498672871">
+            Saturday, 03-Feb-01 04:05:06 UTC
+          </span>
+        </b>
+        <br/>
+                version: 
+        <b>
+          testVersionID
+        </b>
+        <br/>
+      </div>
+    </footer>
+    <script>
+      $(function () {
+        'use strict';
+        milo.makeTimesLocal();
+        milo.annotateDurations();
+        $(document).tooltip({
+          show: false,
+          hide: false
+        });
+      });
+    </script>
+    <script>
+        (function(i,s,o,g,r,a,m){i['CrDXObject']=r;i[r]=i[r]||function(){
+          (i[r].q=i[r].q||[]).push(arguments)},a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+          })(window,document,'script','https://storage.googleapis.com/crdx-feedback.appspot.com/feedback.js','crdx');
+      
+        crdx('setFeedbackButtonLink', 'https://bugs.chromium.org/p/chromium/issues/entry?components=Infra%3EPlatform%3EMilo');
+      
+      (function(window) {
+        let lastWindowScrollTop = window.scrollY;
+      
+        function debounce(f, wait) {
+          let timeout;
+          return function(...args) {
+            if (timeout) {
+              clearTimeout(timeout);
+            }
+            timeout = setTimeout(() => {
+              f(...args);
+              timeout = null;
+            }, wait);
+          };
+        }
+      
+        window.addEventListener('scroll', debounce(function(evt) {
+          const delta = window.scrollY - lastWindowScrollTop;
+          lastWindowScrollTop = window.scrollY;
+          const absDelta = Math.abs(delta);
+          const category = window.location.pathname.split('/').slice(0, 2).join('/');
+          ga('send', 'event', category, 'scroll-abs', '', absDelta);
+          if (delta > 0) {
+            ga('send', 'event', category, 'scroll-down', '', absDelta);
+          } else {
+            ga('send', 'event', category, 'scroll-up', '', absDelta);
+          }
+        }, 250));
+      })(window);
+    </script>
+    <script>
+      	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+      
+      	ga('create', 'UA-12345-01', 'auto');
+      	ga('send', 'pageview');
+    </script>
+  </body>
 </html>
