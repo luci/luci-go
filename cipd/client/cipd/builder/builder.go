@@ -30,6 +30,7 @@ import (
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/logging"
 
+	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/common"
@@ -55,6 +56,11 @@ type Options struct {
 	// CompressionLevel defines deflate compression level in range [0-9].
 	CompressionLevel int
 
+	// HashAlgo specifies what hashing algorithm to use for computing instance ID.
+	//
+	// By default it is common.DefaultHashAlgo.
+	HashAlgo api.HashAlgo
+
 	// OverrideFormatVersion, if set, will override the default format version put
 	// into the manifest file.
 	//
@@ -64,33 +70,44 @@ type Options struct {
 
 // BuildInstance builds a new package instance.
 //
-// If build an instance of package named opts.PackageName by archiving input
-// files (passed via opts.Input).
+// It builds an instance of a package named opts.PackageName by archiving input
+// files (passed via opts.Input) and writing the final binary to opts.Output.
 //
-// The final binary is written to opts.Output. Some output may be written even
-// if BuildInstance eventually returns an error.
-func BuildInstance(ctx context.Context, opts Options) error {
+// On success returns a pin of the built package which can later be used to
+// register the package on CIPD backend.
+//
+// Some output may be written even if BuildInstance eventually returns an error.
+func BuildInstance(ctx context.Context, opts Options) (common.Pin, error) {
 	err := common.ValidatePackageName(opts.PackageName)
 	if err != nil {
-		return err
+		return common.Pin{}, err
+	}
+
+	// Make sure hash algo is supported.
+	if opts.HashAlgo == 0 {
+		opts.HashAlgo = common.DefaultHashAlgo
+	}
+	hash, err := common.NewHash(opts.HashAlgo)
+	if err != nil {
+		return common.Pin{}, err
 	}
 
 	// Sanitize the Inputs.
 	for _, f := range opts.Input {
 		// Make sure no files are written to package service directory.
 		if strings.HasPrefix(f.Name(), pkg.ServiceDir+"/") {
-			return fmt.Errorf("can't write to %s: %s", pkg.ServiceDir, f.Name())
+			return common.Pin{}, fmt.Errorf("can't write to %s: %s", pkg.ServiceDir, f.Name())
 		}
 		// Make sure no files are written to cipd's internal state directory.
 		if strings.HasPrefix(f.Name(), fs.SiteServiceDir+"/") {
-			return fmt.Errorf("can't write to %s: %s", fs.SiteServiceDir, f.Name())
+			return common.Pin{}, fmt.Errorf("can't write to %s: %s", fs.SiteServiceDir, f.Name())
 		}
 	}
 
 	// Generate the manifest file, add to the list of input files.
 	manifestFile, err := makeManifestFile(opts)
 	if err != nil {
-		return err
+		return common.Pin{}, err
 	}
 	files := append(opts.Input, manifestFile)
 
@@ -99,13 +116,22 @@ func BuildInstance(ctx context.Context, opts Options) error {
 	for _, f := range files {
 		_, seen := seenNames[f.Name()]
 		if seen {
-			return fmt.Errorf("file %s is provided twice", f.Name())
+			return common.Pin{}, fmt.Errorf("file %s is provided twice", f.Name())
 		}
 		seenNames[f.Name()] = struct{}{}
 	}
 
-	// Write the final zip file.
-	return zipInputFiles(ctx, files, opts.Output, opts.CompressionLevel)
+	// Write the final zip file, calculate its hash to use for instance ID.
+	if err := zipInputFiles(ctx, files, io.MultiWriter(opts.Output, hash), opts.CompressionLevel); err != nil {
+		return common.Pin{}, err
+	}
+	return common.Pin{
+		PackageName: opts.PackageName,
+		InstanceID: common.ObjectRefToInstanceID(&api.ObjectRef{
+			HashAlgo:  opts.HashAlgo,
+			HexDigest: common.HexDigest(hash),
+		}),
+	}, nil
 }
 
 // zipInputFiles deterministically builds a zip archive out of input files and
