@@ -6,28 +6,34 @@ steps: <
 steps: <
   name: "successful step"
   status: SUCCESS
+  start_time: < seconds: 1400000000 >
+  end_time: < seconds: 1400001000 >
 >
 
 steps: <
   name: "failed step"
   status: FAILURE
+  start_time: < seconds: 1400000000 >
+  end_time: < seconds: 1400001000 >
 >
 
 steps: <
   name: "infra-failed step"
   status: INFRA_FAILURE
+  start_time: < seconds: 1400000000 >
+  end_time: < seconds: 1400001000 >
 >
 
 steps: <
   name: "with time"
   start_time: < seconds: 1500000000 >
-  end_time: < seconds: 1500001000 >
   status: STARTED
 >
 
 steps: <
   name: "with failure details text"
   status: FAILURE
+  end_time: < seconds: 1400001000 >
   summary_markdown: <<END
 failure_details_text
 
@@ -126,4 +132,21 @@ steps: <
   name: "started_parent|descendant"
   status: STARTED
   start_time: < seconds: 1500000000 >
+>
+
+steps: <
+  name: "duplicate_log_name"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+
+  logs: <
+    name: "stdout"
+    view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fduplicate_log_name%2F0%2Fstdout"
+    url: "logdog://logdog.example.com/project/prefix/+/steps/duplicate_log_name/0/stdout"
+  >
+  logs: <
+    name: "stderr"
+    view_url: "https://logdog.example.com/v/?s=project%2Fprefix%2F%2B%2Fsteps%2Fduplicate_log_name%2F0%2Fstderr"
+    url: "logdog://logdog.example.com/project/prefix/+/steps/duplicate_log_name/0/stderr"
+  >
 >

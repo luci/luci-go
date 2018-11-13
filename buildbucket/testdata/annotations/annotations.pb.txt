@@ -9,6 +9,8 @@ substep: <
   step: <
     name: "successful step"
     status: SUCCESS
+    started: < seconds: 1400000000 >
+    ended: < seconds: 1400001000 >
   >
 >
 
@@ -16,6 +18,8 @@ substep: <
   step: <
     name: "failed step"
     status: FAILURE
+    started: < seconds: 1400000000 >
+    ended: < seconds: 1400001000 >
   >
 >
 
@@ -24,6 +28,8 @@ substep: <
     name: "infra-failed step"
     status: FAILURE
     failure_details: < type: EXCEPTION >
+    started: < seconds: 1400000000 >
+    ended: < seconds: 1400001000 >
   >
 >
 
@@ -32,7 +38,6 @@ substep: <
   step: <
     name: "with time"
     started: < seconds: 1500000000 >
-    ended: < seconds: 1500001000 >
   >
 >
 
@@ -41,6 +46,7 @@ substep: <
     name: "with failure details text"
     text: "step_text"
     status: FAILURE
+    ended: < seconds: 1400001000 >
     failure_details: <
         text: "failure_details_text"
     >
@@ -163,4 +169,25 @@ substep: <
      >
    >
  >
+>
+
+substep: <
+  step: <
+    name: "duplicate_log_name"
+    status: RUNNING
+    started: < seconds: 1500000000 >
+
+    stdout_stream: <
+      name: "steps/duplicate_log_name/0/stdout"
+    >
+    stderr_stream: <
+      name: "steps/duplicate_log_name/0/stderr"
+    >
+    other_links: <
+      label: "stdout"
+      logdog_stream: <
+        name: "steps/duplicate_log_name/0/stdout"
+      >
+    >
+  >
 >
