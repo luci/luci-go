@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1cccd581_fa524241",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-13T20:13:11Z",
+      "side": 1,
+      "message": "I wonder if this being separate from convertStatus below may result in confusion, because the latter is suggestive that that\u0027s where status processing happens.\n\nEither way I don\u0027t feel strongly though.",
+      "range": {
+        "startLine": 157,
+        "startChar": 4,
+        "endLine": 157,
+        "endChar": 10
+      },
+      "revId": "6907626d5c466d783e732f586991538040cce806",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
