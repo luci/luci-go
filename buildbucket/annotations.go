@@ -154,8 +154,19 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 		}
 	}
 
-	if bb.Status == buildbucketpb.Status_STARTED && bb.StartTime == nil {
+	// Adjust step status based on start/end time.
+	switch {
+	// A step without start time cannot be STARTED.
+	case bb.Status == buildbucketpb.Status_STARTED && bb.StartTime == nil:
 		bb.Status = buildbucketpb.Status_SCHEDULED
+
+	// A step without end time cannot have a terminal status.
+	case bb.Status.Ended() && bb.EndTime == nil:
+		if bb.StartTime == nil {
+			bb.Status = buildbucketpb.Status_SCHEDULED
+		} else {
+			bb.Status = buildbucketpb.Status_STARTED
+		}
 	}
 
 	maybeCloneTimestamp(&bb.StartTime)
