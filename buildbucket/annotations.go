@@ -24,6 +24,7 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 
 	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
+	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	annotpb "go.chromium.org/luci/common/proto/milo"
@@ -252,16 +253,22 @@ func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*b
 	// Convert each link to a Buildbucket v2 log.
 	bbLogs := make([]*buildbucketpb.Step_Log, 0, len(aLinks))
 	summary := make([]string, 0, len(aLinks))
+	logNames := stringset.New(len(aLinks))
 	for _, l := range aLinks {
 		switch {
 		case l.GetLogdogStream() != nil:
-			bbLogs = append(bbLogs,
-				&buildbucketpb.Step_Log{
-					Name:    l.Label,
-					ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
-					Url:     p.convertLogdogLink(l.GetLogdogStream(), false),
-				},
-			)
+			if logNames.Has(l.Label) {
+				logging.Warningf(c, "step %q: duplicate log name %q", ann.Name, l.Label)
+			} else {
+				logNames.Add(l.Label)
+				bbLogs = append(bbLogs,
+					&buildbucketpb.Step_Log{
+						Name:    l.Label,
+						ViewUrl: p.convertLogdogLink(l.GetLogdogStream(), true),
+						Url:     p.convertLogdogLink(l.GetLogdogStream(), false),
+					},
+				)
+			}
 		case l.GetUrl() != "":
 			// Arbitrary links go into the summary.
 			summary = append(summary, fmt.Sprintf("* [%s](%s)", l.Label, l.GetUrl()))
