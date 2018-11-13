@@ -115,3 +115,15 @@ steps: <
   status: STARTED
   start_time: < seconds: 1500003000 >
 >
+
+steps: <
+  name: "started_parent"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>
+
+steps: <
+  name: "started_parent|descendant"
+  status: STARTED
+  start_time: < seconds: 1500000000 >
+>

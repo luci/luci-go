@@ -154,6 +154,10 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 		}
 	}
 
+	if bb.Status == buildbucketpb.Status_STARTED && bb.StartTime == nil {
+		bb.Status = buildbucketpb.Status_SCHEDULED
+	}
+
 	maybeCloneTimestamp(&bb.StartTime)
 	maybeCloneTimestamp(&bb.EndTime)
 	return bb, nil
@@ -183,9 +187,6 @@ func (p *stepConverter) convertStatus(ann *annotpb.Step, bbSubsteps []*buildbuck
 	var bbStatus buildbucketpb.Status
 	switch ann.Status {
 	case annotpb.Status_RUNNING:
-		if ann.Started == nil {
-			return buildbucketpb.Status_SCHEDULED
-		}
 		return buildbucketpb.Status_STARTED
 
 	case annotpb.Status_SUCCESS:
