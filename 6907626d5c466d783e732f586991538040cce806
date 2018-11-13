@@ -22,6 +22,30 @@
       "revId": "6907626d5c466d783e732f586991538040cce806",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a49857c_7b41dccf",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-13T21:31:24Z",
+      "side": 1,
+      "message": "i agree it is confusing. We\u0027d need to refactor this, or delete if recipe engine starts producing build protos",
+      "parentUuid": "1cccd581_fa524241",
+      "range": {
+        "startLine": 157,
+        "startChar": 4,
+        "endLine": 157,
+        "endChar": 10
+      },
+      "revId": "6907626d5c466d783e732f586991538040cce806",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
