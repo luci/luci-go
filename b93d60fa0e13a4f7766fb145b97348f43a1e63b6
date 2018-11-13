@@ -22,6 +22,30 @@
       "revId": "b93d60fa0e13a4f7766fb145b97348f43a1e63b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8ad0225d_f612896c",
+        "filename": "cipd/client/cipd/builder/builder.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-13T20:10:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ba26d3f_b90d60dc",
+      "range": {
+        "startLine": 73,
+        "startChar": 3,
+        "endLine": 73,
+        "endChar": 23
+      },
+      "revId": "b93d60fa0e13a4f7766fb145b97348f43a1e63b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
