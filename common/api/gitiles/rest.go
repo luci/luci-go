@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -150,39 +151,45 @@ func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest
 	}
 	query.Set("format", "JSON")
 
-	u := fmt.Sprintf("%s/%s?%s",
-		strings.TrimSuffix(c.BaseURL, "/"),
-		strings.TrimPrefix(urlPath, "/"),
-		query.Encode())
-	r, err := ctxhttp.Get(ctx, c.Client, u)
-	if err != nil {
-		return transient.Tag.Apply(err)
+	bStream, err := c.getStream(ctx, urlPath, query)
+	defer bStream.Close()
+	body, err2 := ioutil.ReadAll(bStream)
+	if err2 != nil {
+		return errors.Annotate(err, "could not read response body").Err()
 	}
 
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return errors.Annotate(err, "could not read response body").Err()
+		logging.Errorf(ctx, "Response body in gitiles error response: %s", body)
+		return err
+	}
+	return json.Unmarshal(bytes.TrimPrefix(body, jsonPrefix), dest)
+}
+
+func (c *client) getStream(ctx context.Context, urlPath string, query url.Values) (io.ReadCloser, error) {
+	u := fmt.Sprintf("%s/%s", strings.TrimSuffix(c.BaseURL, "/"), strings.TrimPrefix(urlPath, "/"))
+	if query != nil {
+		u = fmt.Sprintf("%s?%s", u, query.Encode())
+	}
+
+	r, err := ctxhttp.Get(ctx, c.Client, u)
+	if err != nil {
+		return r.Body, transient.Tag.Apply(err)
 	}
 
 	switch r.StatusCode {
 	case http.StatusOK:
-		body = bytes.TrimPrefix(body, jsonPrefix)
-		return json.Unmarshal(body, dest)
+		return r.Body, nil
 
 	case http.StatusTooManyRequests:
-		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s",
-			r.Header, body)
-		return status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
+		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v", r.Header)
+		return r.Body, status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
 	case http.StatusNotFound:
-		return status.Errorf(codes.NotFound, "not found")
+		return r.Body, status.Errorf(codes.NotFound, "not found")
 
 	default:
-		logging.Errorf(ctx, "gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
-			r.StatusCode,
-			r.Header, body)
-		return status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
+		logging.Errorf(ctx, "gitiles: unexpected HTTP %d response.\nResponse headers: %v", r.StatusCode, r.Header)
+		return r.Body, status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
 	}
 }
 
