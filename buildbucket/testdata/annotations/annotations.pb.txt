@@ -150,3 +150,17 @@ substep: <
     >
   >
 >
+
+substep: <
+  step: <
+    name: "started_parent"
+
+    substep: <
+     step: <
+       name: "descendant"
+       status: RUNNING
+       started: < seconds: 1500000000 >
+     >
+   >
+ >
+>
