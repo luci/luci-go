@@ -28,6 +28,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/common"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -37,7 +38,7 @@ func TestBuildInstance(t *testing.T) {
 
 	Convey("Building empty package", t, func() {
 		out := bytes.Buffer{}
-		err := BuildInstance(ctx, Options{
+		pin, err := BuildInstance(ctx, Options{
 			Input:            []fs.File{},
 			Output:           &out,
 			PackageName:      "testing",
@@ -46,8 +47,13 @@ func TestBuildInstance(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		// BuildInstance builds deterministic zip. It MUST NOT depend on
-		// the platform, or a time of day, or anything else, only on the input data.
+		// the platform, or a time of day, or anything else, only on the input data,
+		// CIPD code and compress/deflat and archive/zip code.
 		So(getSHA256(&out), ShouldEqual, "66b44a6bd1cdfcb9481d952c6654f3a66882b3c02abc0873f5367337de90a71e")
+		So(pin, ShouldResemble, common.Pin{
+			PackageName: "testing",
+			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 
 		// There should be a single file: the manifest.
 		goodManifest := `{
@@ -156,7 +162,7 @@ func TestBuildInstance(t *testing.T) {
 
 		for lvl := 0; lvl <= 9; lvl++ {
 			out := bytes.Buffer{}
-			err := BuildInstance(ctx, makeOpts(&out, lvl))
+			_, err := BuildInstance(ctx, makeOpts(&out, lvl))
 			So(err, ShouldBeNil)
 			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
 		}
@@ -253,14 +259,14 @@ func TestBuildInstance(t *testing.T) {
 
 		for lvl := 0; lvl <= 9; lvl++ {
 			out := bytes.Buffer{}
-			err := BuildInstance(ctx, makeOpts(&out, lvl))
+			_, err := BuildInstance(ctx, makeOpts(&out, lvl))
 			So(err, ShouldBeNil)
 			So(readZip(out.Bytes()), ShouldResemble, goodFiles)
 		}
 	})
 
 	Convey("Duplicate files fail", t, func() {
-		err := BuildInstance(ctx, Options{
+		_, err := BuildInstance(ctx, Options{
 			Input: []fs.File{
 				fs.NewTestFile("a", "12345", fs.TestFileOpts{}),
 				fs.NewTestFile("a", "12345", fs.TestFileOpts{}),
@@ -272,7 +278,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Writing to service dir fails", t, func() {
-		err := BuildInstance(ctx, Options{
+		_, err := BuildInstance(ctx, Options{
 			Input: []fs.File{
 				fs.NewTestFile(".cipdpkg/stuff", "12345", fs.TestFileOpts{}),
 			},
@@ -283,7 +289,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Bad name fails", t, func() {
-		err := BuildInstance(ctx, Options{
+		_, err := BuildInstance(ctx, Options{
 			Output:      &bytes.Buffer{},
 			PackageName: "../../asdad",
 		})
@@ -291,7 +297,7 @@ func TestBuildInstance(t *testing.T) {
 	})
 
 	Convey("Bad version file fails", t, func() {
-		err := BuildInstance(ctx, Options{
+		_, err := BuildInstance(ctx, Options{
 			Output:      &bytes.Buffer{},
 			PackageName: "abc",
 			VersionFile: "../bad/path",

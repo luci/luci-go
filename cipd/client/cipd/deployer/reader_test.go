@@ -79,12 +79,16 @@ func TestPackageReading(t *testing.T) {
 	Convey("Open empty package works", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := builder.BuildInstance(ctx, builder.Options{
+		pin, err := builder.BuildInstance(ctx, builder.Options{
 			Output:           &out,
 			PackageName:      "testing",
 			CompressionLevel: 5,
 		})
 		So(err, ShouldBeNil)
+		So(pin, ShouldResemble, Pin{
+			PackageName: "testing",
+			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
+		})
 
 		// Open it.
 		inst, err := OpenInstance(ctx, bytesFile(&out), OpenInstanceOpts{
@@ -95,10 +99,7 @@ func TestPackageReading(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer inst.Close(ctx, false)
 
-		So(inst.Pin(), ShouldResemble, Pin{
-			PackageName: "testing",
-			InstanceID:  "ZrRKa9HN_LlIHZUsZlTzpmiCs8AqvAhz9TZzN96Qpx4C",
-		})
+		So(inst.Pin(), ShouldResemble, pin)
 		So(len(inst.Files()), ShouldEqual, 1)
 
 		// Contains single manifest file.
@@ -123,7 +124,7 @@ func TestPackageReading(t *testing.T) {
 	Convey("Open empty package with unexpected instance ID", t, func() {
 		// Build an empty package.
 		out := bytes.Buffer{}
-		err := builder.BuildInstance(ctx, builder.Options{
+		_, err := builder.BuildInstance(ctx, builder.Options{
 			Output:           &out,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -175,7 +176,7 @@ func TestPackageReading(t *testing.T) {
 		defer os.Remove(tempFilePath)
 
 		// Write empty package to it.
-		err = builder.BuildInstance(ctx, builder.Options{
+		_, err = builder.BuildInstance(ctx, builder.Options{
 			Output:           tempFile,
 			PackageName:      "testing",
 			CompressionLevel: 5,
@@ -212,7 +213,7 @@ func TestPackageReading(t *testing.T) {
 		}
 
 		out := bytes.Buffer{}
-		err := builder.BuildInstance(ctx, builder.Options{
+		_, err := builder.BuildInstance(ctx, builder.Options{
 			Input:            inFiles,
 			Output:           &out,
 			PackageName:      "testing",
@@ -367,7 +368,7 @@ func TestPackageReading(t *testing.T) {
 		}
 
 		out := bytes.Buffer{}
-		err := builder.BuildInstance(ctx, builder.Options{
+		_, err := builder.BuildInstance(ctx, builder.Options{
 			Input:                 inFiles,
 			Output:                &out,
 			PackageName:           "testing",

@@ -1251,7 +1251,7 @@ func bytesInstance(data []byte) pkg.Source {
 func fakeInstance(name string) pkg.Instance {
 	ctx := context.Background()
 	out := bytes.Buffer{}
-	err := builder.BuildInstance(ctx, builder.Options{
+	_, err := builder.BuildInstance(ctx, builder.Options{
 		Output:      &out,
 		PackageName: name,
 	})
