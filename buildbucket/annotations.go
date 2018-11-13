@@ -161,7 +161,7 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 	case bb.Status == buildbucketpb.Status_STARTED && bb.StartTime == nil:
 		bb.Status = buildbucketpb.Status_SCHEDULED
 
-	// A step without end time cannot have a terminate status.
+	// A step without end time cannot have a terminal status.
 	case bb.Status.Ended() && bb.EndTime == nil:
 		if bb.StartTime == nil {
 			bb.Status = buildbucketpb.Status_SCHEDULED
