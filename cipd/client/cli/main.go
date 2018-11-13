@@ -2172,7 +2172,7 @@ func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts input
 	buildOpts.Output = out
 
 	// Build the package.
-	err = builder.BuildInstance(ctx, buildOpts)
+	_, err = builder.BuildInstance(ctx, buildOpts)
 	out.Close()
 	if err != nil {
 		os.Remove(instanceFile)
