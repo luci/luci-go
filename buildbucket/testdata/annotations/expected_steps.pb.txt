@@ -33,6 +33,7 @@ steps: <
 steps: <
   name: "with failure details text"
   status: FAILURE
+  start_time: < seconds: 1400000000 >
   end_time: < seconds: 1400001000 >
   summary_markdown: <<END
 failure_details_text
@@ -94,9 +95,8 @@ steps: <
 >
 steps: <
   name: "substeps|child"
-  status: INFRA_FAILURE
+  status: STARTED
   start_time: < seconds: 1500000000 >
-  end_time: < seconds: 1500002000 >
 >
 steps: <
   name: "substeps|child|descendant0"
