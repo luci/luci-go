@@ -63,6 +63,10 @@ type parser interface {
 	bufferedBytes() int64
 
 	firstChunkTime() (time.Time, bool)
+
+	// getWrappedCallback returns a StreamChunkCallback wrapped appropriately for the parser type such
+	// that the returned callback only calls on a complete LogEntry.
+	getWrappedCallback(StreamChunkCallback) StreamChunkCallback
 }
 
 func newParser(p *streamproto.Properties, c *counter) (parser, error) {

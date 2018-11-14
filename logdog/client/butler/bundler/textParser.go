@@ -145,3 +145,13 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	p.sequence += int64(lineCount)
 	return le, nil
 }
+
+func (p *textParser) getWrappedCallback(cb StreamChunkCallback) StreamChunkCallback {
+	f := func(cb StreamChunkCallback, buf []*logpb.LogEntry) StreamChunkCallback {
+		/*return func(le *logpb.LogEntry) {
+			tail := buf[len(buf)-1]
+		}*/
+		return cb
+	}
+	return f(cb, []*logpb.LogEntry{})
+}

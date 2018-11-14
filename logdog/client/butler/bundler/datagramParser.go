@@ -15,6 +15,7 @@
 package bundler
 
 import (
+	"fmt"
 	"io"
 
 	"go.chromium.org/luci/common/data/recordio"
@@ -145,4 +146,68 @@ func (s *datagramParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 		s.remaining -= emitCount
 	}
 	return le, nil
+}
+
+// assertGetDatagram panics if the passed LogEntry does not contain Datagram data, or returns it.
+func assertGetDatagram(le *logpb.LogEntry) *logpb.Datagram {
+	if dg := le.GetDatagram(); dg == nil {
+		panic(fmt.Sprintf(
+				"expected to pass Datagrams to getWrappedCallback for Datagrams, got %v",
+				le.Content,
+		))
+	} else {
+		return dg
+	}
+}
+
+// getWrappedCallback wraps a passed callback meant to be called on complete Datagrams so that it is
+// actually called on complete Datagrams.
+func (p *datagramParser) getWrappedCallback(cb StreamChunkCallback) StreamChunkCallback {
+	f := func(cb StreamChunkCallback, buf []*logpb.LogEntry) StreamChunkCallback {
+		return func(le *logpb.LogEntry) {
+			if le == nil {
+				return
+			}
+			dg := assertGetDatagram(le)
+
+			buf = append(buf, le)
+
+			// If we're only a partial Datagram and not the last chunk, check order and return after
+			// buffering.
+			if dg.Partial != nil && !dg.Partial.Last {
+				// If it came out of order, drop previously buffered chunks.
+				if len(buf) > 1 {
+					lePrev := buf[len(buf)-2]
+					dgPrev := assertGetDatagram(lePrev)
+
+					if lePrev.Sequence > le.Sequence ||
+							lePrev.StreamIndex >= le.StreamIndex ||
+							dgPrev.Partial.Index >= dg.Partial.Index {
+						buf = []*logpb.LogEntry{le}
+					}
+				}
+				return
+			}
+
+			// Otherwise, we're either already a full Datagram, or the end of one, so reconstruct.
+			bytes := []byte{}
+			for _, lePart := range buf {
+				part := assertGetDatagram(lePart)
+				bytes = append(bytes, part.Data...)
+			}
+
+			// Use the first LogEntry as the source for indices etc. in the full one.
+			leFull := *buf[0]
+			leFull.Content = &logpb.LogEntry_Datagram{
+					Datagram: &logpb.Datagram{
+							Data: bytes,
+					},
+			}
+			defer cb(&leFull)
+
+			// Reset the buffer
+			buf = []*logpb.LogEntry{}
+		}
+	}
+	return f(cb, []*logpb.LogEntry{})
 }

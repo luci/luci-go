@@ -75,3 +75,8 @@ func (p *binaryParser) getThreshold() int {
 	}
 	return result
 }
+
+func (p *binaryParser) getWrappedCallback(cb StreamChunkCallback) StreamChunkCallback {
+	// For binaryParsers, this is a noop as LogEntry boundaries have no semantic significance.
+	return cb
+}
