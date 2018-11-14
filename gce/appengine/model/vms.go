@@ -20,6 +20,9 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 )
 
+// VMsKind is the VMs entities' kind in the datastore.
+const VMsKind = "VMs"
+
 // VMs is a root entity representing a configured block of VMs.
 type VMs struct {
 	// _extra is where unknown properties are put into memory.
