@@ -46,6 +46,7 @@ substep: <
     name: "with failure details text"
     text: "step_text"
     status: FAILURE
+    started: < seconds: 1400000000 >
     ended: < seconds: 1400001000 >
     failure_details: <
         text: "failure_details_text"

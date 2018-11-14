@@ -136,37 +136,61 @@ func (p *stepConverter) convertSteps(c context.Context, bbSteps *[]*buildbucketp
 		return nil, err
 	}
 
-	bb.Status = p.convertStatus(ann, bbSubsteps)
-
 	// Ensure parent step start/end time is not after/before of its children.
-	noEndTime := false
 	for _, ss := range bbSubsteps {
 		if ss.StartTime != nil && (bb.StartTime == nil || cmpTs(bb.StartTime, ss.StartTime) > 0) {
 			bb.StartTime = ss.StartTime
 		}
 		switch {
 		case ss.EndTime == nil:
-			noEndTime = true
 			bb.EndTime = nil
-		case noEndTime:
-
-		case bb.EndTime == nil || cmpTs(bb.EndTime, ss.EndTime) < 0:
+		case bb.EndTime != nil && cmpTs(bb.EndTime, ss.EndTime) < 0:
 			bb.EndTime = ss.EndTime
 		}
 	}
 
-	// Adjust step status based on start/end time.
+	// Determine status.
 	switch {
-	// A step without start time cannot be STARTED.
-	case bb.Status == buildbucketpb.Status_STARTED && bb.StartTime == nil:
+	// First of all, honor start/end times.
+
+	case bb.StartTime == nil:
 		bb.Status = buildbucketpb.Status_SCHEDULED
 
-	// A step without end time cannot have a terminal status.
-	case bb.Status.Ended() && bb.EndTime == nil:
-		if bb.StartTime == nil {
-			bb.Status = buildbucketpb.Status_SCHEDULED
+	case bb.EndTime == nil:
+		bb.Status = buildbucketpb.Status_STARTED
+
+	// Secondly, honor current status.
+
+	case ann.Status == annotpb.Status_SUCCESS:
+		bb.Status = buildbucketpb.Status_SUCCESS
+
+	case ann.Status == annotpb.Status_FAILURE:
+		if fd := ann.GetFailureDetails(); fd != nil {
+			switch fd.Type {
+			case annotpb.FailureDetails_GENERAL:
+				bb.Status = buildbucketpb.Status_FAILURE
+			case annotpb.FailureDetails_CANCELLED:
+				bb.Status = buildbucketpb.Status_CANCELED
+			default:
+				bb.Status = buildbucketpb.Status_INFRA_FAILURE
+			}
 		} else {
-			bb.Status = buildbucketpb.Status_STARTED
+			bb.Status = buildbucketpb.Status_FAILURE
+		}
+
+	default:
+		return nil, errors.Reason("step %q has end time, but status is not terminal", bb.Name).Err()
+	}
+
+	// When parent step finishes running, compute its final status as worst
+	// status, as determined by statusPrecedence map below, among direct children
+	// and its own status.
+	if bb.Status.Ended() {
+		for _, bbSubstep := range bbSubsteps {
+			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
+			if ok && substepStatusPrecedence < statusPrecedence[bb.Status] {
+				bb.Status = bbSubstep.Status
+			}
 		}
 	}
 
@@ -193,45 +217,6 @@ var statusPrecedence = map[buildbucketpb.Status]int{
 	buildbucketpb.Status_INFRA_FAILURE: 1,
 	buildbucketpb.Status_FAILURE:       2,
 	buildbucketpb.Status_SUCCESS:       3,
-}
-
-func (p *stepConverter) convertStatus(ann *annotpb.Step, bbSubsteps []*buildbucketpb.Step) buildbucketpb.Status {
-	var bbStatus buildbucketpb.Status
-	switch ann.Status {
-	case annotpb.Status_RUNNING:
-		return buildbucketpb.Status_STARTED
-
-	case annotpb.Status_SUCCESS:
-		bbStatus = buildbucketpb.Status_SUCCESS
-
-	case annotpb.Status_FAILURE:
-		if fd := ann.GetFailureDetails(); fd != nil {
-			switch fd.Type {
-			case annotpb.FailureDetails_GENERAL:
-				bbStatus = buildbucketpb.Status_FAILURE
-			case annotpb.FailureDetails_CANCELLED:
-				bbStatus = buildbucketpb.Status_CANCELED
-			default:
-				bbStatus = buildbucketpb.Status_INFRA_FAILURE
-			}
-		} else {
-			bbStatus = buildbucketpb.Status_FAILURE
-		}
-	}
-
-	// When parent step finishes running, compute its final status as worst
-	// status, as determined by statusPrecedence map above, among direct children
-	// and its own status.
-	if bbStatus.Ended() {
-		for _, bbSubstep := range bbSubsteps {
-			substepStatusPrecedence, ok := statusPrecedence[bbSubstep.Status]
-			if ok && substepStatusPrecedence < statusPrecedence[bbStatus] {
-				bbStatus = bbSubstep.Status
-			}
-		}
-	}
-
-	return bbStatus
 }
 
 func (p *stepConverter) convertLinks(c context.Context, ann *annotpb.Step) ([]*buildbucketpb.Step_Log, []string) {
