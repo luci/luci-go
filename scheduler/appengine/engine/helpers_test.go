@@ -53,7 +53,7 @@ var epoch = time.Unix(1442270520, 0).UTC()
 
 // getSentMetric returns sent value or nil if value wasn't sent.
 func getSentMetric(c context.Context, m types.Metric, fieldVals ...interface{}) interface{} {
-	return tsmon.GetState(c).S.Get(c, m, time.Time{}, fieldVals)
+	return tsmon.GetState(c).Store().Get(c, m, time.Time{}, fieldVals)
 }
 
 // getSentDistrValue returns the value that was added to distribuition after

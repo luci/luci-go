@@ -30,11 +30,11 @@ func TestGlobalMetrics(t *testing.T) {
 
 	Convey("Default version", t, func() {
 		c, _ := buildGAETestContext()
-		tsmon.GetState(c).S = store.NewInMemory(&target.Task{ServiceName: "default target"})
+		tsmon.GetState(c).SetStore(store.NewInMemory(&target.Task{ServiceName: "default target"}))
 		collectGlobalMetrics(c)
 		tsmon.Flush(c)
 
-		monitor := tsmon.GetState(c).M.(*monitor.Fake)
+		monitor := tsmon.GetState(c).Monitor().(*monitor.Fake)
 		So(len(monitor.Cells), ShouldEqual, 1)
 		So(monitor.Cells[0][0].Name, ShouldEqual, "appengine/default_version")
 		So(monitor.Cells[0][0].Value, ShouldEqual, "testVersion1")
