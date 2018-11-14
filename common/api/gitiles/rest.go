@@ -144,6 +144,32 @@ func (c *client) Refs(ctx context.Context, req *gitiles.RefsRequest, opts ...grp
 	return ret, nil
 }
 
+var archiveExtensions = map[gitiles.ArchiveRequest_Format]string{
+	gitiles.ArchiveRequest_BZIP2: ".bzip2",
+	gitiles.ArchiveRequest_GZIP:  ".tar.gz",
+	gitiles.ArchiveRequest_TAR:   ".tar",
+	gitiles.ArchiveRequest_XZ:    ".xz",
+}
+
+func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts ...grpc.CallOption) (*gitiles.ArchiveResponse, error) {
+	ref := strings.TrimRight(req.Ref, "/")
+	path := fmt.Sprintf("/%s/+archive/%s%s", url.PathEscape(req.Project), url.PathEscape(ref), archiveExtensions[req.Format])
+	h, b, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return &gitiles.ArchiveResponse{}, err
+	}
+
+	filename := ""
+	filenames := h["filename"]
+	if len(filenames) > 0 {
+		filename = filenames[0]
+	}
+	return &gitiles.ArchiveResponse{
+		Filename: filename,
+		Contents: b,
+	}, nil
+}
+
 func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest interface{}) error {
 	if query == nil {
 		query = make(url.Values, 1)
