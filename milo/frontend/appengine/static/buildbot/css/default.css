@@ -465,12 +465,6 @@ div.BuildWaterfall {
   border-style: solid;
 }
 
-.status-Warning {
-  color: #FFFFFF;
-  background-color: #fa3;
-  border-color: #C29D46;
-}
-
 .status-InfraFailure {
   color: #FFFFFF;
   background-color: #c6c;
@@ -483,7 +477,7 @@ div.BuildWaterfall {
   border-color: #ACA0B3;
 }
 
-.warning {
+.warning, .status-Warning {
   color: #FFFFFF;
   background-color: #fa3;
   border-color: #C29D46;
