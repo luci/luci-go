@@ -79,7 +79,7 @@ func InstrumentTransport(ctx context.Context, base http.RoundTripper, client str
 	if base == nil {
 		base = http.DefaultTransport
 	}
-	if store.IsNilStore(tsmon.GetState(ctx).S) {
+	if store.IsNilStore(tsmon.GetState(ctx).Store()) {
 		return base
 	}
 	return &instrumentedHTTPRoundTripper{ctx, base, client}

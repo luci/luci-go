@@ -34,13 +34,13 @@ import (
 // this process.  Applications shouldn't need to access this directly - instead
 // use the metric objects which provide type-safe accessors.
 func Store(c context.Context) store.Store {
-	return GetState(c).S
+	return GetState(c).Store()
 }
 
 // Monitor returns the global monitor that sends metrics to monitoring
 // endpoints.  Defaults to a nil monitor, but changed by InitializeFromFlags.
 func Monitor(c context.Context) monitor.Monitor {
-	return GetState(c).M
+	return GetState(c).Monitor()
 }
 
 // SetStore changes the global metric store.  All metrics that were registered
@@ -108,15 +108,15 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 	Initialize(c, mon, store.NewInMemory(t))
 
 	state := GetState(c)
-	if state.Flusher != nil {
+	if state.flusher != nil {
 		logging.Infof(c, "Canceling previous tsmon auto flush")
-		state.Flusher.stop()
-		state.Flusher = nil
+		state.flusher.stop()
+		state.flusher = nil
 	}
 
 	if fl.Flush == FlushAuto {
-		state.Flusher = &autoFlusher{}
-		state.Flusher.start(c, fl.FlushInterval)
+		state.flusher = &autoFlusher{}
+		state.flusher.start(c, fl.FlushInterval)
 	}
 
 	return nil
@@ -125,7 +125,7 @@ func InitializeFromFlags(c context.Context, fl *Flags) error {
 // Initialize configures the tsmon library with the given monitor and store.
 func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
 	state := GetState(c)
-	state.M = m
+	state.SetMonitor(m)
 	state.SetStore(s)
 }
 
@@ -137,14 +137,14 @@ func Initialize(c context.Context, m monitor.Monitor, s store.Store) {
 // Logs error to standard logger. Does nothing if tsmon wasn't initialized.
 func Shutdown(c context.Context) {
 	state := GetState(c)
-	if store.IsNilStore(state.S) {
+	if store.IsNilStore(state.Store()) {
 		return
 	}
 
-	if state.Flusher != nil {
+	if state.flusher != nil {
 		logging.Debugf(c, "Stopping tsmon auto flush")
-		state.Flusher.stop()
-		state.Flusher = nil
+		state.flusher.stop()
+		state.flusher = nil
 	}
 
 	// Flush logs errors inside.

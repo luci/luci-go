@@ -490,12 +490,12 @@ func testContext() context.Context {
 }
 
 func getConfiguredProjectValue(ctx context.Context, project string) bool {
-	metricValue := tsmon.GetState(ctx).S.Get(ctx, metricConfigValid, time.Time{}, []interface{}{project})
+	metricValue := tsmon.GetState(ctx).Store().Get(ctx, metricConfigValid, time.Time{}, []interface{}{project})
 	return metricValue.(bool)
 }
 
 func getConfiguredJobsValue(ctx context.Context, project, status string) int64 {
-	metricValue := tsmon.GetState(ctx).S.Get(ctx, metricConfigJobs, time.Time{}, []interface{}{project, status})
+	metricValue := tsmon.GetState(ctx).Store().Get(ctx, metricConfigJobs, time.Time{}, []interface{}{project, status})
 	return metricValue.(int64)
 }
 
