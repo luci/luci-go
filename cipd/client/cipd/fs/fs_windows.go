@@ -18,6 +18,7 @@ package fs
 
 import (
 	"os"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -34,10 +35,21 @@ const (
 	moveFileWriteThrough    = 8
 )
 
+// longFileName converts a non-UNC path to a \?\\ style long path.
+func longFileName(path string) string {
+	const MAGIC = `\\?\`
+	if !strings.HasPrefix(path, MAGIC) {
+		path = MAGIC + path
+	}
+	return path
+}
+
 // openFile on Windows ensures that the FILE_SHARE_DELETE sharing permission is
 // applied to the file when it is opened. This is required in order for
 // atomicRename to be able to rename a file while it is being read.
 func openFile(path string) (*os.File, error) {
+	path = longFileName(path)
+
 	lpFileName, err := syscall.UTF16PtrFromString(path)
 	if err != nil {
 		return nil, err
@@ -69,6 +81,8 @@ func moveFileEx(source, target *uint16, flags uint32) error {
 }
 
 func atomicRename(source, target string) error {
+	source, target = longFileName(source), longFileName(target)
+
 	lpReplacedFileName, err := syscall.UTF16PtrFromString(target)
 	if err != nil {
 		return err
