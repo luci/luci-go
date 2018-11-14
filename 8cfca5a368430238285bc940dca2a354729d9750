@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac120e1_fd25fd87",
+        "filename": "common/tsmon/context.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "nit: move this to top, before WithState\n\nConsider also doing:\n\n  // note: this is a global var with stable address\n  var stateKey \u003d \"tsmon.State\"\n  \n  context.WithValue(c, \u0026stateKey, s)\n\nIt makes context keys a bit more \"self-describing\" (useful when dumping contexts).",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 20
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c996e044_d8f795a2",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "nit: I believe this should be in context.go, since it uses \"private\" stateKey variable defined there.\n\nOTOH it also references globalState :-/\n\nMaybe introduce a function in context.go\n\nfunc stateFromCtx(c context.Context) *State {\n  s, _ :\u003d c.Value(...).(*State)\n  return s\n}\n\nand use it here.",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 1
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85b45e9d_cf79b1da",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "nit: naming it \u0027s\u0027 would be just as fine, considering all methods are very short (but their names are long).",
+      "range": {
+        "startLine": 65,
+        "startChar": 6,
+        "endLine": 65,
+        "endChar": 11
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "544fc846_3fd8254d",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "since we try to use RWMutex when accessing .store, this should probably be\n\nstore :\u003d state.GetStore()\nregistry.Iter(... {\n  ...\n  store.Reset(...)\n})",
+      "range": {
+        "startLine": 116,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 3
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a74d6286_430bac33",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "This now has a higher chance to deadlock (if some of the callbacks attempt to grab the write side of state.mu).\n\nConsider:\n\nstate.mu.RLock()\ncbs :\u003d append(([]GlobalCallback)(nil), state.globalCallbacks...)\nstate.mu.RUnlock()\n\nfor _, gcp :\u003d range cbs {\n  ...\n}\n\n\nAs a bonus, this also works more correctly if some callback adds another callbacks.",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 17
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "344be554_89c9dacd",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "maybe just mon \u003d state.GetMonitor()? Holding this mutex the whole time again increases potentials for deadlocks (considering Flush calls user-provided callbacks later).",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 21
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9133756e_1fb1a0b1",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "same comment about callbacks into the unknown under the mutex",
+      "range": {
+        "startLine": 215,
+        "startChar": 1,
+        "endLine": 217,
+        "endChar": 2
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1cd31db0_d452fc29",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T16:55:34Z",
+      "side": 1,
+      "message": "eh, go...",
+      "range": {
+        "startLine": 220,
+        "startChar": 5,
+        "endLine": 220,
+        "endChar": 11
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
