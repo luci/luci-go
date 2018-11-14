@@ -7,6 +7,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 )
@@ -137,13 +138,13 @@ func (mr *MockBuildsClientMockRecorder) SearchBuilds(ctx, in interface{}, opts .
 }
 
 // UpdateBuild mocks base method
-func (m *MockBuildsClient) UpdateBuild(ctx context.Context, in *UpdateBuildRequest, opts ...grpc.CallOption) (*Build, error) {
+func (m *MockBuildsClient) UpdateBuild(ctx context.Context, in *UpdateBuildRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	varargs := []interface{}{ctx, in}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "UpdateBuild", varargs...)
-	ret0, _ := ret[0].(*Build)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -258,9 +259,9 @@ func (mr *MockBuildsServerMockRecorder) SearchBuilds(arg0, arg1 interface{}) *go
 }
 
 // UpdateBuild mocks base method
-func (m *MockBuildsServer) UpdateBuild(arg0 context.Context, arg1 *UpdateBuildRequest) (*Build, error) {
+func (m *MockBuildsServer) UpdateBuild(arg0 context.Context, arg1 *UpdateBuildRequest) (*empty.Empty, error) {
 	ret := m.ctrl.Call(m, "UpdateBuild", arg0, arg1)
-	ret0, _ := ret[0].(*Build)
+	ret0, _ := ret[0].(*empty.Empty)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
