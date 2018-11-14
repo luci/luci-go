@@ -135,7 +135,7 @@ func TestFlush(t *testing.T) {
 		Convey("No Monitor configured", func() {
 			c, _, _ := WithFakes(c)
 			state := GetState(c)
-			state.M = nil
+			state.SetMonitor(nil)
 
 			So(Flush(c), ShouldNotBeNil)
 		})
