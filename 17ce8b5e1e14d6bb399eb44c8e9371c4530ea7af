@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d886c3a8_08c99c4a",
+        "filename": "buildbucket/annotations.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-14T17:24:39Z",
+      "side": 1,
+      "message": "nit: below :)",
+      "range": {
+        "startLine": 186,
+        "startChar": 50,
+        "endLine": 186,
+        "endChar": 55
+      },
+      "revId": "17ce8b5e1e14d6bb399eb44c8e9371c4530ea7af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
