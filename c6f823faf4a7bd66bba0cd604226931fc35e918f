@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "d1da6fc2_1d6de592",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-15T00:35:52Z",
+      "side": 1,
+      "message": "I don\u0027t buy this argument.\nThere is implicit contract that dispatcher is available in context, just like the fact that context passed !\u003d nil.\nObviously, we aren\u0027t doing \"if c \u003d\u003d nil { panic... }\".\nSo, I argue to that readability of code by declaring var next to where it\u0027s used is more important that early contract failures.",
+      "parentUuid": "004d8eee_f874386f",
+      "range": {
+        "startLine": 46,
+        "startChar": 1,
+        "endLine": 46,
+        "endChar": 24
+      },
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "eba24ada_7049b5c8",
         "filename": "gce/appengine/backend/cron_test.go",
         "patchSetId": 1
@@ -166,6 +190,30 @@
       "side": 1,
       "message": "For the time being, yes I want just one default service. In the future I might separate them, which is why they\u0027re currently in separate frontend and backend modules. I\u0027ll send a followup once I figure out how I want this structured.",
       "parentUuid": "527b1096_5736c11a",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 31
+      },
+      "revId": "c6f823faf4a7bd66bba0cd604226931fc35e918f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aff0c0fe_abadbd69",
+        "filename": "gce/appengine/frontend/main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-15T00:35:52Z",
+      "side": 1,
+      "message": "sg.",
+      "parentUuid": "26794915_60883d42",
       "range": {
         "startLine": 42,
         "startChar": 1,
