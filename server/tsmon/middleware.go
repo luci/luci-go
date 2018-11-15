@@ -161,8 +161,8 @@ func (s *State) checkSettings(c context.Context) (*tsmon.State, *tsmonSettings) 
 	// First call to 'checkSettings' ever?
 	if s.state == nil {
 		s.state = state
-		s.state.M = monitor.NewNilMonitor() // doFlush uses its own monitor
-		s.state.InvokeGlobalCallbacksOnFlush = false
+		s.state.SetMonitor(monitor.NewNilMonitor()) // doFlush uses its own monitor
+		s.state.InhibitGlobalCallbacksOnFlush()
 	} else if state != s.state {
 		panic("tsmon state in the context was unexpectedly changed between requests")
 	}
@@ -288,7 +288,7 @@ func (s *State) flushIfNeeded(c context.Context, req *http.Request, state *tsmon
 // Returns ErrNoTaskNumber if the task wasn't assigned a task number yet.
 func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, state *tsmon.State, settings *tsmonSettings) error {
 	var task target.Task
-	defTarget := state.S.DefaultTarget()
+	defTarget := state.Store().DefaultTarget()
 	if t, ok := defTarget.(*target.Task); ok {
 		task = *t
 	} else {
@@ -309,12 +309,12 @@ func (s *State) ensureTaskNumAndFlush(c context.Context, instanceID string, stat
 			state.ResetCumulativeMetrics(c)
 		}
 		task.TaskNum = -1
-		state.S.SetDefaultTarget(&task)
+		state.Store().SetDefaultTarget(&task)
 		return ErrNoTaskNumber
 	}
 
 	task.TaskNum = int32(assignedTaskNum)
-	state.S.SetDefaultTarget(&task)
+	state.Store().SetDefaultTarget(&task)
 	return s.doFlush(c, state, settings)
 }
 
