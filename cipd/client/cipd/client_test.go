@@ -35,12 +35,12 @@ import (
 
 	api "go.chromium.org/luci/cipd/api/cipd/v1"
 	"go.chromium.org/luci/cipd/client/cipd/builder"
-	"go.chromium.org/luci/cipd/client/cipd/deployer"
 	"go.chromium.org/luci/cipd/client/cipd/digests"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 
@@ -1256,8 +1256,8 @@ func fakeInstance(name string) pkg.Instance {
 		PackageName: name,
 	})
 	So(err, ShouldBeNil)
-	inst, err := deployer.OpenInstance(ctx, bytesInstance(out.Bytes()), deployer.OpenInstanceOpts{
-		VerificationMode: deployer.CalculateHash,
+	inst, err := reader.OpenInstance(ctx, bytesInstance(out.Bytes()), reader.OpenInstanceOpts{
+		VerificationMode: reader.CalculateHash,
 		HashAlgo:         api.HashAlgo_SHA256,
 	})
 	So(err, ShouldBeNil)

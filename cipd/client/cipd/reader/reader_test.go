@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package deployer
+package reader
 
 import (
 	"bytes"
@@ -231,7 +231,7 @@ func TestPackageReading(t *testing.T) {
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
-		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
+		err = ExtractFilesTxn(ctx, inst.Files(), dest, pkg.WithManifest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)
@@ -387,7 +387,7 @@ func TestPackageReading(t *testing.T) {
 		defer inst.Close(ctx, false)
 
 		dest := &testDestination{}
-		err = ExtractFilesTxn(ctx, inst.Files(), dest, WithManifest)
+		err = ExtractFilesTxn(ctx, inst.Files(), dest, pkg.WithManifest)
 		So(err, ShouldBeNil)
 		So(dest.beginCalls, ShouldEqual, 1)
 		So(dest.endCalls, ShouldEqual, 1)

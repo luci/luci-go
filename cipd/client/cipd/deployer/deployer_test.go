@@ -1431,7 +1431,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 		}
 
 		check := func(expected *DeployedPackage) *DeployedPackage {
-			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, WithoutManifest)
+			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, pkg.WithoutManifest)
 			So(err, ShouldBeNil)
 			So(dp.Manifest, ShouldNotBeNil)
 			dp.Manifest = nil
@@ -1452,7 +1452,7 @@ func TestCheckDeployedAndRepair(t *testing.T) {
 		}
 
 		checkHealty := func() {
-			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, WithoutManifest)
+			dp, err := dep.CheckDeployed(ctx, "subdir", "test/package", CheckPresence, pkg.WithoutManifest)
 			So(err, ShouldBeNil)
 			So(dp.Deployed, ShouldBeTrue)
 			So(dp.ToRedeploy, ShouldHaveLength, 0)

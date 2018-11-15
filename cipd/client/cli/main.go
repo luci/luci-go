@@ -50,6 +50,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/ensure"
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/version/versioncmd"
@@ -2216,8 +2217,8 @@ func (c *deployRun) Run(a subcommands.Application, args []string, env subcommand
 }
 
 func deployInstanceFile(ctx context.Context, root, instanceFile string, hashAlgo api.HashAlgo) (common.Pin, error) {
-	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
-		VerificationMode: deployer.CalculateHash,
+	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
+		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
@@ -2308,8 +2309,8 @@ func fetchInstanceFile(ctx context.Context, packageName, version, instanceFile s
 
 	// Print information about the instance. 'FetchInstanceTo' already verified
 	// the hash.
-	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
-		VerificationMode: deployer.SkipHashVerification,
+	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
+		VerificationMode: reader.SkipHashVerification,
 		InstanceID:       pin.InstanceID,
 	})
 	if err != nil {
@@ -2353,8 +2354,8 @@ func (c *inspectRun) Run(a subcommands.Application, args []string, env subcomman
 }
 
 func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.HashAlgo, listFiles bool) (common.Pin, error) {
-	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
-		VerificationMode: deployer.CalculateHash,
+	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
+		VerificationMode: reader.CalculateHash,
 		HashAlgo:         hashAlgo,
 	})
 	if err != nil {
@@ -2443,8 +2444,8 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 }
 
 func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, err := deployer.OpenInstanceFile(ctx, instanceFile, deployer.OpenInstanceOpts{
-		VerificationMode: deployer.CalculateHash,
+	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
+		VerificationMode: reader.CalculateHash,
 		HashAlgo:         opts.hashAlgo(),
 	})
 	if err != nil {
