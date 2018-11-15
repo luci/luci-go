@@ -295,26 +295,26 @@ func TestRegisterInstance(t *testing.T) {
 			}))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_REGISTERED, nil))
 
-			So(client.RegisterInstance(ctx, inst, 0), ShouldBeNil)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldBeNil)
 			So(storage.getStored(op.UploadUrl), ShouldNotEqual, "")
 		})
 
 		Convey("Already registered", func() {
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil))
-			So(client.RegisterInstance(ctx, inst, 0), ShouldBeNil)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldBeNil)
 		})
 
 		Convey("Registration error", func() {
 			rpc := registerInstanceRPC(api.RegistrationStatus_ALREADY_REGISTERED, nil)
 			rpc.err = status.Errorf(codes.PermissionDenied, "denied blah")
 			repo.expect(rpc)
-			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "denied blah")
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "denied blah")
 		})
 
 		Convey("Upload error", func() {
 			storage.returnErr(fmt.Errorf("upload err blah"))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "upload err blah")
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "upload err blah")
 		})
 
 		Convey("Verification error", func() {
@@ -323,7 +323,7 @@ func TestRegisterInstance(t *testing.T) {
 				Status:       api.UploadStatus_ERRORED,
 				ErrorMessage: "baaaaad",
 			}))
-			So(client.RegisterInstance(ctx, inst, 0), ShouldErrLike, "baaaaad")
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldErrLike, "baaaaad")
 		})
 
 		Convey("Confused backend", func() {
@@ -332,7 +332,7 @@ func TestRegisterInstance(t *testing.T) {
 				Status: api.UploadStatus_PUBLISHED,
 			}))
 			repo.expect(registerInstanceRPC(api.RegistrationStatus_NOT_UPLOADED, &op))
-			So(client.RegisterInstance(ctx, inst, 0), ShouldEqual, ErrBadUpload)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldEqual, ErrBadUpload)
 		})
 
 		Convey("Verification timeout", func() {
@@ -340,7 +340,7 @@ func TestRegisterInstance(t *testing.T) {
 			cas.expectMany(finishUploadRPC(op.OperationId, &api.UploadOperation{
 				Status: api.UploadStatus_VERIFYING,
 			}))
-			So(client.RegisterInstance(ctx, inst, 0), ShouldEqual, ErrFinalizationTimeout)
+			So(client.RegisterInstance(ctx, inst.Pin(), inst.Source(), 0), ShouldEqual, ErrFinalizationTimeout)
 		})
 	})
 }
