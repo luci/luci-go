@@ -55,7 +55,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.NetworkDevice)(nil))
 			target := s.DefaultTarget().(*target.NetworkDevice)
 			So(target.Hostname, ShouldEqual, "autogen:host-sys")
@@ -69,7 +69,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.NetworkDevice)(nil))
 			target := s.DefaultTarget().(*target.NetworkDevice)
 			So(target.Hostname, ShouldEqual, "autogen:test-m5")
@@ -86,7 +86,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.Task)(nil))
 			target := s.DefaultTarget().(*target.Task)
 			So(target.HostName, ShouldEqual, "autogen:test-m5")
@@ -98,7 +98,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.NetworkDevice)(nil))
 			target := s.DefaultTarget().(*target.NetworkDevice)
 			So(target.Hostname, ShouldEqual, "host-sys")
@@ -112,7 +112,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.NetworkDevice)(nil))
 			target := s.DefaultTarget().(*target.NetworkDevice)
 			So(target.Hostname, ShouldEqual, "host-flag")
@@ -129,7 +129,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.Task)(nil))
 			target := s.DefaultTarget().(*target.Task)
 			So(target.HostName, ShouldEqual, "host-flag")
@@ -158,7 +158,7 @@ func TestInitializeFromFlags(t *testing.T) {
 			So(err, ShouldBeNil)
 			defer Shutdown(c)
 
-			s := GetState(c).S
+			s := GetState(c).Store()
 			So(s.DefaultTarget(), ShouldHaveSameTypeAs, (*target.NetworkDevice)(nil))
 			target := s.DefaultTarget().(*target.NetworkDevice)
 			So(target.Hostname, ShouldEqual, "autogen:host-flag")
