@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5e5e901d_9a045cfa",
+        "filename": "common/tsmon/context.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "The rationale for relegating it to the bottom of the file is that exported types, variables, functions etc are more \"interesting\", as such are promoted to the top, with implementation details further down the file (either immediately below a logically related, exported method/function, or at the bottom of the file). It\u0027s also easily repeatable.\n\nHowever, this is just my opinion, so if there is some convention under the code base I should adhere to, I\u0027m happy to hear it!\n\nI\u0027ve compromised and changed the the type of `key` from int to string. It\u0027s recommended that context keys not be a built-in type, as to avoid collisions. So we should get best of both now.",
+      "parentUuid": "5ac120e1_fd25fd87",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 20
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c996e044_d8f795a2",
         "filename": "common/tsmon/state.go",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "8cfca5a368430238285bc940dca2a354729d9750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "212c4599_5c6d084b",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "The rationale was that as this provides a `State`, it is placed immediately below its definition. Similar to GoDoc. But that sounds like a good idea!\n\nDone.",
+      "parentUuid": "c996e044_d8f795a2",
+      "range": {
+        "startLine": 52,
+        "startChar": 0,
+        "endLine": 59,
+        "endChar": 1
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "abd0e775_8a0f594b",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "Agreed, it was originall `state` when under context.go, I should have updated it when i moved to state.go\n\nDone.",
+      "parentUuid": "85b45e9d_cf79b1da",
+      "range": {
+        "startLine": 65,
+        "startChar": 6,
+        "endLine": 65,
+        "endChar": 11
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "544fc846_3fd8254d",
         "filename": "common/tsmon/state.go",
         "patchSetId": 4
@@ -91,6 +163,30 @@
       "revId": "8cfca5a368430238285bc940dca2a354729d9750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7e2a46f5_e309b3db",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "544fc846_3fd8254d",
+      "range": {
+        "startLine": 116,
+        "startChar": 1,
+        "endLine": 120,
+        "endChar": 3
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "e4bcf664_a86fd991",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a74d6286_430bac33",
+      "range": {
+        "startLine": 132,
+        "startChar": 2,
+        "endLine": 132,
+        "endChar": 17
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "344be554_89c9dacd",
         "filename": "common/tsmon/state.go",
         "patchSetId": 4
@@ -137,6 +257,30 @@
       "revId": "8cfca5a368430238285bc940dca2a354729d9750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0807643e_65100025",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "Good point.\n\nDone.",
+      "parentUuid": "344be554_89c9dacd",
+      "range": {
+        "startLine": 143,
+        "startChar": 2,
+        "endLine": 146,
+        "endChar": 21
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "670abd04_945291b9",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 217,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9133756e_1fb1a0b1",
+      "range": {
+        "startLine": 215,
+        "startChar": 1,
+        "endLine": 217,
+        "endChar": 2
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1cd31db0_d452fc29",
         "filename": "common/tsmon/state.go",
         "patchSetId": 4
@@ -183,6 +351,30 @@
       "revId": "8cfca5a368430238285bc940dca2a354729d9750",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "903d12e7_de340c61",
+        "filename": "common/tsmon/state.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1313074
+      },
+      "writtenOn": "2018-11-15T02:19:38Z",
+      "side": 1,
+      "message": "I could have made this an anonymous function on line 178, but this its probably slightly more readable this way.",
+      "parentUuid": "1cd31db0_d452fc29",
+      "range": {
+        "startLine": 220,
+        "startChar": 5,
+        "endLine": 220,
+        "endChar": 11
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
