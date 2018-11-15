@@ -388,6 +388,19 @@ func TestReplace(t *testing.T) {
 		So(fs.Replace(ctx, fs.join("f"), fs.join("a/123/456")), ShouldBeNil)
 		So(fs.read("a/123/456"), ShouldEqual, "yyy")
 	})
+
+	Convey("Replace works for very long paths", t, func() {
+		fs := tempFileSystem()
+		// Windows runs into trouble with paths > 260 chars
+		longPath1 := strings.Repeat("abc/", 260/4) + "file"
+		longPath2 := strings.Repeat("xyz/", 260/4) + "file"
+		So(len(longPath1), ShouldBeGreaterThan, 260)
+		fs.write(longPath1, "hi")
+		fs.write(longPath2, "there")
+		So(fs.Replace(ctx, fs.join(longPath1), fs.join(longPath2)), ShouldBeNil)
+		So(fs.read(longPath2), ShouldEqual, "hi")
+	})
+
 }
 
 ///////
