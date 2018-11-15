@@ -102,6 +102,11 @@ func TestPackageReading(t *testing.T) {
 		So(inst.Pin(), ShouldResemble, pin)
 		So(len(inst.Files()), ShouldEqual, 1)
 
+		// CalculatePin also agrees with the value of the pin.
+		calcedPin, err := CalculatePin(ctx, bytes.NewReader(out.Bytes()), api.HashAlgo_SHA256)
+		So(err, ShouldBeNil)
+		So(calcedPin, ShouldResemble, pin)
+
 		// Contains single manifest file.
 		f := inst.Files()[0]
 		So(f.Name(), ShouldEqual, ".cipdpkg/manifest.json")
