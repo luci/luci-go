@@ -37,6 +37,7 @@ import (
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/common"
 )
 
@@ -153,7 +154,7 @@ type Deployer interface {
 	// manifest and install mode. This is optional, since not all callers need it,
 	// and it is pretty heavy operation. Any paranoid mode implies WithManifest
 	// too.
-	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia ParanoidMode, manifest ManifestMode) (*DeployedPackage, error)
+	CheckDeployed(ctx context.Context, subdir, packageName string, paranoia ParanoidMode, manifest pkg.ManifestMode) (*DeployedPackage, error)
 
 	// FindDeployed returns a list of packages deployed to a site root.
 	//
@@ -210,7 +211,7 @@ func (d errDeployer) DeployInstance(context.Context, string, pkg.Instance) (comm
 	return common.Pin{}, d.err
 }
 
-func (d errDeployer) CheckDeployed(context.Context, string, string, ParanoidMode, ManifestMode) (*DeployedPackage, error) {
+func (d errDeployer) CheckDeployed(context.Context, string, string, ParanoidMode, pkg.ManifestMode) (*DeployedPackage, error) {
 	return nil, d.err
 }
 
@@ -317,7 +318,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 
 	// Unzip the package into the final destination inside .cipd/* guts.
 	destPath := filepath.Join(pkgPath, pin.InstanceID)
-	if err := ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), WithManifest); err != nil {
+	if err := reader.ExtractFilesTxn(ctx, files, fs.NewDestination(destPath, d.fs), pkg.WithManifest); err != nil {
 		return common.Pin{}, err
 	}
 
@@ -410,7 +411,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	}
 
 	// Verify it's all right.
-	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, WithoutManifest)
+	state, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, pkg.WithoutManifest)
 	switch {
 	case err != nil:
 		logging.Errorf(ctx, "Failed to deploy %s: %s", pin, err)
@@ -427,7 +428,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 	}
 }
 
-func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string, par ParanoidMode, m ManifestMode) (out *DeployedPackage, err error) {
+func (d *deployerImpl) CheckDeployed(ctx context.Context, subdir, pkgname string, par ParanoidMode, m pkg.ManifestMode) (out *DeployedPackage, err error) {
 	if err = common.ValidateSubdir(subdir); err != nil {
 		return
 	}
@@ -530,7 +531,7 @@ func (d *deployerImpl) FindDeployed(ctx context.Context) (common.PinSliceBySubdi
 func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName string) error {
 	logging.Infof(ctx, "Removing %s from %s(/%s)", packageName, d.fs.Root(), subdir)
 
-	deployed, err := d.CheckDeployed(ctx, subdir, packageName, NotParanoid, WithManifest)
+	deployed, err := d.CheckDeployed(ctx, subdir, packageName, NotParanoid, pkg.WithManifest)
 	switch {
 	case err != nil:
 		// This error is unrecoverable, we can't even figure out whether the package
@@ -569,7 +570,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 
 	// Check that the package we are repairing is still installed and grab its
 	// manifest (for the install mode and list of files).
-	p, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, WithManifest)
+	p, err := d.CheckDeployed(ctx, subdir, pin.PackageName, NotParanoid, pkg.WithManifest)
 	switch {
 	case err != nil:
 		return err
@@ -639,7 +640,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 	}
 	if len(repair) != 0 {
 		logging.Infof(ctx, "Repairing %d files...", len(repair))
-		if err := ExtractFiles(ctx, repair, fs.ExistingDestination(p.instancePath, d.fs), WithoutManifest); err != nil {
+		if err := reader.ExtractFiles(ctx, repair, fs.ExistingDestination(p.instancePath, d.fs), pkg.WithoutManifest); err != nil {
 			return err
 		}
 	}

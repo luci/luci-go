@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package deployer
+// Package reader implements reading contents of a CIPD package.
+package reader
 
 import (
 	"archive/zip"
@@ -139,7 +140,7 @@ func OpenInstanceFile(ctx context.Context, path string, opts OpenInstanceOpts) (
 //
 // If withManifest is WithoutManifest, the function will fail if the manifest is
 // among 'files' (as a precaution against unintended override of manifests).
-func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest ManifestMode) error {
+func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, withManifest pkg.ManifestMode) error {
 	if !withManifest {
 		for _, f := range files {
 			if f.Name() == pkg.ManifestName {
@@ -279,7 +280,7 @@ func ExtractFiles(ctx context.Context, files []fs.File, dest fs.Destination, wit
 //
 // It guarantees that if extraction fails for some reason, there'll be no
 // garbage laying around.
-func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest ManifestMode) (err error) {
+func ExtractFilesTxn(ctx context.Context, files []fs.File, dest fs.TransactionalDestination, withManifest pkg.ManifestMode) (err error) {
 	if err := dest.Begin(ctx); err != nil {
 		return err
 	}

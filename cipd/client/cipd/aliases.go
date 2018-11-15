@@ -20,6 +20,7 @@ package cipd
 
 import (
 	"go.chromium.org/luci/cipd/client/cipd/deployer"
+	"go.chromium.org/luci/cipd/client/cipd/pkg"
 )
 
 // ParanoidMode specifies how paranoid EnsurePackages should be.
@@ -44,11 +45,11 @@ const (
 //
 // Just to improve code readability, since Func(..., WithManifest) is less
 // cryptic than Func(..., true).
-type ManifestMode = deployer.ManifestMode
+type ManifestMode = pkg.ManifestMode
 
 const (
 	// WithoutManifest indicates the function should skip manifest.
-	WithoutManifest = deployer.WithoutManifest
+	WithoutManifest = pkg.WithoutManifest
 	// WithManifest indicates the function should handle manifest.
-	WithManifest = deployer.WithManifest
+	WithManifest = pkg.WithManifest
 )

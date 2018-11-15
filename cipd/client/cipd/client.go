@@ -75,6 +75,7 @@ import (
 	"go.chromium.org/luci/cipd/client/cipd/internal"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
 	"go.chromium.org/luci/cipd/client/cipd/platform"
+	"go.chromium.org/luci/cipd/client/cipd/reader"
 	"go.chromium.org/luci/cipd/client/cipd/template"
 	"go.chromium.org/luci/cipd/common"
 	"go.chromium.org/luci/cipd/version"
@@ -1407,7 +1408,7 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 			Close(ctx context.Context, corrupt bool) error
 		}
 		closeMaybeCorrupted := func(f corruptable) {
-			corrupt := deployer.IsCorruptionError(err)
+			corrupt := reader.IsCorruptionError(err)
 			if clErr := f.Close(ctx, corrupt); clErr != nil && clErr != os.ErrClosed {
 				logging.Warningf(ctx, "cipd: failed to close the package file - %s", clErr)
 			}
@@ -1415,8 +1416,8 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 
 		// Open the instance. This reads its manifest. 'FetchInstance' has verified
 		// the hash already, so skip the verification.
-		instance, err := deployer.OpenInstance(ctx, instanceFile, deployer.OpenInstanceOpts{
-			VerificationMode: deployer.SkipHashVerification,
+		instance, err := reader.OpenInstance(ctx, instanceFile, reader.OpenInstanceOpts{
+			VerificationMode: reader.SkipHashVerification,
 			InstanceID:       pin.InstanceID,
 		})
 		if err != nil {
@@ -1432,7 +1433,7 @@ func (client *clientImpl) fetchAndDo(ctx context.Context, pin common.Pin, cb fun
 	}
 
 	err := doit()
-	if err != nil && deployer.IsCorruptionError(err) {
+	if err != nil && reader.IsCorruptionError(err) {
 		logging.WithError(err).Warningf(ctx, "cipd: unpacking failed, retrying.")
 		err = doit()
 	}
