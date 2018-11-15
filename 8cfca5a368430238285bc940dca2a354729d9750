@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ff3d3e6f_23bc29b8",
+        "filename": "common/tsmon/context.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-15T18:11:22Z",
+      "side": 1,
+      "message": "\u003e The rationale for relegating it to the bottom of the file is that exported types, variables, functions etc are more \"interesting\", as such are promoted to the top, with implementation details further down the file (either immediately below a logically related, exported method/function, or at the bottom of the file). It\u0027s also easily repeatable.\n\u003e \n\u003e However, this is just my opinion, so if there is some convention under the code base I should adhere to, I\u0027m happy to hear it!\n\nNo concrete guidelines. I think we generally order things by relevance first, not by visibility. It\u0027s not a big deal.\n\n\u003e \n\u003e I\u0027ve compromised and changed the the type of `key` from int to string. It\u0027s recommended that context keys not be a built-in type, as to avoid collisions. So we should get best of both now.\n\nOk. The proposal was to use an address of a (private) global string variable as a key, not its value. So there could be no collisions in this case either. string type is also fine.",
+      "parentUuid": "5e5e901d_9a045cfa",
+      "range": {
+        "startLine": 53,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 20
+      },
+      "revId": "8cfca5a368430238285bc940dca2a354729d9750",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c996e044_d8f795a2",
         "filename": "common/tsmon/state.go",
         "patchSetId": 4
