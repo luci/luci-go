@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "63976267_e36ffd98",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-16T19:30:15Z",
+      "side": 1,
+      "message": "Btw, this already enables CORB regardless of the content type (if I understand the doc correctly). Though setting nosniff will disable this.",
+      "range": {
+        "startLine": 73,
+        "startChar": 32,
+        "endLine": 73,
+        "endChar": 40
+      },
+      "revId": "aec68b981f2289e773196b54fd45db3688ea8184",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
