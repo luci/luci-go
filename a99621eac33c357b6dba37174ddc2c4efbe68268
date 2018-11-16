@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "0687b167_81adf462",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-16T00:43:13Z",
+      "side": 1,
+      "message": "I don\u0027t currently expect \u003e1, changed.",
+      "parentUuid": "b0ddf82a_c7445920",
+      "range": {
+        "startLine": 15,
+        "startChar": 52,
+        "endLine": 15,
+        "endChar": 53
+      },
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "38fdde49_d0ba6e7f",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-16T00:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d42b4830_8a1dae98",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ea85dd7_0323f68e",
         "filename": "gce/appengine/rpc/memory/config.go",
         "patchSetId": 1
@@ -59,6 +101,24 @@
     },
     {
       "key": {
+        "uuid": "9d2bca6c_086b7932",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-16T00:43:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ea85dd7_0323f68e",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "87b9d71c_3fae3194",
         "filename": "gce/appengine/rpc/memory/config_test.go",
         "patchSetId": 1
@@ -73,6 +133,24 @@
       "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2c7c4ee_d1b01445",
+        "filename": "gce/appengine/rpc/memory/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-16T00:43:13Z",
+      "side": 1,
+      "message": "Done in config.go, for consistency with elsewhere in the app (gce/api/config/v1/block.go has such a type assertion).",
+      "parentUuid": "87b9d71c_3fae3194",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
