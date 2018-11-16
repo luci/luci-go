@@ -46,6 +46,30 @@
       "revId": "aec68b981f2289e773196b54fd45db3688ea8184",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19e2d2c4_9c2aa910",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-16T19:53:57Z",
+      "side": 1,
+      "message": "i started writing an email to the author of the the doc, but this behavior might be specific to chrome. There are other browsers too. The nosiff and application/json seems to be a more standard mitigation of the problem.",
+      "parentUuid": "d11c57f0_3e04175c",
+      "range": {
+        "startLine": 73,
+        "startChar": 32,
+        "endLine": 73,
+        "endChar": 40
+      },
+      "revId": "aec68b981f2289e773196b54fd45db3688ea8184",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
