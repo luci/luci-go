@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0ddf82a_c7445920",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-16T00:14:27Z",
+      "side": 1,
+      "message": "curious, do you expect \u003e1? Or do you mean 1 service \u003d 1 server?",
+      "range": {
+        "startLine": 15,
+        "startChar": 52,
+        "endLine": 15,
+        "endChar": 53
+      },
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d42b4830_8a1dae98",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-16T00:14:27Z",
+      "side": 1,
+      "message": "nitty nit: i dunno why, but most docs I see wrap by 80 lines.",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5ea85dd7_0323f68e",
+        "filename": "gce/appengine/rpc/memory/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-16T00:14:27Z",
+      "side": 1,
+      "message": "this assumes server user is single-threaded, which is unusual.\nwhy not make it thread-safe upfront? adds just 8 lines :)",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87b9d71c_3fae3194",
+        "filename": "gce/appengine/rpc/memory/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-16T00:14:27Z",
+      "side": 1,
+      "message": "consider asserting implementation of intended service with:\n\nvar _ config.ConfigService \u003d (*Config)(nil)",
+      "revId": "a99621eac33c357b6dba37174ddc2c4efbe68268",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
