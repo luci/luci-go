@@ -22,6 +22,30 @@
       "revId": "aec68b981f2289e773196b54fd45db3688ea8184",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d11c57f0_3e04175c",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-16T19:34:42Z",
+      "side": 1,
+      "message": "yes, that\u0027s how I understand this too. Maybe it is false alarm in inquisition that it does not look at this",
+      "parentUuid": "63976267_e36ffd98",
+      "range": {
+        "startLine": 73,
+        "startChar": 32,
+        "endLine": 73,
+        "endChar": 40
+      },
+      "revId": "aec68b981f2289e773196b54fd45db3688ea8184",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
