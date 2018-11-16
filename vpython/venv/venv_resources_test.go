@@ -213,6 +213,7 @@ func (tl *testingLoader) buildWheelLocked(t *testing.T, py *python.Interpreter, 
 
 		// Testing parameters for this bootstrap wheel-building environment.
 		testLeaveReadWrite: true,
+		testUIDOverride:    true,
 	}
 
 	// Build the wheel in a temporary directory, then copy it into outDir. This

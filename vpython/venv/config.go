@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"time"
 
@@ -39,7 +40,7 @@ import (
 
 // EnvironmentVersion is an environment version string. It must advance each
 // time the layout of a VirtualEnv environment changes.
-const EnvironmentVersion = "v3"
+const EnvironmentVersion = "v4"
 
 const siteCustomizePy = "sitecustomize.py"
 
@@ -118,6 +119,10 @@ type Config struct {
 	// directory read/write. This makes it easier to manage, and is safe since it
 	// is not a production directory.
 	testLeaveReadWrite bool
+
+	// testUIDOverride can be set to prevent calling `user.Current()` to
+	// determine the current user name.
+	testUIDOverride bool
 }
 
 // WithoutWheels returns a clone of cfg that depends on no additional packages.
@@ -213,8 +218,15 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
 func (cfg *Config) envNameForSpec(s *vpython.Spec, rt *vpython.Runtime) string {
+	uid := "<unknown>"
+	if !cfg.testUIDOverride {
+		if user, err := user.Current(); err != nil {
+			uid = user.Uid
+		}
+	}
+
 	name := spec.Hash(s, rt, EnvironmentVersion,
-		string(assets.GetAssetSHA256(siteCustomizePy)))
+		string(assets.GetAssetSHA256(siteCustomizePy)), uid)
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}
