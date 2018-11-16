@@ -169,7 +169,6 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		transient.Only(options.Retry),
 		func() error {
 			ctx := ctx
-			logging.Debugf(ctx, "RPC %s/%s.%s", c.Host, serviceName, methodName)
 
 			// If there is a deadline on our Context, set the timeout header on the
 			// request.
@@ -177,7 +176,6 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 			var requestDeadline time.Time
 			if options.PerRPCTimeout > 0 {
 				requestDeadline = now.Add(options.PerRPCTimeout)
-				logging.Debugf(ctx, "RPC: Using options.PerPRCTimeout %q. Timeout: %q", options.PerRPCTimeout, requestDeadline)
 			}
 
 			// Does our parent Context have a deadline?
@@ -185,28 +183,27 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 				// Outer Context has a shorter deadline than our per-RPC deadline, so
 				// use it.
 				requestDeadline = deadline
-				logging.Debugf(ctx, "RPC: Using context deadline %q.", requestDeadline)
 			} else if !requestDeadline.IsZero() {
 				// We have a shorter request deadline. Create a derivative Context for
 				// this request round.
 				var cancelFunc context.CancelFunc
 				ctx, cancelFunc = clock.WithDeadline(ctx, requestDeadline)
-				logging.Debugf(ctx, "RPC: Using request deadline %q.", requestDeadline)
 				defer cancelFunc()
 			}
 
 			// If we have a request deadline, apply it to our header.
 			if !requestDeadline.IsZero() {
 				delta := requestDeadline.Sub(now)
+				logging.Debugf(ctx, "RPC %s/%s.%s [deadline %s]", c.Host, serviceName, methodName, delta)
 				if delta <= 0 {
 					// The request has already expired. This will likely never happen,
 					// since the outer Retry loop will have expired, but there is a very
 					// slight possibility of a race.
-					logging.Debugf(ctx, "RPC: Deadline exceed now %q", now)
 					return context.DeadlineExceeded
 				}
-
 				req.Header.Set(HeaderTimeout, EncodeTimeout(delta))
+			} else {
+				logging.Debugf(ctx, "RPC %s/%s.%s", c.Host, serviceName, methodName)
 			}
 
 			// Send the request.
