@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5209b14e_e1db417b",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "It should: it\u0027s a oneof from Binary, Text, and Datagram https://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/logdog/api/logpb/log.proto?l\u003d177\u0026rcl\u003d233800ef69284400d5fc15827304c10cda6ef070\n\nI\u0027m not at all wedded to the idea of dumping *everything* in the content, rather than just the text. I put it like this at first so that if we find it\u0027s too much and not useful we can take it out later.",
+      "parentUuid": "9ba39955_7fc0bdcc",
+      "range": {
+        "startLine": 156,
+        "startChar": 7,
+        "endLine": 156,
+        "endChar": 14
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "1589fde2_e9109c0c",
         "filename": "logdog/client/butler/bundler/datagramParser.go",
         "patchSetId": 1
@@ -59,6 +83,24 @@
     },
     {
       "key": {
+        "uuid": "20a3f9b1_5cd4688b",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "I\u0027ve swapped for\n\nvar buf []*logpb.LogEntry\nbuf \u003d nil\n\nsince the construction in the second excerpt fails with\n\nclient/butler/bundler/datagramParser.go:170:27: syntax error: unexpected { at end of statement\nclient/butler/bundler/datagramParser.go:171:2: syntax error: non-declaration statement outside function body",
+      "parentUuid": "c1640158_92b7608c",
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a8b98f7f_adfa817f",
         "filename": "logdog/client/butler/bundler/datagramParser.go",
         "patchSetId": 1
@@ -70,6 +112,30 @@
       "writtenOn": "2018-11-16T00:42:59Z",
       "side": 1,
       "message": "good thing StreamChunkCallback is called under a lock!\n\nThat said, I would short circuit if le is NOT partial and buf is empty, call cb(le) and return (no extra allocs, logic). We expect this to be the majority case anyway, right?",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 24
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "552dedd8_8c00c9fe",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "Yep.\n\nTrue. Actually, if le is not partial, then buf *should* be empty because the previous complete log should have gone through, unless something went wrong and we dropped a LogEntry (which is not supposed to happen due to when this is called), right?\n\nI don\u0027t like the idea of assuming buf is empty. What do you think of panicking if it isn\u0027t?",
+      "parentUuid": "a8b98f7f_adfa817f",
       "range": {
         "startLine": 173,
         "startChar": 3,
@@ -105,6 +171,30 @@
     },
     {
       "key": {
+        "uuid": "8477590d_e3a54f7a",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "I\u0027d considered this --- does this benefit so much as to warrant the double traversal? (We\u0027d also need to assertGetDatagram in the first traversal too.)",
+      "parentUuid": "46620132_9c4e34e4",
+      "range": {
+        "startLine": 193,
+        "startChar": 12,
+        "endLine": 193,
+        "endChar": 20
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "c312976f_14a0f242",
         "filename": "logdog/client/butler/bundler/datagramParser.go",
         "patchSetId": 1
@@ -125,6 +215,30 @@
       "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5eaa16e3_7d1fb8a5",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": ":D",
+      "parentUuid": "c312976f_14a0f242",
+      "range": {
+        "startLine": 194,
+        "startChar": 10,
+        "endLine": 194,
+        "endChar": 16
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +265,30 @@
     },
     {
       "key": {
+        "uuid": "8294adec_36efa1c2",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "Mostly to separate out the \"cleanup\" (buffer reset). Removed and will mark as resolved with the next patchset.",
+      "parentUuid": "723229fa_be29e8e6",
+      "range": {
+        "startLine": 206,
+        "startChar": 3,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "5d697bcc_099677cc",
         "filename": "logdog/client/butler/bundler/datagramParser.go",
         "patchSetId": 1
@@ -162,6 +300,30 @@
       "writtenOn": "2018-11-16T00:42:59Z",
       "side": 1,
       "message": "assigning nil to buf is fine",
+      "range": {
+        "startLine": 209,
+        "startChar": 3,
+        "endLine": 209,
+        "endChar": 28
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4b63d527_beb2512d",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:02:51Z",
+      "side": 1,
+      "message": "Oh neat, thanks. Will mark as resolved with the next patchset.",
+      "parentUuid": "5d697bcc_099677cc",
       "range": {
         "startLine": 209,
         "startChar": 3,
