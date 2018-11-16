@@ -130,7 +130,7 @@ var (
 	// ClientPackage is a package with the CIPD client. Used during self-update.
 	ClientPackage = "infra/tools/cipd/${platform}"
 	// UserAgent is HTTP user agent string for CIPD client.
-	UserAgent = "cipd 2.2.11"
+	UserAgent = "cipd 2.2.12"
 )
 
 func init() {
@@ -198,13 +198,18 @@ type Client interface {
 	// RegisterInstance makes the package instance available for clients.
 	//
 	// It uploads the instance to the storage, waits until the storage verifies
-	// its hash, and then registers the package in the repository, making it
-	// discoverable.
+	// its hash matches instance ID in 'pin', and then registers the package in
+	// the repository, making it discoverable.
+	//
+	// 'pin' here should match the package body, otherwise CIPD backend will
+	// reject the package. Either get it from builder.BuildInstance (when building
+	// a new package) or from reader.CalculatePin (when uploading an existing
+	// package file).
 	//
 	// 'timeout' specifies for how long to wait until the instance hash is
 	// verified by the storage backend. If 0, default CASFinalizationTimeout will
 	// be used.
-	RegisterInstance(ctx context.Context, instance pkg.Instance, timeout time.Duration) error
+	RegisterInstance(ctx context.Context, pin common.Pin, body io.ReadSeeker, timeout time.Duration) error
 
 	// DescribeInstance returns information about a package instance.
 	//
@@ -911,11 +916,10 @@ func (client *clientImpl) maybeUpdateClient(ctx context.Context, fs fs.FileSyste
 	return pin, nil
 }
 
-func (client *clientImpl) RegisterInstance(ctx context.Context, instance pkg.Instance, timeout time.Duration) error {
+func (client *clientImpl) RegisterInstance(ctx context.Context, pin common.Pin, body io.ReadSeeker, timeout time.Duration) error {
 	if timeout == 0 {
 		timeout = CASFinalizationTimeout
 	}
-	pin := instance.Pin()
 
 	// attemptToRegister calls RegisterInstance RPC and logs the result.
 	attemptToRegister := func() (*api.UploadOperation, error) {
@@ -954,7 +958,7 @@ func (client *clientImpl) RegisterInstance(ctx context.Context, instance pkg.Ins
 	}
 
 	// The backend asked us to upload the data to CAS. Do it.
-	if err := client.storage.upload(ctx, uploadOp.UploadUrl, instance.Source()); err != nil {
+	if err := client.storage.upload(ctx, uploadOp.UploadUrl, body); err != nil {
 		return err
 	}
 	if err := client.finalizeUpload(ctx, uploadOp.OperationId, timeout); err != nil {

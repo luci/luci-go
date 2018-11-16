@@ -1039,11 +1039,11 @@ func buildAndUploadInstance(ctx context.Context, opts *createOpts) (common.Pin, 
 		f.Close()
 		os.Remove(f.Name())
 	}()
-	err = buildInstanceFile(ctx, f.Name(), opts.inputOptions)
+	pin, err := buildInstanceFile(ctx, f.Name(), opts.inputOptions, opts.hashAlgo())
 	if err != nil {
 		return common.Pin{}, err
 	}
-	return registerInstanceFile(ctx, f.Name(), &registerOpts{
+	return registerInstanceFile(ctx, f.Name(), &pin, &registerOpts{
 		refsOptions:   opts.refsOptions,
 		tagsOptions:   opts.tagsOptions,
 		clientOptions: opts.clientOptions,
@@ -2151,35 +2151,42 @@ func (c *buildRun) Run(a subcommands.Application, args []string, env subcommands
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	err := buildInstanceFile(ctx, c.outputFile, c.inputOptions)
+	_, err := buildInstanceFile(ctx, c.outputFile, c.inputOptions, c.hashAlgo())
 	if err != nil {
 		return c.done(nil, err)
 	}
 	return c.done(inspectInstanceFile(ctx, c.outputFile, c.hashAlgo(), false))
 }
 
-func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts inputOptions) error {
+func buildInstanceFile(ctx context.Context, instanceFile string, inputOpts inputOptions, algo api.HashAlgo) (common.Pin, error) {
 	// Read the list of files to add to the package.
 	buildOpts, err := inputOpts.prepareInput()
 	if err != nil {
-		return err
+		return common.Pin{}, err
 	}
 
 	// Prepare the destination, update build options with io.Writer to it.
 	out, err := os.OpenFile(instanceFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		return err
+		return common.Pin{}, err
 	}
 	buildOpts.Output = out
+	buildOpts.HashAlgo = algo
 
 	// Build the package.
-	_, err = builder.BuildInstance(ctx, buildOpts)
-	out.Close()
+	pin, err := builder.BuildInstance(ctx, buildOpts)
 	if err != nil {
+		out.Close()
 		os.Remove(instanceFile)
-		return err
+		return common.Pin{}, err
 	}
-	return nil
+
+	// Make sure it is flushed properly by ensuring Close succeeds.
+	if err := out.Close(); err != nil {
+		return common.Pin{}, err
+	}
+
+	return pin, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2366,8 +2373,12 @@ func inspectInstanceFile(ctx context.Context, instanceFile string, hashAlgo api.
 	return inst.Pin(), nil
 }
 
+func inspectPin(ctx context.Context, pin common.Pin) {
+	fmt.Printf("Instance: %s\n", pin)
+}
+
 func inspectInstance(ctx context.Context, inst pkg.Instance, listFiles bool) {
-	fmt.Printf("Instance: %s\n", inst.Pin())
+	inspectPin(ctx, inst.Pin())
 	if listFiles {
 		fmt.Println("Package files:")
 		for _, f := range inst.Files() {
@@ -2440,38 +2451,49 @@ func (c *registerRun) Run(a subcommands.Application, args []string, env subcomma
 		return 1
 	}
 	ctx := cli.GetContext(a, c, env)
-	return c.done(registerInstanceFile(ctx, args[0], &c.Opts))
+	return c.done(registerInstanceFile(ctx, args[0], nil, &c.Opts))
 }
 
-func registerInstanceFile(ctx context.Context, instanceFile string, opts *registerOpts) (common.Pin, error) {
-	inst, err := reader.OpenInstanceFile(ctx, instanceFile, reader.OpenInstanceOpts{
-		VerificationMode: reader.CalculateHash,
-		HashAlgo:         opts.hashAlgo(),
-	})
+func registerInstanceFile(ctx context.Context, instanceFile string, knownPin *common.Pin, opts *registerOpts) (common.Pin, error) {
+	src, err := os.Open(instanceFile)
 	if err != nil {
 		return common.Pin{}, err
 	}
-	defer inst.Close(ctx, false)
-	client, err := opts.clientOptions.makeCIPDClient(ctx)
-	if err != nil {
-		return common.Pin{}, err
-	}
-	inspectInstance(ctx, inst, false)
-	err = client.RegisterInstance(ctx, inst, opts.uploadOptions.verificationTimeout)
-	if err != nil {
-		return common.Pin{}, err
-	}
-	err = client.AttachTagsWhenReady(ctx, inst.Pin(), opts.tagsOptions.tags)
-	if err != nil {
-		return common.Pin{}, err
-	}
-	for _, ref := range opts.refsOptions.refs {
-		err = client.SetRefWhenReady(ctx, ref, inst.Pin())
+	defer src.Close()
+
+	// Calculate the pin if not yet known.
+	var pin common.Pin
+	if knownPin != nil {
+		pin = *knownPin
+	} else {
+		pin, err = reader.CalculatePin(ctx, src, opts.hashAlgo())
 		if err != nil {
 			return common.Pin{}, err
 		}
 	}
-	return inst.Pin(), nil
+	inspectPin(ctx, pin)
+
+	client, err := opts.clientOptions.makeCIPDClient(ctx)
+	if err != nil {
+		return common.Pin{}, err
+	}
+
+	err = client.RegisterInstance(ctx, pin, src, opts.uploadOptions.verificationTimeout)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	err = client.AttachTagsWhenReady(ctx, pin, opts.tagsOptions.tags)
+	if err != nil {
+		return common.Pin{}, err
+	}
+	for _, ref := range opts.refsOptions.refs {
+		err = client.SetRefWhenReady(ctx, ref, pin)
+		if err != nil {
+			return common.Pin{}, err
+		}
+	}
+
+	return pin, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
