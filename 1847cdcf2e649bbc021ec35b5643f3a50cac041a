@@ -148,6 +148,30 @@
     },
     {
       "key": {
+        "uuid": "082f2a61_12784e15",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-16T21:18:27Z",
+      "side": 1,
+      "message": "Then again, something similar happens below with non-terminal partial Datagrams. I retract; don\u0027t feel strongly about not panicking. Do you have a preference?",
+      "parentUuid": "552dedd8_8c00c9fe",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 24
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "46620132_9c4e34e4",
         "filename": "logdog/client/butler/bundler/datagramParser.go",
         "patchSetId": 1
