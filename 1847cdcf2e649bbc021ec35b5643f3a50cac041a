@@ -1,0 +1,199 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ba39955_7fc0bdcc",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "what is Content? Will it tell us what type the LogEntry is?",
+      "range": {
+        "startLine": 156,
+        "startChar": 7,
+        "endLine": 156,
+        "endChar": 14
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1589fde2_e9109c0c",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "this should probably also take context, so we can use logging in the buffering thingy",
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1640158_92b7608c",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "I\u0027m not sure this construction is necessary:\n\n   f :\u003d func(StreamChunkCallback, []*logpb.LogEntry) {\n     return func(*logpb.LogEntry) {\n        ... use buf ...\n     }\n   }\n   return f(cb, []*logpb.LogEntry{})\n\nvs.\n\n   var buf []*logpb.LogEntry{}    // note that a nil slice here is fine\n   return func(*logpb.LogEntry) {\n     ... use buf ...\n   }",
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a8b98f7f_adfa817f",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "good thing StreamChunkCallback is called under a lock!\n\nThat said, I would short circuit if le is NOT partial and buf is empty, call cb(le) and return (no extra allocs, logic). We expect this to be the majority case anyway, right?",
+      "range": {
+        "startLine": 173,
+        "startChar": 3,
+        "endLine": 173,
+        "endChar": 24
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "46620132_9c4e34e4",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "allocate the slice with the correct capacity:\n\n   dgSize :\u003d 0\n   for _, lePart :\u003d range buf {\n     dgSize +\u003d len(lePart.Data)\n   }\n   bytes :\u003d make([]byte, 0, dgSize)\n   for _, lePart :\u003d range buf {\n     part :\u003d assertGetDatagram(lePart)\n     bytes \u003d append(bytes, part.Data...)  # doesn\u0027t cause allocation now\n   }",
+      "range": {
+        "startLine": 193,
+        "startChar": 12,
+        "endLine": 193,
+        "endChar": 20
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c312976f_14a0f242",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "why not `laPartie` :)",
+      "range": {
+        "startLine": 194,
+        "startChar": 10,
+        "endLine": 194,
+        "endChar": 16
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "723229fa_be29e8e6",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 206,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "why defer?",
+      "range": {
+        "startLine": 206,
+        "startChar": 3,
+        "endLine": 206,
+        "endChar": 8
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d697bcc_099677cc",
+        "filename": "logdog/client/butler/bundler/datagramParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "assigning nil to buf is fine",
+      "range": {
+        "startLine": 209,
+        "startChar": 3,
+        "endLine": 209,
+        "endChar": 28
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cf24c89d_4fefe7af",
+        "filename": "logdog/client/butler/bundler/textParser.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-16T00:42:59Z",
+      "side": 1,
+      "message": "have escape hatch on all of these:\n\n   if cb \u003d\u003d nil { return nil }",
+      "range": {
+        "startLine": 149,
+        "startChar": 40,
+        "endLine": 149,
+        "endChar": 42
+      },
+      "revId": "1847cdcf2e649bbc021ec35b5643f3a50cac041a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
