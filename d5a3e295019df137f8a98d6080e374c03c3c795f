@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5f6fc76e_9827a89c",
+        "filename": "vpython/venv/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-16T23:10:03Z",
+      "side": 1,
+      "message": "Can we at least log this?",
+      "range": {
+        "startLine": 223,
+        "startChar": 11,
+        "endLine": 223,
+        "endChar": 14
+      },
+      "revId": "d5a3e295019df137f8a98d6080e374c03c3c795f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
