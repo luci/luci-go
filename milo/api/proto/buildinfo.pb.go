@@ -6,10 +6,10 @@ package milo
 import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
+	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	milo "go.chromium.org/luci/common/proto/milo"
-	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 	math "math"
 )

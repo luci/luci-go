@@ -1878,6 +1878,7 @@
             "CANCELED",
             "COMPLETED",
             "EXPIRED",
+            "INVALID",
             "KILLED",
             "NO_RESOURCE",
             "PENDING",
@@ -1885,6 +1886,7 @@
             "TIMED_OUT"
           ],
           "enumDescriptions": [
+            "",
             "",
             "",
             "",
@@ -1945,6 +1947,7 @@
               "CANCELED",
               "COMPLETED",
               "EXPIRED",
+              "INVALID",
               "KILLED",
               "NO_RESOURCE",
               "PENDING",
@@ -1952,6 +1955,7 @@
               "TIMED_OUT"
             ],
             "enumDescriptions": [
+              "",
               "",
               "",
               "",

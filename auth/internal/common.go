@@ -277,7 +277,7 @@ func isBadKeyError(err error) bool {
 	// See https://go.googlesource.com/oauth2.git/+/197281d4/internal/oauth2.go#32
 	// Unfortunately, if uses fmt.Errorf.
 	s := err.Error()
-	return strings.Contains(s, "private key should be a PEM or plain PKSC1 or PKCS8") ||
+	return strings.Contains(s, "private key should be a PEM") ||
 		s == "private key is invalid"
 }
 
