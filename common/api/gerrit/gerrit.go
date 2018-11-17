@@ -659,6 +659,32 @@ func (c *Client) SetReview(ctx context.Context, changeID string, revisionID stri
 	return &resp, nil
 }
 
+// RestoreInput contains information for restoring a change.
+type RestoreInput struct {
+	// Message is the message to be added as review comment to the change when restoring the change.
+	Message string `json:"message,omitempty"`
+}
+
+// Restore restores an existing abandoned change in Gerrit.
+//
+// Returns a Change referenced by changeID, if restored.
+//
+// RestoreInput is optional (that is, may be nil).
+//
+// The changeID parameter may be in any of the forms supported by Gerrit:
+//   - "4247"
+//   - "I8473b95934b5732ac55d26311a706c9c2bde9940"
+//   - etc. See the link below.
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-id
+func (c *Client) RestoreChange(ctx context.Context, changeID string, ri *RestoreInput) (*Change, error) {
+	var resp Change
+	path := fmt.Sprintf("a/changes/%s/restore", url.PathEscape(changeID))
+	if _, err := c.post(ctx, path, ri, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 func (c *Client) get(ctx context.Context, path string, query url.Values, result interface{}) (int, error) {
 	u := c.gerritURL
 	u.Opaque = "//" + u.Host + "/" + path
