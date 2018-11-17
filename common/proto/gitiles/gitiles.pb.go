@@ -6,10 +6,10 @@ package gitiles
 import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
+	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
-	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 	math "math"
 )

@@ -156,12 +156,12 @@ type ButlerLogBundle struct {
 	//
 	// This field will be used for debugging and internal accounting.
 	Timestamp *timestamp.Timestamp `protobuf:"bytes,2,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// *
+	//*
 	// Each Entry is an individual set of log records for a given log stream.
 	Entries []*ButlerLogBundle_Entry `protobuf:"bytes,3,rep,name=entries,proto3" json:"entries,omitempty"`
-	// * Project specifies which luci-config project this stream belongs to.
+	//* Project specifies which luci-config project this stream belongs to.
 	Project string `protobuf:"bytes,4,opt,name=project,proto3" json:"project,omitempty"`
-	// *
+	//*
 	// The log stream prefix that is shared by all bundled streams.
 	//
 	// This prefix is valid within the supplied project scope.
