@@ -41,6 +41,23 @@
 //
 // Protocol
 //
+// ## v1.1
+//
+// v1.1 is small, backward-compatible amendment to the protocol to address a
+// security issue. Since it is backward compatible, it does not introduce
+// a formal protocol version header at this time.
+//
+// Changes:
+//  - Requests/responses must use "application/json" media type instead of
+//    "application/prpc; encoding=json".
+//  - Responses must include "X-Content-Type-Options: nosniff" HTTP header.
+//
+// This enables CORB protection (which mitigates spectre) and disables content
+// sniffing.
+// For CORB, see https://chromium.googlesource.com/chromium/src/+/master/services/network/cross_origin_read_blocking_explainer.md.
+//
+// ## v1.0
+//
 // This section describes the pRPC protocol. It is based on HTTP 1.x and employs
 // gRPC codes.
 //
