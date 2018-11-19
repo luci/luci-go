@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"time"
 
@@ -39,7 +40,7 @@ import (
 
 // EnvironmentVersion is an environment version string. It must advance each
 // time the layout of a VirtualEnv environment changes.
-const EnvironmentVersion = "v3"
+const EnvironmentVersion = "v4"
 
 const siteCustomizePy = "sitecustomize.py"
 
@@ -204,7 +205,7 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 	// fully-resolved specification.
 	envName := cfg.OverrideName
 	if envName == "" {
-		envName = cfg.envNameForSpec(e.Spec, e.Runtime)
+		envName = cfg.envNameForSpec(c, e.Spec, e.Runtime)
 	}
 	env := cfg.envForName(envName, e)
 	return env, nil
@@ -212,9 +213,16 @@ func (cfg *Config) makeEnv(c context.Context, e *vpython.Environment) (*Env, err
 
 // EnvName returns the VirtualEnv environment name for the environment that cfg
 // describes.
-func (cfg *Config) envNameForSpec(s *vpython.Spec, rt *vpython.Runtime) string {
+func (cfg *Config) envNameForSpec(c context.Context, s *vpython.Spec, rt *vpython.Runtime) string {
+	uid := "<unknown>"
+	if user, err := user.Current(); err != nil {
+		uid = user.Uid
+	} else {
+		logging.Warningf(c, "Unable to find current user ID: %s", err)
+	}
+
 	name := spec.Hash(s, rt, EnvironmentVersion,
-		string(assets.GetAssetSHA256(siteCustomizePy)))
+		string(assets.GetAssetSHA256(siteCustomizePy)), uid)
 	if cfg.MaxHashLen > 0 && len(name) > cfg.MaxHashLen {
 		name = name[:cfg.MaxHashLen]
 	}
