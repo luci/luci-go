@@ -16,6 +16,7 @@ package bundler
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -144,4 +145,12 @@ func (p *textParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 
 	p.sequence += int64(lineCount)
 	return le, nil
+}
+
+// getWrappedCallback wraps a passed callback meant to be called at the ends of Text lines so that
+// it is actually called at the end of Text lines.
+// Does not wrap callback to guarantee being called at the end of *every* Text line.
+func (p *textParser) getWrappedCallback(cb StreamChunkCallback) StreamChunkCallback {
+	// TODO(jchinlee): implement
+	return cb
 }
