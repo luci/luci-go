@@ -30,7 +30,8 @@ const (
 	mtPRPCEncodingJSONPB = "json"
 	mtPRPCEncodingText   = "text"
 	mtPRPCBinary         = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingBinary
-	mtPRPCJSONPB         = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingJSONPB
+	mtPRPCJSONPB         = ContentTypeJSON
+	mtPRPCJSONPBLegacy   = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingJSONPB
 	mtPRPCText           = ContentTypePRPC + "; " + mtPRPCEncoding + "=" + mtPRPCEncodingText
 
 	// JSONPBPrefix is prepended to a message in JSONPB format to avoid CSRF.

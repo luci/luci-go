@@ -80,7 +80,7 @@ func TestDecoding(t *testing.T) {
 			Convey(ContentTypeJSON, func() {
 				testLucy(ContentTypeJSON, body)
 			})
-			Convey(mtPRPCJSONPB, func() {
+			Convey(mtPRPCJSONPBLegacy, func() {
 				testLucy(mtPRPCJSONPB, body)
 			})
 			Convey("malformed body", func() {
