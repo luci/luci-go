@@ -40,12 +40,8 @@ func RegisterCallback(f Callback) {
 }
 
 // RegisterCallbackIn is like RegisterCallback but registers in a given context.
-func RegisterCallbackIn(c context.Context, f Callback) {
-	state := GetState(c)
-	state.CallbacksMutex.Lock()
-	defer state.CallbacksMutex.Unlock()
-
-	state.Callbacks = append(state.Callbacks, f)
+func RegisterCallbackIn(ctx context.Context, f Callback) {
+	GetState(ctx).RegisterCallbacks(f)
 }
 
 // RegisterGlobalCallback registers a callback function that will be run once
@@ -64,14 +60,10 @@ func RegisterGlobalCallback(f Callback, metrics ...types.Metric) {
 
 // RegisterGlobalCallbackIn is like RegisterGlobalCallback but registers in a
 // given context.
-func RegisterGlobalCallbackIn(c context.Context, f Callback, metrics ...types.Metric) {
+func RegisterGlobalCallbackIn(ctx context.Context, f Callback, metrics ...types.Metric) {
 	if len(metrics) == 0 {
 		panic("RegisterGlobalCallback called without any metrics")
 	}
 
-	state := GetState(c)
-	state.CallbacksMutex.Lock()
-	defer state.CallbacksMutex.Unlock()
-
-	state.GlobalCallbacks = append(state.GlobalCallbacks, GlobalCallback{f, metrics})
+	GetState(ctx).RegisterGlobalCallbacks(GlobalCallback{f, metrics})
 }
