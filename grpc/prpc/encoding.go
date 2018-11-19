@@ -66,9 +66,9 @@ func responseFormat(acceptHeader string) (Format, *protocolError) {
 		return FormatBinary, errorf(
 			http.StatusNotAcceptable,
 			"Accept header: specified media types are not not supported. Supported types: %q, %q, %q, %q.",
-			FormatBinary.ContentType(),
-			FormatJSONPB.ContentType(),
-			FormatText.ContentType(),
+			FormatBinary.MediaType(),
+			FormatJSONPB.MediaType(),
+			FormatText.MediaType(),
 			ContentTypeJSON,
 		)
 	}
@@ -115,7 +115,7 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 	}
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
-	w.Header().Set(headerContentType, format.ContentType())
+	w.Header().Set(headerContentType, format.MediaType())
 	if _, err := w.Write(body); err != nil {
 		logging.WithError(err).Errorf(c, "prpc: failed to write response body")
 	}
