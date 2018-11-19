@@ -113,22 +113,8 @@ func FormatFromEncoding(v string) (Format, error) {
 	}
 }
 
-// MediaType returns the media type value for a Format.
+// MediaType returns a full media type for f.
 func (f Format) MediaType() string {
-	switch f {
-	case FormatJSONPB:
-		return mtPRPCEncodingJSONPB
-	case FormatText:
-		return mtPRPCEncodingText
-	case FormatBinary:
-		fallthrough
-	default:
-		return mtPRPCEncodingBinary
-	}
-}
-
-// ContentType returns a full MIME type for a format.
-func (f Format) ContentType() string {
 	switch f {
 	case FormatJSONPB:
 		return mtPRPCJSONPB

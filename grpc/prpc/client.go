@@ -338,7 +338,7 @@ func (c *Client) CallRaw(ctx context.Context, serviceName, methodName string, in
 		return nil, err
 	}
 	if f != outf {
-		return nil, fmt.Errorf("output format (%s) doesn't match expected format (%s)", f.ContentType(), outf.ContentType())
+		return nil, fmt.Errorf("output format (%s) doesn't match expected format (%s)", f.MediaType(), outf.MediaType())
 	}
 
 	out := buf.Bytes()
@@ -368,8 +368,8 @@ func prepareRequest(host, serviceName, methodName string, md metadata.MD, conten
 	}
 
 	// Set headers.
-	req.Header.Set("Content-Type", inf.ContentType())
-	req.Header.Set("Accept", outf.ContentType())
+	req.Header.Set("Content-Type", inf.MediaType())
+	req.Header.Set("Accept", outf.MediaType())
 	userAgent := options.UserAgent
 	if userAgent == "" {
 		userAgent = DefaultUserAgent
