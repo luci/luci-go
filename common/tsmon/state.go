@@ -222,7 +222,7 @@ func (s *State) resetGlobalCallbackMetrics(ctx context.Context) {
 	store := s.Store()
 
 	for _, cb := range s.GlobalCallbacks() {
-		for _, m := range cb.Metrics {
+		for _, m := range cb.metrics {
 			store.Reset(ctx, m)
 		}
 	}
