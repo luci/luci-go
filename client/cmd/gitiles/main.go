@@ -39,6 +39,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 		Title: "gitiles client",
 		// Keep in alphabetical order of their name.
 		Commands: []*subcommands.Command{
+			cmdArchive(defaultAuthOpts),
 			cmdLog(defaultAuthOpts),
 			cmdRefs(defaultAuthOpts),
 			subcommands.CmdHelp,
