@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "016141a6_bc8d20a5",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-19T22:17:00Z",
+      "side": 1,
+      "message": "I\u0027ve validated the GZIP target against https://chromium.googlesource.com/infra/luci/luci-go\nOther formats don\u0027t seem to be supported by our gitiles instance.\n\nThey\u0027re supported by gitiles code though: https://github.com/google/gitiles/blob/65edbe49f2b3882a5979f602383ef0c7b2b8ee0c/java/com/google/gitiles/ArchiveFormat.java#L30",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 166,
+        "endChar": 1
+      },
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
