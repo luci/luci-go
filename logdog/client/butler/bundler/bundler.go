@@ -59,6 +59,7 @@ type Config struct {
 	// callback to attach to the stream or nil if no callback is desired.
 	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
 	// should treat it as read-only .
+	// NB: may FAIL to be called if logs come to it out of order (this is not anticipated).
 	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) StreamChunkCallback
 }
 
@@ -135,15 +136,14 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 			}
 		},
 	}
-	// TODO(jchinlee): wrap the callback returned here so that it's called only on full LogEntries.
-	if b.c.StreamRegistrationCallback != nil {
-		c.callback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
-	}
 
 	err := error(nil)
 	c.parser, err = newParser(p, &b.prefixCounter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stream parser: %s", err)
+	}
+	if b.c.StreamRegistrationCallback != nil {
+		c.callback = c.parser.getWrappedCallback(b.c.StreamRegistrationCallback(p.LogStreamDescriptor))
 	}
 
 	b.streamsLock.Lock()

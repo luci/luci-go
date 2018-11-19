@@ -65,6 +65,7 @@ func TestDatagramParser(t *testing.T) {
 		c := &constraints{
 			limit: 32,
 		}
+		cbResults := [][]byte{}
 
 		Convey(`Loaded with {<2>, 0xca, 0xfe}, {<0>, }, {<5>, 0xd0, 0x65, 0x10, 0xbb, 0x12}`, func() {
 			now := s.now
@@ -78,22 +79,44 @@ func TestDatagramParser(t *testing.T) {
 				now = now.Add(offset)
 			}
 
+			// Define a callback to store each complete Datagram appended with 0xbb in cbResults.
+			cb := func(le *logpb.LogEntry) {
+				dg := assertGetDatagram(le)
+				cbResults = append(cbResults, append(dg.Data, 0xbb))
+			}
+			cbWrapped := p.getWrappedCallback(cb)
+
 			Convey(`Yields the 3 datagrams as individual LogEntry.`, func() {
 				le, err := p.nextEntry(c)
+				cbWrapped(le)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 					Data: []byte{0xca, 0xfe},
 				}))
+				So(cbResults, ShouldResemble, [][]byte{
+					[]byte{0xca, 0xfe, 0xbb},
+				})
 
 				le, err = p.nextEntry(c)
+				cbWrapped(le)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
+				So(cbResults, ShouldResemble, [][]byte{
+					[]byte{0xca, 0xfe, 0xbb},
+					[]byte{0xbb},
+				})
 
 				le, err = p.nextEntry(c)
+				cbWrapped(le)
 				So(err, ShouldBeNil)
 				So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 					Data: []byte{0xd0, 0x65, 0x10, 0xbb, 0x12},
 				}))
+				So(cbResults, ShouldResemble, [][]byte{
+					[]byte{0xca, 0xfe, 0xbb},
+					[]byte{0xbb},
+					[]byte{0xd0, 0x65, 0x10, 0xbb, 0x12, 0xbb},
+				})
 			})
 
 			Convey(`With a limit of 2`, func() {
@@ -101,18 +124,32 @@ func TestDatagramParser(t *testing.T) {
 
 				Convey(`When not truncating, only yields the first two datagrams.`, func() {
 					le, err := p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
 					}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, ShouldBeNil)
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+					})
 				})
 
 				Convey(`When truncating, yields all three, the last as partial.`, func() {
@@ -120,16 +157,26 @@ func TestDatagramParser(t *testing.T) {
 					c.allowSplit = true
 
 					le, err := p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.le(0, logpb.Datagram{
 						Data: []byte{0xca, 0xfe},
 					}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(2*time.Second).le(1, logpb.Datagram{}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0xd0, 0x65},
@@ -138,8 +185,13 @@ func TestDatagramParser(t *testing.T) {
 							Index: 0,
 						},
 					}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x10, 0xbb},
@@ -148,8 +200,13 @@ func TestDatagramParser(t *testing.T) {
 							Index: 1,
 						},
 					}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+					})
 
 					le, err = p.nextEntry(c)
+					cbWrapped(le)
 					So(err, ShouldBeNil)
 					So(le, shouldMatchLogEntry, s.add(time.Second).le(2, logpb.Datagram{
 						Data: []byte{0x12},
@@ -159,6 +216,11 @@ func TestDatagramParser(t *testing.T) {
 							Last:  true,
 						},
 					}))
+					So(cbResults, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xbb},
+						[]byte{0xd0, 0x65, 0x10, 0xbb, 0x12, 0xbb},
+					})
 
 					le, err = p.nextEntry(c)
 					So(err, ShouldBeNil)

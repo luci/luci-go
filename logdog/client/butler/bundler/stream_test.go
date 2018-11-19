@@ -176,6 +176,10 @@ func (p *testParser) nextEntry(c *constraints) (*logpb.LogEntry, error) {
 	return &le, nil
 }
 
+func (p *testParser) getWrappedCallback(cb StreamChunkCallback) StreamChunkCallback {
+	return cb
+}
+
 func (p *testParser) bufferedBytes() (r int64) {
 	for _, rec := range p.commands {
 		r += int64(len(rec.data))
