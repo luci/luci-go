@@ -22,6 +22,30 @@
       "revId": "9b84d89ddbfcc0d4aead6c5619c59c42354b6008",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0412c6fc_6b26a98e",
+        "filename": "grpc/prpc/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-19T19:35:37Z",
+      "side": 1,
+      "message": "good point. generalized.",
+      "parentUuid": "01c6b058_0464a176",
+      "range": {
+        "startLine": 51,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 12
+      },
+      "revId": "9b84d89ddbfcc0d4aead6c5619c59c42354b6008",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
