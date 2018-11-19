@@ -54,7 +54,7 @@ func TestEncoding(t *testing.T) {
 		test("", FormatBinary, nil)
 		test(ContentTypePRPC, FormatBinary, nil)
 		test(mtPRPCBinary, FormatBinary, nil)
-		test(mtPRPCJSONPB, FormatJSONPB, nil)
+		test(mtPRPCJSONPBLegacy, FormatJSONPB, nil)
 		test(mtPRPCText, FormatText, nil)
 		test(ContentTypeJSON, FormatJSONPB, nil)
 
@@ -101,6 +101,7 @@ func TestEncoding(t *testing.T) {
 				So(rec.Code, ShouldEqual, http.StatusOK)
 				So(rec.Header().Get(HeaderGRPCCode), ShouldEqual, "0")
 				So(rec.Header().Get(headerContentType), ShouldEqual, contentType)
+				So(rec.Header().Get("X-Content-Type-Options"), ShouldEqual, "nosniff")
 				So(rec.Body.Bytes(), ShouldResemble, body)
 			})
 		}

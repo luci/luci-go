@@ -116,6 +116,7 @@ func writeMessage(c context.Context, w http.ResponseWriter, msg proto.Message, f
 
 	w.Header().Set(HeaderGRPCCode, strconv.Itoa(int(codes.OK)))
 	w.Header().Set(headerContentType, format.MediaType())
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if _, err := w.Write(body); err != nil {
 		logging.WithError(err).Errorf(c, "prpc: failed to write response body")
 	}

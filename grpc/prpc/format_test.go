@@ -36,7 +36,7 @@ func TestFormat(t *testing.T) {
 		test("", FormatBinary, nil)
 		test(ContentTypePRPC, FormatBinary, nil)
 		test(mtPRPCBinary, FormatBinary, nil)
-		test(mtPRPCJSONPB, FormatJSONPB, nil)
+		test(mtPRPCJSONPBLegacy, FormatJSONPB, nil)
 		test(mtPRPCText, FormatText, nil)
 		test(
 			ContentTypePRPC+"; encoding=blah",
