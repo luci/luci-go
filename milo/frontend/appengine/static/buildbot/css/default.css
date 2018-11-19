@@ -465,25 +465,19 @@ div.BuildWaterfall {
   border-style: solid;
 }
 
-.status-Warning {
-  color: #FFFFFF;
-  background-color: #fa3;
-  border-color: #C29D46;
-}
-
 .status-InfraFailure {
   color: #FFFFFF;
   background-color: #c6c;
   border-color: #ACA0B3;
 }
 
-.status-Expired, .expired {
+.expired, .status-Expired {
   color: #FFFFFF;
   background-color: #ac39ac;
   border-color: #ACA0B3;
 }
 
-.warning {
+.warning, .status-Warning {
   color: #FFFFFF;
   background-color: #fa3;
   border-color: #C29D46;
