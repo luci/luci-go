@@ -137,7 +137,7 @@ func (b *Bundler) Register(p *streamproto.Properties) (Stream, error) {
 	}
 	// TODO(jchinlee): wrap the callback returned here so that it's called only on full LogEntries.
 	if b.c.StreamRegistrationCallback != nil {
-		c.callback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
+		c.nextBundleEntryCallback = b.c.StreamRegistrationCallback(p.LogStreamDescriptor)
 	}
 
 	err := error(nil)
