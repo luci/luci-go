@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "809f2755_10f888c3",
+        "filename": "logdog/client/butler/bundler/stream.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 332,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:07:54Z",
+      "side": 1,
+      "message": "maybe rename this to \u0027nextBundleEntryCallback\u0027?",
+      "range": {
+        "startLine": 332,
+        "startChar": 10,
+        "endLine": 332,
+        "endChar": 18
+      },
+      "revId": "227198c269f104487b51da335b249c4643e16e86",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
