@@ -51,7 +51,7 @@ func process(c context.Context) error {
 	for i, k := range keys {
 		id := k.StringID()
 		t[i] = &tq.Task{
-			Payload: &tasks.Expansion{
+			Payload: &tasks.Expand{
 				Id: id,
 			},
 		}
