@@ -15,6 +15,7 @@
 package starlarkproto
 
 import (
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 
 	"go.starlark.net/starlark"
@@ -35,16 +36,27 @@ import (
 //      Returns:
 //        An str representing msg in text format.
 //      """
+//
+//    def to_jsonpb(msg):
+//      """Serializes a protobuf message to JSONPB string.
+//
+//      Args:
+//        msg: a *Message to serialize.
+//
+//      Returns:
+//        An str representing msg in JSONPB format.
+//      """
 func ProtoLib() starlark.StringDict {
 	return starlark.StringDict{
 		"proto": starlarkstruct.FromStringDict(starlark.String("proto"), starlark.StringDict{
 			"to_pbtext": starlark.NewBuiltin("to_pbtext", toPbText),
+			"to_jsonpb": starlark.NewBuiltin("to_jsonpb", toJSONPb),
 		}),
 	}
 }
 
-// toPbText takes single protobuf message and serializes it using text protobuf
-// serialization.
+// toPbText takes a single protobuf message and serializes it using text
+// protobuf serialization.
 func toPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	var msg *Message
 	if err := starlark.UnpackArgs("to_pbtext", args, kwargs, "msg", &msg); err != nil {
@@ -55,4 +67,25 @@ func toPbText(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwar
 		return nil, err
 	}
 	return starlark.String(proto.MarshalTextString(pb)), nil
+}
+
+// TODO(vadimsh): Some options here can be moved to to_jsonpb kwargs if needed.
+var jsonMarshaler = &jsonpb.Marshaler{Indent: "\t"}
+
+// toJSONPb takes a single protobuf message and serializes it using JSONPB
+// serialization.
+func toJSONPb(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var msg *Message
+	if err := starlark.UnpackArgs("to_jsonpb", args, kwargs, "msg", &msg); err != nil {
+		return nil, err
+	}
+	pb, err := msg.ToProto()
+	if err != nil {
+		return nil, err
+	}
+	str, err := jsonMarshaler.MarshalToString(pb)
+	if err != nil {
+		return nil, err
+	}
+	return starlark.String(str), nil
 }
