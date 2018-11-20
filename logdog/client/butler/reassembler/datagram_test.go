@@ -1,0 +1,83 @@
+// Copyright 2018 The LUCI Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package reassembler
+
+import (
+	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
+
+	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/bundler"
+)
+
+func mkDatagramLogEntry(data []byte, partial, last bool, index uint32, size uint64) *logpb.LogEntry {
+	le := &logpb.LogEntry{
+		Content: &logpb.LogEntry_Datagram{
+			Datagram: &logpb.Datagram{Data: data},
+		},
+	}
+	if partial {
+		le.GetDatagram().Partial = &logpb.Datagram_Partial{
+			Index: index,
+			Size: size,
+			Last: last,
+		}
+	}
+	return le
+}
+
+func mkWrappedDatagramCb(values *[][]byte) bundler.StreamChunkCallback {
+	cb := func(le *logpb.LogEntry) {
+		*values = append(*values, append(le.GetDatagram().Data, 0xbb))
+	}
+	return getWrappedDatagramCallback(cb)
+}
+
+func TestDatagramReassembler(t *testing.T) {
+	t.Parallel()
+	Convey(`Callback wrapper works`, t, func() {
+		Convey(`With nil`, func() {
+			values := [][]byte{}
+			mkWrappedDatagramCb(&values)(nil)
+			So(values, ShouldResemble, [][]byte{})
+		})
+
+		Convey(`With a complete datagram`, func () {
+			values := [][]byte{}
+			cbWrapped := mkWrappedDatagramCb(&values)
+			cbWrapped(mkDatagramLogEntry([]byte{0xca, 0xfe}, false, true, 0, 2))
+			So(values, ShouldResemble, [][]byte{
+				[]byte{0xca, 0xfe, 0xbb},
+			})
+
+			Convey(`And doesn't call on an incomplete datagram`, func () {
+				cbWrapped(mkDatagramLogEntry([]byte{0xd0}, true, false, 0, 1))
+				cbWrapped(mkDatagramLogEntry([]byte{0x65, 0x10}, true, false, 1, 2))
+				So(values, ShouldResemble, [][]byte{
+					[]byte{0xca, 0xfe, 0xbb},
+				})
+
+				Convey(`Until a LogEntry completes it`, func () {
+					cbWrapped(mkDatagramLogEntry([]byte{0xbb, 0x12}, true, true, 2, 2))
+					So(values, ShouldResemble, [][]byte{
+						[]byte{0xca, 0xfe, 0xbb},
+						[]byte{0xd0, 0x65, 0x10, 0xbb, 0x12, 0xbb},
+					})
+				})
+			})
+		})
+	})
+}
