@@ -20,11 +20,6 @@ import (
 	"go.chromium.org/luci/common/flag/flagenum"
 )
 
-// FlushType is a flush type enumeration.
-type FlushType string
-
-var _ flag.Value = (*FlushType)(nil)
-
 const (
 	// FlushManual requires the user to flush manually.
 	FlushManual = FlushType("manual")
@@ -32,10 +27,8 @@ const (
 	FlushAuto = FlushType("auto")
 )
 
-var flushTypeEnum = flagenum.Enum{
-	"manual": FlushManual,
-	"auto":   FlushAuto,
-}
+// FlushType is a flush type enumeration.
+type FlushType string
 
 func (ft *FlushType) String() string {
 	return flushTypeEnum.FlagString(ft)
@@ -44,4 +37,11 @@ func (ft *FlushType) String() string {
 // Set implements flag.Value.
 func (ft *FlushType) Set(v string) error {
 	return flushTypeEnum.FlagSet(ft, v)
+}
+
+var _ flag.Value = (*FlushType)(nil)
+
+var flushTypeEnum = flagenum.Enum{
+	"manual": FlushManual,
+	"auto":   FlushAuto,
 }
