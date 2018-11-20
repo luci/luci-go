@@ -33,6 +33,7 @@ import (
 	"go.chromium.org/luci/logdog/api/logpb"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
+	"go.chromium.org/luci/logdog/client/butler/reassembler"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
 	"go.chromium.org/luci/logdog/client/butlerlib/streamproto"
 	"go.chromium.org/luci/logdog/common/types"
@@ -196,7 +197,7 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 		Prefix:                     config.Prefix,
 		MaxBufferedBytes:           streamBufferSize,
 		MaxBundleSize:              config.Output.MaxSize(),
-		StreamRegistrationCallback: config.StreamRegistrationCallback,
+		StreamRegistrationCallback: wrapStreamRegistrationCallback(config.StreamRegistrationCallback),
 	}
 	if config.BufferLogs {
 		bc.MaxBufferDelay = config.MaxBufferAge
@@ -686,4 +687,24 @@ func (b *Butler) getRunErr() error {
 	b.shutdownMu.Lock()
 	defer b.shutdownMu.Unlock()
 	return b.runErr
+}
+
+type streamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
+
+// wrapStreamRegistrationCallback wraps the given callback to dispatch on the correct stream type.
+func wrapStreamRegistrationCallback(reg streamRegistrationCallback) streamRegistrationCallback {
+	if reg == nil {
+		return reg
+	}
+	return func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+		cb := reg(desc)
+		switch desc.StreamType {
+			case logpb.StreamType_TEXT:
+				return reassembler.GetWrappedTextCallback(cb)
+			case logpb.StreamType_DATAGRAM:
+				return reassembler.GetWrappedDatagramCallback(cb)
+			default:
+				return cb
+		}
+	}
 }
