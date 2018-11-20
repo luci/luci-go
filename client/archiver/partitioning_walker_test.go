@@ -100,11 +100,11 @@ func TestWalkFn(t *testing.T) {
 		{
 			name: "partitions files",
 			files: []file{
-				symlink("/rootDir/patha", 1e3),
-				regularFile("/rootDir/pathb", 10e3),
+				symlink("/rootDir/patha", 1e4),
+				regularFile("/rootDir/pathb", 10e4),
 				// The duplicate entry will be skipped.
-				regularFile("/rootDir/pathb", 10e3),
-				regularFile("/rootDir/pathc", 100e3),
+				regularFile("/rootDir/pathb", 10e4),
+				regularFile("/rootDir/pathc", 100e4),
 			},
 			want: partitionedDeps{
 				links: itemGroup{
@@ -113,10 +113,10 @@ func TestWalkFn(t *testing.T) {
 							Path:    "/rootDir/patha",
 							RelPath: "patha",
 							Mode:    os.ModeSymlink,
-							Size:    1e3,
+							Size:    1e4,
 						},
 					},
-					totalSize: 1e3,
+					totalSize: 1e4,
 				},
 				filesToArchive: itemGroup{
 					items: []*Item{
@@ -124,10 +124,10 @@ func TestWalkFn(t *testing.T) {
 							Path:    "/rootDir/pathb",
 							RelPath: "pathb",
 							Mode:    0,
-							Size:    10e3,
+							Size:    10e4,
 						},
 					},
-					totalSize: 10e3,
+					totalSize: 10e4,
 				},
 				indivFiles: itemGroup{
 					items: []*Item{
@@ -135,10 +135,10 @@ func TestWalkFn(t *testing.T) {
 							Path:    "/rootDir/pathc",
 							RelPath: "pathc",
 							Mode:    0,
-							Size:    100e3,
+							Size:    100e4,
 						},
 					},
-					totalSize: 100e3,
+					totalSize: 100e4,
 				},
 			},
 		},
