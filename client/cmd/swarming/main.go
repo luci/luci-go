@@ -61,7 +61,7 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 }
 
 func main() {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+	log.SetFlags(log.Lmicroseconds)
 	mathrand.SeedRandomly()
 	app := GetApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
