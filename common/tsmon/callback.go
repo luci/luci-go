@@ -29,7 +29,7 @@ type Callback func(ctx context.Context)
 // metrics can be reset after they are flushed.
 type GlobalCallback struct {
 	Callback
-	Metrics []types.Metric
+	metrics []types.Metric
 }
 
 // RegisterCallback registers a callback function that will be run at metric
