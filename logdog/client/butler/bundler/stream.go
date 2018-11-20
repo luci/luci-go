@@ -82,13 +82,13 @@ type streamConfig struct {
 	// The stream's append lock will be held when this method is called.
 	onAppend func(bool)
 
-	// callback is called synchronously when a complete LogEntry enters the stream.
+	// nextBundleEntryCallback is called synchronously when a complete LogEntry enters the stream.
 	// Any error handling is the responsibility of the caller/StreamChunkCallback implementation.
 	// Expects:
 	// - LogEntry to be read-only, so the callback and others must take care not to
 	//   modify the LogEntry and should be able to assume that keeping the reference remains safe;
 	// - callback to return quickly as it will block the stream until it completes.
-	callback StreamChunkCallback
+	nextBundleEntryCallback StreamChunkCallback
 }
 
 // streamImpl is a Stream implementation that is bound to a Bundler.
@@ -326,6 +326,11 @@ func (s *streamImpl) nextBundleEntryLocked(bb *builder, aggressive bool) (bool, 
 			// Enforce basic log entry consistency.
 			if err := s.fixupLogEntry(s.lastLogEntry, le); err != nil {
 				return err
+			}
+
+			// Call callback.
+			if s.c.nextBundleEntryCallback != nil {
+				s.c.nextBundleEntryCallback(le)
 			}
 
 			emittedLog = true

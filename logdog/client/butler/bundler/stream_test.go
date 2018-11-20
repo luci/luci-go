@@ -371,6 +371,22 @@ func TestStream(t *testing.T) {
 				So(bb.bundle(), shouldHaveBundleEntries)
 				So(s.isDrained(), ShouldBeTrue)
 			})
+
+			Convey(`With a non-nil callback`, func() {
+				var called bool
+				s.c.nextBundleEntryCallback = func(*logpb.LogEntry) { called = true }
+
+				Convey(`Call if a LogEntry is returned`, func() {
+					tp.tags(tc.Now(), "a", "b")
+					s.nextBundleEntry(bb, true)
+					So(called, ShouldBeTrue)
+				})
+
+				Convey(`Skip if a LogEntry is not returned`, func() {
+					s.nextBundleEntry(bb, true)
+					So(called, ShouldBeFalse)
+				})
+			})
 		})
 	})
 }
