@@ -240,6 +240,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "79a742ac_453925d1",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-20T21:29:43Z",
+      "side": 1,
+      "message": "Hm... so I had asked in this direction before, but perhaps I wasn\u0027t clear or misunderstood what you meant.\n\nWhat I asked was the merit of reassembling the whole lines as we go, and shoving them into a LogEntry once we ran out of whole lines. In most cases, Text_Lines in the LogEntry *would* be whole.\n\nWhat I understood is that you preferred the method of buffering up the Text_Lines as-is, and then, once we hit a delimiter, reassembling everything up to that [last] delimiter. I was under the impression you preferred this because it lets us preallocate the [complete] line sizes during reassembly, whereas reassembling as-we-go doesn\u0027t let us preallocate, which is significantly less performant?\n\nWhat I\u0027m trying to do here is avoid copying lines until we actually reassemble complete LogEntries, and instead save the line delimiter and size information as we traverse. Your comment above, though, sounds more along the lines of the reassemble-as-we-go approach.\n\nHave I understood correctly what you\u0027re conveying?",
+      "parentUuid": "b78f369c_67a93529",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
