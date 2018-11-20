@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "39211320_54756379",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-20T17:44:43Z",
+      "side": 1,
+      "message": "grpc errors, to be precise.",
+      "range": {
+        "startLine": 176,
+        "startChar": 67,
+        "endLine": 176,
+        "endChar": 91
+      },
+      "revId": "2d22db43e7f368838a689bdc30dea85028e6d73f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
