@@ -328,6 +328,11 @@ func (s *streamImpl) nextBundleEntryLocked(bb *builder, aggressive bool) (bool, 
 				return err
 			}
 
+			// Call callback.
+			if s.c.callback != nil {
+				s.c.callback(le)
+			}
+
 			emittedLog = true
 			modified = true
 
