@@ -1,0 +1,245 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3648ec65_9567e75b",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "If this is going to be it\u0027s own package, it should have a doc.go with some package level documentation, e.g.\n\n    // Copyright n\u0027 stuff\n    \n    // Package reassembler does blah blah blah\n    // \n    // Use it for meh meh meh\n    package reassembler\n\nWhat about maybe \u0027buffered_callback\u0027 as a package name?",
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6dad5ae_64fae484",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "document panic behaviors",
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b33b203_b0492b55",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "note that `[]byte` is already a nil-able reference type, so I think what you want here is `[][]byte`.",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 18
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "33cf0d48_c9519687",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "maybe \u0027nextLogEntryBase\u0027?",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 11
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee16b99b_bd294591",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "I would drop the Otherwise\u0027s:\n\n  // We\u0027re a partial datagram; if we\u0027re not the last chunk, just return. ....",
+      "range": {
+        "startLine": 68,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 32
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "aa3c210f_546df7fa",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "same",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 14
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3b5f40c1_97d3aa0a",
+        "filename": "logdog/client/butler/reassembler/datagram_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "run this test with coverage (e.g. via goconvey, or directly with `go test`) and make sure these tests cover the interesting cases. In particular, it would be good to encode (in the tests) the various panic conditions, if it\u0027s easy to do so (I think it should be).",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "29d69a38_150c9150",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "maybe use Errorf so that you\u0027re panic\u0027ing with an error instead of a string (it\u0027s... marginally more standard. go error handling kinda sucks :))",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 19
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "985f8775_25c10d9c",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "In general, avoid repeating the type of the variable in the comment, but focus on its semantic meaning.",
+      "range": {
+        "startLine": 51,
+        "startChar": 32,
+        "endLine": 51,
+        "endChar": 50
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7958704e_bcb36a4c",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "iiuc we only need to buffer either 0 or 1 line though?",
+      "range": {
+        "startLine": 52,
+        "startChar": 51,
+        "endLine": 52,
+        "endChar": 66
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b78f369c_67a93529",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-20T20:56:20Z",
+      "side": 1,
+      "message": "imo I would carve off the chunk of the LogEntry that you CAN call back on directly, and immediately call cb on that (to avoid buffering whole lines)\n\nSo something like:\n\n   if we have a partial line already:\n     try to complete it from the incoming log entry.\n     completed?\n       cb(le with completed line)\n     else\n       return // we used all the data from le, so we\u0027re done for now\n   \n   build a log entry containing all the complete lines in incoming le\n     cb(complete lines)\n\n   if there\u0027s an incomplete line\n     buf \u003d incomplete line\n\n\nmaybe?",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
