@@ -28,16 +28,21 @@ import (
 func TestVMs(t *testing.T) {
 	t.Parallel()
 
-	Convey("datastore", t, func() {
+	Convey("VMs", t, func() {
 		c := memory.Use(context.Background())
-		v := &VMs{ID: "test"}
+		v := &VMs{ID: "id"}
 		err := datastore.Get(c, v)
 		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
 
 		err = datastore.Put(c, &VMs{
-			ID: "test",
+			ID: "id",
 			Config: config.Block{
 				Attributes: &config.VM{
+					Disk: []*config.Disk{
+						{
+							Image: "image",
+						},
+					},
 					Project: "project",
 				},
 				Prefix: "prefix",
@@ -48,12 +53,41 @@ func TestVMs(t *testing.T) {
 		err = datastore.Get(c, v)
 		So(err, ShouldBeNil)
 		So(v, ShouldResemble, &VMs{
-			ID: "test",
+			ID: "id",
 			Config: config.Block{
 				Attributes: &config.VM{
+					Disk: []*config.Disk{
+						{
+							Image: "image",
+						},
+					},
 					Project: "project",
 				},
 				Prefix: "prefix",
+			},
+		})
+	})
+
+	Convey("VM", t, func() {
+		c := memory.Use(context.Background())
+		v := &VM{ID: "id"}
+		err := datastore.Get(c, v)
+		So(err, ShouldEqual, datastore.ErrNoSuchEntity)
+
+		err = datastore.Put(c, &VM{
+			ID: "id",
+			Attributes: config.VM{
+				Project: "project",
+			},
+		})
+		So(err, ShouldBeNil)
+
+		err = datastore.Get(c, v)
+		So(err, ShouldBeNil)
+		So(v, ShouldResemble, &VM{
+			ID: "id",
+			Attributes: config.VM{
+				Project: "project",
 			},
 		})
 	})
