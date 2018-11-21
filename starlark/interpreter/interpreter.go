@@ -81,15 +81,6 @@
 //    """Aborts the script execution with an error message."""
 //
 //
-//  def mutable(value=None):
-//    """Returns an object with get and set methods.
-//
-//    Allows modules to explicitly declare that they wish to keep some
-//    mutable (non-frozen) state, which can be modified after the module has
-//    loaded (e.g. from an exported function).
-//    """
-//
-//
 //  def to_json(value):
 //    """Serializes a value to compact JSON.
 //
@@ -220,7 +211,6 @@ func (intr *Interpreter) Init() error {
 	// (stdlib and user scripts).
 	intr.globals = starlark.StringDict{
 		"fail":    starlark.NewBuiltin("fail", failImpl),
-		"mutable": starlark.NewBuiltin("mutable", mutableImpl),
 		"struct":  starlark.NewBuiltin("struct", starlarkstruct.Make),
 		"to_json": starlark.NewBuiltin("to_json", toJSONImpl),
 	}
