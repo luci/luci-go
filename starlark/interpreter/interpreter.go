@@ -12,23 +12,63 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package interpreter contains basic starlark interpreter with some features
-// that make it useful for non-trivial scripts:
+// Package interpreter contains Starlark interpreter.
 //
-//  * Scripts can load other script from the file system.
-//  * There's one designated "interpreter root" directory that can be used to
-//    load scripts given their path relative to this root. For example,
-//    load("//some/script.star", ...).
-//  * Scripts can load protobuf message descriptors (built into the interpreter
-//    binary) and instantiate protobuf messages defined there.
-//  * Scripts have access to some built-in starlark modules (aka 'stdlib'),
-//    supplied by whoever instantiates Interpreter.
-//  * All symbols from "init.star" stdlib module are available globally to all
-//    non-stdlib scripts.
+// It supports loading Starlark programs that consist of many files that
+// reference each other, thus allowing decomposing code into small logical
+// chunks and enabling code reuse.
 //
-// Additionally, all script have access to some predefined symbols:
+// Modules and packages
 //
-//  `proto`, a library with protobuf helpers, see starlarkproto.ProtoLib.
+// Two main new concepts are modules and packages. A package is a collection
+// of Starlark files living under the same root. A module is just one such
+// Starlark file.
+//
+// Modules within a single package can load each other (via 'load' statement)
+// using their root-relative paths that start with "//". Modules are executed
+// exactly once when they are loaded for the first time. All subsequent
+// load("//module/path", ...) calls just reuse the cached dict of the executed
+// module.
+//
+// Packages also have identifiers, though they are local to the interpreter
+// (e.g. not defined anywhere in the package itself). For that reason they are
+// called "package aliases".
+//
+// Modules from one package may load modules from another package by using
+// the following syntax:
+//
+//   load("@<package alias>//<path within the package>", ...)
+//
+// Presently the mapping between a package alias (e.g. 'stdlib') and package's
+// source code (a collection of *.star files under a single root) is static and
+// supplied by Go code that uses the interpreter. This may change in the future
+// to allow loading packages dynamically, e.g. over the network.
+//
+// Special packages
+//
+// There are two special package aliases recognized natively by the interpreter:
+// '__main__' and 'stdlib'.
+//
+// '__main__' is a conventional name of the package with top level user-supplied
+// code. When printing module paths in stack traces and error message,
+// "@__main__//<path>" are shown as simply "//<path>" to avoid confusing users
+// who don't know what "@<alias>//" might mean. There's no other special
+// handling.
+//
+// Module '@stdlib//builtins.star' (if present) is loaded before any other code.
+// All its exported symbols that do not start with '_' are made available in the
+// global namespace of all other modules (except ones loaded by
+// '@stdlib//builtins.star' itself). This allows to implement in Starlark
+// built-in global functions exposed by the interpreter.
+//
+//
+// Built-in symbols
+//
+// Embedders of the interpreter can also supply arbitrary "predeclared" symbols
+// they want to be available in the global scope of all loaded modules.
+//
+// Additionally, Interpreter itself exposes some symbols:
+//
 //
 //  def struct(**kwargs):
 //    """Returns an object resembling namedtuple from Python.
@@ -64,62 +104,60 @@ package interpreter
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 
 	"go.chromium.org/luci/common/errors"
-	"go.chromium.org/luci/starlark/starlarkproto"
 )
 
-// ErrNoStdlibModule should be returned by the stdlib loader function if the
-// requested module doesn't exist.
-var ErrNoStdlibModule = errors.New("no such stdlib module")
+var (
+	// ErrNoModule is returned by loaders when they can't find a source code of
+	// the requested module. It is also returned by LoadModule when it can't find
+	// a module within an existing package.
+	ErrNoModule = errors.New("no such module")
 
-// Interpreter knows how to load starlark scripts that can load other starlark
-// scripts, instantiate protobuf messages (with descriptors compiled into the
-// interpreter binary) and have access to some built-in standard library.
+	// ErrNoPackage is returned by LoadModule when it can't find a package.
+	ErrNoPackage = errors.New("no such package")
+)
+
+const (
+	// MainPkg is an alias of the package with user-supplied code.
+	MainPkg = "__main__"
+	// StdlibPkg is an alias of the package with the standard library.
+	StdlibPkg = "stdlib"
+)
+
+// Loader knows how to load modules of some concrete package.
+//
+// It takes a module path relative to the package and returns either modules's
+// dict (e.g. for go native modules) or module's source code, to be interpreted.
+//
+// Returns ErrNoModule if there's no such module in the package.
+//
+// The source code is returned as 'string' to guarantee immutability and
+// allowing efficient use of string Go constants.
+type Loader func(path string) (dict starlark.StringDict, src string, err error)
+
+// Interpreter knows how to load starlark modules that can load other starlark
+// modules.
 type Interpreter struct {
-	// Root is a path to a root directory with scripts.
-	//
-	// Scripts will be able to load other scripts from this directory using
-	// "//path/rel/to/root" syntax in load(...).
-	//
-	// Default is ".".
-	Root string
-
 	// Predeclared is a dict with predeclared symbols that are available globally.
 	//
-	// They are available when loading stdlib and when executing user scripts.
+	// They are available when loading stdlib and when executing user modules. Can
+	// be used to extend the interpreter with native Go functions.
 	Predeclared starlark.StringDict
 
-	// Usercode knows how to load source code files from the file system.
+	// Packages is a mapping from a package alias to a loader with package code.
 	//
-	// It takes a path relative to Root and returns its content (or an error).
-	// Used by ExecFile and by load("<path>") statements inside starlark scripts.
-	//
-	// The default implementation justs uses io.ReadFile.
-	Usercode func(path string) (string, error)
+	// Users of Interpreter are expected to supply a loader for at least __main__
+	// package.
+	Packages map[string]Loader
 
-	// Stdlib is a set of scripts that constitute a builtin standard library.
-	//
-	// It is defined as function that takes a script path and returns its body
-	// or ErrNoStdlibModule error if there's no such stdlib module.
-	//
-	// The stdlib is preloaded before execution of other scripts. The stdlib
-	// loading starts with init.star script that can load other stdlib scripts
-	// using load("builtin:<path>", ...).
-	//
-	// All globals of init.star script that do not start with '_' will become
-	// available as globals in all user scripts.
-	Stdlib func(path string) (string, error)
-
-	// Logger is called by starlark's print(...) function.
+	// Logger is called by Starlark's print(...) function.
 	//
 	// The callback takes the position in the starlark source code where
 	// print(...) was called and the message it received.
@@ -127,52 +165,58 @@ type Interpreter struct {
 	// The default implementation just prints the message to stderr.
 	Logger func(file string, line int, message string)
 
-	modules map[string]*loadedModule // dicts of loaded modules, keyed by path
-	globals starlark.StringDict      // predeclared + symbols from init.star
+	modules map[moduleKey]*loadedModule // cache of the loaded modules
+	globals starlark.StringDict         // global symbols exposed to all modules
+}
+
+// moduleKey is a key of a module within a cache of loaded modules.
+type moduleKey struct {
+	pkg  string // package name, e.g. "stdlib"
+	path string // path within the package, e.g. "abc/script.star"
+}
+
+// makeModuleKey takes '[@pkg]//path', parses and cleans it up a bit.
+//
+// Does some light validation. Module loaders are expected to validate module
+// paths more rigorously, since they interpret them anyway.
+func makeModuleKey(ref string) (key moduleKey, err error) {
+	hasPkg := strings.HasPrefix(ref, "@")
+
+	idx := strings.Index(ref, "//")
+	if idx == -1 || (!hasPkg && idx != 0) {
+		err = errors.New("a module path should be either '//<path>' or '@<package>//<path>'")
+		return
+	}
+
+	if hasPkg {
+		if key.pkg = ref[1:idx]; key.pkg == "" {
+			err = errors.New("a package alias can't be empty")
+			return
+		}
+	}
+	key.path = path.Clean(ref[idx+2:])
+
+	return
 }
 
 // loadedModule represents an executed starlark module.
-//
-// We do not reload modules all the time but rather cache their dicts, just like
-// Python.
 type loadedModule struct {
-	globals starlark.StringDict
-	err     error // non-nil if this module could not be loaded
+	dict starlark.StringDict // global dict of the module after we executed it
+	err  error               // non-nil if this module could not be loaded
 }
 
-// Init initializes the interpreter and loads the stdlib.
+// Init initializes the interpreter and loads '@stdlib//builtins.star'.
 //
-// Registers most basic built in symbols first (like 'struct' and 'fail'). Then
-// executes 'init.star' from stdlib, which may define more symbols or override
-// already defined ones.
-// Initializes intr.Usercode and intr.Logger if they are not set.
-//
-// Whatever symbols end up in the global dict of init.star stdlib script will
-// become available as global symbols in all scripts executed via ExecFile (or
-// transitively loaded by them).
+// Registers most basic built-in symbols first (like 'struct' and 'fail'), then
+// whatever was passed via Predeclared. Then loads '@stdlib//builtins.star',
+// which may define more symbols or override already defined ones. Whatever
+// symbols not starting with '_' end up in the global dict of
+// '@stdlib//builtins.star' module will become available as global symbols in
+// all modules.
 func (intr *Interpreter) Init() error {
-	if intr.Root == "" {
-		intr.Root = "."
-	}
-	var err error
-	if intr.Root, err = filepath.Abs(intr.Root); err != nil {
-		return errors.Annotate(err, "failed to resolve %q to an absolute path", intr.Root).Err()
-	}
+	intr.modules = map[moduleKey]*loadedModule{}
 
-	if intr.Usercode == nil {
-		intr.Usercode = func(path string) (string, error) {
-			blob, err := ioutil.ReadFile(filepath.Join(intr.Root, path))
-			return string(blob), err
-		}
-	}
-
-	if intr.Logger == nil {
-		intr.Logger = func(file string, line int, message string) {
-			fmt.Fprintf(os.Stderr, "[%s:%d] %s\n", file, line, message)
-		}
-	}
-
-	// Register most basic builtin symbols. They'll be available from all scripts
+	// Register basic built-in symbols. They'll be available from all modules
 	// (stdlib and user scripts).
 	intr.globals = starlark.StringDict{
 		"fail":    starlark.NewBuiltin("fail", failImpl),
@@ -180,19 +224,13 @@ func (intr *Interpreter) Init() error {
 		"struct":  starlark.NewBuiltin("struct", starlarkstruct.Make),
 		"to_json": starlark.NewBuiltin("to_json", toJSONImpl),
 	}
-	for k, v := range starlarkproto.ProtoLib() {
-		intr.globals[k] = v
-	}
-
-	// Add all predeclared symbols to make them available when loading stdlib.
 	for k, v := range intr.Predeclared {
 		intr.globals[k] = v
 	}
 
 	// Load the stdlib, if any.
-	intr.modules = map[string]*loadedModule{}
-	top, err := intr.loadStdlibInit()
-	if err != nil && err != ErrNoStdlibModule {
+	top, err := intr.LoadModule(StdlibPkg, "builtins.star")
+	if err != nil && err != ErrNoModule && err != ErrNoPackage {
 		return err
 	}
 	for k, v := range top {
@@ -200,92 +238,29 @@ func (intr *Interpreter) Init() error {
 			intr.globals[k] = v
 		}
 	}
-
 	return nil
 }
 
-// ExecFile executes a starlark script file in an environment that has all
-// builtin symbols and all stdlib symbols.
+// LoadModule finds and executes a starlark module, returning its dict.
 //
-// Returns the global dict of the executed script.
-func (intr *Interpreter) ExecFile(path string) (starlark.StringDict, error) {
-	abs, err := intr.normalizePath(path, "")
+// 'pkg' is a package alias, it will be used to lookup the package loader in
+// intr.Packages. 'path' is a module path (without leading '//') within
+// the package.
+//
+// Caches the result of the execution. Modules are always loaded only once.
+func (intr *Interpreter) LoadModule(pkg, path string) (starlark.StringDict, error) {
+	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
 	}
-	return intr.loadFileModule(abs)
-}
 
-// normalizePath converts the path of the module (as it appears in the "load"
-// statement) to an absolute file system path or cleaned up "builtin:..." path.
-//
-// The module path can be specified in two ways:
-//   1) As relative to the interpreter root: //path/here/script.star
-//   2) As relative to the current executing script: ../script.star.
-//
-// To resolve (2) this function also takes an absolute path to the currently
-// executing script. If there's no executing script (e.g. normalizePath is
-// called by top-evel ExecFile call), uses current working directory to convert
-// 'mod' to an absolute path.
-func (intr *Interpreter) normalizePath(mod, cur string) (string, error) {
-	// Builtin paths are always relative, so just clean them up.
-	if strings.HasPrefix(mod, "builtin:") {
-		return "builtin:" + path.Clean(strings.TrimPrefix(mod, "builtin:")), nil
-	}
-
-	switch {
-	case strings.HasPrefix(mod, "//"):
-		// A path relative to the scripts root directory.
-		mod = filepath.Join(intr.Root, filepath.FromSlash(strings.TrimLeft(mod, "/")))
-	case cur != "":
-		// A path relative to the currently executing script.
-		mod = filepath.Join(filepath.Dir(cur), filepath.FromSlash(mod))
-	default:
-		// A path relative to cwd.
-		mod = filepath.FromSlash(mod)
-	}
-
-	// Make sure we get a nice looking clean path.
-	abs, err := filepath.Abs(mod)
-	if err != nil {
-		return "", errors.Annotate(err, "failed to resolve %q to an absolute path", mod).Err()
-	}
-	return abs, nil
-}
-
-// rootRel converts a path to be relative to the interpreter root.
-//
-// We give relative paths to starlark.ExecFile so that stack traces look nicer.
-func (intr *Interpreter) rootRel(path string) string {
-	rel, err := filepath.Rel(intr.Root, path)
-	if err != nil {
-		panic(fmt.Errorf("failed to resolve %q as relative path to %q", path, intr.Root))
-	}
-	return rel
-}
-
-// thread returns a new starlark.Thread to use for executing a single file.
-//
-// We do not reuse threads between files. All global state is passed through
-// intr.globals and intr.modules.
-func (intr *Interpreter) thread() *starlark.Thread {
-	return &starlark.Thread{
-		Load: intr.loadImpl,
-		Print: func(th *starlark.Thread, msg string) {
-			position := th.Caller().Position()
-			intr.Logger(position.Filename(), int(position.Line), msg)
-		},
-	}
-}
-
-// loadIfMissing loads the module by calling the given callback if the module
-// hasn't been loaded before or just returns the existing module dict otherwise.
-func (intr *Interpreter) loadIfMissing(key string, loader func() (starlark.StringDict, error)) (starlark.StringDict, error) {
 	switch m, ok := intr.modules[key]; {
-	case m != nil: // already loaded or attempted to be loaded
-		return m.globals, m.err
-	case ok: // this module is being loaded right now
-		return nil, errors.New("cycle in load graph")
+	case m != nil: // already loaded or attempted and failed
+		return m.dict, m.err
+	case ok:
+		// This module is being loaded right now, Starlark stack trace will show
+		// the sequence of load(...) calls that led to this cycle.
+		return nil, errors.New("cycle in the module dependency graph")
 	}
 
 	// Add a placeholder to indicate we are loading this module to detect cycles.
@@ -296,96 +271,62 @@ func (intr *Interpreter) loadIfMissing(key string, loader func() (starlark.Strin
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.globals, m.err = loader()
-	return m.globals, m.err
+	m.dict, m.err = intr.execModule(pkg, path)
+	return m.dict, m.err
 }
 
-// loadImpl implements starlark's load(...) builtin.
-//
-// It understands 3 kinds of modules:
-//  1) A module from the file system referenced either via a path relative to
-//     the interpreter root ("//a/b/c.star") or relative to the currently
-//     executing script ("../a/b/c.star").
-//  2) A protobuf file (compiled into the interpreter binary), referenced by
-//     the location of the proto file in the protobuf lib registry:
-//        "builtin:go.chromium.org/luci/.../file.proto"
-//  3) An stdlib module, as supplied by Stdlib callback:
-//        "builtin:some/path/to/be/passed/to/the/callback.star"
-func (intr *Interpreter) loadImpl(thread *starlark.Thread, module string) (starlark.StringDict, error) {
-	// Grab a name of a module that is calling load(...). This would be either a
-	// "builtin:..." path or a path relative to the root, since that's what we
-	// pass to starlark.ExecFile.
-	cur := thread.TopFrame().Position().Filename()
-
-	// Convert it back to an absolute path, as required by normalizePath.
-	curIsBuiltin := strings.HasPrefix(cur, "builtin:")
-	if !curIsBuiltin {
-		cur = filepath.Join(intr.Root, cur)
+// execModule really loads and execute the module.
+func (intr *Interpreter) execModule(pkg, path string) (starlark.StringDict, error) {
+	loader, ok := intr.Packages[pkg]
+	if !ok {
+		return nil, ErrNoPackage
 	}
-
-	// Cleanup and normalize the path to the module being loaded. 'module' here
-	// will be either a "builtin:..." path or an absolute file system path.
-	module, err := intr.normalizePath(module, cur)
+	dict, src, err := loader(path)
 	if err != nil {
 		return nil, err
 	}
 
-	// Builtin scripts can load only other builtin scripts, not something from the
-	// filesystem.
-	loadingBuiltin := strings.HasPrefix(module, "builtin:")
-	if curIsBuiltin && !loadingBuiltin {
-		return nil, errors.Reason(
-			"builtin module %q is attempting to load non-builtin %q, this is forbidden", cur, module).Err()
+	// This is a native module constructed in Go? No need to interpret it then.
+	if dict != nil {
+		return dict, nil
 	}
 
-	// Actually load the module if it hasn't been loaded before.
-	return intr.loadIfMissing(module, func() (starlark.StringDict, error) {
-		if loadingBuiltin {
-			return intr.loadBuiltinModule(module)
-		}
-		return intr.loadFileModule(module)
-	})
-}
+	// Otherwise make a thread for executing the code. We do not reuse threads
+	// between modules. All global state is passed through intr.globals and
+	// intr.modules.
+	th := &starlark.Thread{
+		Load: func(th *starlark.Thread, loadPath string) (starlark.StringDict, error) {
+			key, err := makeModuleKey(loadPath)
+			if err != nil {
+				return nil, err
+			}
+			// By default (when not specifying @<pkg>) modules within a package refer
+			// to sibling files in the same package.
+			if key.pkg == "" {
+				key.pkg = pkg
+			}
+			return intr.LoadModule(key.pkg, key.path)
+		},
+		Print: func(th *starlark.Thread, msg string) {
+			position := th.Caller().Position()
+			if intr.Logger != nil {
+				intr.Logger(position.Filename(), int(position.Line), msg)
+			} else {
+				fmt.Fprintf(os.Stderr, "[%s:%d] %s\n", position.Filename(), position.Line, msg)
+			}
+		},
+	}
 
-// loadBuiltinModule loads a builtin module, given as "builtin:<path>".
-//
-// It can be either a proto descriptor (compiled into the binary) or a stdlib
-// module (as supplied by Stdlib callback).
-//
-// Returns ErrNoStdlibModule if there's no such stdlib module.
-func (intr *Interpreter) loadBuiltinModule(module string) (starlark.StringDict, error) {
-	path := strings.TrimPrefix(module, "builtin:")
-	if strings.HasSuffix(path, ".proto") {
-		return starlarkproto.LoadProtoModule(path)
+	// Construct a full module name for error messages and stack traces. Omit the
+	// name of the top-level package with user-supplied code ("__main__") to avoid
+	// confusing users who are oblivious of packages.
+	module := ""
+	if pkg != MainPkg {
+		module = "@" + pkg
 	}
-	if intr.Stdlib == nil {
-		return nil, ErrNoStdlibModule
-	}
-	src, err := intr.Stdlib(path)
-	if err != nil {
-		return nil, err
-	}
-	return starlark.ExecFile(intr.thread(), module, src, intr.globals)
-}
+	module += "//" + path
 
-// loadStdlibInit loads init.star from the stdlib and returns its global dict.
-//
-// Returns ErrNoStdlibModule if there's no init.star in the stdlib.
-func (intr *Interpreter) loadStdlibInit() (starlark.StringDict, error) {
-	const initStar = "builtin:init.star"
-	return intr.loadIfMissing(initStar, func() (starlark.StringDict, error) {
-		return intr.loadBuiltinModule(initStar)
-	})
-}
-
-// loadFileModule loads a starlark module from the file system.
-//
-// 'path' must always be absolute here, per normalizePath output.
-func (intr *Interpreter) loadFileModule(path string) (starlark.StringDict, error) {
-	path = intr.rootRel(path)
-	src, err := intr.Usercode(path)
-	if err != nil {
-		return nil, errors.Annotate(err, "failed to read %q", path).Err()
-	}
-	return starlark.ExecFile(intr.thread(), path, src, intr.globals)
+	// Execute the module. It may load other modules inside, which will call
+	// th.Load callback above.
+	return starlark.ExecFile(th, module, src, intr.globals)
 }
