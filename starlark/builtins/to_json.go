@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package interpreter
+package builtins
 
 import (
 	"encoding/json"
@@ -20,6 +20,37 @@ import (
 
 	"go.starlark.net/starlark"
 )
+
+// ToJSON is to_json(value) builtin.
+//
+//  def to_json(value):
+//    """Serializes a value to compact JSON.
+//
+//    Doesn't support integers that do not fit int64. Fails if the value being
+//    converted has cycles.
+//
+//    Args:
+//      value: a starlark value: scalars, lists, tuples, dicts containing only
+//        starlark values.
+//
+//    Returns:
+//      A string with its compact JSON serialization.
+//    """
+var ToJSON = starlark.NewBuiltin("to_json", func(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+	var v starlark.Value
+	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 1, &v); err != nil {
+		return nil, err
+	}
+	obj, err := toGoNative(v, visitingSet{})
+	if err != nil {
+		return nil, err
+	}
+	blob, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+	return starlark.String(blob), nil
+})
 
 // visitingSet is a set of containers we currently have recursed into.
 //
@@ -112,24 +143,4 @@ func toGoNative(v starlark.Value, visiting visitingSet) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("to_json: unsupported type %s", v.Type())
-}
-
-// toJSONImpl implements to_json(value) builtin.
-//
-// It serializes a JSON-ish starlark value to a string. Doesn't support integers
-// that do not fit int64. Fails if the value being converted has cycles.
-func toJSONImpl(_ *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
-	var v starlark.Value
-	if err := starlark.UnpackPositionalArgs(fn.Name(), args, kwargs, 1, &v); err != nil {
-		return nil, err
-	}
-	obj, err := toGoNative(v, visitingSet{})
-	if err != nil {
-		return nil, err
-	}
-	blob, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	return starlark.String(blob), nil
 }
