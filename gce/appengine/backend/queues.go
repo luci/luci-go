@@ -30,6 +30,22 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
+// createQueue is the name of the create task handler queue.
+const createQueue = "create-instance"
+
+// create creates a GCE instance.
+func create(c context.Context, payload proto.Message) error {
+	task, ok := payload.(*tasks.Create)
+	switch {
+	case !ok:
+		return errors.Reason("unexpected payload %q", payload).Err()
+	case task.GetId() == "":
+		return errors.Reason("ID is required").Err()
+	}
+	// TODO(smut): Create the GCE instance.
+	return nil
+}
+
 // ensureQueue is the name of the ensure task handler queue.
 const ensureQueue = "ensure-vm"
 
@@ -42,7 +58,6 @@ func ensure(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	logging.Debugf(c, "ensuring %q", task.Id)
 	datastore.RunInTransaction(c, func(c context.Context) error {
 		vm := &model.VM{
 			ID: task.Id,
@@ -71,8 +86,7 @@ func expand(c context.Context, payload proto.Message) error {
 	case task.GetId() == "":
 		return errors.Reason("ID is required").Err()
 	}
-	logging.Debugf(c, "expanding %q", task.Id)
-	vms, err := getServer(c).GetVMs(c, &config.GetVMsRequest{Id: task.Id})
+	vms, err := getConfig(c).GetVMs(c, &config.GetVMsRequest{Id: task.Id})
 	if err != nil {
 		return errors.Annotate(err, "failed to get VMs block").Err()
 	}
