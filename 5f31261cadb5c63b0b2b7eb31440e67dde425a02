@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36859747_e6f3ea30",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "these aren\u0027t actually necessary, since they match the names automatically given by Go",
+      "range": {
+        "startLine": 156,
+        "startChar": 30,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "34c22c43_4cb1ce67",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "I think it\u0027s cleaner combining these two into a single data structure, and then name it TimelineJSON",
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a10c2f72_6ab65e49",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "comp.Status is enough.  String() is implied with %s.",
+      "range": {
+        "startLine": 210,
+        "startChar": 46,
+        "endLine": 210,
+        "endChar": 66
+      },
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}

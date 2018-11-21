@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "455dce7c_0fef562f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "step?",
+      "range": {
+        "startLine": 155,
+        "startChar": 5,
+        "endLine": 155,
+        "endChar": 9
+      },
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8f55d701_3ec268a7",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "add documentation if these structs need to conform to some shape (eg. link to vis.js docs)",
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f2d0e5b5_7dba83f3",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "I think it\u0027s better not to show the links in the timeline view (or at least default them to collapsed) so that there is less vertical scroll.",
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b2519975_100ec02a",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "nit: avoid naming vars the same as types",
+      "range": {
+        "startLine": 211,
+        "startChar": 10,
+        "endLine": 211,
+        "endChar": 14
+      },
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9101ecd_4e31eecf",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T18:38:31Z",
+      "side": 1,
+      "message": "explicit fields preferred here, ie\nitems[index] \u003d item{\n  Id: groupId\n  ...\n}\n\nwith 7 items it\u0027s hard to tell whats going where",
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
