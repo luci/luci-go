@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "349fa95f_deeba528",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T02:49:21Z",
+      "side": 1,
+      "message": "my bad, i missed \"err !\u003d nil\" check. Sorry.",
+      "parentUuid": "43adc3c5_eb6681f1",
+      "range": {
+        "startLine": 51,
+        "startChar": 32,
+        "endLine": 51,
+        "endChar": 50
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "17adeb12_1032d589",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -96,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "47649a59_ac431c6e",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T02:49:21Z",
+      "side": 1,
+      "message": "Plan sg.",
+      "parentUuid": "dbc1de1f_5740a29b",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 22
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d60c3fbc_e4db6dcc",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -131,6 +179,30 @@
       "side": 1,
       "message": "I\u0027ll consider for later, it should probably be something like \"Config\" and \"VM\". Kinds aren\u0027t stored in the database at all, they will be merged into the Block at config import time, therefore these entities represent the entire config.",
       "parentUuid": "d60c3fbc_e4db6dcc",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 17
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "095dfd65_6f00cf5f",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T02:49:21Z",
+      "side": 1,
+      "message": "makes sense.",
+      "parentUuid": "5adaa38a_ab7ef681",
       "range": {
         "startLine": 22,
         "startChar": 0,

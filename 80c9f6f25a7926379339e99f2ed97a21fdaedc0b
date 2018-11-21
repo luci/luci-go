@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1757469_50ca3a6f",
+        "filename": "gce/appengine/backend/queues_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T02:49:21Z",
+      "side": 1,
+      "message": "👍",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 136,
+        "endChar": 7
+      },
+      "revId": "80c9f6f25a7926379339e99f2ed97a21fdaedc0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5abde737_a186b8f4",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T02:49:21Z",
+      "side": 1,
+      "message": "VMs\u0027\n(for clarity)",
+      "range": {
+        "startLine": 27,
+        "startChar": 41,
+        "endLine": 27,
+        "endChar": 42
+      },
+      "revId": "80c9f6f25a7926379339e99f2ed97a21fdaedc0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
