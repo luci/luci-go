@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6003eaae_317ab2b4",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T01:57:22Z",
+      "side": 1,
+      "message": "not always right, sometimes precisely wrong. VM might have actually been fetched.\nHave you meant to bail out early of VM with these attributes already exist?",
+      "range": {
+        "startLine": 51,
+        "startChar": 32,
+        "endLine": 51,
+        "endChar": 50
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "17adeb12_1032d589",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T01:57:22Z",
+      "side": 1,
+      "message": "I think i don\u0027t understand semantics of VM record (instance in DS). I think it\u0027d be great to document this next in vms.go.\n1) when is actual GCE VM created/destroyed vs VM record lifetime?\n   ie, should this immediately try to spawn a new VM, or should it postpone a TQ task to do so?\n   or do you expect a cron to to scan all DS VM records, compare to the real world and apply changes?\n2) can VM.attributes be updated after VM record is created?",
+      "range": {
+        "startLine": 56,
+        "startChar": 0,
+        "endLine": 56,
+        "endChar": 22
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d60c3fbc_e4db6dcc",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-21T01:57:22Z",
+      "side": 1,
+      "message": "VMs vs VM is okish, but VMsKind vs VMKind is harder to catch. Have you considered naming this Block? or VMsBlock instead?",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 17
+      },
+      "revId": "40a34ab5367b0169e7f1e0b3da2aedbb518a87eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
