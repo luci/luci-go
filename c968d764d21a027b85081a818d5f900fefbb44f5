@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "34c2c931_4e5a78dc",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done.\n\nIt doesn\u0027t excite me as a name but I haven\u0027t another alternative :)",
+      "parentUuid": "3648ec65_9567e75b",
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f6dad5ae_64fae484",
         "filename": "logdog/client/butler/reassembler/datagram.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "789c9704_3b3da3fd",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f6dad5ae_64fae484",
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "a5d95e57_318e25c3",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Indeed!",
+      "parentUuid": "3b33b203_b0492b55",
+      "range": {
+        "startLine": 43,
+        "startChar": 9,
+        "endLine": 43,
+        "endChar": 18
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "33cf0d48_c9519687",
         "filename": "logdog/client/butler/reassembler/datagram.go",
         "patchSetId": 2
@@ -79,6 +139,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "20746883_c29928b1",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33cf0d48_c9519687",
+      "range": {
+        "startLine": 45,
+        "startChar": 5,
+        "endLine": 45,
+        "endChar": 11
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -105,6 +189,30 @@
     },
     {
       "key": {
+        "uuid": "5d257da1_cc8635ca",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ee16b99b_bd294591",
+      "range": {
+        "startLine": 68,
+        "startChar": 2,
+        "endLine": 70,
+        "endChar": 32
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "aa3c210f_546df7fa",
         "filename": "logdog/client/butler/reassembler/datagram.go",
         "patchSetId": 2
@@ -125,6 +233,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82bd57b8_3bc5de3f",
+        "filename": "logdog/client/butler/reassembler/datagram.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa3c210f_546df7fa",
+      "range": {
+        "startLine": 75,
+        "startChar": 5,
+        "endLine": 75,
+        "endChar": 14
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "90d656d3_9c32a5e5",
+        "filename": "logdog/client/butler/reassembler/datagram_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3b5f40c1_97d3aa0a",
+      "range": {
+        "startLine": 49,
+        "startChar": 5,
+        "endLine": 49,
+        "endChar": 28
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "29d69a38_150c9150",
         "filename": "logdog/client/butler/reassembler/text.go",
         "patchSetId": 2
@@ -171,6 +327,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bd620df9_53cf38f8",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29d69a38_150c9150",
+      "range": {
+        "startLine": 27,
+        "startChar": 12,
+        "endLine": 27,
+        "endChar": 19
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -197,6 +377,30 @@
     },
     {
       "key": {
+        "uuid": "d117fa5a_50ed4ee6",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Ack\n\nThis comment is now obsolete anyway (and unnecessary now), but at the time was meant to distinguish between pointing into each individual Text_Line, vs. all the Text_Lines in a LogEntry.",
+      "parentUuid": "985f8775_25c10d9c",
+      "range": {
+        "startLine": 51,
+        "startChar": 32,
+        "endLine": 51,
+        "endChar": 50
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7958704e_bcb36a4c",
         "filename": "logdog/client/butler/reassembler/text.go",
         "patchSetId": 2
@@ -217,6 +421,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05ad6a16_76c75957",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Ack\n\nDiscussed offline.",
+      "parentUuid": "7958704e_bcb36a4c",
+      "range": {
+        "startLine": 52,
+        "startChar": 51,
+        "endLine": 52,
+        "endChar": 66
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -264,6 +492,30 @@
       "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0cdd87e0_524389d4",
+        "filename": "logdog/client/butler/reassembler/text.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T06:10:42Z",
+      "side": 1,
+      "message": "Discussed offline. Incidentally, I realized we can\u0027t log an error for unexpected format because we don\u0027t have a context...",
+      "parentUuid": "79a742ac_453925d1",
+      "range": {
+        "startLine": 67,
+        "startChar": 2,
+        "endLine": 67,
+        "endChar": 21
+      },
+      "revId": "c968d764d21a027b85081a818d5f900fefbb44f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
