@@ -20,6 +20,8 @@ import (
 
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+
+	"go.chromium.org/luci/starlark/interpreter"
 )
 
 // nativeCall carries arguments for nativeFunc to avoid ridiculously long
@@ -63,17 +65,18 @@ func declNative(name string, f nativeFunc) {
 
 // native returns a starlark struct with all registered native functions.
 //
-// This struct is put into the global starlark namespace as '__native__'. It is
-// bound to the given state and context: all native functions will receive them
-// through corresponding arguments.
-func native(ctx context.Context, s *State) starlark.Value {
+// This struct is put into the global starlark namespace as '__native__'. Native
+// functions can access the generator state through the context associated with
+// the starlark thread that executes them.
+func native() starlark.Value {
 	dict := make(starlark.StringDict, len(nativeFuncs))
 	for name, cb := range nativeFuncs {
 		cb := cb
 		dict[name] = starlark.NewBuiltin(name, func(th *starlark.Thread, fn *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+			ctx := interpreter.Context(th)
 			return cb(nativeCall{
 				Ctx:    ctx,
-				State:  s,
+				State:  ctxState(ctx),
 				Thread: th,
 				Fn:     fn,
 				Args:   args,

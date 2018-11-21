@@ -17,6 +17,7 @@ package interpreter
 // Code shared by tests.
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -101,6 +102,8 @@ e
 
 // intrParams are arguments for runIntr helper.
 type intrParams struct {
+	ctx context.Context
+
 	// scripts contains user-supplied scripts (ones that would normally be loaded
 	// from the file system). If there's main.star script, it will be executed via
 	// LoadModule and its global dict keys returned.
@@ -122,6 +125,11 @@ type intrParams struct {
 // Returns keys of the dict of the main.star script (if any), and a list of
 // messages logged via print(...).
 func runIntr(p intrParams) (keys []string, logs []string, err error) {
+	ctx := p.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	intr := Interpreter{
 		Predeclared: p.predeclared,
 		Packages: map[string]Loader{
@@ -134,13 +142,13 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 		},
 	}
 
-	if err = intr.Init(); err != nil {
+	if err = intr.Init(ctx); err != nil {
 		return
 	}
 
 	if _, ok := p.scripts["main.star"]; ok {
 		var dict starlark.StringDict
-		dict, err = intr.LoadModule(MainPkg, "main.star")
+		dict, err = intr.LoadModule(ctx, MainPkg, "main.star")
 		if err == nil {
 			keys = make([]string, 0, len(dict))
 			for k := range dict {

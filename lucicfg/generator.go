@@ -45,9 +45,24 @@ type State struct {
 	Greetings []string // this is just for demo purposes
 }
 
+var stateCtxKey = "lucicfg.State"
+
+// withState puts *State into the context, to be accessed by native functions.
+func withState(ctx context.Context, s *State) context.Context {
+	return context.WithValue(ctx, &stateCtxKey, s)
+}
+
+// ctxState pulls out *State from the context, as put there by withState.
+//
+// Panics if not there.
+func ctxState(ctx context.Context) *State {
+	return ctx.Value(&stateCtxKey).(*State)
+}
+
 // Generate interprets the high-level config.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
+	ctx = withState(ctx, state)
 
 	// Expose two predeclared symbols: 'proto' with utilities for manipulating
 	// proto messages and '__native__' with all hooks into Go code. 'proto' is
@@ -55,12 +70,12 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// public @stdlib functions.
 	predeclared := starlark.StringDict{
 		"proto":      starlarkproto.ProtoLib()["proto"],
-		"__native__": native(ctx, state),
+		"__native__": native(),
 	}
 
 	// Expose @stdlib, @proto and __main__ package. All have no externally
 	// observable state of their own, but they call low-level __native__.*
-	// functions that manipulate 'state'.
+	// functions that manipulate 'state' by getting it through the context.
 	pkgs := embeddedPackages()
 	pkgs[interpreter.MainPkg] = in.Main
 	pkgs["proto"] = interpreter.ProtoLoader()
@@ -71,10 +86,10 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		Predeclared: predeclared,
 		Packages:    pkgs,
 	}
-	if err := intr.Init(); err != nil {
+	if err := intr.Init(ctx); err != nil {
 		return nil, err
 	}
-	if _, err := intr.LoadModule(interpreter.MainPkg, "LUCI.star"); err != nil {
+	if _, err := intr.LoadModule(ctx, interpreter.MainPkg, "LUCI.star"); err != nil {
 		return nil, err
 	}
 
