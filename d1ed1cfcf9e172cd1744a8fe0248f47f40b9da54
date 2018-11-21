@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4033035a_df988a63",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:15:34Z",
+      "side": 1,
+      "message": "should there be a separate package for std tools vs LUCI stuff? i.e. @stdlib vs @luci?",
+      "range": {
+        "startLine": 17,
+        "startChar": 7,
+        "endLine": 17,
+        "endChar": 13
+      },
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "95bab719_3730a0e5",
+        "filename": "lucicfg/greetings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:15:34Z",
+      "side": 1,
+      "message": "hm... maybe TODO: use reflect to put this in the actual function signature?\n\nI suspect this is going to get pretty old when we have more complicated functions.",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 32
+      },
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0f18ead8_88ce0c9c",
+        "filename": "lucicfg/native.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:15:34Z",
+      "side": 1,
+      "message": "i.e. you could do reflect.Call here; assert that arg0 is a nativeCall, then populate the rest of the builtin\u0027s args/kwargs from... args and kwargs.",
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
