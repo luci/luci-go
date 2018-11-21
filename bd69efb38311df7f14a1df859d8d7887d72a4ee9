@@ -45,6 +45,30 @@
       "revId": "bd69efb38311df7f14a1df859d8d7887d72a4ee9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3628228d_2c98eb3c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T22:28:09Z",
+      "side": 1,
+      "message": "There are more explicit ways. I\u0027m not sure yet how it would look.",
+      "parentUuid": "d5fa9ff5_58a09ebb",
+      "range": {
+        "startLine": 13,
+        "startChar": 57,
+        "endLine": 13,
+        "endChar": 66
+      },
+      "revId": "bd69efb38311df7f14a1df859d8d7887d72a4ee9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
