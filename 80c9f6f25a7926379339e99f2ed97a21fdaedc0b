@@ -45,6 +45,30 @@
       "revId": "80c9f6f25a7926379339e99f2ed97a21fdaedc0b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "079cd21f_1cc07be5",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-21T02:54:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5abde737_a186b8f4",
+      "range": {
+        "startLine": 27,
+        "startChar": 41,
+        "endLine": 27,
+        "endChar": 42
+      },
+      "revId": "80c9f6f25a7926379339e99f2ed97a21fdaedc0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
