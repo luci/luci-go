@@ -26,14 +26,47 @@ import (
 	_ "go.chromium.org/luci/starlark/starlarkproto/testprotos"
 )
 
+func TestMakeModuleKey(t *testing.T) {
+	t.Parallel()
+
+	Convey("Works", t, func() {
+		k, err := makeModuleKey("//some/mod")
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"", "some/mod"})
+
+		k, err = makeModuleKey("//some/mod/../blah")
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"", "some/blah"})
+
+		k, err = makeModuleKey("//../../")
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"", "../.."})
+
+		k, err = makeModuleKey("@pkg//some/mod")
+		So(err, ShouldBeNil)
+		So(k, ShouldResemble, moduleKey{"pkg", "some/mod"})
+	})
+
+	Convey("Fails", t, func() {
+		_, err := makeModuleKey("some/mod")
+		So(err, ShouldNotBeNil)
+
+		_, err = makeModuleKey("some//mod")
+		So(err, ShouldNotBeNil)
+
+		_, err = makeModuleKey("@//mod")
+		So(err, ShouldNotBeNil)
+	})
+}
+
 func TestInterpreter(t *testing.T) {
 	t.Parallel()
 
 	Convey("Stdlib scripts can load each other", t, func() {
 		keys, logs, err := runIntr(intrParams{
 			stdlib: map[string]string{
-				"init.star": `
-					load("builtin:loaded.star", "loaded_sym")
+				"builtins.star": `
+					load("//loaded.star", "loaded_sym")
 					exported_sym = "exported_sym_val"
 				`,
 				"loaded.star": `loaded_sym = "loaded_sym_val"`,
@@ -44,7 +77,7 @@ func TestInterpreter(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(keys, ShouldHaveLength, 0) // main.star doesn't export anything itself
-		So(logs, ShouldResemble, []string{"[main.star:1] loaded_sym_val exported_sym_val"})
+		So(logs, ShouldResemble, []string{"[//main.star:1] loaded_sym_val exported_sym_val"})
 	})
 
 	Convey("User scripts can load each other and stdlib scripts", t, func() {
@@ -54,45 +87,46 @@ func TestInterpreter(t *testing.T) {
 			},
 			scripts: map[string]string{
 				"main.star": `
-					# Absolute paths work.
-					load("//sub/loaded.star", "loaded_sym", "another_loaded_sym")
-					# Loading stdlib modules work.
-					load("builtin:lib.star", "lib_sym")
+					load("//sub/loaded.star", "loaded_sym")
+					load("@stdlib//lib.star", "lib_sym")
 					main_sym = True
 				`,
-				"sub/loaded.star": `
-					# Relative paths work.
-					load("../another_loaded.star", "another_loaded_sym")
-					loaded_sym = True
-				`,
-				"another_loaded.star": `another_loaded_sym = True`,
+				"sub/loaded.star": `loaded_sym = True`,
 			},
 		})
 		So(err, ShouldBeNil)
 		So(keys, ShouldResemble, []string{
-			"another_loaded_sym",
 			"lib_sym",
 			"loaded_sym",
 			"main_sym",
 		})
 	})
 
-	Convey("Stdlib scripts can NOT load non-stdlib scripts", t, func() {
-		_, _, err := runIntr(intrParams{
-			stdlib: map[string]string{
-				"init.star": `load("//some.star", "some")`,
-			},
-		})
-		So(err, ShouldErrLike, `builtin module "builtin:init.star" is attempting to load non-builtin`)
-	})
-
-	Convey("Missing scripts", t, func() {
+	Convey("Missing module", t, func() {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
 				"main.star": `load("//some.star", "some")`,
 			},
 		})
-		So(err, ShouldErrLike, `failed to read`)
+		So(err, ShouldErrLike, `cannot load //some.star: no such module`)
+	})
+
+	Convey("Missing package", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("@pkg//some.star", "some")`,
+			},
+		})
+		So(err, ShouldErrLike, `cannot load @pkg//some.star: no such package`)
+	})
+
+	Convey("Bad module reference", t, func() {
+		_, _, err := runIntr(intrParams{
+			scripts: map[string]string{
+				"main.star": `load("../some.star", "some")`,
+			},
+		})
+		So(err, ShouldErrLike, `cannot load ../some.star: a module path should be either '//<path>' or '@<package>//<path>'`)
 	})
 
 	Convey("Predeclared are exposed to stdlib and user scripts", t, func() {
@@ -101,7 +135,7 @@ func TestInterpreter(t *testing.T) {
 				"imported_sym": starlark.MakeInt(123),
 			},
 			stdlib: map[string]string{
-				"init.star": `print(imported_sym)`,
+				"builtins.star": `print(imported_sym)`,
 			},
 			scripts: map[string]string{
 				"main.star": `print(imported_sym)`,
@@ -109,44 +143,17 @@ func TestInterpreter(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(logs, ShouldResemble, []string{
-			"[builtin:init.star:1] 123",
-			"[main.star:1] 123",
+			"[@stdlib//builtins.star:1] 123",
+			"[//main.star:1] 123",
 		})
-	})
-
-	Convey("Can load protos and have 'proto' module available", t, func() {
-		_, logs, err := runIntr(intrParams{
-			scripts: map[string]string{
-				"main.star": `
-					load("builtin:go.chromium.org/luci/starlark/starlarkproto/testprotos/test.proto", "testprotos")
-					print(proto.to_pbtext(testprotos.SimpleFields(i64=123)))
-				`,
-			},
-		})
-		So(err, ShouldBeNil)
-		So(logs, ShouldResemble, []string{"[main.star:3] i64: 123\n"})
 	})
 
 	Convey("Modules are loaded only once", t, func() {
 		_, logs, err := runIntr(intrParams{
-			stdlib: map[string]string{
-				"init.star": `
-					load("builtin:mod.star", "a")
-					load("builtin:mod.star", "b")
-
-					print(a, b)
-				`,
-				"mod.star": `
-					print("Loading")
-
-					a = 1
-					b = 2
-				`,
-			},
 			scripts: map[string]string{
 				"main.star": `
-					load("mod.star", "a")
-					load("mod.star", "b")
+					load("//mod.star", "a")
+					load("//mod.star", "b")
 
 					print(a, b)
 				`,
@@ -160,20 +167,18 @@ func TestInterpreter(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(logs, ShouldResemble, []string{
-			"[builtin:mod.star:2] Loading",
-			"[builtin:init.star:5] 1 2",
-			"[mod.star:2] Loading",
-			"[main.star:5] 1 2",
+			"[//mod.star:2] Loading", // only once
+			"[//main.star:5] 1 2",
 		})
 	})
 
-	Convey("Load cycles are caught", t, func() {
+	Convey("Module cycles are caught", t, func() {
 		_, _, err := runIntr(intrParams{
 			scripts: map[string]string{
-				"main.star": `load("mod.star", "a")`,
-				"mod.star":  `load("main.star", "a")`,
+				"main.star": `load("//mod.star", "a")`,
+				"mod.star":  `load("//main.star", "a")`,
 			},
 		})
-		So(err, ShouldErrLike, "cannot load mod.star: cannot load main.star: cannot load mod.star: cycle in load graph")
+		So(err, ShouldErrLike, "cannot load //mod.star: cannot load //main.star: cycle in the module dependency graph")
 	})
 }

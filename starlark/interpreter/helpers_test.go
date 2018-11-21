@@ -18,7 +18,6 @@ package interpreter
 
 import (
 	"fmt"
-	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
@@ -65,6 +64,17 @@ func deindent(s string) string {
 	return strings.Join(trimmed, "\n")
 }
 
+// deindentLoader deindents starlark code before returning it.
+func deindentLoader(files map[string]string) Loader {
+	return func(path string) (_ starlark.StringDict, src string, err error) {
+		body, ok := files[path]
+		if !ok {
+			return nil, "", ErrNoModule
+		}
+		return nil, deindent(body), nil
+	}
+}
+
 func TestDeindent(t *testing.T) {
 	t.Parallel()
 	Convey("Works", t, func() {
@@ -93,12 +103,15 @@ e
 type intrParams struct {
 	// scripts contains user-supplied scripts (ones that would normally be loaded
 	// from the file system). If there's main.star script, it will be executed via
-	// ExecFile and its global dict keys returned.
+	// LoadModule and its global dict keys returned.
 	scripts map[string]string
 
 	// stdlib contains stdlib source code, as path => body mapping. In particular,
-	// init.star will be auto-loaded by the interpreter.
+	// builtins.star will be auto-loaded by the interpreter.
 	stdlib map[string]string
+
+	// package 'custom' is used by tests for Loaders.
+	custom Loader
 
 	// predeclared are just passed directly to the interpreter.
 	predeclared starlark.StringDict
@@ -111,17 +124,10 @@ type intrParams struct {
 func runIntr(p intrParams) (keys []string, logs []string, err error) {
 	intr := Interpreter{
 		Predeclared: p.predeclared,
-		Usercode: func(path string) (string, error) {
-			if body, ok := p.scripts[filepath.ToSlash(path)]; ok {
-				return deindent(body), nil
-			}
-			return "", fmt.Errorf("no such script file %s", path)
-		},
-		Stdlib: func(path string) (string, error) {
-			if body, ok := p.stdlib[path]; ok {
-				return deindent(body), nil
-			}
-			return "", ErrNoStdlibModule
+		Packages: map[string]Loader{
+			MainPkg:   deindentLoader(p.scripts),
+			StdlibPkg: deindentLoader(p.stdlib),
+			"custom":  p.custom,
 		},
 		Logger: func(file string, line int, message string) {
 			logs = append(logs, fmt.Sprintf("[%s:%d] %s", file, line, message))
@@ -134,7 +140,7 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 
 	if _, ok := p.scripts["main.star"]; ok {
 		var dict starlark.StringDict
-		dict, err = intr.ExecFile("main.star")
+		dict, err = intr.LoadModule(MainPkg, "main.star")
 		if err == nil {
 			keys = make([]string, 0, len(dict))
 			for k := range dict {
@@ -147,10 +153,10 @@ func runIntr(p intrParams) (keys []string, logs []string, err error) {
 	return
 }
 
-// runScript runs a single init.star script through the interpreter.
+// runScript runs a single builtins.star script through the interpreter.
 func runScript(body string) error {
 	_, _, err := runIntr(intrParams{
-		stdlib: map[string]string{"init.star": body},
+		stdlib: map[string]string{"builtins.star": body},
 	})
 	return err
 }

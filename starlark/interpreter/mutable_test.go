@@ -26,8 +26,8 @@ func TestMutable(t *testing.T) {
 	Convey("Works", t, func() {
 		_, logs, err := runIntr(intrParams{
 			stdlib: map[string]string{
-				"init.star": `
-					load("builtin:imported.star", "append", "collect")
+				"builtins.star": `
+					load("//imported.star", "append", "collect")
 					append(1)
 					append(2)
 					print(collect())
@@ -42,7 +42,7 @@ func TestMutable(t *testing.T) {
 			},
 		})
 		So(err, ShouldBeNil)
-		So(logs, ShouldResemble, []string{"[builtin:init.star:5] [1, 2]"})
+		So(logs, ShouldResemble, []string{"[@stdlib//builtins.star:5] [1, 2]"})
 	})
 
 	Convey("Setter and boolean cast work", t, func() {
