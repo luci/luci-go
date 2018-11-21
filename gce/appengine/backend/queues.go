@@ -20,12 +20,14 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
+	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
 	"go.chromium.org/luci/gce/api/config/v1"
 	"go.chromium.org/luci/gce/api/tasks/v1"
+	"go.chromium.org/luci/gce/appengine/model"
 )
 
 // ensureQueue is the name of the ensure task handler queue.
@@ -41,7 +43,19 @@ func ensure(c context.Context, payload proto.Message) error {
 		return errors.Reason("ID is required").Err()
 	}
 	logging.Debugf(c, "ensuring %q", task.Id)
-	// TODO(smut): Create or update this VM.
+	datastore.RunInTransaction(c, func(c context.Context) error {
+		vm := &model.VM{
+			ID: task.Id,
+		}
+		if err := datastore.Get(c, vm); err != nil && err != datastore.ErrNoSuchEntity {
+			return errors.Annotate(err, "failed to fetch VM").Err()
+		}
+		if task.Attributes != nil {
+			vm.Attributes = *task.Attributes
+		}
+		datastore.Put(c, vm)
+		return nil
+	}, nil)
 	return nil
 }
 
@@ -68,7 +82,7 @@ func expand(c context.Context, payload proto.Message) error {
 		t[i] = &tq.Task{
 			Payload: &tasks.Ensure{
 				Id:         fmt.Sprintf("%s-%d", task.Id, i),
-				Attributes: vms,
+				Attributes: vms.Attributes,
 			},
 		}
 	}
