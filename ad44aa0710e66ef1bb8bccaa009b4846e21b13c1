@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d1b9644a_d9bb6db5",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T23:06:07Z",
+      "side": 1,
+      "message": "I would do this the other way:\n\n   ....\n      StreamRegistrationCallback: config.StreamRegistrationCallback,\n   }\n    \n   if !config.NoWrapStreamRegistrationCallback {\n      bc.StreamRegistrationCallback \u003d wrap...(bc.StreamRegistrationCallback)\n   }",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
