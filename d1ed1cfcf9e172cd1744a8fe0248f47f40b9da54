@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b503eea6_a90306e5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T18:29:37Z",
+      "side": 1,
+      "message": "Maybe. We\u0027ll see how it goes.",
+      "parentUuid": "4033035a_df988a63",
+      "range": {
+        "startLine": 17,
+        "startChar": 7,
+        "endLine": 17,
+        "endChar": 13
+      },
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "95bab719_3730a0e5",
         "filename": "lucicfg/greetings.go",
         "patchSetId": 1
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "bc73e6d4_eaa59fda",
+        "filename": "lucicfg/greetings.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T18:29:37Z",
+      "side": 1,
+      "message": "I\u0027m not sure yet. There are advantages to explicit unpack(...) call: can supply default values for arguments, can support required positions arguments. We\u0027ll see.",
+      "parentUuid": "95bab719_3730a0e5",
+      "range": {
+        "startLine": 27,
+        "startChar": 11,
+        "endLine": 27,
+        "endChar": 32
+      },
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0f18ead8_88ce0c9c",
         "filename": "lucicfg/native.go",
         "patchSetId": 1
@@ -62,6 +110,24 @@
       "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02a83676_4a68c2bc",
+        "filename": "lucicfg/native.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T18:29:37Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "0f18ead8_88ce0c9c",
+      "revId": "d1ed1cfcf9e172cd1744a8fe0248f47f40b9da54",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
