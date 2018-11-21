@@ -32,49 +32,72 @@ import (
 func TestCron(t *testing.T) {
 	t.Parallel()
 
-	Convey("process", t, func() {
+	Convey("cron", t, func() {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		c := withDispatcher(memory.Use(context.Background()), dsp)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
-		Convey("none", func() {
-			err := process(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldBeEmpty)
-		})
-
-		Convey("one", func() {
-			datastore.Put(c, &model.VMs{
-				ID: "id",
-				Config: config.Block{
-					Amount: 1,
-					Attributes: &config.VM{
-						Project: "project",
-					},
-					Prefix: "prefix",
-				},
+		Convey("createInstances", func() {
+			Convey("none", func() {
+				err := createInstances(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 			})
-			datastore.GetTestable(c).CatchupIndexes()
-			err := process(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
-		})
 
-		Convey("many", func() {
-			for i := 0; i < 100; i++ {
-				datastore.Put(c, &model.VMs{
-					ID: fmt.Sprintf("id-%d", i),
-					Config: config.Block{
-						Amount: 1,
+			Convey("one", func() {
+				datastore.Put(c, &model.VM{
+					ID: "id",
+					Attributes: config.VM{
+						Zone: "zone",
 					},
 				})
-			}
-			datastore.GetTestable(c).CatchupIndexes()
-			err := process(c)
-			So(err, ShouldBeNil)
-			So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
+				datastore.GetTestable(c).CatchupIndexes()
+				err := createInstances(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+		})
+
+		Convey("expandVMs", func() {
+			Convey("none", func() {
+				err := expandVMs(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+			})
+
+			Convey("one", func() {
+				datastore.Put(c, &model.VMs{
+					ID: "id",
+					Config: config.Block{
+						Amount: 1,
+						Attributes: &config.VM{
+							Project: "project",
+						},
+						Prefix: "prefix",
+					},
+				})
+				datastore.GetTestable(c).CatchupIndexes()
+				err := expandVMs(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 1)
+			})
+
+			Convey("many", func() {
+				for i := 0; i < 100; i++ {
+					datastore.Put(c, &model.VMs{
+						ID: fmt.Sprintf("id-%d", i),
+						Config: config.Block{
+							Amount: 1,
+						},
+					})
+				}
+				datastore.GetTestable(c).CatchupIndexes()
+				err := expandVMs(c)
+				So(err, ShouldBeNil)
+				So(tqt.GetScheduledTasks(), ShouldHaveLength, 100)
+			})
 		})
 	})
 }
