@@ -32,7 +32,7 @@ func TestToJSON(t *testing.T) {
 			stdlib: map[string]string{"init.star": fmt.Sprintf("print(to_json(%s))", val)},
 		})
 		So(err, ShouldBeNil)
-		So(logs, ShouldResemble, []string{fmt.Sprintf("[builtin:init.star:1] %s", expected)})
+		So(logs, ShouldResemble, []string{fmt.Sprintf("[@stdlib//init.star:1] %s", expected)})
 	}
 
 	mustFail := func(val string, expectErr string) {
