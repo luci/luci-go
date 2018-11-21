@@ -34,6 +34,24 @@
       "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "162b69c5_adbb684e",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T23:50:48Z",
+      "side": 1,
+      "message": "I would prefer that if the user said \"no wrap\", then we don\u0027t ever call the wrapper. So maybe a temporary variable before declaring bc?",
+      "parentUuid": "106ef222_c4087460",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
