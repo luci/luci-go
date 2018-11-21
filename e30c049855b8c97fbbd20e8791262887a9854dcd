@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "24a4809a_ffe7203e",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T17:54:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "391b965b_361c7777",
+      "range": {
+        "startLine": 58,
+        "startChar": 20,
+        "endLine": 58,
+        "endChar": 24
+      },
+      "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f70b8053_10bd7526",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 3
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "7bd28496_4eee2bec",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T17:54:22Z",
+      "side": 1,
+      "message": "Will do it in a separate CL. The diff is ugly.",
+      "parentUuid": "d8e22cf2_9346a705",
+      "range": {
+        "startLine": 70,
+        "startChar": 3,
+        "endLine": 70,
+        "endChar": 57
+      },
+      "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a973dc9_c851537c",
         "filename": "starlark/interpreter/loaders.go",
         "patchSetId": 3
@@ -92,6 +140,30 @@
       "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f970b498_62a41f5a",
+        "filename": "starlark/interpreter/loaders.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T17:54:22Z",
+      "side": 1,
+      "message": "One instance of Loader is used to load many different files, so I think \u0027loads files\u0027 is appropriate, unless it\u0027s some grammatical rule I don\u0027t understand.",
+      "parentUuid": "3a973dc9_c851537c",
+      "range": {
+        "startLine": 29,
+        "startChar": 48,
+        "endLine": 29,
+        "endChar": 53
+      },
+      "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
