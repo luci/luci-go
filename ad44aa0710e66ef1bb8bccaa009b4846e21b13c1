@@ -16,6 +16,24 @@
       "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "106ef222_c4087460",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:39:53Z",
+      "side": 1,
+      "message": "I preferred the \"if config.NoWrap...\" because it doesn\u0027t have a double negative... do you have a definite preference for the above?",
+      "parentUuid": "d1b9644a_d9bb6db5",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
