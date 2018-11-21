@@ -15,6 +15,7 @@
 package interpreter
 
 import (
+	"context"
 	"testing"
 
 	"go.starlark.net/starlark"
@@ -146,6 +147,24 @@ func TestInterpreter(t *testing.T) {
 			"[@stdlib//builtins.star:1] 123",
 			"[//main.star:1] 123",
 		})
+	})
+
+	Convey("Predeclared can access the context", t, func() {
+		fromCtx := ""
+		_, _, err := runIntr(intrParams{
+			ctx: context.WithValue(context.Background(), 123, "ctx value"),
+			predeclared: starlark.StringDict{
+				"call_me": starlark.NewBuiltin("call_me", func(th *starlark.Thread, _ *starlark.Builtin, _ starlark.Tuple, _ []starlark.Tuple) (starlark.Value, error) {
+					fromCtx = Context(th).Value(123).(string)
+					return starlark.None, nil
+				}),
+			},
+			scripts: map[string]string{
+				"main.star": `call_me()`,
+			},
+		})
+		So(err, ShouldBeNil)
+		So(fromCtx, ShouldEqual, "ctx value")
 	})
 
 	Convey("Modules are loaded only once", t, func() {

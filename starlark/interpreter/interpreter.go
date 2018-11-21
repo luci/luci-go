@@ -94,6 +94,7 @@
 package interpreter
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -121,6 +122,20 @@ const (
 	// StdlibPkg is an alias of the package with the standard library.
 	StdlibPkg = "stdlib"
 )
+
+// Key of context.Context inside starlark.Thread's local store.
+const threadCtxKey = "interpreter.Context"
+
+// Context returns a context of the thread created through Interpreter.
+//
+// Panics if the Starlark thread wasn't created through Interpreter.Thread().
+func Context(th *starlark.Thread) context.Context {
+	ctx := th.Local(threadCtxKey)
+	if ctx == nil {
+		panic("not an Interpreter thread, no context in it")
+	}
+	return ctx.(context.Context)
+}
 
 // Loader knows how to load modules of some concrete package.
 //
@@ -204,7 +219,9 @@ type loadedModule struct {
 // symbols not starting with '_' end up in the global dict of
 // '@stdlib//builtins.star' module will become available as global symbols in
 // all modules.
-func (intr *Interpreter) Init() error {
+//
+// The context ends up available to builtins through Context(...).
+func (intr *Interpreter) Init(ctx context.Context) error {
 	intr.modules = map[moduleKey]*loadedModule{}
 
 	// Register basic built-in symbols. They'll be available from all modules
@@ -219,7 +236,7 @@ func (intr *Interpreter) Init() error {
 	}
 
 	// Load the stdlib, if any.
-	top, err := intr.LoadModule(StdlibPkg, "builtins.star")
+	top, err := intr.LoadModule(ctx, StdlibPkg, "builtins.star")
 	if err != nil && err != ErrNoModule && err != ErrNoPackage {
 		return err
 	}
@@ -237,8 +254,10 @@ func (intr *Interpreter) Init() error {
 // intr.Packages. 'path' is a module path (without leading '//') within
 // the package.
 //
+// The context ends up available to builtins through Context(...).
+//
 // Caches the result of the execution. Modules are always loaded only once.
-func (intr *Interpreter) LoadModule(pkg, path string) (starlark.StringDict, error) {
+func (intr *Interpreter) LoadModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
 	key, err := makeModuleKey(fmt.Sprintf("@%s//%s", pkg, path))
 	if err != nil {
 		return nil, err
@@ -261,12 +280,37 @@ func (intr *Interpreter) LoadModule(pkg, path string) (starlark.StringDict, erro
 	}
 	defer func() { intr.modules[key] = m }()
 
-	m.dict, m.err = intr.execModule(pkg, path)
+	m.dict, m.err = intr.execModule(ctx, pkg, path)
 	return m.dict, m.err
 }
 
+// Thread creates a new Starlark thread associated with the given context.
+//
+// Thread() can be used, for example, to invoke callbacks registered by the
+// loaded Starlark code.
+//
+// The context ends up available to builtins through Context(...).
+//
+// The returned thread has no implementation of load(...). Use LoadModule to
+// load top-level Starlark code instead. Note that load(...) statements are
+// forbidden inside Starlark functions anyway.
+func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
+	th := &starlark.Thread{
+		Print: func(th *starlark.Thread, msg string) {
+			position := th.Caller().Position()
+			if intr.Logger != nil {
+				intr.Logger(position.Filename(), int(position.Line), msg)
+			} else {
+				fmt.Fprintf(os.Stderr, "[%s:%d] %s\n", position.Filename(), position.Line, msg)
+			}
+		},
+	}
+	th.SetLocal(threadCtxKey, ctx)
+	return th
+}
+
 // execModule really loads and execute the module.
-func (intr *Interpreter) execModule(pkg, path string) (starlark.StringDict, error) {
+func (intr *Interpreter) execModule(ctx context.Context, pkg, path string) (starlark.StringDict, error) {
 	loader, ok := intr.Packages[pkg]
 	if !ok {
 		return nil, ErrNoPackage
@@ -282,29 +326,20 @@ func (intr *Interpreter) execModule(pkg, path string) (starlark.StringDict, erro
 	}
 
 	// Otherwise make a thread for executing the code. We do not reuse threads
-	// between modules. All global state is passed through intr.globals and
-	// intr.modules.
-	th := &starlark.Thread{
-		Load: func(th *starlark.Thread, loadPath string) (starlark.StringDict, error) {
-			key, err := makeModuleKey(loadPath)
-			if err != nil {
-				return nil, err
-			}
-			// By default (when not specifying @<pkg>) modules within a package refer
-			// to sibling files in the same package.
-			if key.pkg == "" {
-				key.pkg = pkg
-			}
-			return intr.LoadModule(key.pkg, key.path)
-		},
-		Print: func(th *starlark.Thread, msg string) {
-			position := th.Caller().Position()
-			if intr.Logger != nil {
-				intr.Logger(position.Filename(), int(position.Line), msg)
-			} else {
-				fmt.Fprintf(os.Stderr, "[%s:%d] %s\n", position.Filename(), position.Line, msg)
-			}
-		},
+	// between modules. All global state is passed through intr.globals,
+	// intr.modules and ctx.
+	th := intr.Thread(ctx)
+	th.Load = func(th *starlark.Thread, loadPath string) (starlark.StringDict, error) {
+		key, err := makeModuleKey(loadPath)
+		if err != nil {
+			return nil, err
+		}
+		// By default (when not specifying @<pkg>) modules within a package refer
+		// to sibling files in the same package.
+		if key.pkg == "" {
+			key.pkg = pkg
+		}
+		return intr.LoadModule(ctx, key.pkg, key.path)
 	}
 
 	// Construct a full module name for error messages and stack traces. Omit the
