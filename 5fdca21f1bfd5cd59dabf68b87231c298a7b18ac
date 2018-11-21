@@ -1,0 +1,291 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "936e5047_2cca3ea7",
+        "filename": "logdog/api/logpb/log.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "Since we determined that \u0027aggressive flushing\u0027 is actually part of the standard operation of butler, I would leave this line out; there\u0027s nothing that the reader of this proto could do to affect this aggressive mode one way or the other; practically anyone using this proto should always expect this form (with the sole, documented, exception of the butler wrapped callbacks).",
+      "range": {
+        "startLine": 88,
+        "startChar": 4,
+        "endLine": 88,
+        "endChar": 78
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1ce3cde1_658cc644",
+        "filename": "logdog/client/butler/buffered_callback/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "Use either the stdlib or LUCI errors package (i.e. `errors.New()`). The LUCI one is a smidge better, because it\u0027ll contain the file+line number of where the error was declared.",
+      "range": {
+        "startLine": 24,
+        "startChar": 21,
+        "endLine": 24,
+        "endChar": 31
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "351f68c5_f1e80737",
+        "filename": "logdog/client/butler/buffered_callback/datagram.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "this one :)",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 20,
+        "endChar": 36
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e38cf8a5_18b470e9",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "2018 for all new files",
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba028d73_b816b779",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "drop, or: \"because the logdog bundler produces fragmented LogEntries under normal operation, in order to meet time or buffer size requirements\"",
+      "range": {
+        "startLine": 16,
+        "startChar": 63,
+        "endLine": 18,
+        "endChar": 13
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "696c65ad_83231705",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "This is correct, but it took me a couple times to understand it. Maybe \"The wrapped callbacks will not split otherwise contiguous LogEntries (e.g. if bundler produces a LogEntry with multiple complete lines, that will get passed along as-is, not called once-per-line).\"",
+      "range": {
+        "startLine": 18,
+        "startChar": 15,
+        "endLine": 19,
+        "endChar": 55
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f3a40eb3_bac4ca81",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "I think this is generally implied since there\u0027s no `error` in the function signatures",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 18
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a78a38f_33290226",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "maybe just \u003d\u003d 0? if len(anything) returns \u003c 0 then we\u0027ve got some serious issues (in the vein of data corruption in memory, or someone drove a tent spike through the cpu).",
+      "range": {
+        "startLine": 60,
+        "startChar": 20,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0ccafc8_7c23b8a5",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "drop \u0027compressed\u0027; \u0027complete\u0027 is enough (and there\u0027s no compression happening here, just concatenation)",
+      "range": {
+        "startLine": 81,
+        "startChar": 24,
+        "endLine": 81,
+        "endChar": 34
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a4d195fa_3b7141cf",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "imo it\u0027s a bit weird to re-use buf like this. I would make a new buffer variable (maybe called `toCallback` or something like that) for use within this phase. In particular, I think it would be clearer if `buf` only was used for buffering between calls, but not within a single call.",
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b457b800_309b9c95",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "I would:\n  * Assert that this is the last line\n  * update `buf` and `curLineSize` here\n\nAnd then the 105 and 118 code can move in here (assuming you have a second variable for the lines you\u0027re going to send and not re-using buf)",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cfa0f357_f1452fb2",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "should this be set to something if you start a new buf here?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 18
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "221e3755_18d891a7",
+        "filename": "logdog/client/butler/buffered_callback/text_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T07:40:19Z",
+      "side": 1,
+      "message": "I think it\u0027s probably worth asserting on the correct sequence numbers too?",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 20
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
