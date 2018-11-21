@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "a0706449_04289b03",
+        "filename": "logdog/api/logpb/log.proto",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "True, removed.",
+      "parentUuid": "936e5047_2cca3ea7",
+      "range": {
+        "startLine": 88,
+        "startChar": 4,
+        "endLine": 88,
+        "endChar": 78
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1ce3cde1_658cc644",
         "filename": "logdog/client/butler/buffered_callback/common.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c82982d2_b0153315",
+        "filename": "logdog/client/butler/buffered_callback/common.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ce3cde1_658cc644",
+      "range": {
+        "startLine": 24,
+        "startChar": 21,
+        "endLine": 24,
+        "endChar": 31
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "f19535df_82c8197c",
+        "filename": "logdog/client/butler/buffered_callback/datagram.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "351f68c5_f1e80737",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 20,
+        "endChar": 36
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e38cf8a5_18b470e9",
         "filename": "logdog/client/butler/buffered_callback/doc.go",
         "patchSetId": 3
@@ -85,6 +157,24 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "596e5fa3_f578e764",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e38cf8a5_18b470e9",
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "ab899128_9c30567d",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba028d73_b816b779",
+      "range": {
+        "startLine": 16,
+        "startChar": 63,
+        "endLine": 18,
+        "endChar": 13
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "696c65ad_83231705",
         "filename": "logdog/client/butler/buffered_callback/doc.go",
         "patchSetId": 3
@@ -131,6 +245,30 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e7c77e8_d7acdb10",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "696c65ad_83231705",
+      "range": {
+        "startLine": 18,
+        "startChar": 15,
+        "endLine": 19,
+        "endChar": 55
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "09f39cf6_ac8002ee",
+        "filename": "logdog/client/butler/buffered_callback/doc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "f3a40eb3_bac4ca81",
+      "range": {
+        "startLine": 20,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 18
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2a78a38f_33290226",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 3
@@ -177,6 +339,30 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b0a7fe41_88f93d05",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2a78a38f_33290226",
+      "range": {
+        "startLine": 60,
+        "startChar": 20,
+        "endLine": 60,
+        "endChar": 22
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -203,6 +389,30 @@
     },
     {
       "key": {
+        "uuid": "f6058fa1_9c81ee9e",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "It compresses an array of several *logpb.Text_Lines into an array of one :)",
+      "parentUuid": "c0ccafc8_7c23b8a5",
+      "range": {
+        "startLine": 81,
+        "startChar": 24,
+        "endLine": 81,
+        "endChar": 34
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a4d195fa_3b7141cf",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 3
@@ -217,6 +427,24 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "82b02e06_42d1ef1c",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a4d195fa_3b7141cf",
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -243,6 +471,30 @@
     },
     {
       "key": {
+        "uuid": "e08fc5a2_946a8984",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done.\n\nI updated buf and curLineSize earlier: OK?",
+      "parentUuid": "b457b800_309b9c95",
+      "range": {
+        "startLine": 100,
+        "startChar": 4,
+        "endLine": 100,
+        "endChar": 9
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cfa0f357_f1452fb2",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 3
@@ -254,6 +506,30 @@
       "writtenOn": "2018-11-21T07:40:19Z",
       "side": 1,
       "message": "should this be set to something if you start a new buf here?",
+      "range": {
+        "startLine": 122,
+        "startChar": 2,
+        "endLine": 122,
+        "endChar": 18
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "784e2eb6_3ae3fc5d",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "IIUC the sequence in the LogEntries coming in doesn\u0027t get incremented for partial lines, so we want to pick up the *next* LogEntry as base, not the current one. Does that sound right to you?\n\nhttps://cs.chromium.org/chromium/infra/go/src/go.chromium.org/luci/logdog/client/butler/bundler/textParser_test.go?l\u003d120\u0026rcl\u003df9d1608976ceef6accafca0b2514c96a5394629f",
+      "parentUuid": "cfa0f357_f1452fb2",
       "range": {
         "startLine": 122,
         "startChar": 2,
@@ -286,6 +562,30 @@
       "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "98efccd9_ce7db628",
+        "filename": "logdog/client/butler/buffered_callback/text_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-21T23:37:48Z",
+      "side": 1,
+      "message": "Done modulo above comment on sequence numbers",
+      "parentUuid": "221e3755_18d891a7",
+      "range": {
+        "startLine": 50,
+        "startChar": 5,
+        "endLine": 50,
+        "endChar": 20
+      },
+      "revId": "5fdca21f1bfd5cd59dabf68b87231c298a7b18ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
