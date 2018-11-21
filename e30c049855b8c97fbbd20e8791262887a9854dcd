@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "391b965b_361c7777",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T06:32:56Z",
+      "side": 1,
+      "message": "maybe \u0027builtins\u0027?",
+      "range": {
+        "startLine": 58,
+        "startChar": 20,
+        "endLine": 58,
+        "endChar": 24
+      },
+      "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f70b8053_10bd7526",
         "filename": "starlark/interpreter/interpreter.go",
         "patchSetId": 3
@@ -42,6 +65,29 @@
         "startChar": 3,
         "endLine": 70,
         "endChar": 57
+      },
+      "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3a973dc9_c851537c",
+        "filename": "starlark/interpreter/loaders.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-21T06:32:56Z",
+      "side": 1,
+      "message": "\"a file\"?",
+      "range": {
+        "startLine": 29,
+        "startChar": 48,
+        "endLine": 29,
+        "endChar": 53
       },
       "revId": "e30c049855b8c97fbbd20e8791262887a9854dcd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
