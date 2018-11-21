@@ -6,8 +6,18 @@ syntax = "proto3";
 
 package tasks;
 
+import "go.chromium.org/luci/gce/api/config/v1/config.proto";
+
+// A task to create or update a particular VM.
+message Ensure {
+  // The ID of the VM to create or update.
+  string id = 1;
+  // The attributes of the VM.
+  config.Block attributes = 2;
+}
+
 // A task to expand a VMs config.
-message Expansion {
+message Expand {
   // The ID of the VMs block to expand.
   string id = 1;
 }

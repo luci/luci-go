@@ -1,4 +1,9 @@
 queue:
+- name: ensure-vm
+  rate: 100/s
+  retry_parameters:
+    task_retry_limit: 0
+
 - name: expand-config
   rate: 100/s
   retry_parameters:
