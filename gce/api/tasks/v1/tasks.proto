@@ -13,7 +13,7 @@ message Ensure {
   // The ID of the VM to create or update.
   string id = 1;
   // The attributes of the VM.
-  config.Block attributes = 2;
+  config.VM attributes = 2;
 }
 
 // A task to expand a VMs config.

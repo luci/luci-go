@@ -20,10 +20,11 @@ import (
 	"go.chromium.org/luci/gce/api/config/v1"
 )
 
-// VMsKind is the VMs entities' kind in the datastore.
+// VMsKind is a VMs entity's kind in the datastore.
 const VMsKind = "VMs"
 
 // VMs is a root entity representing a configured block of VMs.
+// VM entities should be created for each VMs entity.
 type VMs struct {
 	// _extra is where unknown properties are put into memory.
 	// Extra properties are not written to the datastore.
@@ -34,4 +35,21 @@ type VMs struct {
 	ID string `gae:"$id"`
 	// Config is the config.Block representation of this entity.
 	Config config.Block `gae:"config"`
+}
+
+// VMKind is a VM entity's kind in the datastore.
+const VMKind = "VM"
+
+// VM is a root entity representing a configured VM.
+// GCE instances should be created for each VM entity.
+type VM struct {
+	// _extra is where unknown properties are put into memory.
+	// Extra properties are not written to the datastore.
+	_extra datastore.PropertyMap `gae:"-,extra"`
+	// _kind is the entity's kind in the datastore.
+	_kind string `gae:"$kind,VM"`
+	// ID is the unique identifier for this VM.
+	ID string `gae:"$id"`
+	// Attributes is the config.VM describing the GCE instance to create.
+	Attributes config.VM `gae:"attributes"`
 }
