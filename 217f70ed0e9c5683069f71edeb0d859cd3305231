@@ -2,6 +2,63 @@
   "comments": [
     {
       "key": {
+        "uuid": "4316355f_0fa333ad",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T19:48:27Z",
+      "side": 1,
+      "message": "nit: redundant",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f9aec6df_4dcba3fd",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T19:48:27Z",
+      "side": 1,
+      "message": "Add a warning about the non-streaming nature of the tool.  Eg.\n\"This tool does not stream the archive, so the full contents are stored in memory before being written to disk.\"",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6821240c_d8709c68",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T19:48:27Z",
+      "side": 1,
+      "message": "add sort.Strings(cs)\n\nmap ordering is unstable",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "016141a6_bc8d20a5",
         "filename": "common/api/gitiles/rest.go",
         "patchSetId": 6
@@ -22,6 +79,23 @@
       "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d0152365_d11964c9",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-21T19:48:27Z",
+      "side": 1,
+      "message": "Archive is pretty esoteric for gitiles, I\u0027d add a short explanation.\n\nAdd: // An archive is a shallow bundle of the contents of a repository.",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
