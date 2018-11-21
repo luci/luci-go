@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1ded3722_15c0f94d",
+        "filename": "starlark/interpreter/interpreter.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-21T02:21:58Z",
+      "side": 1,
+      "message": "Don\u0027t look at the diff, it\u0027s almost a complete rewrite of this file.\n\nIt is actually much smaller and simpler now :)",
+      "revId": "a1e7344b4b26953dd0416c097caefd175d329c43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
