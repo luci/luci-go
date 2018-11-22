@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f38d6d0e_0d963bb9",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-22T01:09:17Z",
+      "side": 1,
+      "message": "I\u0027m afraid to change this. Changing proto package name breaks serialized google.Any or similar mechanisms that deal with \"generic\" protos. I have no idea whether logdog/lucicfg library uses them.",
+      "range": {
+        "startLine": 63,
+        "startChar": 63,
+        "endLine": 63,
+        "endChar": 74
+      },
+      "revId": "ca6c40e95fd759388d97d70059322a5a8727dfd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "579e75cc_8408456b",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-22T01:09:17Z",
+      "side": 1,
+      "message": "Here we have another problem: https://chromium.googlesource.com/infra/luci/luci-go/+/6db112c5d6460d8a1635bab5c9794b0741138223\n\n:(\n\nI see 3 potential solutions:\n1. Rename proto packages (to be consistent) and proto messages (to avoid conflicts on clashes). This is scary, can break stuff in runtime when deserializing stored protos that are suddenly no longer in the proto registry. I\u0027ve seen this before.\n2. Teach starlarkproto library to alias proto package names. This would causes some cognitive dissonance, since the package name is part of *.proto file.\n3. Keep everything as in this CL and declare that tuple (package path, proto package name) is our public API, e.g. these load(\"@...\") lines I put in comments are meant to be copy-pasted verbatim.\n\nI\u0027m leaning towards 3 for now...",
+      "range": {
+        "startLine": 87,
+        "startChar": 69,
+        "endLine": 87,
+        "endChar": 87
+      },
+      "revId": "ca6c40e95fd759388d97d70059322a5a8727dfd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
