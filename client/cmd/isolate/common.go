@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/maruel/subcommands"
@@ -116,6 +117,12 @@ func (c *isolateFlags) Parse(cwd string, flags RequiredIsolateFlags) error {
 				return fmt.Errorf("invalid key %s", k)
 			}
 		}
+	}
+	if len(c.ConfigVariables) != 0 || len(c.ExtraVariables) != 0 || len(c.PathVariables) != 0 {
+		os.Stderr.WriteString(
+			"WARNING: -config-variables, -path-variables and -extra-variables\n" +
+				"         will be unsupported soon. Please contact the LUCI team.\n" +
+				"         https://crbug.com/907880\n")
 	}
 
 	if c.Isolate == "" {
