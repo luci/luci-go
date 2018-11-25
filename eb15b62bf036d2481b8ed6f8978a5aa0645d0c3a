@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5689dbae_7466a826",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1291295
+      },
+      "writtenOn": "2018-11-25T21:20:08Z",
+      "side": 1,
+      "message": "s/conccurrent/concurrent",
+      "range": {
+        "startLine": 195,
+        "startChar": 3,
+        "endLine": 195,
+        "endChar": 13
+      },
+      "revId": "eb15b62bf036d2481b8ed6f8978a5aa0645d0c3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
