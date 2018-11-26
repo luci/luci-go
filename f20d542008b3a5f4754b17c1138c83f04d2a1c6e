@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "5e539f26_5a07b474",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T22:53:45Z",
+      "side": 1,
+      "message": "`curLine` is meant to be the line of txt.Lines \"currently being processed\", which is why it\u0027s reused. Is `firstFullLine` clearer? An alternative would have been to loop through everything in txt.Lines and branch on the index of the line.\n\ncurLineSize-\u003ebufSize sounds good.",
+      "parentUuid": "2c2830cf_de6847a9",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 9
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "ddaf7150_7a42c557",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 4
