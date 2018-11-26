@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f8ac8a4_5b9df3d3",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-26T22:46:48Z",
+      "side": 1,
+      "message": "I don\u0027t see a reason to pre-declare these (as opposed to declaring them at first use)",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 46
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2c2830cf_de6847a9",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-26T22:46:48Z",
+      "side": 1,
+      "message": "it\u0027s confusing to have curLine be inside the function, but curLineSize outside the function (and, specifically, len(curLine) !\u003d curLineSize). Is there a better name for this? Maybe `buf ++ bufSize`?\n\nIt\u0027s not clear to me why reusing `curLine` on line 99 is beneficial",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 9
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ddaf7150_7a42c557",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-26T22:46:48Z",
+      "side": 1,
+      "message": "instead of reusing this variable, I would consider something like:\n\n  wholeLines :\u003d txt.Lines[1:]\n  var newPartial *logpb.TextLine\n  lastLineIdx :\u003d len(wholeLines)-1\n  if wholeLines[lastLineIdex].Delimiter \u003d\u003d \"\" {\n    newPartial \u003d wholeLines[lastLineIdx]\n    wholeLines \u003d wholeLines[:lastLineIdx]\n  } \n\n  // if wholeLines, process them\n  // if newPartial, process it",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
