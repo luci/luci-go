@@ -77,7 +77,15 @@ message LogStreamDescriptor {
 
 /* Text stream content. */
 message Text {
-  /* Contiguous text lines and their delimiters. */
+  /*
+	 * Contiguous text lines and their delimiters.
+	 *
+	 * The array of lines follows the following pattern:
+	 *   - 0 or 1 completion lines completing the last LogEntry's Text (i.e. with
+	 *     a delimiter but not itself the full line)
+	 *   - any number of complete lines (i.e. with delimiter, each its own line)
+	 *   - 0 or 1 partial lines
+	 */
   message Line {
     /* The line's text content, not including its delimiter. */
     bytes value = 1;
