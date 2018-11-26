@@ -88,6 +88,24 @@
       "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2744b3db_f7e3cc68",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T20:03:23Z",
+      "side": 1,
+      "message": "Nah I\u0027m totally fine with that, thanks!",
+      "parentUuid": "b72c3350_54ab3e8e",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
