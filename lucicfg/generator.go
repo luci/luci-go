@@ -32,6 +32,10 @@ import (
 // Inputs define all inputs for the config generator.
 type Inputs struct {
 	Main interpreter.Loader // a package with the entry LUCI.star file
+
+	// Used to setup additional facilities for unit tests.
+	testPredeclared    starlark.StringDict
+	testThreadModified func(th *starlark.Thread)
 }
 
 // State is mutated throughout execution of the script and at the end contains
@@ -77,6 +81,9 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		// @stdlib functions.
 		"__native__": native(),
 	}
+	for k, v := range in.testPredeclared {
+		predeclared[k] = v
+	}
 
 	// Expose @stdlib, @proto and __main__ package. All have no externally
 	// observable state of their own, but they call low-level __native__.*
@@ -88,8 +95,9 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// Execute LUCI.star in this environment. Return errors unwrapped so that
 	// callers can sniff out various sorts of Starlark errors.
 	intr := interpreter.Interpreter{
-		Predeclared: predeclared,
-		Packages:    pkgs,
+		Predeclared:    predeclared,
+		Packages:       pkgs,
+		ThreadModifier: in.testThreadModified,
 	}
 	if err := intr.Init(ctx); err != nil {
 		return nil, err
