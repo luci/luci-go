@@ -102,6 +102,7 @@
     <ul>
     {{- range .Builder.PendingBuilds -}}
       <li>
+        {{- .Link.HTML }}
         <small>({{- .PendingTime.Started | localTime "" }}, waiting {{ .PendingTime.Duration | humanDuration -}})</small>
         {{- with .Blame }}{{- template "blamelist" -}}{{- end -}}
       </li>
