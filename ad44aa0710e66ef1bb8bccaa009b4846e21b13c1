@@ -70,6 +70,24 @@
       "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b72c3350_54ab3e8e",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-26T19:53:57Z",
+      "side": 1,
+      "message": "\u003e Another alternative would be just setting StreamRegistrationCallback completely outside of the struct, in an if...else kind of construction, but I just went ahead and did it like your first comment.\n\u003e \n\nYep that would work too.\n\n\u003e For curiosity\u0027s sake is there much of a performance impact in calling vs. not calling the wrapper? I figured that given it\u0027s just a lambda (basically) and all compiled anyway there\u0027s not; I get if the preference boils down to not calling if we don\u0027t need to call though.\n\nNah there shouldn\u0027t be, currently, but in principle I think it\u0027s best to completely disable disabled things. Like, what if the function (somehow) panic\u0027d? Maybe not in the current version of the code, but maybe some later version. Like what if someone later makes an assumption that this function will only be called when the feature is enabled, so they initialize some global tracker structure or something?\n\nI\u0027m probably just being persnickety 😜.",
+      "parentUuid": "ce71baba_c130bef4",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
