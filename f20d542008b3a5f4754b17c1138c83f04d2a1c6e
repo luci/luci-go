@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4cd0cf49_a5f97256",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T23:22:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7f8ac8a4_5b9df3d3",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 67,
+        "endChar": 46
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2c2830cf_de6847a9",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 4
@@ -72,6 +96,30 @@
     },
     {
       "key": {
+        "uuid": "552837da_b10c796d",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T23:22:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5e539f26_5a07b474",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 9
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ddaf7150_7a42c557",
         "filename": "logdog/client/butler/buffered_callback/text.go",
         "patchSetId": 4
@@ -92,6 +140,30 @@
       "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "78e48cd1_c4970943",
+        "filename": "logdog/client/butler/buffered_callback/text.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T23:22:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ddaf7150_7a42c557",
+      "range": {
+        "startLine": 99,
+        "startChar": 9,
+        "endLine": 99,
+        "endChar": 16
+      },
+      "revId": "f20d542008b3a5f4754b17c1138c83f04d2a1c6e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
