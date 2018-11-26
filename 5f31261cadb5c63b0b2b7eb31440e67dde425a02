@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3523cb9c_5fbe622f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Actually these don\u0027t exactly match - I made the choice to change them all to lowerCamelCase so that the resulting name for Javascript would match standard Javascript naming conventions. Looking through luci milo code I do see these json annotations being used:\n\n- sometimes to convert to lowerCamelCase like I did here\n- sometimes to convert to underscore_case\n- sometimes to convert to a different naming entirely\n\nbut there is no clear established standard for sure.\n\nI can jettison these annotations if you feel strongly about it.\n\nNow for the group and item structs these renames are required - these are the names by which the vis Timeline component knows these properties.",
+      "parentUuid": "36859747_e6f3ea30",
+      "range": {
+        "startLine": 156,
+        "startChar": 30,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "34c22c43_4cb1ce67",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 3
@@ -39,6 +63,24 @@
       "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8206fd79_49b10033",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "34c22c43_4cb1ce67",
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -62,6 +104,30 @@
       "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0ad197ef_379868a6",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a10c2f72_6ab65e49",
+      "range": {
+        "startLine": 210,
+        "startChar": 46,
+        "endLine": 210,
+        "endChar": 66
+      },
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

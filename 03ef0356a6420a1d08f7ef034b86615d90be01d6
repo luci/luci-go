@@ -42,6 +42,48 @@
     },
     {
       "key": {
+        "uuid": "c5ac1af8_470d4b21",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done - changed to stepData, good idea.",
+      "parentUuid": "455dce7c_0fef562f",
+      "range": {
+        "startLine": 155,
+        "startChar": 5,
+        "endLine": 155,
+        "endChar": 9
+      },
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fad1380b_67149bb0",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8f55d701_3ec268a7",
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f2d0e5b5_7dba83f3",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "8890dbfe_51bc20a5",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done - made the type less generic as advised above.",
+      "parentUuid": "b2519975_100ec02a",
+      "range": {
+        "startLine": 211,
+        "startChar": 10,
+        "endLine": 211,
+        "endChar": 14
+      },
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9101ecd_4e31eecf",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 4
@@ -96,6 +162,24 @@
       "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "abe08861_c1764f4e",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-26T23:21:54Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9101ecd_4e31eecf",
+      "revId": "03ef0356a6420a1d08f7ef034b86615d90be01d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
