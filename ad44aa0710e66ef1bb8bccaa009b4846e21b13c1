@@ -52,6 +52,24 @@
       "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce71baba_c130bef4",
+        "filename": "logdog/client/butler/butler.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1134874
+      },
+      "writtenOn": "2018-11-26T08:35:21Z",
+      "side": 1,
+      "message": "Another alternative would be just setting StreamRegistrationCallback completely outside of the struct, in an if...else kind of construction, but I just went ahead and did it like your first comment.\n\nFor curiosity\u0027s sake is there much of a performance impact in calling vs. not calling the wrapper? I figured that given it\u0027s just a lambda (basically) and all compiled anyway there\u0027s not; I get if the preference boils down to not calling if we don\u0027t need to call though.",
+      "parentUuid": "162b69c5_adbb684e",
+      "revId": "ad44aa0710e66ef1bb8bccaa009b4846e21b13c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
