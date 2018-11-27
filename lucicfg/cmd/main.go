@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
 	"go.starlark.net/starlark"
 
@@ -28,12 +29,23 @@ import (
 
 // It's just a tiny example for now.
 
+const input = `
+load("@proto//luci/config/project_config.proto", config_pb="config")
+
+def gen(ctx):
+	ctx.config_set['project.cfg'] = config_pb.ProjectCfg(
+			name = 'test',
+			access = ['group:all'],
+	)
+generator(impl = gen)
+`
+
 func main() {
 	ctx := context.Background()
 
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code: interpreter.MemoryLoader(map[string]string{
-			"LUCI.star": `say_hi("Hello, world")`,
+			"LUCI.star": input,
 		}),
 		Entry: "LUCI.star",
 	})
@@ -47,7 +59,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, g := range state.Greetings {
-		fmt.Printf("Starlark said: %s\n", g)
+	files := make([]string, 0, len(state.Configs))
+	for f := range state.Configs {
+		files = append(files, f)
+	}
+	sort.Strings(files)
+
+	for _, f := range files {
+		fmt.Println("--------------------------------------------------")
+		fmt.Println(f)
+		fmt.Println("--------------------------------------------------")
+		fmt.Print(state.Configs[f])
+		fmt.Println("--------------------------------------------------")
 	}
 }
