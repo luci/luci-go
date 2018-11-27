@@ -43,6 +43,7 @@ var apiUsage = metric.NewCounter(
 	field.String("master"),
 	field.String("builder"),
 	field.Bool("exclude_deprecated"),
+	field.Bool("no_emulation"),
 )
 
 // Service is a service implementation that displays BuildBot builds.
@@ -101,7 +102,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
-	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated)
+	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated, req.NoEmulation)
 
 	if req.Master == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
