@@ -83,11 +83,7 @@ type streamConfig struct {
 	onAppend func(bool)
 
 	// nextBundleEntryCallback is called synchronously when a complete LogEntry enters the stream.
-	// Any error handling is the responsibility of the caller/StreamChunkCallback implementation.
-	// Expects:
-	// - LogEntry to be read-only, so the callback and others must take care not to
-	//   modify the LogEntry and should be able to assume that keeping the reference remains safe;
-	// - callback to return quickly as it will block the stream until it completes.
+	// See client/butler/buffered_callback/doc.go for more details.
 	nextBundleEntryCallback StreamChunkCallback
 }
 
