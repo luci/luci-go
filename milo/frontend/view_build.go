@@ -5,6 +5,7 @@
 package frontend
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -151,6 +152,44 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	}
 }
 
+type timelineJSON struct {
+	Groups string
+	Items string
+}
+
+// Extra data to deliver with the groups and items (see below) for the
+// Javascript vis Timeline component.
+type stepData struct {
+	Label           string       `json:"label"`
+	Text            []string     `json:"text"`
+	MainLink        ui.LinkSet   `json:"mainLink"`
+	SubLink         []ui.LinkSet `json:"subLink"`
+	StatusClassName string       `json:"statusClassName"`
+}
+
+// Corresponds to, and matches the shape of, a Group for the Javascript
+// vis Timeline component http://visjs.org/docs/timeline/#groups. Data
+// rides along as an extra property (unused by vis Timeline itself) used
+// in client side rendering.
+type group struct {
+	Id   string `json:"id"`
+	Data stepData   `json:"data"`
+}
+
+// Corresponds to, and matches the shape of, an Item for the Javascript
+// vis Timeline component http://visjs.org/docs/timeline/#items. Data
+// rides along as an extra property (unused by vis Timeline itself) used
+// in client side rendering.
+type item struct {
+	Id        string `json:"id"`
+	Group     string `json:"group"`
+	Start     int64  `json:"start"`
+	End       int64  `json:"end"`
+	Type      string `json:"type"`
+	ClassName string `json:"className"`
+	Data      stepData   `json:"data"`
+}
+
 // renderBuild is a shortcut for rendering build or returning err if it is not
 // nil. Also calls build.Fix().
 func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
@@ -160,8 +199,57 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix(c.Context)
+
+	timelineJSON, err := timelineData(build)
+	if err != nil {
+		return err
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
-		"Build": build,
+		"Build":  build,
+		"TimelineJSON": timelineJSON,
 	})
 	return nil
+}
+
+// timelineData returns the timelineJSON for a vis timeline timeline
+// with groups and items delivered in a JSON.parse parseable form.
+func timelineData(build *ui.MiloBuild) (timelineJSON, error) {
+	groups := make([]group, len(build.Components))
+	items := make([]item, len(build.Components))
+	for index, comp := range build.Components {
+		groupId := fmt.Sprintf("%d", index)
+		startTime := comp.ExecutionTime.Started.UnixNano() / 1000000
+		endTime := comp.ExecutionTime.Finished.UnixNano() / 1000000
+		statusClassName := fmt.Sprintf("status-%s", comp.Status)
+		data := stepData{
+			Label: comp.Label.Label,
+			Text: comp.TextBR(),
+			MainLink: comp.MainLink,
+			SubLink: comp.SubLink,
+			StatusClassName: statusClassName,
+		}
+		groups[index] = group{groupId, data}
+		items[index] = item{
+			Id: groupId,
+			Group: groupId,
+			Start: startTime,
+			End: endTime,
+			Type: "range",
+			ClassName: statusClassName,
+			Data: data,
+		}
+	}
+
+	groupsBytes, err := json.Marshal(groups)
+	if err != nil {
+		return timelineJSON{}, err
+	}
+	itemsBytes, err := json.Marshal(items)
+	if err != nil {
+		return timelineJSON{}, err
+	}
+
+	// return string(groupsBytes), string(itemsBytes), nil
+	return timelineJSON{string(groupsBytes), string(itemsBytes)}, nil
 }
