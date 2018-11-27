@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a3580b36_67a37e96",
+        "filename": "gce/appengine/backend/common.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-27T23:23:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f3565d5_00978f29",
+      "revId": "c39377b7bf29f62fa0b50c68ef937f16fc6dd6b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0a5f769d_708d0ff4",
         "filename": "gce/appengine/backend/cron.go",
         "patchSetId": 1
@@ -39,6 +57,30 @@
       "revId": "c39377b7bf29f62fa0b50c68ef937f16fc6dd6b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a747cb2f_820a1f7f",
+        "filename": "gce/appengine/backend/cron.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-27T23:23:37Z",
+      "side": 1,
+      "message": "Yeah, eventually we\u0027ll only query for VM entities which have no associated GCE instance (but there are currently no fields for this).",
+      "parentUuid": "0a5f769d_708d0ff4",
+      "range": {
+        "startLine": 49,
+        "startChar": 41,
+        "endLine": 49,
+        "endChar": 64
+      },
+      "revId": "c39377b7bf29f62fa0b50c68ef937f16fc6dd6b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
