@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "8153609a_41eb484a",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-27T01:43:35Z",
+      "side": 1,
+      "message": "I won\u0027t trust grepping to catch all cases when proto registry is relied upon for deserializing stored protos...",
+      "parentUuid": "7db5b715_5e0e62b8",
+      "range": {
+        "startLine": 63,
+        "startChar": 63,
+        "endLine": 63,
+        "endChar": 74
+      },
+      "revId": "ca6c40e95fd759388d97d70059322a5a8727dfd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "579e75cc_8408456b",
         "filename": "lucicfg/protos.go",
         "patchSetId": 1
@@ -93,6 +117,30 @@
       "revId": "ca6c40e95fd759388d97d70059322a5a8727dfd5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b63b0081_d684b8dc",
+        "filename": "lucicfg/protos.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-27T01:43:35Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "1c3d9f14_f1295321",
+      "range": {
+        "startLine": 87,
+        "startChar": 69,
+        "endLine": 87,
+        "endChar": 87
+      },
+      "revId": "ca6c40e95fd759388d97d70059322a5a8727dfd5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
