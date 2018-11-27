@@ -16,13 +16,13 @@ package buildbucket
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	tspb "github.com/golang/protobuf/ptypes/timestamp"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -191,34 +191,112 @@ func uiCommit(commit *gitpb.Commit, repoURL string) *ui.Commit {
 	return res
 }
 
-// extractDetails extracts the following from a build message's ResultDetailsJson:
-// * Build Info Text
-// * Swarming Bot ID
-// TODO(hinoka, nodir): Delete after buildbucket v2.
-func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string, err error) {
-	var resultDetails struct {
-		// TODO(nodir,iannucci): define a proto for build UI data
-		UI struct {
-			Info string `json:"info"`
-		} `json:"ui"`
-		Swarming struct {
-			TaskResult struct {
-				BotID string `json:"bot_id"`
-			} `json:"task_result"`
-			BotDimensions struct {
-				ID []string `json:"id"`
-			} `json:"bot_dimensions"`
-		} `json:"swarming"`
-	}
-	if msg.ResultDetailsJson != "" {
-		err = json.NewDecoder(strings.NewReader(msg.ResultDetailsJson)).Decode(&resultDetails)
-		info = resultDetails.UI.Info
-		botID = resultDetails.Swarming.TaskResult.BotID
-		if botID == "" && len(resultDetails.Swarming.BotDimensions.ID) > 0 {
-			botID = resultDetails.Swarming.BotDimensions.ID[0]
+// toMiloBuildInMemoryV2 takes a bbv2 build proto and converts it into a
+// Milo build in memory.
+// TODO(hinoka): Merge this back into toMiloBuildInMemory.
+func toMiloBuildInMemoryV2(c context.Context, b *buildbucketpb.Build) (*ui.MiloBuild, error) {
+	// We want invalid timestamps to translate to zero time.Time structs,
+	// not 1970-01-01, which is the default behavior for ptypes.Timestamp()
+	convTS := func(ts *tspb.Timestamp) (result time.Time) {
+		if t, err := ptypes.Timestamp(ts); err == nil {
+			result = t
 		}
+		return
 	}
-	return
+	created := convTS(b.CreateTime)
+	started := convTS(b.StartTime)
+	ended := convTS(b.EndTime)
+
+	pendingEnd := started
+	if pendingEnd.IsZero() {
+		// Maybe the build expired and never started.  Use the expiration time, if any.
+		pendingEnd = ended
+	}
+	result := &ui.MiloBuild{
+		Summary: ui.BuildComponent{
+			PendingTime:   ui.NewInterval(c, created, pendingEnd),
+			ExecutionTime: ui.NewInterval(c, started, ended),
+			Status:        parseStatus(b.Status),
+		},
+		Trigger: &ui.Trigger{},
+	}
+	// Add in revision information, if available.
+	switch {
+	case b.Output.GitilesCommit != nil:
+		result.Trigger.Commit.Revision = ui.NewEmptyLink(b.Output.GitilesCommit.Id)
+	case b.Input.GitilesCommit != nil:
+		result.Trigger.Commit.RequestRevision = ui.NewEmptyLink(b.Input.GitilesCommit.Id)
+	}
+
+	if b.Input.Experimental {
+		result.Summary.Text = []string{"Experimental"}
+	}
+	if b.Output.SummaryMarkdown != "" {
+		result.Summary.Text = append(result.Summary.Text, strings.Split(b.Output.SummaryMarkdown, "\n")...)
+	}
+
+	for _, cl := range b.Input.GerritChanges {
+		// support only one CL per build.
+		link := ui.NewPatchLink(cl)
+		result.Blame = []*ui.Commit{{
+			Changelist: link,
+		}}
+		if b.Input.GitilesCommit != nil {
+			id := b.Input.GitilesCommit.Id
+			result.Blame[0].RequestRevision = ui.NewLink(id, b.Input.GitilesCommit.URL(), fmt.Sprintf("request revision %s", id))
+		}
+		result.Trigger.Changelist = link
+
+		var err error
+		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
+		switch {
+		case err == context.DeadlineExceeded:
+			result.Blame[0].AuthorEmail = "<Gerrit took too long respond>"
+			fallthrough
+		case err != nil:
+			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.Id)
+		}
+		break
+	}
+
+	if b.Infra != nil && b.Infra.Swarming != nil {
+		host := b.Infra.Swarming.Hostname
+		task := b.Infra.Swarming.TaskId
+		var bot string
+		logging.Debugf(c, "dims: %d", len(b.Infra.Swarming.BotDimensions))
+		for _, item := range b.Infra.Swarming.BotDimensions {
+			logging.Debugf(c, "Swarming %s: %s", item.Key, item.Value)
+			if item.Key == "id" {
+				bot = item.Value
+				break
+			}
+		}
+		result.Summary.Bot = ui.NewLink(
+			bot,
+			fmt.Sprintf("https://%s/bot?id=%s", host, bot),
+			fmt.Sprintf("Swarming Bot %s", bot))
+		result.Summary.Source = ui.NewLink(
+			"Task "+task,
+			swarming.TaskPageURL(host, task).String(),
+			"Swarming task page for task "+task)
+	}
+
+	result.Trigger.Project = b.Builder.Project
+
+	result.Summary.ParentLabel = ui.NewLink(
+		b.Builder.Builder,
+		fmt.Sprintf("/p/%s/builders/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder),
+		fmt.Sprintf("builder %s", b.Builder.Builder))
+	numStr := fmt.Sprintf("%d", b.Id)
+	if b.Number != 0 {
+		numStr = fmt.Sprintf("%d", b.Number)
+	}
+	result.Summary.Label = ui.NewLink(
+		numStr,
+		fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Builder.Project, b.Builder.Bucket, b.Builder.Builder, numStr),
+		fmt.Sprintf("build %s", numStr))
+
+	return result, nil
 }
 
 // toMiloBuildInMemory converts a buildbucket build to a milo build in memory.
@@ -226,116 +304,25 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 // In case of an error, returns a build with a description of the error
 // and logs the error.
 func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
-	// Parse the build message into a buildbucket.Build struct, filling in the
+	// Parse the build message into a buildbucketpb.Build struct, filling in the
 	// input and output properties that we expect to receive.
-	var b buildbucket.Build
-	var props struct {
-		Revision string `json:"revision"`
-	}
-	var resultDetails struct {
-		GotRevision string `json:"got_revision"`
-	}
-	b.Input.Properties = &props
-	b.Output.Properties = &resultDetails
-	if err := b.ParseMessage(msg); err != nil {
-		return nil, err
-	}
-	// TODO(hinoka,nodir): Replace the following lines after buildbucket v2.
-	info, botID, err := extractDetails(msg)
+	b, err := buildbucket.BuildToV2(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	// Now that all the data is parsed, put them all in the correct places.
-	pendingEnd := b.StartTime
-	if pendingEnd.IsZero() {
-		// Maybe the build expired and never started.  Use the expiration time, if any.
-		pendingEnd = b.CompletionTime
-	}
-	result := &ui.MiloBuild{
-		Summary: ui.BuildComponent{
-			PendingTime:   ui.NewInterval(c, b.CreationTime, pendingEnd),
-			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
-			Status:        parseStatus(b.Status),
-		},
-		Trigger: &ui.Trigger{},
-	}
-	// Add in revision information, if available.
-	if resultDetails.GotRevision != "" {
-		result.Trigger.Commit.Revision = ui.NewEmptyLink(resultDetails.GotRevision)
-	}
-	if props.Revision != "" {
-		result.Trigger.Commit.RequestRevision = ui.NewEmptyLink(props.Revision)
-	}
-
-	if b.Experimental {
-		result.Summary.Text = []string{"Experimental"}
-	}
-	if info != "" {
-		result.Summary.Text = append(result.Summary.Text, strings.Split(info, "\n")...)
-	}
-	if botID != "" {
-		result.Summary.Bot = ui.NewLink(
-			botID,
-			fmt.Sprintf(
-				"https://%s/bot?id=%s", b.Tags.Get("swarming_hostname"), botID),
-			fmt.Sprintf("Swarming Bot %s", botID))
-	}
-
-	for _, bs := range b.BuildSets {
-		// ignore rietveld.
-		cl, ok := bs.(*buildbucketpb.GerritChange)
-		if !ok {
-			continue
-		}
-
-		// support only one CL per build.
-		link := ui.NewPatchLink(cl)
-		result.Blame = []*ui.Commit{{
-			Changelist:      link,
-			RequestRevision: ui.NewLink(props.Revision, "", fmt.Sprintf("request revision %s", props.Revision)),
-		}}
-		result.Trigger.Changelist = link
-
-		result.Blame[0].AuthorEmail, err = git.Get(c).CLEmail(c, cl.Host, cl.Change)
-		switch {
-		case err == context.DeadlineExceeded:
-			result.Blame[0].AuthorEmail = "<Gerrit took too long respond>"
-			fallthrough
-		case err != nil:
-			logging.WithError(err).Errorf(c, "failed to load CL author for build %d", b.ID)
-		}
-		break
+	result, err := toMiloBuildInMemoryV2(c, b)
+	if err != nil {
+		return nil, err
 	}
 
 	// Sprinkle in some extra information from Swarming
-	swarmingTags := strpair.ParseMap(b.Tags["swarming_tag"])
+	// TODO(hinoka): Remove this once this info is in the BBv2 proto.
+	bbTags := strpair.ParseMap(msg.Tags)
+	swarmingTags := strpair.ParseMap(bbTags["swarming_tag"])
 	swarming.AddBanner(result, swarmingTags)
 	swarming.AddRecipeLink(result, swarmingTags)
-	swarming.AddProjectInfo(result, swarmingTags)
-	task := b.Tags.Get("swarming_task_id")
-	result.Summary.Source = ui.NewLink(
-		"Task "+task,
-		swarming.TaskPageURL(b.Tags.Get("swarming_hostname"), task).String(),
-		"Swarming task page for task "+task)
 
-	result.Summary.ParentLabel = ui.NewLink(
-		b.Builder,
-		fmt.Sprintf("/p/%s/builders/%s/%s", b.Project, b.Bucket, b.Builder),
-		fmt.Sprintf("builder %s", b.Builder))
-	if b.Number != nil {
-		numStr := strconv.Itoa(*b.Number)
-		result.Summary.Label = ui.NewLink(
-			numStr,
-			fmt.Sprintf("/p/%s/builders/%s/%s/%s", b.Project, b.Bucket, b.Builder, numStr),
-			fmt.Sprintf("build #%s", numStr))
-	} else {
-		idStr := strconv.FormatInt(b.ID, 10)
-		result.Summary.Label = ui.NewLink(
-			idStr,
-			fmt.Sprintf("/b/%s", idStr),
-			fmt.Sprintf("build #%s", idStr))
-	}
 	return result, nil
 }
 
@@ -406,7 +393,7 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 	}
 	tags := strpair.ParseMap(msg.Tags)
 	bSet, _ := tags["buildset"]
-	bid := NewBuilderID(msg.Bucket, tags.Get("builder"))
+	bid := NewV1BuilderID(msg.Bucket, tags.Get("builder"))
 	bs := &model.BuildSummary{
 		BuildKey:  MakeBuildKey(c, host, tags.Get("build_address")),
 		BuildSet:  bSet,

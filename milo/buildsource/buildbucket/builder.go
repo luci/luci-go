@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"google.golang.org/api/googleapi"
@@ -50,9 +51,24 @@ type BuilderID struct {
 	buildbucketpb.BuilderID
 }
 
-// NewBuilderID does what it says.
-func NewBuilderID(v1Bucket, builder string) (bid BuilderID) {
-	bid.Project, bid.Bucket = bb.BucketNameToV2(v1Bucket)
+// NewBuilderID returns a BuilderID, given a v1 or v2 bucket name.
+func NewBuilderID(project, bucket, builder string) BuilderID {
+	if strings.HasPrefix(bucket, "luci.") {
+		return NewV1BuilderID(bucket, builder)
+	}
+	return BuilderID{
+		buildbucketpb.BuilderID{
+			Project: project,
+			Bucket:  bucket,
+			Builder: builder,
+		},
+	}
+}
+
+// NewV1BuilderID returns a BuilderID, given a v1 bucket name.
+// TODO(hinoka): Remove this.
+func NewV1BuilderID(bucket, builder string) (bid BuilderID) {
+	bid.Project, bid.Bucket = bb.BucketNameToV2(bucket)
 	bid.Builder = builder
 	return
 }

@@ -68,7 +68,8 @@ func processBuilders(c context.Context, r *swarmbucketAPI.SwarmingSwarmbucketApi
 	seen := stringset.New(0)
 	for _, bucket := range r.Buckets {
 		for _, builder := range bucket.Builders {
-			bid := NewBuilderID(bucket.Name, builder.Name)
+			// The Swarmbucket API uses V1 bucket names.
+			bid := NewV1BuilderID(bucket.Name, builder.Name)
 			if bid.Project == "" {
 				// This may happen if the bucket or builder does not fulfill the LUCI
 				// naming convention.
