@@ -31,6 +31,7 @@ import (
 	"go.chromium.org/luci/common/runtime/paniccatcher"
 	"go.chromium.org/luci/common/sync/parallel"
 	"go.chromium.org/luci/logdog/api/logpb"
+	"go.chromium.org/luci/logdog/client/butler/buffered_callback"
 	"go.chromium.org/luci/logdog/client/butler/bundler"
 	"go.chromium.org/luci/logdog/client/butler/output"
 	"go.chromium.org/luci/logdog/client/butler/streamserver"
@@ -101,8 +102,18 @@ type Config struct {
 	// must be set for I/O keep-alive to be active.
 	IOKeepAliveWriter io.Writer
 
-	// StreamRegistrationCallback is called on new streams and returns the
-	// callback to attach to the stream or nil if no callback is desired.
+	// NoWrapStreamRegistrationCallback provides a way to opt-out of wrapping
+	// StreamRegistrationCallback to call on LogEntries without buffering them
+	// to guarantee full LogEntries.
+	NoWrapStreamRegistrationCallback bool
+
+	// StreamRegistrationCallback is called on new streams and returns a callback
+	// to attach to the stream or nil if no callback is desired.
+	//
+	// The callback is by default wrapped internally to buffer LogEntries until
+	// they're guaranteed complete. This behavior can be turned off explicitly
+	// with NoWrapStreamRegistrationCallback above.
+	//
 	// Expects passed *logpb.LogStreamDescriptor reference to be safe to keep, and
 	// should treat it as read-only.
 	StreamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
@@ -191,12 +202,16 @@ func New(ctx context.Context, config Config) (*Butler, error) {
 	}
 
 	bc := bundler.Config{
-		Clock:                      clock.Get(ctx),
-		Project:                    config.Project,
-		Prefix:                     config.Prefix,
-		MaxBufferedBytes:           streamBufferSize,
-		MaxBundleSize:              config.Output.MaxSize(),
-		StreamRegistrationCallback: config.StreamRegistrationCallback,
+		Clock:            clock.Get(ctx),
+		Project:          config.Project,
+		Prefix:           config.Prefix,
+		MaxBufferedBytes: streamBufferSize,
+		MaxBundleSize:    config.Output.MaxSize(),
+	}
+	if config.NoWrapStreamRegistrationCallback {
+		bc.StreamRegistrationCallback = config.StreamRegistrationCallback
+	} else {
+		bc.StreamRegistrationCallback = wrapStreamRegistrationCallback(config.StreamRegistrationCallback)
 	}
 	if config.BufferLogs {
 		bc.MaxBufferDelay = config.MaxBufferAge
@@ -686,4 +701,24 @@ func (b *Butler) getRunErr() error {
 	b.shutdownMu.Lock()
 	defer b.shutdownMu.Unlock()
 	return b.runErr
+}
+
+type streamRegistrationCallback func(*logpb.LogStreamDescriptor) bundler.StreamChunkCallback
+
+// wrapStreamRegistrationCallback wraps the given callback to dispatch on the correct stream type.
+func wrapStreamRegistrationCallback(reg streamRegistrationCallback) streamRegistrationCallback {
+	if reg == nil {
+		return reg
+	}
+	return func(desc *logpb.LogStreamDescriptor) bundler.StreamChunkCallback {
+		cb := reg(desc)
+		switch desc.StreamType {
+		case logpb.StreamType_TEXT:
+			return buffered_callback.GetWrappedTextCallback(cb)
+		case logpb.StreamType_DATAGRAM:
+			return buffered_callback.GetWrappedDatagramCallback(cb)
+		default:
+			return cb
+		}
+	}
 }
