@@ -47,8 +47,8 @@ var RecentTimeUTC = time.Date(2016, time.June, 30, 23, 30, 0, 0, time.UTC)
 func TestBuilder(t *testing.T) {
 	t.Parallel()
 
-	testCases := []struct{ bucket, builder string }{
-		{"luci.infra.try", "InfraPresubmit.Swarming"},
+	testCases := []struct{ project, bucket, builder string }{
+		{"infra", "try", "InfraPresubmit.Swarming"},
 	}
 
 	Convey("Builder", t, func() {
@@ -69,11 +69,11 @@ func TestBuilder(t *testing.T) {
 		for _, tc := range testCases {
 			tc := tc
 			Convey(fmt.Sprintf("%s:%s", tc.bucket, tc.builder), func() {
-				expectationFilePath := filepath.Join("expectations", tc.bucket, tc.builder+".json")
+				expectationFilePath := filepath.Join("expectations", fmt.Sprintf("luci.%s.%s", tc.project, tc.bucket), tc.builder+".json")
 				err := os.MkdirAll(filepath.Dir(expectationFilePath), 0777)
 				So(err, ShouldBeNil)
 
-				bid := NewBuilderID(tc.bucket, tc.builder)
+				bid := NewBuilderID(tc.project, tc.bucket, tc.builder)
 				actual, err := GetBuilder(c, bid, 20, "")
 				So(err, ShouldBeNil)
 				actualJSON, err := json.MarshalIndent(actual, "", "  ")

@@ -43,10 +43,10 @@
         ]
     },
     {
-        "result_details_json": "{\"task_result\": {\"bot_dimensions\": [{\"value\": [\"1\", \"2\"], \"key\": \"d1\"}, {\"value\": [\"3\"], \"key\": \"d2\"}]}}"
+        "result_details_json": "{\"swarming\": {\"bot_dimensions\": {\"d1\": [\"1\", \"2\"], \"d2\": [\"3\"]}}}"
     },
     {
-        "result_details_json": "{\"task_result\": {\"bot_dimensions\": [{\"value\": [\"1\", \"2\"], \"key\": \"d1\"}, {\"value\": [\"3\"], \"key\": \"d2\"}]}}",
+        "result_details_json": "{\"swarming\": {\"bot_dimensions\": {\"d1\": [\"1\", \"2\"], \"d2\": [\"3\"]}}}",
         "tags": [
             "swarming_dimension:d1:1",
             "swarming_dimension:d2:3"

@@ -86,7 +86,7 @@ func generateSummary(c context.Context, hostname string, build buildbucket.Build
 		ProjectID:     project,
 		AnnotationURL: swarmTags.Get("log_location"),
 		BuildKey:      MakeBuildKey(c, hostname, build.Address()),
-		BuilderID:     NewBuilderID(build.Bucket, build.Builder).String(),
+		BuilderID:     NewBuilderID(project, build.Bucket, build.Builder).String(),
 		BuildID:       "buildbucket/" + build.Address(),
 		BuildSet:      build.Tags[bbv1.TagBuildSet],
 		ContextURI: []string{

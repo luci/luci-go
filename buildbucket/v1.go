@@ -16,6 +16,7 @@ package buildbucket
 
 import (
 	"encoding/json"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -111,9 +112,12 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 	}
 
 	resultDetails := &struct {
-		Properties json.RawMessage                 `json:"properties"`
-		TaskResult swarming.SwarmingRpcsTaskResult `json:"task_result"`
-		UI         struct {
+		Properties json.RawMessage `json:"properties"`
+		Swarming   struct {
+			TaskResult    swarming.SwarmingRpcsTaskResult `json:"task_result"`
+			BotDimensions strpair.Map                     `json:"bot_dimensions"`
+		} `json:"swarming"`
+		UI struct {
 			Info string `json:"info"`
 		} `json:"ui"`
 	}{}
@@ -182,11 +186,16 @@ func BuildToV2(msg *v1.ApiCommonBuildMessage) (b *buildbucketpb.Build, err error
 		return nil, errors.Annotate(err, "invalid output properties").Tag(MalformedBuild).Err()
 	}
 
-	b.Infra.Swarming.BotDimensions = make([]*buildbucketpb.StringPair, 0, len(resultDetails.TaskResult.BotDimensions))
-	for _, d := range resultDetails.TaskResult.BotDimensions {
-		for _, v := range d.Value {
+	b.Infra.Swarming.BotDimensions = make([]*buildbucketpb.StringPair, 0, len(resultDetails.Swarming.BotDimensions))
+	ks := make([]string, 0, len(resultDetails.Swarming.BotDimensions))
+	for k, _ := range resultDetails.Swarming.BotDimensions {
+		ks = append(ks, k)
+	}
+	sort.Strings(ks)
+	for _, k := range ks {
+		for _, v := range resultDetails.Swarming.BotDimensions[k] {
 			b.Infra.Swarming.BotDimensions = append(b.Infra.Swarming.BotDimensions, &buildbucketpb.StringPair{
-				Key:   d.Key,
+				Key:   k,
 				Value: v,
 			})
 		}

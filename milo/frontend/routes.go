@@ -115,13 +115,7 @@ func Run(templatePath string) {
 	// If these routes change, also change links in common/model/build_summary.go:getLinkFromBuildID
 	// and common/model/builder_summary.go:SelfLink.
 	r.GET("/p/:project/builders/:bucket/:builder", projectMW, handleError(func(c *router.Context) error {
-		// TODO(nodir): use project parameter.
-		// Besides implementation, requires deleting the redirect for
-		// /buildbucket/:bucket/:builder
-		// because it assumes that project is not used here and
-		// simply passes project=chromium.
-
-		bid := buildbucket.NewBuilderID(c.Params.ByName("bucket"), c.Params.ByName("builder"))
+		bid := buildbucket.NewBuilderID(c.Params.ByName("project"), c.Params.ByName("bucket"), c.Params.ByName("builder"))
 		return BuilderHandler(c, buildsource.BuilderID(bid.String()))
 	}))
 	// TODO(nodir): delete this redirect and the chromium project assumption with it
