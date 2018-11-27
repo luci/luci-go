@@ -145,6 +145,12 @@ type Interpreter struct {
 	// The default implementation just prints the message to stderr.
 	Logger func(file string, line int, message string)
 
+	// ThreadModifier is called whenever interpreter makes a new starlark.Thread.
+	//
+	// It can inject additional state into thread locals. Useful when hooking up
+	// a thread to starlarktest's reporter in unit tests.
+	ThreadModifier func(th *starlark.Thread)
+
 	modules map[moduleKey]*loadedModule // cache of the loaded modules
 	globals starlark.StringDict         // global symbols exposed to all modules
 }
@@ -274,6 +280,9 @@ func (intr *Interpreter) Thread(ctx context.Context) *starlark.Thread {
 		},
 	}
 	th.SetLocal(threadCtxKey, ctx)
+	if intr.ThreadModifier != nil {
+		intr.ThreadModifier(th)
+	}
 	return th
 }
 
