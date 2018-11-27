@@ -240,23 +240,6 @@ func swarmingFetch(c context.Context, svc SwarmingService, taskID string, req sw
 	return &fr, logErr
 }
 
-func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
-	props := &ui.PropertyGroup{GroupName: "Swarming"}
-	if len(sr.CostsUsd) == 1 {
-		props.Property = append(props.Property, &ui.Property{
-			Key:   "Cost of job (USD)",
-			Value: fmt.Sprintf("$%.2f", sr.CostsUsd[0]),
-		})
-	}
-	if sr.State == TaskCompleted || sr.State == TaskTimedOut {
-		props.Property = append(props.Property, &ui.Property{
-			Key:   "Exit Code",
-			Value: fmt.Sprintf("%d", sr.ExitCode),
-		})
-	}
-	return props
-}
-
 // addBuilderLink adds a link to the buildbucket builder view.
 func addBuilderLink(c context.Context, build *ui.MiloBuild, tags strpair.Map) {
 	bucket := tags.Get("buildbucket_bucket")
@@ -467,10 +450,6 @@ func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTas
 		"Task "+sr.TaskId, TaskPageURL(host, sr.TaskId).String(),
 		fmt.Sprintf("swarming task %s", sr.TaskId))
 
-	// Extract more swarming specific information into the properties.
-	if props := taskProperties(sr); len(props.Property) > 0 {
-		build.PropertyGroup = append(build.PropertyGroup, props)
-	}
 	tags := strpair.ParseMap(sr.Tags)
 
 	addBuildsetInfo(build, tags)
