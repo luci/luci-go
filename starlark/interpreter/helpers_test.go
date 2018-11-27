@@ -24,19 +24,10 @@ import (
 	"testing"
 	"unicode"
 
-	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-func init() {
-	// Enable not-yet-standard features.
-	resolve.AllowLambda = true
-	resolve.AllowNestedDef = true
-	resolve.AllowFloat = true
-	resolve.AllowSet = true
-}
 
 // deindent finds first non-empty and non-whitespace line and subtracts its
 // indentation from all lines.

@@ -66,31 +66,6 @@
 //
 // Embedders of the interpreter can also supply arbitrary "predeclared" symbols
 // they want to be available in the global scope of all loaded modules.
-//
-// Additionally, Interpreter itself exposes some symbols:
-//
-//
-//  def struct(**kwargs):
-//    """Returns an object resembling namedtuple from Python.
-//
-//    kwargs will become attributes of the returned object.
-//    See also starlarkstruct package.
-//
-//
-//  def fail(msg):
-//    """Aborts the script execution with an error message."""
-//
-//
-//  def to_json(value):
-//    """Serializes a value to compact JSON.
-//
-//    Args:
-//      value: a starlark value: scalars, lists, tuples, dicts containing only
-//        starlark values.
-//
-//    Returns:
-//      A string with its compact JSON serialization.
-//    """
 package interpreter
 
 import (
@@ -101,7 +76,6 @@ import (
 	"strings"
 
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 
 	"go.chromium.org/luci/common/errors"
 )
@@ -224,13 +198,7 @@ type loadedModule struct {
 func (intr *Interpreter) Init(ctx context.Context) error {
 	intr.modules = map[moduleKey]*loadedModule{}
 
-	// Register basic built-in symbols. They'll be available from all modules
-	// (stdlib and user scripts).
-	intr.globals = starlark.StringDict{
-		"fail":    starlark.NewBuiltin("fail", failImpl),
-		"struct":  starlark.NewBuiltin("struct", starlarkstruct.Make),
-		"to_json": starlark.NewBuiltin("to_json", toJSONImpl),
-	}
+	intr.globals = make(starlark.StringDict, len(intr.Predeclared))
 	for k, v := range intr.Predeclared {
 		intr.globals[k] = v
 	}

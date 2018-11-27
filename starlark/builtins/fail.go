@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package interpreter
+package builtins
 
 import (
 	"errors"
@@ -21,10 +21,11 @@ import (
 	"go.starlark.net/starlark"
 )
 
-// failImpl implements fail() builtin.
+// Fail is fail(msg) builtin.
 //
-// It aborts the script with a fatal error.
-func failImpl(thread *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+//  def fail(msg):
+//    """Aborts the script execution with an error message."""
+var Fail = starlark.NewBuiltin("fail", func(_ *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	if len(kwargs) != 0 {
 		return nil, fmt.Errorf("'fail' doesn't accept kwargs")
 	}
@@ -39,4 +40,4 @@ func failImpl(thread *starlark.Thread, _ *starlark.Builtin, args starlark.Tuple,
 	// original error flattened into a string, so returning a structured error
 	// here makes no difference.
 	return nil, errors.New(msg)
-}
+})

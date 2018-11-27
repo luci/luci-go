@@ -12,33 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package interpreter
+package builtins
 
 import (
 	"fmt"
 	"testing"
 
+	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
 )
 
+func init() {
+	resolve.AllowFloat = true
+	resolve.AllowSet = true
+}
+
 func TestToJSON(t *testing.T) {
 	t.Parallel()
 
-	run := func(val string, expected string) {
-		_, logs, err := runIntr(intrParams{
-			stdlib: map[string]string{"builtins.star": fmt.Sprintf("print(to_json(%s))", val)},
+	runScript := func(code string) (starlark.StringDict, error) {
+		return starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
+			"to_json": ToJSON,
 		})
+	}
+
+	run := func(val string, expected string) {
+		out, err := runScript(fmt.Sprintf("result = to_json(%s)", val))
 		So(err, ShouldBeNil)
-		So(logs, ShouldResemble, []string{fmt.Sprintf("[@stdlib//builtins.star:1] %s", expected)})
+		So(out["result"].(starlark.String).GoString(), ShouldEqual, expected)
 	}
 
 	mustFail := func(val string, expectErr string) {
-		_, _, err := runIntr(intrParams{
-			stdlib: map[string]string{"builtins.star": fmt.Sprintf("print(to_json(%s))", val)},
-		})
+		_, err := runScript(fmt.Sprintf("result = to_json(%s)", val))
 		So(err, ShouldErrLike, expectErr)
 	}
 
@@ -86,28 +94,15 @@ func TestToJSON(t *testing.T) {
 		const msg = "to_json: detected recursion in the data structure"
 
 		// With dict.
-		err := runScript(`
-			a = {}
-			a['k'] = a
-			print(to_json(a))
-		`)
+		_, err := runScript(`a = {}; a['k'] = a; print(to_json(a))`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, msg)
 
 		// With list.
-		err = runScript(`
-			a = []
-			a.append(a)
-			print(to_json(a))
-		`)
+		_, err = runScript(`a = []; a.append(a); print(to_json(a))`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, msg)
 
 		// With tuple.
-		err = runScript(`
-			a = []
-			b = (1, a)
-			a.append(b)
-			print(to_json(b))
-		`)
+		_, err = runScript(`a = []; b = (1, a); a.append(b); print(to_json(b))`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, msg)
 
 		// And there can't be recursion involving sets, since Starlark sets require
@@ -116,11 +111,11 @@ func TestToJSON(t *testing.T) {
 	})
 
 	Convey("Bad calls", t, func() {
-		err := runScript(`to_json()`)
+		_, err := runScript(`to_json()`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, "to_json: got 0 arguments, want 1")
-		err = runScript(`to_json(1, 2, 3)`)
+		_, err = runScript(`to_json(1, 2, 3)`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, "to_json: got 3 arguments, want 1")
-		err = runScript(`to_json(k=1)`)
+		_, err = runScript(`to_json(k=1)`)
 		So(err.(*starlark.EvalError).Msg, ShouldEqual, "to_json: unexpected keyword arguments")
 	})
 }

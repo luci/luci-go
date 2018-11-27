@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package interpreter
+package builtins
 
 import (
 	"testing"
@@ -24,6 +24,13 @@ import (
 
 func TestFail(t *testing.T) {
 	t.Parallel()
+
+	runScript := func(code string) error {
+		_, err := starlark.ExecFile(&starlark.Thread{}, "main", code, starlark.StringDict{
+			"fail": Fail,
+		})
+		return err
+	}
 
 	Convey("Works", t, func() {
 		err := runScript(`fail("boo")`)

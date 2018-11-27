@@ -22,6 +22,7 @@ import (
 
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarkproto"
 
@@ -64,12 +65,16 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
 	ctx = withState(ctx, state)
 
-	// Expose two predeclared symbols: 'proto' with utilities for manipulating
-	// proto messages and '__native__' with all hooks into Go code. 'proto' is
-	// part of public API. '__native__' is NOT, it should be used only through
-	// public @stdlib functions.
+	// All available functions implemented in go.
 	predeclared := starlark.StringDict{
-		"proto":      starlarkproto.ProtoLib()["proto"],
+		// Part of public API of the generator.
+		"fail":    builtins.Fail,
+		"proto":   starlarkproto.ProtoLib()["proto"],
+		"struct":  builtins.Struct,
+		"to_json": builtins.ToJSON,
+
+		// '__native__' is NOT public API. It should be used only through public
+		// @stdlib functions.
 		"__native__": native(),
 	}
 
