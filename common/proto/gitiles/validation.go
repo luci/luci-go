@@ -48,3 +48,17 @@ func (r *RefsRequest) Validate() error {
 		return nil
 	}
 }
+
+// Validate returns an error if r is invalid.
+func (r *ArchiveRequest) Validate() error {
+	switch {
+	case r.Format == ArchiveRequest_Invalid:
+		return errors.New("format must be valid")
+	case r.Project == "":
+		return errors.New("project is required")
+	case r.Ref == "":
+		return errors.New("ref is required")
+	default:
+		return nil
+	}
+}

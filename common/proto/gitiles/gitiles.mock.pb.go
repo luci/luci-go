@@ -70,6 +70,24 @@ func (mr *MockGitilesClientMockRecorder) Refs(ctx, in interface{}, opts ...inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refs", reflect.TypeOf((*MockGitilesClient)(nil).Refs), varargs...)
 }
 
+// Archive mocks base method
+func (m *MockGitilesClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Archive", varargs...)
+	ret0, _ := ret[0].(*ArchiveResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Archive indicates an expected call of Archive
+func (mr *MockGitilesClientMockRecorder) Archive(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Archive", reflect.TypeOf((*MockGitilesClient)(nil).Archive), varargs...)
+}
+
 // MockGitilesServer is a mock of GitilesServer interface
 type MockGitilesServer struct {
 	ctrl     *gomock.Controller
@@ -117,4 +135,17 @@ func (m *MockGitilesServer) Refs(arg0 context.Context, arg1 *RefsRequest) (*Refs
 // Refs indicates an expected call of Refs
 func (mr *MockGitilesServerMockRecorder) Refs(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Refs", reflect.TypeOf((*MockGitilesServer)(nil).Refs), arg0, arg1)
+}
+
+// Archive mocks base method
+func (m *MockGitilesServer) Archive(arg0 context.Context, arg1 *ArchiveRequest) (*ArchiveResponse, error) {
+	ret := m.ctrl.Call(m, "Archive", arg0, arg1)
+	ret0, _ := ret[0].(*ArchiveResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Archive indicates an expected call of Archive
+func (mr *MockGitilesServerMockRecorder) Archive(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Archive", reflect.TypeOf((*MockGitilesServer)(nil).Archive), arg0, arg1)
 }

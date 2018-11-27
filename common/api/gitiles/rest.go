@@ -158,6 +158,38 @@ func (c *client) Refs(ctx context.Context, req *gitiles.RefsRequest, opts ...grp
 	return ret, nil
 }
 
+var archiveExtensions = map[gitiles.ArchiveRequest_Format]string{
+	gitiles.ArchiveRequest_BZIP2: ".bzip2",
+	gitiles.ArchiveRequest_GZIP:  ".tar.gz",
+	gitiles.ArchiveRequest_TAR:   ".tar",
+	gitiles.ArchiveRequest_XZ:    ".xz",
+}
+
+func (c *client) Archive(ctx context.Context, req *gitiles.ArchiveRequest, opts ...grpc.CallOption) (*gitiles.ArchiveResponse, error) {
+	if err := checkArgs(opts, req); err != nil {
+		return nil, err
+	}
+	resp := &gitiles.ArchiveResponse{}
+
+	ref := strings.TrimRight(req.Ref, "/")
+	path := fmt.Sprintf("/%s/+archive/%s%s", url.PathEscape(req.Project), url.PathEscape(ref), archiveExtensions[req.Format])
+	h, b, err := c.getRaw(ctx, path, nil)
+	if err != nil {
+		return resp, err
+	}
+	resp.Contents = b
+
+	filenames := h["Filename"]
+	switch len(filenames) {
+	case 0:
+	case 1:
+		resp.Filename = filenames[0]
+	default:
+		return resp, fmt.Errorf("received %d filenames for archive", len(filenames))
+	}
+	return resp, nil
+}
+
 func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest interface{}) error {
 	if query == nil {
 		query = make(url.Values, 1)

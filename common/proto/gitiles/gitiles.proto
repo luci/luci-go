@@ -23,6 +23,10 @@ service Gitiles {
     rpc Log(LogRequest) returns (LogResponse) {};
     // Refs retrieves repo refs.
     rpc Refs(RefsRequest) returns (RefsResponse) {};
+    // Archive retrieves archived contents of the project.
+    //
+    // An archive is a shallow bundle of the contents of a repository.
+    rpc Archive(ArchiveRequest) returns (ArchiveResponse) {};
 }
 
 // LogRequest is request message for Gitiles.Log rpc.
@@ -110,4 +114,40 @@ message RefsResponse {
     // revisions maps a ref to a revision.
     // Git branches have keys start with "refs/heads/".
     map<string, string> revisions = 2;
+}
+
+// ArchiveRequest is a request message of the Gitiles.Archive RPC.
+message ArchiveRequest {
+    // Gitiles project, e.g. "chromium/src" part in
+    // https://chromium.googlesource.com/chromium/src/+/master
+    // Required.
+    string project = 1;
+
+    // The ref at which to generate the project archive for.
+    //
+    // viz refs/for/branch or just branch
+    string ref = 2;
+
+    // List copied from
+    // https://github.com/google/gitiles/blob/65edbe49f2b3882a5979f602383ef0c7b2b8ee0c/java/com/google/gitiles/ArchiveFormat.java
+    enum Format {
+        Invalid = 0;
+        GZIP = 1;
+        TAR = 2;
+        BZIP2 = 3;
+        XZ = 4;
+    }
+    // Format of the returned project archive.
+    Format format = 3;
+}
+
+message ArchiveResponse {
+    // Suggested name of the returned archive.
+    string filename = 1;
+
+    // Contents of the archive streamed from gitiles.
+    //
+    // The underlying server RPC streams back the contents. This API simplifies
+    // the RPC to a non-streaming response.
+    bytes contents = 2;
 }
