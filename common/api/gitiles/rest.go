@@ -164,39 +164,49 @@ func (c *client) get(ctx context.Context, urlPath string, query url.Values, dest
 	}
 	query.Set("format", "JSON")
 
-	u := fmt.Sprintf("%s/%s?%s",
-		strings.TrimSuffix(c.BaseURL, "/"),
-		strings.TrimPrefix(urlPath, "/"),
-		query.Encode())
+	_, body, err := c.getRaw(ctx, urlPath, query)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(body, dest)
+}
+
+// getRaw makes a raw HTTP get request and returns the header and body returned.
+//
+// In case of errors, getRaw translates the generic HTTP errors to grpc errors.
+func (c *client) getRaw(ctx context.Context, urlPath string, query url.Values) (http.Header, []byte, error) {
+	u := fmt.Sprintf("%s/%s", strings.TrimSuffix(c.BaseURL, "/"), strings.TrimPrefix(urlPath, "/"))
+	if query != nil {
+		u = fmt.Sprintf("%s?%s", u, query.Encode())
+	}
 	r, err := ctxhttp.Get(ctx, c.Client, u)
 	if err != nil {
-		return transient.Tag.Apply(err)
+		return http.Header{}, []byte{}, transient.Tag.Apply(err)
 	}
 
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return errors.Annotate(err, "could not read response body").Err()
+		return r.Header, []byte{}, errors.Annotate(err, "could not read response body").Err()
 	}
 
 	switch r.StatusCode {
 	case http.StatusOK:
-		body = bytes.TrimPrefix(body, jsonPrefix)
-		return json.Unmarshal(body, dest)
+		return r.Header, bytes.TrimPrefix(body, jsonPrefix), nil
 
 	case http.StatusTooManyRequests:
 		logging.Errorf(ctx, "Gitiles quota error.\nResponse headers: %v\nResponse body: %s",
 			r.Header, body)
-		return status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
+		return r.Header, body, status.Errorf(codes.ResourceExhausted, "insufficient Gitiles quota")
 
 	case http.StatusNotFound:
-		return status.Errorf(codes.NotFound, "not found")
+		return r.Header, body, status.Errorf(codes.NotFound, "not found")
 
 	default:
 		logging.Errorf(ctx, "gitiles: unexpected HTTP %d response.\nResponse headers: %v\nResponse body: %s",
 			r.StatusCode,
 			r.Header, body)
-		return status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
+		return r.Header, body, status.Errorf(codes.Internal, "unexpected HTTP %d from Gitiles", r.StatusCode)
 	}
 }
 
