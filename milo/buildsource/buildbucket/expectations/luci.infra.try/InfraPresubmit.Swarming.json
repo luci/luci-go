@@ -6,8 +6,8 @@
     {
       "Link": {
         "Label": "100",
-        "URL": "/p//builders/luci.infra.try/Infra Presubmit (Swarming)/100",
-        "AriaLabel": "build #100"
+        "URL": "/p/infra/builders/try/Infra Presubmit (Swarming)/100",
+        "AriaLabel": "build 100"
       },
       "Status": "Running",
       "PendingTime": {
@@ -26,10 +26,7 @@
         "CommitTime": "0001-01-01T00:00:00Z",
         "Repo": "",
         "Branch": "",
-        "RequestRevision": {
-          "Label": "HEAD",
-          "URL": ""
-        },
+        "RequestRevision": null,
         "Revision": null,
         "Description": "",
         "Changelist": {
@@ -48,11 +45,7 @@
           "CommitTime": "0001-01-01T00:00:00Z",
           "Repo": "",
           "Branch": "",
-          "RequestRevision": {
-            "Label": "HEAD",
-            "URL": "",
-            "AriaLabel": "request revision HEAD"
-          },
+          "RequestRevision": null,
           "Revision": null,
           "Description": "",
           "Changelist": {
@@ -72,8 +65,8 @@
     {
       "Link": {
         "Label": "9008388977193267696",
-        "URL": "/b/9008388977193267696",
-        "AriaLabel": "build #9008388977193267696"
+        "URL": "/p/infra/builders/try/Infra Presubmit (Swarming)/9008388977193267696",
+        "AriaLabel": "build 9008388977193267696"
       },
       "Status": "Success",
       "PendingTime": {
@@ -92,10 +85,7 @@
         "CommitTime": "0001-01-01T00:00:00Z",
         "Repo": "",
         "Branch": "",
-        "RequestRevision": {
-          "Label": "HEAD",
-          "URL": ""
-        },
+        "RequestRevision": null,
         "Revision": null,
         "Description": "",
         "Changelist": {
@@ -116,11 +106,7 @@
           "CommitTime": "0001-01-01T00:00:00Z",
           "Repo": "",
           "Branch": "",
-          "RequestRevision": {
-            "Label": "HEAD",
-            "URL": "",
-            "AriaLabel": "request revision HEAD"
-          },
+          "RequestRevision": null,
           "Revision": null,
           "Description": "",
           "Changelist": {
