@@ -32,9 +32,10 @@ func TestProtosAreImportable(t *testing.T) {
 	for path, proto := range publicProtos {
 		Convey(fmt.Sprintf("%q (aka %q) is importable", path, proto.goPath), t, func(c C) {
 			_, err := Generate(ctx, Inputs{
-				Main: interpreter.MemoryLoader(map[string]string{
-					"LUCI.star": fmt.Sprintf(`load("@proto//%s", "%s")`, path, proto.protoPkg),
+				Code: interpreter.MemoryLoader(map[string]string{
+					"proto.star": fmt.Sprintf(`load("@proto//%s", "%s")`, path, proto.protoPkg),
 				}),
+				Entry: "proto.star",
 			})
 			// If this assertion failed, you either:
 			//   1. Moved some *.proto files. This is fine, just update publicProtos

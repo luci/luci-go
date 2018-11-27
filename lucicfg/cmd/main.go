@@ -32,9 +32,10 @@ func main() {
 	ctx := context.Background()
 
 	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
-		Main: interpreter.MemoryLoader(map[string]string{
+		Code: interpreter.MemoryLoader(map[string]string{
 			"LUCI.star": `say_hi("Hello, world")`,
 		}),
+		Entry: "LUCI.star",
 	})
 
 	if err != nil {

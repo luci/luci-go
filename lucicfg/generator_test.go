@@ -32,9 +32,10 @@ func TestGenerate(t *testing.T) {
 
 	exec := func(code string) (*State, error) {
 		return Generate(ctx, Inputs{
-			Main: interpreter.MemoryLoader(map[string]string{
-				"LUCI.star": code,
+			Code: interpreter.MemoryLoader(map[string]string{
+				"main.star": code,
 			}),
+			Entry: "main.star",
 		})
 	}
 

@@ -88,12 +88,9 @@ func runSingleTest(t *testing.T, script string, predeclared starlark.StringDict)
 
 	in := Inputs{
 		// Make sure error messages have the original scripts name by loading the
-		// test script under its true name (rather than sticking its body in
-		// LUCI.star).
-		Main: interpreter.MemoryLoader(map[string]string{
-			"LUCI.star": fmt.Sprintf(`load("//%s", "test"); test()`, script),
-			script:      string(code),
-		}),
+		// test script under its true name.
+		Code:  interpreter.MemoryLoader(map[string]string{script: string(code)}),
+		Entry: script,
 
 		// Expose 'assert' module, hook up error reporting to 't'.
 		testPredeclared: predeclared,

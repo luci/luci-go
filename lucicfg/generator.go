@@ -31,7 +31,8 @@ import (
 
 // Inputs define all inputs for the config generator.
 type Inputs struct {
-	Main interpreter.Loader // a package with the entry LUCI.star file
+	Code  interpreter.Loader // a package with the user supplied code
+	Entry string             // a name of the entry point script in this package
 
 	// Used to setup additional facilities for unit tests.
 	testPredeclared    starlark.StringDict
@@ -89,11 +90,11 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// observable state of their own, but they call low-level __native__.*
 	// functions that manipulate 'state' by getting it through the context.
 	pkgs := embeddedPackages()
-	pkgs[interpreter.MainPkg] = in.Main
+	pkgs[interpreter.MainPkg] = in.Code
 	pkgs["proto"] = protoLoader() // see protos.go
 
-	// Execute LUCI.star in this environment. Return errors unwrapped so that
-	// callers can sniff out various sorts of Starlark errors.
+	// Execute the config script in this environment. Return errors unwrapped so
+	// that callers can sniff out various sorts of Starlark errors.
 	intr := interpreter.Interpreter{
 		Predeclared:    predeclared,
 		Packages:       pkgs,
@@ -102,7 +103,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	if err := intr.Init(ctx); err != nil {
 		return nil, err
 	}
-	if _, err := intr.LoadModule(ctx, interpreter.MainPkg, "LUCI.star"); err != nil {
+	if _, err := intr.LoadModule(ctx, interpreter.MainPkg, in.Entry); err != nil {
 		return nil, err
 	}
 
