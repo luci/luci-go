@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "10eafa72_4ffe3f45",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-27T19:45:46Z",
+      "side": 1,
+      "message": "go-import adds this automatically. I\u0027d rather no hand-edit this and get diffs in all future CLs (my editor runs go-import on save)",
+      "parentUuid": "4316355f_0fa333ad",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 23,
+        "endChar": 9
+      },
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f9aec6df_4dcba3fd",
         "filename": "client/cmd/gitiles/archive.go",
         "patchSetId": 6
@@ -42,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "8505ae9b_7d68fd7e",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-27T19:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f9aec6df_4dcba3fd",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6821240c_d8709c68",
         "filename": "client/cmd/gitiles/archive.go",
         "patchSetId": 6
@@ -56,6 +98,24 @@
       "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fdab7600_dd8aa962",
+        "filename": "client/cmd/gitiles/archive.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-27T19:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6821240c_d8709c68",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -96,6 +156,24 @@
       "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51fd70ac_67621e9b",
+        "filename": "common/proto/gitiles/gitiles.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-27T19:45:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d0152365_d11964c9",
+      "revId": "217f70ed0e9c5683069f71edeb0d859cd3305231",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
