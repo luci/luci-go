@@ -83,7 +83,7 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// functions that manipulate 'state' by getting it through the context.
 	pkgs := embeddedPackages()
 	pkgs[interpreter.MainPkg] = in.Main
-	pkgs["proto"] = interpreter.ProtoLoader()
+	pkgs["proto"] = protoLoader() // see protos.go
 
 	// Execute LUCI.star in this environment. Return errors unwrapped so that
 	// callers can sniff out various sorts of Starlark errors.

@@ -19,6 +19,8 @@ package lucicfg
 // type information.
 
 import (
+	"go.chromium.org/luci/starlark/interpreter"
+
 	_ "go.chromium.org/luci/buildbucket/proto/config"
 	_ "go.chromium.org/luci/common/proto/config"
 	_ "go.chromium.org/luci/logdog/api/config/svcconfig"
@@ -26,3 +28,74 @@ import (
 	_ "go.chromium.org/luci/milo/api/config"
 	_ "go.chromium.org/luci/scheduler/appengine/messages"
 )
+
+// Mapping from a proto module path on the Starlark side to its proto package
+// name and path within luci-go repository.
+//
+// Go proto location can be changed without altering Starlark API. Proto package
+// name is still important and should not be changed. It is here mostly for the
+// documentation purpose.
+//
+// There's also a test that asserts real proto packages (per generated *.pb2.go)
+// match what's specified here.
+var publicProtos = map[string]struct {
+	protoPkg string
+	goPath   string
+}{
+	// Buildbucket project config.
+	//
+	// load("@proto//luci/buildbucket/project_config.proto", buildbucket_pb="buildbucket")
+	"luci/buildbucket/project_config.proto": {
+		"buildbucket",
+		"go.chromium.org/luci/buildbucket/proto/config/project_config.proto",
+	},
+
+	// "LUCI Config" project config.
+	//
+	// load("@proto//luci/config/project_config.proto", config_pb="config")
+	"luci/config/project_config.proto": {
+		"config",
+		"go.chromium.org/luci/common/proto/config/project_config.proto",
+	},
+
+	// LogDog project config.
+	//
+	// load("@proto//luci/logdog/project_config.proto", logdog_pb="svcconfig")
+	"luci/logdog/project_config.proto": {
+		"svcconfig",
+		"go.chromium.org/luci/logdog/api/config/svcconfig/config.proto",
+	},
+
+	// "LUCI Notify" project config.
+	//
+	// load("@proto//luci/notify/project_config.proto", notify_pb="notify")
+	"luci/notify/project_config.proto": {
+		"notify",
+		"go.chromium.org/luci/luci_notify/api/config/notify.proto",
+	},
+
+	// Milo project config.
+	//
+	// load("@proto//luci/milo/project_config.proto", milo_pb="milo")
+	"luci/milo/project_config.proto": {
+		"milo",
+		"go.chromium.org/luci/milo/api/config/project.proto",
+	},
+
+	// "LUCI Scheduler" project config.
+	//
+	// load("@proto//luci/scheduler/project_config.proto", scheduler_pb="scheduler.config")
+	"luci/scheduler/project_config.proto": {
+		"scheduler.config",
+		"go.chromium.org/luci/scheduler/appengine/messages/config.proto",
+	},
+}
+
+// protoLoader returns a loader that is capable of loading publicProtos.
+func protoLoader() interpreter.Loader {
+	mapping := make(map[string]string, len(publicProtos))
+	for path, proto := range publicProtos {
+		mapping[path] = proto.goPath
+	}
+	return interpreter.ProtoLoader(mapping)
+}
