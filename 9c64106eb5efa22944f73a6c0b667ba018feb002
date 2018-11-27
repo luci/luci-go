@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6cd87085_8687c01a",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-27T23:49:14Z",
+      "side": 1,
+      "message": "note that this will break the existing metric. You\u0027d need to delete it after this is deployed, so that monarch creates a new one.",
+      "revId": "9c64106eb5efa22944f73a6c0b667ba018feb002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd68a9c5_9132f998",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-27T23:49:14Z",
+      "side": 1,
+      "message": "all usages of the metric must be updated if the metric is updated, including this one and L168",
+      "revId": "9c64106eb5efa22944f73a6c0b667ba018feb002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
