@@ -39,9 +39,30 @@ func TestQueues(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
-		c := withServer(withDispatcher(memory.Use(context.Background()), dsp), srv)
+		c := withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
+
+		Convey("create", func() {
+			Convey("invalid", func() {
+				Convey("nil", func() {
+					err := create(c, nil)
+					So(err, ShouldErrLike, "unexpected payload")
+				})
+
+				Convey("empty", func() {
+					err := create(c, &tasks.Create{})
+					So(err, ShouldErrLike, "ID is required")
+				})
+			})
+
+			Convey("valid", func() {
+				err := create(c, &tasks.Create{
+					Id: "id",
+				})
+				So(err, ShouldBeNil)
+			})
+		})
 
 		Convey("ensure", func() {
 			Convey("invalid", func() {

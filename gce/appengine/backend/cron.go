@@ -28,21 +28,45 @@ import (
 	"go.chromium.org/luci/gce/appengine/model"
 )
 
-// processHandler handles HTTP requests to process each VMs block.
-func processHandler(c *router.Context) {
-	c.Writer.Header().Set("Content-Type", "text/plain")
+// newHTTPHandler returns a router.Handler which invokes the given function.
+func newHTTPHandler(f func(c context.Context) error) router.Handler {
+	return func(c *router.Context) {
+		c.Writer.Header().Set("Content-Type", "text/plain")
 
-	if err := process(c.Context); err != nil {
-		errors.Log(c.Context, err)
-		c.Writer.WriteHeader(http.StatusInternalServerError)
-		return
+		if err := f(c.Context); err != nil {
+			errors.Log(c.Context, err)
+			c.Writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		c.Writer.WriteHeader(http.StatusOK)
 	}
-
-	c.Writer.WriteHeader(http.StatusOK)
 }
 
-// process creates task queue tasks to expand each VMs block.
-func process(c context.Context) error {
+// createInstances creates task queue tasks to create each GCE instance.
+func createInstances(c context.Context) error {
+	var keys []*datastore.Key
+	if err := datastore.GetAll(c, datastore.NewQuery(model.VMKind), &keys); err != nil {
+		return errors.Annotate(err, "failed to fetch VMs").Err()
+	}
+	t := make([]*tq.Task, len(keys))
+	for i, k := range keys {
+		id := k.StringID()
+		t[i] = &tq.Task{
+			Payload: &tasks.Create{
+				Id: id,
+			},
+		}
+		logging.Debugf(c, "found VM %q", id)
+	}
+	if err := getDispatcher(c).AddTask(c, t...); err != nil {
+		return errors.Annotate(err, "failed to schedule tasks").Err()
+	}
+	return nil
+}
+
+// expandVMs creates task queue tasks to expand each VMs block.
+func expandVMs(c context.Context) error {
 	var keys []*datastore.Key
 	if err := datastore.GetAll(c, datastore.NewQuery(model.VMsKind), &keys); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs blocks").Err()

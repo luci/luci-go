@@ -1,3 +1,5 @@
 cron:
-- url: /internal/cron/process-config
+- url: /internal/cron/create-instances
+  schedule: every 1 minutes
+- url: /internal/cron/expand-vms
   schedule: every 1 minutes
