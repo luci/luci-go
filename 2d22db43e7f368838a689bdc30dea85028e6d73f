@@ -22,6 +22,30 @@
       "revId": "2d22db43e7f368838a689bdc30dea85028e6d73f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7a6c654_338a1fa2",
+        "filename": "common/api/gitiles/rest.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-11-27T19:35:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "39211320_54756379",
+      "range": {
+        "startLine": 176,
+        "startChar": 67,
+        "endLine": 176,
+        "endChar": 91
+      },
+      "revId": "2d22db43e7f368838a689bdc30dea85028e6d73f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
