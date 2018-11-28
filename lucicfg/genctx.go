@@ -16,18 +16,33 @@ package lucicfg
 
 import (
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 )
 
-// This is just a demo of how to use declNative. To be deleted when there's some
-// real code.
+// genCtx is a starlark struct that represents the state passed to generator
+// callbacks (as first and only argument).
+type genCtx struct {
+	starlarkstruct.Struct
+
+	configSet *configSet
+}
+
+func newGenCtx() *genCtx {
+	ctx := &genCtx{
+		configSet: newConfigSet(),
+	}
+	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
+		"config_set": ctx.configSet,
+	})
+	return ctx
+}
 
 func init() {
-	declNative("emit_greeting", func(call nativeCall) (starlark.Value, error) {
-		var msg starlark.String
-		if err := call.unpack(1, &msg); err != nil {
+	// new_gen_ctx() makes a new empty generator context object.
+	declNative("new_gen_ctx", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
 			return nil, err
 		}
-		call.State.Greetings = append(call.State.Greetings, msg.GoString())
-		return starlark.None, nil
+		return newGenCtx(), nil
 	})
 }
