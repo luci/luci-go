@@ -91,6 +91,26 @@ func validate(c context.Context, kinds *gce.Kinds, vms *gce.VMs) error {
 	return v.Finalize()
 }
 
+// merge merges validated configs.
+// Each VMs block's referenced Kind is used to fill out unset values in the VMs block.
+func merge(c context.Context, kinds *gce.Kinds, vms *gce.VMs) {
+	kindsMap := kinds.Map()
+	for _, block := range vms.Vms {
+		if block.GetKind() != "" {
+			// Merge the block's attributes into a copy of the kind's.
+			// This ensures the block's attributes overwrite the kind's.
+			attrs := proto.Clone(kindsMap[block.Kind].Attributes).(*gce.VM)
+			// By default, proto.Merge concatenates repeated field values.
+			// Instead, make repeated fields in the block override the kind.
+			if len(block.Attributes.Disk) > 0 {
+				attrs.Disk = nil
+			}
+			proto.Merge(attrs, block.Attributes)
+			block.Attributes = attrs
+		}
+	}
+}
+
 // Import fetches and validates configs from the config service.
 func Import(c context.Context) error {
 	kinds, vms, err := fetch(c)
@@ -101,5 +121,7 @@ func Import(c context.Context) error {
 	if err := validate(c, kinds, vms); err != nil {
 		return errors.Annotate(err, "invalid configs").Err()
 	}
+
+	merge(c, kinds, vms)
 	return nil
 }
