@@ -119,8 +119,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 	})
 
 	Convey(`Test bot finished`, t, func() {
-		var written_to string
-		var written_isolated string
+		var writtenTo string
+		var writtenIsolated string
 		service := &testService{
 			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				return &swarming.SwarmingRpcsTaskResult{
@@ -132,8 +132,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 				return &swarming.SwarmingRpcsTaskOutput{Output: "yipeeee"}, nil
 			},
 			getTaskOutputs: func(c context.Context, _, output string, ref *swarming.SwarmingRpcsFilesRef) ([]string, error) {
-				written_to = output
-				written_isolated = ref.Isolated
+				writtenTo = output
+				writtenIsolated = ref.Isolated
 				return []string{"hello"}, nil
 			},
 		}
@@ -147,8 +147,8 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.result.State, ShouldResemble, "COMPLETED")
 		So(result.output, ShouldResemble, "yipeeee")
 		So(result.outputs, ShouldResemble, []string{"hello"})
-		So(written_to, ShouldResemble, "bah")
-		So(written_isolated, ShouldResemble, "aaaaaaaaa")
+		So(writtenTo, ShouldResemble, "bah")
+		So(writtenIsolated, ShouldResemble, "aaaaaaaaa")
 	})
 
 	Convey(`Test bot finished after failures`, t, func() {
@@ -157,7 +157,7 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		service := &testService{
 			getTaskResult: func(c context.Context, _ string, _ bool) (*swarming.SwarmingRpcsTaskResult, error) {
 				if i < maxTries {
-					i += 1
+					i++
 					return nil, &googleapi.Error{Code: http.StatusBadGateway}
 				}
 				return &swarming.SwarmingRpcsTaskResult{State: "COMPLETED"}, nil
