@@ -15,16 +15,20 @@
 package gerrit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/golang/protobuf/jsonpb"
 	. "github.com/smartystreets/goconvey/convey"
 
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
@@ -55,6 +59,7 @@ func TestGetChange(t *testing.T) {
 			_, err := c.GetChange(ctx, req)
 			s, ok := status.FromError(err)
 			So(ok, ShouldBeTrue)
+			fmt.Printf("\n[xkcd] %s", err)
 			So(s.Code(), ShouldEqual, codes.NotFound)
 		})
 
@@ -104,6 +109,78 @@ func TestGetChange(t *testing.T) {
 				)
 			})
 		})
+	})
+}
+
+func TestRestCreateChange(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("CreateChange basic", t, func() {
+		var actualBody []byte
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			// ignore errors here, but verify body later.
+			actualBody, _ = ioutil.ReadAll(r.Body)
+			w.WriteHeader(201)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `)]}'`)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"_number":   1,
+				"project":   "example/repo",
+				"branch":    "master",
+				"change_id": "c1",
+				"status":    "NEW",
+			})
+		})
+		defer srv.Close()
+
+		req := gerritpb.CreateChangeRequest{
+			Project: "example/repo",
+			Branch:  "master",
+			Subject: "example subject",
+		}
+		res, err := c.CreateChange(ctx, &req)
+		So(err, ShouldBeNil)
+		So(res, ShouldResemble, &gerritpb.ChangeInfo{
+			Number:   1,
+			Project:  "example/repo",
+			Branch:   "master",
+			ChangeId: "c1",
+			Status:   gerritpb.ChangeInfo_NEW,
+		})
+
+		var ccr gerritpb.CreateChangeRequest
+		err = jsonpb.Unmarshal(bytes.NewBuffer(actualBody), &ccr)
+		So(err, ShouldBeNil)
+		So(ccr, ShouldResemble, req)
+	})
+}
+
+func TestRestChangeEditFileContent(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	Convey("ChangeEditFileContent basic", t, func() {
+		// large enough?
+		var actualBody []byte
+		var actualURL *url.URL
+		srv, c := newMockPbClient(func(w http.ResponseWriter, r *http.Request) {
+			actualURL = r.URL
+			// ignore errors here, but verify body later.
+			actualBody, _ = ioutil.ReadAll(r.Body)
+			// API returns 204 on success.
+			w.WriteHeader(204)
+		})
+		defer srv.Close()
+
+		_, err := c.ChangeEditFileContent(ctx, &gerritpb.ChangeEditFileContentRequest{
+			ChangeId: "c1",
+			FilePath: "some/path",
+			Content:  []byte("changed file"),
+		})
+		So(err, ShouldBeNil)
+		So(actualURL.Path, ShouldEqual, "/changes/c1/edit/some/path")
+		So(actualBody, ShouldResemble, []byte("changed file"))
 	})
 }
 

@@ -14,11 +14,21 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package gerrit;
 
 service Gerrit {
   // Loads a change by id.
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
+
+  rpc CreateChange(CreateChangeRequest) returns (ChangeInfo);
+  rpc ChangeEditFileContent(ChangeEditFileContentRequest)
+      returns (google.protobuf.Empty);
+  rpc ChangeEditPublish(ChangeEditPublishRequest)
+      returns (google.protobuf.Empty);
+
+  rpc SubmitChange(SubmitChangeRequest) returns (ChangeInfo);
 }
 
 // Specifies what extra information to include in the response.
@@ -147,4 +157,48 @@ message ChangeInfo {
 
   // The project of this change. For example, "chromium/src".
   string project = 3;
+
+  // Branch of this change, without the refs/heads/ prefix.
+  string branch = 4;
+
+  // Change-ID of this change.
+  string change_id = 5;
+
+  enum Status {
+    STATUS_INVALID = 0;
+    NEW = 1;
+    MERGED = 2;
+    ABANDONED = 3;
+  }
+  Status status = 6;
+}
+
+// Information for creating a new change.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-input
+message CreateChangeRequest {
+  string project = 1;
+  string branch = 2;
+  string subject = 3;
+}
+
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-input
+message SubmitChangeRequest {
+  string change_id = 1;
+}
+
+message ChangeEditFileContentRequest {
+  string change_id = 1;
+  string file_path = 2;
+  bytes content = 3;
+}
+
+// Information for publishing a change edit.
+//
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-change-edit-input
+message ChangeEditPublishRequest {
+  string change_id = 1;
 }
