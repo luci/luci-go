@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "613b5d0e_be05ebb3",
+        "filename": "milo/buildsource/swarming/expectations/build-nested.json",
+        "patchSetId": 1
+      },
+      "lineNbr": 365,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-11-28T16:10:48Z",
+      "side": 0,
+      "message": "This is gone because now build.build step has not output. Instead it\u0027s part of the build.build.compile step.",
+      "revId": "21b4995e3d6449ed07867e38a2e477e37004c8a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
