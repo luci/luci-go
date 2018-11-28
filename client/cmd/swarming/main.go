@@ -32,7 +32,7 @@ import (
 // supported commands) is done.
 const version = "0.3"
 
-func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
+func getApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplication {
 	return &subcommands.DefaultApplication{
 		Name:  "swarming",
 		Title: "Client tool to access a swarming server.",
@@ -63,6 +63,6 @@ func GetApplication(defaultAuthOpts auth.Options) *subcommands.DefaultApplicatio
 func main() {
 	log.SetFlags(log.Lmicroseconds)
 	mathrand.SeedRandomly()
-	app := GetApplication(chromeinfra.DefaultAuthOptions())
+	app := getApplication(chromeinfra.DefaultAuthOptions())
 	os.Exit(subcommands.Run(app, nil))
 }

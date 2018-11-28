@@ -268,17 +268,17 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 			// failure, or it hit too many transient failures.
 			results <- result
 			return
-		} else {
-			// Only stop if the swarming bot is "dead" (i.e. not running).
-			state, err := parseTaskState(result.result.State)
-			if err != nil {
-				results <- taskResult{taskID: taskID, err: err}
-				return
-			}
-			if !state.Alive() {
-				results <- result
-				return
-			}
+		}
+
+		// Only stop if the swarming bot is "dead" (i.e. not running).
+		state, err := parseTaskState(result.result.State)
+		if err != nil {
+			results <- taskResult{taskID: taskID, err: err}
+			return
+		}
+		if !state.Alive() {
+			results <- result
+			return
 		}
 
 		currentTime := clock.Now(ctx)
