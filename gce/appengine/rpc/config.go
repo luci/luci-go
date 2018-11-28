@@ -40,10 +40,7 @@ type Config struct {
 // DeleteVMs handles a request to delete a VMs block.
 // For app-internal use only.
 func (*Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empty.Empty, error) {
-	switch {
-	case req == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "request is required")
-	case req.Id == "":
+	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	if err := datastore.Delete(c, &model.VMs{ID: req.Id}); err != nil {
@@ -56,12 +53,18 @@ func (*Config) DeleteVMs(c context.Context, req *config.DeleteVMsRequest) (*empt
 // For app-internal use only.
 func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*config.Block, error) {
 	switch {
-	case req == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "request is required")
-	case req.Id == "":
+	case req.GetId() == "":
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
-	case req.Vms == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "VMs block is required")
+	case req.Vms.GetPrefix() == "":
+		return nil, status.Errorf(codes.InvalidArgument, "prefix is required")
+	case len(req.Vms.Attributes.GetDisk()) == 0:
+		return nil, status.Errorf(codes.InvalidArgument, "at least one disk is required")
+	case req.Vms.Attributes.MachineType == "":
+		return nil, status.Errorf(codes.InvalidArgument, "machine type is required")
+	case req.Vms.Attributes.Project == "":
+		return nil, status.Errorf(codes.InvalidArgument, "project is required")
+	case req.Vms.Attributes.Zone == "":
+		return nil, status.Errorf(codes.InvalidArgument, "zone is required")
 	}
 	vms := &model.VMs{
 		ID:     req.Id,
@@ -75,10 +78,7 @@ func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*conf
 
 // GetVMs handles a request to get a VMs block.
 func (*Config) GetVMs(c context.Context, req *config.GetVMsRequest) (*config.Block, error) {
-	switch {
-	case req == nil:
-		return nil, status.Errorf(codes.InvalidArgument, "request is required")
-	case req.Id == "":
+	if req.GetId() == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "ID is required")
 	}
 	vms := &model.VMs{
