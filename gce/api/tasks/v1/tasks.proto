@@ -20,6 +20,8 @@ message Ensure {
   string id = 1;
   // The attributes of the VM.
   config.VM attributes = 2;
+  // The prefix to use when naming this VM.
+  string prefix = 3;
 }
 
 // A task to expand a VMs config into VM entities.

@@ -14,7 +14,7 @@ message Disk {
   string image = 1;
 
   // The size of this disk in GiB.
-  int32 size = 2;
+  int64 size = 2;
 
   // The name of a disk type to use for this disk.
   // https://cloud.google.com/compute/docs/reference/rest/v1/diskTypes/list.

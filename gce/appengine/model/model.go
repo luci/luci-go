@@ -15,6 +15,8 @@
 package model
 
 import (
+	"google.golang.org/api/compute/v1"
+
 	"go.chromium.org/gae/service/datastore"
 
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -52,4 +54,40 @@ type VM struct {
 	ID string `gae:"$id"`
 	// Attributes is the config.VM describing the GCE instance to create.
 	Attributes config.VM `gae:"attributes"`
+	// Hostname is the short hostname of the GCE instance to create.
+	Hostname string `gae:"hostname"`
+	// Prefix is the prefix to use when naming the GCE instance.
+	Prefix string `gae:"prefix"`
+	// URL is the URL of the created GCE instance.
+	URL string `gae:"url"`
+}
+
+// GetInstance returns a *compute.Instance representation of this VM.
+func (vm *VM) GetInstance() *compute.Instance {
+	inst := &compute.Instance{
+		Name:        vm.Hostname,
+		MachineType: vm.Attributes.GetMachineType(),
+		// One network interface is required, but GCE can infer all defaults.
+		// TODO(smut): Allow the config to optionally configure NICs.
+		NetworkInterfaces: []*compute.NetworkInterface{
+			{},
+		},
+	}
+	inst.Disks = make([]*compute.AttachedDisk, len(vm.Attributes.GetDisk()))
+	for i, disk := range vm.Attributes.GetDisk() {
+		inst.Disks[i] = &compute.AttachedDisk{
+			// AutoDelete deletes the disk when the instance is deleted.
+			AutoDelete: true,
+			InitializeParams: &compute.AttachedDiskInitializeParams{
+				DiskSizeGb:  disk.Size,
+				DiskType:    disk.Type,
+				SourceImage: disk.Image,
+			},
+		}
+	}
+	if len(inst.Disks) > 0 {
+		// GCE requires the first disk to be the boot disk.
+		inst.Disks[0].Boot = true
+	}
+	return inst
 }
