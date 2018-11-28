@@ -16,36 +16,16 @@ package lucicfg
 
 import (
 	"context"
-	"fmt"
-	"go/build"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
 	"testing"
 
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarktest"
 
 	"go.chromium.org/luci/starlark/interpreter"
+	"go.chromium.org/luci/starlark/starlarktest"
 )
 
 func init() {
-	// Replace DataFile implementation with non-broken one that understands GOPATH
-	// with multiple entries. This is needed to pick up assert.star file under
-	// Starlark package tree.
-	starlarktest.DataFile = func(pkgdir, filename string) string {
-		rel := filepath.Join("go.starlark.net", pkgdir, filename)
-		for _, p := range build.Default.SrcDirs() {
-			full := filepath.Join(p, rel)
-			if _, err := os.Stat(full); err == nil {
-				return full
-			}
-		}
-		panic(fmt.Sprintf("could not find %s", rel))
-	}
-
 	// Enable not-yet-standard features.
 	resolve.AllowLambda = true
 	resolve.AllowNestedDef = true
@@ -57,54 +37,23 @@ func init() {
 func TestAllStarlark(t *testing.T) {
 	t.Parallel()
 
-	assertMod, err := starlarktest.LoadAssertModule()
-	if err != nil {
-		t.Fatalf("failed to load assertion module - %s", err)
-	}
+	starlarktest.RunTests(t, starlarktest.Options{
+		TestsDir: "testdata",
 
-	files, err := filepath.Glob("testdata/*.star")
-	if err != nil {
-		t.Fatalf("failed to list *.star files - %s", err)
-	}
-	if len(files) == 0 {
-		t.Fatalf("no *.star files in testdata, something is fishy")
-	}
-	sort.Strings(files)
+		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
+			_, err := Generate(context.Background(), Inputs{
+				// Make sure error messages have the original scripts name by loading the
+				// test script under its true name.
+				Code:  interpreter.MemoryLoader(map[string]string{path: body}),
+				Entry: path,
 
-	for _, f := range files {
-		f := f
-		t.Run(f, func(t *testing.T) { runSingleTest(t, f, assertMod) })
-	}
-}
-
-func runSingleTest(t *testing.T, script string, predeclared starlark.StringDict) {
-	ctx := context.Background()
-
-	code, err := ioutil.ReadFile(script)
-	if err != nil {
-		t.Fatalf("Failed to open %q - %s", script, err)
-		return
-	}
-
-	in := Inputs{
-		// Make sure error messages have the original scripts name by loading the
-		// test script under its true name.
-		Code:  interpreter.MemoryLoader(map[string]string{script: string(code)}),
-		Entry: script,
-
-		// Expose 'assert' module, hook up error reporting to 't'.
-		testPredeclared: predeclared,
-		testThreadModified: func(th *starlark.Thread) {
-			starlarktest.SetReporter(th, t)
-			th.Print = func(_ *starlark.Thread, msg string) { t.Logf("%s", msg) }
+				// Expose 'assert' module, hook up error reporting to 't'.
+				testPredeclared: predeclared,
+				testThreadModified: func(th *starlark.Thread) {
+					starlarktest.HookThread(th, t)
+				},
+			})
+			return err
 		},
-	}
-
-	if _, err = Generate(ctx, in); err != nil {
-		if evalErr, _ := err.(*starlark.EvalError); evalErr != nil {
-			t.Errorf("%s\n", evalErr.Backtrace())
-		} else {
-			t.Errorf("%s", err)
-		}
-	}
+	})
 }
