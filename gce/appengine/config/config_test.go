@@ -83,6 +83,90 @@ func TestFetch(t *testing.T) {
 	})
 }
 
+func TestMerge(t *testing.T) {
+	t.Parallel()
+
+	Convey("merge", t, func() {
+		c := context.Background()
+
+		Convey("empty", func() {
+			kinds := &gce.Kinds{
+				Kind: []*gce.Kind{
+					{
+						Name: "kind",
+						Attributes: &gce.VM{
+							Project: "project",
+							Zone:    "zone",
+						},
+					},
+				},
+			}
+			vms := &gce.VMs{}
+			merge(c, kinds, vms)
+			So(vms.GetVms(), ShouldHaveLength, 0)
+		})
+
+		Convey("merged", func() {
+			kinds := &gce.Kinds{
+				Kind: []*gce.Kind{
+					{
+						Name: "kind",
+						Attributes: &gce.VM{
+							Disk: []*gce.Disk{
+								{
+									Image: "image 1",
+								},
+							},
+							Project: "project 1",
+							Zone:    "zone",
+						},
+					},
+				},
+			}
+			vms := &gce.VMs{
+				Vms: []*gce.Block{
+					{
+						Attributes: &gce.VM{
+							MachineType: "type",
+						},
+					},
+					{
+						Kind: "kind",
+						Attributes: &gce.VM{
+							Disk: []*gce.Disk{
+								{
+									Image: "image 2",
+								},
+							},
+							Project: "project 2",
+						},
+					},
+				},
+			}
+			merge(c, kinds, vms)
+			So(vms.GetVms(), ShouldResemble, []*gce.Block{
+				{
+					Attributes: &gce.VM{
+						MachineType: "type",
+					},
+				},
+				{
+					Kind: "kind",
+					Attributes: &gce.VM{
+						Disk: []*gce.Disk{
+							{
+								Image: "image 2",
+							},
+						},
+						Project: "project 2",
+						Zone:    "zone",
+					},
+				},
+			})
+		})
+	})
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 

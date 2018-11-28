@@ -19,6 +19,17 @@ import (
 	"go.chromium.org/luci/config/validation"
 )
 
+// Map returns a map of name to VM kind.
+// For each name, only the last kind is included in the map.
+// Use Validate to ensure names are unique.
+func (kinds *Kinds) Map() map[string]*Kind {
+	m := make(map[string]*Kind, len(kinds.Kind))
+	for _, k := range kinds.Kind {
+		m[k.Name] = k
+	}
+	return m
+}
+
 // Names returns the names of VM kinds.
 func (kinds *Kinds) Names() []string {
 	names := make([]string, len(kinds.Kind))
