@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bbf9fea8_291d0625",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-28T22:45:23Z",
+      "side": 1,
+      "message": "so we removing support for git recipes completely? Or we already removed it?",
+      "range": {
+        "startLine": 272,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 20
+      },
+      "revId": "abaa455a18e8e083369716d18f4406d9463b85fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
