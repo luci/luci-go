@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "3b7c354f_aa704c35",
+        "filename": "gce/api/config/v1/kinds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T03:32:58Z",
+      "side": 1,
+      "message": "oops i read it wrong",
+      "parentUuid": "4c759112_d259ceb6",
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1fafd8a0_300f54b5",
         "filename": "gce/appengine/config/config.go",
         "patchSetId": 1
@@ -113,6 +131,24 @@
       "side": 1,
       "message": "Good catch, thanks. I opted not to reflect and check all repeated properties for now.",
       "parentUuid": "68c48e44_72fb80b7",
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9b1c4414_3d66884d",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T03:32:58Z",
+      "side": 1,
+      "message": "i did the same in buildbucket",
+      "parentUuid": "85a73497_0ffaf94a",
       "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
