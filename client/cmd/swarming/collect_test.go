@@ -170,3 +170,31 @@ func TestCollectPollForTaskResult(t *testing.T) {
 		So(result.result.State, ShouldResemble, "COMPLETED")
 	})
 }
+
+func TestCollectSummarizeResultsPython(t *testing.T) {
+	t.Parallel()
+
+	Convey(`Simple json.`, t, func() {
+		results := []taskResult{
+			{
+				result: &swarming.SwarmingRpcsTaskResult{
+					State:    "COMPLETED",
+					Duration: 1,
+					ExitCode: 0,
+				},
+			},
+			{},
+		}
+		json, err := summarizeResultsPython(results)
+		So(err, ShouldBeNil)
+		So(string(json), ShouldEqual, `{
+  "shards": [
+    {
+      "duration": 1,
+      "state": "COMPLETED"
+    },
+    null
+  ]
+}`)
+	})
+}
