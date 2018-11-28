@@ -39,7 +39,7 @@ func TestValidateBlock(t *testing.T) {
 		Convey("invalid", func() {
 			Convey("nil", func() {
 				v, err := srv.DeleteVMs(c, nil)
-				So(err, ShouldErrLike, "request is required")
+				So(err, ShouldErrLike, "ID is required")
 				So(v, ShouldBeNil)
 			})
 
@@ -80,7 +80,7 @@ func TestValidateBlock(t *testing.T) {
 		Convey("invalid", func() {
 			Convey("nil", func() {
 				v, err := srv.EnsureVMs(c, nil)
-				So(err, ShouldErrLike, "request is required")
+				So(err, ShouldErrLike, "ID is required")
 				So(v, ShouldBeNil)
 			})
 
@@ -90,7 +90,7 @@ func TestValidateBlock(t *testing.T) {
 				So(v, ShouldBeNil)
 			})
 
-			Convey("ID missing", func() {
+			Convey("ID", func() {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Vms: &config.Block{},
 				})
@@ -98,11 +98,90 @@ func TestValidateBlock(t *testing.T) {
 				So(v, ShouldBeNil)
 			})
 
-			Convey("block missing", func() {
+			Convey("block", func() {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",
 				})
-				So(err, ShouldErrLike, "VMs block is required")
+				So(err, ShouldErrLike, "prefix is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("prefix", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id:  "id",
+					Vms: &config.Block{},
+				})
+				So(err, ShouldErrLike, "prefix is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("disk", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id: "id",
+					Vms: &config.Block{
+						Prefix: "prefix",
+						Attributes: &config.VM{
+							MachineType: "type",
+							Project:     "project",
+							Zone:        "zone",
+						},
+					},
+				})
+				So(err, ShouldErrLike, "disk is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("machine type", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id: "id",
+					Vms: &config.Block{
+						Prefix: "prefix",
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							Project: "project",
+							Zone:    "zone",
+						},
+					},
+				})
+				So(err, ShouldErrLike, "machine type is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("project", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id: "id",
+					Vms: &config.Block{
+						Prefix: "prefix",
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							MachineType: "type",
+							Zone:        "zone",
+						},
+					},
+				})
+				So(err, ShouldErrLike, "project is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("zone", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id: "id",
+					Vms: &config.Block{
+						Prefix: "prefix",
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							MachineType: "type",
+							Project:     "project",
+						},
+					},
+				})
+				So(err, ShouldErrLike, "zone is required")
 				So(v, ShouldBeNil)
 			})
 		})
@@ -112,7 +191,12 @@ func TestValidateBlock(t *testing.T) {
 				Id: "id",
 				Vms: &config.Block{
 					Attributes: &config.VM{
-						Project: "project",
+						Disk: []*config.Disk{
+							{},
+						},
+						MachineType: "type",
+						Project:     "project",
+						Zone:        "zone",
 					},
 					Prefix: "prefix",
 				},
@@ -120,7 +204,12 @@ func TestValidateBlock(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(v, ShouldResemble, &config.Block{
 				Attributes: &config.VM{
-					Project: "project",
+					Disk: []*config.Disk{
+						{},
+					},
+					MachineType: "type",
+					Project:     "project",
+					Zone:        "zone",
 				},
 				Prefix: "prefix",
 			})
@@ -134,7 +223,7 @@ func TestValidateBlock(t *testing.T) {
 		Convey("invalid", func() {
 			Convey("nil", func() {
 				v, err := srv.GetVMs(c, nil)
-				So(err, ShouldErrLike, "request is required")
+				So(err, ShouldErrLike, "ID is required")
 				So(v, ShouldBeNil)
 			})
 
