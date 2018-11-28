@@ -220,6 +220,19 @@ rm -rf -- "."/build-*
 @@@CURRENT_TIMESTAMP@1479163036.33@@@
 @@@STEP_STARTED@@@
 @@@STEP_NEST_LEVEL@1@@@
+@@@SEED_STEP@build.build.generate@@@
+@@@STEP_CURSOR@build.build.generate@@@
+@@@CURRENT_TIMESTAMP@1479163036.33@@@
+@@@STEP_STARTED@@@
+@@@STEP_NEST_LEVEL@2@@@
+Generating Makefile...
+@@@CURRENT_TIMESTAMP@1479163038.33@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@build.build.compile@@@
+@@@STEP_CURSOR@build.build.compile@@@
+@@@CURRENT_TIMESTAMP@1479163038.33@@@
+@@@STEP_STARTED@@@
+@@@STEP_NEST_LEVEL@2@@@
 make -j4 magenta-pc-x86-64
 in dir /b/swarm_slave/w/iruhikkv/kitchen-workdir/magenta:
 allow_subannotations: False
@@ -248,6 +261,9 @@ EXPORT system/ulib/driver shared
 step returned non-zero exit code: 2
 @@@STEP_FAILURE@@@
 @@@CURRENT_TIMESTAMP@1479163078.5@@@
+@@@STEP_CLOSED@@@
+@@@SEED_STEP@build.build@@@
+@@@CURRENT_TIMESTAMP@1479163079.80@@@
 @@@STEP_CLOSED@@@
 @@@SEED_STEP@build.upload@@@
 @@@STEP_CURSOR@build.upload@@@

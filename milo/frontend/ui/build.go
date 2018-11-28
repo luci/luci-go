@@ -106,8 +106,7 @@ func fixComponent(comp *BuildComponent, buildFinished time.Time, stripPrefix str
 	// Fix substeps recursively.
 	for _, substep := range comp.Children {
 		fixComponent(
-			substep, buildFinished, stripPrefix+comp.Label.String()+".",
-			collapseGreen)
+			substep, buildFinished, comp.Label.String()+".", collapseGreen)
 	}
 
 	// When parent step finishes running, compute its final status as worst
