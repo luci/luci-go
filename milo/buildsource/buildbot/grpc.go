@@ -43,6 +43,7 @@ var apiUsage = metric.NewCounter(
 	field.String("master"),
 	field.String("builder"),
 	field.Bool("exclude_deprecated"),
+	field.Bool("no_emulation"),
 )
 
 // Service is a service implementation that displays BuildBot builds.
@@ -54,7 +55,7 @@ var errNotFoundGRPC = status.Errorf(codes.NotFound, "Not found")
 func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuildRequest) (
 	*milo.BuildbotBuildJSON, error) {
 
-	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder, req.ExcludeDeprecated)
+	apiUsage.Add(c, 1, "GetBuildbotBuildJSON", req.Master, req.Builder, req.ExcludeDeprecated, false)
 
 	if req.Master == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
@@ -101,7 +102,7 @@ func (s *Service) GetBuildbotBuildJSON(c context.Context, req *milo.BuildbotBuil
 func (s *Service) GetBuildbotBuildsJSON(c context.Context, req *milo.BuildbotBuildsRequest) (
 	*milo.BuildbotBuildsJSON, error) {
 
-	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated)
+	apiUsage.Add(c, 1, "GetBuildbotBuildsJSON", req.Master, req.Builder, req.ExcludeDeprecated, req.NoEmulation)
 
 	if req.Master == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
@@ -164,7 +165,7 @@ func (s *Service) GetCompressedMasterJSON(c context.Context, req *milo.MasterReq
 		return nil, status.Errorf(codes.InvalidArgument, "No master specified")
 	}
 
-	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated)
+	apiUsage.Add(c, 1, "GetCompressedMasterJSON", req.Name, "", req.ExcludeDeprecated, req.NoEmulation)
 
 	cu := auth.CurrentUser(c)
 	logging.Debugf(c, "%s is making a master request for %s", cu.Identity, req.Name)
