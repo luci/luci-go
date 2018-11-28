@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "49749fd7_cc30df6b",
+        "filename": "gce/api/config/v1/kinds.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T02:12:43Z",
+      "side": 1,
+      "message": "should it panic if a name is non-unique? otherwise this func is non-deterministic (because map iteration is random) \u003d\u003e flaky behavior/tests",
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1fafd8a0_300f54b5",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T02:12:43Z",
+      "side": 1,
+      "message": "this never fails and it seems never will? because its requires configs to be valid",
+      "range": {
+        "startLine": 96,
+        "startChar": 62,
+        "endLine": 96,
+        "endChar": 67
+      },
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "68c48e44_72fb80b7",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T02:12:43Z",
+      "side": 1,
+      "message": "this will _append_ disks, not overwrite them. Unintended?",
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4af333f4_3ba76de7",
+        "filename": "gce/appengine/config/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-28T02:12:43Z",
+      "side": 1,
+      "message": "dead code",
+      "revId": "d7fa01387ad848980660cce54926a5197047c1e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
