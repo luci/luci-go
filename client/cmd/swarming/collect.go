@@ -133,12 +133,13 @@ func cmdCollect(defaultAuthOpts auth.Options) *subcommands.Command {
 type collectRun struct {
 	commonFlags
 
-	timeout         time.Duration
-	taskSummaryJSON string
-	taskOutput      taskOutputOption
-	outputDir       string
-	perf            bool
-	jsonInput       string
+	timeout           time.Duration
+	taskSummaryJSON   string
+	taskSummaryPython bool
+	taskOutput        taskOutputOption
+	outputDir         string
+	perf              bool
+	jsonInput         string
 }
 
 func (c *collectRun) Init(defaultAuthOpts auth.Options) {
@@ -146,6 +147,10 @@ func (c *collectRun) Init(defaultAuthOpts auth.Options) {
 
 	c.Flags.DurationVar(&c.timeout, "timeout", 0, "Timeout to wait for result. Set to 0 for no timeout.")
 	c.Flags.StringVar(&c.taskSummaryJSON, "task-summary-json", "", "Dump a summary of task results to a file as json.")
+
+	//TODO(tikuta): Remove this flag once crbug.com/894045 is fixed.
+	c.Flags.BoolVar(&c.taskSummaryPython, "task-summary-python", false, "Generate python client compatible task summary json.")
+
 	c.Flags.BoolVar(&c.perf, "perf", false, "Includes performance statistics.")
 	c.Flags.Var(&c.taskOutput, "task-output-stdout", "Where to output each task's console output (stderr/stdout). (none|json|console|all)")
 	c.Flags.StringVar(&c.outputDir, "output-dir", "", "Where to download isolated output to.")
@@ -306,8 +311,26 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 	}
 }
 
+// summarizeResultsPython generates summary JSON file compatible with python's
+// swarming client.
+func summarizeResultsPython(results []taskResult) ([]byte, error) {
+	var shards []*swarming.SwarmingRpcsTaskResult
+
+	for _, result := range results {
+		shards = append(shards, result.result)
+	}
+
+	return json.MarshalIndent(map[string][]*swarming.SwarmingRpcsTaskResult{
+		"shards": shards,
+	}, "", "  ")
+}
+
 // summarizeResults generate a marshalled JSON summary of the task results.
 func (c *collectRun) summarizeResults(results []taskResult) ([]byte, error) {
+	if c.taskSummaryPython {
+		return summarizeResultsPython(results)
+	}
+
 	jsonResults := map[string]interface{}{}
 	for _, result := range results {
 		jsonResult := map[string]interface{}{}
