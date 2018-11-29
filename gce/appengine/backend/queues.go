@@ -68,6 +68,7 @@ func ensure(c context.Context, payload proto.Message) error {
 		if task.Attributes != nil {
 			vm.Attributes = *task.Attributes
 		}
+		vm.Prefix = task.Prefix
 		datastore.Put(c, vm)
 		return nil
 	}, nil)
@@ -97,6 +98,7 @@ func expand(c context.Context, payload proto.Message) error {
 			Payload: &tasks.Ensure{
 				Id:         fmt.Sprintf("%s-%d", task.Id, i),
 				Attributes: vms.Attributes,
+				Prefix:     vms.Prefix,
 			},
 		}
 	}

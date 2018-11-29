@@ -18,6 +18,8 @@ import (
 	"context"
 	"testing"
 
+	"google.golang.org/api/compute/v1"
+
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -67,6 +69,10 @@ func TestVMs(t *testing.T) {
 			},
 		})
 	})
+}
+
+func TestVM(t *testing.T) {
+	t.Parallel()
 
 	Convey("VM", t, func() {
 		c := memory.Use(context.Background())
@@ -89,6 +95,50 @@ func TestVMs(t *testing.T) {
 			Attributes: config.VM{
 				Project: "project",
 			},
+		})
+	})
+
+	Convey("GetInstance", t, func() {
+		Convey("empty", func() {
+			v := &VM{}
+			i := v.GetInstance()
+			So(i, ShouldResemble, &compute.Instance{
+				Disks: []*compute.AttachedDisk{},
+				NetworkInterfaces: []*compute.NetworkInterface{
+					{},
+				},
+			})
+		})
+
+		Convey("non-empty", func() {
+			v := &VM{
+				Attributes: config.VM{
+					Disk: []*config.Disk{
+						{
+							Image: "image",
+							Size:  100,
+						},
+					},
+					MachineType: "type",
+				},
+			}
+			i := v.GetInstance()
+			So(i, ShouldResemble, &compute.Instance{
+				Disks: []*compute.AttachedDisk{
+					{
+						AutoDelete: true,
+						Boot:       true,
+						InitializeParams: &compute.AttachedDiskInitializeParams{
+							DiskSizeGb:  100,
+							SourceImage: "image",
+						},
+					},
+				},
+				MachineType: "type",
+				NetworkInterfaces: []*compute.NetworkInterface{
+					{},
+				},
+			})
 		})
 	})
 }
