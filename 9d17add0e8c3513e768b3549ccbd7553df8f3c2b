@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fbb0b9d4_89d2c96b",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-29T22:44:11Z",
+      "side": 1,
+      "message": "Moved state.errors \u003d append(state.errors, err) in a function to slightly reduce copy-pasta.",
+      "parentUuid": "6d400f72_b35d226b",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 26
+      },
+      "revId": "9d17add0e8c3513e768b3549ccbd7553df8f3c2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0bd278bb_9fda3b2e",
         "filename": "lucicfg/state.go",
         "patchSetId": 6
@@ -36,6 +60,24 @@
       "writtenOn": "2018-11-29T07:45:35Z",
       "side": 1,
       "message": "these configs need to be written to files. This CL doesn\u0027t do that, and at the same time the knowledge that it needs to be done is only in your head. This may not scale if there is a lot of such pending items.\nWhen I did something like this during buildbucket short bucket name refactoring, i marked all to-be-updated places with todos, as a guarantee that i will not forget. It helped because i could find all such places, and it actually prevented a minor outage",
+      "revId": "9d17add0e8c3513e768b3549ccbd7553df8f3c2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ab896683_115f88ee",
+        "filename": "lucicfg/state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-29T22:44:11Z",
+      "side": 1,
+      "message": "\u003e these configs need to be written to files. This CL doesn\u0027t do that, and at the same time the knowledge that it needs to be done is only in your head. This may not scale if there is a lot of such pending items.\n\nI don\u0027t see a lot of people eager to work on this code, so it doesn\u0027t need \"to scale\" yet. Once I\u0027m out of active phase of writing, I\u0027ll document all unfinished TODOs.\n\n\u003e When I did something like this during buildbucket short bucket name refactoring, i marked all to-be-updated places with todos, as a guarantee that i will not forget. It helped because i could find all such places, and it actually prevented a minor outage\n\nMy case is simpler. It is a layered cake. I work on lower layers now, not touching higher levels at all. The highest level is reading *.star from disk, writing generated configs, diffing them against existing ones (with flattening and normalization of existing ones), sending them to luci-config for validation, etc. cmd/main.go is an empty stub for this.",
+      "parentUuid": "0bd278bb_9fda3b2e",
       "revId": "9d17add0e8c3513e768b3549ccbd7553df8f3c2b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
