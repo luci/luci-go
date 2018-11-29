@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "764a007a_0d569b9d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "You\u0027re right, I was mistaken, they don\u0027t match the names given by Go.  I think the names are good as is.",
+      "parentUuid": "3523cb9c_5fbe622f",
+      "range": {
+        "startLine": 156,
+        "startChar": 30,
+        "endLine": 156,
+        "endChar": 44
+      },
+      "revId": "5f31261cadb5c63b0b2b7eb31440e67dde425a02",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "34c22c43_4cb1ce67",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 3

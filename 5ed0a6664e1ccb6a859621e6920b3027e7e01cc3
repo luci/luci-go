@@ -1,0 +1,146 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "861c0077_9bfa0e1b",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "This is showing up as black",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb01a139_de63a6ed",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "This is a bit scary.  link.Label is unvalidated user input text, and over here we are inserting it directly into the DOM as text.  This opens Milo up to XSS attacks.\n\nThere are a couple of options:\n1. Use a client side templating engine.  It appears vis supports several: http://visjs.org/docs/timeline/#Templates\n2. Render all html on the server side using Go templates, client-side only deals with data.\n3. Keep the javascript as-is, but sanitize all text on the server side.\n\nGenerally I\u0027d prefer #2 but I don\u0027t know how feasible that is.  #1 might be okay if the templating engine is low cost (in terms of perceived user latency), but I have doubts about that.  #3 is probably the practical option, but we just need to be very careful everything is sanitized.",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "87979538_0788a724",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "Move this after L23 maybe\n\nIt looks like the flicker is happening because the time.js code blocks the tab rendering code:\nhttps://screenshot.googleplex.com/8JOWohPCa9W",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4674d912_3af2bc1f",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "Would be good to default this to some text like \"Rendering...\", which is to be removed after rendering is done, just to show progress is being made.",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "737cbe1b_66e5ec40",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "nit: The Godoc commenting convention is always\n// stepData is extra data to....\n// ...\ntype stepData ....\n\nThe first word is always the thing that is being described.\n\nhttps://blog.golang.org/godoc-documenting-go-code",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fb1694b0_f3c73905",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "Semantically though, what is a group, and what is an item? What is their role in the timeline relative to the part of the build they are in? (add as comment)",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "582c41a7_7475b031",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "Started.Unix()?",
+      "range": {
+        "startLine": 222,
+        "startChar": 34,
+        "endLine": 222,
+        "endChar": 28
+      },
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7110bd9_f67b34f8",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T22:41:50Z",
+      "side": 1,
+      "message": "it\u0027d be less loc to json.Marshal() the whole timelineJSON, and refer group/items in the code as tl.group, tl.items.\n\nie\nreturn json.Marshal(timelineJSON{Groups: groups, Items: items})",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
