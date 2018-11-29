@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "390a2eae_ae7f7629",
+        "filename": "lucicfg/testdata/errors.star",
+        "patchSetId": 4
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-29T02:05:57Z",
+      "side": 1,
+      "message": "ah crap...\n\nFor reasons unknown, this is always final line in the file. I think I\u0027ll need to deep-copy stack trace when capturing it.",
+      "range": {
+        "startLine": 20,
+        "startChar": 26,
+        "endLine": 20,
+        "endChar": 29
+      },
+      "revId": "07b4c169944e73d2ff17d5b27b4a861d4a434d4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
