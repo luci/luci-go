@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d400f72_b35d226b",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-29T07:45:35Z",
+      "side": 1,
+      "message": "this repeating pattern convinces me more in https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1354524/5/lucicfg/generator.go#95",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 26
+      },
+      "revId": "9d17add0e8c3513e768b3549ccbd7553df8f3c2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bd278bb_9fda3b2e",
+        "filename": "lucicfg/state.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-29T07:45:35Z",
+      "side": 1,
+      "message": "these configs need to be written to files. This CL doesn\u0027t do that, and at the same time the knowledge that it needs to be done is only in your head. This may not scale if there is a lot of such pending items.\nWhen I did something like this during buildbucket short bucket name refactoring, i marked all to-be-updated places with todos, as a guarantee that i will not forget. It helped because i could find all such places, and it actually prevented a minor outage",
+      "revId": "9d17add0e8c3513e768b3549ccbd7553df8f3c2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
