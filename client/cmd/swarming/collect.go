@@ -351,6 +351,11 @@ func summarizeResultsPython(results []taskResult) ([]byte, error) {
 	var shards []*swarming.SwarmingRpcsTaskResult
 
 	for _, result := range results {
+		if result.result != nil {
+			// ExitCode and Duration are necessary in swarming recipe modules.
+			result.result.ForceSendFields = append(result.result.ForceSendFields, "ExitCode", "Duration")
+		}
+
 		shards = append(shards, result.result)
 	}
 
