@@ -114,6 +114,15 @@
       {{ end }}
     </h1>
 
+    {{ if .BugLinks }}
+    <div>
+    File a bug for this build [
+        {{ range .BugLinks }}
+          <a href="{{ .URL }}">{{ .Label }}</a>
+        {{ end }}
+    ]
+    </div>
+    {{ end }}
     <div class="column">
 
       <h2>Results:</h2>

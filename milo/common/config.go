@@ -45,11 +45,18 @@ import (
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
+type Link struct {
+	Text string
+	Url string
+	Alt string
+}
+
 // Project is a datastore entity representing a single project.  Its children
 // are consoles.
 type Project struct {
 	ID      string `gae:"$id"`
 	LogoURL string
+	BuildBugLinks []Link
 }
 
 // Console is a datastore entity representing a single console.
@@ -517,6 +524,24 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	})
 	con, _ := itm.([]*Console)
 	return con, err
+}
+
+func GetProject(c context.Context, project string) (*Project, error) {
+	allowed, err := IsAllowed(c, project)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		// Use canned error? IsAllowed should return this when returning false?
+		return nil, errors.New("no access")
+	}
+	proj := Project{
+		ID: project,
+	}
+	if err := datastore.Get(c, &proj); err != nil {
+		return nil, err
+	}
+	return &proj, nil
 }
 
 // GetAllProjects returns all projects the current user has access to.

@@ -26,6 +26,19 @@ message Project {
   // This field is optional. The logo URL must have a host of
   // storage.googleapis.com.
   string logo_url = 4;
+
+  // Links to put on build pages presumably to file a bug for the build.
+  // The URLs of these links are interpolated with values specific to the
+  // build. Supported interpolations are:
+  //
+  // {{.project}}
+  // {{.bucket}}
+  // {{.builder}}
+  // {{.numberOrId}}
+  //
+  // If any placeholder in the URL cannot be satisfied by the context of
+  // the build page then the link is not rendered.
+  repeated Link build_bug_links = 5;
 }
 
 // Link is a link to an internet resource, which will be rendered out as
