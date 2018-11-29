@@ -22,6 +22,30 @@
       "revId": "401459f75f2b2b90de450cccddee555442ee1229",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b5dd2da6_4635a6fc",
+        "filename": "vpython/python/command_line_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-11-29T21:43:56Z",
+      "side": 1,
+      "message": "No, every CommandLineFlag has an implied \u0027-\u0027 in front of it when it gets rendered (see the []string below, which is how it will be rendered).\n\nWith the exception of --help and --version, all python (and python3) flags are short-form (e.g. `-V`), so dropping the \u0027-\u0027 from everything makes sense. This also prevents us from needing to add \u0027-\u0027 when we parse a CLI which combines many short ops together (like `-vm pip` is `[(\"v\", \"\"), (\"m\", \"pip\")]` instead of `[(\"-v\", \"\"), (\"-m\", \"pip\")]`)",
+      "parentUuid": "24bc6e81_7d475a2a",
+      "range": {
+        "startLine": 201,
+        "startChar": 30,
+        "endLine": 201,
+        "endChar": 43
+      },
+      "revId": "401459f75f2b2b90de450cccddee555442ee1229",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
