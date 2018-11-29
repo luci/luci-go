@@ -22,6 +22,30 @@
       "revId": "abaa455a18e8e083369716d18f4406d9463b85fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1a8abd5_7870a4c2",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-29T14:33:48Z",
+      "side": 1,
+      "message": "i am surprised that code is still alive\nwe even have tasks using old code path\n\nhttps://chromium-swarm.appspot.com/tasklist?c\u003dname\u0026c\u003dstate\u0026c\u003dcreated_ts\u0026c\u003dduration\u0026c\u003dpending_time\u0026c\u003dpool\u0026c\u003dbot\u0026c\u003drecipe_repository-tag\u0026et\u003d1543501860000\u0026f\u003drecipe_repository-tag%3Ahttps%3A%2F%2Fchromium.googlesource.com%2Fchromium%2Ftools%2Fbuild.git\u0026l\u003d50\u0026n\u003dtrue\u0026q\u003drecipe_repository\u0026s\u003dcreated_ts%3Adesc\u0026st\u003d1543415460000\n\ni will fix that\n\ni see no benefits of fetching recipes from git, as opposed to cipd, so yes, i think we should remove git recipes completely",
+      "parentUuid": "bbf9fea8_291d0625",
+      "range": {
+        "startLine": 272,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 20
+      },
+      "revId": "abaa455a18e8e083369716d18f4406d9463b85fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
