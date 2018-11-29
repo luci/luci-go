@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "24bc6e81_7d475a2a",
+        "filename": "vpython/python/command_line_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-29T21:37:52Z",
+      "side": 1,
+      "message": "er... does this mean python will be called as \"python -version\" or as \"python --version\"?\n\nBecause \"python -version\" doesn\u0027t work...",
+      "range": {
+        "startLine": 201,
+        "startChar": 30,
+        "endLine": 201,
+        "endChar": 43
+      },
+      "revId": "401459f75f2b2b90de450cccddee555442ee1229",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
