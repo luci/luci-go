@@ -5,10 +5,13 @@
 package frontend
 
 import (
+	"bytes"
 	"fmt"
+	"go.chromium.org/luci/milo/common/model"
 	"net/http"
 	"strconv"
 	"strings"
+	"text/template"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
@@ -157,11 +160,51 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 	if err != nil {
 		return err
 	}
+	project, err := common.GetProject(c.Context, c.Params.ByName("project"))
+	if err != nil {
+		return err
+	}
+
+	links := makeLinks(c, project.BuildBugLinks);
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix(c.Context)
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build": build,
+		"BugLinks": links,
 	})
 	return nil
+}
+
+type stringMap map[string]string
+
+func makeLinks(c *router.Context, links []common.Link) ui.LinkSet {
+	var m = make(stringMap).populate(c, "project", "bucket", "builder", "numberOrId")
+
+	var uiLinks ui.LinkSet
+	for _, link := range links {
+		tmpl, err := template.New("main").Option("missingkey=error").Parse(link.Url)
+		if err != nil {
+			logging.WithError(err).Warningf(c.Context, "Unable to create template for link %s", link.Url)
+			continue
+		}
+		var output bytes.Buffer
+		err = tmpl.Execute(&output, m)
+		if err != nil {
+			logging.WithError(err).Warningf(c.Context, "Unable to populate buglink template %s with %s", link.Url, m)
+			continue
+		}
+		// Should alt and img be forwarded here?
+		uiLinks = append(uiLinks, &ui.Link{Link: model.Link{Label: link.Text, URL: output.String()}})
+	}
+	return uiLinks
+}
+
+func (m stringMap) populate(c *router.Context, keys ...string) stringMap {
+	for _, key := range keys {
+		if value := c.Params.ByName(key); value != "" {
+			m[key] = value
+		}
+	}
+	return m
 }
