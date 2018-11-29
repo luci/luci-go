@@ -29,13 +29,22 @@ import (
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
 type State struct {
-	Inputs Inputs // all inputs, exactly as passed to Generate.
+	Inputs  Inputs            // all inputs, exactly as passed to Generate.
+	Configs map[string]string // all generated config files, populated at the end
 
-	errors errors.MultiError // all errors emitted during the generation (if any)
+	errors     errors.MultiError // all errors emitted during the generation (if any)
+	generators generators        // callbacks that generate config files based on state
 }
 
+// clear resets the state.
 func (s *State) clear() {
 	*s = State{Inputs: s.Inputs}
+}
+
+// err adds an error to the list of errors and returns the list as MultiError.
+func (s *State) err(err error) error {
+	s.errors = append(s.errors, err)
+	return s.errors
 }
 
 var stateCtxKey = "lucicfg.State"
