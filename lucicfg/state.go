@@ -18,6 +18,8 @@ import (
 	"context"
 
 	"go.starlark.net/starlark"
+
+	"go.chromium.org/luci/common/errors"
 )
 
 // State is mutated throughout execution of the script and at the end contains
@@ -27,9 +29,8 @@ import (
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
 type State struct {
-	Inputs Inputs // all inputs, exactly as passed to Generate.
-
-	Greetings []string // this is just for demo purposes
+	Inputs Inputs            // all inputs, exactly as passed to Generate.
+	Errors errors.MultiError // all errors emitted during the generation (if any)
 }
 
 func (s *State) clear() {
