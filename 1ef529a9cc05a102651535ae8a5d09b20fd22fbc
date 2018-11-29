@@ -22,6 +22,30 @@
       "revId": "1ef529a9cc05a102651535ae8a5d09b20fd22fbc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8450af3d_2939f412",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-29T22:17:22Z",
+      "side": 1,
+      "message": "Yeah, you are right.\n\nI did different thing though: \u0027.errors\u0027 is now hidden field of State. They are returned exclusively through (..., error).",
+      "parentUuid": "cc425bc3_157aac61",
+      "range": {
+        "startLine": 95,
+        "startChar": 12,
+        "endLine": 95,
+        "endChar": 26
+      },
+      "revId": "1ef529a9cc05a102651535ae8a5d09b20fd22fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
