@@ -193,6 +193,15 @@ func TestParseCommandLine(t *testing.T) {
 			},
 			[]string{"--", "--", "--", "--"},
 		},
+
+		// --version is a special multi-character flag.
+		{[]string{"--version"},
+			CommandLine{
+				Target: NoTarget{},
+				Flags:  []CommandLineFlag{f("-version")},
+			},
+			[]string{"--version"},
+		},
 	}
 
 	failures := []struct {

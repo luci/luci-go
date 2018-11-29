@@ -256,6 +256,10 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 		return
 	}
 
+	// Some cases will set this to true if `r` is determined to just be a no-value
+	// single-character flag
+	isSingleCharFlag := false
+
 	switch r {
 	case 'c':
 		// Inline command target.
@@ -289,10 +293,25 @@ func (cl *CommandLine) parseSingleFlag(fs *parsedFlagState) error {
 			break
 		}
 
-		// Single "O", fall through to single-flag parsing.
-		fallthrough
+		// Single "O", do normal single-flag parsing.
+		isSingleCharFlag = true
+
+	case '-':
+		// handle the case of "--version", which is an atypical many-character flag.
+		if fs.flag == "version" {
+			fs.flag = ""
+			cl.Flags = append(cl.Flags, CommandLineFlag{"-version", ""})
+			break
+		}
+
+		// Not sure what this could be, but fall through none the less.
+		isSingleCharFlag = true
 
 	default:
+		isSingleCharFlag = true
+	}
+
+	if isSingleCharFlag {
 		// One-argument Python flags. If there are more characters in "flag",
 		// don't consume the entire flag; instead, replace it with the remainder
 		// for subsequent parses. This handles cases like "-vvc <script>".
