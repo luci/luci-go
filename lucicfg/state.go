@@ -29,8 +29,11 @@ import (
 // Starlark side. Starlark code operates with the state exclusively through
 // these functions.
 type State struct {
-	Inputs Inputs            // all inputs, exactly as passed to Generate.
-	Errors errors.MultiError // all errors emitted during the generation (if any)
+	Inputs  Inputs            // all inputs, exactly as passed to Generate.
+	Errors  errors.MultiError // all errors emitted during the generation (if any)
+	Configs map[string]string // all generated config files, populated at the end
+
+	generators generators // callbacks that generate config files based on state
 }
 
 func (s *State) clear() {
