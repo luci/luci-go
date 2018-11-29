@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cc425bc3_157aac61",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-29T07:10:18Z",
+      "side": 1,
+      "message": "we always return state.Errors as err if it is not empty\nWe also return the state itself, never with errors.\nCurrently the func docstring doesn\u0027t say that the returned state may not have errors.\nWould it be simpler to just return state by value (never nil) and let the caller deal with its .Errors?",
+      "range": {
+        "startLine": 95,
+        "startChar": 12,
+        "endLine": 95,
+        "endChar": 26
+      },
+      "revId": "1ef529a9cc05a102651535ae8a5d09b20fd22fbc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
