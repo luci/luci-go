@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "e140d51f_c257e817",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-29T23:30:27Z",
+      "side": 1,
+      "message": "(I just want) to be compatible with google.golang.org/api/compute/v1 without conversion. compute.AttachedDiskInitializeParams.DiskSizeGb is an int64.\n\nAlso this is in gigabytes. I think 2^63-1 GB \u003e 1 YB.",
+      "parentUuid": "94fa78ec_d2c65293",
+      "range": {
+        "startLine": 17,
+        "startChar": 2,
+        "endLine": 17,
+        "endChar": 7
+      },
+      "revId": "04501b91c4593755b6295293d168785466450078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1913d6e3_017f82e6",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "04501b91c4593755b6295293d168785466450078",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eeb6d7d8_e2d7ac1e",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-29T23:30:27Z",
+      "side": 1,
+      "message": "This package doesn\u0027t care what GCE requires, it creates a *compute.Instance even if that instance would be rejected by the GCE API (it\u0027s still a valid call, even if it produces no valid virtual machine). If you use the rpc package to create the VMs entities then this will be checked.",
+      "parentUuid": "1913d6e3_017f82e6",
+      "range": {
+        "startLine": 88,
+        "startChar": 1,
+        "endLine": 88,
+        "endChar": 25
+      },
+      "revId": "04501b91c4593755b6295293d168785466450078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
