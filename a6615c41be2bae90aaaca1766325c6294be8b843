@@ -2,6 +2,166 @@
   "comments": [
     {
       "key": {
+        "uuid": "93d33172_5d16dc60",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "^^ see comment in .proto file about doing Ref: convertToRef(ci.Branch)",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "377bec3f_5e734cf8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "i think just \ndata :\u003d map[string]string{ ... } will do just fine.",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 2
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ee5bec28_6f2bba4a",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "changeId and req.FilePath is a string, so you need pathEscape instead of just concatenation.",
+      "range": {
+        "startLine": 153,
+        "startChar": 9,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c1a57487_0316623d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "ditto for pathEscape",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b9836b8d_10cce52c",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "wrong",
+      "range": {
+        "startLine": 173,
+        "startChar": 36,
+        "endLine": 173,
+        "endChar": 55
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3d55ff66_37db9cee",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "are you sure? It used to return something else before.\nupdate: TIL Gerrit API has changed, indeed\nhttps://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f26aaef7_101fdca7",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "raw bytes",
+      "range": {
+        "startLine": 198,
+        "startChar": 51,
+        "endLine": 198,
+        "endChar": 55
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7e5db98_0010a81d",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "Comment removed by: Andrii Shyshkalov; Reason: test",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "bc70c62b_07b7b244",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -19,6 +179,120 @@
         "endLine": 32,
         "endChar": 32
       },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "85fbe4ce_0640eafb",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "Personal pet peeve: use ref instead of branch, even if Gerrit API doesn\u0027t (gerrit API should!)\n\nSo, please replace with ref and actually ensure it has refs/heads/ prefix before returning.\n\nIn practice, Gerrit API uses \"\u003cbranch\u003e\" for refs/heads/\u003cbranch\u003e and otherwise complete ref/what/ever.",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 20
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0b77f862_fff36a45",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "isn\u0027t there also WIP?",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0337eaff_e15fcabe",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "ditto, please use ref.",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 15
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f145cff0_bf548792",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "don\u0027t use change_id here. Should be number instead. change_id isn\u0027t unique, even if you annotate it with project and target ref.\n\nIf you do it in this CL, then please also add optional project field. Gerrit appreciates when REST API specifies \"project~number\", because it provides for more efficient routing.",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecce63f1_0429153b",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "ditto, incl. about project field.",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c974b169_3ff60065",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-29T23:39:31Z",
+      "side": 1,
+      "message": "ditto.",
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
