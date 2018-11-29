@@ -16,7 +16,10 @@ package lucicfg
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"fmt"
+	"sort"
 	"strings"
 	"testing"
 
@@ -46,7 +49,7 @@ func TestAllStarlark(t *testing.T) {
 		TestsDir: "testdata",
 
 		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
-			_, err := Generate(context.Background(), Inputs{
+			state, err := Generate(context.Background(), Inputs{
 				// Make sure error messages have the original scripts name by loading the
 				// test script under its true name.
 				Code:  interpreter.MemoryLoader(map[string]string{path: body}),
@@ -85,6 +88,26 @@ func TestAllStarlark(t *testing.T) {
 				}
 				return true
 			})
+			if err != nil {
+				return nil // the error has been reported already
+			}
+
+			// If was expecting to see some configs, assert we did see them.
+			if expectCfg := readCommentBlock(body, "Expect configs:"); expectCfg != "" {
+				files := make([]string, 0, len(state.Configs))
+				for f := range state.Configs {
+					files = append(files, f)
+				}
+				sort.Strings(files)
+				got := bytes.Buffer{}
+				for _, f := range files {
+					fmt.Fprintf(&got, "=== %s\n", f)
+					fmt.Fprintf(&got, state.Configs[f])
+					fmt.Fprintf(&got, "===\n\n")
+				}
+				errorOnDiff(t, got.String(), expectCfg)
+			}
+
 			return nil
 		},
 	})
