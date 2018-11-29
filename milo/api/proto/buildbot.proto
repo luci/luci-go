@@ -70,6 +70,8 @@ message BuildbotBuildsRequest {
   // to deprecate:
   // - slave info
   bool exclude_deprecated = 10;
+  // If true, turn off emulation mode.
+  bool no_emulation = 11;
 }
 
 // The response message for multiple builds in a builder.
