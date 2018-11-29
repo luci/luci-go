@@ -356,13 +356,6 @@
             "AriaLabel": "build.build"
           },
           "Status": "Failure",
-          "MainLink": [
-            {
-              "Label": "stdout",
-              "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/stdout",
-              "AriaLabel": "log link for stdout"
-            }
-          ],
           "PendingTime": {
             "Started": "0001-01-01T00:00:00Z",
             "Finished": "0001-01-01T00:00:00Z",
@@ -375,7 +368,66 @@
           },
           "Type": "Step",
           "Text": null,
-          "Children": [],
+          "Children": [
+            {
+              "Label": {
+                "Label": "generate",
+                "URL": "",
+                "AriaLabel": "build.build.generate"
+              },
+              "Status": "Success",
+              "MainLink": [
+                {
+                  "Label": "stdout",
+                  "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/steps/generate/0/stdout",
+                  "AriaLabel": "log link for stdout"
+                }
+              ],
+              "PendingTime": {
+                "Started": "0001-01-01T00:00:00Z",
+                "Finished": "0001-01-01T00:00:00Z",
+                "Duration": 0
+              },
+              "ExecutionTime": {
+                "Started": "2016-11-14T22:37:16.329999872Z",
+                "Finished": "2016-11-14T22:37:18.329999872Z",
+                "Duration": 2000000000
+              },
+              "Type": "Step",
+              "Text": null,
+              "Children": [],
+              "Collapsed": true
+            },
+            {
+              "Label": {
+                "Label": "compile",
+                "URL": "",
+                "AriaLabel": "build.build.compile"
+              },
+              "Status": "Failure",
+              "MainLink": [
+                {
+                  "Label": "stdout",
+                  "URL": "/swarming/task/build-nested/steps/build/0/steps/build/0/steps/compile/0/stdout",
+                  "AriaLabel": "log link for stdout"
+                }
+              ],
+              "PendingTime": {
+                "Started": "0001-01-01T00:00:00Z",
+                "Finished": "0001-01-01T00:00:00Z",
+                "Duration": 0
+              },
+              "ExecutionTime": {
+                "Started": "2016-11-14T22:37:18.329999872Z",
+                "Finished": "2016-11-14T22:37:58.5Z",
+                "Duration": 40170000128
+              },
+              "Type": "Step",
+              "Text": null,
+              "Children": [],
+              "Collapsed": false
+            }
+          ],
           "Collapsed": false
         },
         {
@@ -454,6 +506,14 @@
     },
     {
       "GroupName": "build.build",
+      "Property": null
+    },
+    {
+      "GroupName": "build.build.generate",
+      "Property": null
+    },
+    {
+      "GroupName": "build.build.compile",
       "Property": null
     },
     {
