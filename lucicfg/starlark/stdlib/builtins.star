@@ -12,5 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def say_hi(msg):
-  __native__.emit_greeting(msg)
+# Nothing here for now.
