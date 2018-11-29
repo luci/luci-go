@@ -46,6 +46,30 @@
       "revId": "abaa455a18e8e083369716d18f4406d9463b85fe",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c647c05_e4ec6b03",
+        "filename": "buildbucket/proto/build.proto",
+        "patchSetId": 2
+      },
+      "lineNbr": 276,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-11-29T15:22:41Z",
+      "side": 1,
+      "message": "upon further investigation, there is still 11 cr-buildbukcet.cfg that use repository.\nI\u0027ve filed crbug.com/910127 for the cleanup, but decided not to do it now.\n\nI intend to motivate users to update their configs by the absence of this feature.",
+      "parentUuid": "a1a8abd5_7870a4c2",
+      "range": {
+        "startLine": 272,
+        "startChar": 4,
+        "endLine": 276,
+        "endChar": 20
+      },
+      "revId": "abaa455a18e8e083369716d18f4406d9463b85fe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
