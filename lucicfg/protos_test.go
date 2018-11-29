@@ -21,8 +21,18 @@ import (
 
 	"go.chromium.org/luci/starlark/interpreter"
 
+	_ "go.chromium.org/luci/lucicfg/testproto"
+
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+// Register protos used exclusively from tests.
+func init() {
+	publicProtos["test.proto"] = struct {
+		protoPkg string
+		goPath   string
+	}{"testproto", "go.chromium.org/luci/lucicfg/testproto/test.proto"}
+}
 
 func TestProtosAreImportable(t *testing.T) {
 	t.Parallel()

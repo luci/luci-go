@@ -19,6 +19,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucicfg"
@@ -28,27 +29,20 @@ import (
 // It's just a tiny example for now.
 
 const input = `
-load("@stdlib//internal/error.star", "error")
+load("@proto//luci/config/project_config.proto", config_pb="config")
 
-def func1():
-	error("hello %s", "world")
-
-def capture_stack():
-	return stacktrace()
-
-def func2():
-	return capture_stack()
-
-s = func2()
-
-func1()
-error("another err", stack=s)
+def gen(ctx):
+	ctx.config_set['project.cfg'] = config_pb.ProjectCfg(
+			name = 'test',
+			access = ['group:all'],
+	)
+core.generator(impl = gen)
 `
 
 func main() {
 	ctx := context.Background()
 
-	_, err := lucicfg.Generate(ctx, lucicfg.Inputs{
+	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code: interpreter.MemoryLoader(map[string]string{
 			"main.star": input,
 		}),
@@ -66,5 +60,19 @@ func main() {
 			return true
 		})
 		os.Exit(1)
+	}
+
+	files := make([]string, 0, len(state.Configs))
+	for f := range state.Configs {
+		files = append(files, f)
+	}
+	sort.Strings(files)
+
+	for _, f := range files {
+		fmt.Println("--------------------------------------------------")
+		fmt.Println(f)
+		fmt.Println("--------------------------------------------------")
+		fmt.Print(state.Configs[f])
+		fmt.Println("--------------------------------------------------")
 	}
 }

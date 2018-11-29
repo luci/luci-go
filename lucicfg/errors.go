@@ -64,7 +64,7 @@ func init() {
 		if err := call.unpack(2, &msg, &stack); err != nil {
 			return nil, err
 		}
-		call.State.errors = append(call.State.errors, &Error{
+		call.State.err(&Error{
 			Msg:   msg.GoString(),
 			Stack: stack,
 		})
