@@ -40,6 +40,9 @@ type Inputs struct {
 }
 
 // Generate interprets the high-level config.
+//
+// Returns a multi-error with all captured errors. Some of them may implement
+// BacktracableError interface.
 func Generate(ctx context.Context, in Inputs) (*State, error) {
 	state := &State{Inputs: in}
 	ctx = withState(ctx, state)
@@ -47,10 +50,11 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	// All available functions implemented in go.
 	predeclared := starlark.StringDict{
 		// Part of public API of the generator.
-		"fail":    builtins.Fail,
-		"proto":   starlarkproto.ProtoLib()["proto"],
-		"struct":  builtins.Struct,
-		"to_json": builtins.ToJSON,
+		"fail":       builtins.Fail,
+		"proto":      starlarkproto.ProtoLib()["proto"],
+		"stacktrace": builtins.Stacktrace,
+		"struct":     builtins.Struct,
+		"to_json":    builtins.ToJSON,
 
 		// '__native__' is NOT public API. It should be used only through public
 		// @stdlib functions.
@@ -75,16 +79,21 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		ThreadModifier: in.testThreadModified,
 	}
 	if err := intr.Init(ctx); err != nil {
-		return nil, err
+		state.errors = append(state.errors, err)
+		return nil, state.errors
 	}
 	if _, err := intr.LoadModule(ctx, interpreter.MainPkg, in.Entry); err != nil {
-		return nil, err
+		state.errors = append(state.errors, err)
+		return nil, state.errors
 	}
 
 	// TODO(vadimsh): There'll likely be more stages of the execution. LoadModule
 	// above only loads all starlark code, we may want to call some of callbacks
 	// it has registered.
 
+	if len(state.errors) != 0 {
+		return nil, state.errors
+	}
 	return state, nil
 }
 
