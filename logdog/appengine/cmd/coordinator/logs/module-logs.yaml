@@ -21,6 +21,9 @@ resources:
   memory_gb: 4
   disk_size_gb: 10
 
+automatic_scaling:
+  min_num_instances: 4
+
 inbound_services:
   - warmup
 
