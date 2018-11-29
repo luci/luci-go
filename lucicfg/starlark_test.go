@@ -15,12 +15,18 @@
 package lucicfg
 
 import (
+	"bufio"
 	"context"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/sergi/go-diff/diffmatchpatch"
 
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/starlark/interpreter"
 	"go.chromium.org/luci/starlark/starlarktest"
 )
@@ -41,9 +47,12 @@ func TestAllStarlark(t *testing.T) {
 		TestsDir: "testdata",
 
 		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
+			// Use slash path to make stack traces look uniform across OSes.
+			path = filepath.ToSlash(path)
+
 			_, err := Generate(context.Background(), Inputs{
-				// Make sure error messages have the original scripts name by loading the
-				// test script under its true name.
+				// Make sure error messages have the original scripts name by loading
+				// the test script under its true name.
 				Code:  interpreter.MemoryLoader(map[string]string{path: body}),
 				Entry: path,
 
@@ -53,7 +62,70 @@ func TestAllStarlark(t *testing.T) {
 					starlarktest.HookThread(th, t)
 				},
 			})
-			return err
+
+			// If test was expected to fail on Starlark side, make sure it did, in
+			// an expected way.
+			if expectErr := readCommentBlock(body, "Expect errors:"); expectErr != "" {
+				allErrs := strings.Builder{}
+				errors.WalkLeaves(err, func(err error) bool {
+					if bt, ok := err.(BacktracableError); ok {
+						allErrs.WriteString(bt.Backtrace())
+					} else {
+						allErrs.WriteString(err.Error())
+					}
+					allErrs.WriteString("\n\n")
+					return true
+				})
+				errorOnDiff(t, allErrs.String(), expectErr)
+				return nil
+			}
+
+			// Otherwise just report all errors to Mr. T.
+			errors.WalkLeaves(err, func(err error) bool {
+				if bt, ok := err.(BacktracableError); ok {
+					t.Errorf("%s\n", bt.Backtrace())
+				} else {
+					t.Errorf("%s\n", err)
+				}
+				return true
+			})
+			return nil
 		},
 	})
+}
+
+// readCommentBlock reads a comment block that start with "# <hdr>\n".
+//
+// Return empty string if there's no such block.
+func readCommentBlock(script, hdr string) string {
+	scanner := bufio.NewScanner(strings.NewReader(script))
+	for scanner.Scan() && scanner.Text() != "# "+hdr {
+		continue
+	}
+	sb := strings.Builder{}
+	for scanner.Scan() {
+		if line := scanner.Text(); strings.HasPrefix(line, "#") {
+			sb.WriteString(strings.TrimPrefix(line[1:], " "))
+			sb.WriteRune('\n')
+		}
+	}
+	return sb.String()
+}
+
+// errorOnDiff emits an error to T if got != exp.
+func errorOnDiff(t *testing.T, got, exp string) {
+	t.Helper()
+
+	got = strings.TrimSpace(got)
+	exp = strings.TrimSpace(exp)
+	switch {
+	case got == "":
+		t.Errorf("Got nothing, but was expecting:\n\n%s\n", exp)
+	case got != exp:
+		dmp := diffmatchpatch.New()
+		diffs := dmp.DiffMain(exp, got, false)
+		t.Errorf(
+			"Got:\n\n%s\n\nWas expecting:\n\n%s\n\nDiff:\n\n%s\n",
+			got, exp, dmp.DiffPrettyText(diffs))
+	}
 }

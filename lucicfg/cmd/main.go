@@ -20,34 +20,51 @@ import (
 	"fmt"
 	"os"
 
-	"go.starlark.net/starlark"
-
+	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/lucicfg"
 	"go.chromium.org/luci/starlark/interpreter"
 )
 
 // It's just a tiny example for now.
 
+const input = `
+load("@stdlib//internal/error.star", "error")
+
+def func1():
+	error("hello %s", "world")
+
+def capture_stack():
+	return stacktrace()
+
+def func2():
+	return capture_stack()
+
+s = func2()
+
+func1()
+error("another err", stack=s)
+`
+
 func main() {
 	ctx := context.Background()
 
-	state, err := lucicfg.Generate(ctx, lucicfg.Inputs{
+	_, err := lucicfg.Generate(ctx, lucicfg.Inputs{
 		Code: interpreter.MemoryLoader(map[string]string{
-			"LUCI.star": `say_hi("Hello, world")`,
+			"main.star": input,
 		}),
-		Entry: "LUCI.star",
+		Entry: "main.star",
 	})
 
+	// Report all encountered errors, with stack traces.
 	if err != nil {
-		if evalErr, _ := err.(*starlark.EvalError); evalErr != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", evalErr.Backtrace())
-		} else {
-			fmt.Fprintf(os.Stderr, "%s\n", err)
-		}
+		errors.WalkLeaves(err, func(err error) bool {
+			if bt, ok := err.(lucicfg.BacktracableError); ok {
+				fmt.Fprintf(os.Stderr, "%s\n\n", bt.Backtrace())
+			} else {
+				fmt.Fprintf(os.Stderr, "%s\n\n", err)
+			}
+			return true
+		})
 		os.Exit(1)
-	}
-
-	for _, g := range state.Greetings {
-		fmt.Printf("Starlark said: %s\n", g)
 	}
 }
