@@ -267,9 +267,19 @@ message BuildInfra {
     string prefix = 3;
   }
 
+  // Recipe-specific information.
+  message Recipe {
+    // CIPD package name containing the recipe used to run this build.
+    string cipd_package = 1;
+
+    // Name of the recipe used to run this build.
+    string name = 2;
+  }
+
   Buildbucket buildbucket = 1;
   Swarming swarming = 2;
   LogDog logdog = 3;
+  Recipe recipe = 4;
 }
 
 // Identifies a builder.
