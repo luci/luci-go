@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "623009ed_31411e36",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T19:01:51Z",
+      "side": 1,
+      "message": "😭",
+      "parentUuid": "6cd87085_8687c01a",
+      "revId": "9c64106eb5efa22944f73a6c0b667ba018feb002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dd68a9c5_9132f998",
         "filename": "milo/buildsource/buildbot/grpc.go",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "9c64106eb5efa22944f73a6c0b667ba018feb002",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "355ba976_fb54bd4a",
+        "filename": "milo/buildsource/buildbot/grpc.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-29T19:01:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dd68a9c5_9132f998",
+      "revId": "9c64106eb5efa22944f73a6c0b667ba018feb002",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
