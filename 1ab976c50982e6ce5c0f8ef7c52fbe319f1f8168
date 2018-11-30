@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "bc137287_7a42b0d9",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-30T03:09:08Z",
+      "side": 1,
+      "message": "Reuse isn\u0027t that bad, but I just realized collision is a much bigger problem. It\u0027s unlikely that the same suffix is generated for two VMs at the same time (esp. if we increase suffix length), but the results would be surprising and hard to debug if that did happen.\n\nI think we can solve it by using ID instead of prefix. Recall that ID is prefix-n. So if the config says to use prefix chrome-trusty to create 1000 VMs, the entity IDs will be chrome-trusty-0 to chrome-trusty-999. If we use ID-suffix instead of prefix-suffix we achieve the two important goals:\n\n1. Users won\u0027t think a replacement VM is the same VM. chrome-trusty-0-abcd may be replaced with e.g. chrome-trusty-0-wxyz. It\u0027s clear that it\u0027s the 0th VM but also that it\u0027s not the same VM as before.\n\n2. Collisions are impossible. Even if we happen to generate the same suffix for two entities, names will differ because of the number.\n\nOf course, reuse is still possible, but we can lower the probability by lengthening the suffix as you propose.",
+      "parentUuid": "43871776_fd4ddcc1",
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "73a3f497_9be3bf08",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "7e8151c9_ddfa3f2c",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-30T03:09:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73a3f497_9be3bf08",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 2
+      },
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a53c0546_5bb2644a",
         "filename": "gce/appengine/backend/queues_test.go",
         "patchSetId": 1
@@ -62,6 +104,30 @@
       "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "500804db_2435bc0f",
+        "filename": "gce/appengine/backend/queues_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-30T03:09:08Z",
+      "side": 1,
+      "message": "Both this and the above case create, they only differ by whether the name existed or not. Added nested convey.",
+      "parentUuid": "a53c0546_5bb2644a",
+      "range": {
+        "startLine": 105,
+        "startChar": 12,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
