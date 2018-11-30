@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1673519d_e7f0422f",
+        "filename": "buildbucket/proto/rpc.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-30T19:48:26Z",
+      "side": 1,
+      "message": "something in your environment is out-of-date, this is a regression",
+      "range": {
+        "startLine": 12,
+        "startChar": 1,
+        "endLine": 12,
+        "endChar": 35
+      },
+      "revId": "68505bb3e6c699ebc987ab9bd621ffe408109421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
