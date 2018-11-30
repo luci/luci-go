@@ -215,7 +215,14 @@ func (m *Text) GetLines() []*Text_Line {
 	return nil
 }
 
+//
 // Contiguous text lines and their delimiters.
+//
+// The array of lines follows the following pattern:
+//   - 0 or 1 completion lines completing the last LogEntry's Text (i.e. with
+//     a delimiter but not itself the full line)
+//   - any number of complete lines (i.e. with delimiter, each its own line)
+//   - 0 or 1 partial lines
 type Text_Line struct {
 	// The line's text content, not including its delimiter.
 	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
