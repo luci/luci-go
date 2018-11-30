@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "a09c3b82_848cae39",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Can you send me a link to an example of my running dev instance. I\u0027m not sure what I should be looking at without introspecting the pages to look for usages of this class name. Thanks.",
+      "parentUuid": "861c0077_9bfa0e1b",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "fb01a139_de63a6ed",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 7
@@ -33,6 +51,24 @@
       "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ce866bff_0267a9b4",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 7
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Went with practical #3 escaping Label and TextBR.",
+      "parentUuid": "fb01a139_de63a6ed",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "bd5fc42b_b80680c8",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "I\u0027m seeing a much shorter empty page rendering time on my machine that what you show in your screen shot.\n\nMoved the script tag. Done.",
+      "parentUuid": "87979538_0788a724",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4674d912_3af2bc1f",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 7
@@ -67,6 +121,24 @@
       "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "312c8088_291b24d1",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 7
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4674d912_3af2bc1f",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -87,6 +159,24 @@
     },
     {
       "key": {
+        "uuid": "2afbf5d3_080f8635",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 160,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Ah I see it:\n\n\"Notice this comment is a complete sentence that begins with the name of the element it describes.\"\n\nThanks, Done.",
+      "parentUuid": "737cbe1b_66e5ec40",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb1694b0_f3c73905",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 7
@@ -101,6 +191,24 @@
       "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e505487_bc19817a",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Expanded the explanation.",
+      "parentUuid": "fb1694b0_f3c73905",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -127,6 +235,30 @@
     },
     {
       "key": {
+        "uuid": "4637fbd7_5e88fbd8",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Not exactly, the Start and End being fed below take a few formats, the simplest of which is milliseconds since the epoch. I added a little helper function to make this more clear.\n\nDone.",
+      "parentUuid": "582c41a7_7475b031",
+      "range": {
+        "startLine": 222,
+        "startChar": 34,
+        "endLine": 222,
+        "endChar": 28
+      },
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7110bd9_f67b34f8",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 7
@@ -141,6 +273,24 @@
       "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b00d5084_b57811ad",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-11-30T18:57:10Z",
+      "side": 1,
+      "message": "Good idea.\nDone.",
+      "parentUuid": "f7110bd9_f67b34f8",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
