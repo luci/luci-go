@@ -22,6 +22,30 @@
       "revId": "68505bb3e6c699ebc987ab9bd621ffe408109421",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1f01aaf4_3a35902b",
+        "filename": "buildbucket/proto/rpc.pb.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-11-30T20:01:01Z",
+      "side": 1,
+      "message": "Updated.",
+      "parentUuid": "1673519d_e7f0422f",
+      "range": {
+        "startLine": 12,
+        "startChar": 1,
+        "endLine": 12,
+        "endChar": 35
+      },
+      "revId": "68505bb3e6c699ebc987ab9bd621ffe408109421",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
