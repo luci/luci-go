@@ -77,12 +77,12 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 		return nil, err
 	}
 
-	// During probing, we try and capture the output of "--version". If we do,
-	// and if we confirm that the "path" returned by the probe matches "lastPath",
-	// return this version along with the resolution.
+	// During probing, we try and capture the output of platform.python_version().
+	// If we do, and if we confirm that the "path" returned by the probe matches
+	// "lastPath", return this version along with the resolution.
 	if result.Path == lp.lastPath {
 		var err error
-		if result.Version, err = python.ParseVersionOutput(lp.lastOutput); err == nil {
+		if result.Version, err = python.ParseVersion(lp.lastOutput); err == nil {
 			logging.Debugf(c, "Detected Python version %q from probe candidate [%s]", result.Version, result.Path)
 		} else {
 			logging.Debugf(c, "Failed to parse version from probe candidate [%s]: %s", result.Path, err)
@@ -95,7 +95,7 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 // checkWrapper is a prober.CheckWrapperFunc that detects if a given path is a
 // "vpython" instance.
 //
-// It does this by running it "path --version" with CheckWrapperENV set. If
+// It does this by running it "path -c ...." with CheckWrapperENV set. If
 // the target is a "vpython" wrapper, it will immediately exit with a non-zero
 // value (see Main). If it is not a valid Python program, its behavior is
 // undefined. If it is a valid Pytohn instance, it will exit with a Python
@@ -107,7 +107,10 @@ func (lp *lookPath) look(c context.Context, target string) (*python.LookPathResu
 func (lp *lookPath) checkWrapper(c context.Context, path string, env environ.Env) (isWrapper bool, err error) {
 	env.Set(checkWrapperENV, "1")
 
-	cmd := exec.CommandContext(c, path, "--version")
+	// We use 'sys.write' instead of 'print' so this will work for both py2 and
+	// py3.
+	cmd := exec.CommandContext(c, path, "-c",
+		"import platform, sys; sys.stdout.write(platform.python_version())")
 	cmd.Env = env.Sorted()
 
 	output, err := cmd.CombinedOutput()

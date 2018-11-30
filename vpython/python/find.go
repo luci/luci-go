@@ -29,10 +29,11 @@ type LookPathResult struct {
 	// executable.
 	Path string
 
-	// Version, if not zero, is the Python version string. Standard "vpython"
-	// wrapper identification may choose to call Python with "--version" to
-	// identify it. If so, it may choose to populate this field to avoid redundant
-	// calls to "--version".
+	// Version, if not zero, is the Python version string. The most common (only?)
+	// LookPathFunc implementation (in go.chromium.org/luci/vpython/application/probe.go)
+	// calls the candidate Python to determine its version, and then stashes the
+	// result here to void redundant lookups if this LookPathResult ends up being
+	// selected.
 	Version Version
 }
 
