@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6a145ac5_96a164fd",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-11-30T22:58:46Z",
+      "side": 1,
+      "message": "nit: there\u0027s unnecessary unneeded redundant superfluous excess verbs here",
+      "range": {
+        "startLine": 33,
+        "startChar": 41,
+        "endLine": 34,
+        "endChar": 27
+      },
+      "revId": "254ffda633257d89b07ec007e734b263161e6653",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
