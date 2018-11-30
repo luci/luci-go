@@ -56,6 +56,10 @@ const currentManifestKeyVersion = 0
 // InvalidBuildIDURL is returned if a BuildID cannot be parsed and a URL generated.
 const InvalidBuildIDURL = "#invalid-build-id"
 
+func justATest() {
+	fmt.Printf("Unused")
+}
+
 // BuildSummary is a datastore model which is used for storing staandardized
 // summarized build data, and is used for backend-agnostic views (i.e. builders,
 // console). It contains only data that:
