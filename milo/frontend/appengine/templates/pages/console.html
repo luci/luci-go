@@ -208,8 +208,12 @@
           <div class="console-commit-description">
             <div class="console-commit-description-overlay">
               <p>
-                {{ range .DescLines }}
-                  {{ . }}<br>
+                {{ range $i, $line := .DescLines }}
+                  {{ if eq $i 0 }}
+                    <strong>{{ $line }}</strong><br>
+                  {{ else }}
+                    {{ $line }}<br>
+                  {{ end }}
                 {{ end }}
               </p>
             </div>
