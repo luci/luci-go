@@ -6,10 +6,10 @@ package gitiles
 import prpc "go.chromium.org/luci/grpc/prpc"
 
 import (
-	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
 	git "go.chromium.org/luci/common/proto/git"
+	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -523,6 +523,8 @@ type GitilesClient interface {
 	// Refs retrieves repo refs.
 	Refs(ctx context.Context, in *RefsRequest, opts ...grpc.CallOption) (*RefsResponse, error)
 	// Archive retrieves archived contents of the project.
+	//
+	// An archive is a shallow bundle of the contents of a repository.
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (*ArchiveResponse, error)
 }
 type gitilesPRPCClient struct {
@@ -602,6 +604,8 @@ type GitilesServer interface {
 	// Refs retrieves repo refs.
 	Refs(context.Context, *RefsRequest) (*RefsResponse, error)
 	// Archive retrieves archived contents of the project.
+	//
+	// An archive is a shallow bundle of the contents of a repository.
 	Archive(context.Context, *ArchiveRequest) (*ArchiveResponse, error)
 }
 

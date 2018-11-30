@@ -23,18 +23,18 @@ package swarming // import "go.chromium.org/luci/common/api/swarming/swarming/v1
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	context "golang.org/x/net/context"
+	ctxhttp "golang.org/x/net/context/ctxhttp"
+	gensupport "google.golang.org/api/gensupport"
+	googleapi "google.golang.org/api/googleapi"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	gensupport "google.golang.org/api/gensupport"
-	googleapi "google.golang.org/api/googleapi"
 )
 
 // Always reference these packages, just in case the auto-generated code
@@ -50,6 +50,7 @@ var _ = googleapi.Version
 var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
+var _ = ctxhttp.Do
 
 const apiId = "swarming:v1"
 const apiName = "swarming"
@@ -1861,10 +1862,7 @@ func (c *BotDeleteCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/delete")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
@@ -2025,10 +2023,7 @@ func (c *BotEventsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/events")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
@@ -2186,10 +2181,7 @@ func (c *BotGetCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/get")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
@@ -2395,10 +2387,7 @@ func (c *BotTasksCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/tasks")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
@@ -2606,10 +2595,7 @@ func (c *BotTerminateCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bot/{bot_id}/terminate")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"bot_id": c.botId,
@@ -2750,10 +2736,7 @@ func (c *BotsCountCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bots/count")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -2883,10 +2866,7 @@ func (c *BotsDimensionsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bots/dimensions")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3081,10 +3061,7 @@ func (c *BotsListCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "bots/list")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3310,10 +3287,7 @@ func (c *QueuesListCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "queues/list")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3446,10 +3420,7 @@ func (c *ServerDetailsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/details")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3571,10 +3542,7 @@ func (c *ServerGetBootstrapCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/get_bootstrap")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3696,10 +3664,7 @@ func (c *ServerGetBotConfigCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/get_bot_config")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3821,10 +3786,7 @@ func (c *ServerPermissionsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/permissions")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -3935,10 +3897,7 @@ func (c *ServerTokenCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "server/token")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -4056,10 +4015,7 @@ func (c *TaskCancelCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/cancel")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
@@ -4200,10 +4156,7 @@ func (c *TaskRequestCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/request")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
@@ -4351,10 +4304,7 @@ func (c *TaskResultCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/result")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
@@ -4495,10 +4445,7 @@ func (c *TaskStdoutCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "task/{task_id}/stdout")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	googleapi.Expand(req.URL, map[string]string{
 		"task_id": c.taskId,
@@ -4628,10 +4575,7 @@ func (c *TasksCancelCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/cancel")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -4797,10 +4741,7 @@ func (c *TasksCountCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/count")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -4982,10 +4923,7 @@ func (c *TasksGetStatesCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/get_states")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -5187,10 +5125,7 @@ func (c *TasksListCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/list")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -5392,10 +5327,7 @@ func (c *TasksNewCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/new")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("POST", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -5593,10 +5525,7 @@ func (c *TasksRequestsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/requests")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
@@ -5803,10 +5732,7 @@ func (c *TasksTagsCall) doRequest(alt string) (*http.Response, error) {
 	c.urlParams_.Set("prettyPrint", "false")
 	urls := googleapi.ResolveRelative(c.s.BasePath, "tasks/tags")
 	urls += "?" + c.urlParams_.Encode()
-	req, err := http.NewRequest("GET", urls, body)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("GET", urls, body)
 	req.Header = reqHeaders
 	return gensupport.SendRequest(c.ctx_, c.s.client, req)
 }
