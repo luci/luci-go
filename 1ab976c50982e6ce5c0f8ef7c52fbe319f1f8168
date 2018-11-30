@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "43871776_fd4ddcc1",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-30T02:35:30Z",
+      "side": 1,
+      "message": "can we increase the suffix length?\n\nIf we re-create 1000 bots daily, I think we\u0027ll get a re-use within a week or two.",
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73a3f497_9be3bf08",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-30T02:35:30Z",
+      "side": 1,
+      "message": "i think this can be done after ensuring hostname !\u003d \"\", since presumably VM exists implies it has a hostname.\nand then you\u0027d not need to have this check twice.",
+      "range": {
+        "startLine": 66,
+        "startChar": 1,
+        "endLine": 69,
+        "endChar": 2
+      },
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a53c0546_5bb2644a",
+        "filename": "gce/appengine/backend/queues_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-11-30T02:35:30Z",
+      "side": 1,
+      "message": "creates is more descriptive",
+      "range": {
+        "startLine": 105,
+        "startChar": 12,
+        "endLine": 105,
+        "endChar": 17
+      },
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
