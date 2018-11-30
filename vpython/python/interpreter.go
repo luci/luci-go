@@ -17,7 +17,6 @@ package python
 import (
 	"context"
 	"os/exec"
-	"strings"
 	"sync"
 
 	"go.chromium.org/luci/common/errors"
@@ -69,8 +68,8 @@ func (i *Interpreter) IsolatedCommand(c context.Context, target Target, args ...
 	return cmd
 }
 
-// GetVersion runs the specified Python interpreter with the "--version"
-// flag and maps it to a known specification verison.
+// GetVersion runs the specified Python interpreter to extract its version
+// from `platform.python_version` and maps it to a known specification verison.
 func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 	i.cachedVersionMu.Lock()
 	defer i.cachedVersionMu.Unlock()
@@ -81,42 +80,26 @@ func (i *Interpreter) GetVersion(c context.Context) (v Version, err error) {
 		return
 	}
 
-	// We use CombinedOutput here becuase Python2 writes the version to STDERR,
-	// while Python3+ writes it to STDOUT.
-	cmd := i.IsolatedCommand(c, NoTarget{}, "--version")
-	out, err := cmd.CombinedOutput()
+	cmd := i.IsolatedCommand(c, CommandTarget{
+		"import platform, sys; sys.stdout.write(platform.python_version())",
+	})
+
+	out, err := cmd.Output()
 	if err != nil {
 		err = errors.Annotate(err, "").Err()
 		return
 	}
 
-	if v, err = ParseVersionOutput(string(out)); err != nil {
+	if v, err = ParseVersion(string(out)); err != nil {
+		return
+	}
+	if v.IsZero() {
+		err = errors.Reason("unknown version output").Err()
 		return
 	}
 
 	i.cachedVersion = &v
 	return
-}
-
-// ParseVersionOutput parses a Version out of the output of a "--version" Python
-// invocation.
-func ParseVersionOutput(output string) (Version, error) {
-	s := strings.TrimSpace(string(output))
-
-	// Expected output:
-	// Python X.Y.Z
-	parts := strings.SplitN(s, " ", 2)
-	if len(parts) != 2 || parts[0] != "Python" {
-		return Version{}, errors.Reason("unknown version output").
-			InternalReason("output(%q)", s).Err()
-	}
-
-	v, err := ParseVersion(parts[1])
-	if err != nil {
-		err = errors.Annotate(err, "failed to parse version from: %q", parts[1]).Err()
-		return v, err
-	}
-	return v, nil
 }
 
 // IsolateEnvironment mutates e to remove any environmental influence over

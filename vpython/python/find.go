@@ -30,9 +30,9 @@ type LookPathResult struct {
 	Path string
 
 	// Version, if not zero, is the Python version string. Standard "vpython"
-	// wrapper identification may choose to call Python with "--version" to
-	// identify it. If so, it may choose to populate this field to avoid redundant
-	// calls to "--version".
+	// wrapper identification may choose to call Python to determine it's version
+	// in order to identify it. If so, Find may choose to populate this field to
+	// avoid redundant calls to python.
 	Version Version
 }
 
