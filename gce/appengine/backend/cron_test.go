@@ -75,7 +75,6 @@ func TestCron(t *testing.T) {
 						Attributes: &config.VM{
 							Project: "project",
 						},
-						Prefix: "prefix",
 					},
 				})
 				datastore.GetTestable(c).CatchupIndexes()
