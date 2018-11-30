@@ -41,9 +41,22 @@ func TestCron(t *testing.T) {
 
 		Convey("createInstances", func() {
 			Convey("none", func() {
-				err := createInstances(c)
-				So(err, ShouldBeNil)
-				So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				Convey("zero", func() {
+					err := createInstances(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
+
+				Convey("exists", func() {
+					datastore.Put(c, &model.VM{
+						ID:  "id",
+						URL: "url",
+					})
+					datastore.GetTestable(c).CatchupIndexes()
+					err := createInstances(c)
+					So(err, ShouldBeNil)
+					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
+				})
 			})
 
 			Convey("one", func() {

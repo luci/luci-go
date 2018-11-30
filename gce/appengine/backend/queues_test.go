@@ -121,6 +121,33 @@ func TestQueues(t *testing.T) {
 						})
 						So(err, ShouldBeNil)
 					})
+
+					Convey("done", func() {
+						rt.Handler = func(req interface{}) interface{} {
+							inst, ok := req.(*compute.Instance)
+							So(ok, ShouldBeTrue)
+							So(inst.Name, ShouldEqual, "name")
+							So(inst.NetworkInterfaces, ShouldHaveLength, 1)
+							return &compute.Operation{
+								Status:     "DONE",
+								TargetLink: "url",
+							}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						datastore.Put(c, &model.VM{
+							ID:       "id",
+							Hostname: "name",
+						})
+						err := create(c, &tasks.Create{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+						v := &model.VM{
+							ID: "id",
+						}
+						datastore.Get(c, v)
+						So(v.URL, ShouldEqual, "url")
+					})
 				})
 			})
 		})
