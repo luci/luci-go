@@ -5,10 +5,13 @@
 package frontend
 
 import (
+	"encoding/json"
 	"fmt"
+	"html"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
@@ -151,6 +154,48 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	}
 }
 
+type timelineJSON struct {
+	Groups []group
+	Items []item
+}
+
+// stepData is extra data to deliver with the groups and items (see below) for the
+// Javascript vis Timeline component.
+type stepData struct {
+	Label           string       `json:"label"`
+	Text            []string     `json:"text"`
+	MainLink        ui.LinkSet   `json:"mainLink"`
+	SubLink         []ui.LinkSet `json:"subLink"`
+	StatusClassName string       `json:"statusClassName"`
+}
+
+// group corresponds to, and matches the shape of, a Group for the Javascript
+// vis Timeline component http://visjs.org/docs/timeline/#groups. Data
+// rides along as an extra property (unused by vis Timeline itself) used
+// in client side rendering. Each Group is rendered as its own row in the
+// timeline component on to which Items are rendered. Currently we only render
+// one Item per Group, that is one thing per row.
+type group struct {
+	Id   string `json:"id"`
+	Data stepData   `json:"data"`
+}
+
+// item corresponds to, and matches the shape of, an Item for the Javascript
+// vis Timeline component http://visjs.org/docs/timeline/#items. Data
+// rides along as an extra property (unused by vis Timeline itself) used
+// in client side rendering. Each Item is rendered to a Group which corresponds
+// to a row. Currently we only render one Item per Group, that is one thing per
+// row.
+type item struct {
+	Id        string `json:"id"`
+	Group     string `json:"group"`
+	Start     int64  `json:"start"`
+	End       int64  `json:"end"`
+	Type      string `json:"type"`
+	ClassName string `json:"className"`
+	Data      stepData   `json:"data"`
+}
+
 // renderBuild is a shortcut for rendering build or returning err if it is not
 // nil. Also calls build.Fix().
 func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
@@ -160,8 +205,64 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix(c.Context)
+
+	timelineJSON, err := timelineData(build)
+	if err != nil {
+		return err
+	}
+
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
-		"Build": build,
+		"Build":  build,
+		"TimelineJSON": timelineJSON,
 	})
 	return nil
+}
+
+// timelineData returns the timelineJSON for a vis timeline timeline
+// as a JSON.parse parseable string that will contain the necessary
+// Groups and Items.
+func timelineData(build *ui.MiloBuild) (string, error) {
+	groups := make([]group, len(build.Components))
+	items := make([]item, len(build.Components))
+	for index, comp := range build.Components {
+		groupId := fmt.Sprintf("%d", index)
+		startTime := milliseconds(comp.ExecutionTime.Started)
+		endTime := milliseconds(comp.ExecutionTime.Finished)
+		statusClassName := fmt.Sprintf("status-%s", comp.Status)
+		data := stepData{
+			Label: html.EscapeString(comp.Label.Label),
+			Text: sanitize(comp.TextBR()),
+			MainLink: comp.MainLink,
+			SubLink: comp.SubLink,
+			StatusClassName: statusClassName,
+		}
+		groups[index] = group{groupId, data}
+		items[index] = item{
+			Id: groupId,
+			Group: groupId,
+			Start: startTime,
+			End: endTime,
+			Type: "range",
+			ClassName: statusClassName,
+			Data: data,
+		}
+	}
+
+	timeline, err := json.Marshal(timelineJSON{Groups: groups, Items: items})
+	if err != nil {
+		return "", err
+	}
+
+	return string(timeline), nil
+}
+
+func sanitize(values []string) []string {
+	for i, value := range values {
+		values[i] = html.EscapeString(value)
+	}
+	return values
+}
+
+func milliseconds(time time.Time) int64 {
+	return time.UnixNano() / 1e6
 }
