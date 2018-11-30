@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "935dfba3_1cebbe74",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-11-30T03:31:28Z",
+      "side": 1,
+      "message": "Based on in person discussion I\u0027ve kept the suffix length at 4. By using ID and generating a new hostname per ID every day, it would take about 6 months to have a 1% chance of reuse.\n\nI\u0027ve also restored the code that sets prefix in the entity, in case we decide to use it later (we might do something like prefix-SHA1(ID-suffix) to ensure no collisions, low probability of reuse, and obfuscate total number of VMs).",
+      "parentUuid": "bc137287_7a42b0d9",
+      "revId": "1ab976c50982e6ce5c0f8ef7c52fbe319f1f8168",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73a3f497_9be3bf08",
         "filename": "gce/appengine/backend/queues.go",
         "patchSetId": 1
