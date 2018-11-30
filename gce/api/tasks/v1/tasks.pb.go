@@ -5,10 +5,9 @@ package tasks
 
 import (
 	fmt "fmt"
-	math "math"
-
 	proto "github.com/golang/protobuf/proto"
 	v1 "go.chromium.org/luci/gce/api/config/v1"
+	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
