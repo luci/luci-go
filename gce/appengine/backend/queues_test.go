@@ -16,7 +16,11 @@ package backend
 
 import (
 	"context"
+	"net/http"
+	"reflect"
 	"testing"
+
+	"google.golang.org/api/compute/v1"
 
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
@@ -27,6 +31,7 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 	rpc "go.chromium.org/luci/gce/appengine/rpc/memory"
+	"go.chromium.org/luci/gce/appengine/testing/roundtripper"
 
 	. "github.com/smartystreets/goconvey/convey"
 	. "go.chromium.org/luci/common/testing/assertions"
@@ -39,7 +44,10 @@ func TestQueues(t *testing.T) {
 		dsp := &tq.Dispatcher{}
 		registerTasks(dsp)
 		srv := &rpc.Config{}
-		c := withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv)
+		rt := &roundtripper.JSONRoundTripper{}
+		gce, err := compute.New(&http.Client{Transport: rt})
+		So(err, ShouldBeNil)
+		c := withCompute(withConfig(withDispatcher(memory.Use(context.Background()), dsp), srv), gce)
 		tqt := tqtesting.GetTestable(c, dsp)
 		tqt.CreateQueues()
 
@@ -54,13 +62,66 @@ func TestQueues(t *testing.T) {
 					err := create(c, &tasks.Create{})
 					So(err, ShouldErrLike, "ID is required")
 				})
+
+				Convey("missing", func() {
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "failed to fetch VM")
+				})
 			})
 
 			Convey("valid", func() {
-				err := create(c, &tasks.Create{
-					Id: "id",
+				Convey("exists", func() {
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+						URL:      "url",
+					})
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
 				})
-				So(err, ShouldBeNil)
+
+				Convey("creates", func() {
+					Convey("names", func() {
+						rt.Handler = func(req interface{}) interface{} {
+							inst, ok := req.(*compute.Instance)
+							So(ok, ShouldBeTrue)
+							So(inst.Name, ShouldNotBeEmpty)
+							So(inst.NetworkInterfaces, ShouldHaveLength, 1)
+							return &compute.Operation{}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						datastore.Put(c, &model.VM{
+							ID: "id",
+						})
+						err := create(c, &tasks.Create{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+					})
+
+					Convey("named", func() {
+						rt.Handler = func(req interface{}) interface{} {
+							inst, ok := req.(*compute.Instance)
+							So(ok, ShouldBeTrue)
+							So(inst.Name, ShouldEqual, "name")
+							So(inst.NetworkInterfaces, ShouldHaveLength, 1)
+							return &compute.Operation{}
+						}
+						rt.Type = reflect.TypeOf(compute.Instance{})
+						datastore.Put(c, &model.VM{
+							ID:       "id",
+							Hostname: "name",
+						})
+						err := create(c, &tasks.Create{
+							Id: "id",
+						})
+						So(err, ShouldBeNil)
+					})
+				})
 			})
 		})
 
@@ -172,9 +233,7 @@ func TestQueues(t *testing.T) {
 					So(err, ShouldErrLike, "ID is required")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
-			})
 
-			Convey("valid", func() {
 				Convey("missing", func() {
 					err := expand(c, &tasks.Expand{
 						Id: "id",
@@ -182,7 +241,9 @@ func TestQueues(t *testing.T) {
 					So(err, ShouldErrLike, "failed to get VMs block")
 					So(tqt.GetScheduledTasks(), ShouldBeEmpty)
 				})
+			})
 
+			Convey("valid", func() {
 				Convey("zero", func() {
 					srv.EnsureVMs(c, &config.EnsureVMsRequest{
 						Id:  "id",
