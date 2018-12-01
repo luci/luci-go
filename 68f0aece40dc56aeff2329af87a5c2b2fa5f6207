@@ -22,6 +22,30 @@
       "revId": "68f0aece40dc56aeff2329af87a5c2b2fa5f6207",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "461a8005_30b85fe5",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-01T03:23:47Z",
+      "side": 1,
+      "message": "OAuth2 token checking code is not shared in general because implementation on GAE and non-GAE are quite different.\n\nSharing GetUserCredentials implementation would require to exposing some adhoc looking utility method in public API of server/auth, which currently looks pretty high-level. I decided it\u0027s not worth it, considering this logic is pretty simple.",
+      "parentUuid": "3cd686e5_41fe4422",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 0
+      },
+      "revId": "68f0aece40dc56aeff2329af87a5c2b2fa5f6207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
