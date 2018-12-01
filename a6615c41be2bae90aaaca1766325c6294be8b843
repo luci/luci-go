@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9a1a6b8b_8b1de566",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "93d33172_5d16dc60",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "377bec3f_5e734cf8",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -42,6 +60,30 @@
     },
     {
       "key": {
+        "uuid": "20cbb4c6_ec469734",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "good point.\n\nBut now I have a struct type defined outside that I also use from the tests.",
+      "parentUuid": "377bec3f_5e734cf8",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 2
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee5bec28_6f2bba4a",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -53,6 +95,30 @@
       "writtenOn": "2018-11-29T23:39:31Z",
       "side": 1,
       "message": "changeId and req.FilePath is a string, so you need pathEscape instead of just concatenation.",
+      "range": {
+        "startLine": 153,
+        "startChar": 9,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "57020aed_feae152b",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done for changeID.\n\nNot for filepath? gerrit actually wants the path to be part of the url\n\nso changes/project~number/edit/some/actual/path/in/the/project ?",
+      "parentUuid": "ee5bec28_6f2bba4a",
       "range": {
         "startLine": 153,
         "startChar": 9,
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "2bdff822_59cee2da",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1a57487_0316623d",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b9836b8d_10cce52c",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -102,6 +186,30 @@
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7152d272_081a00fe",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9836b8d_10cce52c",
+      "range": {
+        "startLine": 173,
+        "startChar": 36,
+        "endLine": 173,
+        "endChar": 55
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -142,6 +250,30 @@
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "821fa594_cff60844",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f26aaef7_101fdca7",
+      "range": {
+        "startLine": 198,
+        "startChar": 51,
+        "endLine": 198,
+        "endChar": 55
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -208,6 +340,30 @@
     },
     {
       "key": {
+        "uuid": "84ad17d9_eedf120d",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85fbe4ce_0640eafb",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 168,
+        "endChar": 20
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "0b77f862_fff36a45",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -222,6 +378,24 @@
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cb6630c0_9a48882d",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 177,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Comment removed by: Andrii Shyshkalov; Reason: alk",
+      "parentUuid": "0b77f862_fff36a45",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -248,6 +422,30 @@
     },
     {
       "key": {
+        "uuid": "dd2e5b9b_bb1e1e6c",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done\n\nAlthough this one is more questionable. It does not make sense to create a change on a non-branch ref, so accepting an arbitrary ref is confusing.",
+      "parentUuid": "0337eaff_e15fcabe",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 15
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f145cff0_bf548792",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -259,6 +457,24 @@
       "writtenOn": "2018-11-29T23:39:31Z",
       "side": 1,
       "message": "don\u0027t use change_id here. Should be number instead. change_id isn\u0027t unique, even if you annotate it with project and target ref.\n\nIf you do it in this CL, then please also add optional project field. Gerrit appreciates when REST API specifies \"project~number\", because it provides for more efficient routing.",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1907191_044a3465",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Comment removed by: Andrii Shyshkalov; Reason: alk",
+      "parentUuid": "f145cff0_bf548792",
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -282,6 +498,24 @@
     },
     {
       "key": {
+        "uuid": "c872027a_ec8226b6",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 201,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ecce63f1_0429153b",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c974b169_3ff60065",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -296,6 +530,24 @@
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "767f9ab3_33f92446",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 215,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-01T00:56:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c974b169_3ff60065",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
