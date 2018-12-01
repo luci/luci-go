@@ -25,7 +25,22 @@ def _key(*args):
   return __graph__.key(*args)
 
 
+def _add_node(key, props=None, trace=None):
+  """Adds a node to the graph if it didn't exist before.
+
+  Args:
+    key: a node key, as returned by graph.key(...).
+    props: a dict with node properties, will be frozen.
+    trace: a stack trace to associated with the node.
+
+  Returns:
+    graph.node object representing the node.
+  """
+  return __graph__.add_node(key, props or {}, trace or stacktrace(skip=1))
+
+
 # Public API of this module.
 graph = struct(
     key = _key,
+    add_node = _add_node,
 )
