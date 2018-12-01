@@ -34,6 +34,7 @@ type State struct {
 
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	generators generators        // callbacks that generate config files based on state
+	graph      configGraph       // the graph with config entities defined so far
 }
 
 // clear resets the state.
