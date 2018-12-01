@@ -19,6 +19,8 @@ import (
 	"errors"
 	"net"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth/authdb"
 )
@@ -60,6 +62,10 @@ type State interface {
 	// PeerIP is IP address (IPv4 or IPv6) of whoever is making the request or
 	// nil if not available.
 	PeerIP() net.IP
+
+	// UserCredentials is an end-user credentials as they were received if they
+	// are allowed to be forwarded.
+	UserCredentials() (*oauth2.Token, error)
 }
 
 type stateContextKey int
@@ -148,11 +154,18 @@ type state struct {
 	user          *User
 	peerIdent     identity.Identity
 	peerIP        net.IP
+
+	// For AsCredentialsForwarder. Populated only when not using delegation.
+	// 'endUserErr' (if not nil) would be returned by GetRPCTransport when
+	// attempting to forward the credentials.
+	endUserTok *oauth2.Token
+	endUserErr error
 }
 
-func (s *state) Authenticator() *Authenticator   { return s.authenticator }
-func (s *state) DB() authdb.DB                   { return s.db }
-func (s *state) Method() Method                  { return s.method }
-func (s *state) User() *User                     { return s.user }
-func (s *state) PeerIdentity() identity.Identity { return s.peerIdent }
-func (s *state) PeerIP() net.IP                  { return s.peerIP }
+func (s *state) Authenticator() *Authenticator           { return s.authenticator }
+func (s *state) DB() authdb.DB                           { return s.db }
+func (s *state) Method() Method                          { return s.method }
+func (s *state) User() *User                             { return s.user }
+func (s *state) PeerIdentity() identity.Identity         { return s.peerIdent }
+func (s *state) PeerIP() net.IP                          { return s.peerIP }
+func (s *state) UserCredentials() (*oauth2.Token, error) { return s.endUserTok, s.endUserErr }

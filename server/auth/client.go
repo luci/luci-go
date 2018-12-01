@@ -52,7 +52,14 @@ const (
 	AsSelf
 
 	// AsUser is used for outbound RPCs that inherit the authority of a user
-	// that initiated the request that is currently being handled.
+	// that initiated the request that is currently being handled, regardless of
+	// how exactly the user was authenticated.
+	//
+	// The implementation is based on LUCI-specific protocol that uses special
+	// delegation tokens. Only LUCI backends can understand them.
+	//
+	// If you need to call non-LUCI services, and incoming requests are
+	// authenticated via OAuth access tokens, use AsCredentialsForwarder instead.
 	//
 	// If the current request was initiated by an anonymous caller, the RPC will
 	// have no auth headers (just like in NoAuth mode).
@@ -63,10 +70,20 @@ const (
 	// initiated request) when this task is created and store the resulting token
 	// along with the task. Then, to make an RPC on behalf of the user from the
 	// task use GetRPCTransport(ctx, AsUser, WithDelegationToken(token)).
-	//
-	// The implementation is based on LUCI-specific protocol that uses special
-	// delegation tokens. Only LUCI backends can understand them.
 	AsUser
+
+	// AsCredentialsForwarder is used for outbound RPCs that just forward the
+	// user credentials, exactly as they were received by the service.
+	//
+	// For authenticated calls, works only if the current request was
+	// authenticated via an OAuth access token.
+	//
+	// If the current request was initiated by an anonymous caller, the RPC will
+	// have no auth headers (just like in NoAuth mode).
+	//
+	// An attempt to use GetRPCTransport(ctx, AsCredentialsForwarder) with
+	// unsupported credentials results in an error.
+	AsCredentialsForwarder
 
 	// AsActor is used for outbound RPCs sent with the authority of some service
 	// account that the current service has "iam.serviceAccountActor" role in.
@@ -395,6 +412,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		options.getRPCHeaders = asSelfHeaders
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
+	case AsCredentialsForwarder:
+		options.getRPCHeaders = asCredentialsForwarder
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
 	default:
@@ -485,6 +504,25 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		"fingerprint": tokenFingerprint(delegationToken),
 	}.Debugf(c, "auth: Sending delegation token")
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
+}
+
+// asCredentialsForwarder returns the end user token, as it was received by the
+// service.
+func asCredentialsForwarder(c context.Context, uri string, _ *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	s := GetState(c)
+	if s == nil {
+		return nil, nil, ErrNoAuthState
+	}
+
+	// Nothing to forward if the call is anonymous.
+	if s.User().Identity == identity.AnonymousIdentity {
+		return nil, nil, nil
+	}
+
+	// Otherwise grab the end user credentials (or an error) from the state, as
+	// put there by Authenticate(...).
+	tok, err := s.UserCredentials()
+	return tok, nil, err
 }
 
 // asActorHeaders returns a map of authentication headers to add to outbound

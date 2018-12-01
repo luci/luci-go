@@ -156,6 +156,53 @@ func TestGetRPCTransport(t *testing.T) {
 			So(err, ShouldNotBeNil)
 		})
 
+		Convey("in AsCredentialsForwarder mode, anonymous", func(c C) {
+			ctx := WithState(ctx, &state{
+				user:       &User{Identity: identity.AnonymousIdentity},
+				endUserErr: ErrNoForwardableCreds,
+			})
+
+			t, err := GetRPCTransport(ctx, AsCredentialsForwarder)
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://example.com"))
+			So(err, ShouldBeNil)
+
+			// No credentials passed.
+			So(mock.reqs[0].Header, ShouldHaveLength, 0)
+		})
+
+		Convey("in AsCredentialsForwarder mode, non-anonymous", func(c C) {
+			ctx := WithState(ctx, &state{
+				user: &User{Identity: "user:a@example.com"},
+				endUserTok: &oauth2.Token{
+					TokenType:   "Bearer",
+					AccessToken: "abc.def",
+				},
+			})
+
+			t, err := GetRPCTransport(ctx, AsCredentialsForwarder)
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://example.com"))
+			So(err, ShouldBeNil)
+
+			// Passed the token.
+			So(mock.reqs[0].Header, ShouldResemble, http.Header{
+				"Authorization": {"Bearer abc.def"},
+			})
+		})
+
+		Convey("in AsCredentialsForwarder mode, non-forwardable", func(c C) {
+			ctx := WithState(ctx, &state{
+				user:       &User{Identity: "user:a@example.com"},
+				endUserErr: ErrNoForwardableCreds,
+			})
+
+			t, err := GetRPCTransport(ctx, AsCredentialsForwarder)
+			So(err, ShouldBeNil)
+			_, err = t.RoundTrip(makeReq("https://example.com"))
+			So(err, ShouldEqual, ErrNoForwardableCreds)
+		})
+
 		Convey("in AsActor mode with account", func(C C) {
 			mocks := &rpcMocks{
 				MintAccessTokenForServiceAccount: func(ic context.Context, p MintAccessTokenParams) (*oauth2.Token, error) {

@@ -21,6 +21,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/common/data/caching/lru"
 	"go.chromium.org/luci/server/caching"
 	"go.chromium.org/luci/server/caching/cachingtest"
@@ -184,5 +186,36 @@ func TestGoogleOAuth2Method(t *testing.T) {
 			_, err := call("Bearer access_token")
 			So(err, ShouldEqual, ErrBadOAuthToken)
 		})
+	})
+}
+
+func TestGetUserCredentials(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	m := GoogleOAuth2Method{}
+
+	call := func(hdr string) (*oauth2.Token, error) {
+		return m.GetUserCredentials(ctx, &http.Request{Header: http.Header{
+			"Authorization": {hdr},
+		}})
+	}
+
+	Convey("Works", t, func() {
+		tok, err := call("Bearer abc.def")
+		So(err, ShouldBeNil)
+		So(tok, ShouldResemble, &oauth2.Token{
+			AccessToken: "abc.def",
+			TokenType:   "Bearer",
+		})
+	})
+
+	Convey("Bad headers", t, func() {
+		_, err := call("")
+		So(err, ShouldEqual, errBadAuthHeader)
+		_, err = call("abc.def")
+		So(err, ShouldEqual, errBadAuthHeader)
+		_, err = call("Basic abc.def")
+		So(err, ShouldEqual, errBadAuthHeader)
 	})
 }

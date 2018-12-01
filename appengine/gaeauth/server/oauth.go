@@ -16,8 +16,12 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strings"
+
+	"golang.org/x/oauth2"
 
 	"go.chromium.org/gae/service/info"
 	"go.chromium.org/gae/service/user"
@@ -27,6 +31,8 @@ import (
 	"go.chromium.org/luci/common/retry/transient"
 	"go.chromium.org/luci/server/auth"
 )
+
+var errBadAuthHeader = errors.New("oauth: bad Authorization header")
 
 // EmailScope is a scope used to identifies user's email. Present in most tokens
 // by default. Can be used as a base scope for authentication.
@@ -38,6 +44,8 @@ type OAuth2Method struct {
 	// Scopes is a list of OAuth scopes to check when authenticating the token.
 	Scopes []string
 }
+
+var _ auth.UserCredentialsGetter = (*OAuth2Method)(nil)
 
 // Authenticate extracts peer's identity from the incoming request.
 func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.User, error) {
@@ -85,4 +93,16 @@ func (m *OAuth2Method) Authenticate(c context.Context, r *http.Request) (*auth.U
 		}, nil
 	}
 	return nil, transient.Tag.Apply(err)
+}
+
+// GetUserCredentials implements auth.UserCredentialsGetter.
+func (m *OAuth2Method) GetUserCredentials(c context.Context, r *http.Request) (*oauth2.Token, error) {
+	chunks := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
+	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
+		return nil, errBadAuthHeader
+	}
+	return &oauth2.Token{
+		AccessToken: chunks[1],
+		TokenType:   "Bearer",
+	}, nil
 }
