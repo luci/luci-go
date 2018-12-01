@@ -52,7 +52,14 @@ const (
 	AsSelf
 
 	// AsUser is used for outbound RPCs that inherit the authority of a user
-	// that initiated the request that is currently being handled.
+	// that initiated the request that is currently being handled, regardless of
+	// how exactly the user was authenticated.
+	//
+	// The implementation is based on LUCI-specific protocol that uses special
+	// delegation tokens. Only LUCI backends can understand them.
+	//
+	// If you need to call non-LUCI services, and incoming requests are
+	// authenticated via OAuth access tokens, use AsCredentialsForwarder instead.
 	//
 	// If the current request was initiated by an anonymous caller, the RPC will
 	// have no auth headers (just like in NoAuth mode).
@@ -63,10 +70,20 @@ const (
 	// initiated request) when this task is created and store the resulting token
 	// along with the task. Then, to make an RPC on behalf of the user from the
 	// task use GetRPCTransport(ctx, AsUser, WithDelegationToken(token)).
-	//
-	// The implementation is based on LUCI-specific protocol that uses special
-	// delegation tokens. Only LUCI backends can understand them.
 	AsUser
+
+	// AsCredentialsForwarder is used for outbound RPCs that just forward the
+	// user credentials, exactly as they were received by the service.
+	//
+	// For authenticated calls, works only if the current request was
+	// authenticated via an OAuth access token.
+	//
+	// If the current request was initiated by an anonymous caller, the RPC will
+	// have no auth headers (just like in NoAuth mode).
+	//
+	// An attempt to use GetRPCTransport(ctx, AsCredentialsForwarder) with
+	// unsupported credentials results in an error.
+	AsCredentialsForwarder
 
 	// AsActor is used for outbound RPCs sent with the authority of some service
 	// account that the current service has "iam.serviceAccountActor" role in.
@@ -193,14 +210,23 @@ func GetRPCTransport(c context.Context, kind RPCAuthorityKind, opts ...RPCOption
 	if err != nil {
 		return nil, err
 	}
+
 	config := getConfig(c)
 	if config == nil || config.AnonymousTransport == nil {
 		return nil, ErrNotConfigured
 	}
+
+	if options.checkCtx != nil {
+		if err := options.checkCtx(c); err != nil {
+			return nil, err
+		}
+	}
+
 	baseTransport := metric.InstrumentTransport(c, config.AnonymousTransport(c), options.monitoringClient)
 	if options.kind == NoAuth {
 		return baseTransport, nil
 	}
+
 	return auth.NewModifyingTransport(baseTransport, func(req *http.Request) error {
 		tok, extra, err := options.getRPCHeaders(c, req.URL.String(), options)
 		if err != nil {
@@ -258,18 +284,24 @@ func (creds perRPCCreds) RequireTransportSecurity() bool {
 
 // GetTokenSource returns an oauth2.TokenSource bound to the supplied Context.
 //
-// Supports only AsSelf and AsActor authorization kinds, since they are only
-// ones that exclusively use OAuth2 tokens and no other extra headers.
+// Supports only AsSelf, AsCredentialsForwarder and AsActor authorization kinds,
+// since they are only ones that exclusively use OAuth2 tokens and no other
+// extra headers.
 //
 // While GetPerRPCCredentials is preferred, this can be used by packages that
 // cannot or do not properly handle this gRPC option.
 func GetTokenSource(c context.Context, kind RPCAuthorityKind, opts ...RPCOption) (oauth2.TokenSource, error) {
-	if kind != AsSelf && kind != AsActor {
-		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf or AsActor authorization kind")
+	if kind != AsSelf && kind != AsCredentialsForwarder && kind != AsActor {
+		return nil, fmt.Errorf("auth: GetTokenSource can only be used with AsSelf, AsCredentialsForwarder or AsActor authorization kind")
 	}
 	options, err := makeRPCOptions(kind, opts)
 	if err != nil {
 		return nil, err
+	}
+	if options.checkCtx != nil {
+		if err := options.checkCtx(c); err != nil {
+			return nil, err
+		}
 	}
 	return &tokenSource{c, options}, nil
 }
@@ -350,6 +382,7 @@ type rpcOptions struct {
 	delegationToken  string   // for AsUser
 	delegationTags   []string // for AsUser
 	monitoringClient string
+	checkCtx         func(c context.Context) error // optional, may be skipped
 	getRPCHeaders    headersGetter
 	rpcMocks         *rpcMocks
 }
@@ -395,6 +428,15 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		options.getRPCHeaders = asSelfHeaders
 	case AsUser:
 		options.getRPCHeaders = asUserHeaders
+	case AsCredentialsForwarder:
+		options.checkCtx = func(c context.Context) error {
+			_, err := forwardedCreds(c)
+			return err
+		}
+		options.getRPCHeaders = func(c context.Context, _ string, _ *rpcOptions) (*oauth2.Token, map[string]string, error) {
+			tok, err := forwardedCreds(c)
+			return tok, nil, err
+		}
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
 	default:
@@ -485,6 +527,23 @@ func asUserHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Tok
 		"fingerprint": tokenFingerprint(delegationToken),
 	}.Debugf(c, "auth: Sending delegation token")
 	return oauthTok, map[string]string{delegation.HTTPHeaderName: delegationToken}, nil
+}
+
+// forwardedCreds returns the end user token, as it was received by the service.
+//
+// Returns (nil, nil) if the incoming call was anonymous. Returns an error if
+// the incoming call was authenticated by non-forwardable credentials.
+func forwardedCreds(c context.Context) (*oauth2.Token, error) {
+	switch s := GetState(c); {
+	case s == nil:
+		return nil, ErrNoAuthState
+	case s.User().Identity == identity.AnonymousIdentity:
+		return nil, nil // nothing to forward if the call is anonymous
+	default:
+		// Grab the end user credentials (or an error) from the auth state, as
+		// put there by Authenticate(...).
+		return s.UserCredentials()
+	}
 }
 
 // asActorHeaders returns a map of authentication headers to add to outbound

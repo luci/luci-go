@@ -22,6 +22,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/server/router"
 
 	"go.chromium.org/luci/auth/identity"
@@ -43,7 +45,10 @@ func TestAuthenticate(t *testing.T) {
 			allowedClientID: "some_client_id",
 		})
 		auth := Authenticator{
-			Methods: []Method{fakeAuthMethod{clientID: "some_client_id"}},
+			Methods: []Method{fakeAuthMethod{
+				clientID: "some_client_id",
+				userTok:  &oauth2.Token{AccessToken: "abc.def"},
+			}},
 		}
 		c, err := auth.Authenticate(c, makeRequest())
 		So(err, ShouldBeNil)
@@ -61,6 +66,10 @@ func TestAuthenticate(t *testing.T) {
 		url, err = LogoutURL(c, "logout")
 		So(err, ShouldBeNil)
 		So(url, ShouldEqual, "http://fake.logout.url/logout")
+
+		tok, err := GetState(c).UserCredentials()
+		So(err, ShouldBeNil)
+		So(tok, ShouldResemble, &oauth2.Token{AccessToken: "abc.def"})
 	})
 
 	Convey("No methods given", t, func() {
@@ -207,6 +216,7 @@ type fakeAuthMethod struct {
 	err      error
 	clientID string
 	email    string
+	userTok  *oauth2.Token
 }
 
 func (m fakeAuthMethod) Authenticate(context.Context, *http.Request) (*User, error) {
@@ -230,6 +240,13 @@ func (m fakeAuthMethod) LoginURL(c context.Context, dest string) (string, error)
 
 func (m fakeAuthMethod) LogoutURL(c context.Context, dest string) (string, error) {
 	return "http://fake.logout.url/" + dest, nil
+}
+
+func (m fakeAuthMethod) GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error) {
+	if m.userTok != nil {
+		return m.userTok, nil
+	}
+	return nil, ErrNoForwardableCreds
 }
 
 func injectTestDB(c context.Context, d authdb.DB) context.Context {
