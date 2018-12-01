@@ -84,6 +84,30 @@
     },
     {
       "key": {
+        "uuid": "4e91cbb9_22d0e89d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "20cbb4c6_ec469734",
+      "range": {
+        "startLine": 131,
+        "startChar": 1,
+        "endLine": 139,
+        "endChar": 2
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "ee5bec28_6f2bba4a",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
@@ -119,6 +143,30 @@
       "side": 1,
       "message": "Done for changeID.\n\nNot for filepath? gerrit actually wants the path to be part of the url\n\nso changes/project~number/edit/some/actual/path/in/the/project ?",
       "parentUuid": "ee5bec28_6f2bba4a",
+      "range": {
+        "startLine": 153,
+        "startChar": 9,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4f87380_fcabda64",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "i\u0027m pretty sure filepath also needs escaping. It may contain characters like \"?\" and \"#\", which are likely badly parsed in Gerrit.",
+      "parentUuid": "57020aed_feae152b",
       "range": {
         "startLine": 153,
         "startChar": 9,
@@ -446,6 +494,30 @@
     },
     {
       "key": {
+        "uuid": "6bd59773_a99189e7",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 188,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "No, it makes sense :)\nAs a gerrit admin, i routinely edit refs/meta/config.\nAnd most chromium browser devs constantly cherry pick their fixes for releases in refs/branch-heads/* (in chromium/src and other repos)",
+      "parentUuid": "dd2e5b9b_bb1e1e6c",
+      "range": {
+        "startLine": 188,
+        "startChar": 9,
+        "endLine": 188,
+        "endChar": 15
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f145cff0_bf548792",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 4
@@ -475,6 +547,24 @@
       "side": 1,
       "message": "Comment removed by: Andrii Shyshkalov; Reason: alk",
       "parentUuid": "f145cff0_bf548792",
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "564a9ec9_e865582f",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 4
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "sorry, i had to remove your comment, but overall i agree that Gerrit\u0027s unique change id story confusing.\nI\u0027m fine supporting just project and (_)number here.\nThe \"_number\" field, although marked with underscore will be supported in the future.",
+      "parentUuid": "e1907191_044a3465",
       "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true

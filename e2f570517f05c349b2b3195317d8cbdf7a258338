@@ -1,0 +1,313 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "11b90c25_95d4a9a8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "not necessary. Gerrit happily accepts refs/heads/master as well as master.",
+      "range": {
+        "startLine": 135,
+        "startChar": 13,
+        "endLine": 136,
+        "endChar": 0
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c11a32d7_8376e197",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "please remove :)",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b862b46_73960f9f",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "can be inlined (see also comment L288)",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 277,
+        "endChar": 32
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73c45002_dee3641d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "see, that\u0027s where confusion is! The best possible way to interpret Gerrit\u0027s branch is:\n\nif strings.HasPrefix(branch, \"refs/\"){\n  // Assume, it\u0027s actually an explicit full ref. \n  // Also, assume that ref \"refs/heads/refs/whatever\" will be passed as is by Gerrit,\n  // instead of \"refs/whatever\".\n  return branch \n}\nreturn \"refs/heads/\" + branch",
+      "range": {
+        "startLine": 279,
+        "startChar": 5,
+        "endLine": 279,
+        "endChar": 16
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1ac6975_29f660a8",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "refsPrefix+branch is shorter and faster :)",
+      "range": {
+        "startLine": 280,
+        "startChar": 8,
+        "endLine": 280,
+        "endChar": 26
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5574b852_1af6a980",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "shouldn\u0027t be needed.",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 288,
+        "endChar": 1
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e628a11b_ace283f4",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "a number is already unique by itself; the point of the function is better routing if project is known.\nSo, perhaps a better name would be \"changeIDForRouting\". WDYT?",
+      "range": {
+        "startLine": 290,
+        "startChar": 5,
+        "endLine": 290,
+        "endChar": 19
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "667a501f_d0320cb1",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "if project !\u003d \"\" {\n  ...\n}\nreturn strconv.Itoa(number)",
+      "range": {
+        "startLine": 291,
+        "startChar": 1,
+        "endLine": 291,
+        "endChar": 61
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a7d8a6a7_07d1f042",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "please remove!",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "88ee96cd_955cf083",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "Ref which this change targets.",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e33fe306_66f080ce",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "may return short branch name",
+      "range": {
+        "startLine": 169,
+        "startChar": 30,
+        "endLine": 169,
+        "endChar": 56
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3003fafb_78d26b40",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "Remove, not true. Gerrit API allows fully qualified refs (even though docs aren\u0027t clear about it)",
+      "range": {
+        "startLine": 192,
+        "startChar": 5,
+        "endLine": 194,
+        "endChar": 24
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "60e8bba3_a120fd2f",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "please add \"optional, but recommended for better routing and faster submit operation\"\n\nAlso, it\u0027d make project here a second field, because only number is really required.\nAnd the same for 2 more places below.",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "afac4397_85f600b0",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "\"optional, but recommended for better routing and faster submit operation\"",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "277290d7_b24aa9ce",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T02:54:44Z",
+      "side": 1,
+      "message": "\"optional, but recommended for better routing and faster submit operation\"",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
