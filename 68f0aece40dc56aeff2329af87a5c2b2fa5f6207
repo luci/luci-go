@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3cd686e5_41fe4422",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T03:11:52Z",
+      "side": 1,
+      "message": "sad this copy-pasta must be exist here and gae. why have you decided no not share code?",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 0
+      },
+      "revId": "68f0aece40dc56aeff2329af87a5c2b2fa5f6207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
