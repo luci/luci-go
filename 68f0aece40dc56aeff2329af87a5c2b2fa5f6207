@@ -46,6 +46,30 @@
       "revId": "68f0aece40dc56aeff2329af87a5c2b2fa5f6207",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "a381e6ea_1e48fd22",
+        "filename": "server/auth/oauth.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T03:25:29Z",
+      "side": 1,
+      "message": "ack. I suspected you\u0027ve considered, but I wanted to be sure:)",
+      "parentUuid": "461a8005_30b85fe5",
+      "range": {
+        "startLine": 134,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 0
+      },
+      "revId": "68f0aece40dc56aeff2329af87a5c2b2fa5f6207",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
