@@ -47,6 +47,30 @@
       "revId": "254ffda633257d89b07ec007e734b263161e6653",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0665ef3c_fd0fa713",
+        "filename": "vpython/python/find.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-01T00:35:58Z",
+      "side": 1,
+      "message": ":D :D :D",
+      "parentUuid": "4592bba9_7cff1eed",
+      "range": {
+        "startLine": 33,
+        "startChar": 41,
+        "endLine": 34,
+        "endChar": 27
+      },
+      "revId": "254ffda633257d89b07ec007e734b263161e6653",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
