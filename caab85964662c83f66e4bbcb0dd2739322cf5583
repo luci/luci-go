@@ -1,0 +1,239 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0a7fa404_dd3f61c5",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "Can I ask you to show duration for each steps in timeline like we did in current milo UI?",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dc9a2d6f_bb8531c9",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "can be const?",
+      "range": {
+        "startLine": 51,
+        "startChar": 8,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "94fe425e_c39f9581",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "let ?",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d4cff967_f8352037",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "Is this function used?",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "678dec04_ac59f731",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "let ?",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b3d9735c_bee589fc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "const ?",
+      "range": {
+        "startLine": 23,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1398ee6f_eddcb89a",
+        "filename": "milo/frontend/expectations/buildbot.build-Debug_page-_chromium_presubmit_426944.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "Do you really need to call parse here?",
+      "range": {
+        "startLine": 31,
+        "startChar": 21,
+        "endLine": 31,
+        "endChar": 31
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "01104021_2b44195d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "Did you apply go fmt?",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "be28cb3e_067fa5bf",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "ID ?\nhttps://github.com/golang/go/wiki/CodeReviewComments#initialisms",
+      "range": {
+        "startLine": 179,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 3
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e1c519ed_9584f67f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "ID ?",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 3
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "45f32890_f0404504",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-01T00:37:42Z",
+      "side": 1,
+      "message": "strconv.Itoa ?",
+      "range": {
+        "startLine": 228,
+        "startChar": 13,
+        "endLine": 228,
+        "endChar": 37
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
