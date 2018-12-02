@@ -35,6 +35,7 @@ import (
 // they represent same path) are considered not equal and shouldn't be used
 // together.
 type Key struct {
+	set   *KeySet
 	pairs []string
 	idx   int
 }
@@ -109,7 +110,7 @@ func (k *KeySet) Key(pairs ...string) (*Key, error) {
 		k.keys = make(map[string]*Key, 1)
 	}
 
-	key := &Key{pairs: pairs, idx: len(k.keys)}
+	key := &Key{set: k, pairs: pairs, idx: len(k.keys)}
 	k.keys[keyID] = key
 	return key, nil
 }
