@@ -19,14 +19,84 @@ import (
 	"sort"
 
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
+
+	"go.chromium.org/luci/starlark/builtins"
 )
+
+// RedeclarationError is returned when a node is being defined more than once.
+type RedeclarationError struct {
+	Key      *Key                         // a key of the node being redeclared
+	Trace    *builtins.CapturedStacktrace // where it is redeclared
+	Previous *builtins.CapturedStacktrace // where it was declared initially
+}
+
+// Error is part of 'error' interface.
+func (e *RedeclarationError) Error() string {
+	// TODO(vadimsh): Improve error messages.
+	return fmt.Sprintf("%s is redeclared, previous declaration:\n%s", e.Key, e.Previous)
+}
 
 // Graph is a DAG of keyed nodes.
 //
 // It implements starlark.HasAttrs interface and have the following methods:
-//   * key(typ1: string, id2: string, typ2: string, id2: string, ...): Key.
+//   * key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
+//   * add_node(key: graph.key, props={}, trace=stacktrace()): graph.nod
+//   * node(key: graph.key): graph.node
 type Graph struct {
 	KeySet
+
+	nodes  map[*Key]*Node
+	frozen bool
+}
+
+// validateKey returns an error if the key is not from this graph.
+func (g *Graph) validateKey(k *Key) error {
+	if k.set != &g.KeySet {
+		return fmt.Errorf("got a key %s from another graph", k)
+	}
+	return nil
+}
+
+// AddNode adds a node to the graph if it didn't exist before.
+//
+// Freezes props.values() as a side effect.
+func (g *Graph) AddNode(k *Key, props *starlark.Dict, trace *builtins.CapturedStacktrace) (*Node, error) {
+	if g.frozen {
+		return nil, fmt.Errorf("cannot add a node to a frozen graph")
+	}
+	if err := g.validateKey(k); err != nil {
+		return nil, err
+	}
+
+	// Only string keys are allowed in 'props'.
+	for _, pk := range props.Keys() {
+		if _, ok := pk.(starlark.String); !ok {
+			return nil, fmt.Errorf("non-string key %s in 'props'", pk)
+		}
+	}
+
+	if n, ok := g.nodes[k]; ok {
+		return nil, &RedeclarationError{Key: k, Trace: trace, Previous: n.Trace}
+	}
+
+	n := &Node{
+		Key:   k,
+		Props: starlarkstruct.FromKeywords(starlark.String("props"), props.Items()),
+		Trace: trace,
+	}
+	n.Props.Freeze()
+
+	if g.nodes == nil {
+		g.nodes = make(map[*Key]*Node, 1)
+	}
+	g.nodes[k] = n
+	return n, nil
+}
+
+// Node returns a node by the key or nil if it wasn't added by AddNode yet.
+func (g *Graph) Node(k *Key) *Node {
+	return g.nodes[k]
 }
 
 // String is a part of starlark.Value interface
@@ -36,7 +106,7 @@ func (g *Graph) String() string { return "graph" }
 func (g *Graph) Type() string { return "graph" }
 
 // Freeze is a part of starlark.Value interface.
-func (g *Graph) Freeze() {}
+func (g *Graph) Freeze() { g.frozen = true }
 
 // Truth is a part of starlark.Value interface.
 func (g *Graph) Truth() starlark.Bool { return starlark.True }
@@ -66,6 +136,7 @@ func (g *Graph) Attr(name string) (starlark.Value, error) {
 //// Starlark bindings for individual graph methods.
 
 var graphAttrs = map[string]*starlark.Builtin{
+	// key(kind1: string, id1: string, kind2: string, id2: string, ...): graph.key
 	"key": starlark.NewBuiltin("key", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 		if len(kwargs) != 0 {
 			return nil, fmt.Errorf("graph.key: not expecting keyword arguments")
@@ -79,5 +150,37 @@ var graphAttrs = map[string]*starlark.Builtin{
 			pairs[idx] = str.GoString()
 		}
 		return b.Receiver().(*Graph).Key(pairs...)
+	}),
+
+	// add_node(key: graph.key, props={}, trace=stacktrace()): graph.node
+	"add_node": starlark.NewBuiltin("add_node", func(th *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var key *Key
+		var props *starlark.Dict
+		var trace *builtins.CapturedStacktrace
+		if err := starlark.UnpackArgs("add_node", args, kwargs, "key", &key, "props?", &props, "trace?", &trace); err != nil {
+			return nil, err
+		}
+		if props == nil {
+			props = &starlark.Dict{}
+		}
+		if trace == nil {
+			var err error
+			if trace, err = builtins.CaptureStacktrace(th, 0); err != nil {
+				return nil, err
+			}
+		}
+		return b.Receiver().(*Graph).AddNode(key, props, trace)
+	}),
+
+	// node(key: graph.key): graph.node
+	"node": starlark.NewBuiltin("node", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var key *Key
+		if err := starlark.UnpackArgs("node", args, kwargs, "key", &key); err != nil {
+			return nil, err
+		}
+		if node := b.Receiver().(*Graph).Node(key); node != nil {
+			return node, nil
+		}
+		return starlark.None, nil
 	}),
 }
