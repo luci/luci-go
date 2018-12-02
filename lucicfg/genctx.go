@@ -17,6 +17,8 @@ package lucicfg
 import (
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+
+	"go.chromium.org/luci/lucicfg/graph"
 )
 
 // genCtx is a starlark struct that represents the state passed to generator
@@ -24,15 +26,35 @@ import (
 type genCtx struct {
 	starlarkstruct.Struct
 
-	configSet *configSet
+	graph     *graph.Graph // frozen graph with all the state
+	configSet *configSet   // output config set
 }
 
-func newGenCtx() *genCtx {
+func newGenCtx(g *graph.Graph) *genCtx {
 	ctx := &genCtx{
+		graph:     g,
 		configSet: newConfigSet(),
 	}
+
+	graphAttr := func(key string) starlark.Value {
+		val, err := g.Attr(key)
+		if err != nil {
+			panic(err)
+		}
+		if val == nil {
+			panic("expectedly missing attribute")
+		}
+		return val
+	}
+
 	ctx.Struct = *starlarkstruct.FromStringDict(starlark.String("gen_ctx"), starlark.StringDict{
 		"config_set": ctx.configSet,
+
+		// Limited read-only view of the graph API, to make sure generators don't
+		// have access to the graph mutation API.
+		"graph": starlarkstruct.FromStringDict(starlark.String("graph"), starlark.StringDict{
+			"node": graphAttr("node"),
+		}),
 	})
 	return ctx
 }
@@ -43,6 +65,6 @@ func init() {
 		if err := call.unpack(0); err != nil {
 			return nil, err
 		}
-		return newGenCtx(), nil
+		return newGenCtx(&call.State.graph), nil
 	})
 }
