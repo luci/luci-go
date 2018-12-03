@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "171ceba2_a2d76793",
+        "filename": "starlark/builtins/stacktrace.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:17:30Z",
+      "side": 1,
+      "message": "i just noticed that this file is not using common/errors package. Why?",
+      "range": {
+        "startLine": 92,
+        "startChar": 14,
+        "endLine": 92,
+        "endChar": 24
+      },
+      "revId": "9c4d80f0030636e52a0a794045cd40ad0aca33c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
