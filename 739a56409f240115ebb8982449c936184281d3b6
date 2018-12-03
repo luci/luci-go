@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "33ade753_c58f064c",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-03T02:55:02Z",
+      "side": 1,
+      "message": "i think having extra check is in order:\nelse if vm.URL !\u003d op.TargetLink {\n  // Loudly panic\n}",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 4
+      },
+      "revId": "739a56409f240115ebb8982449c936184281d3b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
