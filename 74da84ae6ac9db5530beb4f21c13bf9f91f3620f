@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "96a4db49_3670aa97",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "No longer relevant.",
+      "parentUuid": "d02e4468_cefdbca1",
+      "range": {
+        "startLine": 45,
+        "startChar": 10,
+        "endLine": 45,
+        "endChar": 20
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "49a65d25_04fa4105",
         "filename": "lucicfg/genctx.go",
         "patchSetId": 5
@@ -45,6 +69,30 @@
       "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7532c14e_de6e2511",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Fine, removed this, everything happens through global \u0027graph\u0027 now.\n\nThe original idea was to limit visibility of various mutating APIs only to callbacks that do the mutation. There are two such mutating APIs: building graph and generating configs.\n\nSo originally I planned to have something like this (cargoculting Bazel\u0027s \u0027rule\u0027):\n\ndef _trigger(ctx):\n  ctx.graph.add_node(...)\n  for b in ctx.attrs.triggers:\n    ctx.graph.add_edge(...)\n\ntrigger \u003d node(\n    impl \u003d _trigger,\n    attrs \u003d {\n        \u0027repo\u0027: attr.string(),\n        \u0027triggers\u0027: [attr.string()],\n    }\n)\n\n\nHere graph-mutation stuff is accessible only through \u0027ctx\u0027 which is \"node declaration context\".\n\nAnother context is \"generator context\". It has APIs to traverse the graph and emit configs, but not to define any new nodes.\n\nThen I decided node(...) thing is probably an overkill for now. But I wanted to simplify future change to use context-scoped APIs. That\u0027s how generator context got ctx.graph.node(...).\n\nBut this is not important, and can be changed in the future.",
+      "parentUuid": "49a65d25_04fa4105",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 43
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "bc1bb087_7ce96cae",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "No longer relevant.",
+      "parentUuid": "64ba4e4a_fbda4f1c",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 28
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ec16f03_685bfeb6",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 5
@@ -91,6 +163,30 @@
       "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4f280dd5_49080702",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ec16f03_685bfeb6",
+      "range": {
+        "startLine": 44,
+        "startChar": 69,
+        "endLine": 44,
+        "endChar": 72
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "4edc225d_a3eec8e6",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Clarified.",
+      "parentUuid": "9f1c5421_ce5bd3a8",
+      "range": {
+        "startLine": 61,
+        "startChar": 24,
+        "endLine": 61,
+        "endChar": 62
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "acb45398_6532da44",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 5
@@ -137,6 +257,30 @@
       "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fd0a7c3f_e4804a12",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "\u003e if we make it a struct in the end, why don\u0027t we accept struct from users?\n\nBecause constructing structs looks a bit awkward from starlark side, and strictly speaking structs are not part of core starlark.\n\n\u003e it is weird to add props are dict, but read it as struct.\n\nI disagree.\n\n\u003e then we wouldn\u0027t need to do L72 check\n\u003e \n\u003e if we don\u0027t intend to add more node attrs to node besides key and trace, maybe we could even do\n\u003e   \n\u003e   graph.node(key\u003dgraph.key(\u0027a\u0027, \u0027b\u0027), foo\u003d\u0027c\u0027, bar\u003d\u0027c\u0027)\n\u003e \n\u003e it works fine in ndb. Having a property named \"key\" would be confusing\n\nI don\u0027t like this, it mixes two different namespaces into one. Also it is more difficult to visually see what exactly is being available as .props (they are no longer grouped together).",
+      "parentUuid": "acb45398_6532da44",
+      "range": {
+        "startLine": 85,
+        "startChar": 9,
+        "endLine": 85,
+        "endChar": 78
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -163,6 +307,30 @@
     },
     {
       "key": {
+        "uuid": "d57f5661_5c28559c",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05c12abd_f3f3fb84",
+      "range": {
+        "startLine": 24,
+        "startChar": 11,
+        "endLine": 24,
+        "endChar": 12
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3834f619_9983a121",
         "filename": "lucicfg/graph/node.go",
         "patchSetId": 5
@@ -183,6 +351,30 @@
       "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d3e3edc_2ae4a812",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3834f619_9983a121",
+      "range": {
+        "startLine": 31,
+        "startChar": 12,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -209,6 +401,30 @@
     },
     {
       "key": {
+        "uuid": "2a065331_02f15555",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "I\u0027ve added TODO. I\u0027ll do it later when I\u0027ll be working on reporting errors in a readable form.",
+      "parentUuid": "c49e7fd5_17db7e8a",
+      "range": {
+        "startLine": 33,
+        "startChar": 26,
+        "endLine": 33,
+        "endChar": 35
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "278411fa_1e211b7a",
         "filename": "lucicfg/starlark/stdlib/internal/graph.star",
         "patchSetId": 5
@@ -229,6 +445,30 @@
       "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36e7f3f2_a2e806bc",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T23:31:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "278411fa_1e211b7a",
+      "range": {
+        "startLine": 29,
+        "startChar": 10,
+        "endLine": 29,
+        "endChar": 56
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
