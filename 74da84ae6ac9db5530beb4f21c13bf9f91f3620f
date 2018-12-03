@@ -1,0 +1,234 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d02e4468_cefdbca1",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "i don\u0027t understand. \nunexpectedly?",
+      "range": {
+        "startLine": 45,
+        "startChar": 10,
+        "endLine": 45,
+        "endChar": 20
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "49a65d25_04fa4105",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "they still do because graph.add_node is global, isn\u0027t it?\n\nalso it is bit weird that users are expected to call global key() and non-global node().\nI am not sure this complexity is justified. I think it would be simpler to have just one graph object that freezes after script runs.",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 54,
+        "endChar": 43
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64ba4e4a_fbda4f1c",
+        "filename": "lucicfg/genctx.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "can we just do graphAttrs[\"node\"]?",
+      "range": {
+        "startLine": 56,
+        "startChar": 11,
+        "endLine": 56,
+        "endChar": 28
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9ec16f03_685bfeb6",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "node",
+      "range": {
+        "startLine": 44,
+        "startChar": 69,
+        "endLine": 44,
+        "endChar": 72
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f1c5421_ce5bd3a8",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "this reads like nothing will happen if it already exists",
+      "range": {
+        "startLine": 61,
+        "startChar": 24,
+        "endLine": 61,
+        "endChar": 62
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "acb45398_6532da44",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "if we make it a struct in the end, why don\u0027t we accept struct from users?\nit is weird to add props are dict, but read it as struct.\nthen we wouldn\u0027t need to do L72 check\n\nif we don\u0027t intend to add more node attrs to node besides key and trace, maybe we could even do\n  \n  graph.node(key\u003dgraph.key(\u0027a\u0027, \u0027b\u0027), foo\u003d\u0027c\u0027, bar\u003d\u0027c\u0027)\n\nit works fine in ndb. Having a property named \"key\" would be confusing",
+      "range": {
+        "startLine": 85,
+        "startChar": 9,
+        "endLine": 85,
+        "endChar": 78
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05c12abd_f3f3fb84",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "an",
+      "range": {
+        "startLine": 24,
+        "startChar": 11,
+        "endLine": 24,
+        "endChar": 12
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3834f619_9983a121",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "a part\n\nlike below",
+      "range": {
+        "startLine": 31,
+        "startChar": 12,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c49e7fd5_17db7e8a",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "how about something with n.Key.String() in it",
+      "range": {
+        "startLine": 33,
+        "startChar": 26,
+        "endLine": 33,
+        "endChar": 35
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "278411fa_1e211b7a",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T18:49:07Z",
+      "side": 1,
+      "message": "this also needs to be clarified",
+      "range": {
+        "startLine": 29,
+        "startChar": 10,
+        "endLine": 29,
+        "endChar": 56
+      },
+      "revId": "74da84ae6ac9db5530beb4f21c13bf9f91f3620f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
