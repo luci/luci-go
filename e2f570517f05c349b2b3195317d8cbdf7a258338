@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "68dfc38e_6f2e73a3",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11b90c25_95d4a9a8",
+      "range": {
+        "startLine": 135,
+        "startChar": 13,
+        "endLine": 136,
+        "endChar": 0
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c11a32d7_8376e197",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e82cc31b_f717dcbb",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c11a32d7_8376e197",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "67d7161c_adcabc9b",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8b862b46_73960f9f",
+      "range": {
+        "startLine": 277,
+        "startChar": 0,
+        "endLine": 277,
+        "endChar": 32
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73c45002_dee3641d",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 5
@@ -85,6 +151,30 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2bdc37f1_673f23b0",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 279,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "73c45002_dee3641d",
+      "range": {
+        "startLine": 279,
+        "startChar": 5,
+        "endLine": 279,
+        "endChar": 16
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "1cf8c31e_263b124d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 280,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b1ac6975_29f660a8",
+      "range": {
+        "startLine": 280,
+        "startChar": 8,
+        "endLine": 280,
+        "endChar": 26
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5574b852_1af6a980",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 5
@@ -131,6 +245,30 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a6f3cc53_31ea6f40",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5574b852_1af6a980",
+      "range": {
+        "startLine": 283,
+        "startChar": 0,
+        "endLine": 288,
+        "endChar": 1
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -157,6 +295,30 @@
     },
     {
       "key": {
+        "uuid": "1092a32c_b91da6c7",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done, but used the name gerritChangeIDForRouting\n\nIt\u0027s unfortunate that change_id by itself has a different meaning (the CL ID that isn\u0027t unique...)",
+      "parentUuid": "e628a11b_ace283f4",
+      "range": {
+        "startLine": 290,
+        "startChar": 5,
+        "endLine": 290,
+        "endChar": 19
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "667a501f_d0320cb1",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 5
@@ -180,6 +342,30 @@
     },
     {
       "key": {
+        "uuid": "2714760c_d9b6c981",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "667a501f_d0320cb1",
+      "range": {
+        "startLine": 291,
+        "startChar": 1,
+        "endLine": 291,
+        "endChar": 61
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "a7d8a6a7_07d1f042",
         "filename": "common/api/gerrit/rest_test.go",
         "patchSetId": 5
@@ -197,6 +383,24 @@
     },
     {
       "key": {
+        "uuid": "efd4c67d_2d832b3c",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a7d8a6a7_07d1f042",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "88ee96cd_955cf083",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -211,6 +415,24 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3facb176_5bd57607",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "88ee96cd_955cf083",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -237,6 +459,30 @@
     },
     {
       "key": {
+        "uuid": "9a08a235_6e635f0d",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e33fe306_66f080ce",
+      "range": {
+        "startLine": 169,
+        "startChar": 30,
+        "endLine": 169,
+        "endChar": 56
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3003fafb_78d26b40",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -260,6 +506,30 @@
     },
     {
       "key": {
+        "uuid": "56b0d638_2d81a052",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 194,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3003fafb_78d26b40",
+      "range": {
+        "startLine": 192,
+        "startChar": 5,
+        "endLine": 194,
+        "endChar": 24
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "60e8bba3_a120fd2f",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -274,6 +544,24 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f4efdc42_b437d822",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done.\n\nI also renumbered the fields, \u0027cause why not.\nBut note that proto field numbering should not be given any special significance by clients. Reordering the fields is not possible retroactively, so it\u0027s not possible to maintain any meaningful order as the API evolves.",
+      "parentUuid": "60e8bba3_a120fd2f",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -294,6 +582,24 @@
     },
     {
       "key": {
+        "uuid": "5c8c52bb_bfb4be95",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "afac4397_85f600b0",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "277290d7_b24aa9ce",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 5
@@ -308,6 +614,24 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6feb2bc0_5d54a200",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "277290d7_b24aa9ce",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

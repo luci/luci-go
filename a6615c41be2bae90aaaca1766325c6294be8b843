@@ -179,6 +179,30 @@
     },
     {
       "key": {
+        "uuid": "9576105d_58e53a1d",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-03T21:30:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4f87380_fcabda64",
+      "range": {
+        "startLine": 153,
+        "startChar": 9,
+        "endLine": 153,
+        "endChar": 21
+      },
+      "revId": "a6615c41be2bae90aaaca1766325c6294be8b843",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c1a57487_0316623d",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 4
