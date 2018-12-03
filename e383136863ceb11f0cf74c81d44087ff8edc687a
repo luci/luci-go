@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6a7f6d0c_b5d1b640",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "No: https://en.wikipedia.org/wiki/String_interning",
+      "parentUuid": "0c4832a6_901d7fe4",
+      "range": {
+        "startLine": 12,
+        "startChar": 3,
+        "endLine": 12,
+        "endChar": 9
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1aacfd48_955b2d38",
         "filename": "lucicfg/generator.go",
         "patchSetId": 5
@@ -39,6 +63,24 @@
       "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a65c0344_2cb7f857",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "Converted to .graph(). But this is not important at all.\n\nNote that native() is a global stateless object populated during init() time. It can\u0027t have .graph as an attribute (since \u0027graph\u0027 is not global, but part of State{} struct that exists only temporary during \u0027Generate\u0027 call).",
+      "parentUuid": "1aacfd48_955b2d38",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "39d648a8_6e901aed",
+        "filename": "lucicfg/graph/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "Yes. What else \"multiple edges between a given pair of nodes\" may mean? If there are no multiple edges between same nodes, than it\u0027s just a regular graph, and there\u0027s no need to specially mention anything about multiple edges.",
+      "parentUuid": "36b43aa3_1dd2904a",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 15
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9f19f5e4_be61b1e0",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 5
@@ -85,6 +151,30 @@
       "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d06090a5_c1da0543",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "All it does is parses *args into []string. It\u0027s a starlark\u003c-\u003ego glue, it doesn\u0027t know anything about KeySet other than its public method .Key() accepts []string.\n\nAll such glue code will be concentrated here.\n\nI don\u0027t want to promote KeySet to a starlark object, it is unnecessary and just introduces more boilerplate.",
+      "parentUuid": "9f19f5e4_be61b1e0",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 39
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "336e7a3d_7e7a4b72",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "233c281f_3957187a",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 4
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "657f7bae_a705ed61",
         "filename": "lucicfg/graph/key.go",
         "patchSetId": 5
@@ -125,6 +239,24 @@
       "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27adb105_d4528510",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "Our strategy is not to bother with this. Generate(...) doesn\u0027t spawn any goroutines inside, everything is single threaded. I don\u0027t see why we would want to parallelize it anytime soon.\n\nAdded a section to doc.go, since it would apply to all other structs in this package.",
+      "parentUuid": "657f7bae_a705ed61",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -151,6 +283,30 @@
     },
     {
       "key": {
+        "uuid": "13c034c0_abea5683",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "It does, but ContainsRune(s, 0) is exactly equivalent to IndexByte(s, 0) !\u003d -1. I like IndexByte more.",
+      "parentUuid": "e061f1d6_45b5b1fa",
+      "range": {
+        "startLine": 98,
+        "startChar": 13,
+        "endLine": 98,
+        "endChar": 22
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1b6732a4_dea9e730",
         "filename": "lucicfg/starlark/stdlib/internal/graph.star",
         "patchSetId": 5
@@ -165,6 +321,24 @@
       "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7d1e27d9_e0837a1e",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "1. To split flatness of internal __native__ API into a bunch of internal/*.star modules with clearer meaning.\n2. For doc strings with meaning of arguments, their types and default values.",
+      "parentUuid": "1b6732a4_dea9e730",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -188,6 +362,30 @@
       "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05ed6c36_ddb7d120",
+        "filename": "lucicfg/testdata/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-03T22:01:22Z",
+      "side": 1,
+      "message": "No. This is unnecessary. And I don\u0027t want to forbid slashes in ID names. And to construct such strings we still will have to use \"%s/%s\" % (a, b) which makes this \"simplification\" totally useless.",
+      "parentUuid": "e3e95319_3550ff84",
+      "range": {
+        "startLine": 7,
+        "startChar": 17,
+        "endLine": 7,
+        "endChar": 39
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
