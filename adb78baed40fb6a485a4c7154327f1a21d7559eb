@@ -45,6 +45,30 @@
       "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dea6bda2_127f3753",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:01:08Z",
+      "side": 1,
+      "message": "i meant it should be PUT",
+      "parentUuid": "2cc53a37_ed0b027c",
+      "range": {
+        "startLine": 51,
+        "startChar": 28,
+        "endLine": 51,
+        "endChar": 32
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
