@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2cc53a37_ed0b027c",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:00:53Z",
+      "side": 1,
+      "message": "it is POST https://docs.google.com/document/d/10BH6oSq_UEtdSdhrguEuV4hx-JxY7jzFcgs1OCHcniQ/edit#heading\u003dh.lio3dwa86eek",
+      "range": {
+        "startLine": 51,
+        "startChar": 28,
+        "endLine": 51,
+        "endChar": 32
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba64d122_cdaf3bc3",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:00:53Z",
+      "side": 1,
+      "message": "the body should specify client_operation_id",
+      "range": {
+        "startLine": 51,
+        "startChar": 78,
+        "endLine": 51,
+        "endChar": 81
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
