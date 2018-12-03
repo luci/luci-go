@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0c4832a6_901d7fe4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "typo?",
+      "range": {
+        "startLine": 12,
+        "startChar": 3,
+        "endLine": 12,
+        "endChar": 9
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1aacfd48_955b2d38",
+        "filename": "lucicfg/generator.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "why is graph an exception from native? Why native cannot have .graph or .graph()?\n\nit seems nativeFuncs should be generalized to nativeAttrs, and then starlark.NewBuiltin call in native() would migrate to declNative().",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "36b43aa3_1dd2904a",
+        "filename": "lucicfg/graph/doc.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "can there be multiple edges with same head and tail node?",
+      "range": {
+        "startLine": 20,
+        "startChar": 2,
+        "endLine": 22,
+        "endChar": 15
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f19f5e4_be61b1e0",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "consider moving this func closer to (*KeySet).Key\ngraphsAttrs seems to know a bit too much about method impl",
+      "range": {
+        "startLine": 69,
+        "startChar": 35,
+        "endLine": 69,
+        "endChar": 39
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "233c281f_3957187a",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "please add a comment",
+      "range": {
+        "startLine": 39,
+        "startChar": 1,
+        "endLine": 39,
+        "endChar": 4
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "657f7bae_a705ed61",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "this is currently not thread-safe, but `graph.key` is a global func, and starlark in general supports parallelism. What is our strategy here?\nA TODO would be sufficient",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e061f1d6_45b5b1fa",
+        "filename": "lucicfg/graph/key.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "does ContainsRune(s, 0) work?",
+      "range": {
+        "startLine": 98,
+        "startChar": 13,
+        "endLine": 98,
+        "endChar": 22
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1b6732a4_dea9e730",
+        "filename": "lucicfg/starlark/stdlib/internal/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "Why do we need this layer? We already have __graph__ which is a stateful graph with the same methods?",
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e3e95319_3550ff84",
+        "filename": "lucicfg/testdata/graph.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-03T17:57:44Z",
+      "side": 1,
+      "message": "this is a bit verbose. Can we support a \"func overload\" with a single string with slash-separated kinds and ids?\n\nthen we can use slashes in hash computation and string representation",
+      "range": {
+        "startLine": 7,
+        "startChar": 17,
+        "endLine": 7,
+        "endChar": 39
+      },
+      "revId": "e383136863ceb11f0cf74c81d44087ff8edc687a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
