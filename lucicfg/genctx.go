@@ -24,7 +24,7 @@ import (
 type genCtx struct {
 	starlarkstruct.Struct
 
-	configSet *configSet
+	configSet *configSet // output config set
 }
 
 func newGenCtx() *genCtx {
