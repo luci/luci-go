@@ -34,11 +34,24 @@ type CapturedStacktrace struct {
 	backtrace string
 }
 
-// capturedStacktrace captures the frame and all its parent frames.
-func capturedStacktrace(f *starlark.Frame) *CapturedStacktrace {
+// CaptureStacktrace captures thread's stack trace, skipping some number of
+// innermost frames.
+//
+// Returns an error if the stack is not deep enough to skip the requested number
+// of frames.
+func CaptureStacktrace(th *starlark.Thread, skip int) (*CapturedStacktrace, error) {
+	f := th.Caller()
+	skipped := 0
+	for skipped < skip && f != nil {
+		f = f.Parent()
+		skipped++
+	}
+	if f == nil {
+		return nil, fmt.Errorf("stacktrace: the stack is not deep enough to skip %d levels, has only %d frames", skip, skipped)
+	}
 	buf := bytes.Buffer{}
 	f.WriteBacktrace(&buf)
-	return &CapturedStacktrace{buf.String()}
+	return &CapturedStacktrace{buf.String()}, nil
 }
 
 // Type is part of starlark.Value interface.
@@ -74,21 +87,12 @@ var Stacktrace = starlark.NewBuiltin("stacktrace", func(th *starlark.Thread, _ *
 	if err := starlark.UnpackArgs("stacktrace", args, kwargs, "skip?", &skip); err != nil {
 		return nil, err
 	}
-
-	lvl, ok := skip.Uint64()
-	if !ok {
-		return nil, fmt.Errorf("stacktrace: bad 'skip' value %s", skip)
+	switch lvl, err := starlark.AsInt32(skip); {
+	case err != nil:
+		return nil, fmt.Errorf("stacktrace: bad 'skip' value %s - %s", skip, err)
+	case lvl < 0:
+		return nil, fmt.Errorf("stacktrace: bad 'skip' value %d - must be non-negative", lvl)
+	default:
+		return CaptureStacktrace(th, lvl)
 	}
-
-	f := th.Caller()
-	skipped := uint64(0)
-	for skipped < lvl && f != nil {
-		f = f.Parent()
-		skipped++
-	}
-	if f == nil {
-		return nil, fmt.Errorf("stacktrace: the stack is not deep enough to skip %s levels, has only %d frames", skip, skipped)
-	}
-
-	return capturedStacktrace(f), nil
 })
