@@ -319,6 +319,30 @@
     },
     {
       "key": {
+        "uuid": "9f11a3e5_3ea6d363",
+        "filename": "common/api/gerrit/rest.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 290,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-03T22:25:05Z",
+      "side": 1,
+      "message": "yep :( thanks!",
+      "parentUuid": "1092a32c_b91da6c7",
+      "range": {
+        "startLine": 290,
+        "startChar": 5,
+        "endLine": 290,
+        "endChar": 19
+      },
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "667a501f_d0320cb1",
         "filename": "common/api/gerrit/rest.go",
         "patchSetId": 5
@@ -562,6 +586,24 @@
       "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "11c5a07a_32680141",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 5
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-03T22:25:05Z",
+      "side": 1,
+      "message": "in newly defined structs, you can change numbers as you want.So, this CL is fine.\nBut once structs are in use, we shouldn\u0027t change numbers like this, because some serialized stuff may stored in datastore. It\u0027s fine to re-order fields for easier reading of humans, so long as numbers don\u0027t change.\n\nAre we on the same page? or have i misunderstood you?",
+      "parentUuid": "f4efdc42_b437d822",
+      "revId": "e2f570517f05c349b2b3195317d8cbdf7a258338",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {
