@@ -69,6 +69,54 @@
       "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c615af1b_b6ff5642",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-12-03T23:14:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dea6bda2_127f3753",
+      "range": {
+        "startLine": 51,
+        "startChar": 28,
+        "endLine": 51,
+        "endChar": 32
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99378a23_00be36fb",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1153089
+      },
+      "writtenOn": "2018-12-03T23:14:29Z",
+      "side": 1,
+      "message": "Why? AFAIK, it seems to be optional based on documentation: \"If specified...\".",
+      "parentUuid": "ba64d122_cdaf3bc3",
+      "range": {
+        "startLine": 51,
+        "startChar": 78,
+        "endLine": 51,
+        "endChar": 81
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
