@@ -14,11 +14,27 @@
 
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 package gerrit;
 
 service Gerrit {
   // Loads a change by id.
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
+
+  // Create a new empty change.
+  rpc CreateChange(CreateChangeRequest) returns (ChangeInfo);
+
+  // Edit a single file within an existing change edit.
+  rpc ChangeEditFileContent(ChangeEditFileContentRequest)
+      returns (google.protobuf.Empty);
+
+  // Publish all changes in a a change edit.
+  rpc ChangeEditPublish(ChangeEditPublishRequest)
+      returns (google.protobuf.Empty);
+
+  // Submit a change.
+  rpc SubmitChange(SubmitChangeRequest) returns (ChangeInfo);
 }
 
 // Specifies what extra information to include in the response.
@@ -147,4 +163,77 @@ message ChangeInfo {
 
   // The project of this change. For example, "chromium/src".
   string project = 3;
+
+  // Ref that this change targets, e.g.: refs/heads/master
+  //
+  // Note that the gerrit API may return short branch name (master instead of
+  // refs/heads/master) but we convert it to a ref for consistency across the
+  // API.
+  string ref = 4;
+
+  enum Status {
+    STATUS_INVALID = 0;
+    NEW = 1;
+    MERGED = 2;
+    ABANDONED = 3;
+  }
+  Status status = 5;
+}
+
+// Information for creating a new change.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-input
+message CreateChangeRequest {
+  string project = 1;
+
+  // Ref to base the new change at. e.g. refs/heads/master
+  string ref = 2;
+
+  string subject = 3;
+}
+
+// Information to submit a change.
+//
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-input
+message SubmitChangeRequest {
+  // The change number.
+  int64 number= 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+}
+
+message ChangeEditFileContentRequest {
+  // The change number.
+  int64 number= 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Path to the file to edit inside the project.
+  string file_path = 3;
+
+  // New content of the file. Overwrites existing contents entirely.
+  bytes content = 4;
+}
+
+// Information for publishing a change edit.
+//
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-change-edit-input
+message ChangeEditPublishRequest {
+  // The change number.
+  int64 number= 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
 }

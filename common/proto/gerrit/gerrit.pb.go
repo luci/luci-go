@@ -9,6 +9,7 @@ import (
 	context "context"
 	fmt "fmt"
 	proto "github.com/golang/protobuf/proto"
+	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	math "math"
 )
@@ -164,6 +165,37 @@ func (QueryOption) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_3c6e096860f6adc3, []int{0}
 }
 
+type ChangeInfo_Status int32
+
+const (
+	ChangeInfo_STATUS_INVALID ChangeInfo_Status = 0
+	ChangeInfo_NEW            ChangeInfo_Status = 1
+	ChangeInfo_MERGED         ChangeInfo_Status = 2
+	ChangeInfo_ABANDONED      ChangeInfo_Status = 3
+)
+
+var ChangeInfo_Status_name = map[int32]string{
+	0: "STATUS_INVALID",
+	1: "NEW",
+	2: "MERGED",
+	3: "ABANDONED",
+}
+
+var ChangeInfo_Status_value = map[string]int32{
+	"STATUS_INVALID": 0,
+	"NEW":            1,
+	"MERGED":         2,
+	"ABANDONED":      3,
+}
+
+func (x ChangeInfo_Status) String() string {
+	return proto.EnumName(ChangeInfo_Status_name, int32(x))
+}
+
+func (ChangeInfo_Status) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_3c6e096860f6adc3, []int{2, 0}
+}
+
 type GetChangeRequest struct {
 	// Change number.
 	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
@@ -303,10 +335,17 @@ type ChangeInfo struct {
 	// The owner of the change.
 	Owner *AccountInfo `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	// The project of this change. For example, "chromium/src".
-	Project              string   `protobuf:"bytes,3,opt,name=project,proto3" json:"project,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Project string `protobuf:"bytes,3,opt,name=project,proto3" json:"project,omitempty"`
+	// Ref that this change targets, e.g.: refs/heads/master
+	//
+	// Note that the gerrit API may return short branch name (master instead of
+	// refs/heads/master) but we convert it to a ref for consistency across the
+	// API.
+	Ref                  string            `protobuf:"bytes,4,opt,name=ref,proto3" json:"ref,omitempty"`
+	Status               ChangeInfo_Status `protobuf:"varint,5,opt,name=status,proto3,enum=gerrit.ChangeInfo_Status" json:"status,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *ChangeInfo) Reset()         { *m = ChangeInfo{} }
@@ -355,11 +394,269 @@ func (m *ChangeInfo) GetProject() string {
 	return ""
 }
 
+func (m *ChangeInfo) GetRef() string {
+	if m != nil {
+		return m.Ref
+	}
+	return ""
+}
+
+func (m *ChangeInfo) GetStatus() ChangeInfo_Status {
+	if m != nil {
+		return m.Status
+	}
+	return ChangeInfo_STATUS_INVALID
+}
+
+// Information for creating a new change.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-input
+type CreateChangeRequest struct {
+	Project string `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// Ref to base the new change at. e.g. refs/heads/master
+	Ref                  string   `protobuf:"bytes,2,opt,name=ref,proto3" json:"ref,omitempty"`
+	Subject              string   `protobuf:"bytes,3,opt,name=subject,proto3" json:"subject,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateChangeRequest) Reset()         { *m = CreateChangeRequest{} }
+func (m *CreateChangeRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateChangeRequest) ProtoMessage()    {}
+func (*CreateChangeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3c6e096860f6adc3, []int{3}
+}
+
+func (m *CreateChangeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateChangeRequest.Unmarshal(m, b)
+}
+func (m *CreateChangeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateChangeRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateChangeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateChangeRequest.Merge(m, src)
+}
+func (m *CreateChangeRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateChangeRequest.Size(m)
+}
+func (m *CreateChangeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateChangeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateChangeRequest proto.InternalMessageInfo
+
+func (m *CreateChangeRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *CreateChangeRequest) GetRef() string {
+	if m != nil {
+		return m.Ref
+	}
+	return ""
+}
+
+func (m *CreateChangeRequest) GetSubject() string {
+	if m != nil {
+		return m.Subject
+	}
+	return ""
+}
+
+// Information to submit a change.
+//
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-input
+type SubmitChangeRequest struct {
+	// The change number.
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	// The project of this change. For example, "chromium/src".
+	//
+	// Optional, but recommended for better routing and faster RPC execution.
+	Project              string   `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SubmitChangeRequest) Reset()         { *m = SubmitChangeRequest{} }
+func (m *SubmitChangeRequest) String() string { return proto.CompactTextString(m) }
+func (*SubmitChangeRequest) ProtoMessage()    {}
+func (*SubmitChangeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3c6e096860f6adc3, []int{4}
+}
+
+func (m *SubmitChangeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SubmitChangeRequest.Unmarshal(m, b)
+}
+func (m *SubmitChangeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SubmitChangeRequest.Marshal(b, m, deterministic)
+}
+func (m *SubmitChangeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SubmitChangeRequest.Merge(m, src)
+}
+func (m *SubmitChangeRequest) XXX_Size() int {
+	return xxx_messageInfo_SubmitChangeRequest.Size(m)
+}
+func (m *SubmitChangeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SubmitChangeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SubmitChangeRequest proto.InternalMessageInfo
+
+func (m *SubmitChangeRequest) GetNumber() int64 {
+	if m != nil {
+		return m.Number
+	}
+	return 0
+}
+
+func (m *SubmitChangeRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+type ChangeEditFileContentRequest struct {
+	// The change number.
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	// The project of this change. For example, "chromium/src".
+	//
+	// Optional, but recommended for better routing and faster RPC execution.
+	Project string `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	// Path to the file to edit inside the project.
+	FilePath string `protobuf:"bytes,3,opt,name=file_path,json=filePath,proto3" json:"file_path,omitempty"`
+	// New content of the file. Overwrites existing contents entirely.
+	Content              []byte   `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChangeEditFileContentRequest) Reset()         { *m = ChangeEditFileContentRequest{} }
+func (m *ChangeEditFileContentRequest) String() string { return proto.CompactTextString(m) }
+func (*ChangeEditFileContentRequest) ProtoMessage()    {}
+func (*ChangeEditFileContentRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3c6e096860f6adc3, []int{5}
+}
+
+func (m *ChangeEditFileContentRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangeEditFileContentRequest.Unmarshal(m, b)
+}
+func (m *ChangeEditFileContentRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangeEditFileContentRequest.Marshal(b, m, deterministic)
+}
+func (m *ChangeEditFileContentRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangeEditFileContentRequest.Merge(m, src)
+}
+func (m *ChangeEditFileContentRequest) XXX_Size() int {
+	return xxx_messageInfo_ChangeEditFileContentRequest.Size(m)
+}
+func (m *ChangeEditFileContentRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangeEditFileContentRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChangeEditFileContentRequest proto.InternalMessageInfo
+
+func (m *ChangeEditFileContentRequest) GetNumber() int64 {
+	if m != nil {
+		return m.Number
+	}
+	return 0
+}
+
+func (m *ChangeEditFileContentRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
+func (m *ChangeEditFileContentRequest) GetFilePath() string {
+	if m != nil {
+		return m.FilePath
+	}
+	return ""
+}
+
+func (m *ChangeEditFileContentRequest) GetContent() []byte {
+	if m != nil {
+		return m.Content
+	}
+	return nil
+}
+
+// Information for publishing a change edit.
+//
+// This is a placeholder to support the options described here in the future:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-change-edit-input
+type ChangeEditPublishRequest struct {
+	// The change number.
+	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
+	// The project of this change. For example, "chromium/src".
+	//
+	// Optional, but recommended for better routing and faster RPC execution.
+	Project              string   `protobuf:"bytes,2,opt,name=project,proto3" json:"project,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChangeEditPublishRequest) Reset()         { *m = ChangeEditPublishRequest{} }
+func (m *ChangeEditPublishRequest) String() string { return proto.CompactTextString(m) }
+func (*ChangeEditPublishRequest) ProtoMessage()    {}
+func (*ChangeEditPublishRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3c6e096860f6adc3, []int{6}
+}
+
+func (m *ChangeEditPublishRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangeEditPublishRequest.Unmarshal(m, b)
+}
+func (m *ChangeEditPublishRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangeEditPublishRequest.Marshal(b, m, deterministic)
+}
+func (m *ChangeEditPublishRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangeEditPublishRequest.Merge(m, src)
+}
+func (m *ChangeEditPublishRequest) XXX_Size() int {
+	return xxx_messageInfo_ChangeEditPublishRequest.Size(m)
+}
+func (m *ChangeEditPublishRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangeEditPublishRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChangeEditPublishRequest proto.InternalMessageInfo
+
+func (m *ChangeEditPublishRequest) GetNumber() int64 {
+	if m != nil {
+		return m.Number
+	}
+	return 0
+}
+
+func (m *ChangeEditPublishRequest) GetProject() string {
+	if m != nil {
+		return m.Project
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterEnum("gerrit.QueryOption", QueryOption_name, QueryOption_value)
+	proto.RegisterEnum("gerrit.ChangeInfo_Status", ChangeInfo_Status_name, ChangeInfo_Status_value)
 	proto.RegisterType((*GetChangeRequest)(nil), "gerrit.GetChangeRequest")
 	proto.RegisterType((*AccountInfo)(nil), "gerrit.AccountInfo")
 	proto.RegisterType((*ChangeInfo)(nil), "gerrit.ChangeInfo")
+	proto.RegisterType((*CreateChangeRequest)(nil), "gerrit.CreateChangeRequest")
+	proto.RegisterType((*SubmitChangeRequest)(nil), "gerrit.SubmitChangeRequest")
+	proto.RegisterType((*ChangeEditFileContentRequest)(nil), "gerrit.ChangeEditFileContentRequest")
+	proto.RegisterType((*ChangeEditPublishRequest)(nil), "gerrit.ChangeEditPublishRequest")
 }
 
 func init() {
@@ -367,45 +664,62 @@ func init() {
 }
 
 var fileDescriptor_3c6e096860f6adc3 = []byte{
-	// 596 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x53, 0x4d, 0x6f, 0xda, 0x40,
-	0x10, 0x2d, 0x1f, 0x21, 0x30, 0x34, 0xb0, 0x4c, 0x68, 0x6a, 0xe5, 0x84, 0x72, 0x4a, 0x2a, 0x15,
-	0xa4, 0x54, 0x3d, 0xf4, 0x16, 0xb3, 0x5e, 0xc8, 0x0a, 0x63, 0xd3, 0xb5, 0x69, 0xd4, 0x93, 0x45,
-	0x5c, 0x97, 0x50, 0xc5, 0xde, 0xd4, 0xd8, 0xaa, 0x72, 0xa9, 0xfc, 0x1f, 0xfb, 0x87, 0x2a, 0xaf,
-	0x31, 0x44, 0x95, 0x7a, 0xb2, 0xdf, 0xdb, 0xb7, 0x6f, 0xde, 0xac, 0x66, 0xe0, 0xe3, 0x5a, 0x0e,
-	0xfd, 0x87, 0x58, 0x86, 0x9b, 0x34, 0x1c, 0xca, 0x78, 0x3d, 0x7a, 0x4c, 0xfd, 0xcd, 0xc8, 0x97,
-	0x61, 0x28, 0xa3, 0xd1, 0x53, 0x2c, 0x13, 0x39, 0x5a, 0x07, 0x71, 0xbc, 0x49, 0x76, 0x9f, 0xa1,
-	0xe2, 0xb0, 0x51, 0xa0, 0x8b, 0xaf, 0x40, 0xa6, 0x41, 0x42, 0x1f, 0x56, 0xd1, 0x3a, 0x10, 0xc1,
-	0xcf, 0x34, 0xd8, 0x26, 0x78, 0x06, 0x8d, 0x28, 0x0d, 0xef, 0x83, 0x58, 0xab, 0x0c, 0x2a, 0x97,
-	0x35, 0xb1, 0x43, 0xf8, 0x1e, 0x8e, 0xe5, 0x53, 0xb2, 0x91, 0xd1, 0x56, 0xab, 0x0e, 0x6a, 0x97,
-	0x9d, 0xeb, 0xd3, 0xe1, 0xce, 0xf3, 0x73, 0x1a, 0xc4, 0xcf, 0xb6, 0x3a, 0x13, 0xa5, 0xe6, 0xe2,
-	0x37, 0xb4, 0x75, 0xdf, 0x97, 0x69, 0x94, 0xf0, 0xe8, 0xbb, 0x44, 0x84, 0x7a, 0xb4, 0x0a, 0x03,
-	0xe5, 0xd9, 0x12, 0xea, 0x1f, 0xfb, 0x70, 0x14, 0x84, 0xab, 0xcd, 0xa3, 0x56, 0x55, 0x64, 0x01,
-	0xf0, 0x0a, 0xc8, 0x36, 0xf0, 0x65, 0xf4, 0x6d, 0x15, 0x3f, 0x7b, 0x8a, 0xda, 0x6a, 0xb5, 0x41,
-	0xed, 0xb2, 0x25, 0xba, 0x7b, 0x9e, 0x29, 0x1a, 0xcf, 0xa1, 0x99, 0x6e, 0x83, 0x58, 0x19, 0xd7,
-	0x95, 0xc7, 0x1e, 0x5f, 0x6c, 0x00, 0x8a, 0xbe, 0x54, 0xf9, 0xff, 0x35, 0x75, 0x05, 0x47, 0xf2,
-	0x57, 0x14, 0xc4, 0x2a, 0x42, 0xfb, 0xd0, 0xd2, 0x8b, 0xe8, 0xa2, 0x50, 0xa0, 0x06, 0xc7, 0x4f,
-	0xb1, 0xfc, 0x11, 0xf8, 0x89, 0x56, 0x53, 0xb5, 0x4a, 0xf8, 0xee, 0x4f, 0x0d, 0xda, 0x2f, 0xde,
-	0x00, 0xcf, 0x00, 0xed, 0x85, 0xcb, 0x6d, 0xcb, 0x5b, 0x5a, 0xce, 0x82, 0x51, 0x3e, 0xe1, 0xcc,
-	0x20, 0xaf, 0x10, 0xa0, 0x61, 0xea, 0x63, 0x66, 0x3a, 0xa4, 0x82, 0xa7, 0xd0, 0x35, 0x98, 0xab,
-	0x73, 0x93, 0x19, 0xde, 0x8e, 0xac, 0x62, 0x1f, 0x08, 0x5d, 0x0a, 0xc1, 0x2c, 0xd7, 0x13, 0xec,
-	0x0b, 0x77, 0xb8, 0x6d, 0x91, 0x3a, 0xf6, 0xe0, 0x44, 0x37, 0xcd, 0x3d, 0xe3, 0x90, 0x26, 0x22,
-	0x74, 0x4a, 0x21, 0xb5, 0xe7, 0x73, 0xee, 0x12, 0x82, 0x5d, 0x68, 0xe7, 0xb2, 0x02, 0x3b, 0x64,
-	0x90, 0xdf, 0x2b, 0x45, 0x13, 0x6e, 0x32, 0x87, 0xdc, 0x60, 0x07, 0x5a, 0xb9, 0xa6, 0x80, 0x59,
-	0x05, 0xcf, 0xa0, 0xb7, 0x4f, 0xa1, 0x53, 0x6a, 0x2f, 0x2d, 0xd7, 0x21, 0x59, 0x15, 0xdf, 0x00,
-	0xc9, 0xcb, 0xb1, 0x3b, 0x26, 0xbc, 0xe5, 0xc2, 0xd0, 0xdd, 0x5c, 0x5e, 0xc7, 0x13, 0x68, 0xce,
-	0x99, 0xe3, 0xe8, 0xd3, 0x1c, 0x36, 0xb1, 0x0f, 0xdd, 0xb2, 0x80, 0x4e, 0x5d, 0x15, 0x2d, 0x23,
-	0x78, 0x0a, 0x1d, 0x7a, 0xab, 0x5b, 0x53, 0x76, 0x20, 0x07, 0xf9, 0xcd, 0x9d, 0xa1, 0x41, 0xb2,
-	0x1b, 0xec, 0x43, 0xc7, 0x99, 0xf1, 0x85, 0x37, 0x67, 0x62, 0xca, 0xf4, 0xb1, 0xc9, 0x48, 0x96,
-	0x55, 0xb0, 0x07, 0x6d, 0x67, 0x39, 0x9e, 0x73, 0xd7, 0xdd, 0x51, 0x55, 0xec, 0x42, 0xeb, 0x8e,
-	0x8d, 0x3d, 0x93, 0x5b, 0x33, 0x87, 0x64, 0x59, 0x1d, 0xdb, 0x70, 0x44, 0x6f, 0x19, 0x9d, 0x91,
-	0x4c, 0x05, 0xe8, 0x14, 0xed, 0x7a, 0x13, 0xdb, 0x76, 0x99, 0xc8, 0x25, 0x04, 0xdf, 0x42, 0x6f,
-	0xb1, 0x74, 0x6e, 0x3d, 0xca, 0x84, 0xcb, 0x27, 0x9c, 0x16, 0xe9, 0xb3, 0x01, 0x22, 0xbc, 0x76,
-	0x85, 0x4e, 0x67, 0xdc, 0x9a, 0x7a, 0xdc, 0xc8, 0xb9, 0x1b, 0xd4, 0xa0, 0x67, 0xd8, 0x77, 0x96,
-	0x69, 0xeb, 0x86, 0x7a, 0x3a, 0xdd, 0x52, 0x07, 0x59, 0xe5, 0x9a, 0x42, 0x63, 0xaa, 0x86, 0x01,
-	0x3f, 0x41, 0x6b, 0xbf, 0x25, 0xa8, 0x95, 0x23, 0xf2, 0xef, 0xe2, 0x9c, 0x63, 0x79, 0x72, 0x98,
-	0xbb, 0xfb, 0x86, 0xda, 0xb7, 0x0f, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x17, 0xaa, 0x86, 0x8f,
-	0xa8, 0x03, 0x00, 0x00,
+	// 878 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x55, 0x41, 0x6f, 0xe2, 0x46,
+	0x14, 0xae, 0x81, 0x10, 0x78, 0x24, 0x30, 0x3c, 0xb2, 0xa9, 0x9b, 0xf4, 0x80, 0x50, 0x0f, 0xd9,
+	0x4a, 0x05, 0x35, 0x55, 0x0f, 0x3d, 0x6d, 0x8c, 0x3d, 0x10, 0x2b, 0xc6, 0xa6, 0xb6, 0xd9, 0xa8,
+	0xea, 0xc1, 0x02, 0x76, 0x02, 0xae, 0xc0, 0xa6, 0xc6, 0x56, 0x95, 0x4b, 0xe5, 0x5b, 0x7f, 0x60,
+	0x7f, 0x46, 0x2f, 0xfd, 0x09, 0x95, 0xc7, 0x36, 0x90, 0x86, 0x95, 0x56, 0x7b, 0xc2, 0xef, 0xf3,
+	0xe7, 0xef, 0x7d, 0x8f, 0x99, 0x6f, 0x06, 0x7e, 0x5c, 0xf8, 0xdd, 0xf9, 0x32, 0xf0, 0xd7, 0x6e,
+	0xb4, 0xee, 0xfa, 0xc1, 0xa2, 0xb7, 0x8a, 0xe6, 0x6e, 0x6f, 0xee, 0xaf, 0xd7, 0xbe, 0xd7, 0xdb,
+	0x04, 0x7e, 0xe8, 0xf7, 0x16, 0x2c, 0x08, 0xdc, 0x30, 0xfb, 0xe9, 0x72, 0x0c, 0xcb, 0x69, 0x75,
+	0x75, 0xbd, 0xf0, 0xfd, 0xc5, 0x8a, 0xa5, 0xcc, 0x59, 0xf4, 0xd4, 0x63, 0xeb, 0x4d, 0xf8, 0x9c,
+	0x92, 0x3a, 0xbf, 0x00, 0x19, 0xb2, 0x50, 0x5e, 0x4e, 0xbd, 0x05, 0x33, 0xd9, 0xef, 0x11, 0xdb,
+	0x86, 0x78, 0x09, 0x65, 0x2f, 0x5a, 0xcf, 0x58, 0x20, 0x0a, 0x6d, 0xe1, 0xa6, 0x68, 0x66, 0x15,
+	0x7e, 0x07, 0xa7, 0xfe, 0x26, 0x74, 0x7d, 0x6f, 0x2b, 0x16, 0xda, 0xc5, 0x9b, 0xfa, 0x6d, 0xab,
+	0x9b, 0x35, 0xfc, 0x39, 0x62, 0xc1, 0xb3, 0xc1, 0xdf, 0x99, 0x39, 0xa7, 0xf3, 0x27, 0xd4, 0xa4,
+	0xf9, 0xdc, 0x8f, 0xbc, 0x50, 0xf5, 0x9e, 0x7c, 0x44, 0x28, 0x79, 0xd3, 0x35, 0xe3, 0x9a, 0x55,
+	0x93, 0x3f, 0xe3, 0x05, 0x9c, 0xb0, 0xf5, 0xd4, 0x5d, 0x89, 0x05, 0x0e, 0xa6, 0x05, 0xbe, 0x05,
+	0xb2, 0x65, 0x73, 0xdf, 0xfb, 0x30, 0x0d, 0x9e, 0x1d, 0x0e, 0x6d, 0xc5, 0x62, 0xbb, 0x78, 0x53,
+	0x35, 0x1b, 0x3b, 0x9c, 0x72, 0x18, 0xaf, 0xa0, 0x12, 0x6d, 0x59, 0xc0, 0x85, 0x4b, 0x5c, 0x63,
+	0x57, 0x77, 0xfe, 0x15, 0x00, 0xd2, 0xc1, 0x78, 0xff, 0x8f, 0x4d, 0xf5, 0x16, 0x4e, 0xfc, 0x3f,
+	0x3c, 0x16, 0x70, 0x0f, 0xb5, 0xfd, 0x4c, 0x07, 0xde, 0xcd, 0x94, 0x81, 0x22, 0x9c, 0x6e, 0x02,
+	0xff, 0x37, 0x36, 0x0f, 0xc5, 0x22, 0x6f, 0x96, 0x97, 0x48, 0xa0, 0x18, 0xb0, 0xa7, 0xcc, 0x42,
+	0xf2, 0x88, 0xdf, 0x43, 0x79, 0x1b, 0x4e, 0xc3, 0x68, 0x2b, 0x9e, 0xb4, 0x85, 0x9b, 0xfa, 0xed,
+	0x57, 0xb9, 0xee, 0xde, 0x52, 0xd7, 0xe2, 0x04, 0x33, 0x23, 0x76, 0xee, 0xa0, 0x9c, 0x22, 0x88,
+	0x50, 0xb7, 0x6c, 0xc9, 0x9e, 0x58, 0x8e, 0xaa, 0xbf, 0x97, 0x34, 0x55, 0x21, 0x5f, 0xe0, 0x29,
+	0x14, 0x75, 0xfa, 0x48, 0x04, 0x04, 0x28, 0x8f, 0xa8, 0x39, 0xa4, 0x0a, 0x29, 0xe0, 0x39, 0x54,
+	0xa5, 0xbe, 0xa4, 0x2b, 0x86, 0x4e, 0x15, 0x52, 0xec, 0xfc, 0x0a, 0x2d, 0x39, 0x60, 0xd3, 0x90,
+	0xbd, 0x5c, 0xd0, 0x03, 0xdf, 0xc2, 0x51, 0xdf, 0x85, 0xbd, 0x6f, 0x11, 0x4e, 0xb7, 0xd1, 0xec,
+	0x70, 0xc6, 0xac, 0xec, 0x0c, 0xa1, 0x65, 0x45, 0xb3, 0xb5, 0xfb, 0x89, 0xbb, 0xe5, 0xa0, 0x69,
+	0xe1, 0x45, 0xd3, 0xce, 0x5f, 0x02, 0x7c, 0x9d, 0x6a, 0xd0, 0x0f, 0x6e, 0x38, 0x70, 0x57, 0x4c,
+	0xf6, 0xbd, 0x90, 0x79, 0xe1, 0x67, 0x4b, 0xe2, 0x35, 0x54, 0x9f, 0xdc, 0x15, 0x73, 0x36, 0xd3,
+	0x70, 0x99, 0xf9, 0xae, 0x24, 0xc0, 0x78, 0x1a, 0x2e, 0x93, 0xcf, 0xe6, 0x69, 0x03, 0xbe, 0x40,
+	0x67, 0x66, 0x5e, 0x76, 0x34, 0x10, 0xf7, 0x46, 0xc6, 0xd1, 0x6c, 0xe5, 0x6e, 0x97, 0x9f, 0x6d,
+	0xe2, 0xdb, 0xbf, 0x8b, 0x50, 0x3b, 0x48, 0x02, 0x5e, 0x02, 0x1a, 0x63, 0x5b, 0x35, 0x74, 0x67,
+	0xa2, 0x5b, 0x63, 0x2a, 0xab, 0x03, 0x95, 0x26, 0x2b, 0x09, 0x50, 0xd6, 0xa4, 0x3e, 0xd5, 0x2c,
+	0x22, 0x60, 0x0b, 0x1a, 0x0a, 0xb5, 0x25, 0x55, 0xa3, 0x8a, 0x93, 0x81, 0x05, 0xbc, 0x00, 0x22,
+	0x4f, 0x4c, 0x93, 0xea, 0xb6, 0x63, 0xd2, 0xf7, 0xaa, 0xa5, 0x1a, 0x3a, 0x29, 0x61, 0x13, 0xce,
+	0x25, 0x4d, 0xdb, 0x21, 0x16, 0xa9, 0x24, 0xfb, 0x24, 0x27, 0xca, 0xc6, 0x68, 0xa4, 0xda, 0x84,
+	0x60, 0x03, 0x6a, 0x09, 0x2d, 0xad, 0x2d, 0xd2, 0x4e, 0xbe, 0xcb, 0x49, 0x03, 0x55, 0xa3, 0x16,
+	0xb9, 0xc3, 0x3a, 0x54, 0x13, 0x4e, 0x5a, 0xc6, 0x02, 0x5e, 0x42, 0x73, 0xe7, 0x42, 0x92, 0x65,
+	0x63, 0xa2, 0xdb, 0x16, 0x89, 0x0b, 0xf8, 0x06, 0x48, 0xd2, 0x8e, 0x3e, 0x52, 0xd3, 0x99, 0x8c,
+	0x15, 0xc9, 0x4e, 0xe8, 0x25, 0x3c, 0x87, 0xca, 0x88, 0x5a, 0x96, 0x34, 0x4c, 0xca, 0x0a, 0x5e,
+	0x40, 0x23, 0x6f, 0x20, 0xc9, 0x36, 0xb7, 0x16, 0x13, 0x6c, 0x41, 0x5d, 0xbe, 0x97, 0xf4, 0x21,
+	0xdd, 0x83, 0xed, 0xe4, 0xcb, 0x4c, 0x50, 0x21, 0xf1, 0x1d, 0x5e, 0x40, 0xdd, 0x7a, 0x50, 0xc7,
+	0x0e, 0xdf, 0xcf, 0x52, 0x5f, 0xa3, 0x24, 0x8e, 0x05, 0x6c, 0x42, 0xcd, 0x9a, 0xf4, 0x47, 0xaa,
+	0x6d, 0x67, 0x50, 0x01, 0x1b, 0x50, 0x7d, 0xa4, 0x7d, 0x47, 0x53, 0xf5, 0x07, 0x8b, 0xc4, 0x71,
+	0x09, 0x6b, 0x70, 0x22, 0xdf, 0x53, 0xf9, 0x81, 0xc4, 0xdc, 0x40, 0x3d, 0x1d, 0xd7, 0x19, 0x18,
+	0x86, 0x4d, 0xcd, 0x84, 0x42, 0xf0, 0x4b, 0x68, 0x8e, 0x27, 0xd6, 0xbd, 0x23, 0x53, 0xd3, 0x56,
+	0x07, 0xaa, 0x9c, 0xba, 0x8f, 0xdb, 0x88, 0x70, 0x66, 0x9b, 0x92, 0xfc, 0xa0, 0xea, 0x43, 0x47,
+	0x55, 0x12, 0xec, 0x0e, 0x45, 0x68, 0x2a, 0xc6, 0xa3, 0xae, 0x19, 0x92, 0xc2, 0xff, 0x3a, 0x49,
+	0xe7, 0x2f, 0x62, 0xe1, 0xf6, 0x9f, 0x02, 0x94, 0x87, 0x3c, 0xba, 0xf8, 0x13, 0x54, 0x77, 0x87,
+	0x25, 0x8a, 0x79, 0xa0, 0xff, 0x7f, 0x7e, 0x5e, 0xe1, 0xeb, 0xa8, 0xe3, 0x3b, 0x38, 0x3b, 0x4c,
+	0x26, 0x5e, 0xef, 0x38, 0xaf, 0xf3, 0x7a, 0x54, 0x60, 0x02, 0x6f, 0x8e, 0x66, 0x06, 0xbf, 0x79,
+	0x49, 0x3e, 0x1e, 0xa9, 0xab, 0xcb, 0x6e, 0x7a, 0x0b, 0x74, 0xf3, 0x5b, 0xa0, 0x4b, 0x93, 0x5b,
+	0x00, 0x47, 0xd0, 0x7c, 0x95, 0x00, 0x6c, 0xbf, 0x96, 0x7c, 0x19, 0x8e, 0x8f, 0xca, 0xbd, 0x83,
+	0xb3, 0xc3, 0x33, 0x62, 0x3f, 0xe6, 0x91, 0x93, 0xe3, 0xd8, 0x98, 0xb3, 0x32, 0x17, 0xfc, 0xe1,
+	0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x8f, 0xf0, 0x32, 0x88, 0xf4, 0x06, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -422,6 +736,14 @@ const _ = grpc.SupportPackageIsVersion4
 type GerritClient interface {
 	// Loads a change by id.
 	GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
+	// Create a new empty change.
+	CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
+	// Edit a single file within an existing change edit.
+	ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Publish all changes in a a change edit.
+	ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// Submit a change.
+	SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error)
 }
 type gerritPRPCClient struct {
 	client *prpc.Client
@@ -434,6 +756,42 @@ func NewGerritPRPCClient(client *prpc.Client) GerritClient {
 func (c *gerritPRPCClient) GetChange(ctx context.Context, in *GetChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	out := new(ChangeInfo)
 	err := c.client.Call(ctx, "gerrit.Gerrit", "GetChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	out := new(ChangeInfo)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "CreateChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditFileContent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "ChangeEditPublish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritPRPCClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	out := new(ChangeInfo)
+	err := c.client.Call(ctx, "gerrit.Gerrit", "SubmitChange", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -457,10 +815,54 @@ func (c *gerritClient) GetChange(ctx context.Context, in *GetChangeRequest, opts
 	return out, nil
 }
 
+func (c *gerritClient) CreateChange(ctx context.Context, in *CreateChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	out := new(ChangeInfo)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/CreateChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) ChangeEditFileContent(ctx context.Context, in *ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditFileContent", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) ChangeEditPublish(ctx context.Context, in *ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/ChangeEditPublish", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gerritClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	out := new(ChangeInfo)
+	err := c.cc.Invoke(ctx, "/gerrit.Gerrit/SubmitChange", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GerritServer is the server API for Gerrit service.
 type GerritServer interface {
 	// Loads a change by id.
 	GetChange(context.Context, *GetChangeRequest) (*ChangeInfo, error)
+	// Create a new empty change.
+	CreateChange(context.Context, *CreateChangeRequest) (*ChangeInfo, error)
+	// Edit a single file within an existing change edit.
+	ChangeEditFileContent(context.Context, *ChangeEditFileContentRequest) (*empty.Empty, error)
+	// Publish all changes in a a change edit.
+	ChangeEditPublish(context.Context, *ChangeEditPublishRequest) (*empty.Empty, error)
+	// Submit a change.
+	SubmitChange(context.Context, *SubmitChangeRequest) (*ChangeInfo, error)
 }
 
 func RegisterGerritServer(s prpc.Registrar, srv GerritServer) {
@@ -485,6 +887,78 @@ func _Gerrit_GetChange_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Gerrit_CreateChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).CreateChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/CreateChange",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).CreateChange(ctx, req.(*CreateChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_ChangeEditFileContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeEditFileContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ChangeEditFileContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/ChangeEditFileContent",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ChangeEditFileContent(ctx, req.(*ChangeEditFileContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_ChangeEditPublish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeEditPublishRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).ChangeEditPublish(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/ChangeEditPublish",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).ChangeEditPublish(ctx, req.(*ChangeEditPublishRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Gerrit_SubmitChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GerritServer).SubmitChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gerrit.Gerrit/SubmitChange",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GerritServer).SubmitChange(ctx, req.(*SubmitChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _Gerrit_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gerrit.Gerrit",
 	HandlerType: (*GerritServer)(nil),
@@ -492,6 +966,22 @@ var _Gerrit_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetChange",
 			Handler:    _Gerrit_GetChange_Handler,
+		},
+		{
+			MethodName: "CreateChange",
+			Handler:    _Gerrit_CreateChange_Handler,
+		},
+		{
+			MethodName: "ChangeEditFileContent",
+			Handler:    _Gerrit_ChangeEditFileContent_Handler,
+		},
+		{
+			MethodName: "ChangeEditPublish",
+			Handler:    _Gerrit_ChangeEditPublish_Handler,
+		},
+		{
+			MethodName: "SubmitChange",
+			Handler:    _Gerrit_SubmitChange_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
