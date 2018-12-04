@@ -140,7 +140,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 		Subject: req.Subject,
 	}
 
-	if _, err := c.call(ctx, "POST", "/changes", url.Values{}, data, &resp, http.StatusCreated); err != nil {
+	if _, err := c.call(ctx, "POST", "/changes/", url.Values{}, data, &resp, http.StatusCreated); err != nil {
 		return nil, errors.Annotate(err, "create empty change").Err()
 	}
 
