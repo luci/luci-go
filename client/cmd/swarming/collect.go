@@ -348,13 +348,26 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 // summarizeResultsPython generates summary JSON file compatible with python's
 // swarming client.
 func summarizeResultsPython(results []taskResult) ([]byte, error) {
-	var shards []*swarming.SwarmingRpcsTaskResult
+	var shards []map[string]interface{}
 
 	for _, result := range results {
-		shards = append(shards, result.result)
+		buf, err := json.Marshal(result.result)
+		if err != nil {
+			return nil, err
+		}
+
+		var jsonResult map[string]interface{}
+		if err := json.Unmarshal(buf, &jsonResult); err != nil {
+			return nil, err
+		}
+
+		if jsonResult != nil {
+			jsonResult["output"] = result.output
+		}
+		shards = append(shards, jsonResult)
 	}
 
-	return json.MarshalIndent(map[string][]*swarming.SwarmingRpcsTaskResult{
+	return json.MarshalIndent(map[string]interface{}{
 		"shards": shards,
 	}, "", "  ")
 }
