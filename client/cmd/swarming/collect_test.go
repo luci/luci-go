@@ -182,6 +182,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
 					Duration: 1,
 					ExitCode: 0,
 				},
+				output: "Output",
 			},
 			{},
 		}
@@ -191,6 +192,7 @@ func TestCollectSummarizeResultsPython(t *testing.T) {
   "shards": [
     {
       "duration": 1,
+      "output": "Output",
       "state": "COMPLETED"
     },
     null
