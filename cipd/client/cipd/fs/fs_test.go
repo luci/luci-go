@@ -263,6 +263,19 @@ func TestEnsureFileGone(t *testing.T) {
 		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
 	})
 
+	Convey("EnsureFileGone works with empty directory", t, func() {
+		fs := tempFileSystem()
+		fs.mkdir("abc")
+		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldBeNil)
+		So(fs.isMissing("abc"), ShouldBeTrue)
+	})
+
+	Convey("EnsureFileGone fails with non-empty directory", t, func() {
+		fs := tempFileSystem()
+		fs.write("abc/file", "zzz")
+		So(fs.EnsureFileGone(ctx, fs.join("abc")), ShouldNotBeNil)
+	})
+
 	if runtime.GOOS != "windows" {
 		Convey("EnsureFileGone works with symlink", t, func() {
 			fs := tempFileSystem()
@@ -431,6 +444,11 @@ func (f *tempFileSystemImpl) write(rel string, data string) {
 	So(err, ShouldBeNil)
 	file.WriteString(data)
 	file.Close()
+}
+
+// mkdir creates an empty directory.
+func (f *tempFileSystemImpl) mkdir(rel string) {
+	So(os.MkdirAll(filepath.Dir(f.join(rel)), 0777), ShouldBeNil)
 }
 
 // read reads an existing file at a given slash separated path relative to Root().
