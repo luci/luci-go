@@ -13,17 +13,23 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+<script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/yellow-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse( null );
+</script>
 
 
 <body class="interface">
@@ -42,62 +48,69 @@
   
   <div class="content">
     <h1>
-      
-      Build <a>2d8d62f6be545b10</a>
-      
+    
+    Build <a>2d8d62f6be545b10</a>
+    
     </h1>
 
-    <div class="column">
-
-      <h2>Results:</h2>
-      
-        <p class="result status-Running">
-        <span class="step-text">Running recipe bootstrap </span><span class="step-text">Failure build </span>
-        
-        </p>
-       
-
-        
-
-      
-      <h2>Execution:</h2>
+    <div id="tabs" style="display: none;">
       <ul>
-        
-        <li>
-          Source:
-          <a href="https://example.com/task?id=2d8d62f6be545b10&amp;show_raw=1&amp;wide_logs=true"
-             aria-label="Source for Task 2d8d62f6be545b10">
-            Task 2d8d62f6be545b10
-          </a>
-        </li>
-        
-
-        
-
-        
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
-       
+      <div id="results-tab">
+  <div id="results">
+    <h2>Results:</h2>
+    
+      <p class="result status-Running">
+      <span class="step-text">Running recipe bootstrap </span><span class="step-text">Failure build </span>
+      
+      </p>
+     
 
       
 
+    
+    <h2>Execution:</h2>
+    <ul>
       
-        <h2>Steps and Logfiles:</h2>
-        Show:
-        <input type="radio" name="hider" id="showExpanded">
-        <label for="showExpanded">Expanded</label>
-        <input type="radio" name="hider" id="showDefault">
-        <label for="showDefault">Default</label>
-        <input type="radio" name="hider" id="showNonGreen" checked>
-        <label for="showNonGreen">Non-Green</label>
+      <li>
+        Source:
+        <a href="https://example.com/task?id=2d8d62f6be545b10&amp;show_raw=1&amp;wide_logs=true"
+           aria-label="Source for Task 2d8d62f6be545b10">
+          Task 2d8d62f6be545b10
+        </a>
+      </li>
+      
 
-        <ol id="steps" class="non-green">
+      
 
-          
-            
-          
+      
+    </ul>
+     
 
+    
+
+    
+      <h2>Steps and Logfiles:</h2>
+      Show:
+      <input type="radio" name="hider" id="showExpanded">
+      <label for="showExpanded">Expanded</label>
+      <input type="radio" name="hider" id="showDefault">
+      <label for="showDefault">Default</label>
+      <input type="radio" name="hider" id="showNonGreen" checked>
+      <label for="showNonGreen">Non-Green</label>
+
+      <ol id="steps" class="non-green">
+
+        
           
-            
+        
+
+        
+          
 <li class="">
   <div class="status-Running result">
       
@@ -126,8 +139,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -154,8 +167,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -182,8 +195,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -210,8 +223,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -236,8 +249,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -262,8 +275,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -288,8 +301,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -314,8 +327,8 @@
   
 </li>
 
+        
           
-            
 <li class=" substeps">
   <div class="status-InfraFailure result">
       
@@ -488,102 +501,111 @@
   
 </li>
 
-          
-        </ol>
-       
+        
+      </ol>
+     
 
-    </div>
+  </div>
+</div>
+      <div id="properties-tab">
+  <div id="properties">
+    <h2>Build Properties:</h2>
 
-    <div class="column">
-
-      <h2>Build Properties:</h2>
-
-      <table class="info BuildProperties" width="100%">
-      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-        
-          
-        
-      </table>
+    <table class="info BuildProperties" width="100%">
+    <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
       
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+      
+        
+      
+    </table>
 
-      <h2>Timing:</h2>
-      <table class="info" width="100%">
-        <tr class="alt"><td class="left">Create</td>
-        <td>
+    
+
+    <h2>Timing:</h2>
+    <table class="info" width="100%">
+      <tr class="alt"><td class="left">Create</td>
+      <td>
+        N/A
+      </td></tr>
+      <tr><td class="left">Start</td>
+      <td>
+        <span class="local-time " data-timestamp="1457949601850">Monday, 14-Mar-16 10:00:01 UTC</span>
+      </td></tr>
+      <tr class="alt"><td class="left">End</td>
+      <td>
+        N/A
+      </td></tr>
+      <tr><td class="left">Pending</td>
+      <td id="duration">
+        
           N/A
-        </td></tr>
-        <tr><td class="left">Start</td>
-        <td>
-          <span class="local-time " data-timestamp="1457949601850">Monday, 14-Mar-16 10:00:01 UTC</span>
-        </td></tr>
-        <tr class="alt"><td class="left">End</td>
-        <td>
-          N/A
-        </td></tr>
-        <tr><td class="left">Pending</td>
-        <td id="duration">
-          
-            N/A
-          
-        </td></tr>
-        <tr class="alt"><td class="left">Execution</td>
-        <td id="duration">
-          
-            59 mins 58 secs
-          
-        </td></tr>
-      </table>
+        
+      </td></tr>
+      <tr class="alt"><td class="left">Execution</td>
+      <td id="duration">
+        
+          59 mins 58 secs
+        
+      </td></tr>
+    </table>
 
-    </div>
-
+  </div>
+</div>
+      <div id="changes-tab">
+  <div id="changes">
     
   </div>
 </div>
+      <div id="timeline-tab">
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+</div>
+    </div>
+  </div>
 
   <footer>
     <hr>
@@ -598,8 +620,11 @@
 <script>
 $(function () {
   'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
+  
+  setTimeout(function() {
+    milo.makeTimesLocal();
+    milo.annotateDurations();
+  }, 0);
   $(document).tooltip({
     show: false,
     hide: false
@@ -646,6 +671,7 @@ $(function () {
 </script>
 
 <script>
+setTimeout(function() {
 	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -653,6 +679,7 @@ $(function () {
 
 	ga('create', 'UA-12345-01', 'auto');
 	ga('send', 'pageview');
+}, 0);
 </script>
 
 </html>

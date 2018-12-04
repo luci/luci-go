@@ -13,17 +13,23 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+<script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse( null );
+</script>
 
 
 <body class="interface">
@@ -42,96 +48,103 @@
   
   <div class="content">
     <h1>
-      
-        Builder <a href="." aria-label="Parent builder CrWinGoma">CrWinGoma</a>
-      
-      Build <a href="/buildbot/chromium.fyi/CrWinGoma/30608" aria-label="Build number 30608 on master chromium.fyi builder CrWinGoma">#30608</a>
-      
+    
+      Builder <a href="." aria-label="Parent builder CrWinGoma">CrWinGoma</a>
+    
+    Build <a href="/buildbot/chromium.fyi/CrWinGoma/30608" aria-label="Build number 30608 on master chromium.fyi builder CrWinGoma">#30608</a>
+    
     </h1>
 
-    <div class="column">
-
-      <h2>Results:</h2>
-      
-        <p class="result status-Success">
-        <span class="step-text">build successful </span>
-        
-        </p>
-       
-
-      
-      
-
-      <h2>Trigger Info:</h2>
-
-      <table class="info" width="100%">
-      
-
-      
-
-      
-
-      
-
-      
-        <tr><td class="left">Got Revision</td><td><a href="https://chromium.googlesource.com/chromium/src/&#43;/bfdee36d31a624d330b60b481fc26d10dff81b97" aria-label="got revision bfdee36d31a624d330b60b481fc26d10dff81b97">bfdee36d31a624d330b60b481fc26d10dff81b97</a></td></tr>
-      
-
-      
-
-      </table>
-        
-        
-
-      
-      <h2>Execution:</h2>
+    <div id="tabs" style="display: none;">
       <ul>
-        
-        <li>
-          Source:
-          <a href="https://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608"
-             aria-label="Source for chromium.fyi/CrWinGoma/30608">
-            chromium.fyi/CrWinGoma/30608
-          </a>
-        </li>
-        
-
-        
-        <li>
-          Bot:
-          <a href="https://build.chromium.org/p/chromium.fyi/buildslaves/build28-m1"
-             aria-label="Bot build28-m1">
-            build28-m1
-          </a>
-        </li>
-        
-
-        
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
-       
+      <div id="results-tab">
+  <div id="results">
+    <h2>Results:</h2>
+    
+      <p class="result status-Success">
+      <span class="step-text">build successful </span>
+      
+      </p>
+     
+
+    
+    
+
+    <h2>Trigger Info:</h2>
+
+    <table class="info" width="100%">
+    
+
+    
+
+    
+
+    
+
+    
+      <tr><td class="left">Got Revision</td><td><a href="https://chromium.googlesource.com/chromium/src/&#43;/bfdee36d31a624d330b60b481fc26d10dff81b97" aria-label="got revision bfdee36d31a624d330b60b481fc26d10dff81b97">bfdee36d31a624d330b60b481fc26d10dff81b97</a></td></tr>
+    
+
+    
+
+    </table>
+      
+      
+
+    
+    <h2>Execution:</h2>
+    <ul>
+      
+      <li>
+        Source:
+        <a href="https://build.chromium.org/p/chromium.fyi/builders/CrWinGoma/builds/30608"
+           aria-label="Source for chromium.fyi/CrWinGoma/30608">
+          chromium.fyi/CrWinGoma/30608
+        </a>
+      </li>
+      
 
       
+      <li>
+        Bot:
+        <a href="https://build.chromium.org/p/chromium.fyi/buildslaves/build28-m1"
+           aria-label="Bot build28-m1">
+          build28-m1
+        </a>
+      </li>
+      
+
+      
+    </ul>
+     
+
+    
+      
+    
+
+    
+      <h2>Steps and Logfiles:</h2>
+      Show:
+      <input type="radio" name="hider" id="showExpanded">
+      <label for="showExpanded">Expanded</label>
+      <input type="radio" name="hider" id="showDefault" checked>
+      <label for="showDefault">Default</label>
+      <input type="radio" name="hider" id="showNonGreen">
+      <label for="showNonGreen">Non-Green</label>
+
+      <ol id="steps">
+
         
-      
-
-      
-        <h2>Steps and Logfiles:</h2>
-        Show:
-        <input type="radio" name="hider" id="showExpanded">
-        <label for="showExpanded">Expanded</label>
-        <input type="radio" name="hider" id="showDefault" checked>
-        <label for="showDefault">Default</label>
-        <input type="radio" name="hider" id="showNonGreen">
-        <label for="showNonGreen">Non-Green</label>
-
-        <ol id="steps">
-
           
-            
-          
+        
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -162,8 +175,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -190,8 +203,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -216,8 +229,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -244,8 +257,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -270,8 +283,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -298,8 +311,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -324,8 +337,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -352,8 +365,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -380,8 +393,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -406,8 +419,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -434,8 +447,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -462,8 +475,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -488,8 +501,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -514,8 +527,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -542,8 +555,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -568,8 +581,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -594,8 +607,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -620,8 +633,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -648,305 +661,306 @@
   
 </li>
 
-          
-        </ol>
-       
+        
+      </ol>
+     
 
-    </div>
+  </div>
+</div>
+      <div id="properties-tab">
+  <div id="properties">
+    <h2>Build Properties:</h2>
 
-    <div class="column">
-
-      <h2>Build Properties:</h2>
-
-      <table class="info BuildProperties" width="100%">
-      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
-        
-        
-          
-            <tr>
-              <td class="left">got_angle_revision</td>
-              <td class="middle"><abbr title="&#34;07529ff8dcacd94b93d432122d0c6aa68631843a&#34;">&#34;07529ff8dcacd94b93d432122d0c6aa68631843a&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_buildtools_revision</td>
-              <td class="middle"><abbr title="&#34;8dd3c8e39a48743c4eb790d9a8abe9676b617046&#34;">&#34;8dd3c8e39a48743c4eb790d9a8abe9676b617046&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_nacl_revision</td>
-              <td class="middle"><abbr title="&#34;f9308087f764c0f4341e3200baded605c917eb49&#34;">&#34;f9308087f764c0f4341e3200baded605c917eb49&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_revision</td>
-              <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/master@{#398661}&#34;">&#34;refs/heads/master@{#398661}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_swarming_client_revision</td>
-              <td class="middle"><abbr title="&#34;df6e95e7669883c8fe9ef956c69a544154701a49&#34;">&#34;df6e95e7669883c8fe9ef956c69a544154701a49&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_v8_revision</td>
-              <td class="middle"><abbr title="&#34;af2ed87b122bd32cc53285dc7579530ae08731e5&#34;">&#34;af2ed87b122bd32cc53285dc7579530ae08731e5&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_v8_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/5.3.182@{#1}&#34;">&#34;refs/heads/5.3.182@{#1}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_webrtc_revision</td>
-              <td class="middle"><abbr title="&#34;393886f22bb16e991b0fc57d7e290637d307448a&#34;">&#34;393886f22bb16e991b0fc57d7e290637d307448a&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_webrtc_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/master@{#13070}&#34;">&#34;refs/heads/master@{#13070}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">recipe</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>Annotation(setup_properties)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">build_revision</td>
-              <td class="middle"><abbr title="&#34;94dbe001292dcec3423c5d1b0374826ff89a8f46&#34;">&#34;94dbe001292dcec3423c5d1b0374826ff89a8f46&#34;</abbr></td>
-              <td>Annotation(update_scripts)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">build_scm</td>
-              <td class="middle"><abbr title="&#34;git&#34;">&#34;git&#34;</abbr></td>
-              <td>Annotation(update_scripts)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">blamelist</td>
-              <td class="middle"><abbr title="[&#34;agrieve@chromium.org&#34;,&#34;dcheng@chromium.org&#34;,&#34;dtseng@chromium.org&#34;,&#34;fsamuel@chromium.org&#34;,&#34;gab@chromium.org&#34;,&#34;moshayedi@chromium.org&#34;,&#34;yolandyan@google.com&#34;]">[&#34;agrieve@chromium.org&#34;,&#34;dcheng@chromium.org&#34;,&#34;dtseng@chromium.org&#34;,&#34;fsamuel@chromium.org&#34;,&#34;gab@chromium.org&#34;,&#34;moshayedi@chromium.org&#34;,&#34;yolandyan@google.com&#34;]</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">branch</td>
-              <td class="middle"><abbr title="&#34;master&#34;">&#34;master&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">buildnumber</td>
-              <td class="middle"><abbr title="30608">30608</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">project</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">repository</td>
-              <td class="middle"><abbr title="&#34;https://chromium.googlesource.com/chromium/src&#34;">&#34;https://chromium.googlesource.com/chromium/src&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">requestedAt</td>
-              <td class="middle"><abbr title="1465417476">1465417476</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">revision</td>
-              <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">slavename</td>
-              <td class="middle"><abbr title="&#34;build28-m1&#34;">&#34;build28-m1&#34;</abbr></td>
-              <td>BuildSlave</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">buildername</td>
-              <td class="middle"><abbr title="&#34;CrWinGoma&#34;">&#34;CrWinGoma&#34;</abbr></td>
-              <td>Builder</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">git_revision</td>
-              <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
-              <td>Change</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">scheduler</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>Scheduler</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">buildbotURL</td>
-              <td class="middle"><abbr title="&#34;http://build.chromium.org/p/chromium.fyi/&#34;">&#34;http://build.chromium.org/p/chromium.fyi/&#34;</abbr></td>
-              <td>master.cfg</td>
-            </tr>
-          
-            <tr>
-              <td class="left">mastername</td>
-              <td class="middle"><abbr title="&#34;chromium.fyi&#34;">&#34;chromium.fyi&#34;</abbr></td>
-              <td>master.cfg</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">workdir</td>
-              <td class="middle"><abbr title="&#34;C:\\b\\build\\slave/CrWinGoma&#34;">&#34;C:\\b\\build\\slave/CrWinGoma&#34;</abbr></td>
-              <td>slave</td>
-            </tr>
-          
-        
-      </table>
+    <table class="info BuildProperties" width="100%">
+    <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
       
-        <h2>Blamelist:</h2>
-        <ol>
-        
-          <li> (moshayedi<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-          <li> (fsamuel<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-          <li> (gab<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-          <li> (dtseng<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-          <li> (yolandyan<span style="display:none">ohnoyoudont</span>@google.com)</li>
-        
-          <li> (dcheng<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-          <li> (agrieve<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-        </ol>
       
-
-      <h2>Timing:</h2>
-      <table class="info" width="100%">
-        <tr class="alt"><td class="left">Create</td>
-        <td>
-          N/A
-        </td></tr>
-        <tr><td class="left">Start</td>
-        <td>
-          <span class="local-time " data-timestamp="1465418246347">Wednesday, 08-Jun-16 20:37:26 UTC</span>
-        </td></tr>
-        <tr class="alt"><td class="left">End</td>
-        <td>
-          <span class="local-time " data-timestamp="1465419176719">Wednesday, 08-Jun-16 20:52:56 UTC</span>
-        </td></tr>
-        <tr><td class="left">Pending</td>
-        <td id="duration">
-          
-            N/A
-          
-        </td></tr>
-        <tr class="alt"><td class="left">Execution</td>
-        <td id="duration">
-          
-            15 mins 30 secs
-          
-        </td></tr>
-      </table>
-
-    </div>
+        
+          <tr>
+            <td class="left">got_angle_revision</td>
+            <td class="middle"><abbr title="&#34;07529ff8dcacd94b93d432122d0c6aa68631843a&#34;">&#34;07529ff8dcacd94b93d432122d0c6aa68631843a&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_buildtools_revision</td>
+            <td class="middle"><abbr title="&#34;8dd3c8e39a48743c4eb790d9a8abe9676b617046&#34;">&#34;8dd3c8e39a48743c4eb790d9a8abe9676b617046&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_nacl_revision</td>
+            <td class="middle"><abbr title="&#34;f9308087f764c0f4341e3200baded605c917eb49&#34;">&#34;f9308087f764c0f4341e3200baded605c917eb49&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_revision</td>
+            <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/master@{#398661}&#34;">&#34;refs/heads/master@{#398661}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_swarming_client_revision</td>
+            <td class="middle"><abbr title="&#34;df6e95e7669883c8fe9ef956c69a544154701a49&#34;">&#34;df6e95e7669883c8fe9ef956c69a544154701a49&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_v8_revision</td>
+            <td class="middle"><abbr title="&#34;af2ed87b122bd32cc53285dc7579530ae08731e5&#34;">&#34;af2ed87b122bd32cc53285dc7579530ae08731e5&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_v8_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/5.3.182@{#1}&#34;">&#34;refs/heads/5.3.182@{#1}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_webrtc_revision</td>
+            <td class="middle"><abbr title="&#34;393886f22bb16e991b0fc57d7e290637d307448a&#34;">&#34;393886f22bb16e991b0fc57d7e290637d307448a&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_webrtc_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/master@{#13070}&#34;">&#34;refs/heads/master@{#13070}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">recipe</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>Annotation(setup_properties)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">build_revision</td>
+            <td class="middle"><abbr title="&#34;94dbe001292dcec3423c5d1b0374826ff89a8f46&#34;">&#34;94dbe001292dcec3423c5d1b0374826ff89a8f46&#34;</abbr></td>
+            <td>Annotation(update_scripts)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">build_scm</td>
+            <td class="middle"><abbr title="&#34;git&#34;">&#34;git&#34;</abbr></td>
+            <td>Annotation(update_scripts)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">blamelist</td>
+            <td class="middle"><abbr title="[&#34;agrieve@chromium.org&#34;,&#34;dcheng@chromium.org&#34;,&#34;dtseng@chromium.org&#34;,&#34;fsamuel@chromium.org&#34;,&#34;gab@chromium.org&#34;,&#34;moshayedi@chromium.org&#34;,&#34;yolandyan@google.com&#34;]">[&#34;agrieve@chromium.org&#34;,&#34;dcheng@chromium.org&#34;,&#34;dtseng@chromium.org&#34;,&#34;fsamuel@chromium.org&#34;,&#34;gab@chromium.org&#34;,&#34;moshayedi@chromium.org&#34;,&#34;yolandyan@google.com&#34;]</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">branch</td>
+            <td class="middle"><abbr title="&#34;master&#34;">&#34;master&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">buildnumber</td>
+            <td class="middle"><abbr title="30608">30608</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">project</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">repository</td>
+            <td class="middle"><abbr title="&#34;https://chromium.googlesource.com/chromium/src&#34;">&#34;https://chromium.googlesource.com/chromium/src&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">requestedAt</td>
+            <td class="middle"><abbr title="1465417476">1465417476</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">revision</td>
+            <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">slavename</td>
+            <td class="middle"><abbr title="&#34;build28-m1&#34;">&#34;build28-m1&#34;</abbr></td>
+            <td>BuildSlave</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">buildername</td>
+            <td class="middle"><abbr title="&#34;CrWinGoma&#34;">&#34;CrWinGoma&#34;</abbr></td>
+            <td>Builder</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">git_revision</td>
+            <td class="middle"><abbr title="&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;">&#34;bfdee36d31a624d330b60b481fc26d10dff81b97&#34;</abbr></td>
+            <td>Change</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">scheduler</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>Scheduler</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">buildbotURL</td>
+            <td class="middle"><abbr title="&#34;http://build.chromium.org/p/chromium.fyi/&#34;">&#34;http://build.chromium.org/p/chromium.fyi/&#34;</abbr></td>
+            <td>master.cfg</td>
+          </tr>
+        
+          <tr>
+            <td class="left">mastername</td>
+            <td class="middle"><abbr title="&#34;chromium.fyi&#34;">&#34;chromium.fyi&#34;</abbr></td>
+            <td>master.cfg</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">workdir</td>
+            <td class="middle"><abbr title="&#34;C:\\b\\build\\slave/CrWinGoma&#34;">&#34;C:\\b\\build\\slave/CrWinGoma&#34;</abbr></td>
+            <td>slave</td>
+          </tr>
+        
+      
+    </table>
 
     
-    <div class="column">
-      <h2>All Changes:</h2>
+      <h2>Blamelist:</h2>
       <ol>
       
-      <li>
-        <h3>Remove type converters for ui::Event.</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  moshayedi<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417408000">Wednesday, 08-Jun-16 20:23:28 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/74b54c510611ebaa8479d004a6878abe96e372d3" aria-label="commit by moshayedi@chromium.org">74b54c510611ebaa8479d004a6878abe96e372d3</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
+        <li> (moshayedi<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+        <li> (fsamuel<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+        <li> (gab<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+        <li> (dtseng<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+        <li> (yolandyan<span style="display:none">ohnoyoudont</span>@google.com)</li>
+      
+        <li> (dcheng<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+        <li> (agrieve<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
+      
+      </ol>
+    
 
+    <h2>Timing:</h2>
+    <table class="info" width="100%">
+      <tr class="alt"><td class="left">Create</td>
+      <td>
+        N/A
+      </td></tr>
+      <tr><td class="left">Start</td>
+      <td>
+        <span class="local-time " data-timestamp="1465418246347">Wednesday, 08-Jun-16 20:37:26 UTC</span>
+      </td></tr>
+      <tr class="alt"><td class="left">End</td>
+      <td>
+        <span class="local-time " data-timestamp="1465419176719">Wednesday, 08-Jun-16 20:52:56 UTC</span>
+      </td></tr>
+      <tr><td class="left">Pending</td>
+      <td id="duration">
         
-          <h3>Comments</h3>
-          <pre class="comments">Remove type converters for ui::Event.
+          N/A
+        
+      </td></tr>
+      <tr class="alt"><td class="left">Execution</td>
+      <td id="duration">
+        
+          15 mins 30 secs
+        
+      </td></tr>
+    </table>
+
+  </div>
+</div>
+      <div id="changes-tab">
+  <div id="changes">
+    
+    <h2>All Changes:</h2>
+    <ol>
+    
+    <li>
+      <h3>Remove type converters for ui::Event.</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                moshayedi<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417408000">Wednesday, 08-Jun-16 20:23:28 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/74b54c510611ebaa8479d004a6878abe96e372d3" aria-label="commit by moshayedi@chromium.org">74b54c510611ebaa8479d004a6878abe96e372d3</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Remove type converters for ui::Event.
 
 We are using struct traits for serializing/deserializing ui::Event and don&#39;t
 need type converters anymore.
@@ -956,100 +970,100 @@ BUG=<a href="https://crbug.com/578206">578206</a>
 Review-Url: <a href="https://codereview.chromium.org/2048633004">https://codereview.chromium.org/2048633004</a>
 Cr-Commit-Position: refs/heads/master@{#398655}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">ash/mus/BUILD.gn</li>
-            
-            <li class="file">ash/mus/frame/non_client_frame_view_mash.cc</li>
-            
-            <li class="file">ash/mus/window_manager_application.cc</li>
-            
-            <li class="file">ash/sysui/BUILD.gn</li>
-            
-            <li class="file">components/mus/public/cpp/BUILD.gn</li>
-            
-            <li class="file">components/mus/public/cpp/lib/window_tree_client.cc</li>
-            
-            <li class="file">components/mus/public/cpp/tests/BUILD.gn</li>
-            
-            <li class="file">components/mus/public/cpp/tests/window_tree_client_private.cc</li>
-            
-            <li class="file">components/mus/public/cpp/tests/window_tree_client_unittest.cc</li>
-            
-            <li class="file">components/mus/ws/BUILD.gn</li>
-            
-            <li class="file">components/mus/ws/event_dispatcher.cc</li>
-            
-            <li class="file">components/mus/ws/event_matcher.cc</li>
-            
-            <li class="file">components/mus/ws/platform_display.cc</li>
-            
-            <li class="file">components/mus/ws/window_server.cc</li>
-            
-            <li class="file">components/mus/ws/window_tree.cc</li>
-            
-            <li class="file">content/renderer/mus/BUILD.gn</li>
-            
-            <li class="file">content/renderer/mus/compositor_mus_connection.cc</li>
-            
-            <li class="file">ui/events/mojo/BUILD.gn</li>
-            
-            <li class="file">ui/events/mojo/input_events_type_converters.cc</li>
-            
-            <li class="file">ui/events/mojo/input_events_type_converters.h</li>
-            
-            <li class="file">ui/events/mojo/mojo_extended_key_event_data.cc</li>
-            
-            <li class="file">ui/events/mojo/mojo_extended_key_event_data.h</li>
-            
-            <li class="file">ui/events/mojo/mojo_input_events_export.h</li>
-            
-            <li class="file">ui/views/mus/BUILD.gn</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>StructTraits optimizations</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  fsamuel<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417532000">Wednesday, 08-Jun-16 20:25:32 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/605998f30d05bb8d323542c1039e64e1afce696b" aria-label="commit by fsamuel@chromium.org">605998f30d05bb8d323542c1039e64e1afce696b</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">StructTraits optimizations
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">ash/mus/BUILD.gn</li>
+          
+          <li class="file">ash/mus/frame/non_client_frame_view_mash.cc</li>
+          
+          <li class="file">ash/mus/window_manager_application.cc</li>
+          
+          <li class="file">ash/sysui/BUILD.gn</li>
+          
+          <li class="file">components/mus/public/cpp/BUILD.gn</li>
+          
+          <li class="file">components/mus/public/cpp/lib/window_tree_client.cc</li>
+          
+          <li class="file">components/mus/public/cpp/tests/BUILD.gn</li>
+          
+          <li class="file">components/mus/public/cpp/tests/window_tree_client_private.cc</li>
+          
+          <li class="file">components/mus/public/cpp/tests/window_tree_client_unittest.cc</li>
+          
+          <li class="file">components/mus/ws/BUILD.gn</li>
+          
+          <li class="file">components/mus/ws/event_dispatcher.cc</li>
+          
+          <li class="file">components/mus/ws/event_matcher.cc</li>
+          
+          <li class="file">components/mus/ws/platform_display.cc</li>
+          
+          <li class="file">components/mus/ws/window_server.cc</li>
+          
+          <li class="file">components/mus/ws/window_tree.cc</li>
+          
+          <li class="file">content/renderer/mus/BUILD.gn</li>
+          
+          <li class="file">content/renderer/mus/compositor_mus_connection.cc</li>
+          
+          <li class="file">ui/events/mojo/BUILD.gn</li>
+          
+          <li class="file">ui/events/mojo/input_events_type_converters.cc</li>
+          
+          <li class="file">ui/events/mojo/input_events_type_converters.h</li>
+          
+          <li class="file">ui/events/mojo/mojo_extended_key_event_data.cc</li>
+          
+          <li class="file">ui/events/mojo/mojo_extended_key_event_data.h</li>
+          
+          <li class="file">ui/events/mojo/mojo_input_events_export.h</li>
+          
+          <li class="file">ui/views/mus/BUILD.gn</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>StructTraits optimizations</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                fsamuel<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417532000">Wednesday, 08-Jun-16 20:25:32 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/605998f30d05bb8d323542c1039e64e1afce696b" aria-label="commit by fsamuel@chromium.org">605998f30d05bb8d323542c1039e64e1afce696b</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">StructTraits optimizations
 
 Pass more things by const reference and read directly into output.
 
@@ -1059,62 +1073,62 @@ CQ_INCLUDE_TRYBOTS=tryserver.blink:linux_blink_rel
 Review-Url: <a href="https://codereview.chromium.org/2047963004">https://codereview.chromium.org/2047963004</a>
 Cr-Commit-Position: refs/heads/master@{#398656}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">cc/ipc/returned_resource_struct_traits.h</li>
-            
-            <li class="file">cc/ipc/selection_struct_traits.h</li>
-            
-            <li class="file">cc/ipc/shared_quad_state_struct_traits.h</li>
-            
-            <li class="file">cc/ipc/transferable_resource_struct_traits.h</li>
-            
-            <li class="file">gpu/ipc/common/mailbox_holder_struct_traits.h</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>Manual refactor to enum-based WaitableEvent for remaining _win files</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  gab<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417533000">Wednesday, 08-Jun-16 20:25:33 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/7c19b196f653ec0e2b3aab703611231efc04cb2a" aria-label="commit by gab@chromium.org">7c19b196f653ec0e2b3aab703611231efc04cb2a</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">Manual refactor to enum-based WaitableEvent for remaining _win files
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">cc/ipc/returned_resource_struct_traits.h</li>
+          
+          <li class="file">cc/ipc/selection_struct_traits.h</li>
+          
+          <li class="file">cc/ipc/shared_quad_state_struct_traits.h</li>
+          
+          <li class="file">cc/ipc/transferable_resource_struct_traits.h</li>
+          
+          <li class="file">gpu/ipc/common/mailbox_holder_struct_traits.h</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>Manual refactor to enum-based WaitableEvent for remaining _win files</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                gab<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417533000">Wednesday, 08-Jun-16 20:25:33 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/7c19b196f653ec0e2b3aab703611231efc04cb2a" aria-label="commit by gab@chromium.org">7c19b196f653ec0e2b3aab703611231efc04cb2a</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Manual refactor to enum-based WaitableEvent for remaining _win files
 
 BUG=<a href="https://crbug.com/612843">612843</a>
 R=fdoray@chromium.org
@@ -1124,64 +1138,64 @@ TBR=danakj@chromium.org
 Review-Url: <a href="https://codereview.chromium.org/2047163003">https://codereview.chromium.org/2047163003</a>
 Cr-Commit-Position: refs/heads/master@{#398657}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">base/sync_socket_win.cc</li>
-            
-            <li class="file">chrome/browser/chrome_select_file_dialog_factory_win.cc</li>
-            
-            <li class="file">chrome/browser/password_manager/password_store_win_unittest.cc</li>
-            
-            <li class="file">components/policy/core/common/policy_loader_win.cc</li>
-            
-            <li class="file">net/proxy/dhcp_proxy_script_adapter_fetcher_win_unittest.cc</li>
-            
-            <li class="file">net/proxy/dhcp_proxy_script_fetcher_win_unittest.cc</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>Add role lists to ChromeVox.</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  dtseng<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417639000">Wednesday, 08-Jun-16 20:27:19 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/b0b4c0099b04f00b117595a762d09eb3e692f944" aria-label="commit by dtseng@chromium.org">b0b4c0099b04f00b117595a762d09eb3e692f944</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">Add role lists to ChromeVox.
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">base/sync_socket_win.cc</li>
+          
+          <li class="file">chrome/browser/chrome_select_file_dialog_factory_win.cc</li>
+          
+          <li class="file">chrome/browser/password_manager/password_store_win_unittest.cc</li>
+          
+          <li class="file">components/policy/core/common/policy_loader_win.cc</li>
+          
+          <li class="file">net/proxy/dhcp_proxy_script_adapter_fetcher_win_unittest.cc</li>
+          
+          <li class="file">net/proxy/dhcp_proxy_script_fetcher_win_unittest.cc</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>Add role lists to ChromeVox.</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                dtseng<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417639000">Wednesday, 08-Jun-16 20:27:19 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/b0b4c0099b04f00b117595a762d09eb3e692f944" aria-label="commit by dtseng@chromium.org">b0b4c0099b04f00b117595a762d09eb3e692f944</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Add role lists to ChromeVox.
 
 - add lists for forms, headings, landmarks, links, and tables.
 - fix some focusing issues with menus
@@ -1193,62 +1207,62 @@ CQ_INCLUDE_TRYBOTS=tryserver.chromium.linux:closure_compilation
 Review-Url: <a href="https://codereview.chromium.org/2042083002">https://codereview.chromium.org/2042083002</a>
 Cr-Commit-Position: refs/heads/master@{#398658}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">chrome/browser/resources/chromeos/chromevox/chromevox/background/keymaps/next_keymap.json</li>
-            
-            <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/background.js</li>
-            
-            <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/panel.js</li>
-            
-            <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/panel_menu.js</li>
-            
-            <li class="file">chrome/browser/resources/chromeos/chromevox/strings/chromevox_strings.grd</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>Add DisableIf annotation to EME test</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  yolandyan<span style="display:none">ohnoyoudont</span>@google.com
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417829000">Wednesday, 08-Jun-16 20:30:29 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/ea1675fb67d48828efb8c6b168582aa9f33388a2" aria-label="commit by yolandyan@google.com">ea1675fb67d48828efb8c6b168582aa9f33388a2</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">Add DisableIf annotation to EME test
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">chrome/browser/resources/chromeos/chromevox/chromevox/background/keymaps/next_keymap.json</li>
+          
+          <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/background.js</li>
+          
+          <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/panel.js</li>
+          
+          <li class="file">chrome/browser/resources/chromeos/chromevox/cvox2/background/panel_menu.js</li>
+          
+          <li class="file">chrome/browser/resources/chromeos/chromevox/strings/chromevox_strings.grd</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>Add DisableIf annotation to EME test</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                yolandyan<span style="display:none">ohnoyoudont</span>@google.com
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417829000">Wednesday, 08-Jun-16 20:30:29 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/ea1675fb67d48828efb8c6b168582aa9f33388a2" aria-label="commit by yolandyan@google.com">ea1675fb67d48828efb8c6b168582aa9f33388a2</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Add DisableIf annotation to EME test
 
 EME test does not pass on AOSP Android, therefore, add DisableIf annotation to
 it (from BaseInstrumentationTestRunner)
@@ -1261,60 +1275,60 @@ BUG=<a href="https://crbug.com/607350">607350</a>
 Review-Url: <a href="https://codereview.chromium.org/1952573002">https://codereview.chromium.org/1952573002</a>
 Cr-Commit-Position: refs/heads/master@{#398659}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">android_webview/tools/system_webview_shell/layout_tests/src/org/chromium/webview_shell/test/WebViewLayoutTest.java</li>
-            
-            <li class="file">android_webview/tools/system_webview_shell/layout_tests/src/org/chromium/webview_shell/test/WebViewLayoutTestRunner.java</li>
-            
-            <li class="file">base/test/android/javatests/src/org/chromium/base/test/util/DisableIf.java</li>
-            
-            <li class="file">base/test/android/javatests/src/org/chromium/base/test/util/DisableIfSkipCheck.java</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>Revert of service worker: Don&#39;t control a subframe of an insecure context (patchset #21 id:440001 of https://codereview.chromium.org/2009453002/ )</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  dcheng<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417954000">Wednesday, 08-Jun-16 20:32:34 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/c363d41a6001cb7b27789484702d23fa4572a918" aria-label="commit by dcheng@chromium.org">c363d41a6001cb7b27789484702d23fa4572a918</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">Revert of service worker: Don&#39;t control a subframe of an insecure context (patchset #21 id:440001 of <a href="https://codereview.chromium.org/2009453002">https://codereview.chromium.org/2009453002</a>/ )
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">android_webview/tools/system_webview_shell/layout_tests/src/org/chromium/webview_shell/test/WebViewLayoutTest.java</li>
+          
+          <li class="file">android_webview/tools/system_webview_shell/layout_tests/src/org/chromium/webview_shell/test/WebViewLayoutTestRunner.java</li>
+          
+          <li class="file">base/test/android/javatests/src/org/chromium/base/test/util/DisableIf.java</li>
+          
+          <li class="file">base/test/android/javatests/src/org/chromium/base/test/util/DisableIfSkipCheck.java</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>Revert of service worker: Don&#39;t control a subframe of an insecure context (patchset #21 id:440001 of https://codereview.chromium.org/2009453002/ )</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                dcheng<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417954000">Wednesday, 08-Jun-16 20:32:34 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/c363d41a6001cb7b27789484702d23fa4572a918" aria-label="commit by dcheng@chromium.org">c363d41a6001cb7b27789484702d23fa4572a918</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Revert of service worker: Don&#39;t control a subframe of an insecure context (patchset #21 id:440001 of <a href="https://codereview.chromium.org/2009453002">https://codereview.chromium.org/2009453002</a>/ )
 
 Reason for revert:
 ServiceWorkerProviderHost::SetControllerVersionAttribute CHECK is firing in release builds: <a href="https://crbug.com/618365">https://crbug.com/618365</a>
@@ -1337,156 +1351,162 @@ BUG=<a href="https://crbug.com/607543">607543</a>
 Review-Url: <a href="https://codereview.chromium.org/2055433002">https://codereview.chromium.org/2055433002</a>
 Cr-Commit-Position: refs/heads/master@{#398660}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">chrome/browser/chrome_content_browser_client.cc</li>
-            
-            <li class="file">chrome/browser/chrome_content_browser_client.h</li>
-            
-            <li class="file">chrome/browser/extensions/service_worker_apitest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_browsertest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_context_core.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_context_request_handler_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_context_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_controllee_request_handler.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_controllee_request_handler_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_dispatcher_host.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_dispatcher_host.h</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_dispatcher_host_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_handle_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_job_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_provider_host.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_provider_host.h</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_provider_host_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_request_handler_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_storage_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_url_request_job_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_version_unittest.cc</li>
-            
-            <li class="file">content/browser/service_worker/service_worker_write_to_cache_job_unittest.cc</li>
-            
-            <li class="file">content/child/service_worker/service_worker_network_provider.cc</li>
-            
-            <li class="file">content/child/service_worker/service_worker_network_provider.h</li>
-            
-            <li class="file">content/common/service_worker/service_worker_messages.h</li>
-            
-            <li class="file">content/public/browser/content_browser_client.h</li>
-            
-            <li class="file">content/renderer/render_frame_impl.cc</li>
-            
-            <li class="file">content/renderer/service_worker/service_worker_context_client.cc</li>
-            
-            <li class="file">content/renderer/shared_worker/embedded_shared_worker_stub.cc</li>
-            
-            <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/insecure-parent-frame.html</li>
-            
-            <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/resources/insecure-inscope.html</li>
-            
-            <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/resources/insecure-parent.html</li>
-            
-            <li class="file">third_party/WebKit/Source/core/dom/Document.cpp</li>
-            
-            <li class="file">third_party/WebKit/Source/core/dom/Document.h</li>
-            
-            <li class="file">third_party/WebKit/Source/core/frame/Frame.cpp</li>
-            
-            <li class="file">third_party/WebKit/Source/core/frame/Frame.h</li>
-            
-            <li class="file">third_party/WebKit/Source/web/WebFrame.cpp</li>
-            
-            <li class="file">third_party/WebKit/Source/web/tests/WebFrameTest.cpp</li>
-            
-            <li class="file">third_party/WebKit/public/web/WebFrame.h</li>
-            
-          </ul>
-        
-
-      </li>
       
-      <li>
-        <h3>Update GN docs about target_cpu to encourage use of current_cpu</h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  agrieve<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1465417955000">Wednesday, 08-Jun-16 20:32:35 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value">https://chromium.googlesource.com/chromium/src</td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/bfdee36d31a624d330b60b481fc26d10dff81b97" aria-label="commit by agrieve@chromium.org">bfdee36d31a624d330b60b481fc26d10dff81b97</a></td>
-              </tr>
-            
-          </tbody>
-        </table>
 
-        
-          <h3>Comments</h3>
-          <pre class="comments">Update GN docs about target_cpu to encourage use of current_cpu
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">chrome/browser/chrome_content_browser_client.cc</li>
+          
+          <li class="file">chrome/browser/chrome_content_browser_client.h</li>
+          
+          <li class="file">chrome/browser/extensions/service_worker_apitest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_browsertest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_context_core.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_context_request_handler_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_context_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_controllee_request_handler.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_controllee_request_handler_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_dispatcher_host.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_dispatcher_host.h</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_dispatcher_host_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_handle_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_job_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_provider_host.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_provider_host.h</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_provider_host_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_request_handler_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_storage_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_url_request_job_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_version_unittest.cc</li>
+          
+          <li class="file">content/browser/service_worker/service_worker_write_to_cache_job_unittest.cc</li>
+          
+          <li class="file">content/child/service_worker/service_worker_network_provider.cc</li>
+          
+          <li class="file">content/child/service_worker/service_worker_network_provider.h</li>
+          
+          <li class="file">content/common/service_worker/service_worker_messages.h</li>
+          
+          <li class="file">content/public/browser/content_browser_client.h</li>
+          
+          <li class="file">content/renderer/render_frame_impl.cc</li>
+          
+          <li class="file">content/renderer/service_worker/service_worker_context_client.cc</li>
+          
+          <li class="file">content/renderer/shared_worker/embedded_shared_worker_stub.cc</li>
+          
+          <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/insecure-parent-frame.html</li>
+          
+          <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/resources/insecure-inscope.html</li>
+          
+          <li class="file">third_party/WebKit/LayoutTests/http/tests/serviceworker/resources/insecure-parent.html</li>
+          
+          <li class="file">third_party/WebKit/Source/core/dom/Document.cpp</li>
+          
+          <li class="file">third_party/WebKit/Source/core/dom/Document.h</li>
+          
+          <li class="file">third_party/WebKit/Source/core/frame/Frame.cpp</li>
+          
+          <li class="file">third_party/WebKit/Source/core/frame/Frame.h</li>
+          
+          <li class="file">third_party/WebKit/Source/web/WebFrame.cpp</li>
+          
+          <li class="file">third_party/WebKit/Source/web/tests/WebFrameTest.cpp</li>
+          
+          <li class="file">third_party/WebKit/public/web/WebFrame.h</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    <li>
+      <h3>Update GN docs about target_cpu to encourage use of current_cpu</h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                agrieve<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1465417955000">Wednesday, 08-Jun-16 20:32:35 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value">https://chromium.googlesource.com/chromium/src</td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a href="https://chromium.googlesource.com/chromium/src/&#43;/bfdee36d31a624d330b60b481fc26d10dff81b97" aria-label="commit by agrieve@chromium.org">bfdee36d31a624d330b60b481fc26d10dff81b97</a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+        <h3>Comments</h3>
+        <pre class="comments">Update GN docs about target_cpu to encourage use of current_cpu
 
 BUG=<a href="https://crbug.com/616819">616819</a>
 
 Review-Url: <a href="https://codereview.chromium.org/2038733003">https://codereview.chromium.org/2038733003</a>
 Cr-Commit-Position: refs/heads/master@{#398661}
 </pre>
-        
-
-        
-          <h3 class="files">Changed files</h3>
-          <ul class="alternating">
-            
-            <li class="file">tools/gn/docs/cross_compiles.md</li>
-            
-            <li class="file">tools/gn/variables.cc</li>
-            
-          </ul>
-        
-
-      </li>
       
-      </ol>
-    </div>
+
+      
+        <h3 class="files">Changed files</h3>
+        <ul class="alternating">
+          
+          <li class="file">tools/gn/docs/cross_compiles.md</li>
+          
+          <li class="file">tools/gn/variables.cc</li>
+          
+        </ul>
+      
+
+    </li>
+    
+    </ol>
     
   </div>
 </div>
+      <div id="timeline-tab">
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+</div>
+    </div>
+  </div>
 
   <footer>
     <hr>
@@ -1501,8 +1521,11 @@ Cr-Commit-Position: refs/heads/master@{#398661}
 <script>
 $(function () {
   'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
+  
+  setTimeout(function() {
+    milo.makeTimesLocal();
+    milo.annotateDurations();
+  }, 0);
   $(document).tooltip({
     show: false,
     hide: false
@@ -1549,6 +1572,7 @@ $(function () {
 </script>
 
 <script>
+setTimeout(function() {
 	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -1556,6 +1580,7 @@ $(function () {
 
 	ga('create', 'UA-12345-01', 'auto');
 	ga('send', 'pageview');
+}, 0);
 </script>
 
 </html>
