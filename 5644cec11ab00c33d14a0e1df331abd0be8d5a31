@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ddfbec43_53918cd9",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-04T13:50:56Z",
+      "side": 1,
+      "message": "You can inline in the next line.",
+      "revId": "5644cec11ab00c33d14a0e1df331abd0be8d5a31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
