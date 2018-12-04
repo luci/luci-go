@@ -91,7 +91,9 @@ func runSingleTest(t *testing.T, script string, opts Options) {
 		return
 	}
 
-	if err := opts.Executor(t, script, string(code), opts.Predeclared); err != nil {
+	// Use slash path as a script name to make stack traces look uniform across
+	// OSes.
+	if err := opts.Executor(t, filepath.ToSlash(script), string(code), opts.Predeclared); err != nil {
 		if evalErr, _ := err.(*starlark.EvalError); evalErr != nil {
 			t.Errorf("%s\n", evalErr.Backtrace())
 		} else {

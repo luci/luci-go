@@ -20,6 +20,7 @@ import (
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/starlark/builtins"
 	"go.chromium.org/luci/starlark/starlarktest"
 )
 
@@ -35,6 +36,7 @@ func TestGraph(t *testing.T) {
 		TestsDir: "testdata",
 
 		Predeclared: starlark.StringDict{
+			"stacktrace": builtins.Stacktrace,
 			"new_graph": starlark.NewBuiltin("new_graph", func(*starlark.Thread, *starlark.Builtin, starlark.Tuple, []starlark.Tuple) (starlark.Value, error) {
 				return &Graph{}, nil
 			}),
