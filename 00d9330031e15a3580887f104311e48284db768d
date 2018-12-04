@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "899ef7bf_2b6f5418",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T02:47:37Z",
+      "side": 1,
+      "message": "Before https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1359672 it wasn\u0027t even an error :\u0027( It removed the directory.",
+      "range": {
+        "startLine": 13,
+        "startChar": 27,
+        "endLine": 13,
+        "endChar": 43
+      },
+      "revId": "00d9330031e15a3580887f104311e48284db768d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
