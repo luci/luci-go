@@ -353,8 +353,12 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 		prevManifest = pkg.Manifest{} // to make sure prevManifest.Files == nil.
 	}
 
-	// Install all new files to the site root.
-	err = d.addToSiteRoot(ctx, subdir, newManifest.Files, installMode, pkgPath, destPath)
+	// Install all new files to the site root, collect a set of paths (files and
+	// directories) that should exist now, to make sure removeFromSiteRoot doesn't
+	// delete them later. This is important when updating files to directories:
+	// removeFromSiteRoot should not try to delete a directory that used to be
+	// a file.
+	keep, err := d.addToSiteRoot(ctx, subdir, newManifest.Files, installMode, pkgPath, destPath)
 	if err != nil {
 		return common.Pin{}, err
 	}
@@ -396,17 +400,7 @@ func (d *deployerImpl) DeployInstance(ctx context.Context, subdir string, inst p
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			toKeep := map[string]bool{}
-			for _, f := range newManifest.Files {
-				toKeep[f.Name] = true
-			}
-			toKill := []pkg.FileInfo{}
-			for _, f := range prevManifest.Files {
-				if !toKeep[f.Name] {
-					toKill = append(toKill, f)
-				}
-			}
-			d.removeFromSiteRoot(ctx, subdir, toKill)
+			d.removeFromSiteRoot(ctx, subdir, prevManifest.Files, keep)
 		}()
 	}
 
@@ -544,7 +538,7 @@ func (d *deployerImpl) RemoveDeployed(ctx context.Context, subdir, packageName s
 		}
 		return nil
 	case deployed.Deployed:
-		d.removeFromSiteRoot(ctx, subdir, deployed.Manifest.Files)
+		d.removeFromSiteRoot(ctx, subdir, deployed.Manifest.Files, nil)
 	default:
 		// The package was partially installed in the guts, but not into the site
 		// root. We can just remove the guts thus forgetting about the package.
@@ -662,7 +656,7 @@ func (d *deployerImpl) RepairDeployed(ctx context.Context, subdir string, pin co
 		add(name)
 	}
 	logging.Infof(ctx, "Relinking %d files...", len(infos))
-	if err := d.addToSiteRoot(ctx, p.Subdir, infos, p.InstallMode, p.packagePath, p.instancePath); err != nil {
+	if _, err := d.addToSiteRoot(ctx, p.Subdir, infos, p.InstallMode, p.packagePath, p.instancePath); err != nil {
 		return err
 	}
 
@@ -1050,17 +1044,34 @@ func (d *deployerImpl) readManifest(ctx context.Context, instanceDir string) (pk
 
 // addToSiteRoot moves or symlinks files into the site root directory (depending
 // on passed installMode).
-func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) error {
+//
+// On success returns a set of all file system paths (files and dirs) covered
+// by added entries. It is later used in removeFromSiteRoot to avoid deleting
+// files or directories that were just added. This is important when a file is
+// replaced with a directory during an in-place upgrade. Such file is no longer
+// directly listed in the package manifest, nonetheless it exists as a directory
+// and must not be removed.
+func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, installMode pkg.InstallMode, pkgDir, srcDir string) (pathSet, error) {
+	touched := pathSet{}
+
 	for _, f := range files {
-		// e.g. bin/tool
+		// Native path relative to the subdir, e.g. bin/tool
 		relPath := filepath.FromSlash(f.Name)
-		// e.g. <base>/<subdir>/bin/tool
-		destAbs, err := d.fs.RootRelToAbs(filepath.Join(subdir, relPath))
+		// Native path relative to the deployment root, e.g. <subdir>/bin/tool
+		rootRel := filepath.Join(subdir, relPath)
+		// Native absolute path, e.g. <base>/<subdir>/bin/tool
+		destAbs, err := d.fs.RootRelToAbs(rootRel)
 		if err != nil {
 			logging.Warningf(ctx, "Invalid relative path %q: %s", relPath, err)
-			return err
+			return nil, err
 		}
-		if installMode == pkg.InstallModeSymlink {
+
+		// Mark the file and all its parents as alive. For file "a/b/c" this adds
+		// ["a", "a/b", "a/b/c"] to the set.
+		touched.add(rootRel)
+
+		switch installMode {
+		case pkg.InstallModeSymlink:
 			// e.g. <base>/.cipd/pkgs/name/_current/bin/tool
 			targetAbs := filepath.Join(pkgDir, currentSymlink, relPath)
 			// e.g. ../.cipd/pkgs/name/_current/bin/tool
@@ -1070,35 +1081,40 @@ func (d *deployerImpl) addToSiteRoot(ctx context.Context, subdir string, files [
 				logging.Warningf(
 					ctx, "Can't get relative path from %s to %s",
 					filepath.Dir(destAbs), targetAbs)
-				return err
+				return nil, err
 			}
 			if err = d.fs.EnsureSymlink(ctx, destAbs, targetRel); err != nil {
 				logging.Warningf(ctx, "Failed to create symlink for %s", relPath)
-				return err
+				return nil, err
 			}
-		} else if installMode == pkg.InstallModeCopy {
+		case pkg.InstallModeCopy:
 			// E.g. <base>/.cipd/pkgs/name/<id>/bin/tool.
 			srcAbs := filepath.Join(srcDir, relPath)
 			if err := d.fs.Replace(ctx, srcAbs, destAbs); err != nil {
 				logging.Warningf(ctx, "Failed to move %s to %s: %s", srcAbs, destAbs, err)
-				return err
+				return nil, err
 			}
-		} else {
+		default:
 			// Should not happen. ValidateInstallMode checks this.
-			return fmt.Errorf("impossible state")
+			panic("impossible state")
 		}
 	}
-	return nil
+	return touched, nil
 }
 
-// removeFromSiteRoot deletes files from the site root directory.
+// removeFromSiteRoot deletes files from the site root directory unless they
+// are present in the 'keep' set.
 //
 // Best effort. Logs errors and carries on.
-func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo) {
+func (d *deployerImpl) removeFromSiteRoot(ctx context.Context, subdir string, files []pkg.FileInfo, keep pathSet) {
 	dirsToCleanup := stringset.New(0)
 
 	for _, f := range files {
-		absPath, err := d.fs.RootRelToAbs(filepath.Join(subdir, filepath.FromSlash(f.Name)))
+		rootRel := filepath.Join(subdir, filepath.FromSlash(f.Name))
+		if keep.has(rootRel) {
+			continue
+		}
+		absPath, err := d.fs.RootRelToAbs(rootRel)
 		if err != nil {
 			logging.Warningf(ctx, "Refusing to remove %q: %s", f.Name, err)
 			continue
@@ -1233,6 +1249,28 @@ func (d *deployerImpl) checkIntegrity(ctx context.Context, p *DeployedPackage) (
 ////////////////////////////////////////////////////////////////////////////////
 // Utility functions.
 
+// pathSet is a set of native path relative to the deployer root.
+//
+// All methods assume paths have been properly cleaned already and do not have
+// "." or "..".
+type pathSet map[string]struct{}
+
+// add adds a native path 'rel' and all its parents to the path set.
+func (p pathSet) add(rel string) {
+	for i, r := range rel {
+		if r == filepath.Separator && i > 0 {
+			p[rel[:i]] = struct{}{}
+		}
+	}
+	p[rel] = struct{}{}
+}
+
+// has returns true if a native path 'rel' is in the set.
+func (p pathSet) has(rel string) bool {
+	_, ok := p[rel]
+	return ok
+}
+
 // scanPackageDir finds a set of regular files (and symlinks) in a package
 // instance directory and returns them as FileInfo structs (with slash-separated
 // paths relative to dir directory). Skips package service directories (.cipdpkg
@@ -1303,11 +1341,12 @@ func removeEmptyTrees(ctx context.Context, root string, empty stringset.Set) {
 
 		// Here 'rel' has form 'A/B/C' or is '.' (but this is already handled).
 		if rel != "." {
-			path := root
-			for _, chunk := range strings.Split(rel, string(filepath.Separator)) {
-				path = filepath.Join(path, chunk)
-				verboseEmpty.Add(path)
+			for i, r := range rel {
+				if r == filepath.Separator && i > 0 {
+					verboseEmpty.Add(filepath.Join(root, rel[:i]))
+				}
 			}
+			verboseEmpty.Add(filepath.Join(root, rel))
 		}
 
 		return true
