@@ -22,6 +22,30 @@
       "revId": "739a56409f240115ebb8982449c936184281d3b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e4cd9103_2fd4374c",
+        "filename": "gce/appengine/backend/queues.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-04T23:18:44Z",
+      "side": 1,
+      "message": "We\u0027re not detecting the general mismatch case. If vm.URL is set to the wrong thing before the transaction, we abort on L86 with an idempotent success message.\n\nHaving the check here would only catch a very specific mismatch case, where the mismatch is created in another thread concurrent with this one. If the mismatch is created any time prior it\u0027s not caught.\n\nIn general, checking this case is probably more of a test of GCE than anything. Hostname is transactionally decided, meaning all concurrent invocations use the same hostname, so the expected URL would be the same unless GCE changed its URL format.\n\nI\u0027m pretty much just using vm.URL as a bool to determine if the instance is created or not. If it were a boolean value we wouldn\u0027t even be able to catch this case here (and we already can\u0027t really catch it on L86-- we could check if strings.HasSuffix(vm.URL, vm.Hostname), but then we create a dependency on GCE\u0027s instance URL format).\n\nI will consider this some more, but omit it for now. There\u0027s more work to be done in this function anyways.",
+      "parentUuid": "33ade753_c58f064c",
+      "range": {
+        "startLine": 120,
+        "startChar": 3,
+        "endLine": 120,
+        "endChar": 4
+      },
+      "revId": "739a56409f240115ebb8982449c936184281d3b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
