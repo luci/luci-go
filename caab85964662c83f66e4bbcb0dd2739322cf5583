@@ -36,6 +36,24 @@
     },
     {
       "key": {
+        "uuid": "ddc83900_28c26452",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9d99f847_02364162",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3aea7cfb_37ba1485",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -56,6 +74,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5d062020_4dafb5ad",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Ah yes, better ES6.",
+      "parentUuid": "3aea7cfb_37ba1485",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 49,
+        "endChar": 9
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +141,48 @@
     },
     {
       "key": {
+        "uuid": "2d150644_ea3b69b5",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9270601a_08f3e435",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c482cdee_686c5f56",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Yep. Done.",
+      "parentUuid": "dc9a2d6f_bb8531c9",
+      "range": {
+        "startLine": 51,
+        "startChar": 8,
+        "endLine": 51,
+        "endChar": 11
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "beca295a_ccd787cd",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -122,6 +206,30 @@
     },
     {
       "key": {
+        "uuid": "b843bd78_e20031f6",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "beca295a_ccd787cd",
+      "range": {
+        "startLine": 52,
+        "startChar": 19,
+        "endLine": 52,
+        "endChar": 28
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "07e9e2a7_430e5993",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -139,6 +247,24 @@
     },
     {
       "key": {
+        "uuid": "f7694767_4d627b82",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "07e9e2a7_430e5993",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "edb5bba1_a349007c",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -153,6 +279,24 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "64f37977_a44039a3",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "How about push with spread operator? This is an ES6 construct it seems. This along with the lambda makes this pretty concise.",
+      "parentUuid": "edb5bba1_a349007c",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -179,6 +323,30 @@
     },
     {
       "key": {
+        "uuid": "bbabbb37_50f5ec49",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Good idea - there are more that I might do as lambdas - but the multi-line ones already here at the top were done as functions.\n\nSo I changed ones like this to lambda, left others as functions.",
+      "parentUuid": "0b6b0057_d82ef45d",
+      "range": {
+        "startLine": 63,
+        "startChar": 42,
+        "endLine": 63,
+        "endChar": 50
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d270a979_a5bfcca4",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -199,6 +367,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "75bfc7b8_e844808e",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Yeah, copied from results page. Shows as\n\n* - no longs -",
+      "parentUuid": "d270a979_a5bfcca4",
+      "range": {
+        "startLine": 65,
+        "startChar": 38,
+        "endLine": 65,
+        "endChar": 39
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -225,6 +417,30 @@
     },
     {
       "key": {
+        "uuid": "cc00be27_53fe724b",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3dbcfb0d_b0b9c8be",
+      "range": {
+        "startLine": 84,
+        "startChar": 16,
+        "endLine": 84,
+        "endChar": 29
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "dcb2a43b_17601276",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -245,6 +461,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "86f0c717_874ead64",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dcb2a43b_17601276",
+      "range": {
+        "startLine": 88,
+        "startChar": 37,
+        "endLine": 88,
+        "endChar": 38
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -271,6 +511,30 @@
     },
     {
       "key": {
+        "uuid": "a74470f3_93b7c94c",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94fe425e_c39f9581",
+      "range": {
+        "startLine": 104,
+        "startChar": 2,
+        "endLine": 104,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d4cff967_f8352037",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -282,6 +546,24 @@
       "writtenOn": "2018-12-01T00:37:42Z",
       "side": 1,
       "message": "Is this function used?",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e291d61_f4200f7d",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Nope - I left this in here because I feel it would be quite logical to add a button or radio selector to allow the user to switch between wide and narrow mode on this somewhat irritatingly complex function shows how to do that - didn\u0027t want later author to have to figure out how to cook this up from scratch.\n\n(This selection could be similar to the * Expanded * Default * Non-Green selection on the results page)\n\nShould I remove the function completely or add a widget to flip between wide and narrow? (Right now it chooses by initial page render screen width.) Or perhaps remove and forget the widget. Note that Nodir also had a comment pertaining to screen width / tab rendering below.",
+      "parentUuid": "d4cff967_f8352037",
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -311,6 +593,30 @@
     },
     {
       "key": {
+        "uuid": "09bf7829_a3041482",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "No the #results-tab itself doesn\u0027t get the class. It is actually equivalent to this:\n\n$(\u0027#results, #properties, #changes\u0027).addClass(\u0027column\u0027);\n$(\u0027#results-tab\u0027)\n    .append($(\u0027#properties\u0027))\n    .append($(\u0027#changes\u0027));\n\nbut that has jQuery looking up two of the elements twice. Minor - but still.",
+      "parentUuid": "f5dbe851_4958338e",
+      "range": {
+        "startLine": 135,
+        "startChar": 4,
+        "endLine": 137,
+        "endChar": 50
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c7ef4e9f_c33908a9",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -322,6 +628,30 @@
       "writtenOn": "2018-12-03T20:21:58Z",
       "side": 1,
       "message": "this isn\u0027t responsive, i.e. if we resize the window, it is not updated.\n\nalso these kinds of things are usually done with css media queries.\n\ni think it is ok to always have tabs. They are useful even with a wide screen",
+      "range": {
+        "startLine": 146,
+        "startChar": 1,
+        "endLine": 146,
+        "endChar": 33
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "71e2a570_eebacbf2",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "I could watch the window size and switch when they pass the threshold.\n\nOr I could continue to draw based on the initial page width and then add a widget to allow them to switch between narrow and wide versions. (and use a cookie to remember)\n\nNote that there are always tabs - but wide screens get two tabs with more stuff on the first tab and narrow screens get four tabs with everything separated out.\n\nI\u0027m not sure that css and media queries can handle this as this approach is using jquery javascript to move divs into different tabs / add / remove tabs.\n\nAny preference amongst the ideas here?",
+      "parentUuid": "c7ef4e9f_c33908a9",
       "range": {
         "startLine": 146,
         "startChar": 1,
@@ -357,6 +687,30 @@
     },
     {
       "key": {
+        "uuid": "2f65f474_5a6c7411",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "678dec04_ac59f731",
+      "range": {
+        "startLine": 150,
+        "startChar": 2,
+        "endLine": 150,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3d9735c_bee589fc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 10
@@ -380,6 +734,30 @@
     },
     {
       "key": {
+        "uuid": "db687537_52fb00c0",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Good call. Done.",
+      "parentUuid": "b3d9735c_bee589fc",
+      "range": {
+        "startLine": 23,
+        "startChar": 2,
+        "endLine": 23,
+        "endChar": 5
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e921e0a7_050a1d9b",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 10
@@ -391,6 +769,30 @@
       "writtenOn": "2018-12-03T20:21:58Z",
       "side": 1,
       "message": "this and defines below uses 4-space indent while above use 0 and 2. Let\u0027s converge.",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 136,
+        "endChar": 4
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ba3d496d_53aa6f48",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "There are lot of these templates in these projects. Which spacing did you want to converge on in this file - presumably perhaps converging more of these later.",
+      "parentUuid": "e921e0a7_050a1d9b",
       "range": {
         "startLine": 136,
         "startChar": 0,
@@ -449,6 +851,54 @@
     },
     {
       "key": {
+        "uuid": "31a602ac_4b8e0a14",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Good idea - Done.",
+      "parentUuid": "c605e85f_dfd6870e",
+      "range": {
+        "startLine": 392,
+        "startChar": 15,
+        "endLine": 392,
+        "endChar": 24
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "8ac442b5_9f35dac3",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "It is now. Also added comment on why this cosmetic hack is being done in the css file.",
+      "parentUuid": "46b3fa08_a6bf8db6",
+      "range": {
+        "startLine": 392,
+        "startChar": 26,
+        "endLine": 392,
+        "endChar": 52
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1398ee6f_eddcb89a",
         "filename": "milo/frontend/expectations/buildbot.build-Debug_page-_chromium_presubmit_426944.html",
         "patchSetId": 10
@@ -472,6 +922,30 @@
     },
     {
       "key": {
+        "uuid": "f9f41df2_3de12a6c",
+        "filename": "milo/frontend/expectations/buildbot.build-Debug_page-_chromium_presubmit_426944.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "With the technique being used to embed this in the page yes. That is it makes a string containing a Javascript literal object.",
+      "parentUuid": "1398ee6f_eddcb89a",
+      "range": {
+        "startLine": 31,
+        "startChar": 21,
+        "endLine": 31,
+        "endChar": 31
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "01104021_2b44195d",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 10
@@ -486,6 +960,24 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "10bdd886_69333721",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "01104021_2b44195d",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -512,6 +1004,30 @@
     },
     {
       "key": {
+        "uuid": "ddcb1f59_666757ee",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "be28cb3e_067fa5bf",
+      "range": {
+        "startLine": 179,
+        "startChar": 1,
+        "endLine": 179,
+        "endChar": 3
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e1c519ed_9584f67f",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 10
@@ -535,6 +1051,30 @@
     },
     {
       "key": {
+        "uuid": "b6ec0064_3d3106c9",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e1c519ed_9584f67f",
+      "range": {
+        "startLine": 190,
+        "startChar": 1,
+        "endLine": 190,
+        "endChar": 3
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "946b4aa1_730fd0f8",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 10
@@ -549,6 +1089,24 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "590bd124_9ad010ec",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 198,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "946b4aa1_730fd0f8",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -575,6 +1133,30 @@
     },
     {
       "key": {
+        "uuid": "d0f41432_b037c9a6",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "45f32890_f0404504",
+      "range": {
+        "startLine": 228,
+        "startChar": 13,
+        "endLine": 228,
+        "endChar": 37
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ac698d6_68826c7a",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 10
@@ -598,6 +1180,30 @@
     },
     {
       "key": {
+        "uuid": "d7130ba2_f25dc259",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ac698d6_68826c7a",
+      "range": {
+        "startLine": 229,
+        "startChar": 2,
+        "endLine": 230,
+        "endChar": 54
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "6ed0e27d_27ad353a",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 10
@@ -618,6 +1224,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0804dc52_71df569d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T00:42:49Z",
+      "side": 1,
+      "message": "Nice. Done.",
+      "parentUuid": "6ed0e27d_27ad353a",
+      "range": {
+        "startLine": 251,
+        "startChar": 31,
+        "endLine": 251,
+        "endChar": 43
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
