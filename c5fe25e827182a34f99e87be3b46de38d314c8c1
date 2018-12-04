@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7320c7e1_eb551a1b",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 357,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-04T23:35:45Z",
+      "side": 1,
+      "message": "exist",
+      "range": {
+        "startLine": 357,
+        "startChar": 29,
+        "endLine": 357,
+        "endChar": 34
+      },
+      "revId": "c5fe25e827182a34f99e87be3b46de38d314c8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8dd9f02c_f9270ca5",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1270,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-04T23:35:45Z",
+      "side": 1,
+      "message": "why not:\nfor i, r :\u003d rel {\n  if (r \u003d\u003d filepath.Separator \u0026\u0026 i \u003e 0){\n    p[rel[:i]] \u003d struct{}{}\n  }\n}\np[rel] \u003d struct{}{}",
+      "range": {
+        "startLine": 1262,
+        "startChar": 1,
+        "endLine": 1270,
+        "endChar": 2
+      },
+      "revId": "c5fe25e827182a34f99e87be3b46de38d314c8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6ae45f9_4486dabb",
+        "filename": "cipd/client/cipd/deployer/deployer.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1353,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-04T23:35:45Z",
+      "side": 1,
+      "message": "for i, r :\u003d rel {\n  if (r \u003d\u003d filepath.Separator \u0026\u0026 i \u003e 0){\n    verboseEmpty.Add(rel[:i])\n  }\n}\nverboseEmpty.Add(rel)",
+      "range": {
+        "startLine": 1350,
+        "startChar": 3,
+        "endLine": 1353,
+        "endChar": 4
+      },
+      "revId": "c5fe25e827182a34f99e87be3b46de38d314c8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a944d610_3eb0a24f",
+        "filename": "cipd/client/cipd/deployer/deployer_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1216,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-04T23:35:45Z",
+      "side": 1,
+      "message": "ts",
+      "range": {
+        "startLine": 1216,
+        "startChar": 16,
+        "endLine": 1216,
+        "endChar": 17
+      },
+      "revId": "c5fe25e827182a34f99e87be3b46de38d314c8c1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
