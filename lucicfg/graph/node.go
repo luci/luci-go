@@ -26,6 +26,54 @@ type Node struct {
 	Key   *Key                         // unique ID of the node
 	Props *starlarkstruct.Struct       // struct(...) with frozen properties
 	Trace *builtins.CapturedStacktrace // where the node was defined
+
+	children []*Edge // edges from us (the parent) to the children
+}
+
+// Edge is a single 'Parent -> Child' edge in the graph.
+type Edge struct {
+	Parent *Node
+	Child  *Node
+	Title  string                       // arbitrary title for error messages
+	Trace  *builtins.CapturedStacktrace // where it was defined
+}
+
+// declare marks the node as declared.
+//
+// Freezes properties as a side effect.
+func (n *Node) declare(props *starlarkstruct.Struct, trace *builtins.CapturedStacktrace) {
+	props.Freeze()
+	n.Props = props
+	n.Trace = trace
+}
+
+// declared is true if the node was fully defined via AddNode and false if
+// it was only "predeclared" by being referenced in some edge (via AddEdge).
+func (n *Node) declared() bool {
+	return n.Props != nil
+}
+
+// visitDescendants calls cb(n, path) and then recursively visits all
+// descendants of 'n' in depth first order until a first error.
+//
+// If a descendant is reachable through multiple paths, it is visited multiple
+// times.
+//
+// 'path' contains a path being explored now, defined as a list of visited
+// edges. The array backing this slice is mutated by 'visitDescendants', so if
+// 'cb' wants to preserve it, it needs to make a copy.
+//
+// Assumes the graph has no cycles (as verified by AddEdge).
+func (n *Node) visitDescendants(path []*Edge, cb func(*Node, []*Edge) error) error {
+	if err := cb(n, path); err != nil {
+		return err
+	}
+	for _, e := range n.children {
+		if err := e.Child.visitDescendants(append(path, e), cb); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // String is a part of starlark.Value interface.
