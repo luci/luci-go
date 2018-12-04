@@ -25,7 +25,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Supported ways of singing the request.
 type SignatureAlgorithm int32
@@ -387,59 +387,11 @@ func (m *MachineTokenResponse) GetLuciMachineToken() *LuciMachineToken {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*MachineTokenResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _MachineTokenResponse_OneofMarshaler, _MachineTokenResponse_OneofUnmarshaler, _MachineTokenResponse_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MachineTokenResponse) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*MachineTokenResponse_LuciMachineToken)(nil),
 	}
-}
-
-func _MachineTokenResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*MachineTokenResponse)
-	// token_type
-	switch x := m.TokenType.(type) {
-	case *MachineTokenResponse_LuciMachineToken:
-		b.EncodeVarint(21<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.LuciMachineToken); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("MachineTokenResponse.TokenType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _MachineTokenResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*MachineTokenResponse)
-	switch tag {
-	case 21: // token_type.luci_machine_token
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(LuciMachineToken)
-		err := b.DecodeMessage(msg)
-		m.TokenType = &MachineTokenResponse_LuciMachineToken{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _MachineTokenResponse_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*MachineTokenResponse)
-	// token_type
-	switch x := m.TokenType.(type) {
-	case *MachineTokenResponse_LuciMachineToken:
-		s := proto.Size(x.LuciMachineToken)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // LuciMachineToken is short lived machine token.

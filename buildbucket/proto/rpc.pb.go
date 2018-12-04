@@ -25,7 +25,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // A request message for GetBuild rpc.
 type GetBuildRequest struct {
@@ -348,78 +348,12 @@ func (m *BatchRequest_Request) GetSearchBuilds() *SearchBuildsRequest {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BatchRequest_Request) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BatchRequest_Request_OneofMarshaler, _BatchRequest_Request_OneofUnmarshaler, _BatchRequest_Request_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BatchRequest_Request) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*BatchRequest_Request_GetBuild)(nil),
 		(*BatchRequest_Request_SearchBuilds)(nil),
 	}
-}
-
-func _BatchRequest_Request_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BatchRequest_Request)
-	// request
-	switch x := m.Request.(type) {
-	case *BatchRequest_Request_GetBuild:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.GetBuild); err != nil {
-			return err
-		}
-	case *BatchRequest_Request_SearchBuilds:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.SearchBuilds); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("BatchRequest_Request.Request has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BatchRequest_Request_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BatchRequest_Request)
-	switch tag {
-	case 1: // request.get_build
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(GetBuildRequest)
-		err := b.DecodeMessage(msg)
-		m.Request = &BatchRequest_Request_GetBuild{msg}
-		return true, err
-	case 2: // request.search_builds
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(SearchBuildsRequest)
-		err := b.DecodeMessage(msg)
-		m.Request = &BatchRequest_Request_SearchBuilds{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BatchRequest_Request_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BatchRequest_Request)
-	// request
-	switch x := m.Request.(type) {
-	case *BatchRequest_Request_GetBuild:
-		s := proto.Size(x.GetBuild)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchRequest_Request_SearchBuilds:
-		s := proto.Size(x.SearchBuilds)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // A response message for Batch rpc.
@@ -550,97 +484,13 @@ func (m *BatchResponse_Response) GetError() *status.Status {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BatchResponse_Response) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BatchResponse_Response_OneofMarshaler, _BatchResponse_Response_OneofUnmarshaler, _BatchResponse_Response_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BatchResponse_Response) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*BatchResponse_Response_GetBuild)(nil),
 		(*BatchResponse_Response_SearchBuilds)(nil),
 		(*BatchResponse_Response_Error)(nil),
 	}
-}
-
-func _BatchResponse_Response_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BatchResponse_Response)
-	// response
-	switch x := m.Response.(type) {
-	case *BatchResponse_Response_GetBuild:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.GetBuild); err != nil {
-			return err
-		}
-	case *BatchResponse_Response_SearchBuilds:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.SearchBuilds); err != nil {
-			return err
-		}
-	case *BatchResponse_Response_Error:
-		b.EncodeVarint(100<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Error); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("BatchResponse_Response.Response has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BatchResponse_Response_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BatchResponse_Response)
-	switch tag {
-	case 1: // response.get_build
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Build)
-		err := b.DecodeMessage(msg)
-		m.Response = &BatchResponse_Response_GetBuild{msg}
-		return true, err
-	case 2: // response.search_builds
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(SearchBuildsResponse)
-		err := b.DecodeMessage(msg)
-		m.Response = &BatchResponse_Response_SearchBuilds{msg}
-		return true, err
-	case 100: // response.error
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(status.Status)
-		err := b.DecodeMessage(msg)
-		m.Response = &BatchResponse_Response_Error{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BatchResponse_Response_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BatchResponse_Response)
-	// response
-	switch x := m.Response.(type) {
-	case *BatchResponse_Response_GetBuild:
-		s := proto.Size(x.GetBuild)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchResponse_Response_SearchBuilds:
-		s := proto.Size(x.SearchBuilds)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchResponse_Response_Error:
-		s := proto.Size(x.Error)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // A request message for UpdateBuild rpc.

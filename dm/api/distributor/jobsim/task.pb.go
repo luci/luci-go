@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Phrase is a task to do. It consists of zero or more stages, followed by
 // an optional ReturnStage.
@@ -228,97 +228,13 @@ func (m *Stage) GetDeps() *DepsStage {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Stage) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Stage_OneofMarshaler, _Stage_OneofUnmarshaler, _Stage_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Stage) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Stage_Failure)(nil),
 		(*Stage_Stall)(nil),
 		(*Stage_Deps)(nil),
 	}
-}
-
-func _Stage_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Stage)
-	// stage_type
-	switch x := m.StageType.(type) {
-	case *Stage_Failure:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Failure); err != nil {
-			return err
-		}
-	case *Stage_Stall:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Stall); err != nil {
-			return err
-		}
-	case *Stage_Deps:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Deps); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Stage.StageType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Stage_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Stage)
-	switch tag {
-	case 1: // stage_type.failure
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(FailureStage)
-		err := b.DecodeMessage(msg)
-		m.StageType = &Stage_Failure{msg}
-		return true, err
-	case 2: // stage_type.stall
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(StallStage)
-		err := b.DecodeMessage(msg)
-		m.StageType = &Stage_Stall{msg}
-		return true, err
-	case 3: // stage_type.deps
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(DepsStage)
-		err := b.DecodeMessage(msg)
-		m.StageType = &Stage_Deps{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Stage_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Stage)
-	// stage_type
-	switch x := m.StageType.(type) {
-	case *Stage_Failure:
-		s := proto.Size(x.Failure)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Stage_Stall:
-		s := proto.Size(x.Stall)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Stage_Deps:
-		s := proto.Size(x.Deps)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // FailureStage is the /chance/ to fail with a certain liklihood. The chance
@@ -555,73 +471,12 @@ func (m *Dependency) GetPhrase() *Phrase {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Dependency) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Dependency_OneofMarshaler, _Dependency_OneofUnmarshaler, _Dependency_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Dependency) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Dependency_Attempts)(nil),
 		(*Dependency_Retries)(nil),
 	}
-}
-
-func _Dependency_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Dependency)
-	// attempt_strategy
-	switch x := m.AttemptStrategy.(type) {
-	case *Dependency_Attempts:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Attempts); err != nil {
-			return err
-		}
-	case *Dependency_Retries:
-		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Retries))
-	case nil:
-	default:
-		return fmt.Errorf("Dependency.AttemptStrategy has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Dependency_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Dependency)
-	switch tag {
-	case 2: // attempt_strategy.attempts
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(SparseRange)
-		err := b.DecodeMessage(msg)
-		m.AttemptStrategy = &Dependency_Attempts{msg}
-		return true, err
-	case 3: // attempt_strategy.retries
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.AttemptStrategy = &Dependency_Retries{uint32(x)}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Dependency_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Dependency)
-	// attempt_strategy
-	switch x := m.AttemptStrategy.(type) {
-	case *Dependency_Attempts:
-		s := proto.Size(x.Attempts)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Dependency_Retries:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Retries))
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // SparseRange allows the expression of mixed partial ranges like [1,3-10,19,21].
@@ -737,73 +592,12 @@ func (m *RangeItem) GetRange() *Range {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*RangeItem) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _RangeItem_OneofMarshaler, _RangeItem_OneofUnmarshaler, _RangeItem_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*RangeItem) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*RangeItem_Single)(nil),
 		(*RangeItem_Range)(nil),
 	}
-}
-
-func _RangeItem_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*RangeItem)
-	// range_item
-	switch x := m.RangeItem.(type) {
-	case *RangeItem_Single:
-		b.EncodeVarint(1<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Single))
-	case *RangeItem_Range:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Range); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("RangeItem.RangeItem has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _RangeItem_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*RangeItem)
-	switch tag {
-	case 1: // range_item.single
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.RangeItem = &RangeItem_Single{uint32(x)}
-		return true, err
-	case 2: // range_item.range
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Range)
-		err := b.DecodeMessage(msg)
-		m.RangeItem = &RangeItem_Range{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _RangeItem_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*RangeItem)
-	// range_item
-	switch x := m.RangeItem.(type) {
-	case *RangeItem_Single:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Single))
-	case *RangeItem_Range:
-		s := proto.Size(x.Range)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // Range represents a single low-high pair (e.g. [3-40])

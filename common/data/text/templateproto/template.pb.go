@@ -19,7 +19,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Value defines a specific value for a parameter, and is used at Template
 // expansion time.
@@ -193,9 +193,9 @@ func (m *Value) GetNull() *empty.Empty {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Value) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Value_OneofMarshaler, _Value_OneofUnmarshaler, _Value_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Value) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Value_Int)(nil),
 		(*Value_Uint)(nil),
 		(*Value_Float)(nil),
@@ -206,166 +206,6 @@ func (*Value) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, 
 		(*Value_Array)(nil),
 		(*Value_Null)(nil),
 	}
-}
-
-func _Value_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Value)
-	// value
-	switch x := m.Value.(type) {
-	case *Value_Int:
-		b.EncodeVarint(1<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Int))
-	case *Value_Uint:
-		b.EncodeVarint(2<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Uint))
-	case *Value_Float:
-		b.EncodeVarint(3<<3 | proto.WireFixed64)
-		b.EncodeFixed64(math.Float64bits(x.Float))
-	case *Value_Bool:
-		t := uint64(0)
-		if x.Bool {
-			t = 1
-		}
-		b.EncodeVarint(4<<3 | proto.WireVarint)
-		b.EncodeVarint(t)
-	case *Value_Str:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.Str)
-	case *Value_Bytes:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		b.EncodeRawBytes(x.Bytes)
-	case *Value_Object:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.Object)
-	case *Value_Array:
-		b.EncodeVarint(8<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.Array)
-	case *Value_Null:
-		b.EncodeVarint(9<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Null); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Value.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Value_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Value)
-	switch tag {
-	case 1: // value.int
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &Value_Int{int64(x)}
-		return true, err
-	case 2: // value.uint
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &Value_Uint{x}
-		return true, err
-	case 3: // value.float
-		if wire != proto.WireFixed64 {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeFixed64()
-		m.Value = &Value_Float{math.Float64frombits(x)}
-		return true, err
-	case 4: // value.bool
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &Value_Bool{x != 0}
-		return true, err
-	case 5: // value.str
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &Value_Str{x}
-		return true, err
-	case 6: // value.bytes
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeRawBytes(true)
-		m.Value = &Value_Bytes{x}
-		return true, err
-	case 7: // value.object
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &Value_Object{x}
-		return true, err
-	case 8: // value.array
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &Value_Array{x}
-		return true, err
-	case 9: // value.null
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(empty.Empty)
-		err := b.DecodeMessage(msg)
-		m.Value = &Value_Null{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Value_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Value)
-	// value
-	switch x := m.Value.(type) {
-	case *Value_Int:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Int))
-	case *Value_Uint:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Uint))
-	case *Value_Float:
-		n += 1 // tag and wire
-		n += 8
-	case *Value_Bool:
-		n += 1 // tag and wire
-		n += 1
-	case *Value_Str:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Str)))
-		n += len(x.Str)
-	case *Value_Bytes:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Bytes)))
-		n += len(x.Bytes)
-	case *Value_Object:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Object)))
-		n += len(x.Object)
-	case *Value_Array:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Array)))
-		n += len(x.Array)
-	case *Value_Null:
-		s := proto.Size(x.Null)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type Schema struct {
@@ -538,9 +378,9 @@ func (m *Schema) GetArray() *Schema_JSON {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Schema) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Schema_OneofMarshaler, _Schema_OneofUnmarshaler, _Schema_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Schema) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Schema_Int)(nil),
 		(*Schema_Uint)(nil),
 		(*Schema_Float)(nil),
@@ -551,198 +391,6 @@ func (*Schema) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error,
 		(*Schema_Object)(nil),
 		(*Schema_Array)(nil),
 	}
-}
-
-func _Schema_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Schema)
-	// schema
-	switch x := m.Schema.(type) {
-	case *Schema_Int:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Int); err != nil {
-			return err
-		}
-	case *Schema_Uint:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Uint); err != nil {
-			return err
-		}
-	case *Schema_Float:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Float); err != nil {
-			return err
-		}
-	case *Schema_Bool:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Bool); err != nil {
-			return err
-		}
-	case *Schema_Str:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Str); err != nil {
-			return err
-		}
-	case *Schema_Bytes:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Bytes); err != nil {
-			return err
-		}
-	case *Schema_Enum:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Enum); err != nil {
-			return err
-		}
-	case *Schema_Object:
-		b.EncodeVarint(8<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Object); err != nil {
-			return err
-		}
-	case *Schema_Array:
-		b.EncodeVarint(9<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Array); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Schema.Schema has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Schema_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Schema)
-	switch tag {
-	case 1: // schema.int
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Atom)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Int{msg}
-		return true, err
-	case 2: // schema.uint
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Atom)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Uint{msg}
-		return true, err
-	case 3: // schema.float
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Atom)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Float{msg}
-		return true, err
-	case 4: // schema.bool
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Atom)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Bool{msg}
-		return true, err
-	case 5: // schema.str
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Sequence)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Str{msg}
-		return true, err
-	case 6: // schema.bytes
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Sequence)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Bytes{msg}
-		return true, err
-	case 7: // schema.enum
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_Set)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Enum{msg}
-		return true, err
-	case 8: // schema.object
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_JSON)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Object{msg}
-		return true, err
-	case 9: // schema.array
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Schema_JSON)
-		err := b.DecodeMessage(msg)
-		m.Schema = &Schema_Array{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Schema_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Schema)
-	// schema
-	switch x := m.Schema.(type) {
-	case *Schema_Int:
-		s := proto.Size(x.Int)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Uint:
-		s := proto.Size(x.Uint)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Float:
-		s := proto.Size(x.Float)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Bool:
-		s := proto.Size(x.Bool)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Str:
-		s := proto.Size(x.Str)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Bytes:
-		s := proto.Size(x.Bytes)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Enum:
-		s := proto.Size(x.Enum)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Object:
-		s := proto.Size(x.Object)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Schema_Array:
-		s := proto.Size(x.Array)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type Schema_Set struct {

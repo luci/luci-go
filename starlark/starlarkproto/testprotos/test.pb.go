@@ -19,7 +19,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Enum int32
 
@@ -396,78 +396,12 @@ func (m *Complex) GetInnerMsg() *Complex_InnerMessage {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Complex) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Complex_OneofMarshaler, _Complex_OneofUnmarshaler, _Complex_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Complex) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Complex_Simple)(nil),
 		(*Complex_InnerMsg)(nil),
 	}
-}
-
-func _Complex_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Complex)
-	// oneof_val
-	switch x := m.OneofVal.(type) {
-	case *Complex_Simple:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Simple); err != nil {
-			return err
-		}
-	case *Complex_InnerMsg:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.InnerMsg); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Complex.OneofVal has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Complex_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Complex)
-	switch tag {
-	case 6: // oneof_val.simple
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Simple)
-		err := b.DecodeMessage(msg)
-		m.OneofVal = &Complex_Simple{msg}
-		return true, err
-	case 7: // oneof_val.inner_msg
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Complex_InnerMessage)
-		err := b.DecodeMessage(msg)
-		m.OneofVal = &Complex_InnerMsg{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Complex_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Complex)
-	// oneof_val
-	switch x := m.OneofVal.(type) {
-	case *Complex_Simple:
-		s := proto.Size(x.Simple)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Complex_InnerMsg:
-		s := proto.Size(x.InnerMsg)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type Complex_InnerMessage struct {
