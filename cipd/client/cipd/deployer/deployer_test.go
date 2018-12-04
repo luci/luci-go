@@ -28,6 +28,8 @@ import (
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
+	"go.chromium.org/luci/common/logging"
+	"go.chromium.org/luci/common/logging/memlogger"
 
 	"go.chromium.org/luci/cipd/client/cipd/fs"
 	"go.chromium.org/luci/cipd/client/cipd/pkg"
@@ -42,6 +44,19 @@ func mkTempDir() string {
 	So(err, ShouldBeNil)
 	Reset(func() { os.RemoveAll(tempDir) })
 	return tempDir
+}
+
+func withMemLogger() context.Context {
+	return memlogger.Use(context.Background())
+}
+
+func loggerWarnings(c context.Context) (out []string) {
+	for _, m := range logging.Get(c).(*memlogger.MemLogger).Messages() {
+		if m.Level >= logging.Warning {
+			out = append(out, m.Msg)
+		}
+	}
+	return
 }
 
 func TestUtilities(t *testing.T) {
@@ -1166,6 +1181,40 @@ func TestDeployInstanceSwitchingModes(t *testing.T) {
 				})
 			})
 		})
+	})
+}
+
+func TestDeployInstanceUpgradeFileToDir(t *testing.T) {
+	t.Parallel()
+
+	Convey("DeployInstance can replace files with directories", t, func() {
+		ctx := withMemLogger()
+		tempDir := mkTempDir()
+
+		// Here "some/path" is a file.
+		oldPkg := makeTestInstance("test/package", []fs.File{
+			fs.NewTestFile("some/path", "data old", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		oldPkg.instanceID = "000000000_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		// And here "some/path" is a directory.
+		newPkg := makeTestInstance("test/package", []fs.File{
+			fs.NewTestFile("some/path/file", "data new", fs.TestFileOpts{}),
+		}, pkg.InstallModeCopy)
+		newPkg.instanceID = "111111111_aOomrCDp4gKs0uClIlMg25S2j-UMHKwFYC"
+
+		// Note: specifically use '/' even on Windows here, to make sure deployer
+		// guts do slash conversion correctly inside.
+		_, err := New(tempDir).DeployInstance(ctx, "sub/dir", oldPkg)
+		So(err, ShouldBeNil)
+		_, err = New(tempDir).DeployInstance(ctx, "sub/dir", newPkg)
+		So(err, ShouldBeNil)
+
+		// The new file is deployed successfully.
+		So(readFile(tempDir, "sub/dir/some/path/file"), ShouldEqual, "data new")
+
+		// No complaints during the upgrade.
+		So(loggerWarnings(ctx), ShouldResemble, []string(nil))
 	})
 }
 
