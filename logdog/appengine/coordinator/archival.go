@@ -19,6 +19,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.chromium.org/luci/common/clock"
@@ -26,9 +27,9 @@ import (
 	"go.chromium.org/luci/logdog/api/endpoints/coordinator/services/v1"
 )
 
-// ErrArchiveTasked is returned by ArchivalParams' PublishTask if the supplied
-// LogStream indicates that it has already had an archival request dispatched.
-var ErrArchiveTasked = errors.New("archival already tasked for this stream")
+// ErrStreamArchived is returned by ArchivalParams' PublishTask if the supplied
+// LogStream is already archived.
+var ErrStreamArchived = errors.New("stream is already archived")
 
 // ArchivalParams is the archival configuration.
 type ArchivalParams struct {
@@ -55,18 +56,22 @@ type ArchivalParams struct {
 // transaction for transactional safety.
 //
 // If the task is created successfully, this will return nil. If the LogStream
-// already had a task dispatched, it will return ErrArchiveTasked.
+// already had a task dispatched, it will return ErrStreamArchived.
 func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, lst *LogStreamState) error {
-	if as := lst.ArchivalState(); as.Archived() || as == ArchiveTasked {
+	if as := lst.ArchivalState(); as.Archived() {
 		// An archival task has already been dispatched for this log stream.
-		return ErrArchiveTasked
+		return ErrStreamArchived
 	}
 
 	id := lst.ID()
+	key := lst.ArchivalKey
+	if len(key) == 0 {
+		key = p.createArchivalKey(id, ap.NewPublishIndex())
+	}
 	msg := logdog.ArchiveTask{
 		Project:      string(Project(c)),
 		Id:           string(id),
-		Key:          p.createArchivalKey(id, ap.NewPublishIndex()),
+		Key:          key,
 		DispatchedAt: google.NewTimestamp(clock.Now(c)),
 	}
 	if p.SettleDelay > 0 {
@@ -81,9 +86,14 @@ func (p *ArchivalParams) PublishTask(c context.Context, ap ArchivalPublisher, ls
 		return err
 	}
 
-	// Update our LogStream's ArchiveState to reflect that an archival task has
-	// been dispatched.
-	lst.ArchivalKey = msg.Key
+	if reflect.DeepEqual(lst.ArchivalKey, msg.Key) {
+		// This is a retry, increment the retry counter.
+		lst.ArchiveRetryCount++
+	} else {
+		// Update our LogStream's ArchiveState to reflect that an archival task has
+		// been dispatched.
+		lst.ArchivalKey = msg.Key
+	}
 	return nil
 }
 
