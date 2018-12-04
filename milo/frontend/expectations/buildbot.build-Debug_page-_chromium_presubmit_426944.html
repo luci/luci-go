@@ -13,17 +13,23 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+<script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/green-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse( null );
+</script>
 
 
 <body class="interface">
@@ -42,102 +48,109 @@
   
   <div class="content">
     <h1>
+    
+      Builder <a href="." aria-label="Parent builder chromium_presubmit">chromium_presubmit</a>
+    
+    Build <a href="/buildbot/tryserver.chromium.linux/chromium_presubmit/426944" aria-label="Build number 426944 on master tryserver.chromium.linux builder chromium_presubmit">#426944</a>
+    
       
-        Builder <a href="." aria-label="Parent builder chromium_presubmit">chromium_presubmit</a>
+        <img src="/static/common/logos/ubuntu.svg" alt="Canonical Ubuntu"
+             width="25px">
       
-      Build <a href="/buildbot/tryserver.chromium.linux/chromium_presubmit/426944" aria-label="Build number 426944 on master tryserver.chromium.linux builder chromium_presubmit">#426944</a>
       
-        
-          <img src="/static/common/logos/ubuntu.svg" alt="Canonical Ubuntu"
-               width="25px">
-        
-        
-      
+    
     </h1>
 
-    <div class="column">
-
-      <h2>Results:</h2>
-      
-        <p class="result status-Success">
-        <span class="step-text">build successful </span>
-        
-        </p>
-       
-
-      
-      
-
-      <h2>Trigger Info:</h2>
-
-      <table class="info" width="100%">
-      
-
-      
-
-      
-
-      
-
-      
-        <tr><td class="left">Got Revision</td><td><a aria-label="got revision 543cbcbb37d29652edb36adcb64e1dee09e4efe8">543cbcbb37d29652edb36adcb64e1dee09e4efe8</a></td></tr>
-      
-
-      
-
-      </table>
-        
-        
-
-      
-      <h2>Execution:</h2>
+    <div id="tabs" style="display: none;">
       <ul>
-        
-        <li>
-          Source:
-          <a href="https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944"
-             aria-label="Source for tryserver.chromium.linux/chromium_presubmit/426944">
-            tryserver.chromium.linux/chromium_presubmit/426944
-          </a>
-        </li>
-        
-
-        
-        <li>
-          Bot:
-          <a href="https://build.chromium.org/p/tryserver.chromium.linux/buildslaves/slave349-c4"
-             aria-label="Bot slave349-c4">
-            slave349-c4
-          </a>
-        </li>
-        
-
-        
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
-       
+      <div id="results-tab">
+  <div id="results">
+    <h2>Results:</h2>
+    
+      <p class="result status-Success">
+      <span class="step-text">build successful </span>
+      
+      </p>
+     
+
+    
+    
+
+    <h2>Trigger Info:</h2>
+
+    <table class="info" width="100%">
+    
+
+    
+
+    
+
+    
+
+    
+      <tr><td class="left">Got Revision</td><td><a aria-label="got revision 543cbcbb37d29652edb36adcb64e1dee09e4efe8">543cbcbb37d29652edb36adcb64e1dee09e4efe8</a></td></tr>
+    
+
+    
+
+    </table>
+      
+      
+
+    
+    <h2>Execution:</h2>
+    <ul>
+      
+      <li>
+        Source:
+        <a href="https://build.chromium.org/p/tryserver.chromium.linux/builders/chromium_presubmit/builds/426944"
+           aria-label="Source for tryserver.chromium.linux/chromium_presubmit/426944">
+          tryserver.chromium.linux/chromium_presubmit/426944
+        </a>
+      </li>
+      
 
       
+      <li>
+        Bot:
+        <a href="https://build.chromium.org/p/tryserver.chromium.linux/buildslaves/slave349-c4"
+           aria-label="Bot slave349-c4">
+          slave349-c4
+        </a>
+      </li>
+      
+
+      
+    </ul>
+     
+
+    
+      
+    
+
+    
+      <h2>Steps and Logfiles:</h2>
+      Show:
+      <input type="radio" name="hider" id="showExpanded">
+      <label for="showExpanded">Expanded</label>
+      <input type="radio" name="hider" id="showDefault" checked>
+      <label for="showDefault">Default</label>
+      <input type="radio" name="hider" id="showNonGreen">
+      <label for="showNonGreen">Non-Green</label>
+
+      <ol id="steps">
+
         
-      
-
-      
-        <h2>Steps and Logfiles:</h2>
-        Show:
-        <input type="radio" name="hider" id="showExpanded">
-        <label for="showExpanded">Expanded</label>
-        <input type="radio" name="hider" id="showDefault" checked>
-        <label for="showDefault">Default</label>
-        <input type="radio" name="hider" id="showNonGreen">
-        <label for="showNonGreen">Non-Green</label>
-
-        <ol id="steps">
-
           
-            
-          
+        
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -166,8 +179,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -194,8 +207,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -220,8 +233,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -246,8 +259,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -275,8 +288,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -304,8 +317,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -331,8 +344,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -358,8 +371,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -385,8 +398,8 @@
   
 </li>
 
+        
           
-            
 <li class="green">
   <div class="status-Success result">
       
@@ -413,391 +426,398 @@
   
 </li>
 
-          
-        </ol>
-       
+        
+      </ol>
+     
 
-    </div>
+  </div>
+</div>
+      <div id="properties-tab">
+  <div id="properties">
+    <h2>Build Properties:</h2>
 
-    <div class="column">
-
-      <h2>Build Properties:</h2>
-
-      <table class="info BuildProperties" width="100%">
-      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
-        
-        
-          
-            <tr>
-              <td class="left">log_location</td>
-              <td class="middle"><abbr title="&#34;logdog://logs.chromium.org/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/&#43;/recipes/annotations&#34;">&#34;logdog://logs.chromium.org/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/&#43;/recipes/annotations&#34;</abbr></td>
-              <td>Annotation(LogDog Bootstrap)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">logdog_prefix</td>
-              <td class="middle"><abbr title="&#34;bb/tryserver.chromium.linux/chromium_presubmit/426944&#34;">&#34;bb/tryserver.chromium.linux/chromium_presubmit/426944&#34;</abbr></td>
-              <td>Annotation(LogDog Bootstrap)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">logdog_project</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>Annotation(LogDog Bootstrap)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">got_angle_revision</td>
-              <td class="middle"><abbr title="&#34;ba29fa47aafa95330fe054eee02e36d11ce6d8bf&#34;">&#34;ba29fa47aafa95330fe054eee02e36d11ce6d8bf&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_buildtools_revision</td>
-              <td class="middle"><abbr title="null">null</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_nacl_revision</td>
-              <td class="middle"><abbr title="&#34;aac1de245362df94cb40042e5fbc9059b0d0874b&#34;">&#34;aac1de245362df94cb40042e5fbc9059b0d0874b&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_revision</td>
-              <td class="middle"><abbr title="&#34;543cbcbb37d29652edb36adcb64e1dee09e4efe8&#34;">&#34;543cbcbb37d29652edb36adcb64e1dee09e4efe8&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/master@{#469200}&#34;">&#34;refs/heads/master@{#469200}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_swarming_client_revision</td>
-              <td class="middle"><abbr title="null">null</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_v8_revision</td>
-              <td class="middle"><abbr title="&#34;779720b916c4d0f2434a076cf8da90451dc1ed7f&#34;">&#34;779720b916c4d0f2434a076cf8da90451dc1ed7f&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_v8_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/6.0.148@{#1}&#34;">&#34;refs/heads/6.0.148@{#1}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_webrtc_revision</td>
-              <td class="middle"><abbr title="&#34;86a678777ef0132fd7d579e564ed9b55248562e3&#34;">&#34;86a678777ef0132fd7d579e564ed9b55248562e3&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">got_webrtc_revision_cp</td>
-              <td class="middle"><abbr title="&#34;refs/heads/master@{#17981}&#34;">&#34;refs/heads/master@{#17981}&#34;</abbr></td>
-              <td>Annotation(bot_update)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">recipe</td>
-              <td class="middle"><abbr title="&#34;run_presubmit&#34;">&#34;run_presubmit&#34;</abbr></td>
-              <td>Annotation(setup_properties)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">repo_name</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>Annotation(setup_properties)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">runhooks</td>
-              <td class="middle"><abbr title="true">true</abbr></td>
-              <td>Annotation(setup_properties)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">build_revision</td>
-              <td class="middle"><abbr title="&#34;7f1967a10defc60c719bb24cd27f9631d3d71849&#34;">&#34;7f1967a10defc60c719bb24cd27f9631d3d71849&#34;</abbr></td>
-              <td>Annotation(update_scripts)</td>
-            </tr>
-          
-            <tr>
-              <td class="left">build_scm</td>
-              <td class="middle"><abbr title="&#34;git&#34;">&#34;git&#34;</abbr></td>
-              <td>Annotation(update_scripts)</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">blamelist</td>
-              <td class="middle"><abbr title="[&#34;binji@chromium.org&#34;]">[&#34;binji@chromium.org&#34;]</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">branch</td>
-              <td class="middle"><abbr title="null">null</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">buildnumber</td>
-              <td class="middle"><abbr title="426944">426944</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">project</td>
-              <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">repository</td>
-              <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">requestedAt</td>
-              <td class="middle"><abbr title="1493854463">1493854463</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-            <tr>
-              <td class="left">revision</td>
-              <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
-              <td>Build</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">preferred_builder</td>
-              <td class="middle"><abbr title="&#34;chromium_presubmit&#34;">&#34;chromium_presubmit&#34;</abbr></td>
-              <td>BuildSlave</td>
-            </tr>
-          
-            <tr>
-              <td class="left">slavename</td>
-              <td class="middle"><abbr title="&#34;slave349-c4&#34;">&#34;slave349-c4&#34;</abbr></td>
-              <td>BuildSlave</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">buildername</td>
-              <td class="middle"><abbr title="&#34;chromium_presubmit&#34;">&#34;chromium_presubmit&#34;</abbr></td>
-              <td>Builder</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">attempt_start_ts</td>
-              <td class="middle"><abbr title="1493854335186720">1493854335186720</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">buildbucket</td>
-              <td class="middle"><abbr title="&#34;{\&#34;build\&#34;: {\&#34;bucket\&#34;: \&#34;master.tryserver.chromium.linux\&#34;, \&#34;created_by\&#34;: \&#34;user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com\&#34;, \&#34;created_ts\&#34;: \&#34;1493854451351630\&#34;, \&#34;id\&#34;: \&#34;8980573790777229552\&#34;, \&#34;lease_key\&#34;: \&#34;10817444\&#34;, \&#34;tags\&#34;: [\&#34;builder:chromium_presubmit\&#34;, \&#34;buildset:patch/rietveld/codereview.chromium.org/2860873002/1\&#34;, \&#34;master:master.tryserver.chromium.linux\&#34;, \&#34;user_agent:cq\&#34;]}}&#34;">&#34;{\&#34;build\&#34;: {\&#34;bucket\&#34;: \&#34;master.tryserver.chromium.linux\&#34;, \&#34;created_by\&#34;: \&#34;user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com\&#34;, \&#34;created_ts\&#34;: \&#34;1493854451351630\&#34;, \&#34;id\&#34;: \&#34;8980573790777229552\&#34;, \&#34;lease_key\&#34;: \&#34;10817444\&#34;, \&#34;tags\&#34;: [\&#34;builder:chromium_presubmit\&#34;, \&#34;buildset:patch/rietveld/codereview.chromium.org/2860873002/1\&#34;, \&#34;master:master.tryserver.chromium.linux\&#34;, \&#34;user_agent:cq\&#34;]}}&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">category</td>
-              <td class="middle"><abbr title="&#34;cq&#34;">&#34;cq&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">issue</td>
-              <td class="middle"><abbr title="&#34;2860873002&#34;">&#34;2860873002&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">master</td>
-              <td class="middle"><abbr title="&#34;master.tryserver.chromium.linux&#34;">&#34;master.tryserver.chromium.linux&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">patch_project</td>
-              <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">patch_storage</td>
-              <td class="middle"><abbr title="&#34;rietveld&#34;">&#34;rietveld&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">patchset</td>
-              <td class="middle"><abbr title="&#34;1&#34;">&#34;1&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">reason</td>
-              <td class="middle"><abbr title="&#34;CQ&#34;">&#34;CQ&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">requester</td>
-              <td class="middle"><abbr title="&#34;commit-bot@chromium.org&#34;">&#34;commit-bot@chromium.org&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-            <tr>
-              <td class="left">rietveld</td>
-              <td class="middle"><abbr title="&#34;https://codereview.chromium.org&#34;">&#34;https://codereview.chromium.org&#34;</abbr></td>
-              <td>buildbucket</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">buildbotURL</td>
-              <td class="middle"><abbr title="&#34;http://build.chromium.org/p/tryserver.chromium.linux/&#34;">&#34;http://build.chromium.org/p/tryserver.chromium.linux/&#34;</abbr></td>
-              <td>master.cfg</td>
-            </tr>
-          
-            <tr>
-              <td class="left">mastername</td>
-              <td class="middle"><abbr title="&#34;tryserver.chromium.linux&#34;">&#34;tryserver.chromium.linux&#34;</abbr></td>
-              <td>master.cfg</td>
-            </tr>
-          
-        
-        
-          
-            <tr>
-              <td class="left">workdir</td>
-              <td class="middle"><abbr title="&#34;/b/build/slave/linux&#34;">&#34;/b/build/slave/linux&#34;</abbr></td>
-              <td>slave</td>
-            </tr>
-          
-        
-      </table>
+    <table class="info BuildProperties" width="100%">
+    <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
       
-        <h2>Blamelist:</h2>
-        <ol>
-        
-          <li> (binji<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
-        
-        </ol>
       
-
-      <h2>Timing:</h2>
-      <table class="info" width="100%">
-        <tr class="alt"><td class="left">Create</td>
-        <td>
-          N/A
-        </td></tr>
-        <tr><td class="left">Start</td>
-        <td>
-          <span class="local-time " data-timestamp="1493854463961">Wednesday, 03-May-17 23:34:23 UTC</span>
-        </td></tr>
-        <tr class="alt"><td class="left">End</td>
-        <td>
-          <span class="local-time " data-timestamp="1493854673351">Wednesday, 03-May-17 23:37:53 UTC</span>
-        </td></tr>
-        <tr><td class="left">Pending</td>
-        <td id="duration">
-          
-            N/A
-          
-        </td></tr>
-        <tr class="alt"><td class="left">Execution</td>
-        <td id="duration">
-          
-            3 mins 29 secs
-          
-        </td></tr>
-      </table>
-
-    </div>
+        
+          <tr>
+            <td class="left">log_location</td>
+            <td class="middle"><abbr title="&#34;logdog://logs.chromium.org/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/&#43;/recipes/annotations&#34;">&#34;logdog://logs.chromium.org/chromium/bb/tryserver.chromium.linux/chromium_presubmit/426944/&#43;/recipes/annotations&#34;</abbr></td>
+            <td>Annotation(LogDog Bootstrap)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">logdog_prefix</td>
+            <td class="middle"><abbr title="&#34;bb/tryserver.chromium.linux/chromium_presubmit/426944&#34;">&#34;bb/tryserver.chromium.linux/chromium_presubmit/426944&#34;</abbr></td>
+            <td>Annotation(LogDog Bootstrap)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">logdog_project</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>Annotation(LogDog Bootstrap)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">got_angle_revision</td>
+            <td class="middle"><abbr title="&#34;ba29fa47aafa95330fe054eee02e36d11ce6d8bf&#34;">&#34;ba29fa47aafa95330fe054eee02e36d11ce6d8bf&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_buildtools_revision</td>
+            <td class="middle"><abbr title="null">null</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_nacl_revision</td>
+            <td class="middle"><abbr title="&#34;aac1de245362df94cb40042e5fbc9059b0d0874b&#34;">&#34;aac1de245362df94cb40042e5fbc9059b0d0874b&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_revision</td>
+            <td class="middle"><abbr title="&#34;543cbcbb37d29652edb36adcb64e1dee09e4efe8&#34;">&#34;543cbcbb37d29652edb36adcb64e1dee09e4efe8&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/master@{#469200}&#34;">&#34;refs/heads/master@{#469200}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_swarming_client_revision</td>
+            <td class="middle"><abbr title="null">null</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_v8_revision</td>
+            <td class="middle"><abbr title="&#34;779720b916c4d0f2434a076cf8da90451dc1ed7f&#34;">&#34;779720b916c4d0f2434a076cf8da90451dc1ed7f&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_v8_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/6.0.148@{#1}&#34;">&#34;refs/heads/6.0.148@{#1}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_webrtc_revision</td>
+            <td class="middle"><abbr title="&#34;86a678777ef0132fd7d579e564ed9b55248562e3&#34;">&#34;86a678777ef0132fd7d579e564ed9b55248562e3&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">got_webrtc_revision_cp</td>
+            <td class="middle"><abbr title="&#34;refs/heads/master@{#17981}&#34;">&#34;refs/heads/master@{#17981}&#34;</abbr></td>
+            <td>Annotation(bot_update)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">recipe</td>
+            <td class="middle"><abbr title="&#34;run_presubmit&#34;">&#34;run_presubmit&#34;</abbr></td>
+            <td>Annotation(setup_properties)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">repo_name</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>Annotation(setup_properties)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">runhooks</td>
+            <td class="middle"><abbr title="true">true</abbr></td>
+            <td>Annotation(setup_properties)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">build_revision</td>
+            <td class="middle"><abbr title="&#34;7f1967a10defc60c719bb24cd27f9631d3d71849&#34;">&#34;7f1967a10defc60c719bb24cd27f9631d3d71849&#34;</abbr></td>
+            <td>Annotation(update_scripts)</td>
+          </tr>
+        
+          <tr>
+            <td class="left">build_scm</td>
+            <td class="middle"><abbr title="&#34;git&#34;">&#34;git&#34;</abbr></td>
+            <td>Annotation(update_scripts)</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">blamelist</td>
+            <td class="middle"><abbr title="[&#34;binji@chromium.org&#34;]">[&#34;binji@chromium.org&#34;]</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">branch</td>
+            <td class="middle"><abbr title="null">null</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">buildnumber</td>
+            <td class="middle"><abbr title="426944">426944</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">project</td>
+            <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">repository</td>
+            <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">requestedAt</td>
+            <td class="middle"><abbr title="1493854463">1493854463</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+          <tr>
+            <td class="left">revision</td>
+            <td class="middle"><abbr title="&#34;&#34;">&#34;&#34;</abbr></td>
+            <td>Build</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">preferred_builder</td>
+            <td class="middle"><abbr title="&#34;chromium_presubmit&#34;">&#34;chromium_presubmit&#34;</abbr></td>
+            <td>BuildSlave</td>
+          </tr>
+        
+          <tr>
+            <td class="left">slavename</td>
+            <td class="middle"><abbr title="&#34;slave349-c4&#34;">&#34;slave349-c4&#34;</abbr></td>
+            <td>BuildSlave</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">buildername</td>
+            <td class="middle"><abbr title="&#34;chromium_presubmit&#34;">&#34;chromium_presubmit&#34;</abbr></td>
+            <td>Builder</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">attempt_start_ts</td>
+            <td class="middle"><abbr title="1493854335186720">1493854335186720</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">buildbucket</td>
+            <td class="middle"><abbr title="&#34;{\&#34;build\&#34;: {\&#34;bucket\&#34;: \&#34;master.tryserver.chromium.linux\&#34;, \&#34;created_by\&#34;: \&#34;user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com\&#34;, \&#34;created_ts\&#34;: \&#34;1493854451351630\&#34;, \&#34;id\&#34;: \&#34;8980573790777229552\&#34;, \&#34;lease_key\&#34;: \&#34;10817444\&#34;, \&#34;tags\&#34;: [\&#34;builder:chromium_presubmit\&#34;, \&#34;buildset:patch/rietveld/codereview.chromium.org/2860873002/1\&#34;, \&#34;master:master.tryserver.chromium.linux\&#34;, \&#34;user_agent:cq\&#34;]}}&#34;">&#34;{\&#34;build\&#34;: {\&#34;bucket\&#34;: \&#34;master.tryserver.chromium.linux\&#34;, \&#34;created_by\&#34;: \&#34;user:5071639625-1lppvbtck1morgivc6sq4dul7klu27sd@developer.gserviceaccount.com\&#34;, \&#34;created_ts\&#34;: \&#34;1493854451351630\&#34;, \&#34;id\&#34;: \&#34;8980573790777229552\&#34;, \&#34;lease_key\&#34;: \&#34;10817444\&#34;, \&#34;tags\&#34;: [\&#34;builder:chromium_presubmit\&#34;, \&#34;buildset:patch/rietveld/codereview.chromium.org/2860873002/1\&#34;, \&#34;master:master.tryserver.chromium.linux\&#34;, \&#34;user_agent:cq\&#34;]}}&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">category</td>
+            <td class="middle"><abbr title="&#34;cq&#34;">&#34;cq&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">issue</td>
+            <td class="middle"><abbr title="&#34;2860873002&#34;">&#34;2860873002&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">master</td>
+            <td class="middle"><abbr title="&#34;master.tryserver.chromium.linux&#34;">&#34;master.tryserver.chromium.linux&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">patch_project</td>
+            <td class="middle"><abbr title="&#34;chromium&#34;">&#34;chromium&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">patch_storage</td>
+            <td class="middle"><abbr title="&#34;rietveld&#34;">&#34;rietveld&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">patchset</td>
+            <td class="middle"><abbr title="&#34;1&#34;">&#34;1&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">reason</td>
+            <td class="middle"><abbr title="&#34;CQ&#34;">&#34;CQ&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">requester</td>
+            <td class="middle"><abbr title="&#34;commit-bot@chromium.org&#34;">&#34;commit-bot@chromium.org&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+          <tr>
+            <td class="left">rietveld</td>
+            <td class="middle"><abbr title="&#34;https://codereview.chromium.org&#34;">&#34;https://codereview.chromium.org&#34;</abbr></td>
+            <td>buildbucket</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">buildbotURL</td>
+            <td class="middle"><abbr title="&#34;http://build.chromium.org/p/tryserver.chromium.linux/&#34;">&#34;http://build.chromium.org/p/tryserver.chromium.linux/&#34;</abbr></td>
+            <td>master.cfg</td>
+          </tr>
+        
+          <tr>
+            <td class="left">mastername</td>
+            <td class="middle"><abbr title="&#34;tryserver.chromium.linux&#34;">&#34;tryserver.chromium.linux&#34;</abbr></td>
+            <td>master.cfg</td>
+          </tr>
+        
+      
+      
+        
+          <tr>
+            <td class="left">workdir</td>
+            <td class="middle"><abbr title="&#34;/b/build/slave/linux&#34;">&#34;/b/build/slave/linux&#34;</abbr></td>
+            <td>slave</td>
+          </tr>
+        
+      
+    </table>
 
     
-    <div class="column">
-      <h2>All Changes:</h2>
+      <h2>Blamelist:</h2>
       <ol>
       
-      <li>
-        <h3></h3>
-        <table class="info">
-          <tbody>
-            <tr>
-              <td class="left">Changed by</td>
-              <td class="value">
-                  
-                  binji<span style="display:none">ohnoyoudont</span>@chromium.org
-              </td>
-            </tr>
-            <tr>
-              <td class="left">Changed at</td>
-              <td class="value"><span class="local-time " data-timestamp="1493854462000">Wednesday, 03-May-17 23:34:22 UTC</span></td>
-            </tr>
-            <tr>
-              <td class="left">Repository</td>
-              <td class="value"></td>
-            </tr>
-            <tr>
-              <td class="left">Branch</td>
-              <td class="value"></td>
-            </tr>
-            
-              <tr>
-                <td class="left">Revision</td>
-                <td class="value"><a aria-label="commit by binji@chromium.org"></a></td>
-              </tr>
-            
-          </tbody>
-        </table>
-
-        
-
-        
-
-      </li>
+        <li> (binji<span style="display:none">ohnoyoudont</span>@chromium.org)</li>
       
       </ol>
-    </div>
+    
+
+    <h2>Timing:</h2>
+    <table class="info" width="100%">
+      <tr class="alt"><td class="left">Create</td>
+      <td>
+        N/A
+      </td></tr>
+      <tr><td class="left">Start</td>
+      <td>
+        <span class="local-time " data-timestamp="1493854463961">Wednesday, 03-May-17 23:34:23 UTC</span>
+      </td></tr>
+      <tr class="alt"><td class="left">End</td>
+      <td>
+        <span class="local-time " data-timestamp="1493854673351">Wednesday, 03-May-17 23:37:53 UTC</span>
+      </td></tr>
+      <tr><td class="left">Pending</td>
+      <td id="duration">
+        
+          N/A
+        
+      </td></tr>
+      <tr class="alt"><td class="left">Execution</td>
+      <td id="duration">
+        
+          3 mins 29 secs
+        
+      </td></tr>
+    </table>
+
+  </div>
+</div>
+      <div id="changes-tab">
+  <div id="changes">
+    
+    <h2>All Changes:</h2>
+    <ol>
+    
+    <li>
+      <h3></h3>
+      <table class="info">
+        <tbody>
+          <tr>
+            <td class="left">Changed by</td>
+            <td class="value">
+                
+                binji<span style="display:none">ohnoyoudont</span>@chromium.org
+            </td>
+          </tr>
+          <tr>
+            <td class="left">Changed at</td>
+            <td class="value"><span class="local-time " data-timestamp="1493854462000">Wednesday, 03-May-17 23:34:22 UTC</span></td>
+          </tr>
+          <tr>
+            <td class="left">Repository</td>
+            <td class="value"></td>
+          </tr>
+          <tr>
+            <td class="left">Branch</td>
+            <td class="value"></td>
+          </tr>
+          
+            <tr>
+              <td class="left">Revision</td>
+              <td class="value"><a aria-label="commit by binji@chromium.org"></a></td>
+            </tr>
+          
+        </tbody>
+      </table>
+
+      
+
+      
+
+    </li>
+    
+    </ol>
     
   </div>
 </div>
+      <div id="timeline-tab">
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+</div>
+    </div>
+  </div>
 
   <footer>
     <hr>
@@ -812,8 +832,11 @@
 <script>
 $(function () {
   'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
+  
+  setTimeout(function() {
+    milo.makeTimesLocal();
+    milo.annotateDurations();
+  }, 0);
   $(document).tooltip({
     show: false,
     hide: false
@@ -860,6 +883,7 @@ $(function () {
 </script>
 
 <script>
+setTimeout(function() {
 	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -867,6 +891,7 @@ $(function () {
 
 	ga('create', 'UA-12345-01', 'auto');
 	ga('send', 'pageview');
+}, 0);
 </script>
 
 </html>
