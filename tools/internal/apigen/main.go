@@ -15,6 +15,7 @@
 package apigen
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -27,6 +28,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -60,12 +62,12 @@ const (
 
 var (
 	// chromiumLicenseTemplate is the compiled Chromium license template text.
-	chromiumLicenseTemplate *template.Template
-)
-
-func init() {
 	chromiumLicenseTemplate = template.Must(template.New("chromium license").Parse(chromiumLicense))
-}
+
+	// apiGoGenLicenseHdr is a start of a comment block with license header put by
+	// google-api-go-generator, which we remove and replace with chromium license.
+	apiGoGenLicenseHdr = regexp.MustCompile("// Copyright [0-9]+ Google.*")
+)
 
 func compileChromiumLicense(c context.Context) (string, error) {
 	buf := bytes.Buffer{}
@@ -338,7 +340,39 @@ func (a *Application) generateAPI(c context.Context, item *directoryItem, discov
 		log.Fields{
 			"relpath": relpath,
 		}.Infof(c, "Fixing up generated Go file.")
-		return data, nil
+
+		// Remove copyright header added by google-api-go-generator. We have our own
+		// already.
+		filtered := strings.Builder{}
+		alreadySkippedHeader := false
+		scanner := bufio.NewScanner(bytes.NewReader(data))
+		for scanner.Scan() {
+			if line := scanner.Text(); alreadySkippedHeader || !apiGoGenLicenseHdr.MatchString(line) {
+				filtered.WriteString(line)
+				filtered.WriteRune('\n')
+				continue
+			}
+
+			// Found the start of the comment block with the header. Skip it all.
+			for scanner.Scan() {
+				if line := scanner.Text(); !strings.HasPrefix(line, "//") {
+					// The comment block is usually followed by an empty line which we
+					// also skip. But be careful in case it's not.
+					if line != "" {
+						filtered.WriteString(line)
+						filtered.WriteRune('\n')
+					}
+					break
+				}
+			}
+
+			// Carry on copying the rest of lines unchanged.
+			alreadySkippedHeader = true
+		}
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+		return []byte(filtered.String()), nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to install [%s]: %s", item.ID, err)

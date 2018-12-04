@@ -18,7 +18,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type StreamKind int32
 
@@ -274,78 +274,12 @@ func (m *MetricsCollection) GetTask() *Task {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*MetricsCollection) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _MetricsCollection_OneofMarshaler, _MetricsCollection_OneofUnmarshaler, _MetricsCollection_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MetricsCollection) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*MetricsCollection_NetworkDevice)(nil),
 		(*MetricsCollection_Task)(nil),
 	}
-}
-
-func _MetricsCollection_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*MetricsCollection)
-	// target_schema
-	switch x := m.TargetSchema.(type) {
-	case *MetricsCollection_NetworkDevice:
-		b.EncodeVarint(11<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.NetworkDevice); err != nil {
-			return err
-		}
-	case *MetricsCollection_Task:
-		b.EncodeVarint(12<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Task); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("MetricsCollection.TargetSchema has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _MetricsCollection_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*MetricsCollection)
-	switch tag {
-	case 11: // target_schema.network_device
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(NetworkDevice)
-		err := b.DecodeMessage(msg)
-		m.TargetSchema = &MetricsCollection_NetworkDevice{msg}
-		return true, err
-	case 12: // target_schema.task
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Task)
-		err := b.DecodeMessage(msg)
-		m.TargetSchema = &MetricsCollection_Task{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _MetricsCollection_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*MetricsCollection)
-	// target_schema
-	switch x := m.TargetSchema.(type) {
-	case *MetricsCollection_NetworkDevice:
-		s := proto.Size(x.NetworkDevice)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *MetricsCollection_Task:
-		s := proto.Size(x.Task)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type MetricsDataSet struct {
@@ -620,120 +554,15 @@ func (m *MetricsData) GetEndTimestamp() *Timestamp {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*MetricsData) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _MetricsData_OneofMarshaler, _MetricsData_OneofUnmarshaler, _MetricsData_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MetricsData) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*MetricsData_BoolValue)(nil),
 		(*MetricsData_StringValue)(nil),
 		(*MetricsData_Int64Value)(nil),
 		(*MetricsData_DoubleValue)(nil),
 		(*MetricsData_DistributionValue)(nil),
 	}
-}
-
-func _MetricsData_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*MetricsData)
-	// value
-	switch x := m.Value.(type) {
-	case *MetricsData_BoolValue:
-		t := uint64(0)
-		if x.BoolValue {
-			t = 1
-		}
-		b.EncodeVarint(1<<3 | proto.WireVarint)
-		b.EncodeVarint(t)
-	case *MetricsData_StringValue:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.StringValue)
-	case *MetricsData_Int64Value:
-		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Int64Value))
-	case *MetricsData_DoubleValue:
-		b.EncodeVarint(4<<3 | proto.WireFixed64)
-		b.EncodeFixed64(math.Float64bits(x.DoubleValue))
-	case *MetricsData_DistributionValue:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.DistributionValue); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("MetricsData.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _MetricsData_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*MetricsData)
-	switch tag {
-	case 1: // value.bool_value
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &MetricsData_BoolValue{x != 0}
-		return true, err
-	case 2: // value.string_value
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &MetricsData_StringValue{x}
-		return true, err
-	case 3: // value.int64_value
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &MetricsData_Int64Value{int64(x)}
-		return true, err
-	case 4: // value.double_value
-		if wire != proto.WireFixed64 {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeFixed64()
-		m.Value = &MetricsData_DoubleValue{math.Float64frombits(x)}
-		return true, err
-	case 5: // value.distribution_value
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(MetricsData_Distribution)
-		err := b.DecodeMessage(msg)
-		m.Value = &MetricsData_DistributionValue{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _MetricsData_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*MetricsData)
-	// value
-	switch x := m.Value.(type) {
-	case *MetricsData_BoolValue:
-		n += 1 // tag and wire
-		n += 1
-	case *MetricsData_StringValue:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.StringValue)))
-		n += len(x.StringValue)
-	case *MetricsData_Int64Value:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Int64Value))
-	case *MetricsData_DoubleValue:
-		n += 1 // tag and wire
-		n += 8
-	case *MetricsData_DistributionValue:
-		s := proto.Size(x.DistributionValue)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type MetricsData_MetricField struct {
@@ -830,87 +659,13 @@ func (m *MetricsData_MetricField) GetBoolValue() bool {
 	return false
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*MetricsData_MetricField) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _MetricsData_MetricField_OneofMarshaler, _MetricsData_MetricField_OneofUnmarshaler, _MetricsData_MetricField_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MetricsData_MetricField) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*MetricsData_MetricField_StringValue)(nil),
 		(*MetricsData_MetricField_Int64Value)(nil),
 		(*MetricsData_MetricField_BoolValue)(nil),
 	}
-}
-
-func _MetricsData_MetricField_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*MetricsData_MetricField)
-	// value
-	switch x := m.Value.(type) {
-	case *MetricsData_MetricField_StringValue:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.StringValue)
-	case *MetricsData_MetricField_Int64Value:
-		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Int64Value))
-	case *MetricsData_MetricField_BoolValue:
-		t := uint64(0)
-		if x.BoolValue {
-			t = 1
-		}
-		b.EncodeVarint(4<<3 | proto.WireVarint)
-		b.EncodeVarint(t)
-	case nil:
-	default:
-		return fmt.Errorf("MetricsData_MetricField.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _MetricsData_MetricField_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*MetricsData_MetricField)
-	switch tag {
-	case 2: // value.string_value
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &MetricsData_MetricField_StringValue{x}
-		return true, err
-	case 3: // value.int64_value
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &MetricsData_MetricField_Int64Value{int64(x)}
-		return true, err
-	case 4: // value.bool_value
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &MetricsData_MetricField_BoolValue{x != 0}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _MetricsData_MetricField_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*MetricsData_MetricField)
-	// value
-	switch x := m.Value.(type) {
-	case *MetricsData_MetricField_StringValue:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.StringValue)))
-		n += len(x.StringValue)
-	case *MetricsData_MetricField_Int64Value:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Int64Value))
-	case *MetricsData_MetricField_BoolValue:
-		n += 1 // tag and wire
-		n += 1
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type MetricsData_Distribution struct {
@@ -1055,97 +810,13 @@ func (m *MetricsData_Distribution) GetExemplar() []*MetricsData_Distribution_Exe
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*MetricsData_Distribution) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _MetricsData_Distribution_OneofMarshaler, _MetricsData_Distribution_OneofUnmarshaler, _MetricsData_Distribution_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*MetricsData_Distribution) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*MetricsData_Distribution_LinearBuckets)(nil),
 		(*MetricsData_Distribution_ExponentialBuckets)(nil),
 		(*MetricsData_Distribution_ExplicitBuckets)(nil),
 	}
-}
-
-func _MetricsData_Distribution_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*MetricsData_Distribution)
-	// bucket_options
-	switch x := m.BucketOptions.(type) {
-	case *MetricsData_Distribution_LinearBuckets:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.LinearBuckets); err != nil {
-			return err
-		}
-	case *MetricsData_Distribution_ExponentialBuckets:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.ExponentialBuckets); err != nil {
-			return err
-		}
-	case *MetricsData_Distribution_ExplicitBuckets:
-		b.EncodeVarint(8<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.ExplicitBuckets); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("MetricsData_Distribution.BucketOptions has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _MetricsData_Distribution_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*MetricsData_Distribution)
-	switch tag {
-	case 6: // bucket_options.linear_buckets
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(MetricsData_Distribution_LinearOptions)
-		err := b.DecodeMessage(msg)
-		m.BucketOptions = &MetricsData_Distribution_LinearBuckets{msg}
-		return true, err
-	case 7: // bucket_options.exponential_buckets
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(MetricsData_Distribution_ExponentialOptions)
-		err := b.DecodeMessage(msg)
-		m.BucketOptions = &MetricsData_Distribution_ExponentialBuckets{msg}
-		return true, err
-	case 8: // bucket_options.explicit_buckets
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(MetricsData_Distribution_ExplicitOptions)
-		err := b.DecodeMessage(msg)
-		m.BucketOptions = &MetricsData_Distribution_ExplicitBuckets{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _MetricsData_Distribution_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*MetricsData_Distribution)
-	// bucket_options
-	switch x := m.BucketOptions.(type) {
-	case *MetricsData_Distribution_LinearBuckets:
-		s := proto.Size(x.LinearBuckets)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *MetricsData_Distribution_ExponentialBuckets:
-		s := proto.Size(x.ExponentialBuckets)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *MetricsData_Distribution_ExplicitBuckets:
-		s := proto.Size(x.ExplicitBuckets)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type MetricsData_Distribution_LinearOptions struct {

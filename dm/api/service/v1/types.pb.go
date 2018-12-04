@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type MultiPropertyValue struct {
 	Values               []*PropertyValue `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
@@ -189,9 +189,9 @@ func (m *PropertyValue) GetNull() *empty.Empty {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*PropertyValue) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _PropertyValue_OneofMarshaler, _PropertyValue_OneofUnmarshaler, _PropertyValue_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*PropertyValue) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*PropertyValue_Str)(nil),
 		(*PropertyValue_Dat)(nil),
 		(*PropertyValue_Num)(nil),
@@ -199,130 +199,6 @@ func (*PropertyValue) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer)
 		(*PropertyValue_Time)(nil),
 		(*PropertyValue_Null)(nil),
 	}
-}
-
-func _PropertyValue_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*PropertyValue)
-	// value
-	switch x := m.Value.(type) {
-	case *PropertyValue_Str:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.Str)
-	case *PropertyValue_Dat:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		b.EncodeRawBytes(x.Dat)
-	case *PropertyValue_Num:
-		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.Num))
-	case *PropertyValue_Bin:
-		t := uint64(0)
-		if x.Bin {
-			t = 1
-		}
-		b.EncodeVarint(5<<3 | proto.WireVarint)
-		b.EncodeVarint(t)
-	case *PropertyValue_Time:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Time); err != nil {
-			return err
-		}
-	case *PropertyValue_Null:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Null); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("PropertyValue.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _PropertyValue_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*PropertyValue)
-	switch tag {
-	case 1: // value.str
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &PropertyValue_Str{x}
-		return true, err
-	case 2: // value.dat
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeRawBytes(true)
-		m.Value = &PropertyValue_Dat{x}
-		return true, err
-	case 3: // value.num
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &PropertyValue_Num{int64(x)}
-		return true, err
-	case 5: // value.bin
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.Value = &PropertyValue_Bin{x != 0}
-		return true, err
-	case 6: // value.time
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(timestamp.Timestamp)
-		err := b.DecodeMessage(msg)
-		m.Value = &PropertyValue_Time{msg}
-		return true, err
-	case 7: // value.null
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(empty.Empty)
-		err := b.DecodeMessage(msg)
-		m.Value = &PropertyValue_Null{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _PropertyValue_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*PropertyValue)
-	// value
-	switch x := m.Value.(type) {
-	case *PropertyValue_Str:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Str)))
-		n += len(x.Str)
-	case *PropertyValue_Dat:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Dat)))
-		n += len(x.Dat)
-	case *PropertyValue_Num:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.Num))
-	case *PropertyValue_Bin:
-		n += 1 // tag and wire
-		n += 1
-	case *PropertyValue_Time:
-		s := proto.Size(x.Time)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *PropertyValue_Null:
-		s := proto.Size(x.Null)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // AttemptList is logically a listing of unique attempts, which has a compact

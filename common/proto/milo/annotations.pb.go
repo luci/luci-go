@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Status is the expressed root step of this step or substep.
 type Status int32
@@ -472,78 +472,12 @@ func (m *Step_Substep) GetAnnotationStream() *LogdogStream {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Step_Substep) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Step_Substep_OneofMarshaler, _Step_Substep_OneofUnmarshaler, _Step_Substep_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Step_Substep) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Step_Substep_Step)(nil),
 		(*Step_Substep_AnnotationStream)(nil),
 	}
-}
-
-func _Step_Substep_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Step_Substep)
-	// substep
-	switch x := m.Substep.(type) {
-	case *Step_Substep_Step:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Step); err != nil {
-			return err
-		}
-	case *Step_Substep_AnnotationStream:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AnnotationStream); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Step_Substep.Substep has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Step_Substep_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Step_Substep)
-	switch tag {
-	case 1: // substep.step
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Step)
-		err := b.DecodeMessage(msg)
-		m.Substep = &Step_Substep_Step{msg}
-		return true, err
-	case 2: // substep.annotation_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(LogdogStream)
-		err := b.DecodeMessage(msg)
-		m.Substep = &Step_Substep_AnnotationStream{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Step_Substep_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Step_Substep)
-	// substep
-	switch x := m.Substep.(type) {
-	case *Step_Substep_Step:
-		s := proto.Size(x.Step)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Step_Substep_AnnotationStream:
-		s := proto.Size(x.AnnotationStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // Progress expresses a Component's overall progress. It does this using
@@ -774,112 +708,14 @@ func (m *Link) GetDmLink() *DMLink {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Link) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Link_OneofMarshaler, _Link_OneofUnmarshaler, _Link_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Link) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Link_Url)(nil),
 		(*Link_LogdogStream)(nil),
 		(*Link_IsolateObject)(nil),
 		(*Link_DmLink)(nil),
 	}
-}
-
-func _Link_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Link)
-	// value
-	switch x := m.Value.(type) {
-	case *Link_Url:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		b.EncodeStringBytes(x.Url)
-	case *Link_LogdogStream:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.LogdogStream); err != nil {
-			return err
-		}
-	case *Link_IsolateObject:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.IsolateObject); err != nil {
-			return err
-		}
-	case *Link_DmLink:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.DmLink); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Link.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Link_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Link)
-	switch tag {
-	case 3: // value.url
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeStringBytes()
-		m.Value = &Link_Url{x}
-		return true, err
-	case 4: // value.logdog_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(LogdogStream)
-		err := b.DecodeMessage(msg)
-		m.Value = &Link_LogdogStream{msg}
-		return true, err
-	case 5: // value.isolate_object
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(IsolateObject)
-		err := b.DecodeMessage(msg)
-		m.Value = &Link_IsolateObject{msg}
-		return true, err
-	case 6: // value.dm_link
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(DMLink)
-		err := b.DecodeMessage(msg)
-		m.Value = &Link_DmLink{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Link_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Link)
-	// value
-	switch x := m.Value.(type) {
-	case *Link_Url:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(len(x.Url)))
-		n += len(x.Url)
-	case *Link_LogdogStream:
-		s := proto.Size(x.LogdogStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Link_IsolateObject:
-		s := proto.Size(x.IsolateObject)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Link_DmLink:
-		s := proto.Size(x.DmLink)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // LogdogStream is a LogDog stream link.

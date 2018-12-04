@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type Alias struct {
 	OtherConfig          string   `protobuf:"bytes,1,opt,name=other_config,json=otherConfig,proto3" json:"other_config,omitempty"`
@@ -153,97 +153,13 @@ func (m *Distributor) GetJobsim() *jobsim.Config {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Distributor) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Distributor_OneofMarshaler, _Distributor_OneofUnmarshaler, _Distributor_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Distributor) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Distributor_Alias)(nil),
 		(*Distributor_SwarmingV1)(nil),
 		(*Distributor_Jobsim)(nil),
 	}
-}
-
-func _Distributor_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Distributor)
-	// distributor_type
-	switch x := m.DistributorType.(type) {
-	case *Distributor_Alias:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Alias); err != nil {
-			return err
-		}
-	case *Distributor_SwarmingV1:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.SwarmingV1); err != nil {
-			return err
-		}
-	case *Distributor_Jobsim:
-		b.EncodeVarint(2048<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Jobsim); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Distributor.DistributorType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Distributor_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Distributor)
-	switch tag {
-	case 1: // distributor_type.alias
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Alias)
-		err := b.DecodeMessage(msg)
-		m.DistributorType = &Distributor_Alias{msg}
-		return true, err
-	case 4: // distributor_type.swarming_v1
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.Config)
-		err := b.DecodeMessage(msg)
-		m.DistributorType = &Distributor_SwarmingV1{msg}
-		return true, err
-	case 2048: // distributor_type.jobsim
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(jobsim.Config)
-		err := b.DecodeMessage(msg)
-		m.DistributorType = &Distributor_Jobsim{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Distributor_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Distributor)
-	// distributor_type
-	switch x := m.DistributorType.(type) {
-	case *Distributor_Alias:
-		s := proto.Size(x.Alias)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Distributor_SwarmingV1:
-		s := proto.Size(x.SwarmingV1)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Distributor_Jobsim:
-		s := proto.Size(x.Jobsim)
-		n += 3 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type Config struct {

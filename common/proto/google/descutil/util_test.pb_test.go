@@ -22,7 +22,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Enum comment.
 // next line.
@@ -312,108 +312,14 @@ func (m *M3) GetF6() int32 {
 	return 0
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*M3) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _M3_OneofMarshaler, _M3_OneofUnmarshaler, _M3_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*M3) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*M3_F1)(nil),
 		(*M3_F2)(nil),
 		(*M3_F3)(nil),
 		(*M3_F4)(nil),
 	}
-}
-
-func _M3_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*M3)
-	// O1
-	switch x := m.O1.(type) {
-	case *M3_F1:
-		b.EncodeVarint(1<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.F1))
-	case *M3_F2:
-		b.EncodeVarint(2<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.F2))
-	case nil:
-	default:
-		return fmt.Errorf("M3.O1 has unexpected type %T", x)
-	}
-	// O2
-	switch x := m.O2.(type) {
-	case *M3_F3:
-		b.EncodeVarint(3<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.F3))
-	case *M3_F4:
-		b.EncodeVarint(4<<3 | proto.WireVarint)
-		b.EncodeVarint(uint64(x.F4))
-	case nil:
-	default:
-		return fmt.Errorf("M3.O2 has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _M3_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*M3)
-	switch tag {
-	case 1: // O1.f1
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.O1 = &M3_F1{int32(x)}
-		return true, err
-	case 2: // O1.f2
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.O1 = &M3_F2{int32(x)}
-		return true, err
-	case 3: // O2.f3
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.O2 = &M3_F3{int32(x)}
-		return true, err
-	case 4: // O2.f4
-		if wire != proto.WireVarint {
-			return true, proto.ErrInternalBadWireType
-		}
-		x, err := b.DecodeVarint()
-		m.O2 = &M3_F4{int32(x)}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _M3_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*M3)
-	// O1
-	switch x := m.O1.(type) {
-	case *M3_F1:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.F1))
-	case *M3_F2:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.F2))
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	// O2
-	switch x := m.O2.(type) {
-	case *M3_F3:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.F3))
-	case *M3_F4:
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(x.F4))
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type NestedMessageParent struct {
