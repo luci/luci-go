@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7e0dd883_6a72045e",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T20:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9108367e_814f450f",
+      "range": {
+        "startLine": 51,
+        "startChar": 0,
+        "endLine": 51,
+        "endChar": 2
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d03ae7ac_3ae71959",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 14
@@ -45,6 +69,30 @@
       "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a8732da_5f37bcf2",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T20:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d03ae7ac_3ae71959",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 8
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "c41b9ee2_88da7df4",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T20:19:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3fd33b82_8e3e5d57",
+      "range": {
+        "startLine": 230,
+        "startChar": 20,
+        "endLine": 230,
+        "endChar": 35
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b27fab7a_039fdaaa",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 14
@@ -91,6 +163,30 @@
       "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "19d551c0_fc5015b1",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T20:19:11Z",
+      "side": 1,
+      "message": "Looking at build.html, which uses the same MiloBuild data:\n\nhttp://cs/github/luci/luci-go/milo/frontend/appengine/templates/pages/build.html?l\u003d1\u0026rcl\u003df41ecd629b2a49d7affcf2729726a293fcf70d32\n\nit would appear that this is expected to always have a value when looking at \"interval\" template invocations:\n\nhttp://cs/github/luci/luci-go/milo/frontend/appengine/templates/pages/build.html?l\u003d175\u0026rcl\u003df41ecd629b2a49d7affcf2729726a293fcf70d32\nhttp://cs/github/luci/luci-go/milo/frontend/appengine/templates/pages/build.html?l\u003d190\u0026rcl\u003df41ecd629b2a49d7affcf2729726a293fcf70d32\n\nand the actual template:\n\nhttp://cs/github/luci/luci-go/milo/frontend/appengine/templates/pages/build.html?l\u003d19-28\u0026rcl\u003df41ecd629b2a49d7affcf2729726a293fcf70d32",
+      "parentUuid": "b27fab7a_039fdaaa",
+      "range": {
+        "startLine": 238,
+        "startChar": 27,
+        "endLine": 238,
+        "endChar": 45
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
