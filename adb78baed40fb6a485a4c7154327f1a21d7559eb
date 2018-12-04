@@ -117,6 +117,30 @@
       "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0aca8b1_a5171d8a",
+        "filename": "buildbucket/client/cmd/buildbucket/retry.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T03:16:08Z",
+      "side": 1,
+      "message": "because callAndDone has retries. Imagine that the build was successfully retried, but the response did not reach this tool, due to network flake. The request will be retried. This RPC should be idempotent, and that\u0027s client operation id is needed.\nsee also https://chromium.googlesource.com/infra/luci/luci-go/+/refs/changes/68/1358868/2/buildbucket/client/cmd/buildbucket/put.go",
+      "parentUuid": "99378a23_00be36fb",
+      "range": {
+        "startLine": 51,
+        "startChar": 78,
+        "endLine": 51,
+        "endChar": 81
+      },
+      "revId": "adb78baed40fb6a485a4c7154327f1a21d7559eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
