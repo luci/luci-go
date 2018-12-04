@@ -22,6 +22,30 @@
       "revId": "601697c533f6e6ff73ac8f6257d9495d701fd6ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "22eeb950_744b77c5",
+        "filename": "common/api/buildbucket/buildbucket/v1/buildbucket-gen.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T01:10:17Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "616e693d_ed2f65af",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 15,
+        "endChar": 28
+      },
+      "revId": "601697c533f6e6ff73ac8f6257d9495d701fd6ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
