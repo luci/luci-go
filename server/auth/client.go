@@ -95,11 +95,35 @@ const (
 	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
 	// Can be customized with WithScopes() options.
 	AsActor
+
+	// AsProjectScoped is used for outbound RPCs sent with the authority of the current
+	// service itself but with an identity bound to have only access to a single project.
+	//
+	// RPC requests done in this mode will have 'Authorization' header set to the
+	// OAuth2 access token of the project-service specific service account.
+	//
+	// By default uses "https://www.googleapis.com/auth/userinfo.email" API scope.
+	// Can be customized with WithScopes() options.
+	AsProjectScoped
 )
 
 // RPCOption is an option for GetRPCTransport or GetPerRPCCredentials functions.
 type RPCOption interface {
 	apply(opts *rpcOptions)
+}
+
+// WithProject can be used to generate an OAuth token with an identity bound
+// to that particular LUCI project.
+func WithProject(project string) RPCOption {
+	return projectOption{name: project}
+}
+
+type projectOption struct {
+	name string
+}
+
+func (o projectOption) apply(opts *rpcOptions) {
+	opts.project = o.name
 }
 
 // WithScopes can be used to customize OAuth scopes for outbound RPC requests.
@@ -377,6 +401,7 @@ type headersGetter func(c context.Context, uri string, opts *rpcOptions) (*oauth
 
 type rpcOptions struct {
 	kind             RPCAuthorityKind
+	project          string
 	scopes           []string // for AsSelf and AsActor
 	serviceAccount   string   // for AsActor
 	delegationToken  string   // for AsUser
@@ -395,13 +420,13 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 	}
 
 	// Set default scopes.
-	asSelfOrActor := options.kind == AsSelf || options.kind == AsActor
-	if asSelfOrActor && len(options.scopes) == 0 {
+	asSelfOrActorOrProject := options.kind == AsSelf || options.kind == AsActor || options.kind == AsProjectScoped
+	if asSelfOrActorOrProject && len(options.scopes) == 0 {
 		options.scopes = defaultOAuthScopes
 	}
 
 	// Validate options.
-	if !asSelfOrActor && len(options.scopes) != 0 {
+	if !asSelfOrActorOrProject && len(options.scopes) != 0 {
 		return nil, fmt.Errorf("auth: WithScopes can only be used with AsSelf or AsActor authorization kind")
 	}
 	if options.serviceAccount != "" && options.kind != AsActor {
@@ -439,6 +464,8 @@ func makeRPCOptions(kind RPCAuthorityKind, opts []RPCOption) (*rpcOptions, error
 		}
 	case AsActor:
 		options.getRPCHeaders = asActorHeaders
+	case AsProjectScoped:
+		options.getRPCHeaders = asProjectHeaders
 	default:
 		return nil, fmt.Errorf("auth: unknown RPCAuthorityKind %d", options.kind)
 	}
@@ -561,4 +588,17 @@ func asActorHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.To
 		MinTTL:         2 * time.Minute,
 	})
 	return oauthTok, nil, err
+}
+
+// asProjectHeaders returns a map of authentication headers to add to outbound
+// RPC requests done in AsProject mode.
+//
+// This will be called by the transport layer on each request.
+func asProjectHeaders(c context.Context, uri string, opts *rpcOptions) (*oauth2.Token, map[string]string, error) {
+	cfg := getConfig(c)
+	if cfg == nil || cfg.AccessTokenProvider == nil {
+		return nil, nil, ErrNotConfigured
+	}
+	tok, err := cfg.AccessTokenProvider(c, opts.scopes)
+	return tok, nil, err
 }
