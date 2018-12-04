@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "2a5812cb_b1c70e35",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T23:36:00Z",
+      "side": 1,
+      "message": "I specifically don\u0027t want to mention what\u0027s child and what\u0027s parent because they are arbitrarily defined and not even visible to the end users.\n\nConsider:\n  core.builder(\"b\", triggered_by\u003d[\"t\"])\n\nIt will produce the following error:\n  core.builder(\"b\") in \"triggered_by\" refers to undefined core.trigger(\"t\")\n\nSimilarly this:\n  core.trigger(\"t\", triggers\u003d[\"b\"])\n\nWill produce:\n  core.trigger(\"t\") in \"triggers\" refers to undefined core.builder(\"b\")\n\nThese errors messages look (relatively) clear and consistent to the end user (who has no idea what is \u0027parent\u0027 and \u0027child\u0027). Compare them to (respectively):\n\n  relation \"triggered_by\" from core.trigger(\"t\") to core.builder(\"b\"): parent does not exist\n  relation \"triggered_by\" from core.trigger(\"t\") to core.builder(\"b\"): child does not exist\n\nWhat parent, what child?..\n\nAnyway, as said in TODO, I expect there\u0027ll be a separate CL later (when everything is in place) that cleans up how errors are presented, so all looks consistent and the graph terminology doesn\u0027t leak into the tool output.",
+      "parentUuid": "5d026cee_0b7cc0cb",
+      "range": {
+        "startLine": 117,
+        "startChar": 21,
+        "endLine": 117,
+        "endChar": 55
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "73b83cce_4edb8286",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 2
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "60ad8714_6d33126d",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T23:36:00Z",
+      "side": 1,
+      "message": "Strictly speaking in the final program this situation never happens, since all rules always define a node (and then possible a bunch of edges to/from this node). So I didn\u0027t bother to make this error very readable.",
+      "parentUuid": "73b83cce_4edb8286",
+      "range": {
+        "startLine": 123,
+        "startChar": 31,
+        "endLine": 123,
+        "endChar": 41
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "939c0204_b4561c67",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 2
@@ -59,6 +107,24 @@
       "writtenOn": "2018-12-04T23:13:08Z",
       "side": 1,
       "message": "repeated 4 times...",
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9da34bcc_0f1840d4",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T23:36:00Z",
+      "side": 1,
+      "message": "*shrug*\n\nmoved it to a function, but it doesn\u0027t reduce the repetition",
+      "parentUuid": "939c0204_b4561c67",
       "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -85,6 +151,30 @@
       "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "419d8a06_adf2b958",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T23:36:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58205ee6_b7334f62",
+      "range": {
+        "startLine": 171,
+        "startChar": 23,
+        "endLine": 171,
+        "endChar": 25
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
