@@ -87,9 +87,15 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 		return nil, state.err(err)
 	}
 
-	// Executing the script (with all its dependencies) populated State and
-	// registered a bunch of callbacks that take State and transform it into
-	// actual config files (living in a config set). Run these callback now.
+	// Executing the script (with all its dependencies) populated the graph.
+	// It shouldn't be modified by any later stages of the execution.
+	state.graph.Freeze()
+
+	// TODO(vadimsh): Check there are no dangling edges in the graph.
+
+	// The script registered a bunch of callbacks that take the graph and
+	// transform it into actual config files (living in a config set). Run these
+	// callbacks now.
 	genCtx := newGenCtx()
 	if err := state.generators.call(intr.Thread(ctx), genCtx); err != nil {
 		return nil, state.err(err)
