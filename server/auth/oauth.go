@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/gcloud/googleoauth"
@@ -71,6 +73,8 @@ type GoogleOAuth2Method struct {
 	tokenInfoEndpoint string
 }
 
+var _ UserCredentialsGetter = (*GoogleOAuth2Method)(nil)
+
 // Authenticate implements Method.
 func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (user *User, err error) {
 	cfg := getConfig(c)
@@ -83,12 +87,10 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 	if header == "" || len(m.Scopes) == 0 {
 		return nil, nil // this method is not applicable
 	}
-
-	chunks := strings.SplitN(header, " ", 2)
-	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
-		return nil, errors.New("oauth: bad Authorization header")
+	accessToken, err := accessTokenFromHeader(header)
+	if err != nil {
+		return nil, err
 	}
-	accessToken := chunks[1]
 
 	// Store only the token hash in the cache, so that if a memory or cache dump
 	// ever occurs, the tokens themselves aren't included in it.
@@ -127,6 +129,28 @@ func (m *GoogleOAuth2Method) Authenticate(c context.Context, r *http.Request) (u
 
 	user = cached.(*User)
 	return
+}
+
+// GetUserCredentials implements UserCredentialsGetter.
+func (m *GoogleOAuth2Method) GetUserCredentials(c context.Context, r *http.Request) (*oauth2.Token, error) {
+	accessToken, err := accessTokenFromHeader(r.Header.Get("Authorization"))
+	if err != nil {
+		return nil, err
+	}
+	return &oauth2.Token{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+	}, nil
+}
+
+var errBadAuthHeader = errors.New("oauth: bad Authorization header")
+
+func accessTokenFromHeader(header string) (string, error) {
+	chunks := strings.SplitN(header, " ", 2)
+	if len(chunks) != 2 || (chunks[0] != "OAuth" && chunks[0] != "Bearer") {
+		return "", errBadAuthHeader
+	}
+	return chunks[1], nil
 }
 
 // authenticateAgainstGoogle uses OAuth2 tokeninfo endpoint via URL fetch.

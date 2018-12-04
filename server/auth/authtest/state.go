@@ -17,6 +17,8 @@ package authtest
 import (
 	"net"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/auth/identity"
 	"go.chromium.org/luci/server/auth"
 	"go.chromium.org/luci/server/auth/authdb"
@@ -58,6 +60,11 @@ type FakeState struct {
 	//
 	// By default PeerIP() returns "127.0.0.1".
 	PeerIPOverride net.IP
+
+	// UserCredentialsOverride may be set to override UserCredentials().
+	//
+	// By default UserCredentials() returns ErrNoForwardableCreds error.
+	UserCredentialsOverride *oauth2.Token
 }
 
 var _ auth.State = (*FakeState)(nil)
@@ -113,4 +120,12 @@ func (s *FakeState) PeerIP() net.IP {
 		return net.ParseIP("127.0.0.1")
 	}
 	return s.PeerIPOverride
+}
+
+// UserCredentials is part of State interface.
+func (s *FakeState) UserCredentials() (*oauth2.Token, error) {
+	if s.UserCredentialsOverride != nil {
+		return s.UserCredentialsOverride, nil
+	}
+	return nil, auth.ErrNoForwardableCreds
 }

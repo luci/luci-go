@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/oauth2"
+
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
@@ -45,6 +47,10 @@ var (
 	// ErrIPNotWhitelisted is returned when an account is restricted by an IP
 	// whitelist and request's remote_addr is not in it.
 	ErrIPNotWhitelisted = errors.New("auth: IP is not whitelisted")
+
+	// ErrNoForwardableCreds is returned when attempting to forward credentials
+	// (via AsCredentialsForwarder) that are not forwardable.
+	ErrNoForwardableCreds = errors.New("auth: no forwardable credentials in the context")
 )
 
 // Method implements a particular kind of low-level authentication mechanism.
@@ -74,6 +80,20 @@ type UsersAPI interface {
 	// LogoutURL returns a URL that, when visited, signs the user out,
 	// then redirects the user to the URL specified by dest.
 	LogoutURL(c context.Context, dest string) (string, error)
+}
+
+// UserCredentialsGetter may be additionally implemented by Method if it knows
+// how to extract end-user credentials from the incoming request. Currently
+// understands only OAuth2 tokens.
+type UserCredentialsGetter interface {
+	// GetUserCredentials extracts an OAuth access token from the incoming request
+	// or returns an error if it isn't possible.
+	//
+	// May omit token's expiration time if it isn't known.
+	//
+	// Guaranteed to be called only after the successful authentication, so it
+	// doesn't have to recheck the validity of the token.
+	GetUserCredentials(context.Context, *http.Request) (*oauth2.Token, error)
 }
 
 // User represents identity and profile of a user.
@@ -271,6 +291,17 @@ func (a *Authenticator) Authenticate(c context.Context, r *http.Request) (contex
 			"peerID":      s.peerIdent,
 			"delegatedID": delegatedIdentity,
 		}.Debugf(c, "auth: Using delegation")
+	}
+
+	// If not using the delegation, grab the end user creds in case we want to
+	// forward them later in GetRPCTransport(AsCredentialsForwarder). Note that
+	// generally delegation tokens are not forwardable, so we disable credentials
+	// forwarding when delegation is used.
+	s.endUserErr = ErrNoForwardableCreds
+	if delegationTok == "" {
+		if credsGetter, _ := s.method.(UserCredentialsGetter); credsGetter != nil {
+			s.endUserTok, s.endUserErr = credsGetter.GetUserCredentials(c, r)
+		}
 	}
 
 	// Inject auth state.
