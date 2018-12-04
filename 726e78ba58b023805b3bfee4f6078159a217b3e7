@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "2b57772c_621ea676",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T20:09:49Z",
+      "side": 1,
+      "message": "\u003e why? \n\nTo keep the code dead simple. Can worry about optimizing it when there\u0027s a need to optimize it. Our trees are expected to be only ~3 levels deep and not very interlinked. I think it should be fine.\n\n\u003e can the cb at least have a option not to go deeper by returning a special error?\n\nAgain, this seems like a premature optimization. This feature can be added where there\u0027s a need for it.",
+      "parentUuid": "fc11c762_05aec589",
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c229dd32_77ece138",
         "filename": "lucicfg/graph/node.go",
         "patchSetId": 2
@@ -33,6 +51,24 @@
       "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d3372a7f_bb38ce47",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T20:09:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c229dd32_77ece138",
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -56,6 +92,30 @@
       "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "448d304e_8cdb1860",
+        "filename": "lucicfg/graph/testdata/edge.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T20:09:49Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4cfd5de_54a5295d",
+      "range": {
+        "startLine": 30,
+        "startChar": 16,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
