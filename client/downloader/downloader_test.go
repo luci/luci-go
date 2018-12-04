@@ -15,13 +15,17 @@
 package downloader
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -36,22 +40,23 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
-	string1 := "hello world!"
-	data1 := []byte(string1)
-
-	string2 := "wat"
-	data2 := []byte(string2)
+	data1 := []byte("hello world!")
+	data2 := []byte("wat")
+	tardata := genTar(t)
 
 	server := isolatedfake.New()
 	data1hash := server.Inject(data1)
 	data2hash := server.Inject(data2)
+	tardatahash := server.Inject(tardata)
+	tardataname := fmt.Sprintf("%s.tar", tardatahash)
 
 	onePath := filepath.Join("foo", "one.txt")
 	twoPath := filepath.Join("foo", "two.txt")
 	isolated1 := isolated.New()
 	isolated1.Files = map[string]isolated.File{
-		onePath: isolated.BasicFile(data1hash, 0664, int64(len(data1))),
-		twoPath: isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		onePath:     isolated.BasicFile(data1hash, 0664, int64(len(data1))),
+		twoPath:     isolated.BasicFile(data2hash, 0664, int64(len(data2))),
+		tardataname: isolated.TarFile(tardatahash, int64(len(tardata))),
 	}
 	isolated1bytes, _ := json.Marshal(&isolated1)
 	isolated1hash := server.Inject(isolated1bytes)
@@ -64,6 +69,7 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		oloPath: isolated.BasicFile(data2hash, 0664, int64(len(data2))),
 	}
 	isolatedFiles := stringset.NewFromSlice([]string{
+		tardataname,
 		onePath,
 		twoPath,
 		lolPath,
@@ -93,21 +99,26 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
-		oneBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
+		b, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
 		So(err, ShouldBeNil)
-		So(oneBytes, ShouldResemble, data1)
+		So(b, ShouldResemble, data1)
 
-		twoBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, twoPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, twoPath))
 		So(err, ShouldBeNil)
-		So(twoBytes, ShouldResemble, data2)
+		So(b, ShouldResemble, data2)
 
-		lolBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, lolPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, lolPath))
 		So(err, ShouldBeNil)
-		So(lolBytes, ShouldResemble, data1)
+		So(b, ShouldResemble, data1)
 
-		oloBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, oloPath))
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, oloPath))
 		So(err, ShouldBeNil)
-		So(oloBytes, ShouldResemble, data2)
+		So(b, ShouldResemble, data2)
+
+		// This is obviously incorrect.
+		b, err = ioutil.ReadFile(filepath.Join(tmpDir, tardataname))
+		So(err, ShouldBeNil)
+		So(b, ShouldResemble, tardata)
 
 		if runtime.GOOS != "windows" {
 			l, err := os.Readlink(filepath.Join(tmpDir, blahPath))
@@ -115,4 +126,28 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 			So(l, ShouldResemble, filepath.Join(tmpDir, oloPath))
 		}
 	})
+}
+
+// genTar returns a valid tar file.
+func genTar(t *testing.T) []byte {
+	b := bytes.Buffer{}
+	tw := tar.NewWriter(&b)
+	d := []byte("hello file1")
+	if err := tw.WriteHeader(&tar.Header{Name: "file1", Mode: 0644, Typeflag: tar.TypeReg, Size: int64(len(d))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(d); err != nil {
+		t.Fatal(err)
+	}
+	d = []byte(strings.Repeat("hello file2", 100))
+	if err := tw.WriteHeader(&tar.Header{Name: "file2", Mode: 0644, Typeflag: tar.TypeReg, Size: int64(len(d))}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tw.Write(d); err != nil {
+		t.Fatal(err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return b.Bytes()
 }

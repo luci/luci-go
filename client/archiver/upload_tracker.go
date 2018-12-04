@@ -151,10 +151,9 @@ func (ut *UploadTracker) tarAndUploadFiles(smallFiles []*Item) error {
 			Path:    fmt.Sprintf(".%s.tar", digest),
 			RelPath: fmt.Sprintf(".%s.tar", digest),
 			Size:    tarSize,
-			Mode:    0644, // Read
 			Digest:  digest,
 		}
-		ut.isol.Files[item.RelPath] = isolated.TarFile(item.Digest, int(item.Mode), item.Size)
+		ut.isol.Files[item.RelPath] = isolated.TarFile(item.Digest, item.Size)
 
 		ut.checker.AddItem(item, false, func(item *Item, ps *isolatedclient.PushState) {
 			if ps == nil {
