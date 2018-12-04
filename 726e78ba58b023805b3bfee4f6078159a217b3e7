@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fc11c762_05aec589",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T19:59:29Z",
+      "side": 1,
+      "message": "why? this may backfire, since this makes visitDescendants exponential, as opposed to linear\ncan the cb at least have a option not to go deeper by returning a special error?",
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c229dd32_77ece138",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T19:59:29Z",
+      "side": 1,
+      "message": "nit: I think callsite would be more readable if the anonymous func was the last arg",
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4cfd5de_54a5295d",
+        "filename": "lucicfg/graph/testdata/edge.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T19:59:29Z",
+      "side": 1,
+      "message": "unnecessary",
+      "range": {
+        "startLine": 30,
+        "startChar": 16,
+        "endLine": 30,
+        "endChar": 17
+      },
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
