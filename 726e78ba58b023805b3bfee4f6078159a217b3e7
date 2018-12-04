@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "99a7126f_1ada5b6f",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T20:51:36Z",
+      "side": 1,
+      "message": "fine. This is go code \u003d\u003e not public API. Changing it later won\u0027t be hard\n\nadding a map[*Node]bool is pretty simple though",
+      "parentUuid": "2b57772c_621ea676",
+      "revId": "726e78ba58b023805b3bfee4f6078159a217b3e7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c229dd32_77ece138",
         "filename": "lucicfg/graph/node.go",
         "patchSetId": 2

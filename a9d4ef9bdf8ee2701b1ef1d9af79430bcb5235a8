@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edf97fb0_e83255e3",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T20:51:36Z",
+      "side": 1,
+      "message": "nit: remove. An edge in this graph is not necessarily a dep.",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 74
+      },
+      "revId": "a9d4ef9bdf8ee2701b1ef1d9af79430bcb5235a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2ab93ad8_899cc3d4",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T20:51:36Z",
+      "side": 1,
+      "message": "if the user receives this error, it may be not not obvious whether parent or child key caused this.\nconsider adding context, that this is parent. Same below in the child case",
+      "range": {
+        "startLine": 179,
+        "startChar": 9,
+        "endLine": 179,
+        "endChar": 12
+      },
+      "revId": "a9d4ef9bdf8ee2701b1ef1d9af79430bcb5235a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
