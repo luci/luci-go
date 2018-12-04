@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5d026cee_0b7cc0cb",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T23:13:08Z",
+      "side": 1,
+      "message": "nit: if i received this message, i\u0027d think that first node in the message is a parent, because usually it is the parent that refers to its children (a child doesn\u0027t know its parents)\nmaybe at least add \"child %s in %q refers to undefined parent %s\"",
+      "range": {
+        "startLine": 117,
+        "startChar": 21,
+        "endLine": 117,
+        "endChar": 55
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "73b83cce_4edb8286",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 123,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T23:13:08Z",
+      "side": 1,
+      "message": "nit: in the messages above a node refers to a node. In this message an edge refers to a node. Inconsistent.\n\nmaybe use the same format for all: \n\n  \"relation %s from %s to %s: parent does not exist\"\n  \"relation %s from %s to %s: child does not exist\"\n  \"relation %s from %s to %s: neither parent nor child exist\"",
+      "range": {
+        "startLine": 123,
+        "startChar": 31,
+        "endLine": 123,
+        "endChar": 41
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "939c0204_b4561c67",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T23:13:08Z",
+      "side": 1,
+      "message": "repeated 4 times...",
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "58205ee6_b7334f62",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T23:13:08Z",
+      "side": 1,
+      "message": "is",
+      "range": {
+        "startLine": 171,
+        "startChar": 23,
+        "endLine": 171,
+        "endChar": 25
+      },
+      "revId": "e967b9405a42ca055884c324ef4cc8242bd748e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
