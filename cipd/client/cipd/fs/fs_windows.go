@@ -94,8 +94,20 @@ func atomicRename(source, target string) error {
 	return moveFileEx(lpReplacementFileName, lpReplacedFileName, moveFileReplaceExisting|moveFileWriteThrough)
 }
 
-// "The directory name is invalid".
-const ERROR_DIRECTORY syscall.Errno = 267
+// For errors codes see
+// https://docs.microsoft.com/en-us/windows/desktop/debug/system-error-codes--0-499-
+
+const (
+	// "The directory is not empty."
+	ERROR_DIR_NOT_EMPTY syscall.Errno = 145
+	// "The directory name is invalid".
+	ERROR_DIRECTORY syscall.Errno = 267
+)
+
+func isNotEmpty(err error) bool {
+	pe, ok := err.(*os.PathError)
+	return ok && pe.Err == ERROR_DIR_NOT_EMPTY
+}
 
 func isNotDir(err error) bool {
 	pe, ok := err.(*os.PathError)
