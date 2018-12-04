@@ -25,7 +25,39 @@ def _key(*args):
   return __native__.graph().key(*args)
 
 
+def _add_node(key, props=None, trace=None):
+  """Adds a node to the graph or fails if such node already exists.
+
+  Also fails if used from a generator callback: at this point the graph is
+  frozen and can't be extended.
+
+  Args:
+    key: a node key, as returned by graph.key(...).
+    props: a dict with node properties, will be frozen.
+    trace: a stack trace to associate with the node.
+
+  Returns:
+    graph.node object representing the node.
+  """
+  return __native__.graph().add_node(
+      key, props or {}, trace or stacktrace(skip=1))
+
+
+def _node(key):
+  """Returns a node by the key or None if it wasn't added by add_node yet.
+
+  Args:
+    key: a node key, as returned by graph.key(...).
+
+  Returns:
+    graph.node object representing the node.
+  """
+  return __native__.graph().node(key)
+
+
 # Public API of this module.
 graph = struct(
     key = _key,
+    add_node = _add_node,
+    node = _node,
 )
