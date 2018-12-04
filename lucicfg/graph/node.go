@@ -47,9 +47,12 @@ func (n *Node) declare(props *starlarkstruct.Struct, trace *builtins.CapturedSta
 	n.Trace = trace
 }
 
-// declared is true if the node was fully defined via AddNode and false if
+// Declared is true if the node was fully defined via AddNode and false if
 // it was only "predeclared" by being referenced in some edge (via AddEdge).
-func (n *Node) declared() bool {
+//
+// In a finalized graph there are no dangling edges: all nodes are guaranteed to
+// be declared.
+func (n *Node) Declared() bool {
 	return n.Props != nil
 }
 

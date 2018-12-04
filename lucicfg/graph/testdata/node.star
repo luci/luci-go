@@ -5,21 +5,25 @@ def test_add_node_ok():
   g = new_graph()
   k = g.key('t1', 'id1')
 
-  assert.true(g.node(k) == None)
-
   n = g.add_node(k, props={'prop': ['v1', 'v2']})
 
   assert.true(n != None)
   assert.true(n)
-  assert.eq(g.node(k), n)
   assert.eq(str(n), 'graph.node')
   assert.eq(type(n), 'graph.node')
   assert.eq(n.key, k)
   assert.eq(n.props.prop, ['v1', 'v2'])
   assert.eq(str(n.trace),
       'Traceback (most recent call last):\n'
-      + '  testdata/node.star:24: in <toplevel>\n'
-      + '  testdata/node.star:10: in test_add_node_ok\n')
+      + '  testdata/node.star:28: in <toplevel>\n'
+      + '  testdata/node.star:8: in test_add_node_ok\n')
+
+  # The graph is not queryable before the finalization.
+  assert.fails(lambda: g.node(k), 'cannot query a graph under construction')
+
+  # Can be finalized, becomes queryable.
+  assert.eq(g.finalize(), [])
+  assert.eq(g.node(k), n)
 
 test_add_node_ok()
 
