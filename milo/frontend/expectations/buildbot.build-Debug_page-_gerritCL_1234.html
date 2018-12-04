@@ -13,17 +13,23 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+<script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse( null );
+</script>
 
 
 <body class="interface">
@@ -42,96 +48,103 @@
   
   <div class="content">
     <h1>
-      
-        Builder <a href="." aria-label="Parent builder Fake Builder">Fake Builder</a>
-      
-      Build <a href="/buildbot/master.fake/Fake%20Builder/1337" aria-label="Build number 1337 on master master.fake builder Fake Builder">#1337</a>
-      
+    
+      Builder <a href="." aria-label="Parent builder Fake Builder">Fake Builder</a>
+    
+    Build <a href="/buildbot/master.fake/Fake%20Builder/1337" aria-label="Build number 1337 on master master.fake builder Fake Builder">#1337</a>
+    
     </h1>
 
-    <div class="column">
-
-      <h2>Results:</h2>
-      
-        <p class="result status-Failure">
-        <span class="step-text">failed compile (with patch) </span>
-        
-        </p>
-       
-
-      
-      
-
-      <h2>Trigger Info:</h2>
-
-      <table class="info" width="100%">
-      
-
-      
-
-      
-
-      
-
-      
-
-      
-        <tr><td class="left">Patch</td><td><a href="https://example.com/c/12345/7" aria-label="gerrit changelist number 12345 patchset 7">Gerrit CL 12345 (ps#7)</a></td></tr>
-      
-
-      </table>
-        
-        
-
-      
-      <h2>Execution:</h2>
+    <div id="tabs" style="display: none;">
       <ul>
-        
-        <li>
-          Source:
-          <a href="https://build.chromium.org/p/master.fake/builders/Fake%20Builder/builds/1337"
-             aria-label="Source for master.fake/Fake Builder/1337">
-            master.fake/Fake Builder/1337
-          </a>
-        </li>
-        
-
-        
-        <li>
-          Bot:
-          <a href="https://build.chromium.org/p/master.fake/buildslaves/"
-             aria-label="Bot ">
-            
-          </a>
-        </li>
-        
-
-        
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
       </ul>
-       
+      <div id="results-tab">
+  <div id="results">
+    <h2>Results:</h2>
+    
+      <p class="result status-Failure">
+      <span class="step-text">failed compile (with patch) </span>
+      
+      </p>
+     
+
+    
+    
+
+    <h2>Trigger Info:</h2>
+
+    <table class="info" width="100%">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+      <tr><td class="left">Patch</td><td><a href="https://example.com/c/12345/7" aria-label="gerrit changelist number 12345 patchset 7">Gerrit CL 12345 (ps#7)</a></td></tr>
+    
+
+    </table>
+      
+      
+
+    
+    <h2>Execution:</h2>
+    <ul>
+      
+      <li>
+        Source:
+        <a href="https://build.chromium.org/p/master.fake/builders/Fake%20Builder/builds/1337"
+           aria-label="Source for master.fake/Fake Builder/1337">
+          master.fake/Fake Builder/1337
+        </a>
+      </li>
+      
 
       
+      <li>
+        Bot:
+        <a href="https://build.chromium.org/p/master.fake/buildslaves/"
+           aria-label="Bot ">
+          
+        </a>
+      </li>
+      
+
+      
+    </ul>
+     
+
+    
+      
+    
+
+    
+      <h2>Steps and Logfiles:</h2>
+      Show:
+      <input type="radio" name="hider" id="showExpanded">
+      <label for="showExpanded">Expanded</label>
+      <input type="radio" name="hider" id="showDefault" checked>
+      <label for="showDefault">Default</label>
+      <input type="radio" name="hider" id="showNonGreen">
+      <label for="showNonGreen">Non-Green</label>
+
+      <ol id="steps">
+
         
-      
-
-      
-        <h2>Steps and Logfiles:</h2>
-        Show:
-        <input type="radio" name="hider" id="showExpanded">
-        <label for="showExpanded">Expanded</label>
-        <input type="radio" name="hider" id="showDefault" checked>
-        <label for="showDefault">Default</label>
-        <input type="radio" name="hider" id="showNonGreen">
-        <label for="showNonGreen">Non-Green</label>
-
-        <ol id="steps">
-
           
-            
-          
+        
 
+        
           
-            
 <li class="">
   <div class="status-Failure result">
       
@@ -157,78 +170,87 @@
   
 </li>
 
-          
-        </ol>
-       
-
-    </div>
-
-    <div class="column">
-
-      <h2>Build Properties:</h2>
-
-      <table class="info BuildProperties" width="100%">
-      <tr><th>Name</th><th>Value</th><th>Source</th></tr>
-
         
-        
-          
-            <tr>
-              <td class="left">patch_gerrit_url</td>
-              <td class="middle"><abbr title="&#34;https://example.com/&#34;">&#34;https://example.com/&#34;</abbr></td>
-              <td>somewhere</td>
-            </tr>
-          
-            <tr>
-              <td class="left">patch_issue</td>
-              <td class="middle"><abbr title="12345">12345</abbr></td>
-              <td>somewhere</td>
-            </tr>
-          
-            <tr>
-              <td class="left">patch_set</td>
-              <td class="middle"><abbr title="7">7</abbr></td>
-              <td>somewhere</td>
-            </tr>
-          
-        
-      </table>
+      </ol>
+     
+
+  </div>
+</div>
+      <div id="properties-tab">
+  <div id="properties">
+    <h2>Build Properties:</h2>
+
+    <table class="info BuildProperties" width="100%">
+    <tr><th>Name</th><th>Value</th><th>Source</th></tr>
 
       
+      
+        
+          <tr>
+            <td class="left">patch_gerrit_url</td>
+            <td class="middle"><abbr title="&#34;https://example.com/&#34;">&#34;https://example.com/&#34;</abbr></td>
+            <td>somewhere</td>
+          </tr>
+        
+          <tr>
+            <td class="left">patch_issue</td>
+            <td class="middle"><abbr title="12345">12345</abbr></td>
+            <td>somewhere</td>
+          </tr>
+        
+          <tr>
+            <td class="left">patch_set</td>
+            <td class="middle"><abbr title="7">7</abbr></td>
+            <td>somewhere</td>
+          </tr>
+        
+      
+    </table>
 
-      <h2>Timing:</h2>
-      <table class="info" width="100%">
-        <tr class="alt"><td class="left">Create</td>
-        <td>
+    
+
+    <h2>Timing:</h2>
+    <table class="info" width="100%">
+      <tr class="alt"><td class="left">Create</td>
+      <td>
+        N/A
+      </td></tr>
+      <tr><td class="left">Start</td>
+      <td>
+        <span class="local-time " data-timestamp="1467070230080">Monday, 27-Jun-16 23:30:30 UTC</span>
+      </td></tr>
+      <tr class="alt"><td class="left">End</td>
+      <td>
+        <span class="local-time " data-timestamp="1467071406476">Monday, 27-Jun-16 23:50:06 UTC</span>
+      </td></tr>
+      <tr><td class="left">Pending</td>
+      <td id="duration">
+        
           N/A
-        </td></tr>
-        <tr><td class="left">Start</td>
-        <td>
-          <span class="local-time " data-timestamp="1467070230080">Monday, 27-Jun-16 23:30:30 UTC</span>
-        </td></tr>
-        <tr class="alt"><td class="left">End</td>
-        <td>
-          <span class="local-time " data-timestamp="1467071406476">Monday, 27-Jun-16 23:50:06 UTC</span>
-        </td></tr>
-        <tr><td class="left">Pending</td>
-        <td id="duration">
-          
-            N/A
-          
-        </td></tr>
-        <tr class="alt"><td class="left">Execution</td>
-        <td id="duration">
-          
-            19 mins 36 secs
-          
-        </td></tr>
-      </table>
+        
+      </td></tr>
+      <tr class="alt"><td class="left">Execution</td>
+      <td id="duration">
+        
+          19 mins 36 secs
+        
+      </td></tr>
+    </table>
 
-    </div>
-
+  </div>
+</div>
+      <div id="changes-tab">
+  <div id="changes">
     
   </div>
 </div>
+      <div id="timeline-tab">
+  <div id="timeline">
+    <div id="timeline-rendering">Rendering...</div>
+  </div>
+</div>
+    </div>
+  </div>
 
   <footer>
     <hr>
@@ -243,8 +265,11 @@
 <script>
 $(function () {
   'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
+  
+  setTimeout(function() {
+    milo.makeTimesLocal();
+    milo.annotateDurations();
+  }, 0);
   $(document).tooltip({
     show: false,
     hide: false
@@ -291,6 +316,7 @@ $(function () {
 </script>
 
 <script>
+setTimeout(function() {
 	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -298,6 +324,7 @@ $(function () {
 
 	ga('create', 'UA-12345-01', 'auto');
 	ga('send', 'pageview');
+}, 0);
 </script>
 
 </html>
