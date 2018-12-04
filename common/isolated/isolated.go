@@ -82,10 +82,9 @@ func SymLink(link string) File {
 }
 
 // TarFile returns a file populated for a tar archive file.
-func TarFile(d HexDigest, mode int, size int64) File {
+func TarFile(d HexDigest, size int64) File {
 	return File{
 		Digest: d,
-		Mode:   &mode,
 		Size:   &size,
 		Type:   TarArchive,
 	}
