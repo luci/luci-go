@@ -570,6 +570,24 @@
     },
     {
       "key": {
+        "uuid": "b48f263d_13705d10",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-04T01:02:57Z",
+      "side": 1,
+      "message": "I prefer not to have code that is not used.\nSo I\u0027d like you to remove (and introduce in separate CL?) or use this now.",
+      "parentUuid": "1e291d61_f4200f7d",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "f5dbe851_4958338e",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10

@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e468978a_80a6dd88",
+        "filename": "milo/frontend/middleware.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 224,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-04T01:02:57Z",
+      "side": 1,
+      "message": "I think you don\u0027t need to make this function public.",
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6358ab55_80dbf03a",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-04T01:02:57Z",
+      "side": 1,
+      "message": "need blank line between L9 and L10",
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dff90c53_7dd13c81",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-04T01:02:57Z",
+      "side": 1,
+      "message": "move standard package above.",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 10
+      },
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
