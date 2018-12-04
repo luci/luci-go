@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Trigger can be emitted by the engine itself (e.g. on a schedule) or by
 // triggering tasks (such as Gitiles tasks).
@@ -255,135 +255,15 @@ func (m *Trigger) GetBuildbucket() *v1.BuildbucketTrigger {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Trigger) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Trigger_OneofMarshaler, _Trigger_OneofUnmarshaler, _Trigger_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Trigger) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Trigger_Cron)(nil),
 		(*Trigger_Webui)(nil),
 		(*Trigger_Noop)(nil),
 		(*Trigger_Gitiles)(nil),
 		(*Trigger_Buildbucket)(nil),
 	}
-}
-
-func _Trigger_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Trigger)
-	// payload
-	switch x := m.Payload.(type) {
-	case *Trigger_Cron:
-		b.EncodeVarint(40<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Cron); err != nil {
-			return err
-		}
-	case *Trigger_Webui:
-		b.EncodeVarint(41<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Webui); err != nil {
-			return err
-		}
-	case *Trigger_Noop:
-		b.EncodeVarint(50<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Noop); err != nil {
-			return err
-		}
-	case *Trigger_Gitiles:
-		b.EncodeVarint(51<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Gitiles); err != nil {
-			return err
-		}
-	case *Trigger_Buildbucket:
-		b.EncodeVarint(52<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Buildbucket); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Trigger.Payload has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Trigger_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Trigger)
-	switch tag {
-	case 40: // payload.cron
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.CronTrigger)
-		err := b.DecodeMessage(msg)
-		m.Payload = &Trigger_Cron{msg}
-		return true, err
-	case 41: // payload.webui
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.WebUITrigger)
-		err := b.DecodeMessage(msg)
-		m.Payload = &Trigger_Webui{msg}
-		return true, err
-	case 50: // payload.noop
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.NoopTrigger)
-		err := b.DecodeMessage(msg)
-		m.Payload = &Trigger_Noop{msg}
-		return true, err
-	case 51: // payload.gitiles
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.GitilesTrigger)
-		err := b.DecodeMessage(msg)
-		m.Payload = &Trigger_Gitiles{msg}
-		return true, err
-	case 52: // payload.buildbucket
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(v1.BuildbucketTrigger)
-		err := b.DecodeMessage(msg)
-		m.Payload = &Trigger_Buildbucket{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Trigger_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Trigger)
-	// payload
-	switch x := m.Payload.(type) {
-	case *Trigger_Cron:
-		s := proto.Size(x.Cron)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Trigger_Webui:
-		s := proto.Size(x.Webui)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Trigger_Noop:
-		s := proto.Size(x.Noop)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Trigger_Gitiles:
-		s := proto.Size(x.Gitiles)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Trigger_Buildbucket:
-		s := proto.Size(x.Buildbucket)
-		n += 2 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // TriggerList is what we store in datastore entities.
