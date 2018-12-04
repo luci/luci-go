@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "549268b9_7367073b",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 14
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T20:22:58Z",
+      "side": 1,
+      "message": "also .ui-widget input https://screenshot.googleplex.com/cnM6MW0JYus",
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9108367e_814f450f",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 14
@@ -96,6 +113,23 @@
     },
     {
       "key": {
+        "uuid": "d3f32d39_6b2ad301",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T20:22:58Z",
+      "side": 1,
+      "message": "This is pretty costly for builds with long blame lists.  In narrow mode it would take 60ms, but wide mode this would take 260ms due to relayout.\nIdeally we should be able to show multiple tabs without moving the dom around, which would be much cheaper.  I don\u0027t think this is possible with the jquery ui tab library, but should be possible with css grids.\n\nThis can be explored in a separate CL.  We can keep the existing tabs implementation as is.",
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3fd33b82_8e3e5d57",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 14
@@ -143,6 +177,30 @@
     },
     {
       "key": {
+        "uuid": "d3a73c28_4251cf83",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T20:22:58Z",
+      "side": 1,
+      "message": "+1 these should return copies.",
+      "parentUuid": "3fd33b82_8e3e5d57",
+      "range": {
+        "startLine": 230,
+        "startChar": 20,
+        "endLine": 230,
+        "endChar": 35
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "b27fab7a_039fdaaa",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 14
@@ -187,6 +245,53 @@
       "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fe6b0956_a94d0982",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T20:22:58Z",
+      "side": 1,
+      "message": "ExecutionTime is not a pointer, so it cannot be nil.",
+      "parentUuid": "b27fab7a_039fdaaa",
+      "range": {
+        "startLine": 238,
+        "startChar": 27,
+        "endLine": 238,
+        "endChar": 45
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "928bd28b_4f5e0eb7",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 14
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T20:22:58Z",
+      "side": 1,
+      "message": "This should return a copy too",
+      "range": {
+        "startLine": 257,
+        "startChar": 5,
+        "endLine": 257,
+        "endChar": 13
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
