@@ -50,7 +50,7 @@ var funcMap = template.FuncMap{
 	"faviconMIMEType":  faviconMIMEType,
 	"formatCommitDesc": formatCommitDesc,
 	"formatTime":       formatTime,
-	"humanDuration":    humanDuration,
+	"humanDuration":    HumanDuration,
 	"localTime":        localTime,
 	"localTimeTooltip": localTimeTooltip,
 	"obfuscateEmail":   obfuscateEmail,
@@ -218,10 +218,10 @@ func formatCommitDesc(desc string) template.HTML {
 	return chunksToHTML(chunks)
 }
 
-// humanDuration translates d into a human readable string of x units y units,
+// HumanDuration translates d into a human readable string of x units y units,
 // where x and y could be in days, hours, minutes, or seconds, whichever is the
 // largest.
-func humanDuration(d time.Duration) string {
+func HumanDuration(d time.Duration) string {
 	t := int64(d.Seconds())
 	day := t / 86400
 	hr := (t % 86400) / 3600

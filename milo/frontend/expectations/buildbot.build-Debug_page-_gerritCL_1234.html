@@ -13,17 +13,23 @@
 </title>
 <link rel="stylesheet" href="/static/buildbot/css/default.css" type="text/css">
 <link rel="stylesheet" href="/static/common/third_party/css/jquery-ui.min.css" type="text/css">
+<link rel="stylesheet" href="/static/common/third_party/css/vis.min.css" type="text/css">
 <link rel="search" type="application/opensearchdescription+xml" href="/opensearch.xml" title="LUCI" />
 <script src="/static/common/third_party/js/moment-with-locales.min.js"></script>
 <script src="/static/common/third_party/js/moment-timezone-with-data-2012-2022.min.js"></script>
 <script src="/static/common/js/time.js"></script>
 <script src="/static/common/third_party/js/jquery.min.js"></script>
 <script src="/static/common/third_party/js/jquery-ui.min.js"></script>
+<script src="/static/common/third_party/js/vis-custom.min.js"></script>
 
 <link id="favicon" rel="shortcut icon" type="image/png" href="/static/common/favicon/red-32.png">
 
 
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse( null );
+</script>
 
 
 <body class="interface">
@@ -42,15 +48,22 @@
   
   <div class="content">
     <h1>
-      
-        Builder <a href="." aria-label="Parent builder Fake Builder">Fake Builder</a>
-      
-      Build <a href="/buildbot/master.fake/Fake%20Builder/1337" aria-label="Build number 1337 on master master.fake builder Fake Builder">#1337</a>
-      
+    
+      Builder <a href="." aria-label="Parent builder Fake Builder">Fake Builder</a>
+    
+    Build <a href="/buildbot/master.fake/Fake%20Builder/1337" aria-label="Build number 1337 on master master.fake builder Fake Builder">#1337</a>
+    
     </h1>
 
-    <div class="column">
-
+    <div id="tabs" style="display: none;">
+      <ul>
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
+      </ul>
+      <div id="results-tab">
+    <div id="results">
       <h2>Results:</h2>
       
         <p class="result status-Failure">
@@ -163,8 +176,10 @@
 
     </div>
 
-    <div class="column">
+</div>
+      <div id="properties-tab">
 
+    <div id="properties">
       <h2>Build Properties:</h2>
 
       <table class="info BuildProperties" width="100%">
@@ -225,10 +240,20 @@
       </table>
 
     </div>
-
-    
-  </div>
 </div>
+      <div id="changes-tab">
+
+    <div id="changes">
+      
+    </div>
+</div>
+      <div id="timeline-tab">
+    <div id="timeline">
+      <div id="timeline-rendering">Rendering...</div>
+    </div>
+</div>
+    </div>
+  </div>
 
   <footer>
     <hr>
@@ -243,8 +268,11 @@
 <script>
 $(function () {
   'use strict';
-  milo.makeTimesLocal();
-  milo.annotateDurations();
+  
+  setTimeout(function() {
+    milo.makeTimesLocal();
+    milo.annotateDurations();
+  }, 0);
   $(document).tooltip({
     show: false,
     hide: false
