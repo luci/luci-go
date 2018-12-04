@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1484da4f_f9f14d34",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 16
+      },
+      "lineNbr": 277,
+      "author": {
+        "id": 1161379
+      },
+      "writtenOn": "2018-12-04T21:40:20Z",
+      "side": 1,
+      "message": "apply go fmt",
+      "range": {
+        "startLine": 273,
+        "startChar": 0,
+        "endLine": 277,
+        "endChar": 3
+      },
+      "revId": "e1798fa9ad91a6a8fc3da822a67731f0a78e81b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
