@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "72e0943f_6da13318",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T21:47:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "edf97fb0_e83255e3",
+      "range": {
+        "startLine": 61,
+        "startChar": 64,
+        "endLine": 61,
+        "endChar": 74
+      },
+      "revId": "a9d4ef9bdf8ee2701b1ef1d9af79430bcb5235a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "2ab93ad8_899cc3d4",
         "filename": "lucicfg/graph/graph.go",
         "patchSetId": 3
@@ -45,6 +69,30 @@
       "revId": "a9d4ef9bdf8ee2701b1ef1d9af79430bcb5235a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ecb42ec8_e8200ba0",
+        "filename": "lucicfg/graph/graph.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-04T21:47:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2ab93ad8_899cc3d4",
+      "range": {
+        "startLine": 179,
+        "startChar": 9,
+        "endLine": 179,
+        "endChar": 12
+      },
+      "revId": "a9d4ef9bdf8ee2701b1ef1d9af79430bcb5235a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
