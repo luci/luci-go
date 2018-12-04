@@ -526,8 +526,53 @@
         
           59 mins 58 secs
         
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+        
+          
+        
+        
+          
+        
+>>>>>>> prototype build step timeline visualization
+      </table>
+
+      
+
+      <h2>Timing:</h2>
+      <table class="info" width="100%">
+        <tr class="alt"><td class="left">Create</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">Start</td>
+        <td>
+          <span class="local-time " data-timestamp="1457949601850">Monday, 14-Mar-16 10:00:01 UTC</span>
+        </td></tr>
+        <tr class="alt"><td class="left">End</td>
+        <td>
+          N/A
+        </td></tr>
+        <tr><td class="left">Pending</td>
+        <td id="duration">
+          
+            N/A
+          
+        </td></tr>
+        <tr class="alt"><td class="left">Execution</td>
+        <td id="duration">
+          
+            59 mins 58 secs
+          
+        </td></tr>
+      </table>
+
+    </div>
+=======
       </td></tr>
     </table>
+>>>>>>> 79fa61d5... prototype build step timeline visualization
 
   </div>
 </div>
