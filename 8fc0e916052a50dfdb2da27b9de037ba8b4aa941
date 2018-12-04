@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "337c9f0d_78e0f52f",
+        "filename": "common/api/buildbucket/buildbucket/v1/buildbucket-gen.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-04T01:16:45Z",
+      "side": 1,
+      "message": "well this is half-assed. This is supposed to be something like \"by \u003ctoolname\u003e\" so you can tell how it was generated.\n\nwe REALLY need to get off endpoints",
+      "range": {
+        "startLine": 15,
+        "startChar": 18,
+        "endLine": 15,
+        "endChar": 22
+      },
+      "revId": "8fc0e916052a50dfdb2da27b9de037ba8b4aa941",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "14a09f54_b5647165",
+        "filename": "tools/internal/apigen/main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-04T01:16:45Z",
+      "side": 1,
+      "message": "maybe `alreadyFoundHeader` or `headerSkipped` or something?",
+      "revId": "8fc0e916052a50dfdb2da27b9de037ba8b4aa941",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
