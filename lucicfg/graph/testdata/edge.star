@@ -7,13 +7,11 @@ def test_add_edge_ok():
   k2 = g.key('t1', 'id2')
 
   g.add_edge(parent=k1, child=k2)
-
-  # Nodes aren't "visible" yet.
-  assert.true(g.node(k1) == None)
-
-  # They are after being added explicitly.
   g.add_node(k1, {})
-  assert.true(g.node(k1) != None)
+  g.add_node(k2, {})
+
+  # Can be successfully finalized.
+  assert.true(g.finalize() == [])
 
 test_add_edge_ok()
 
@@ -27,7 +25,7 @@ def test_edge_redeclaration():
 
   assert.fails(
       lambda: g.add_edge(parent=k1, child=k2, title='blah'),
-      'Relation "blah" between .* is redeclared')
+      'relation "blah" between .* is redeclared')
 
   # Using a different title is fine.
   g.add_edge(parent=k1, child=k2, title='zzz')

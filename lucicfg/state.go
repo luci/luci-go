@@ -43,9 +43,9 @@ func (s *State) clear() {
 	*s = State{Inputs: s.Inputs}
 }
 
-// err adds an error to the list of errors and returns the list as MultiError.
-func (s *State) err(err error) error {
-	s.errors = append(s.errors, err)
+// err adds errors to the list of errors and returns the list as MultiError.
+func (s *State) err(err ...error) error {
+	s.errors = append(s.errors, err...)
 	return s.errors
 }
 
