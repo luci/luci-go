@@ -87,9 +87,13 @@ type FileSystem interface {
 	// It will create full directory path to the file if necessary.
 	EnsureFile(ctx context.Context, path string, write func(*os.File) error) error
 
-	// EnsureFileGone removes a file, logging the errors (if any).
+	// EnsureFileGone removes a file or an empty directory, logging the errors.
 	//
 	// Missing file is not an error.
+	//
+	// Fails if 'path' is a non-empty directory. Use EnsureDirectoryGone for this
+	// case. Treats an empty directory as a file though (deletes it), since it is
+	// difficult to distinguish the two without an extra syscall.
 	EnsureFileGone(ctx context.Context, path string) error
 
 	// EnsureDirectoryGone recursively removes a directory.
@@ -356,6 +360,11 @@ func (f *fsImpl) EnsureFileGone(ctx context.Context, path string) error {
 	}
 	if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
 		logging.Warningf(ctx, "fs: failed to remove %s - %s", path, err)
+		// Refuse to delete non-empty directories.
+		if isNotEmpty(err) {
+			return err
+		}
+		// Otherwise assume it's a locked file and just move it to trash.
 		if f.moveToTrash(ctx, path) == "" {
 			return err
 		}
