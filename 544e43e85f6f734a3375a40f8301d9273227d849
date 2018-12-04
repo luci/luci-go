@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "57fd23e5_6840b572",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 14
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-04T21:14:00Z",
+      "side": 1,
+      "message": "Hm I guess it also needs font-size: 10px; (It\u0027s overriden to be 1em, which appears to be smaller)",
+      "parentUuid": "d7864a2f_8489d7b3",
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9108367e_814f450f",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 14
