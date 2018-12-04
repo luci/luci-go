@@ -2,6 +2,69 @@
   "comments": [
     {
       "key": {
+        "uuid": "b0a67b26_b86861b0",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "let\u0027s break this line. backticks support line breaks",
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "993e444d_664a8a77",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "given that we do ... below, this part seems unnecessary\n\nsame for subLinks",
+      "range": {
+        "startLine": 55,
+        "startChar": 29,
+        "endLine": 55,
+        "endChar": 63
+      },
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e18bf32c_0627eeb4",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 12
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "this is equivalent to links.map(linkHtml)",
+      "range": {
+        "startLine": 62,
+        "startChar": 30,
+        "endLine": 62,
+        "endChar": 63
+      },
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "e468978a_80a6dd88",
         "filename": "milo/frontend/middleware.go",
         "patchSetId": 12
@@ -36,6 +99,24 @@
     },
     {
       "key": {
+        "uuid": "694c109b_f9227286",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "6358ab55_80dbf03a",
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "dff90c53_7dd13c81",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 12
@@ -53,6 +134,47 @@
         "endLine": 20,
         "endChar": 10
       },
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a1bce876_be3dc0ed",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "+1",
+      "parentUuid": "dff90c53_7dd13c81",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 20,
+        "endChar": 10
+      },
+      "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d0b748a6_c45c5439",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 12
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T01:17:49Z",
+      "side": 1,
+      "message": "most of this func will probably change after Ryan ports this to go/build-proto",
       "revId": "d06a4a55ae9b374747e493abfdfc904e0e6e656d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
