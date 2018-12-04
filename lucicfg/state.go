@@ -20,6 +20,7 @@ import (
 	"go.starlark.net/starlark"
 
 	"go.chromium.org/luci/common/errors"
+	"go.chromium.org/luci/lucicfg/graph"
 )
 
 // State is mutated throughout execution of the script and at the end contains
@@ -34,6 +35,7 @@ type State struct {
 
 	errors     errors.MultiError // all errors emitted during the generation (if any)
 	generators generators        // callbacks that generate config files based on state
+	graph      graph.Graph       // the graph with config entities defined so far
 }
 
 // clear resets the state.
@@ -62,6 +64,14 @@ func ctxState(ctx context.Context) *State {
 }
 
 func init() {
+	// graph() returns a graph with config entities defines thus far.
+	declNative("graph", func(call nativeCall) (starlark.Value, error) {
+		if err := call.unpack(0); err != nil {
+			return nil, err
+		}
+		return &call.State.graph, nil
+	})
+
 	// clear_state() wipes the state of the generator, for tests.
 	declNative("clear_state", func(call nativeCall) (starlark.Value, error) {
 		if err := call.unpack(0); err != nil {
