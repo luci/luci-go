@@ -17,7 +17,11 @@
 {{end}}
 
 {{define "head"}}
+<link rel="stylesheet" href="/static/common/css/timeline.css" type="text/css">
 <script src="/static/common/js/build.js"></script>
+<script>
+  const timelineData = JSON.parse({{ .TimelineJSON }});
+</script>
 {{end}}
 
 {{define "interval"}}
@@ -94,28 +98,42 @@
 </li>
 {{ end }}
 
-
 {{define "body"}}
   <div class="content">
     <h1>
-      {{ if .Build.Summary.ParentLabel }}
-        Builder {{ .Build.Summary.ParentLabel.HTML }}
+    {{ if .Build.Summary.ParentLabel }}
+      Builder {{ .Build.Summary.ParentLabel.HTML }}
+    {{ end }}
+    Build {{.Build.Summary.Label.HTML }}
+    {{ if .Build.Summary.Banner }}
+      {{ range .Build.Summary.Banner.OS }}
+        <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
+             width="25px">
       {{ end }}
-      Build {{.Build.Summary.Label.HTML }}
-      {{ if .Build.Summary.Banner }}
-        {{ range .Build.Summary.Banner.OS }}
-          <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
-               width="25px">
-        {{ end }}
-        {{ range .Build.Summary.Banner.Device }}
-          <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
-               width="25px">
-        {{ end }}
+      {{ range .Build.Summary.Banner.Device }}
+        <img src="/static/common/logos/{{.LogoBase.Img}}" alt="{{.LogoBase.Alt}}"
+             width="25px">
       {{ end }}
+    {{ end }}
     </h1>
 
-    <div class="column">
+    <div id="tabs" style="display: none;">
+      <ul>
+        <li><a href="#results-tab">Results</a></li>
+        <li><a href="#properties-tab">Properties</a></li>
+        <li><a href="#changes-tab">Changes</a></li>
+        <li><a href="#timeline-tab">Timeline</a></li>
+      </ul>
+      <div id="results-tab">{{ template "results" . }}</div>
+      <div id="properties-tab">{{ template "properties" . }}</div>
+      <div id="changes-tab">{{ template "changes" . }}</div>
+      <div id="timeline-tab">{{ template "timeline" . }}</div>
+    </div>
+  </div>
+{{end}}
 
+{{define "results"}}
+    <div id="results">
       <h2>Results:</h2>
       {{ with .Build.Summary }}
         <p class="result status-{{.Status}}">
@@ -243,8 +261,11 @@
 
     </div>
 
-    <div class="column">
+{{end}}
 
+{{define "properties"}}
+
+    <div id="properties">
       <h2>Build Properties:</h2>
 
       <table class="info BuildProperties" width="100%">
@@ -304,9 +325,12 @@
       </table>
 
     </div>
+{{end}}
 
-    {{ if .Build.Blame }}
-    <div class="column">
+{{define "changes"}}
+
+    <div id="changes">
+      {{ if .Build.Blame }}
       <h2>All Changes:</h2>
       <ol>
       {{ range .Build.Blame }}
@@ -359,8 +383,12 @@
       </li>
       {{ end }}
       </ol>
+      {{ end }}
     </div>
-    {{ end }}
-  </div>
-</div>
+{{end}}
+
+{{define "timeline"}}
+    <div id="timeline">
+      <div id="timeline-rendering">Rendering...</div>
+    </div>
 {{end}}
