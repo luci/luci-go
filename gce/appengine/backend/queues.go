@@ -83,9 +83,10 @@ func create(c context.Context, payload proto.Message) error {
 		}
 	}
 	if vm.URL != "" {
-		logging.Debugf(c, "VM exists: %q", vm.URL)
+		logging.Debugf(c, "instance exists: %s", vm.URL)
 		return nil
 	}
+	logging.Debugf(c, "creating instance %q", vm.Hostname)
 	// Generate a request ID based on the hostname.
 	// Ensures duplicate operations aren't created in GCE.
 	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
@@ -98,8 +99,31 @@ func create(c context.Context, payload proto.Message) error {
 		}
 		return errors.Reason("failed to create instance").Err()
 	}
-	logging.Infof(c, "operation %q", op)
-	// TODO(smut): Check operation status.
+	if op.Error != nil {
+		for _, err := range op.Error.Errors {
+			logging.Errorf(c, "%s: %s", err.Code, err.Message)
+		}
+		return errors.Reason("failed to create instance").Err()
+	}
+	if op.Status == "DONE" {
+		logging.Debugf(c, "created instance: %s", op.TargetLink)
+		if err := datastore.RunInTransaction(c, func(c context.Context) error {
+			if err := datastore.Get(c, vm); err != nil {
+				return errors.Annotate(err, "failed to fetch VM").Err()
+			}
+			// Double-check inside transaction. URL may already be set.
+			if vm.URL == "" {
+				vm.URL = op.TargetLink
+				if err := datastore.Put(c, vm); err != nil {
+					return errors.Annotate(err, "failed to store VM").Err()
+				}
+			}
+			return nil
+		}, nil); err != nil {
+			return err
+		}
+		return nil
+	}
 	return nil
 }
 
@@ -156,6 +180,7 @@ func expand(c context.Context, payload proto.Message) error {
 			Payload: &tasks.Ensure{
 				Id:         fmt.Sprintf("%s-%d", task.Id, i),
 				Attributes: vms.Attributes,
+				Prefix:     vms.Prefix,
 			},
 		}
 	}

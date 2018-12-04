@@ -46,7 +46,8 @@ func newHTTPHandler(f func(c context.Context) error) router.Handler {
 // createInstances creates task queue tasks to create each GCE instance.
 func createInstances(c context.Context) error {
 	var keys []*datastore.Key
-	if err := datastore.GetAll(c, datastore.NewQuery(model.VMKind), &keys); err != nil {
+	q := datastore.NewQuery(model.VMKind).Eq("url", "")
+	if err := datastore.GetAll(c, q, &keys); err != nil {
 		return errors.Annotate(err, "failed to fetch VMs").Err()
 	}
 	t := make([]*tq.Task, len(keys))
