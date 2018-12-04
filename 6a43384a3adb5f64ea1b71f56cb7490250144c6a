@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ef0f9a4c_bb49e6f1",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-04T23:03:39Z",
+      "side": 1,
+      "message": "Note, I don\u0027t actually see how it\u0027s incorrect, it seems like it\u0027s saying \"when we read the tar data file, it contains the tar data\".",
+      "range": {
+        "startLine": 118,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 32
+      },
+      "revId": "6a43384a3adb5f64ea1b71f56cb7490250144c6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
