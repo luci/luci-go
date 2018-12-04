@@ -37,14 +37,14 @@ func TestFuncs(t *testing.T) {
 	//t.Parallel()
 
 	Convey("Middleware Tests", t, func() {
-		Convey("humanDuration", func() {
+		Convey("HumanDuration", func() {
 			Convey("3 hrs", func() {
-				h := humanDuration(3 * time.Hour)
+				h := HumanDuration(3 * time.Hour)
 				So(h, ShouldEqual, "3 hrs")
 			})
 
 			Convey("2 hrs 59 mins", func() {
-				h := humanDuration(2*time.Hour + 59*time.Minute)
+				h := HumanDuration(2*time.Hour + 59*time.Minute)
 				So(h, ShouldEqual, "2 hrs 59 mins")
 			})
 		})
