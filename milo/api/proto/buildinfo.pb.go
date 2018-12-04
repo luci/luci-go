@@ -23,7 +23,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type BuildInfoRequest struct {
 	// Types that are valid to be assigned to Build:
@@ -124,97 +124,13 @@ func (m *BuildInfoRequest) GetProjectHint() string {
 	return ""
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BuildInfoRequest) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BuildInfoRequest_OneofMarshaler, _BuildInfoRequest_OneofUnmarshaler, _BuildInfoRequest_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BuildInfoRequest) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*BuildInfoRequest_Buildbot)(nil),
 		(*BuildInfoRequest_Swarming_)(nil),
 		(*BuildInfoRequest_Buildbucket_)(nil),
 	}
-}
-
-func _BuildInfoRequest_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BuildInfoRequest)
-	// build
-	switch x := m.Build.(type) {
-	case *BuildInfoRequest_Buildbot:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Buildbot); err != nil {
-			return err
-		}
-	case *BuildInfoRequest_Swarming_:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Swarming); err != nil {
-			return err
-		}
-	case *BuildInfoRequest_Buildbucket_:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Buildbucket); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("BuildInfoRequest.Build has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BuildInfoRequest_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BuildInfoRequest)
-	switch tag {
-	case 1: // build.buildbot
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(BuildInfoRequest_BuildBot)
-		err := b.DecodeMessage(msg)
-		m.Build = &BuildInfoRequest_Buildbot{msg}
-		return true, err
-	case 2: // build.swarming
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(BuildInfoRequest_Swarming)
-		err := b.DecodeMessage(msg)
-		m.Build = &BuildInfoRequest_Swarming_{msg}
-		return true, err
-	case 3: // build.buildbucket
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(BuildInfoRequest_Buildbucket)
-		err := b.DecodeMessage(msg)
-		m.Build = &BuildInfoRequest_Buildbucket_{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BuildInfoRequest_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BuildInfoRequest)
-	// build
-	switch x := m.Build.(type) {
-	case *BuildInfoRequest_Buildbot:
-		s := proto.Size(x.Buildbot)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BuildInfoRequest_Swarming_:
-		s := proto.Size(x.Swarming)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BuildInfoRequest_Buildbucket_:
-		s := proto.Size(x.Buildbucket)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // The request for the name of a BuildBot built.

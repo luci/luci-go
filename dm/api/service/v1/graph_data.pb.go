@@ -20,7 +20,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type AbnormalFinish_Status int32
 
@@ -1214,135 +1214,15 @@ func (m *Attempt_Data) GetAbnormalFinish() *AbnormalFinish {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Attempt_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Attempt_Data_OneofMarshaler, _Attempt_Data_OneofUnmarshaler, _Attempt_Data_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Attempt_Data) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Attempt_Data_Scheduling_)(nil),
 		(*Attempt_Data_Executing_)(nil),
 		(*Attempt_Data_Waiting_)(nil),
 		(*Attempt_Data_Finished_)(nil),
 		(*Attempt_Data_AbnormalFinish)(nil),
 	}
-}
-
-func _Attempt_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Attempt_Data)
-	// attempt_type
-	switch x := m.AttemptType.(type) {
-	case *Attempt_Data_Scheduling_:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Scheduling); err != nil {
-			return err
-		}
-	case *Attempt_Data_Executing_:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Executing); err != nil {
-			return err
-		}
-	case *Attempt_Data_Waiting_:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Waiting); err != nil {
-			return err
-		}
-	case *Attempt_Data_Finished_:
-		b.EncodeVarint(8<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Finished); err != nil {
-			return err
-		}
-	case *Attempt_Data_AbnormalFinish:
-		b.EncodeVarint(9<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AbnormalFinish); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Attempt_Data.AttemptType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Attempt_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Attempt_Data)
-	switch tag {
-	case 5: // attempt_type.scheduling
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Attempt_Data_Scheduling)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_Scheduling_{msg}
-		return true, err
-	case 6: // attempt_type.executing
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Attempt_Data_Executing)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_Executing_{msg}
-		return true, err
-	case 7: // attempt_type.waiting
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Attempt_Data_Waiting)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_Waiting_{msg}
-		return true, err
-	case 8: // attempt_type.finished
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Attempt_Data_Finished)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_Finished_{msg}
-		return true, err
-	case 9: // attempt_type.abnormal_finish
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(AbnormalFinish)
-		err := b.DecodeMessage(msg)
-		m.AttemptType = &Attempt_Data_AbnormalFinish{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Attempt_Data_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Attempt_Data)
-	// attempt_type
-	switch x := m.AttemptType.(type) {
-	case *Attempt_Data_Scheduling_:
-		s := proto.Size(x.Scheduling)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Attempt_Data_Executing_:
-		s := proto.Size(x.Executing)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Attempt_Data_Waiting_:
-		s := proto.Size(x.Waiting)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Attempt_Data_Finished_:
-		s := proto.Size(x.Finished)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Attempt_Data_AbnormalFinish:
-		s := proto.Size(x.AbnormalFinish)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // This attempt is ready to be Executed, but hasn't been sent to the
@@ -1884,135 +1764,15 @@ func (m *Execution_Data) GetAbnormalFinish() *AbnormalFinish {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Execution_Data) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Execution_Data_OneofMarshaler, _Execution_Data_OneofUnmarshaler, _Execution_Data_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*Execution_Data) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*Execution_Data_Scheduling_)(nil),
 		(*Execution_Data_Running_)(nil),
 		(*Execution_Data_Stopping_)(nil),
 		(*Execution_Data_Finished_)(nil),
 		(*Execution_Data_AbnormalFinish)(nil),
 	}
-}
-
-func _Execution_Data_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Execution_Data)
-	// execution_type
-	switch x := m.ExecutionType.(type) {
-	case *Execution_Data_Scheduling_:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Scheduling); err != nil {
-			return err
-		}
-	case *Execution_Data_Running_:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Running); err != nil {
-			return err
-		}
-	case *Execution_Data_Stopping_:
-		b.EncodeVarint(6<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Stopping); err != nil {
-			return err
-		}
-	case *Execution_Data_Finished_:
-		b.EncodeVarint(7<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Finished); err != nil {
-			return err
-		}
-	case *Execution_Data_AbnormalFinish:
-		b.EncodeVarint(8<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.AbnormalFinish); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Execution_Data.ExecutionType has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _Execution_Data_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Execution_Data)
-	switch tag {
-	case 4: // execution_type.scheduling
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Execution_Data_Scheduling)
-		err := b.DecodeMessage(msg)
-		m.ExecutionType = &Execution_Data_Scheduling_{msg}
-		return true, err
-	case 5: // execution_type.running
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Execution_Data_Running)
-		err := b.DecodeMessage(msg)
-		m.ExecutionType = &Execution_Data_Running_{msg}
-		return true, err
-	case 6: // execution_type.stopping
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Execution_Data_Stopping)
-		err := b.DecodeMessage(msg)
-		m.ExecutionType = &Execution_Data_Stopping_{msg}
-		return true, err
-	case 7: // execution_type.finished
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Execution_Data_Finished)
-		err := b.DecodeMessage(msg)
-		m.ExecutionType = &Execution_Data_Finished_{msg}
-		return true, err
-	case 8: // execution_type.abnormal_finish
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(AbnormalFinish)
-		err := b.DecodeMessage(msg)
-		m.ExecutionType = &Execution_Data_AbnormalFinish{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _Execution_Data_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Execution_Data)
-	// execution_type
-	switch x := m.ExecutionType.(type) {
-	case *Execution_Data_Scheduling_:
-		s := proto.Size(x.Scheduling)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Execution_Data_Running_:
-		s := proto.Size(x.Running)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Execution_Data_Stopping_:
-		s := proto.Size(x.Stopping)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Execution_Data_Finished_:
-		s := proto.Size(x.Finished)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *Execution_Data_AbnormalFinish:
-		s := proto.Size(x.AbnormalFinish)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 type Execution_Data_DistributorInfo struct {
