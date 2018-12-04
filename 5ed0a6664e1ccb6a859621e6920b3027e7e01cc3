@@ -55,6 +55,24 @@
     },
     {
       "key": {
+        "uuid": "a54fe20c_d39f49bc",
+        "filename": "milo/frontend/appengine/static/common/css/timeline.css",
+        "patchSetId": 7
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "Added more specific css in timeline.css to counteract the .ui-widget-content a {color: #333;}.",
+      "parentUuid": "b11ba5d0_d6742800",
+      "revId": "5ed0a6664e1ccb6a859621e6920b3027e7e01cc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fb01a139_de63a6ed",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 7

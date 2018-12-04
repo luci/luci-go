@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "9f3bf303_fc584c43",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0a7fa404_dd3f61c5",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9d99f847_02364162",
         "filename": "milo/frontend/appengine/static/common/js/build.js",
         "patchSetId": 10
@@ -69,6 +87,24 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "51e95138_728c7fb3",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 10
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "Done. Sanitization in view_build.go.",
+      "parentUuid": "d035cf21_58d94dfe",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -830,6 +866,24 @@
     },
     {
       "key": {
+        "uuid": "d2e680df_72253db4",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "Done - change made in analytics.go.",
+      "parentUuid": "94508adf_35fd1168",
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b3d9735c_bee589fc",
         "filename": "milo/frontend/appengine/templates/pages/build.html",
         "patchSetId": 10
@@ -921,6 +975,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c0fbc336_99831dfc",
+        "filename": "milo/frontend/appengine/templates/pages/build.html",
+        "patchSetId": 10
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "2 space it is. Done.",
+      "parentUuid": "ba3d496d_53aa6f48",
+      "range": {
+        "startLine": 136,
+        "startChar": 0,
+        "endLine": 136,
+        "endChar": 4
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -1344,6 +1422,30 @@
       "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d2a97d27_d065f8d8",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-04T19:01:50Z",
+      "side": 1,
+      "message": "Ah, of course, Done.",
+      "parentUuid": "ae515915_f022f1fc",
+      "range": {
+        "startLine": 229,
+        "startChar": 2,
+        "endLine": 230,
+        "endChar": 54
+      },
+      "revId": "caab85964662c83f66e4bbcb0dd2739322cf5583",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
