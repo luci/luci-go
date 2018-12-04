@@ -25,6 +25,29 @@
     },
     {
       "key": {
+        "uuid": "d03ae7ac_3ae71959",
+        "filename": "milo/frontend/appengine/static/common/js/build.js",
+        "patchSetId": 14
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-04T19:25:48Z",
+      "side": 1,
+      "message": "nit: let\u0027s use the indentation optimized for readability. Browsers don\u0027t care about whitespace.\n\n      let content \u003d `\n        \u003cdiv class\u003d\"group-title ${group.data.statusClassName}\"\u003e\n          ${group.data.label}\n          \u003cspan class\u003d\"duration\"\u003e( ${group.data.duration} )\u003c/span\u003e\n        \u003c/div\u003e`;",
+      "range": {
+        "startLine": 49,
+        "startChar": 6,
+        "endLine": 52,
+        "endChar": 8
+      },
+      "revId": "544e43e85f6f734a3375a40f8301d9273227d849",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "3fd33b82_8e3e5d57",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 14
