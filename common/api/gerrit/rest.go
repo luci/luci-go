@@ -36,9 +36,18 @@ import (
 	gerritpb "go.chromium.org/luci/common/proto/gerrit"
 )
 
-// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
-// access token for Gerrit RPCs.
-const OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
+const (
+	// OAuthScope is the OAuth 2.0 scope that must be included when acquiring an
+	// access token for Gerrit RPCs.
+	OAuthScope = "https://www.googleapis.com/auth/gerritcodereview"
+
+	// contentTypeJSON is the http header content-type value for json encoded
+	// objects in the body.
+	contentTypeJSON = "application/json; charset=UTF-8"
+
+	// contentTypeText ist he http header content-type value for plain text body.
+	contentTypeText = "application/x-www-form-urlencoded; charset=UTF-8"
+)
 
 // This file implements Gerrit proto service client
 // on top of Gerrit REST API.
@@ -153,7 +162,7 @@ func (c *client) CreateChange(ctx context.Context, req *gerritpb.CreateChangeReq
 
 func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.ChangeEditFileContentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit/%s", gerritChangeIDForRouting(req.Number, req.Project), url.PathEscape(req.FilePath))
-	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, req.Content, http.StatusNoContent); err != nil {
+	if _, _, err := c.callRaw(ctx, "PUT", path, url.Values{}, textInputHeaders(), req.Content, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit file content").Err()
 	}
 	return &empty.Empty{}, nil
@@ -161,7 +170,7 @@ func (c *client) ChangeEditFileContent(ctx context.Context, req *gerritpb.Change
 
 func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEditPublishRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	path := fmt.Sprintf("/changes/%s/edit:publish", gerritChangeIDForRouting(req.Number, req.Project))
-	if _, _, err := c.callRaw(ctx, "POST", path, url.Values{}, []byte{}, http.StatusNoContent); err != nil {
+	if _, _, err := c.callRaw(ctx, "POST", path, url.Values{}, textInputHeaders(), []byte{}, http.StatusNoContent); err != nil {
 		return nil, errors.Annotate(err, "change edit publish").Err()
 	}
 	return &empty.Empty{}, nil
@@ -187,7 +196,12 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 	if err != nil {
 		return -1, status.Errorf(codes.Internal, "failed to serialize request message: %s", err)
 	}
-	ret, body, err := c.callRaw(ctx, method, urlPath, params, rawData, expectedHTTPCodes...)
+
+	headers := make(map[string]string)
+	if len(rawData) > 0 {
+		headers["Content-Type"] = contentTypeJSON
+	}
+	ret, body, err := c.callRaw(ctx, method, urlPath, params, headers, rawData, expectedHTTPCodes...)
 	body = bytes.TrimPrefix(body, jsonPrefix)
 	if err == nil {
 		if err = json.Unmarshal(body, dest); err != nil {
@@ -202,7 +216,7 @@ func (c *client) call(ctx context.Context, method, urlPath string, params url.Va
 // callRaw returns HTTP status code and gRPC error.
 // If error happens before HTTP status code was determined, HTTP status code
 // will be -1.
-func (c *client) callRaw(ctx context.Context, method, urlPath string, params url.Values, data []byte, expectedHTTPCodes ...int) (int, []byte, error) {
+func (c *client) callRaw(ctx context.Context, method, urlPath string, params url.Values, headers map[string]string, data []byte, expectedHTTPCodes ...int) (int, []byte, error) {
 	url := c.BaseURL + urlPath
 	if len(params) > 0 {
 		url += "?" + params.Encode()
@@ -213,8 +227,8 @@ func (c *client) callRaw(ctx context.Context, method, urlPath string, params url
 		return 0, []byte{}, status.Errorf(codes.Internal, "failed to create an HTTP request: %s", err)
 	}
 
-	if len(data) != 0 {
-		req.Header.Set("Content-Type", contentType)
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 
 	res, err := ctxhttp.Do(ctx, c.Client, req)
@@ -284,4 +298,11 @@ func gerritChangeIDForRouting(number int64, project string) string {
 		return fmt.Sprintf("%s~%d", url.PathEscape(project), number)
 	}
 	return strconv.Itoa(int(number))
+}
+
+func textInputHeaders() map[string]string {
+	return map[string]string{
+		"Content-Type": contentTypeText,
+		"Accept":       contentTypeJSON,
+	}
 }
