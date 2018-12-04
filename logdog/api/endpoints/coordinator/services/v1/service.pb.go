@@ -24,7 +24,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 // Error is a projection of a gRPC error.
 //
@@ -774,116 +774,14 @@ func (m *BatchRequest_Entry) GetArchiveStream() *ArchiveStreamRequest {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BatchRequest_Entry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BatchRequest_Entry_OneofMarshaler, _BatchRequest_Entry_OneofUnmarshaler, _BatchRequest_Entry_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BatchRequest_Entry) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*BatchRequest_Entry_RegisterStream)(nil),
 		(*BatchRequest_Entry_LoadStream)(nil),
 		(*BatchRequest_Entry_TerminateStream)(nil),
 		(*BatchRequest_Entry_ArchiveStream)(nil),
 	}
-}
-
-func _BatchRequest_Entry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BatchRequest_Entry)
-	// value
-	switch x := m.Value.(type) {
-	case *BatchRequest_Entry_RegisterStream:
-		b.EncodeVarint(1<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RegisterStream); err != nil {
-			return err
-		}
-	case *BatchRequest_Entry_LoadStream:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.LoadStream); err != nil {
-			return err
-		}
-	case *BatchRequest_Entry_TerminateStream:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.TerminateStream); err != nil {
-			return err
-		}
-	case *BatchRequest_Entry_ArchiveStream:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.ArchiveStream); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("BatchRequest_Entry.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BatchRequest_Entry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BatchRequest_Entry)
-	switch tag {
-	case 1: // value.register_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RegisterStreamRequest)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchRequest_Entry_RegisterStream{msg}
-		return true, err
-	case 2: // value.load_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(LoadStreamRequest)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchRequest_Entry_LoadStream{msg}
-		return true, err
-	case 3: // value.terminate_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(TerminateStreamRequest)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchRequest_Entry_TerminateStream{msg}
-		return true, err
-	case 4: // value.archive_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(ArchiveStreamRequest)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchRequest_Entry_ArchiveStream{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BatchRequest_Entry_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BatchRequest_Entry)
-	// value
-	switch x := m.Value.(type) {
-	case *BatchRequest_Entry_RegisterStream:
-		s := proto.Size(x.RegisterStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchRequest_Entry_LoadStream:
-		s := proto.Size(x.LoadStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchRequest_Entry_TerminateStream:
-		s := proto.Size(x.TerminateStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchRequest_Entry_ArchiveStream:
-		s := proto.Size(x.ArchiveStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 // BatchResponse is a response to a BatchRequest.
@@ -1028,97 +926,13 @@ func (m *BatchResponse_Entry) GetLoadStream() *LoadStreamResponse {
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*BatchResponse_Entry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _BatchResponse_Entry_OneofMarshaler, _BatchResponse_Entry_OneofUnmarshaler, _BatchResponse_Entry_OneofSizer, []interface{}{
+// XXX_OneofWrappers is for the internal use of the proto package.
+func (*BatchResponse_Entry) XXX_OneofWrappers() []interface{} {
+	return []interface{}{
 		(*BatchResponse_Entry_Err)(nil),
 		(*BatchResponse_Entry_RegisterStream)(nil),
 		(*BatchResponse_Entry_LoadStream)(nil),
 	}
-}
-
-func _BatchResponse_Entry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*BatchResponse_Entry)
-	// value
-	switch x := m.Value.(type) {
-	case *BatchResponse_Entry_Err:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Err); err != nil {
-			return err
-		}
-	case *BatchResponse_Entry_RegisterStream:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RegisterStream); err != nil {
-			return err
-		}
-	case *BatchResponse_Entry_LoadStream:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.LoadStream); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("BatchResponse_Entry.Value has unexpected type %T", x)
-	}
-	return nil
-}
-
-func _BatchResponse_Entry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*BatchResponse_Entry)
-	switch tag {
-	case 2: // value.err
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(Error)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchResponse_Entry_Err{msg}
-		return true, err
-	case 3: // value.register_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(RegisterStreamResponse)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchResponse_Entry_RegisterStream{msg}
-		return true, err
-	case 4: // value.load_stream
-		if wire != proto.WireBytes {
-			return true, proto.ErrInternalBadWireType
-		}
-		msg := new(LoadStreamResponse)
-		err := b.DecodeMessage(msg)
-		m.Value = &BatchResponse_Entry_LoadStream{msg}
-		return true, err
-	default:
-		return false, nil
-	}
-}
-
-func _BatchResponse_Entry_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*BatchResponse_Entry)
-	// value
-	switch x := m.Value.(type) {
-	case *BatchResponse_Entry_Err:
-		s := proto.Size(x.Err)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchResponse_Entry_RegisterStream:
-		s := proto.Size(x.RegisterStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case *BatchResponse_Entry_LoadStream:
-		s := proto.Size(x.LoadStream)
-		n += 1 // tag and wire
-		n += proto.SizeVarint(uint64(s))
-		n += s
-	case nil:
-	default:
-		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
-	}
-	return n
 }
 
 func init() {
