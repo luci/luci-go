@@ -44,7 +44,10 @@ def _add_node(key, props=None, trace=None):
 
 
 def _node(key):
-  """Returns a node by the key or None if it wasn't added by add_node yet.
+  """Returns a node by the key or None if there's no such node.
+
+  Fails if called not from a generator callback: a graph under construction
+  can't be queried.
 
   Args:
     key: a node key, as returned by graph.key(...).
