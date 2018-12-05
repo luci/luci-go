@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e8f6df1a_246fb5e3",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-05T20:38:14Z",
+      "side": 1,
+      "message": "i think we should just add Node.Title field and return that. We can default it to Last() though.\nThen we have even more meaningful error messages e.g.\n\n  Builder \"ci/x\" bla bla Trigger \"ci/y\"\n\nDoes not have to be done in this CL.",
+      "revId": "1b844a06a6423a677dcfa42b1f697fd318808607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
