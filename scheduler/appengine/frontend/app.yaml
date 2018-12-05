@@ -4,6 +4,7 @@ module: default
 runtime: go
 api_version: go1
 
+instance_class: F4_1G
 automatic_scaling:
   min_idle_instances: 1
 
