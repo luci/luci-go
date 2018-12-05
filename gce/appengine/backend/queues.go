@@ -19,14 +19,9 @@ import (
 	"fmt"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/google/uuid"
-
-	"google.golang.org/api/compute/v1"
-	"google.golang.org/api/googleapi"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/appengine/tq"
-	"go.chromium.org/luci/common/data/rand/mathrand"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 
@@ -34,98 +29,6 @@ import (
 	"go.chromium.org/luci/gce/api/tasks/v1"
 	"go.chromium.org/luci/gce/appengine/model"
 )
-
-// getSuffix returns a random suffix to use when naming a GCE instance.
-func getSuffix(c context.Context) string {
-	const allowed = "abcdefghijklmnopqrstuvwxyz0123456789"
-	suf := make([]byte, 4)
-	for i := range suf {
-		suf[i] = allowed[mathrand.Intn(c, len(allowed))]
-	}
-	return string(suf)
-}
-
-// createQueue is the name of the create task handler queue.
-const createQueue = "create-instance"
-
-// create creates a GCE instance.
-func create(c context.Context, payload proto.Message) error {
-	task, ok := payload.(*tasks.Create)
-	switch {
-	case !ok:
-		return errors.Reason("unexpected payload %q", payload).Err()
-	case task.GetId() == "":
-		return errors.Reason("ID is required").Err()
-	}
-	vm := &model.VM{
-		ID: task.Id,
-	}
-	if err := datastore.Get(c, vm); err != nil {
-		return errors.Annotate(err, "failed to fetch VM").Err()
-	}
-	if vm.Hostname == "" {
-		// Generate a new hostname and record it so future calls are idempotent.
-		hostname := fmt.Sprintf("%s-%s", vm.ID, getSuffix(c))
-		if err := datastore.RunInTransaction(c, func(c context.Context) error {
-			if err := datastore.Get(c, vm); err != nil {
-				return errors.Annotate(err, "failed to fetch VM").Err()
-			}
-			// Double-check inside transaction. Hostname may already be generated.
-			if vm.Hostname == "" {
-				vm.Hostname = hostname
-				if err := datastore.Put(c, vm); err != nil {
-					return errors.Annotate(err, "failed to store VM").Err()
-				}
-			}
-			return nil
-		}, nil); err != nil {
-			return err
-		}
-	}
-	if vm.URL != "" {
-		logging.Debugf(c, "instance exists: %s", vm.URL)
-		return nil
-	}
-	logging.Debugf(c, "creating instance %q", vm.Hostname)
-	// Generate a request ID based on the hostname.
-	// Ensures duplicate operations aren't created in GCE.
-	rID := uuid.NewSHA1(uuid.Nil, []byte(vm.Hostname))
-	srv := compute.NewInstancesService(getCompute(c))
-	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
-	op, err := call.RequestId(rID.String()).Context(c).Do()
-	if err != nil {
-		for _, err := range err.(*googleapi.Error).Errors {
-			logging.Errorf(c, "%s", err.Message)
-		}
-		return errors.Reason("failed to create instance").Err()
-	}
-	if op.Error != nil {
-		for _, err := range op.Error.Errors {
-			logging.Errorf(c, "%s: %s", err.Code, err.Message)
-		}
-		return errors.Reason("failed to create instance").Err()
-	}
-	if op.Status == "DONE" {
-		logging.Debugf(c, "created instance: %s", op.TargetLink)
-		if err := datastore.RunInTransaction(c, func(c context.Context) error {
-			if err := datastore.Get(c, vm); err != nil {
-				return errors.Annotate(err, "failed to fetch VM").Err()
-			}
-			// Double-check inside transaction. URL may already be set.
-			if vm.URL == "" {
-				vm.URL = op.TargetLink
-				if err := datastore.Put(c, vm); err != nil {
-					return errors.Annotate(err, "failed to store VM").Err()
-				}
-			}
-			return nil
-		}, nil); err != nil {
-			return err
-		}
-		return nil
-	}
-	return nil
-}
 
 // ensureQueue is the name of the ensure task handler queue.
 const ensureQueue = "ensure-vm"
