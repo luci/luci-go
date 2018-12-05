@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "7f7c08c7_94ac41a5",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:03:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "394e0a4e_aa9fb2ba",
+      "range": {
+        "startLine": 244,
+        "startChar": 25,
+        "endLine": 244,
+        "endChar": 28
+      },
+      "revId": "171042a530a8e10b31ac52136c0037fa98ea7b9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e0ee301c_2aab63df",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "171042a530a8e10b31ac52136c0037fa98ea7b9b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8eb178d1_11218bec",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:03:59Z",
+      "side": 1,
+      "message": "Ack, didn\u0027t find anything in the protobuf docs about reserved field names, but I don\u0027t completely trust they\u0027ll mention everything like this.",
+      "parentUuid": "e0ee301c_2aab63df",
+      "range": {
+        "startLine": 257,
+        "startChar": 9,
+        "endLine": 257,
+        "endChar": 16
+      },
+      "revId": "171042a530a8e10b31ac52136c0037fa98ea7b9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
