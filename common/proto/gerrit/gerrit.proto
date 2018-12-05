@@ -20,23 +20,40 @@ package gerrit;
 
 service Gerrit {
   // Loads a change by id.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
   rpc GetChange(GetChangeRequest) returns (ChangeInfo);
 
   // Create a new empty change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#create-change
   rpc CreateChange(CreateChangeRequest) returns (ChangeInfo);
 
   // Edit a single file within an existing change edit.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
   rpc ChangeEditFileContent(ChangeEditFileContentRequest)
       returns (google.protobuf.Empty);
 
   // Publish all changes in a a change edit.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
   rpc ChangeEditPublish(ChangeEditPublishRequest)
       returns (google.protobuf.Empty);
 
+  // Set various review bits on a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
+  rpc SetReview(SetReviewRequest) returns (ReviewResult);
+
   // Submit a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
   rpc SubmitChange(SubmitChangeRequest) returns (ChangeInfo);
 
   // Abandon a change.
+  //
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
   rpc AbandonChange(AbandonChangeRequest) returns (ChangeInfo);
 }
 
@@ -118,6 +135,10 @@ enum QueryOption {
   DOWNLOAD_COMMANDS = 2097152;
 }
 
+// Request to get information for a single change.
+//
+// Encodes path arguments and query options described at
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#get-change
 message GetChangeRequest {
   // Change number.
   int64 number = 1;
@@ -204,7 +225,8 @@ message CreateChangeRequest {
 
 // Information to submit a change.
 //
-// This is a placeholder to support the options described here in the future:
+// This is a placeholder to support the arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-change
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-input
 message SubmitChangeRequest {
   // The change number.
@@ -216,6 +238,10 @@ message SubmitChangeRequest {
   string project = 2;
 }
 
+// Information for changing contents of single file in a change edit.
+//
+// Fields encode the path arguments of
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#put-edit-file
 message ChangeEditFileContentRequest {
   // The change number.
   int64 number = 1;
@@ -234,7 +260,8 @@ message ChangeEditFileContentRequest {
 
 // Information for publishing a change edit.
 //
-// This is a placeholder to support the options described here in the future:
+// This is a placeholder to support the arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-edit
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-change-edit-input
 message ChangeEditPublishRequest {
   // The change number.
@@ -249,7 +276,8 @@ message ChangeEditPublishRequest {
 
 // Information for abandoning a change.
 //
-// Fields are a subset of:
+// Fields are a subset of arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-change
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-input
 message AbandonChangeRequest {
   // The change number.
@@ -261,4 +289,44 @@ message AbandonChangeRequest {
   string project = 2;
 
   string message = 3;
+}
+
+// Information to set various review bits on a change
+//
+// Fields are a subset of arguments from:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#review-input
+message SetReviewRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  // Unique ID for the revision to query.
+  // See
+  // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id
+  string revision_id = 3;
+
+  // Message to be added to the change along with this review.
+  string message = 4;
+
+  // labels to add, e.g.:
+  //   {
+  //     "Code-Review": -1,
+  //     "Verified": 1,
+  //   }
+  map<string, int32> labels = 5;
+}
+
+// Information returned by a SetReview RPC.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#review-result
+message ReviewResult {
+    // Map of labels to values after the review was posted. Null if any reviewer
+    // additions were rejected.
+    map<string, int32> labels = 1;
 }
