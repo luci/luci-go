@@ -31,8 +31,8 @@ var _ http.RoundTripper = (*JSONRoundTripper)(nil)
 // JSONRoundTripper implements http.RoundTripper to handle *http.Requests with a JSON body.
 type JSONRoundTripper struct {
 	// Handler is called by RoundTrip with the unmarshalled JSON from an *http.Request.
-	// Returns an interface{} to marshal as JSON in an *http.Response.
-	Handler func(interface{}) interface{}
+	// Returns an HTTP status code and an interface{} to marshal as JSON in an *http.Response.
+	Handler func(interface{}) (int, interface{})
 	// Type is the reflect.Type to unmarshal *http.Request.Body into.
 	Type reflect.Type
 }
@@ -42,22 +42,25 @@ type JSONRoundTripper struct {
 func (t *JSONRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Unmarshal *http.Request.Body.
 	val := reflect.New(t.Type).Interface()
-	err := json.NewDecoder(req.Body).Decode(&val)
-	req.Body.Close()
-	if err != nil {
-		panic(errors.Annotate(err, "failed to unmarshal *http.Request.Body").Err())
+	if req.Body != nil {
+		err := json.NewDecoder(req.Body).Decode(&val)
+		req.Body.Close()
+		if err != nil {
+			panic(errors.Annotate(err, "failed to unmarshal *http.Request.Body").Err())
+		}
 	}
 
 	// Marshal the returned value from t.Handler into *http.Response.Body.
 	if t.Handler == nil {
 		panic("handler is required")
 	}
-	b, err := json.Marshal(t.Handler(val))
+	code, rsp := t.Handler(val)
+	b, err := json.Marshal(rsp)
 	if err != nil {
 		panic(errors.Annotate(err, "failed to marshal *http.Response.Body").Err())
 	}
 	return &http.Response{
 		Body:       ioutil.NopCloser(bytes.NewReader(b)),
-		StatusCode: 200,
+		StatusCode: code,
 	}, nil
 }
