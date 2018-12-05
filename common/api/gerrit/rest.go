@@ -186,6 +186,18 @@ func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeReq
 	return toGerritChangeInfo(&resp), nil
 }
 
+func (c *client) AbandonChange(ctx context.Context, req *gerritpb.AbandonChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
+	var resp changeInfo
+	path := fmt.Sprintf("/changes/%s/abandon", gerritChangeIDForRouting(req.Number, req.Project))
+	data := map[string]string{
+		"message": req.Message,
+	}
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "abandon change").Err()
+	}
+	return toGerritChangeInfo(&resp), nil
+}
+
 // call executes a request to Gerrit REST API with JSON input/output.
 //
 // call returns HTTP status code and gRPC error.

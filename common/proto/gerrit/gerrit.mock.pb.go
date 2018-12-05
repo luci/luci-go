@@ -125,6 +125,24 @@ func (mr *MockGerritClientMockRecorder) SubmitChange(ctx, in interface{}, opts .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitChange", reflect.TypeOf((*MockGerritClient)(nil).SubmitChange), varargs...)
 }
 
+// AbandonChange mocks base method
+func (m *MockGerritClient) AbandonChange(ctx context.Context, in *AbandonChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AbandonChange", varargs...)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AbandonChange indicates an expected call of AbandonChange
+func (mr *MockGerritClientMockRecorder) AbandonChange(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritClient)(nil).AbandonChange), varargs...)
+}
+
 // MockGerritServer is a mock of GerritServer interface
 type MockGerritServer struct {
 	ctrl     *gomock.Controller
@@ -211,4 +229,17 @@ func (m *MockGerritServer) SubmitChange(arg0 context.Context, arg1 *SubmitChange
 // SubmitChange indicates an expected call of SubmitChange
 func (mr *MockGerritServerMockRecorder) SubmitChange(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitChange", reflect.TypeOf((*MockGerritServer)(nil).SubmitChange), arg0, arg1)
+}
+
+// AbandonChange mocks base method
+func (m *MockGerritServer) AbandonChange(arg0 context.Context, arg1 *AbandonChangeRequest) (*ChangeInfo, error) {
+	ret := m.ctrl.Call(m, "AbandonChange", arg0, arg1)
+	ret0, _ := ret[0].(*ChangeInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AbandonChange indicates an expected call of AbandonChange
+func (mr *MockGerritServerMockRecorder) AbandonChange(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AbandonChange", reflect.TypeOf((*MockGerritServer)(nil).AbandonChange), arg0, arg1)
 }
