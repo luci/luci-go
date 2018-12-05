@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "0ea7e9e4_9d98b020",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:33:18Z",
+      "side": 1,
+      "message": "Too lazy to write a separate CL, updated comments on all RPCs.",
+      "parentUuid": "209a2fb4_900f8b1e",
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5e6098ff_10cb5575",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
@@ -33,6 +51,24 @@
       "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "716064dc_b4e950c2",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:33:18Z",
+      "side": 1,
+      "message": "Done, here and elsewhere.",
+      "parentUuid": "5e6098ff_10cb5575",
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -59,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "8f5f144d_97b7cdda",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:33:18Z",
+      "side": 1,
+      "message": "Oops, thanks.",
+      "parentUuid": "27ba1157_b03f30fa",
+      "range": {
+        "startLine": 284,
+        "startChar": 5,
+        "endLine": 284,
+        "endChar": 92
+      },
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5f49dca5_d8a204db",
         "filename": "common/proto/gerrit/gerrit.proto",
         "patchSetId": 1
@@ -70,6 +130,30 @@
       "writtenOn": "2018-12-05T02:50:58Z",
       "side": 1,
       "message": "this begs to describe the error semantics in such a case (and I personally have no idea :( )",
+      "range": {
+        "startLine": 303,
+        "startChar": 60,
+        "endLine": 304,
+        "endChar": 31
+      },
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7bae1678_0176e803",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:33:18Z",
+      "side": 1,
+      "message": "Dunno :(\nThis is what gerrit documentation says.\n\nI experimented with trying to set a nonsense label {\"nonexistent\": 3} and simply got an HTTP 400",
+      "parentUuid": "5f49dca5_d8a204db",
       "range": {
         "startLine": 303,
         "startChar": 60,
