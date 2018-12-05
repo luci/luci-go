@@ -22,6 +22,30 @@
       "revId": "01ffc0de2cc37c5100feffa620c4bbab17fa4e30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1de89655_ea983886",
+        "filename": "common/api/gerrit/rest_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002639
+      },
+      "writtenOn": "2018-12-05T18:06:23Z",
+      "side": 1,
+      "message": "CurrentRevision is only set if the GetChange explicitly requests current / all revisions: https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#change-info",
+      "parentUuid": "7ca6ac1d_e1388e0d",
+      "range": {
+        "startLine": 74,
+        "startChar": 22,
+        "endLine": 74,
+        "endChar": 23
+      },
+      "revId": "01ffc0de2cc37c5100feffa620c4bbab17fa4e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
