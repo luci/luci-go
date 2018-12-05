@@ -7,13 +7,11 @@ def test_add_edge_ok():
   k2 = g.key('t1', 'id2')
 
   g.add_edge(parent=k1, child=k2)
-
-  # Nodes aren't "visible" yet.
-  assert.true(g.node(k1) == None)
-
-  # They are after being added explicitly.
   g.add_node(k1, {})
-  assert.true(g.node(k1) != None)
+  g.add_node(k2, {})
+
+  # Can be successfully finalized.
+  assert.true(g.finalize() == [])
 
 test_add_edge_ok()
 
@@ -27,7 +25,7 @@ def test_edge_redeclaration():
 
   assert.fails(
       lambda: g.add_edge(parent=k1, child=k2, title='blah'),
-      'Relation "blah" between .* is redeclared')
+      'relation "blah" between .* is redeclared')
 
   # Using a different title is fine.
   g.add_edge(parent=k1, child=k2, title='zzz')
@@ -47,3 +45,25 @@ def test_cycle_detection():
   assert.fails(lambda: edge('4', '1'), 'introduces a cycle')
 
 test_cycle_detection()
+
+
+def test_dangling_edges():
+  g = new_graph()
+
+  exists = g.key('t', 'exists')
+  g.add_node(exists, {})
+
+  miss = lambda id: g.key('t', str(id))
+
+  g.add_edge(miss(0), miss(1), title='edge1')
+  g.add_edge(miss(2), exists, title='edge2')
+  g.add_edge(exists, miss(3), title='edge3')
+
+  errs = g.finalize()
+  assert.eq(errs, [
+      'relation "edge1": refers to [t("0")] and [t("1")], neither is defined',
+      '[t("exists")] in "edge2" refers to undefined [t("2")]',
+      '[t("exists")] in "edge3" refers to undefined [t("3")]',
+  ])
+
+test_dangling_edges()

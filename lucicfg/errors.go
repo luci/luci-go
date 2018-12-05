@@ -17,12 +17,13 @@ package lucicfg
 import (
 	"go.starlark.net/starlark"
 
+	"go.chromium.org/luci/lucicfg/graph"
 	"go.chromium.org/luci/starlark/builtins"
 )
 
 // BacktracableError is an error that has a starlark backtrace attached to it.
 //
-// Implemented by Error here and by starlark.EvalError.
+// Implemented by Error here, by starlark.EvalError and graph errors.
 type BacktracableError interface {
 	error
 
@@ -31,8 +32,14 @@ type BacktracableError interface {
 	Backtrace() string
 }
 
-var _ BacktracableError = (*starlark.EvalError)(nil)
-var _ BacktracableError = (*Error)(nil)
+var (
+	_ BacktracableError = (*starlark.EvalError)(nil)
+	_ BacktracableError = (*Error)(nil)
+	_ BacktracableError = (*graph.NodeRedeclarationError)(nil)
+	_ BacktracableError = (*graph.EdgeRedeclarationError)(nil)
+	_ BacktracableError = (*graph.CycleError)(nil)
+	_ BacktracableError = (*graph.DanglingEdgeError)(nil)
+)
 
 // Error is a single error message emitted by the config generator.
 //

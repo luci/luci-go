@@ -43,8 +43,34 @@ def _add_node(key, props=None, trace=None):
       key, props or {}, trace or stacktrace(skip=1))
 
 
+def _add_edge(parent, child, title=None, trace=None):
+  """Adds an edge to the graph.
+
+  Neither of the nodes have to exist yet: it is OK to declare nodes and edges
+  in arbitrary order as long as at the end of the script execution (when the
+  graph is finalized) the graph is complete.
+
+  Fails if there's already an edge between the given nodes with exact same title
+  or the new edge introduces a cycle.
+
+  Also fails if used from a generator callback: at this point the graph is
+  frozen and can't be extended.
+
+  Args:
+    parent: a parent node key, as returned by graph.key(...).
+    child: a child node key, as returned by graph.key(...).
+    title: a title for the edge, used in error messages.
+    trace: a stack trace to associate with the edge.
+  """
+  return __native__.graph().add_edge(
+      parent, child, title or '', trace or stacktrace(skip=1))
+
+
 def _node(key):
-  """Returns a node by the key or None if it wasn't added by add_node yet.
+  """Returns a node by the key or None if there's no such node.
+
+  Fails if called not from a generator callback: a graph under construction
+  can't be queried.
 
   Args:
     key: a node key, as returned by graph.key(...).
@@ -59,5 +85,6 @@ def _node(key):
 graph = struct(
     key = _key,
     add_node = _add_node,
+    add_edge = _add_edge,
     node = _node,
 )
