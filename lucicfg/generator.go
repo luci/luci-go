@@ -88,10 +88,11 @@ func Generate(ctx context.Context, in Inputs) (*State, error) {
 	}
 
 	// Executing the script (with all its dependencies) populated the graph.
-	// It shouldn't be modified by any later stages of the execution.
-	state.graph.Freeze()
-
-	// TODO(vadimsh): Check there are no dangling edges in the graph.
+	// Finalize it. This checks there are no dangling edges, freezes the graph,
+	// and makes it queryable, so generator callbacks can traverse it.
+	if errs := state.graph.Finalize(); len(errs) != 0 {
+		return nil, state.err(errs...)
+	}
 
 	// The script registered a bunch of callbacks that take the graph and
 	// transform it into actual config files (living in a config set). Run these
