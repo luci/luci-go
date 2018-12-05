@@ -89,10 +89,7 @@ func testCollectPollWithServer(runner *collectRun, s *testService) taskResult {
 		clk.Add(amt)
 	})
 
-	results := make(chan taskResult, 1)
-	go runner.pollForTaskResult(c, "10982374012938470", s, results)
-	ret := <-results
-	return ret
+	return runner.pollForTaskResult(c, "10982374012938470", s)
 }
 
 func TestCollectPollForTaskResult(t *testing.T) {

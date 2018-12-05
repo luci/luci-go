@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/maruel/subcommands"
@@ -297,7 +298,7 @@ func (c *collectRun) fetchTaskResults(ctx context.Context, taskID string, servic
 	}
 }
 
-func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService, results chan<- taskResult) {
+func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, service swarmingService) taskResult {
 	var result taskResult
 	startedTime := clock.Now(ctx)
 	for {
@@ -305,19 +306,16 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 		if result.err != nil {
 			// If we recieved an error from fetchTaskResults, it either hit a fatal
 			// failure, or it hit too many transient failures.
-			results <- result
-			return
+			return result
 		}
 
 		// Only stop if the swarming bot is "dead" (i.e. not running).
 		state, err := parseTaskState(result.result.State)
 		if err != nil {
-			results <- taskResult{taskID: taskID, err: err}
-			return
+			return taskResult{taskID: taskID, err: err}
 		}
 		if !state.Alive() {
-			results <- result
-			return
+			return result
 		}
 
 		currentTime := clock.Now(ctx)
@@ -339,8 +337,7 @@ func (c *collectRun) pollForTaskResult(ctx context.Context, taskID string, servi
 			} else {
 				result.err = err
 			}
-			results <- result
-			return
+			return result
 		}
 	}
 }
@@ -414,13 +411,15 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 
 	// Aggregate results by polling and fetching across multiple goroutines.
 	results := make([]taskResult, len(taskIDs))
-	aggregator := make(chan taskResult, len(taskIDs))
-	for _, id := range taskIDs {
-		go c.pollForTaskResult(ctx, id, service, aggregator)
+	var wg sync.WaitGroup
+	wg.Add(len(taskIDs))
+	for i := range taskIDs {
+		go func(i int) {
+			defer wg.Done()
+			results[i] = c.pollForTaskResult(ctx, taskIDs[i], service)
+		}(i)
 	}
-	for i := 0; i < len(taskIDs); i++ {
-		results[i] = <-aggregator
-	}
+	wg.Wait()
 
 	// Summarize and write summary json if applicable.
 	if c.taskSummaryJSON != "" {
