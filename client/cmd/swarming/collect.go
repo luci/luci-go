@@ -414,12 +414,13 @@ func (c *collectRun) main(a subcommands.Application, taskIDs []string) error {
 
 	// Aggregate results by polling and fetching across multiple goroutines.
 	results := make([]taskResult, len(taskIDs))
-	aggregator := make(chan taskResult, len(taskIDs))
-	for _, id := range taskIDs {
-		go c.pollForTaskResult(ctx, id, service, aggregator)
+	aggregator := make([]chan taskResult, len(taskIDs))
+	for idx, id := range taskIDs {
+		aggregator[idx] = make(chan taskResult)
+		go c.pollForTaskResult(ctx, id, service, aggregator[idx])
 	}
 	for i := 0; i < len(taskIDs); i++ {
-		results[i] = <-aggregator
+		results[i] = <-aggregator[i]
 	}
 
 	// Summarize and write summary json if applicable.
