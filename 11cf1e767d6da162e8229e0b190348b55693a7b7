@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b9de31b0_ff33233b",
+        "filename": "client/cmd/swarming/collect.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-05T17:00:48Z",
+      "side": 1,
+      "message": "I\u0027d prefer pollForTaskResult() to not take a channel, but be a normal synchronous function instead and return a taskResult. Then do the aggregation here.",
+      "revId": "11cf1e767d6da162e8229e0b190348b55693a7b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
