@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "394e0a4e_aa9fb2ba",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 244,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:42:36Z",
+      "side": 1,
+      "message": "ning",
+      "range": {
+        "startLine": 244,
+        "startChar": 25,
+        "endLine": 244,
+        "endChar": 28
+      },
+      "revId": "171042a530a8e10b31ac52136c0037fa98ea7b9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e0ee301c_2aab63df",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:42:36Z",
+      "side": 1,
+      "message": "oh, can \u0027message\u0027 actually be a name of a field? ie won\u0027t it backfire in some language, like say Java?\nalso, I think \"reason\" is better, but Gerrit chose \"message\" so whatever.",
+      "range": {
+        "startLine": 257,
+        "startChar": 9,
+        "endLine": 257,
+        "endChar": 16
+      },
+      "revId": "171042a530a8e10b31ac52136c0037fa98ea7b9b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
