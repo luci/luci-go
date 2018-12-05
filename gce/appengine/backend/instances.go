@@ -17,6 +17,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
@@ -130,7 +131,34 @@ func create(c context.Context, payload proto.Message) error {
 	call := srv.Insert(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.GetInstance())
 	op, err := call.RequestId(rID.String()).Context(c).Do()
 	if err != nil {
-		logErrors(c, err.(*googleapi.Error))
+		err := err.(*googleapi.Error)
+		logErrors(c, err)
+		if err.Code == http.StatusConflict {
+			// Instance conflicts with an existing instance.
+			// The conflict could be because the instance already exists,
+			// or because a same-named instance exists in another zone.
+			// Figure out which case occurred.
+			call := srv.Get(vm.Attributes.GetProject(), vm.Attributes.GetZone(), vm.Hostname)
+			inst, err := call.Context(c).Do()
+			if err != nil {
+				err := err.(*googleapi.Error)
+				logErrors(c, err)
+				switch err.Code {
+				case http.StatusNotFound:
+					// Instance doesn't exist in this zone.
+					// Conflict was with a same-named instance in another zone.
+					// TODO(smut): Clear hostname.
+					// Subsequent invocations will generate a new one.
+					// Low priority, because it can't happen in practice.
+					// VMs created through the config have no colliding prefixes.
+					return errors.Reason("instance exists in another zone").Err()
+				default:
+					return errors.Reason("failed to fetch instance").Err()
+				}
+			}
+			logging.Debugf(c, "instance exists: %s", inst.SelfLink)
+			return setURL(c, task.Id, inst.SelfLink)
+		}
 		return errors.Reason("failed to create instance").Err()
 	}
 	if op.Error != nil {
@@ -141,9 +169,7 @@ func create(c context.Context, payload proto.Message) error {
 	}
 	if op.Status == "DONE" {
 		logging.Debugf(c, "created instance: %s", op.TargetLink)
-		if err := setURL(c, task.Id, op.TargetLink); err != nil {
-			return err
-		}
+		return setURL(c, task.Id, op.TargetLink)
 	}
 	return nil
 }

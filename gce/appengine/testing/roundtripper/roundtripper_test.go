@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"google.golang.org/api/compute/v1"
+	"google.golang.org/api/googleapi"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,24 +29,36 @@ func TestJSONRoundTripper(t *testing.T) {
 	t.Parallel()
 
 	Convey("RoundTrip", t, func() {
-		rt := &JSONRoundTripper{
-			Handler: func(req interface{}) interface{} {
-				inst, ok := req.(*compute.Instance)
-				So(ok, ShouldBeTrue)
-				So(inst.Name, ShouldEqual, "name")
-				return &compute.Operation{
-					ClientOperationId: "id",
-				}
-			},
-			Type: reflect.TypeOf(compute.Instance{}),
-		}
+		rt := &JSONRoundTripper{}
 		gce, err := compute.New(&http.Client{Transport: rt})
 		So(err, ShouldBeNil)
 		srv := compute.NewInstancesService(gce)
 		call := srv.Insert("project", "zone", &compute.Instance{Name: "name"})
-		rsp, err := call.Do()
-		So(err, ShouldBeNil)
-		So(rsp, ShouldNotBeNil)
-		So(rsp.ClientOperationId, ShouldEqual, "id")
+
+		Convey("ok", func() {
+			rt.Handler = func(req interface{}) (int, interface{}) {
+				inst, ok := req.(*compute.Instance)
+				So(ok, ShouldBeTrue)
+				So(inst.Name, ShouldEqual, "name")
+				return http.StatusOK, &compute.Operation{
+					ClientOperationId: "id",
+				}
+			}
+			rt.Type = reflect.TypeOf(compute.Instance{})
+			rsp, err := call.Do()
+			So(err, ShouldBeNil)
+			So(rsp, ShouldNotBeNil)
+			So(rsp.ClientOperationId, ShouldEqual, "id")
+		})
+
+		Convey("error", func() {
+			rt.Handler = func(_ interface{}) (int, interface{}) {
+				return http.StatusNotFound, nil
+			}
+			rt.Type = reflect.TypeOf(compute.Instance{})
+			rsp, err := call.Do()
+			So(err.(*googleapi.Error).Code, ShouldEqual, http.StatusNotFound)
+			So(rsp, ShouldBeNil)
+		})
 	})
 }

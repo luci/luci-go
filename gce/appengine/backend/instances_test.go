@@ -82,14 +82,78 @@ func TestCreate(t *testing.T) {
 				So(err, ShouldBeNil)
 			})
 
+			Convey("conflict", func() {
+				Convey("zone", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						switch rt.Type {
+						case reflect.TypeOf(compute.Instance{}):
+							// First call, to create the instance.
+							rt.Type = reflect.TypeOf(map[string]string{})
+							return http.StatusConflict, nil
+						default:
+							// Second call, to check the reason for the conflict.
+							// This request should have no body.
+							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
+							return http.StatusNotFound, nil
+						}
+					}
+					rt.Type = reflect.TypeOf(compute.Instance{})
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+					})
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldErrLike, "instance exists in another zone")
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.URL, ShouldBeEmpty)
+				})
+
+				Convey("exists", func() {
+					rt.Handler = func(req interface{}) (int, interface{}) {
+						switch rt.Type {
+						case reflect.TypeOf(compute.Instance{}):
+							// First call, to create the instance.
+							rt.Type = reflect.TypeOf(map[string]string{})
+							return http.StatusConflict, nil
+						default:
+							// Second call, to check the reason for the conflict.
+							// This request should have no body.
+							So(*(req.(*map[string]string)), ShouldHaveLength, 0)
+							return http.StatusOK, &compute.Instance{
+								SelfLink: "url",
+							}
+						}
+					}
+					rt.Type = reflect.TypeOf(compute.Instance{})
+					datastore.Put(c, &model.VM{
+						ID:       "id",
+						Hostname: "name",
+					})
+					err := create(c, &tasks.Create{
+						Id: "id",
+					})
+					So(err, ShouldBeNil)
+					v := &model.VM{
+						ID: "id",
+					}
+					datastore.Get(c, v)
+					So(v.URL, ShouldEqual, "url")
+				})
+			})
+
 			Convey("creates", func() {
 				Convey("names", func() {
-					rt.Handler = func(req interface{}) interface{} {
+					rt.Handler = func(req interface{}) (int, interface{}) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldNotBeEmpty)
 						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
-						return &compute.Operation{}
+						return http.StatusOK, &compute.Operation{}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
 					datastore.Put(c, &model.VM{
@@ -102,12 +166,12 @@ func TestCreate(t *testing.T) {
 				})
 
 				Convey("named", func() {
-					rt.Handler = func(req interface{}) interface{} {
+					rt.Handler = func(req interface{}) (int, interface{}) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
 						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
-						return &compute.Operation{}
+						return http.StatusOK, &compute.Operation{}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
 					datastore.Put(c, &model.VM{
@@ -121,12 +185,12 @@ func TestCreate(t *testing.T) {
 				})
 
 				Convey("done", func() {
-					rt.Handler = func(req interface{}) interface{} {
+					rt.Handler = func(req interface{}) (int, interface{}) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
 						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
-						return &compute.Operation{
+						return http.StatusOK, &compute.Operation{
 							Status:     "DONE",
 							TargetLink: "url",
 						}
