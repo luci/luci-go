@@ -22,6 +22,30 @@
       "revId": "6a43384a3adb5f64ea1b71f56cb7490250144c6a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "bf44d62c_3fb23e24",
+        "filename": "client/downloader/downloader_test.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-05T14:18:51Z",
+      "side": 1,
+      "message": "It shouldn\u0027t save the tarball to disk, but instead expand it on the fly.",
+      "parentUuid": "ef0f9a4c_bb49e6f1",
+      "range": {
+        "startLine": 118,
+        "startChar": 0,
+        "endLine": 121,
+        "endChar": 32
+      },
+      "revId": "6a43384a3adb5f64ea1b71f56cb7490250144c6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
