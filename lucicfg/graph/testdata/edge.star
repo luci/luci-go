@@ -61,9 +61,9 @@ def test_dangling_edges():
 
   errs = g.finalize()
   assert.eq(errs, [
-      'relation "edge1": refers to [t("0")] and [t("1")], neither is defined',
-      '[t("exists")] in "edge2" refers to undefined [t("2")]',
-      '[t("exists")] in "edge3" refers to undefined [t("3")]',
+      'relation "edge1": refers to t("0") and t("1"), neither is defined',
+      't("exists") in "edge2" refers to undefined t("2")',
+      't("exists") in "edge3" refers to undefined t("3")',
   ])
 
 test_dangling_edges()
