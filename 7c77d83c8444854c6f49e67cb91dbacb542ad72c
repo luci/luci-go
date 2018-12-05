@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "209a2fb4_900f8b1e",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:50:58Z",
+      "side": 1,
+      "message": "I realize we didn\u0027t do this before, but imo, it\u0027s better to start earlier than later. Consider adding a link to doc:\n// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review\n\nGiven camelCase here, it\u0027s non-trivial to find relevant doc.",
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5e6098ff_10cb5575",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:50:58Z",
+      "side": 1,
+      "message": "nit: add a link to https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#set-review\nbecause first 3 fields are actually going into URL PATH, and hence not part of review-input.",
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27ba1157_b03f30fa",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 284,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:50:58Z",
+      "side": 1,
+      "message": "bad link. Should be https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#revision-id",
+      "range": {
+        "startLine": 284,
+        "startChar": 5,
+        "endLine": 284,
+        "endChar": 92
+      },
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5f49dca5_d8a204db",
+        "filename": "common/proto/gerrit/gerrit.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 304,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-05T02:50:58Z",
+      "side": 1,
+      "message": "this begs to describe the error semantics in such a case (and I personally have no idea :( )",
+      "range": {
+        "startLine": 303,
+        "startChar": 60,
+        "endLine": 304,
+        "endChar": 31
+      },
+      "revId": "7c77d83c8444854c6f49e67cb91dbacb542ad72c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
