@@ -49,8 +49,7 @@ type NodeRedeclarationError struct {
 // Error is part of 'error' interface.
 func (e *NodeRedeclarationError) Error() string {
 	// TODO(vadimsh): Improve error messages.
-	return fmt.Sprintf("%s is redeclared, previous declaration:\n%s",
-		e.Previous.Key, e.Previous.Trace)
+	return fmt.Sprintf("%s is redeclared, previous declaration:\n%s", e.Previous, e.Previous.Trace)
 }
 
 // Backtrace returns an error message with a backtrace where it happened.
@@ -76,7 +75,7 @@ type EdgeRedeclarationError struct {
 func (e *EdgeRedeclarationError) Error() string {
 	// TODO(vadimsh): Improve error messages.
 	return fmt.Sprintf("relation %q between %s and %s is redeclared, previous declaration:\n%s",
-		e.Previous.Title, e.Previous.Parent.Key, e.Previous.Child.Key, e.Previous.Trace)
+		e.Previous.Title, e.Previous.Parent, e.Previous.Child, e.Previous.Trace)
 }
 
 // Backtrace returns an error message with a backtrace where it happened.
@@ -99,7 +98,7 @@ type CycleError struct {
 func (e *CycleError) Error() string {
 	// TODO(vadimsh): Improve error messages.
 	return fmt.Sprintf("relation %q between %s and %s introduces a cycle",
-		e.Edge.Title, e.Edge.Parent.Key, e.Edge.Child.Key)
+		e.Edge.Title, e.Edge.Parent, e.Edge.Child)
 }
 
 // Backtrace returns an error message with a backtrace where it happened.
@@ -126,13 +125,13 @@ func (e *DanglingEdgeError) Error() string {
 		return "incorrect DanglingEdgeError, the edge is fully connected"
 	case !hasP && hasC:
 		return fmt.Sprintf("%s in %q refers to undefined %s",
-			e.Edge.Child.Key, e.Edge.Title, e.Edge.Parent.Key)
+			e.Edge.Child, e.Edge.Title, e.Edge.Parent)
 	case hasP && !hasC:
 		return fmt.Sprintf("%s in %q refers to undefined %s",
-			e.Edge.Parent.Key, e.Edge.Title, e.Edge.Child.Key)
+			e.Edge.Parent, e.Edge.Title, e.Edge.Child)
 	default:
 		return fmt.Sprintf("relation %q: refers to %s and %s, neither is defined",
-			e.Edge.Title, e.Edge.Parent.Key, e.Edge.Child.Key)
+			e.Edge.Title, e.Edge.Parent, e.Edge.Child)
 	}
 }
 

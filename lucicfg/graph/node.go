@@ -15,6 +15,8 @@
 package graph
 
 import (
+	"fmt"
+
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 
@@ -80,9 +82,13 @@ func (n *Node) visitDescendants(path []*Edge, cb func(*Node, []*Edge) error) err
 }
 
 // String is a part of starlark.Value interface.
+//
+// Returns a node title as derived from the last component of its key. It's not
+// globally unique, but usually "unique enough" to identify the node in error
+// messages.
 func (n *Node) String() string {
-	// TODO(vadimsh): Return something more useful.
-	return "graph.node"
+	kind, id := n.Key.Last()
+	return fmt.Sprintf("%s(%q)", kind, id)
 }
 
 // Type is a part of starlark.Value interface.

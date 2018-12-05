@@ -36,13 +36,19 @@ import (
 // together.
 type Key struct {
 	set   *KeySet  // the parent key set that created this key
-	pairs []string // original list of (typ1, id1, typ2, id2, ...) strings
+	pairs []string // original list of (kind1, id1, kind2, id2, ...) strings
 	idx   int      // index of this key in the KeySet
+}
+
+// Last returns the last (kind, id) pair in the key, which usually defines what
+// sort of an object this key represents.
+func (k *Key) Last() (kind, id string) {
+	return k.pairs[len(k.pairs)-2], k.pairs[len(k.pairs)-1]
 }
 
 // String is part of starlark.Value interface.
 //
-// Returns [typ1("id1"), typ2("id2"), ...]. Must not be parsed, only for
+// Returns [kind1("id1"), kind2("id2"), ...]. Must not be parsed, only for
 // logging.
 func (k *Key) String() string {
 	if len(k.pairs)%2 != 0 {
@@ -51,11 +57,11 @@ func (k *Key) String() string {
 	sb := strings.Builder{}
 	sb.WriteRune('[')
 	for i := 0; i < len(k.pairs)/2; i++ {
-		typ, id := k.pairs[i*2], k.pairs[i*2+1]
+		kind, id := k.pairs[i*2], k.pairs[i*2+1]
 		if i != 0 {
 			sb.WriteString(", ")
 		}
-		sb.WriteString(typ)
+		sb.WriteString(kind)
 		sb.WriteRune('(')
 		sb.WriteString(strconv.Quote(id))
 		sb.WriteRune(')')
@@ -85,7 +91,7 @@ type KeySet struct {
 	keys map[string]*Key // compact representation of the key path -> *Key
 }
 
-// Key returns a *Key given a list of (type, id) pairs.
+// Key returns a *Key given a list of (kind, id) pairs.
 //
 // Assumes strings don't have zero bytes. No other restrictions.
 func (k *KeySet) Key(pairs ...string) (*Key, error) {

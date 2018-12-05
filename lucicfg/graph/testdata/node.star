@@ -3,13 +3,13 @@ trace =  stacktrace()
 
 def test_add_node_ok():
   g = new_graph()
-  k = g.key('t1', 'id1')
+  k = g.key('parent', 'par', 'kind', 'name')
 
   n = g.add_node(k, props={'prop': ['v1', 'v2']})
 
   assert.true(n != None)
   assert.true(n)
-  assert.eq(str(n), 'graph.node')
+  assert.eq(str(n), 'kind("name")')
   assert.eq(type(n), 'graph.node')
   assert.eq(n.key, k)
   assert.eq(n.props.prop, ['v1', 'v2'])
@@ -37,7 +37,7 @@ def test_redeclaration():
 
   g.add_node(k, {}, trace=trace)
   assert.fails(lambda: g.add_node(k, {}),
-    r'\[t1\("id1"\)\] is redeclared, previous declaration:\n'
+    r't1\("id1"\) is redeclared, previous declaration:\n'
     + r'Traceback \(most recent call last\)\:\n'
     + r'  testdata/node\.star\:1\: in <toplevel>\n')
 
