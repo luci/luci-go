@@ -16,6 +16,24 @@
       "revId": "1b844a06a6423a677dcfa42b1f697fd318808607",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "388bf54e_8b29840c",
+        "filename": "lucicfg/graph/node.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-05T20:40:35Z",
+      "side": 1,
+      "message": "In DanglingEdgeError we have no access to a title (because we don\u0027t have *Node, because it wasn\u0027t defined). So I opted for limited, but consistent key.Last(). We can revisit this later when fixing TODO related to errors.",
+      "parentUuid": "e8f6df1a_246fb5e3",
+      "revId": "1b844a06a6423a677dcfa42b1f697fd318808607",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
