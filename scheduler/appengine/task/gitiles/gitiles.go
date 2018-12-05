@@ -130,6 +130,7 @@ func (m TaskManager) LaunchTask(c context.Context, ctl task.Controller) error {
 		ctl.DebugLog("Error fetching state of the world: %s", err)
 		return err
 	}
+	ctl.DebugLog("Fetched refs: %d from datastore, %d from gitiles", len(refs.known), len(refs.current))
 
 	refs.pruneKnown(ctl)
 	leftToProcess, err := m.emitTriggersRefAtATime(c, ctl, g, cfg.Repo, refs)
