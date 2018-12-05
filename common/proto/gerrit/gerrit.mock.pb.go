@@ -107,6 +107,24 @@ func (mr *MockGerritClientMockRecorder) ChangeEditPublish(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritClient)(nil).ChangeEditPublish), varargs...)
 }
 
+// SetReview mocks base method
+func (m *MockGerritClient) SetReview(ctx context.Context, in *SetReviewRequest, opts ...grpc.CallOption) (*ReviewResult, error) {
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SetReview", varargs...)
+	ret0, _ := ret[0].(*ReviewResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetReview indicates an expected call of SetReview
+func (mr *MockGerritClientMockRecorder) SetReview(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritClient)(nil).SetReview), varargs...)
+}
+
 // SubmitChange mocks base method
 func (m *MockGerritClient) SubmitChange(ctx context.Context, in *SubmitChangeRequest, opts ...grpc.CallOption) (*ChangeInfo, error) {
 	varargs := []interface{}{ctx, in}
@@ -216,6 +234,19 @@ func (m *MockGerritServer) ChangeEditPublish(arg0 context.Context, arg1 *ChangeE
 // ChangeEditPublish indicates an expected call of ChangeEditPublish
 func (mr *MockGerritServerMockRecorder) ChangeEditPublish(arg0, arg1 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeEditPublish", reflect.TypeOf((*MockGerritServer)(nil).ChangeEditPublish), arg0, arg1)
+}
+
+// SetReview mocks base method
+func (m *MockGerritServer) SetReview(arg0 context.Context, arg1 *SetReviewRequest) (*ReviewResult, error) {
+	ret := m.ctrl.Call(m, "SetReview", arg0, arg1)
+	ret0, _ := ret[0].(*ReviewResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetReview indicates an expected call of SetReview
+func (mr *MockGerritServerMockRecorder) SetReview(arg0, arg1 interface{}) *gomock.Call {
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReview", reflect.TypeOf((*MockGerritServer)(nil).SetReview), arg0, arg1)
 }
 
 // SubmitChange mocks base method

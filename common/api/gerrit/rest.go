@@ -174,6 +174,26 @@ func (c *client) ChangeEditPublish(ctx context.Context, req *gerritpb.ChangeEdit
 	return &empty.Empty{}, nil
 }
 
+func (c *client) SetReview(ctx context.Context, in *gerritpb.SetReviewRequest, opts ...grpc.CallOption) (*gerritpb.ReviewResult, error) {
+	path := fmt.Sprintf("/changes/%s/revisions/%s/review", gerritChangeIDForRouting(in.Number, in.Project), in.RevisionId)
+	var data struct {
+		Message string           `json:"message"`
+		Labels  map[string]int32 `json:"labels"`
+	}
+	data.Message = in.Message
+	if in.Labels != nil {
+		data.Labels = make(map[string]int32)
+		for k, v := range in.Labels {
+			data.Labels[k] = v
+		}
+	}
+	var resp gerritpb.ReviewResult
+	if _, err := c.call(ctx, "POST", path, url.Values{}, &data, &resp); err != nil {
+		return nil, errors.Annotate(err, "set review").Err()
+	}
+	return &resp, nil
+}
+
 func (c *client) SubmitChange(ctx context.Context, req *gerritpb.SubmitChangeRequest, opts ...grpc.CallOption) (*gerritpb.ChangeInfo, error) {
 	var resp changeInfo
 	path := fmt.Sprintf("/changes/%s/submit", gerritChangeIDForRouting(req.Number, req.Project))
