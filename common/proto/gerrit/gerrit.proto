@@ -35,6 +35,9 @@ service Gerrit {
 
   // Submit a change.
   rpc SubmitChange(SubmitChangeRequest) returns (ChangeInfo);
+
+  // Abandon a change.
+  rpc AbandonChange(AbandonChangeRequest) returns (ChangeInfo);
 }
 
 // Specifies what extra information to include in the response.
@@ -199,7 +202,7 @@ message CreateChangeRequest {
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#submit-input
 message SubmitChangeRequest {
   // The change number.
-  int64 number= 1;
+  int64 number = 1;
 
   // The project of this change. For example, "chromium/src".
   //
@@ -209,7 +212,7 @@ message SubmitChangeRequest {
 
 message ChangeEditFileContentRequest {
   // The change number.
-  int64 number= 1;
+  int64 number = 1;
 
   // The project of this change. For example, "chromium/src".
   //
@@ -229,11 +232,27 @@ message ChangeEditFileContentRequest {
 // https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#publish-change-edit-input
 message ChangeEditPublishRequest {
   // The change number.
-  int64 number= 1;
+  int64 number = 1;
 
   // The project of this change. For example, "chromium/src".
   //
   // Optional, but recommended for better routing and faster RPC execution.
   string project = 2;
 
+}
+
+// Information for abandoning a change.
+//
+// Fields are a subset of:
+// https://gerrit-review.googlesource.com/Documentation/rest-api-changes.html#abandon-input
+message AbandonChangeRequest {
+  // The change number.
+  int64 number = 1;
+
+  // The project of this change. For example, "chromium/src".
+  //
+  // Optional, but recommended for better routing and faster RPC execution.
+  string project = 2;
+
+  string message = 3;
 }
