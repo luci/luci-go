@@ -59,7 +59,7 @@ var (
 		{func() []common.TestBundle {
 			return swarmingTestdata.BuildTestData(
 				"../buildsource/swarming",
-				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
+				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
 					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
 					build.StepDisplayPref = ui.StepDisplayExpanded
 					build.Fix(c)

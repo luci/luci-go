@@ -62,7 +62,7 @@ func handleBuildbotBuild(c *router.Context) error {
 		return nil
 	default:
 		build, err := buildbot.GetBuild(c.Context, id)
-		return renderBuild(c, build, err)
+		return renderBuildLegacy(c, build, err)
 	}
 }
 
@@ -83,7 +83,7 @@ func handleLUCIBuild(c *router.Context) error {
 	// TODO(nodir): after switching to API v2, check that project, bucket
 	// and builder in parameters indeed match the returned build. This is
 	// relevant when the build is loaded by id.
-	return renderBuild(c, build, err)
+	return renderBuildLegacy(c, build, err)
 }
 
 // redirectLUCIBuild redirects to a canonical build URL
@@ -131,7 +131,7 @@ func handleSwarmingBuild(c *router.Context) error {
 		c.Context,
 		c.Request.FormValue("server"),
 		c.Params.ByName("id"))
-	return renderBuild(c, build, err)
+	return renderBuildLegacy(c, build, err)
 }
 
 func handleRawPresentationBuild(c *router.Context) error {
@@ -140,7 +140,7 @@ func handleRawPresentationBuild(c *router.Context) error {
 		c.Params.ByName("logdog_host"),
 		types.ProjectName(c.Params.ByName("project")),
 		types.StreamPath(strings.Trim(c.Params.ByName("path"), "/")))
-	return renderBuild(c, build, err)
+	return renderBuildLegacy(c, build, err)
 }
 
 func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
@@ -155,9 +155,9 @@ func getStepDisplayPrefCookie(c *router.Context) ui.StepDisplayPref {
 	}
 }
 
-// renderBuild is a shortcut for rendering build or returning err if it is not
+// renderBuildLegacy is a shortcut for rendering build or returning err if it is not
 // nil. Also calls build.Fix().
-func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
+func renderBuildLegacy(c *router.Context, build *ui.MiloBuildLegacy, err error) error {
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 		return err
 	}
 
-	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
+	templates.MustRender(c.Context, c.Writer, "pages/build_legacy.html", templates.Args{
 		"Build":        build,
 		"TimelineJSON": timelineJSON,
 	})
@@ -180,7 +180,7 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 // timelineData returns the timelineJSON for a vis timeline timeline
 // as a JSON.parse parseable string that will contain the necessary
 // Groups and Items.
-func timelineData(build *ui.MiloBuild) (string, error) {
+func timelineData(build *ui.MiloBuildLegacy) (string, error) {
 	// stepData is extra data to deliver with the groups and items (see below) for the
 	// Javascript vis Timeline component.
 	type stepData struct {
