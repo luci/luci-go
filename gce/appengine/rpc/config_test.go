@@ -122,8 +122,11 @@ func TestValidateBlock(t *testing.T) {
 						Prefix: "prefix",
 						Attributes: &config.VM{
 							MachineType: "type",
-							Project:     "project",
-							Zone:        "zone",
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
+							Project: "project",
+							Zone:    "zone",
 						},
 					},
 				})
@@ -140,12 +143,34 @@ func TestValidateBlock(t *testing.T) {
 							Disk: []*config.Disk{
 								{},
 							},
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
 							Project: "project",
 							Zone:    "zone",
 						},
 					},
 				})
 				So(err, ShouldErrLike, "machine type is required")
+				So(v, ShouldBeNil)
+			})
+
+			Convey("network interface", func() {
+				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+					Id: "id",
+					Vms: &config.Block{
+						Prefix: "prefix",
+						Attributes: &config.VM{
+							Disk: []*config.Disk{
+								{},
+							},
+							MachineType: "type",
+							Project:     "project",
+							Zone:        "zone",
+						},
+					},
+				})
+				So(err, ShouldErrLike, "network interface is required")
 				So(v, ShouldBeNil)
 			})
 
@@ -159,7 +184,10 @@ func TestValidateBlock(t *testing.T) {
 								{},
 							},
 							MachineType: "type",
-							Zone:        "zone",
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
+							Zone: "zone",
 						},
 					},
 				})
@@ -178,6 +206,9 @@ func TestValidateBlock(t *testing.T) {
 							},
 							MachineType: "type",
 							Project:     "project",
+							NetworkInterface: []*config.NetworkInterface{
+								{},
+							},
 						},
 					},
 				})
@@ -195,8 +226,11 @@ func TestValidateBlock(t *testing.T) {
 							{},
 						},
 						MachineType: "type",
-						Project:     "project",
-						Zone:        "zone",
+						NetworkInterface: []*config.NetworkInterface{
+							{},
+						},
+						Project: "project",
+						Zone:    "zone",
 					},
 					Prefix: "prefix",
 				},
@@ -209,7 +243,10 @@ func TestValidateBlock(t *testing.T) {
 					},
 					MachineType: "type",
 					Project:     "project",
-					Zone:        "zone",
+					NetworkInterface: []*config.NetworkInterface{
+						{},
+					},
+					Zone: "zone",
 				},
 				Prefix: "prefix",
 			})

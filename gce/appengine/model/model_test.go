@@ -103,10 +103,8 @@ func TestVM(t *testing.T) {
 			v := &VM{}
 			i := v.GetInstance()
 			So(i, ShouldResemble, &compute.Instance{
-				Disks: []*compute.AttachedDisk{},
-				NetworkInterfaces: []*compute.NetworkInterface{
-					{},
-				},
+				Disks:             []*compute.AttachedDisk{},
+				NetworkInterfaces: []*compute.NetworkInterface{},
 			})
 		})
 
@@ -120,6 +118,14 @@ func TestVM(t *testing.T) {
 						},
 					},
 					MachineType: "type",
+					NetworkInterface: []*config.NetworkInterface{
+						{
+							AccessConfig: []*config.AccessConfig{
+								{},
+							},
+							Network: "network",
+						},
+					},
 				},
 			}
 			i := v.GetInstance()
@@ -136,7 +142,14 @@ func TestVM(t *testing.T) {
 				},
 				MachineType: "type",
 				NetworkInterfaces: []*compute.NetworkInterface{
-					{},
+					{
+						AccessConfigs: []*compute.AccessConfig{
+							{
+								Type: "ONE_TO_ONE_NAT",
+							},
+						},
+						Network: "network",
+					},
 				},
 			})
 		})

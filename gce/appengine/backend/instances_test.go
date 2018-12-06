@@ -152,7 +152,6 @@ func TestCreate(t *testing.T) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldNotBeEmpty)
-						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
 						return http.StatusOK, &compute.Operation{}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
@@ -170,7 +169,6 @@ func TestCreate(t *testing.T) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
-						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
 						return http.StatusOK, &compute.Operation{}
 					}
 					rt.Type = reflect.TypeOf(compute.Instance{})
@@ -189,7 +187,6 @@ func TestCreate(t *testing.T) {
 						inst, ok := req.(*compute.Instance)
 						So(ok, ShouldBeTrue)
 						So(inst.Name, ShouldEqual, "name")
-						So(inst.NetworkInterfaces, ShouldHaveLength, 1)
 						return http.StatusOK, &compute.Operation{
 							Status:     "DONE",
 							TargetLink: "url",

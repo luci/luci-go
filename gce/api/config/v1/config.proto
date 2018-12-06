@@ -6,6 +6,30 @@ syntax = "proto3";
 
 package config;
 
+// A network access config type.
+// GCE's default and only value is 1:1 NAT.
+enum AccessConfigType {
+  // 1:1 network address translation.
+  ONE_TO_ONE_NAT = 0;
+}
+
+// A description of a network access config.
+message AccessConfig {
+  // The type of config this is.
+  AccessConfigType type = 1;
+}
+
+// A description of a network interface.
+message NetworkInterface {
+  // The access configurations for this interface.
+  // Required to enable external internet access.
+  repeated AccessConfig access_config = 1;
+
+  // The name of a network to use for this interface.
+  // https://cloud.google.com/compute/docs/reference/rest/v1/networks/list.
+  string network = 2;
+}
+
 // A description of a disk.
 // https://cloud.google.com/compute/docs/reference/rest/v1/disks.
 message Disk {
@@ -27,14 +51,17 @@ message VM {
   // The disks to attach to this VM.
   repeated Disk disk = 1;
 
-  // The name of a machine type to use for the VM.
+  // The name of a machine type to use for this VM.
   // https://cloud.google.com/compute/docs/reference/rest/v1/machineTypes/list.
   string machine_type = 2;
 
-  // The name of a GCP project to create the VM in.
+  // The network interfaces to configure for this VM.
+  repeated NetworkInterface network_interface = 3;
+
+  // The name of a GCP project to create this VM in.
   string project = 4;
 
-  // The name of a zone to create the VM in.
+  // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
   string zone = 5;
 }
