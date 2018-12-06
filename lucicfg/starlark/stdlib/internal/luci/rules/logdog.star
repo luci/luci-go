@@ -12,24 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Non-LUCI features.
-load('@stdlib//internal/generator.star', _generator='generator')
-
-# Individual LUCI rules.
-load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
-load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
-load('@stdlib//internal/luci/rules/project.star', _project='project')
-
-# Register all LUCI config generator callbacks.
-load('@stdlib//internal/luci/generators.star', _register='register')
-_register()
+load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/luci/common.star', 'keys')
 
 
-# Public API.
-core = struct(
-    generator = _generator,
+def logdog(archive_gs_bucket=None):
+  """Configuration for the LogDog service.
 
-    bucket = _bucket,
-    logdog =  _logdog,
-    project = _project,
-)
+  Args:
+    archive_gs_bucket: base Google Storage archival path, archive logs will be
+        written to this bucket/path.
+  """
+  graph.add_node(keys.logdog(), props = {
+      'archive_gs_bucket': archive_gs_bucket,
+  })
