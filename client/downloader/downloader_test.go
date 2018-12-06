@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -88,9 +89,15 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		tmpDir, err := ioutil.TempDir("", "isolated")
 		So(err, ShouldBeNil)
 
-		d := New(ctx, client, 8)
-		files, err := d.FetchIsolated(isolated2hash, tmpDir)
-		So(err, ShouldBeNil)
+		d := New(ctx, client, isolated2hash, tmpDir)
+		mu := sync.Mutex{}
+		var files []string
+		d.SetFileCallback(func(name string, _ isolated.File) {
+			mu.Lock()
+			files = append(files, name)
+			mu.Unlock()
+		})
+		So(d.Wait(), ShouldBeNil)
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
 		oneBytes, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
