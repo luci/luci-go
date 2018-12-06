@@ -217,13 +217,13 @@ type SwarmingService interface {
 	GetTaskOutput(c context.Context, taskID string) (string, error)
 }
 
-type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuild, error)
+type SwarmingBuildImplFn func(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuildLegacy, error)
 
 // BuildTestData returns sample test data for swarming build pages.
 func BuildTestData(swarmingRelDir string, swarmingBuildImpl SwarmingBuildImplFn) []common.TestBundle {
 	start := time.Date(2016, 1, 2, 15, 4, 5, 999999999, time.UTC)
 	end := time.Date(2016, 1, 2, 15, 4, 6, 999999999, time.UTC)
-	basic := ui.MiloBuild{
+	basic := ui.MiloBuildLegacy{
 		Summary: ui.BuildComponent{
 			Label:         ui.NewEmptyLink("Test swarming build"),
 			ExecutionTime: ui.Interval{start, end, time.Second},
