@@ -22,6 +22,30 @@
       "revId": "d04983709b1f3c5a52c1a4078fb3ad7d822eb74f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3bbb42ca_829ac642",
+        "filename": "lucicfg/starlark_test.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-06T21:23:15Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9344d11d_53d05566",
+      "range": {
+        "startLine": 169,
+        "startChar": 70,
+        "endLine": 169,
+        "endChar": 73
+      },
+      "revId": "d04983709b1f3c5a52c1a4078fb3ad7d822eb74f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
