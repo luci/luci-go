@@ -231,8 +231,10 @@ func (ut *UploadTracker) Finalize(isolatedPath string) (IsolatedSummary, error) 
 	})
 
 	// Write the isolated file...
-	if err := isolFile.writeJSONFile(ut.lOS); err != nil {
-		return IsolatedSummary{}, err
+	if isolFile.path != "" {
+		if err := isolFile.writeJSONFile(ut.lOS); err != nil {
+			return IsolatedSummary{}, err
+		}
 	}
 
 	return IsolatedSummary{
