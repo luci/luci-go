@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"go.starlark.net/starlark"
@@ -42,7 +43,7 @@ type Options struct {
 	Executor func(t *testing.T, path, body string, predeclared starlark.StringDict) error
 }
 
-// RunTests loads and executes all test scripts (testdata/*.star).
+// RunTests loads and executes all test scripts (testdata/**/*.star).
 func RunTests(t *testing.T, opts Options) {
 	assertMod, err := starlarktest.LoadAssertModule()
 	if err != nil {
@@ -63,7 +64,13 @@ func RunTests(t *testing.T, opts Options) {
 		opts.Executor = defaultExecutor
 	}
 
-	files, err := filepath.Glob(filepath.Join(opts.TestsDir, "*.star"))
+	var files []string
+	err = filepath.Walk(opts.TestsDir, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() && strings.HasSuffix(path, ".star") {
+			files = append(files, path)
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatalf("failed to list *.star files - %s", err)
 	}
