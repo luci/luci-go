@@ -1,0 +1,52 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d789487_90c79ec9",
+        "filename": "gce/cmd/agent/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-06T23:23:57Z",
+      "side": 1,
+      "message": "Copying permissions from mpagent, which itself copied permissions from statically allocated VMs. Swarming bot directory structure should be readable and enumerable by humans with SSH access to the VM.",
+      "parentUuid": "203116b8_90f110a0",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 1
+      },
+      "revId": "0265871bbe9d72507d12a3a397e1c9d11d9a1cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e12c7445_83baa9ec",
+        "filename": "gce/cmd/agent/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-06T23:23:57Z",
+      "side": 1,
+      "message": "As above. swarming_bot.zip should be readable by humans with SSH access to the VM (without running sudo su chrome-bot).",
+      "parentUuid": "61468d9e_814eea28",
+      "range": {
+        "startLine": 69,
+        "startChar": 0,
+        "endLine": 69,
+        "endChar": 1
+      },
+      "revId": "0265871bbe9d72507d12a3a397e1c9d11d9a1cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
