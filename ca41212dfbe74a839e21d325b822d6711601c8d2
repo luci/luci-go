@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f07ff170_fb371b1f",
+        "filename": "gce/api/config/v1/config.proto",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-06T02:44:59Z",
+      "side": 1,
+      "message": "Copying GCE documentation. There\u0027s one value currently, it\u0027s also the default if you specify an access config (but not always because you\u0027re allowed to specify zero access configs). Even though there\u0027s only one value they provide for the possibility of more in the future.",
+      "revId": "ca41212dfbe74a839e21d325b822d6711601c8d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}

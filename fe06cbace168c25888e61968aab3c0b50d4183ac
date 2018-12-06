@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f846d185_d56ee8c9",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-06T02:44:59Z",
+      "side": 0,
+      "message": "Removed logic to add this default, since it\u0027s not a very useful default (permits no external network access to/from the instance). Instead added an RPC-side check that at least one interface is given (can be empty).",
+      "revId": "fe06cbace168c25888e61968aab3c0b50d4183ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
