@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5fa05d77_239b3472",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-06T01:07:59Z",
+      "side": 1,
+      "message": "What about take a pointer to isolated.File instead of a copy of the struct?",
+      "revId": "593a92101d9967bf572c7f453b7e2f6bcff0b991",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ebd3328_fbfbc3fa",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-06T01:07:59Z",
+      "side": 1,
+      "message": "Random rant: log to console is slow :P",
+      "revId": "593a92101d9967bf572c7f453b7e2f6bcff0b991",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "eec87601_60d73b3a",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-06T01:07:59Z",
+      "side": 1,
+      "message": "I became fond if the `struct Opts` pattern that is passed as an argument to New(), because I feel all these methods to be a bit overwhelming. In short, add all these tweaks as a value in a struct Opts, and have New accepts a *Opts. Then it cannot be mutated after the Downloaer instance is created, which reduce the possibility of state changes.",
+      "revId": "593a92101d9967bf572c7f453b7e2f6bcff0b991",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
