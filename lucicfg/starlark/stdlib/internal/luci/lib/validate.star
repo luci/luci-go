@@ -12,24 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Non-LUCI features.
-load('@stdlib//internal/generator.star', _generator='generator')
-
-# Individual LUCI rules.
-load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
-load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
-load('@stdlib//internal/luci/rules/project.star', _project='project')
-
-# Register all LUCI config generator callbacks.
-load('@stdlib//internal/luci/generators.star', _register='register')
-_register()
+"""Generic value validators."""
 
 
-# Public API.
-core = struct(
-    generator = _generator,
+def _string(attr, val, default='', required=True):
+  if not val:
+    if required:
+      fail('bad %r: missing' % attr)
+    return default
+  if type(val) != 'string':
+    fail('bad %r: not a string' % attr)
+  return val
 
-    bucket = _bucket,
-    logdog =  _logdog,
-    project = _project,
+
+validate = struct(
+    string = _string,
 )
