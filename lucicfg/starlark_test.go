@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -50,6 +51,13 @@ func TestAllStarlark(t *testing.T) {
 		TestsDir: "testdata",
 
 		Executor: func(t *testing.T, path, body string, predeclared starlark.StringDict) error {
+			expectErrExct := readCommentBlock(body, "Expect errors:")
+			expectErrLike := readCommentBlock(body, "Expect errors like:")
+			if expectErrExct != "" && expectErrLike != "" {
+				t.Errorf("Cannot use 'Expecte errors' and 'Expect errors like' at the same time")
+				return nil
+			}
+
 			// Use slash path to make stack traces look uniform across OSes.
 			path = filepath.ToSlash(path)
 
@@ -68,7 +76,7 @@ func TestAllStarlark(t *testing.T) {
 
 			// If test was expected to fail on Starlark side, make sure it did, in
 			// an expected way.
-			if expectErr := readCommentBlock(body, "Expect errors:"); expectErr != "" {
+			if expectErrExct != "" || expectErrLike != "" {
 				allErrs := strings.Builder{}
 				errors.WalkLeaves(err, func(err error) bool {
 					if bt, ok := err.(BacktracableError); ok {
@@ -79,7 +87,12 @@ func TestAllStarlark(t *testing.T) {
 					allErrs.WriteString("\n\n")
 					return true
 				})
-				errorOnDiff(t, allErrs.String(), expectErr)
+
+				if expectErrExct != "" {
+					errorOnDiff(t, allErrs.String(), expectErrExct)
+				} else {
+					errorOnPatternMismatch(t, allErrs.String(), expectErrLike)
+				}
 				return nil
 			}
 
@@ -150,5 +163,48 @@ func errorOnDiff(t *testing.T, got, exp string) {
 		t.Errorf(
 			"Got:\n\n%s\n\nWas expecting:\n\n%s\n\nDiff:\n\n%s\n",
 			got, exp, dmp.DiffPrettyText(diffs))
+	}
+}
+
+// errorOnMismatch emits an error to T if got doesn't match a pattern pat.
+//
+// The pattern is syntax is:
+//   * A line "[space]...[space]" matches zero or more arbitrary lines.
+//   * Trigram "???" matches [0-9a-zA-Z]+.
+//   * The rest should match as is.
+func errorOnPatternMismatch(t *testing.T, got, pat string) {
+	t.Helper()
+
+	got = strings.TrimSpace(got)
+	pat = strings.TrimSpace(pat)
+
+	re := strings.Builder{}
+	re.WriteRune('^')
+	needNL := false
+	for _, line := range strings.Split(pat, "\n") {
+		if strings.TrimSpace(line) == "..." {
+			re.WriteString(`(.*\n)*`)
+			needNL = false // regexp above handled it already
+		} else {
+			if needNL {
+				re.WriteString(`\n`)
+			}
+			needNL = true
+			for line != "" {
+				idx := strings.Index(line, "???")
+				if idx == -1 {
+					re.WriteString(regexp.QuoteMeta(line))
+					break
+				}
+				re.WriteString(regexp.QuoteMeta(line[:idx]))
+				re.WriteString(`[0-9a-zA-Z]+`)
+				line = line[idx+3:]
+			}
+		}
+	}
+	re.WriteRune('$')
+
+	if exp := regexp.MustCompile(re.String()); !exp.MatchString(got) {
+		t.Errorf("Got:\n\n%s\n\nWas expecting pattern:\n\n%s\n\n", got, pat)
 	}
 }
