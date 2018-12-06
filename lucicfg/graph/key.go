@@ -38,12 +38,18 @@ type Key struct {
 	set   *KeySet  // the parent key set that created this key
 	pairs []string // original list of (kind1, id1, kind2, id2, ...) strings
 	idx   int      // index of this key in the KeySet
+	cmp   string   // composite string to use to compare keys lexicographically
 }
 
 // Last returns the last (kind, id) pair in the key, which usually defines what
 // sort of an object this key represents.
 func (k *Key) Last() (kind, id string) {
 	return k.pairs[len(k.pairs)-2], k.pairs[len(k.pairs)-1]
+}
+
+// Less returns true if this key is lexicographically before another key.
+func (k *Key) Less(an *Key) bool {
+	return k.cmp < an.cmp
 }
 
 // String is part of starlark.Value interface.
@@ -117,7 +123,7 @@ func (k *KeySet) Key(pairs ...string) (*Key, error) {
 		k.keys = make(map[string]*Key, 1)
 	}
 
-	key := &Key{set: k, pairs: pairs, idx: len(k.keys)}
+	key := &Key{set: k, pairs: pairs, idx: len(k.keys), cmp: keyID}
 	k.keys[keyID] = key
 	return key, nil
 }
