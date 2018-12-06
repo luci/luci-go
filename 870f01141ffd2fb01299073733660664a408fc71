@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "92fbfdc4_8b8632da",
+        "filename": "lucicfg/starlark/stdlib/internal/generator.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-06T22:51:46Z",
+      "side": 1,
+      "message": "the",
+      "range": {
+        "startLine": 19,
+        "startChar": 67,
+        "endLine": 19,
+        "endChar": 68
+      },
+      "revId": "870f01141ffd2fb01299073733660664a408fc71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f5513275_27b97fa8",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-06T22:51:46Z",
+      "side": 1,
+      "message": "is it customary to write it spaces in *.star?",
+      "range": {
+        "startLine": 28,
+        "startChar": 16,
+        "endLine": 28,
+        "endChar": 19
+      },
+      "revId": "870f01141ffd2fb01299073733660664a408fc71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6585b6ab_4850db72",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/service.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-06T22:51:46Z",
+      "side": 1,
+      "message": "s",
+      "range": {
+        "startLine": 32,
+        "startChar": 63,
+        "endLine": 32,
+        "endChar": 64
+      },
+      "revId": "870f01141ffd2fb01299073733660664a408fc71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0a6e032f_b7bb9e6c",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-06T22:51:46Z",
+      "side": 1,
+      "message": "i don\u0027t think this is enforced anywhere in this CL. Have i missed it?",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 0
+      },
+      "revId": "870f01141ffd2fb01299073733660664a408fc71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
