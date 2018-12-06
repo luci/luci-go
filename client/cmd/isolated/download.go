@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"sync"
 
 	"github.com/maruel/subcommands"
 
@@ -77,10 +78,16 @@ func (c *downloadRun) main(a subcommands.Application, args []string) error {
 	}
 	client := isolatedclient.New(nil, authClient, c.isolatedFlags.ServerURL, c.isolatedFlags.Namespace, nil, nil)
 	ctx := context.Background()
-	dl := downloader.New(ctx, client, 8)
+	dl := downloader.New(ctx, client, isolated.HexDigest(c.isolated), c.outputDir)
+	var filesMu sync.Mutex
+	var files []string
+	dl.SetFileCallback(func(name string, f isolated.File) {
+		filesMu.Lock()
+		files = append(files, name)
+		filesMu.Unlock()
+	})
 	common.CancelOnCtrlC(dl)
-	files, err := dl.FetchIsolated(isolated.HexDigest(c.isolated), c.outputDir)
-	if err != nil {
+	if err := dl.Wait(); err != nil {
 		return errors.Annotate(err, "failed to call FetchIsolated()").Err()
 	}
 	if c.outputFiles != "" {
