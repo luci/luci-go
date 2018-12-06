@@ -61,6 +61,8 @@ func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*conf
 		return nil, status.Errorf(codes.InvalidArgument, "at least one disk is required")
 	case req.Vms.Attributes.MachineType == "":
 		return nil, status.Errorf(codes.InvalidArgument, "machine type is required")
+	case len(req.Vms.Attributes.GetNetworkInterface()) == 0:
+		return nil, status.Errorf(codes.InvalidArgument, "at least one network interface is required")
 	case req.Vms.Attributes.Project == "":
 		return nil, status.Errorf(codes.InvalidArgument, "project is required")
 	case req.Vms.Attributes.Zone == "":

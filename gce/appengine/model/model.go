@@ -67,11 +67,6 @@ func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
 		Name:        vm.Hostname,
 		MachineType: vm.Attributes.GetMachineType(),
-		// One network interface is required, but GCE can infer all defaults.
-		// TODO(smut): Allow the config to optionally configure NICs.
-		NetworkInterfaces: []*compute.NetworkInterface{
-			{},
-		},
 	}
 	inst.Disks = make([]*compute.AttachedDisk, len(vm.Attributes.GetDisk()))
 	for i, disk := range vm.Attributes.GetDisk() {
@@ -88,6 +83,18 @@ func (vm *VM) GetInstance() *compute.Instance {
 	if len(inst.Disks) > 0 {
 		// GCE requires the first disk to be the boot disk.
 		inst.Disks[0].Boot = true
+	}
+	inst.NetworkInterfaces = make([]*compute.NetworkInterface, len(vm.Attributes.GetNetworkInterface()))
+	for i, nic := range vm.Attributes.GetNetworkInterface() {
+		inst.NetworkInterfaces[i] = &compute.NetworkInterface{
+			Network: nic.Network,
+		}
+		inst.NetworkInterfaces[i].AccessConfigs = make([]*compute.AccessConfig, len(nic.GetAccessConfig()))
+		for j, cfg := range nic.GetAccessConfig() {
+			inst.NetworkInterfaces[i].AccessConfigs[j] = &compute.AccessConfig{
+				Type: cfg.Type.String(),
+			}
+		}
 	}
 	return inst
 }
