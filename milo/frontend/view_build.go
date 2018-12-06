@@ -5,12 +5,15 @@
 package frontend
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
@@ -161,6 +164,10 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 	if err != nil {
 		return err
 	}
+	project, err := common.GetProject(c.Context, c.Params.ByName("project"))
+	if err != nil {
+		return err
+	}
 
 	build.StepDisplayPref = getStepDisplayPrefCookie(c)
 	build.Fix(c.Context)
@@ -173,6 +180,7 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
 		"Build":        build,
 		"TimelineJSON": timelineJSON,
+		"FeedbackLink": makeFeedbackLink(c, project.BuildBugTemplate),
 	})
 	return nil
 }
@@ -289,4 +297,59 @@ func sanitizeLinkSets(linkSets []ui.LinkSet) []ui.LinkSet {
 
 func milliseconds(time time.Time) int64 {
 	return time.UnixNano() / 1e6
+}
+
+type stringMap map[string]string
+
+// makeFeedbackLink attempts to create the feedback link for the build page. If the
+// project is not configured for a custom feedback link or an interpolation placeholder
+// cannot be satisfied an empty string is returned.
+func makeFeedbackLink(c *router.Context, bugTmpl common.BuildBugTemplate) string {
+	if reflect.DeepEqual(bugTmpl, common.BuildBugTemplate{}) {
+		return ""
+	}
+
+	var replacements = make(stringMap).populate(c, "project", "bucket", "builder", "numberOrId")
+
+	interpolateTemplate := func(fmt string, name string) (string, error) {
+		tmpl, err := template.New(name).Option("missingkey=error").Parse(fmt)
+		if err != nil {
+			logging.WithError(err).Warningf(c.Context, "Unable to create bug %s template for %s", name, fmt)
+			return "", err
+		}
+
+		var buffer bytes.Buffer
+		err = tmpl.Execute(&buffer, replacements)
+		if err != nil {
+			logging.WithError(err).Warningf(c.Context, "Unable to populate bug %s template %s with %s", name, fmt, replacements)
+			return "", err
+		}
+
+		return buffer.String(), nil
+	}
+
+	summary, err := interpolateTemplate(bugTmpl.Summary, "summary")
+	if err != nil {
+		return ""
+	}
+	description, err := interpolateTemplate(bugTmpl.Description, "description")
+	if err != nil {
+		return ""
+	}
+
+	components := ""
+	if len(bugTmpl.Components) > 0 {
+		components = fmt.Sprintf("&components=%s", strings.Join(bugTmpl.Components, ">"))
+	}
+
+	return fmt.Sprintf("https://bugs.chromium.org/p/%s/issues/entry?summary=%s&description=%s%s", bugTmpl.Project, summary, description, components)
+}
+
+func (m stringMap) populate(c *router.Context, keys ...string) stringMap {
+	for _, key := range keys {
+		if value := c.Params.ByName(key); value != "" {
+			m[key] = value
+		}
+	}
+	return m
 }
