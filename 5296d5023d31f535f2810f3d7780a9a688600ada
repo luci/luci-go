@@ -73,6 +73,30 @@
     },
     {
       "key": {
+        "uuid": "f4c1b66e_ca65e0de",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:09:36Z",
+      "side": 1,
+      "message": "Local user is probably good enough.",
+      "parentUuid": "b6c78a6b_b051ecfe",
+      "range": {
+        "startLine": 80,
+        "startChar": 58,
+        "endLine": 80,
+        "endChar": 59
+      },
+      "revId": "5296d5023d31f535f2810f3d7780a9a688600ada",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4a28107a_1d53d6a3",
         "filename": "gce/cmd/agent/swarming.go",
         "patchSetId": 2
