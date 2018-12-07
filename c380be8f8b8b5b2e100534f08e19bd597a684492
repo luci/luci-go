@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ab690a07_9c3364e4",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "what about FromFile()? What if these are files?",
+      "range": {
+        "startLine": 92,
+        "startChar": 29,
+        "endLine": 92,
+        "endChar": 42
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "15df0d11_96de81ab",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "is nullptr here oK?",
+      "range": {
+        "startLine": 102,
+        "startChar": 10,
+        "endLine": 102,
+        "endChar": 13
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8c99ff22_0afd098a",
+        "filename": "gce/appengine/model/model_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "i don\u0027t get it. Are you implying that FromFile should be treated the same?",
+      "range": {
+        "startLine": 145,
+        "startChar": 7,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4c77f03e_80ed7d07",
+        "filename": "gce/appengine/model/model_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "this is highly unreadable. Maybe extra newly added lines of model.go into a standalone function and test it separately instead?",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 45
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9fbe11c8_b4717d14",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "then why have fromFile in the first place?",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 34
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9eb3fc51_23902ca3",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:37:34Z",
+      "side": 1,
+      "message": "i don\u0027t see any metadata actual from_text above.  Are you implying no from_text and no from_file implies bad config? If so, error message could have been better.",
+      "range": {
+        "startLine": 180,
+        "startChar": 5,
+        "endLine": 180,
+        "endChar": 75
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
