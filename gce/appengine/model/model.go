@@ -15,6 +15,8 @@
 package model
 
 import (
+	"strings"
+
 	"google.golang.org/api/compute/v1"
 
 	"go.chromium.org/gae/service/datastore"
@@ -62,11 +64,34 @@ type VM struct {
 	URL string `gae:"url"`
 }
 
+func (vm *VM) getMetadata() *compute.Metadata {
+	meta := &compute.Metadata{
+		Items: make([]*compute.MetadataItems, len(vm.Attributes.GetMetadata())),
+	}
+	for i, data := range vm.Attributes.GetMetadata() {
+		// Implicitly rejects FromFile, which is only supported in configs.
+		spl := strings.SplitN(data.GetFromText(), ":", 2)
+		// Per strings.SplitN semantics, len(spl) > 0 when splitting on a non-empty separator.
+		// Therefore we can be sure the spl[0] exists (even if it's an empty string).
+		key := spl[0]
+		var val *string
+		if len(spl) > 1 {
+			val = &spl[1]
+		}
+		meta.Items[i] = &compute.MetadataItems{
+			Key:   key,
+			Value: val,
+		}
+	}
+	return meta
+}
+
 // GetInstance returns a *compute.Instance representation of this VM.
 func (vm *VM) GetInstance() *compute.Instance {
 	inst := &compute.Instance{
 		Name:        vm.Hostname,
 		MachineType: vm.Attributes.GetMachineType(),
+		Metadata:    vm.getMetadata(),
 	}
 	inst.Disks = make([]*compute.AttachedDisk, len(vm.Attributes.GetDisk()))
 	for i, disk := range vm.Attributes.GetDisk() {

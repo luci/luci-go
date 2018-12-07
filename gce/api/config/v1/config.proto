@@ -45,6 +45,18 @@ message Disk {
   string type = 3;
 }
 
+// A description of instance metadata.
+message Metadata {
+  oneof metadata {
+    // A string of the form "key:value" to use as one item of metadata.
+    string from_text = 1;
+
+    // A string of the form "key:filename".
+    // The contents of the file are used as the value for one item of metadata.
+    string from_file = 2;
+  }
+}
+
 // A description of a VM.
 // https://cloud.google.com/compute/docs/reference/rest/v1/instances.
 message VM {
@@ -55,15 +67,18 @@ message VM {
   // https://cloud.google.com/compute/docs/reference/rest/v1/machineTypes/list.
   string machine_type = 2;
 
+  // The metadata to attach to this VM.
+  repeated Metadata metadata = 3;
+
   // The network interfaces to configure for this VM.
-  repeated NetworkInterface network_interface = 3;
+  repeated NetworkInterface network_interface = 4;
 
   // The name of a GCP project to create this VM in.
-  string project = 4;
+  string project = 5;
 
   // The name of a zone to create this VM in.
   // https://cloud.google.com/compute/docs/reference/rest/v1/zones/list.
-  string zone = 5;
+  string zone = 6;
 }
 
 // A kind of VM.

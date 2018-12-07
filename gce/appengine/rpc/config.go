@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"context"
+	"strings"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -61,6 +62,14 @@ func (*Config) EnsureVMs(c context.Context, req *config.EnsureVMsRequest) (*conf
 		return nil, status.Errorf(codes.InvalidArgument, "at least one disk is required")
 	case req.Vms.Attributes.MachineType == "":
 		return nil, status.Errorf(codes.InvalidArgument, "machine type is required")
+	case len(req.Vms.Attributes.GetMetadata()) > 0:
+		for _, meta := range req.Vms.Attributes.Metadata {
+			// Ensure FromText is in the right form.
+			// Implicitly rejects FromFile, which is only supported in configs.
+			if strings.Index(meta.GetFromText(), ":") == -1 {
+				return nil, status.Errorf(codes.InvalidArgument, "metadata from text must be in key:value form")
+			}
+		}
 	case len(req.Vms.Attributes.GetNetworkInterface()) == 0:
 		return nil, status.Errorf(codes.InvalidArgument, "at least one network interface is required")
 	case req.Vms.Attributes.Project == "":
