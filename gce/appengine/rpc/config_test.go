@@ -155,6 +155,62 @@ func TestValidateBlock(t *testing.T) {
 				So(v, ShouldBeNil)
 			})
 
+			Convey("metadata", func() {
+				Convey("format", func() {
+					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Prefix: "prefix",
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								Metadata: []*config.Metadata{
+									{},
+								},
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Project: "project",
+								Zone:    "zone",
+							},
+						},
+					})
+					So(err, ShouldErrLike, "metadata from text must be in key:value form")
+					So(v, ShouldBeNil)
+				})
+
+				Convey("file", func() {
+					v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
+						Id: "id",
+						Vms: &config.Block{
+							Prefix: "prefix",
+							Attributes: &config.VM{
+								Disk: []*config.Disk{
+									{},
+								},
+								MachineType: "type",
+								Metadata: []*config.Metadata{
+									{
+										Metadata: &config.Metadata_FromFile{
+											FromFile: "key:filename",
+										},
+									},
+								},
+								NetworkInterface: []*config.NetworkInterface{
+									{},
+								},
+								Project: "project",
+								Zone:    "zone",
+							},
+						},
+					})
+					So(err, ShouldErrLike, "metadata from text must be in key:value form")
+					So(v, ShouldBeNil)
+				})
+			})
+
 			Convey("network interface", func() {
 				v, err := srv.EnsureVMs(c, &config.EnsureVMsRequest{
 					Id: "id",

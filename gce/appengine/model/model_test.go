@@ -18,8 +18,6 @@ import (
 	"context"
 	"testing"
 
-	"google.golang.org/api/compute/v1"
-
 	"go.chromium.org/gae/impl/memory"
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/luci/gce/api/config/v1"
@@ -102,10 +100,9 @@ func TestVM(t *testing.T) {
 		Convey("empty", func() {
 			v := &VM{}
 			i := v.GetInstance()
-			So(i, ShouldResemble, &compute.Instance{
-				Disks:             []*compute.AttachedDisk{},
-				NetworkInterfaces: []*compute.NetworkInterface{},
-			})
+			So(i.Disks, ShouldHaveLength, 0)
+			So(i.Metadata.Items, ShouldHaveLength, 0)
+			So(i.NetworkInterfaces, ShouldHaveLength, 0)
 		})
 
 		Convey("non-empty", func() {
@@ -118,6 +115,38 @@ func TestVM(t *testing.T) {
 						},
 					},
 					MachineType: "type",
+					Metadata: []*config.Metadata{
+						{
+							Metadata: &config.Metadata_FromText{
+								FromText: "",
+							},
+						},
+						{
+							Metadata: &config.Metadata_FromText{
+								FromText: "key1",
+							},
+						},
+						{
+							Metadata: &config.Metadata_FromText{
+								FromText: "key2:",
+							},
+						},
+						{
+							Metadata: &config.Metadata_FromText{
+								FromText: ":value3",
+							},
+						},
+						{
+							Metadata: &config.Metadata_FromText{
+								FromText: "key4:value4",
+							},
+						},
+						{
+							Metadata: &config.Metadata_FromFile{
+								FromFile: "key5:value5",
+							},
+						},
+					},
 					NetworkInterface: []*config.NetworkInterface{
 						{
 							AccessConfig: []*config.AccessConfig{
@@ -129,29 +158,29 @@ func TestVM(t *testing.T) {
 				},
 			}
 			i := v.GetInstance()
-			So(i, ShouldResemble, &compute.Instance{
-				Disks: []*compute.AttachedDisk{
-					{
-						AutoDelete: true,
-						Boot:       true,
-						InitializeParams: &compute.AttachedDiskInitializeParams{
-							DiskSizeGb:  100,
-							SourceImage: "image",
-						},
-					},
-				},
-				MachineType: "type",
-				NetworkInterfaces: []*compute.NetworkInterface{
-					{
-						AccessConfigs: []*compute.AccessConfig{
-							{
-								Type: "ONE_TO_ONE_NAT",
-							},
-						},
-						Network: "network",
-					},
-				},
-			})
+			So(i.Disks, ShouldHaveLength, 1)
+			So(i.Disks[0].AutoDelete, ShouldBeTrue)
+			So(i.Disks[0].Boot, ShouldBeTrue)
+			So(i.Disks[0].InitializeParams.DiskSizeGb, ShouldEqual, 100)
+			So(i.Disks[0].InitializeParams.SourceImage, ShouldEqual, "image")
+			So(i.MachineType, ShouldEqual, "type")
+			So(i.Metadata.Items, ShouldHaveLength, 6)
+			So(i.Metadata.Items[0].Key, ShouldEqual, "")
+			So(i.Metadata.Items[0].Value, ShouldBeNil)
+			So(i.Metadata.Items[1].Key, ShouldEqual, "key1")
+			So(i.Metadata.Items[1].Value, ShouldBeNil)
+			So(i.Metadata.Items[2].Key, ShouldEqual, "key2")
+			So(i.Metadata.Items[2].Value, ShouldNotBeNil)
+			So(i.Metadata.Items[3].Key, ShouldEqual, "")
+			So(i.Metadata.Items[3].Value, ShouldNotBeNil)
+			So(i.Metadata.Items[4].Key, ShouldEqual, "key4")
+			So(i.Metadata.Items[4].Value, ShouldNotBeNil)
+			So(i.Metadata.Items[5].Key, ShouldEqual, "")
+			So(i.Metadata.Items[5].Value, ShouldBeNil)
+			So(i.NetworkInterfaces, ShouldHaveLength, 1)
+			So(i.NetworkInterfaces[0].AccessConfigs, ShouldHaveLength, 1)
+			So(i.NetworkInterfaces[0].AccessConfigs[0].Type, ShouldEqual, "ONE_TO_ONE_NAT")
+			So(i.NetworkInterfaces[0].Network, ShouldEqual, "network")
 		})
 	})
 }
