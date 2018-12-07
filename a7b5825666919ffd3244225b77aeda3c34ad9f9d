@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "95e07273_660a37e5",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-07T02:08:35Z",
+      "side": 1,
+      "message": "It\u0027s kind of weird that this value is between FileStatsCallback and MaxFileStatsInterval, I\u0027d move MaxConcurrentJobs before or after the two.",
+      "revId": "a7b5825666919ffd3244225b77aeda3c34ad9f9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "200900b4_700d9d62",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-07T02:08:35Z",
+      "side": 1,
+      "message": "The challenge here is that you are modifying the struct that the caller passed in (if the caller did so). One way to simplify your life is:\n\nvar opt Options\nif options !\u003d nil {\n  opt \u003d *options\n}\n...\n\nAnother option \u003cpun intended\u003e is to deny invalid value like 0, and instead provide a global variable with valid default values. I don\u0027t think it\u0027s worth here, but that\u0027s what I do in periph.",
+      "revId": "a7b5825666919ffd3244225b77aeda3c34ad9f9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "18b317e7_53acb36c",
+        "filename": "client/downloader/downloader.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1000487
+      },
+      "writtenOn": "2018-12-07T02:08:35Z",
+      "side": 1,
+      "message": "Technically I\u0027m not sure this belongs to the downloader, but for now it\u0027s fine enough as making this generic with a local backing store is non-trivial code to write for little value.",
+      "revId": "a7b5825666919ffd3244225b77aeda3c34ad9f9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
