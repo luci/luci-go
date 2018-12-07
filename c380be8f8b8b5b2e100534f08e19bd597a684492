@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "054fc859_eec9e94b",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T20:50:11Z",
+      "side": 1,
+      "message": "yup, now clear.",
+      "parentUuid": "0051750d_36155b4e",
+      "range": {
+        "startLine": 92,
+        "startChar": 29,
+        "endLine": 92,
+        "endChar": 42
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15df0d11_96de81ab",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "Yes, I verified it in the live app. But if you use the rpc module, it will reject the case that causes this to be null anyways.",
       "parentUuid": "15df0d11_96de81ab",
+      "range": {
+        "startLine": 102,
+        "startChar": 10,
+        "endLine": 102,
+        "endChar": 13
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d9ed43f8_b82b36bc",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T20:50:11Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "894baf4d_93ac7021",
       "range": {
         "startLine": 102,
         "startChar": 10,
