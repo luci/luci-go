@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"time"
 
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"

@@ -29,7 +29,7 @@ import (
 	"go.chromium.org/luci/common/tsmon/field"
 	"go.chromium.org/luci/common/tsmon/metric"
 	"go.chromium.org/luci/milo/api/buildbot"
-	"go.chromium.org/luci/milo/api/proto"
+	milo "go.chromium.org/luci/milo/api/proto"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
 	"go.chromium.org/luci/milo/common"
 	"go.chromium.org/luci/server/auth"
