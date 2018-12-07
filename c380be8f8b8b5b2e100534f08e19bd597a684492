@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0051750d_36155b4e",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "FromFile is a convenience for config authors, like kinds. At config import time, dereference all files by fetching the files from the config service, reading their contents, and converting them into FromText (not yet implemented). rpc module only accepts FromText for this reason. Added comment.",
+      "parentUuid": "ab690a07_9c3364e4",
+      "range": {
+        "startLine": 92,
+        "startChar": 29,
+        "endLine": 92,
+        "endChar": 42
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15df0d11_96de81ab",
         "filename": "gce/appengine/model/model.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "894baf4d_93ac7021",
+        "filename": "gce/appengine/model/model.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "Yes, I verified it in the live app. But if you use the rpc module, it will reject the case that causes this to be null anyways.",
+      "parentUuid": "15df0d11_96de81ab",
+      "range": {
+        "startLine": 102,
+        "startChar": 10,
+        "endLine": 102,
+        "endChar": 13
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "7ae06e0e_db4a2fd4",
+        "filename": "gce/appengine/model/model_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "Implying it should be ignored. This should be treated as FromText \u003d\u003d \"\". Added comment in model.go explaining FromFile isn\u0027t supported here.",
+      "parentUuid": "8c99ff22_0afd098a",
+      "range": {
+        "startLine": 145,
+        "startChar": 7,
+        "endLine": 147,
+        "endChar": 9
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4c77f03e_80ed7d07",
         "filename": "gce/appengine/model/model_test.go",
         "patchSetId": 1
@@ -91,6 +163,30 @@
       "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fae57857_e33c036e",
+        "filename": "gce/appengine/model/model_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "ShouldResemble looks better, the problem is the stupid Value field is a pointer to a string instead of a string, and you can\u0027t write \u0026string{\"value\"} the way you can write \u0026compute.MetadataItems{ ... }.\n\nAnyways, I\u0027ve moved it to its own function and therefore its own tests.",
+      "parentUuid": "4c77f03e_80ed7d07",
+      "range": {
+        "startLine": 167,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 45
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "baab0463_368c585a",
+        "filename": "gce/appengine/rpc/config.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "Config convenience, like kinds. In the config you can reference a file to load metadata values from, because it\u0027s obvious the files live in the same config set. The RPC server doesn\u0027t have access to any files so FromFile doesn\u0027t make sense here. Expanded comment to clarify.",
+      "parentUuid": "9fbe11c8_b4717d14",
+      "range": {
+        "startLine": 68,
+        "startChar": 3,
+        "endLine": 68,
+        "endChar": 34
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9eb3fc51_23902ca3",
         "filename": "gce/appengine/rpc/config_test.go",
         "patchSetId": 1
@@ -137,6 +257,30 @@
       "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "53a6bfe2_e62f8953",
+        "filename": "gce/appengine/rpc/config_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T03:45:23Z",
+      "side": 1,
+      "message": "If from_text is empty it\u0027s a bad rpc. Since from_text is oneof with from_file, this means from_text must be specified and from_file must not be specified. So if the caller specifies from_file: \"key:filename\" it will say \"from text must be in key:value form\" hinting that from_text must be given, which implies that from_file must not be given.",
+      "parentUuid": "9eb3fc51_23902ca3",
+      "range": {
+        "startLine": 180,
+        "startChar": 5,
+        "endLine": 180,
+        "endChar": 75
+      },
+      "revId": "c380be8f8b8b5b2e100534f08e19bd597a684492",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
