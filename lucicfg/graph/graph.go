@@ -116,6 +116,11 @@ type DanglingEdgeError struct {
 
 // Error is part of 'error' interface.
 func (e *DanglingEdgeError) Error() string {
+	rel := ""
+	if e.Edge.Title != "" {
+		rel = fmt.Sprintf(" in %q", e.Edge.Title)
+	}
+
 	// TODO(vadimsh): Improve error messages.
 	hasP := e.Edge.Parent.Declared()
 	hasC := e.Edge.Child.Declared()
@@ -124,11 +129,11 @@ func (e *DanglingEdgeError) Error() string {
 		// This should not happen.
 		return "incorrect DanglingEdgeError, the edge is fully connected"
 	case !hasP && hasC:
-		return fmt.Sprintf("%s in %q refers to undefined %s",
-			e.Edge.Child, e.Edge.Title, e.Edge.Parent)
+		return fmt.Sprintf("%s%s refers to undefined %s",
+			e.Edge.Child, rel, e.Edge.Parent)
 	case hasP && !hasC:
-		return fmt.Sprintf("%s in %q refers to undefined %s",
-			e.Edge.Parent, e.Edge.Title, e.Edge.Child)
+		return fmt.Sprintf("%s%s refers to undefined %s",
+			e.Edge.Parent, rel, e.Edge.Child)
 	default:
 		return fmt.Sprintf("relation %q: refers to %s and %s, neither is defined",
 			e.Edge.Title, e.Edge.Parent, e.Edge.Child)

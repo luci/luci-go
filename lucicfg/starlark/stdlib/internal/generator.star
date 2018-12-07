@@ -12,24 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Non-LUCI features.
-load('@stdlib//internal/generator.star', _generator='generator')
+def generator(impl):
+  """Registers a callback that is called at the end of the config generation
+  stage to modify/append/delete generated configs in an arbitrary way.
 
-# Individual LUCI rules.
-load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
-load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
-load('@stdlib//internal/luci/rules/project.star', _project='project')
+  The callback accepts single argument 'ctx' which is a struct with the
+  following fields:
+    'config_set': a dict {config file name -> (str | proto)}.
 
-# Register all LUCI config generator callbacks.
-load('@stdlib//internal/luci/generators.star', _register='register')
-_register()
+  The callback is free to modify ctx.config_set in whatever way it wants, e.g.
+  by adding new values there or mutating/deleting existing ones.
 
-
-# Public API.
-core = struct(
-    generator = _generator,
-
-    bucket = _bucket,
-    logdog =  _logdog,
-    project = _project,
-)
+  Args:
+    impl: a callback func(ctx) -> None.
+  """
+  __native__.add_generator(impl)

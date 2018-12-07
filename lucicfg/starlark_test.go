@@ -180,16 +180,10 @@ func errorOnPatternMismatch(t *testing.T, got, pat string) {
 
 	re := strings.Builder{}
 	re.WriteRune('^')
-	needNL := false
 	for _, line := range strings.Split(pat, "\n") {
 		if strings.TrimSpace(line) == "..." {
 			re.WriteString(`(.*\n)*`)
-			needNL = false // regexp above handled it already
 		} else {
-			if needNL {
-				re.WriteString(`\n`)
-			}
-			needNL = true
 			for line != "" {
 				idx := strings.Index(line, "???")
 				if idx == -1 {
@@ -200,11 +194,13 @@ func errorOnPatternMismatch(t *testing.T, got, pat string) {
 				re.WriteString(`[0-9a-zA-Z]+`)
 				line = line[idx+3:]
 			}
+			re.WriteString(`\n`)
 		}
 	}
 	re.WriteRune('$')
 
-	if exp := regexp.MustCompile(re.String()); !exp.MatchString(got) {
+	if exp := regexp.MustCompile(re.String()); !exp.MatchString(got + "\n") {
 		t.Errorf("Got:\n\n%s\n\nWas expecting pattern:\n\n%s\n\n", got, pat)
+		t.Errorf("Regexp: %s", re.String())
 	}
 }

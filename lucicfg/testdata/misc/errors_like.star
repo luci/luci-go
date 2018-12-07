@@ -22,6 +22,6 @@ error("another err", stack=s)
 #
 # Traceback (most recent call last):
 #   ...
-#   //testdata/errors_like.star:???: in func2
-#   //testdata/errors_like.star:???: in capture_stack
+#   //testdata/misc/errors_like.star:???: in func2
+#   //testdata/misc/errors_like.star:???: in capture_stack
 # Error: ??? err
