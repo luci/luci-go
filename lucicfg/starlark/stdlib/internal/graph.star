@@ -13,8 +13,15 @@
 # limitations under the License.
 
 
+_KEY_ORDER = 'key'
+_EXECUTION_ORDER = 'exec'
+
+
 def _key(*args):
   """Returns a key with given [(kind, name)] path.
+
+  The kind in the last pair is considered the principal kind: when keys or nodes
+  are filtered by kind, they are filtered by the kind from the last pair.
 
   Args:
     *args: even number of strings: kind1, name1, kind2, name2, ...
@@ -81,10 +88,31 @@ def _node(key):
   return __native__.graph().node(key)
 
 
+def _children(parent, kind, order_by=_KEY_ORDER):
+  """Returns direct children of a node (given by its key) with the given kind.
+
+  Fails if called not from a generator callback: a graph under construction
+  can't be queried.
+
+  Args:
+    parent: a key of the parent node, as returned by graph.key(...).
+    kind: a string with a kind of children to return.
+    order_by: either KEY_ORDER or EXECUTION_ORDER, default KEY_ORDER.
+
+  Returns:
+    List of graph.node objects.
+  """
+  return __native__.graph().children(parent, kind, order_by)
+
+
 # Public API of this module.
 graph = struct(
+    KEY_ORDER = _KEY_ORDER,
+    EXECUTION_ORDER = _EXECUTION_ORDER,
+
     key = _key,
     add_node = _add_node,
     add_edge = _add_edge,
     node = _node,
+    children = _children,
 )

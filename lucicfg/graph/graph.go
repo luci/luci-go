@@ -156,6 +156,7 @@ func (e *DanglingEdgeError) Backtrace() string {
 //   * add_edge(parent: graph.Key, child: graph.Key, title='', trace=stacktrace())
 //   * finalize(): []string
 //   * node(key: graph.key): graph.node
+//   * children(parent: graph.key, kind: string, order_by='key'): []graph.node
 type Graph struct {
 	KeySet
 
@@ -335,6 +336,51 @@ func (g *Graph) Node(k *Key) (*Node, error) {
 	}
 }
 
+// Children returns direct children of a node (given by its key) that have the
+// given kind (based on the last component of their keys).
+//
+// The order of the result depends on a value of 'orderBy':
+//   'key': nodes are ordered lexicographically by their keys (smaller first).
+//   'exec': nodes are ordered by the order edges to them were defined during
+//        the execution (earlier first).
+//
+// Any other value of 'orderBy' causes an error.
+//
+// Trying to use Children before the graph has been finalized is an error.
+func (g *Graph) Children(parent *Key, kind, orderBy string) ([]*Node, error) {
+	if !g.finalized {
+		return nil, ErrNotFinalized
+	}
+	if err := g.validateKey("parent", parent); err != nil {
+		return nil, err
+	}
+	if orderBy != "key" && orderBy != "exec" {
+		return nil, fmt.Errorf("unknown order %q, expecting either \"key\" or \"exec\"", orderBy)
+	}
+
+	n := g.nodes[parent]
+	if n == nil {
+		return nil, nil // no parent at all -> no children
+	}
+
+	// Filter children by kind.
+	var out []*Node
+	for _, child := range n.listChildren() {
+		if k, _ := child.Key.Last(); k == kind {
+			out = append(out, child)
+		}
+	}
+
+	// Optionally sort. listChildren() returns children in order they were defined
+	// which matches orderBy == "exec", so need to sort only if asked to order by
+	// key.
+	if orderBy == "key" {
+		sort.Slice(out, func(i, j int) bool { return out[i].Key.Less(out[j].Key) })
+	}
+
+	return out, nil
+}
+
 //// starlark.Value interface implementation.
 
 // String is a part of starlark.Value interface
@@ -467,5 +513,28 @@ var graphAttrs = map[string]*starlark.Builtin{
 			return node, err
 		}
 		return starlark.None, nil
+	}),
+
+	// children(parent: graph.key, kind: string, order_by='key'): []graph.node
+	"children": starlark.NewBuiltin("children", func(_ *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		var parent *Key
+		var kind starlark.String
+		var orderBy starlark.String = "key"
+		err := starlark.UnpackArgs("children", args, kwargs,
+			"parent", &parent,
+			"kind", &kind,
+			"order_by?", &orderBy)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := b.Receiver().(*Graph).Children(parent, kind.GoString(), orderBy.GoString())
+		if err != nil {
+			return nil, err
+		}
+		vals := make([]starlark.Value, len(nodes))
+		for i, n := range nodes {
+			vals[i] = n
+		}
+		return starlark.NewList(vals), nil
 	}),
 }

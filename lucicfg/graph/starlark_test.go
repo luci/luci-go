@@ -26,6 +26,7 @@ import (
 
 func init() {
 	resolve.AllowLambda = true
+	resolve.AllowNestedDef = true
 	resolve.AllowSet = true
 }
 
