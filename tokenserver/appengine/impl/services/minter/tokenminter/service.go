@@ -38,6 +38,7 @@ type serverImpl struct {
 	delegation.MintDelegationTokenRPC
 	serviceaccounts.MintOAuthTokenGrantRPC
 	serviceaccounts.MintOAuthTokenViaGrantRPC
+	serviceaccounts.MintServiceOAuthTokenRPC
 }
 
 // NewServer returns prod TokenMinterServer implementation.
@@ -61,6 +62,12 @@ func NewServer() minter.TokenMinterServer {
 			LogGrant: serviceaccounts.LogGrant,
 		},
 		MintOAuthTokenViaGrantRPC: serviceaccounts.MintOAuthTokenViaGrantRPC{
+			Signer:          gaesigner.Signer{},
+			Rules:           serviceaccounts.GlobalRulesCache.Rules,
+			MintAccessToken: auth.MintAccessTokenForServiceAccount,
+			LogOAuthToken:   serviceaccounts.LogOAuthToken,
+		},
+		MintServiceOAuthTokenRPC: serviceaccounts.MintServiceOAuthTokenRPC{
 			Signer:          gaesigner.Signer{},
 			Rules:           serviceaccounts.GlobalRulesCache.Rules,
 			MintAccessToken: auth.MintAccessTokenForServiceAccount,

@@ -126,3 +126,20 @@ func (s *DecoratedAdmin) InspectOAuthTokenGrant(c context.Context, req *InspectO
 	}
 	return
 }
+
+func (s *DecoratedAdmin) CreateProjectScopedServiceAccount(c context.Context, req *CreateProjectScopedServiceAccountRequest) (rsp *CreateProjectScopedServiceAccountResponse, err error) {
+	if s.Prelude != nil {
+		var newCtx context.Context
+		newCtx, err = s.Prelude(c, "CreateProjectScopedServiceAccount", req)
+		if err == nil {
+			c = newCtx
+		}
+	}
+	if err == nil {
+		rsp, err = s.Service.CreateProjectScopedServiceAccount(c, req)
+	}
+	if s.Postlude != nil {
+		err = s.Postlude(c, "CreateProjectScopedServiceAccount", rsp, err)
+	}
+	return
+}
