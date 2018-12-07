@@ -12,24 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Non-LUCI features.
-load('@stdlib//internal/generator.star', _generator='generator')
-
-# Individual LUCI rules.
-load('@stdlib//internal/luci/rules/bucket.star', _bucket='bucket')
-load('@stdlib//internal/luci/rules/logdog.star', _logdog='logdog')
-load('@stdlib//internal/luci/rules/project.star', _project='project')
-
-# Register all LUCI config generator callbacks.
-load('@stdlib//internal/luci/generators.star', _register='register')
-_register()
+load('@stdlib//internal/graph.star', 'graph')
+load('@stdlib//internal/luci/common.star', 'keys')
+load('@stdlib//internal/luci/lib/validate.star', 'validate')
 
 
-# Public API.
-core = struct(
-    generator = _generator,
+def bucket(name):
+  """Defines a bucket: a container for LUCI resources that share the same ACL.
 
-    bucket = _bucket,
-    logdog =  _logdog,
-    project = _project,
-)
+  Args:
+    name: name of the bucket, e.g. 'ci' or 'try'.
+  """
+  name = validate.string('name', name)
+  graph.add_node(keys.bucket(name), props = {
+      'name': name,
+  })
+  graph.add_edge(keys.project(), keys.bucket(name))

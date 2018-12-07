@@ -63,7 +63,7 @@ var publicProtos = map[string]struct {
 	// load("@proto//luci/logdog/project_config.proto", logdog_pb="svcconfig")
 	"luci/logdog/project_config.proto": {
 		"svcconfig",
-		"go.chromium.org/luci/logdog/api/config/svcconfig/config.proto",
+		"go.chromium.org/luci/logdog/api/config/svcconfig/project.proto",
 	},
 
 	// "LUCI Notify" project config.
