@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "b6c78a6b_b051ecfe",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T02:18:08Z",
+      "side": 1,
+      "message": "not sure about Windows, given domain-something-something, maybe not quite correct. Maybe user on this operating system? Or user on this machine?\n\nMy primary objective is making it clear that this user isn\u0027t with what machine authenticates to swarming.",
+      "parentUuid": "af716ba5_0b1e4279",
+      "range": {
+        "startLine": 80,
+        "startChar": 58,
+        "endLine": 80,
+        "endChar": 59
+      },
+      "revId": "5296d5023d31f535f2810f3d7780a9a688600ada",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4a28107a_1d53d6a3",
         "filename": "gce/cmd/agent/swarming.go",
         "patchSetId": 2
