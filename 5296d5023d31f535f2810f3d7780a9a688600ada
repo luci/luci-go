@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "af716ba5_0b1e4279",
+        "filename": "gce/cmd/agent/connect.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T02:12:07Z",
+      "side": 1,
+      "message": "e.g. chrome-bot for most of our VMs. Is \"local user\" the correct term for that on both Linux and Windows?",
+      "parentUuid": "63fa0425_03121684",
+      "range": {
+        "startLine": 80,
+        "startChar": 58,
+        "endLine": 80,
+        "endChar": 59
+      },
+      "revId": "5296d5023d31f535f2810f3d7780a9a688600ada",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "4a28107a_1d53d6a3",
         "filename": "gce/cmd/agent/swarming.go",
         "patchSetId": 2
@@ -46,6 +70,30 @@
       "revId": "5296d5023d31f535f2810f3d7780a9a688600ada",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "61603dfc_80586958",
+        "filename": "gce/cmd/agent/swarming.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T02:12:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4a28107a_1d53d6a3",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 1
+      },
+      "revId": "5296d5023d31f535f2810f3d7780a9a688600ada",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }

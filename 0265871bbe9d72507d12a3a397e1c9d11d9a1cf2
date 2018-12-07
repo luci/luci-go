@@ -50,6 +50,30 @@
     },
     {
       "key": {
+        "uuid": "03e4f5bb_7997bb86",
+        "filename": "gce/cmd/agent/swarming.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-07T02:12:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ff309794_8064e6e1",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 1
+      },
+      "revId": "0265871bbe9d72507d12a3a397e1c9d11d9a1cf2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e12c7445_83baa9ec",
         "filename": "gce/cmd/agent/swarming.go",
         "patchSetId": 1
