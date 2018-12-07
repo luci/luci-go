@@ -187,6 +187,30 @@
       "revId": "870f01141ffd2fb01299073733660664a408fc71",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "21e43c3c_8c1db4be",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-07T01:00:06Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "da1f5a4e_3b61c425",
+      "range": {
+        "startLine": 24,
+        "startChar": 2,
+        "endLine": 25,
+        "endChar": 0
+      },
+      "revId": "870f01141ffd2fb01299073733660664a408fc71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
