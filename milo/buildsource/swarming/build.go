@@ -258,7 +258,7 @@ func taskProperties(sr *swarming.SwarmingRpcsTaskResult) *ui.PropertyGroup {
 }
 
 // addBuilderLink adds a link to the buildbucket builder view.
-func addBuilderLink(c context.Context, build *ui.MiloBuild, tags strpair.Map) {
+func addBuilderLink(c context.Context, build *ui.MiloBuildLegacy, tags strpair.Map) {
 	bucket := tags.Get("buildbucket_bucket")
 	builder := tags.Get("builder")
 	project := tags.Get("luci_project")
@@ -270,7 +270,7 @@ func addBuilderLink(c context.Context, build *ui.MiloBuild, tags strpair.Map) {
 }
 
 // AddBanner adds an OS banner derived from "os" swarming tag, if present.
-func AddBanner(build *ui.MiloBuild, tags strpair.Map) {
+func AddBanner(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	os := tags.Get("os")
 	parts := strings.SplitN(os, "-", 2)
 	var ver string
@@ -393,7 +393,7 @@ func addTaskToMiloStep(c context.Context, host string, sr *swarming.SwarmingRpcs
 	return nil
 }
 
-func addBuildsetInfo(build *ui.MiloBuild, tags strpair.Map) {
+func addBuildsetInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	buildset := tags.Get("buildset")
 	cl := buildbucketpb.ParseBuildSet(buildset)
 	if cl == nil {
@@ -411,7 +411,7 @@ func addBuildsetInfo(build *ui.MiloBuild, tags strpair.Map) {
 
 var regexRepoFromRecipeBundle = regexp.MustCompile(`/[^/]+\.googlesource\.com/.+$`)
 
-func AddRecipeLink(build *ui.MiloBuild, tags strpair.Map) {
+func AddRecipeLink(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	name := tags.Get("recipe_name")
 	repoURL := tags.Get("recipe_repository")
 	switch {
@@ -442,7 +442,7 @@ func AddRecipeLink(build *ui.MiloBuild, tags strpair.Map) {
 }
 
 // addProjectInfo adds the luci_project swarming tag to the build.
-func AddProjectInfo(build *ui.MiloBuild, tags strpair.Map) {
+func AddProjectInfo(build *ui.MiloBuildLegacy, tags strpair.Map) {
 	if proj := tags.Get("luci_project"); proj != "" {
 		if build.Trigger == nil {
 			build.Trigger = &ui.Trigger{}
@@ -452,7 +452,7 @@ func AddProjectInfo(build *ui.MiloBuild, tags strpair.Map) {
 }
 
 // addPendingTiming adds pending timing information to the build.
-func addPendingTiming(c context.Context, build *ui.MiloBuild, sr *swarming.SwarmingRpcsTaskResult) {
+func addPendingTiming(c context.Context, build *ui.MiloBuildLegacy, sr *swarming.SwarmingRpcsTaskResult) {
 	created, err := time.Parse(SwarmingTimeLayout, sr.CreatedTs)
 	if err != nil {
 		return
@@ -460,7 +460,7 @@ func addPendingTiming(c context.Context, build *ui.MiloBuild, sr *swarming.Swarm
 	build.Summary.PendingTime = ui.NewInterval(c, created, build.Summary.ExecutionTime.Started)
 }
 
-func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuild) error {
+func addTaskToBuild(c context.Context, host string, sr *swarming.SwarmingRpcsTaskResult, build *ui.MiloBuildLegacy) error {
 	build.Summary.Label = ui.NewEmptyLink(sr.TaskId)
 	build.Summary.Type = ui.Recipe
 	build.Summary.Source = ui.NewLink(
@@ -517,7 +517,7 @@ func streamsFromAnnotatedLog(ctx context.Context, log string) (*rawpresentation.
 // failedToStart is called in the case where logdog-only mode is on but the
 // stream doesn't exist and the swarming job is complete.  It modifies the build
 // to add information that would've otherwise been in the annotation stream.
-func failedToStart(c context.Context, build *ui.MiloBuild, res *swarming.SwarmingRpcsTaskResult, host string) error {
+func failedToStart(c context.Context, build *ui.MiloBuildLegacy, res *swarming.SwarmingRpcsTaskResult, host string) error {
 	build.Summary.Status = model.InfraFailure
 	started, err := time.Parse(SwarmingTimeLayout, res.StartedTs)
 	if err != nil {
@@ -577,8 +577,8 @@ func swarmingFetchMaybeLogs(c context.Context, svc SwarmingService, taskID strin
 
 // buildFromLogs returns a milo build from just the swarming log and result data.
 // TODO(hinoka): Remove this once skia moves logging to logdog/kitchen.
-func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuild, error) {
-	var build ui.MiloBuild
+func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult) (*ui.MiloBuildLegacy, error) {
+	var build ui.MiloBuildLegacy
 	var step miloProto.Step
 
 	// Decode the data using annotee. The logdog stream returned here is assumed
@@ -614,7 +614,7 @@ func buildFromLogs(c context.Context, taskURL *url.URL, fr *swarmingFetchResult)
 
 // addFailureSummary adds failure summary information to the main status,
 // derivied from individual steps.
-func addFailureSummary(b *ui.MiloBuild) {
+func addFailureSummary(b *ui.MiloBuildLegacy) {
 	for _, comp := range b.Components {
 		// Add interesting information into the main summary text.
 		if comp.Status != model.Success {
@@ -624,9 +624,9 @@ func addFailureSummary(b *ui.MiloBuild) {
 	}
 }
 
-// SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuild
+// SwarmingBuildImpl fetches data from Swarming and LogDog and produces a resp.MiloBuildLegacy
 // representation of a build state given a Swarming TaskID.
-func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuild, error) {
+func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
 	// First, get the task result from swarming, and maybe the logs.
 	fr, logDogStreamAddr, err := swarmingFetchMaybeLogs(c, svc, taskID)
 	if err != nil {
@@ -643,7 +643,7 @@ func SwarmingBuildImpl(c context.Context, svc SwarmingService, taskID string) (*
 
 	// Create an empty build here first because we might want to add some
 	// system-level messages.
-	var build ui.MiloBuild
+	var build ui.MiloBuildLegacy
 
 	// Load the build from the LogDog service.  For known classes of errors, add
 	// steps in the build presentation to explain what may be going on.
@@ -833,7 +833,7 @@ func getSwarmingHost(c context.Context, host string) (string, error) {
 }
 
 // GetBuild returns a milo build from a swarming task id.
-func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuild, error) {
+func GetBuild(c context.Context, host, taskId string) (*ui.MiloBuildLegacy, error) {
 	if taskId == "" {
 		return nil, errors.New("no swarming task id", common.CodeParameterError)
 	}
