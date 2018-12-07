@@ -1,0 +1,368 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "54d545a5_c74023be",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "I think the word \"template\" is commonly used here, eg:\n\nThe \"summary\" and \"description\" fields are templates for generating summary and description text, respectively.\nThe template fields are interpolated with values specific to the build.\nSupported interpolations are:\n\n...",
+      "range": {
+        "startLine": 35,
+        "startChar": 40,
+        "endLine": 37,
+        "endChar": 32
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "05eadca3_be6da7df",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "* {{.project}}\n* ...",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c16afe0_64e1afcd",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "See https://golang.org/pkg/text/template for the full specification",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "014db4a1_3394b34c",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "I think we can generalize this to cover both build and builder (so that the builder can have a template link too).\nIn which case we can call this BugTemplate",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23bb3228_e3418b20",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "What\u0027s a project? Monorail project or LUCI project? (Rename)",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1d91bbf2_0b2e748b",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "Document components format.",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "277d8d5a_99b03afd",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "Are these TODOs?  If so, make them // TODO(ldap): ....",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "401d47fd_ce7f5e15",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "Since we don\u0027t need to index this, we can just make this a wrapper for the proto\n\ntype BugTemplate config.BugTemplate\n\nThis allows us to define methods on top of the proto",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "4581b4e4_65322899",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "add `gae:\",noindex\"`",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6aee4329_fc6d19f1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "gotta update this too",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ec8c63a_1cb3b0b8",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "For the context of this CL, this should never happen because the project check should\u0027ve happened already.  I\u0027d make this return ErrNoAccess, catch it on the other end, and then panic.",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b98044c_2d93b550",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "nit: inline\nreturn \u0026proj, datastore.Get(c, \u0026proj)",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7b87740b_95d9f290",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "I not sure if this is the right place to put this, since the bottom right hand corner \"file feedback link\" is traditionally used to file feedback against the app, not the build.\n\nI\u0027d be okay with making this more visible, and putting it here:\nhttps://screenshot.googleplex.com/1kDCM3jjaTP\n\nThis was it\u0027s pretty clear that the link is to file a bug against _this build_",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "cc201edd_61c94763",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "buildbot builds have no project\n\nAlso i\u0027d prefer\nfeedbackLink, err :\u003d makeFeedbackLink(c)\n...\n\nAnd put all the logic in there.",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3ce48ff5_5df5be88",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "This is essentially the canonical public API for how a bug template works.  I think it\u0027s better to make this more explicit and give it a better name, so\n\ntype bugTemplateDetails struct {\n  Project string\n  Bucket string\n  Builder string\n  numberOrId string\n}\n\nfunc newBugTemplateDetails(params router.Params) *bugTemplateDetails {\n  ...\n}\n\nAnd maybe all of these belong together in common",
+      "range": {
+        "startLine": 302,
+        "startChar": 5,
+        "endLine": 302,
+        "endChar": 14
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "23f0958f_6e1159cd",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "I think this makes more sense as a method of BuildBugTemplate.  Eg.\n\nfunc (bt *BuildBugTemplate) makeFeedbackLink(details *bugTemplateDetails) URL {\n  ...\n}",
+      "range": {
+        "startLine": 307,
+        "startChar": 5,
+        "endLine": 307,
+        "endChar": 21
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dcdd26a0_867482e1",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "I think it\u0027d be good to have user visible errors about this.  Eg in a banner",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7c90c3e0_0e6928b9",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "Passing in strings around is a bit weird.  I prefer to make this more explicit.\n\n\nfunc (b *bugTemplateDetails) Summary() {\n  ...\n}",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "50a65831_11a2f37b",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "That\u0027s not how components work, example:\nhttps://bugs.chromium.org/p/chromium/issues/entry?components\u003dInfra%3EPlatform%3EMilo,Foo%3EBar%3EBaz\n\nShould be strings.Join(bugTmpl.Components, \", \")",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2e3feea4_6e43a783",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002080
+      },
+      "writtenOn": "2018-12-07T00:15:26Z",
+      "side": 1,
+      "message": "use html.URLQueryEscaper\nhttps://golang.org/pkg/html/template/#URLQueryEscaper",
+      "range": {
+        "startLine": 345,
+        "startChar": 73,
+        "endLine": 345,
+        "endChar": 92
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
