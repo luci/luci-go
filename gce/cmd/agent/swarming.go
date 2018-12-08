@@ -31,7 +31,7 @@ type SwarmingClient struct {
 	*http.Client
 	// PlatformStrategy is the platform-specific strategy to use.
 	PlatformStrategy
-	// Server is the Swarming server URL.
+	// server is the Swarming server URL.
 	server string
 }
 
@@ -48,39 +48,50 @@ func getClient(c context.Context) *SwarmingClient {
 	return c.Value(&cliKey).(*SwarmingClient)
 }
 
-// Fetch fetches the Swarming bot code.
-func (s *SwarmingClient) Fetch(c context.Context, dir, user string) error {
+// fetch fetches the Swarming bot code.
+func (s *SwarmingClient) fetch(c context.Context, path, user string) error {
 	botCode := s.server + "/bot_code"
 	logging.Infof(c, "downloading: %s", botCode)
 	rsp, err := s.Get(botCode)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to fetch bot code").Err()
 	}
 	defer rsp.Body.Close()
 	if rsp.StatusCode != http.StatusOK {
 		return errors.Reason("server returned %q", rsp.Status).Err()
 	}
 
-	// 0755 allows the directory structure to be read and listed by all users.
-	// Useful when SSHing fo the instance.
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-	zip := filepath.Join(dir, "swarming_bot.zip")
-	logging.Infof(c, "installing: %s", zip)
-	// 0644 allows the zip to be read by all users.
+	logging.Infof(c, "installing: %s", path)
+	// 0644 allows the bot code to be read by all users.
 	// Useful when SSHing to the instance.
-	out, err := os.OpenFile(zip, os.O_CREATE|os.O_WRONLY, 0644)
+	out, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to open: %s", path).Err()
 	}
 	defer out.Close()
 	_, err = io.Copy(out, rsp.Body)
 	if err != nil {
-		return err
+		return errors.Annotate(err, "failed to write: %s", path).Err()
 	}
-	if err := s.chown(c, zip, user); err != nil {
-		return err
+	if err := s.chown(c, path, user); err != nil {
+		return errors.Annotate(err, "failed to chown: %s", path).Err()
 	}
 	return nil
+}
+
+// Configure fetches the Swarming bot code and configures it to run on startup.
+func (s *SwarmingClient) Configure(c context.Context, dir, user string) error {
+	// 0755 allows the directory structure to be read and listed by all users.
+	// Useful when SSHing fo the instance.
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return errors.Annotate(err, "failed to create: %s", dir).Err()
+	}
+	if err := s.chown(c, dir, user); err != nil {
+		return errors.Annotate(err, "failed to chown: %s", dir).Err()
+	}
+	zip := filepath.Join(dir, "swarming_bot.zip")
+	if err := s.fetch(c, zip, user); err != nil {
+		return err
+	}
+	return s.autostart(c, zip, user)
 }

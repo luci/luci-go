@@ -58,11 +58,10 @@ func (cmd *connectCmd) Run(app subcommands.Application, args []string, env subco
 
 	cli := getClient(c)
 	cli.server = cmd.server
-	if err := cli.Fetch(c, cmd.dir, cmd.user); err != nil {
+	if err := cli.Configure(c, cmd.dir, cmd.user); err != nil {
 		logging.Errorf(c, "%s", err.Error())
 		return 1
 	}
-	// TODO(smut): Connect to the server.
 	return 0
 }
 
