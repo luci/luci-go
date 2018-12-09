@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f8a426d_62389848",
+        "filename": "gce/cmd/agent/strategy_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1141499
+      },
+      "writtenOn": "2018-12-09T05:58:13Z",
+      "side": 1,
+      "message": "really? i don\u0027t recall seeing autostart in PlatformStrategy :)\nhttps://chromium.googlesource.com/infra/luci/luci-go/+/0cf50c9050a67b9270f473ff46af7e87050fc4ac/gce/cmd/agent/strategy.go",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 31
+      },
+      "revId": "e136c04a65d0fa3b7f36b79157a507d0b1e747fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
