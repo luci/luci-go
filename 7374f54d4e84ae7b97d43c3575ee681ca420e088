@@ -2,6 +2,46 @@
   "comments": [
     {
       "key": {
+        "uuid": "e4e6da89_20301810",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "cl description is stale",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e75d675f_ab0e5b0a",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "i think it is correct that field starts with \"build_\", but the message has nothing to do with \"build\", so i think the message name should be BugTemplate\n\nThe fact that it consumes build fields is not reflected in BugTemplate proto fields. If we ever need a bug template on a different page, we\u0027d want to use the same message. That doc specific to build template params can be pulled here.",
+      "range": {
+        "startLine": 30,
+        "startChar": 2,
+        "endLine": 30,
+        "endChar": 7
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "54d545a5_c74023be",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -36,6 +76,23 @@
       "writtenOn": "2018-12-07T00:15:26Z",
       "side": 1,
       "message": "* {{.project}}\n* ...",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ac6bf8ac_a97e4b1e",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "what\u0027s this format? Can we use go/build-proto here? It is a standard representing a build. It is used in luci-notify email template just like this.\n\nIt\u0027s ok for the impl not to support entire go/build-proto in this CL (because it does not have one yet), but it can pass these 4 values in the same format as go/build-proto",
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -127,6 +184,24 @@
     },
     {
       "key": {
+        "uuid": "002e8b4f_b6a9bd85",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "+1, please either remove this code, or implement",
+      "parentUuid": "277d8d5a_99b03afd",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "401d47fd_ce7f5e15",
         "filename": "milo/common/config.go",
         "patchSetId": 6
@@ -138,6 +213,29 @@
       "writtenOn": "2018-12-07T00:15:26Z",
       "side": 1,
       "message": "Since we don\u0027t need to index this, we can just make this a wrapper for the proto\n\ntype BugTemplate config.BugTemplate\n\nThis allows us to define methods on top of the proto",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3c4b2ffb_b567e817",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "why this is needed? This mirrors fields in the proto.\n\nif this only for persisting in datastore, please use the original proto message with\nhttps://chromium.googlesource.com/infra/luci/gae/+/master/tools/proto-gae",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 1
+      },
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -229,6 +327,24 @@
     },
     {
       "key": {
+        "uuid": "ea6819c4_f5075ec9",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "I\u0027ve proposed this.\nI think it is not user\u0027s job to pick a right bug link. Ideally the system works as a whole, encapsulating the multiple teams that support it. In this case, CrOS infra will be the front line, with most context. If the bug happens to be specific to the app (incorrect behavior, missing feature), then they can redirect it accordingly.",
+      "parentUuid": "7b87740b_95d9f290",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc201edd_61c94763",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -269,6 +385,30 @@
     },
     {
       "key": {
+        "uuid": "b112b2f1_57629674",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "i think this should be go/build-proto",
+      "parentUuid": "3ce48ff5_5df5be88",
+      "range": {
+        "startLine": 302,
+        "startChar": 5,
+        "endLine": 302,
+        "endChar": 14
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "23f0958f_6e1159cd",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -286,6 +426,46 @@
         "endLine": 307,
         "endChar": 21
       },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "527a08e1_e451254f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "this couples private HTTP handler implementation (name of the param) and our public API. Please populate go/build-proto from ui.MiloBuild in the callsite, and then pass it as interface{} here, so this func can be used in non-build-page context",
+      "range": {
+        "startLine": 312,
+        "startChar": 81,
+        "endLine": 312,
+        "endChar": 91
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f7a318d3_16a50ee8",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "nobody will notice this warning.\ni think we need a tsmon counter, or at least elevate this to Errorf",
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
@@ -354,6 +534,30 @@
       "writtenOn": "2018-12-07T00:15:26Z",
       "side": 1,
       "message": "use html.URLQueryEscaper\nhttps://golang.org/pkg/html/template/#URLQueryEscaper",
+      "range": {
+        "startLine": 345,
+        "startChar": 73,
+        "endLine": 345,
+        "endChar": 92
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "06b5685f_75f952e9",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-10T18:49:05Z",
+      "side": 1,
+      "message": "please use https://godoc.org/net/url#URL.String\n\nit does escaping and joins params for you",
+      "parentUuid": "2e3feea4_6e43a783",
       "range": {
         "startLine": 345,
         "startChar": 73,
