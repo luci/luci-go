@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "27a20af3_0c633819",
+        "filename": "logdog/appengine/coordinator/flex/logs/http.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1003190
+      },
+      "writtenOn": "2018-12-10T23:17:21Z",
+      "side": 1,
+      "message": "Optional:\n\nI\u0027m not sure, but I think that\n\n    u, ierr :\u003d auth.LoginURL(...)\n\nshould work -- \"a short variable declaration may redeclare variables in multi-value assignments\" (https://www.godesignpatterns.com/2014/04/assignment-vs-short-variable-declaration.html).\n\nAlso, bikeshedding: perhaps the variable could be called url?",
+      "range": {
+        "startLine": 498,
+        "startChar": 2,
+        "endLine": 499,
+        "endChar": 25
+      },
+      "revId": "52abcffb09fb23e7f1847b4239cd743616931db7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
