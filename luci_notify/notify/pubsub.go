@@ -94,7 +94,27 @@ func sortEmailNotify(en []EmailNotify) {
 	})
 }
 
-func extractEmailNotifyValues(parametersJSON string) ([]EmailNotify, error) {
+// extractEmailNotifyValues extracts EmailNotify slice from the build.
+// TODO(nodir): remove parametersJSON once clients move to properties.
+func extractEmailNotifyValues(build *buildbucketpb.Build, parametersJSON string) ([]EmailNotify, error) {
+	const propertyName = "email_notify"
+	value := build.GetOutput().GetProperties().GetFields()[propertyName]
+	if value == nil {
+		value = build.GetInput().GetProperties().GetFields()[propertyName]
+	}
+	if value != nil {
+		notifiesPB := value.GetListValue().GetValues()
+		ret := make([]EmailNotify, len(notifiesPB))
+		for i, notifyPB := range notifiesPB {
+			notifyFields := notifyPB.GetStructValue().GetFields()
+			ret[i] = EmailNotify{
+				Email:    notifyFields["email"].GetStringValue(),
+				Template: notifyFields["template"].GetStringValue(),
+			}
+		}
+		return ret, nil
+	}
+
 	if parametersJSON == "" {
 		return nil, nil
 	}
@@ -396,7 +416,7 @@ func extractBuild(c context.Context, r *http.Request) (*Build, error) {
 		return nil, err
 	}
 
-	emails, err := extractEmailNotifyValues(message.Build.ParametersJson)
+	emails, err := extractEmailNotifyValues(res, message.Build.ParametersJson)
 	if err != nil {
 		return nil, errors.Annotate(err, "could not decode email_notify").Err()
 	}

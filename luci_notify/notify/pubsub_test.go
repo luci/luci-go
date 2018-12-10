@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/ptypes"
 
 	"go.chromium.org/gae/service/datastore"
@@ -70,42 +71,80 @@ func pubsubDummyBuild(builder string, status buildbucketpb.Status, creationTime 
 
 func TestExtractEmailNotifyValues(t *testing.T) {
 	Convey(`Test Environment for extractEmailNotifyValues`, t, func() {
-		Convey(`empty parametersJson`, func() {
-			results, err := extractEmailNotifyValues("")
-			So(results, ShouldHaveLength, 0)
+		extract := func(buildJSONPB string) ([]EmailNotify, error) {
+			build := &buildbucketpb.Build{}
+			err := jsonpb.UnmarshalString(buildJSONPB, build)
 			So(err, ShouldBeNil)
+			return extractEmailNotifyValues(build, "")
+		}
+
+		Convey(`empty`, func() {
+			results, err := extract(`{}`)
+			So(err, ShouldBeNil)
+			So(results, ShouldHaveLength, 0)
 		})
 
 		Convey(`populated without email_notify`, func() {
-			results, err := extractEmailNotifyValues(`{"foo": 1}`)
-			So(results, ShouldHaveLength, 0)
+			results, err := extract(`{
+				"input": {
+					"properties": {
+						"foo": 1
+					}
+				}
+			}`)
 			So(err, ShouldBeNil)
+			So(results, ShouldHaveLength, 0)
 		})
 
-		Convey(`single email_notify value`, func() {
-			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}]}`)
+		Convey(`single email_notify value in input`, func() {
+			results, err := extract(`{
+				"input": {
+					"properties": {
+						"email_notify": [{"email": "test@email"}]
+					}
+				}
+			}`)
+			So(err, ShouldBeNil)
 			So(results, ShouldResemble, []EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "",
 				},
 			})
-			So(err, ShouldBeNil)
 		})
 
 		Convey(`single email_notify value_with_template`, func() {
-			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email", "template": "test-template"}]}`)
+			results, err := extract(`{
+				"input": {
+					"properties": {
+						"email_notify": [{
+							"email": "test@email",
+							"template": "test-template"
+						}]
+					}
+				}
+			}`)
+			So(err, ShouldBeNil)
 			So(results, ShouldResemble, []EmailNotify{
 				{
 					Email:    "test@email",
 					Template: "test-template",
 				},
 			})
-			So(err, ShouldBeNil)
 		})
 
 		Convey(`multiple email_notify values`, func() {
-			results, err := extractEmailNotifyValues(`{"email_notify": [{"email": "test@email"}, {"email": "test2@email"}]}`)
+			results, err := extract(`{
+				"input": {
+					"properties": {
+						"email_notify": [
+							{"email": "test@email"},
+							{"email": "test2@email"}
+						]
+					}
+				}
+			}`)
+			So(err, ShouldBeNil)
 			So(results, ShouldResemble, []EmailNotify{
 				{
 					Email:    "test@email",
@@ -116,7 +155,32 @@ func TestExtractEmailNotifyValues(t *testing.T) {
 					Template: "",
 				},
 			})
+		})
+
+		Convey(`output takes precedence`, func() {
+			results, err := extract(`{
+				"input": {
+					"properties": {
+						"email_notify": [
+							{"email": "test@email"}
+						]
+					}
+				},
+				"output": {
+					"properties": {
+						"email_notify": [
+							{"email": "test2@email"}
+						]
+					}
+				}
+			}`)
 			So(err, ShouldBeNil)
+			So(results, ShouldResemble, []EmailNotify{
+				{
+					Email:    "test2@email",
+					Template: "",
+				},
+			})
 		})
 	})
 }
