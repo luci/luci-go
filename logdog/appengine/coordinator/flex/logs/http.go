@@ -17,6 +17,7 @@ package logs
 import (
 	"context"
 	"fmt"
+	"html"
 	"html/template"
 	"image/color"
 	"math"
@@ -488,13 +489,14 @@ func writeOKHeaders(ctx *router.Context, data logData) {
 	}
 }
 
-// writeErrHeaders writes the correct headers based on the error type.
-func writeErrHeaders(ctx *router.Context, err error, data logData) {
-	message := "LogDog encountered an internal error"
+// writeErrorPage renders an error page.
+func writeErrorPage(ctx *router.Context, err error, data logData) {
+	ierr := errors.New("LogDog encountered an internal error")
 	switch code := grpcutil.Code(err); code {
 	case codes.Unauthenticated:
 		// Redirect to login screen.
-		u, err := auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
+		var u string
+		u, ierr = auth.LoginURL(ctx.Context, ctx.Request.URL.RequestURI())
 		if err == nil {
 			http.Redirect(ctx.Writer, ctx.Request, u, http.StatusFound)
 			return
@@ -505,13 +507,13 @@ func writeErrHeaders(ctx *router.Context, err error, data logData) {
 		// Hide internal errors, expose all other errors.
 		ctx.Writer.WriteHeader(http.StatusInternalServerError)
 	default:
-		message = "Error: " + err.Error()
+		ierr = err
 		ctx.Writer.WriteHeader(grpcutil.CodeStatus(code))
 	}
 	if data.options.isHTML() {
 		writeHTMLHeader(ctx, data)
 	}
-	fmt.Fprintf(ctx.Writer, message)
+	writeFooter(ctx, clock.Now(ctx.Context), ierr, data.options.isHTML())
 }
 
 func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
@@ -530,7 +532,7 @@ func writeFooter(ctx *router.Context, start time.Time, err error, isHTML bool) {
 			Message:  message,
 			Duration: fmt.Sprintf("%.2fs", clock.Now(ctx.Context).Sub(start).Seconds()),
 		}); err != nil {
-			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", err)
+			fmt.Fprintf(ctx.Writer, "Failed to render page: %s", html.EscapeString(err.Error()))
 		}
 	} else {
 		fmt.Fprintf(ctx.Writer, message)
@@ -737,7 +739,7 @@ func GetHandler(ctx *router.Context) {
 	data, err := startFetch(ctx.Context, ctx.Request, ctx.Params.ByName("path"))
 	if err != nil {
 		logging.WithError(err).Errorf(ctx.Context, "failed to start fetch")
-		writeErrHeaders(ctx, err, data)
+		writeErrorPage(ctx, err, data)
 		return
 	}
 	writeOKHeaders(ctx, data)
