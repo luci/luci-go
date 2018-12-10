@@ -54,6 +54,9 @@ const (
 
 	// MachineDatabaseDevURL is the URL of the Machine Database dev instance.
 	MachineDatabaseDevHost = "machine-db-dev.appspot.com"
+
+	// ConfigServiceHost is the default host of LUCI config service.
+	ConfigServiceHost = "luci-config.appspot.com"
 )
 
 // DefaultAuthOptions returns auth.Options struct prefilled with chrome-infra
