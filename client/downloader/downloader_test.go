@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"go.chromium.org/luci/common/data/stringset"
@@ -74,6 +75,9 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		twoPath,
 		lolPath,
 		oloPath,
+		// In tardata
+		"file1",
+		"file2",
 	}...)
 	blahPath := "blah.txt"
 
@@ -94,9 +98,16 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		tmpDir, err := ioutil.TempDir("", "isolated")
 		So(err, ShouldBeNil)
 
-		d := New(ctx, client, 8)
-		files, err := d.FetchIsolated(isolated2hash, tmpDir)
-		So(err, ShouldBeNil)
+		mu := sync.Mutex{}
+		var files []string
+		d := New(ctx, client, isolated2hash, tmpDir, &Options{
+			FileCallback: func(name string, _ *isolated.File) {
+				mu.Lock()
+				files = append(files, name)
+				mu.Unlock()
+			},
+		})
+		So(d.Wait(), ShouldBeNil)
 		So(stringset.NewFromSlice(files...), ShouldResemble, isolatedFiles)
 
 		b, err := ioutil.ReadFile(filepath.Join(tmpDir, onePath))
@@ -115,10 +126,8 @@ func TestDownloaderFetchIsolated(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(b, ShouldResemble, data2)
 
-		// This is obviously incorrect.
-		b, err = ioutil.ReadFile(filepath.Join(tmpDir, tardataname))
-		So(err, ShouldBeNil)
-		So(b, ShouldResemble, tardata)
+		_, err = ioutil.ReadFile(filepath.Join(tmpDir, tardataname))
+		So(os.IsNotExist(err), ShouldBeTrue)
 
 		if runtime.GOOS != "windows" {
 			l, err := os.Readlink(filepath.Join(tmpDir, blahPath))
