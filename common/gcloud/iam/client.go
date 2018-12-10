@@ -187,6 +187,23 @@ func (cl *Client) ModifyIAMPolicy(c context.Context, resource string, cb func(*P
 	return err
 }
 
+func (cl *Client) CreateServiceAccount(c context.Context, project string, accountId string) (*ServiceAccount, error) {
+	serviceAccount := ServiceAccount{}
+
+	body := struct {
+		AccountId      string         `json:"accountId"`
+		ServiceAccount ServiceAccount `json:"serviceAccount"`
+	}{
+		AccountId:      accountId,
+		ServiceAccount: ServiceAccount{DisplayName: accountId},
+	}
+
+	if err := cl.iamAPIRequest(c, fmt.Sprintf("projects/%s/serviceAccounts", url.QueryEscape(project)), "", &body, &serviceAccount); err != nil {
+		return nil, err
+	}
+	return &serviceAccount, nil
+}
+
 // GenerateAccessToken creates a service account OAuth token using IAM's
 // :generateAccessToken API.
 //
@@ -259,7 +276,10 @@ func (cl *Client) credentialsAPIRequest(c context.Context, resource, action stri
 
 // genericAPIRequest performs HTTP POST to an IAM API endpoint.
 func (cl *Client) genericAPIRequest(c context.Context, base *url.URL, resource, action string, body, resp interface{}) error {
-	query, err := url.Parse(fmt.Sprintf("v1/%s:%s?alt=json", resource, action))
+	if action != "" {
+		action = fmt.Sprintf(":%s?alt=json", action)
+	}
+	query, err := url.Parse(fmt.Sprintf("v1/%s%s", resource, action))
 	if err != nil {
 		return err
 	}
