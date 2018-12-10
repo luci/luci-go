@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/maruel/subcommands"
 
@@ -96,9 +97,19 @@ func (s *swarmingServiceImpl) GetTaskOutputs(c context.Context, taskID, outputDi
 		return nil, err
 	}
 	isolatedClient := isolatedclient.New(nil, s.Client, ref.Isolatedserver, ref.Namespace, nil, nil)
-	dl := downloader.New(c, isolatedClient, s.worker)
+
+	var filesMu sync.Mutex
+	var files []string
+	dl := downloader.New(c, isolatedClient, isolated.HexDigest(ref.Isolated), dir, &downloader.Options{
+		MaxConcurrentJobs: s.worker,
+		FileCallback: func(name string, _ *isolated.File) {
+			filesMu.Lock()
+			files = append(files, name)
+			filesMu.Unlock()
+		},
+	})
 	common.CancelOnCtrlC(dl)
-	return dl.FetchIsolated(isolated.HexDigest(ref.Isolated), dir)
+	return files, dl.Wait()
 }
 
 type taskState int32
