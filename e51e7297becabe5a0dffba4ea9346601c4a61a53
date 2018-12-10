@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "e214d242_49abb9e8",
+        "filename": "lucicfg/cli/app.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-10T20:11:35Z",
+      "side": 1,
+      "message": "upstream?",
+      "parentUuid": "64e8d0a0_55fd0dd0",
+      "range": {
+        "startLine": 50,
+        "startChar": 1,
+        "endLine": 51,
+        "endChar": 72
+      },
+      "revId": "e51e7297becabe5a0dffba4ea9346601c4a61a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f94fecc1_941acb58",
+        "filename": "lucicfg/cli/base.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-10T20:11:35Z",
+      "side": 1,
+      "message": "hassuffix too? Or change comment",
+      "range": {
+        "startLine": 121,
+        "startChar": 13,
+        "endLine": 121,
+        "endChar": 22
+      },
+      "revId": "e51e7297becabe5a0dffba4ea9346601c4a61a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "cd6b7522_66573beb",
         "filename": "lucicfg/cli/validate.go",
         "patchSetId": 1
@@ -36,6 +83,30 @@
       "writtenOn": "2018-12-08T02:21:54Z",
       "side": 1,
       "message": "So the existing presubmit script tries to be smart and discover this itself. I think it\u0027s dangerous: if the config set is moved (or the caller has no access to it), the smarts in the presubmit script just silently skip the validation (since they think modified files don\u0027t belong to any config set).\n\nWith explicit request \"validate a change to config set X\" if something is fishy, request just fails.\n\nI think we can add a smarter logic later if it is needed.",
+      "range": {
+        "startLine": 33,
+        "startChar": 3,
+        "endLine": 33,
+        "endChar": 105
+      },
+      "revId": "e51e7297becabe5a0dffba4ea9346601c4a61a53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0bc12995_4f87d60f",
+        "filename": "lucicfg/cli/validate.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-10T20:11:35Z",
+      "side": 1,
+      "message": "Instead of \u0027smartly discover or pass silently\u0027, maybe \u0027explicitly configure, but if the explicit config is missing/wrong, print the best guess and fail\u0027. e.g.\n\n  You told me X, but I can\u0027t find that.\n  Did you mean Y?\n  # exit 1\n\nBecause then you can set up a new repo by just running `lucicfg validate` and having it print out the best guess, which you can then put into PRESUBMIT if it looks right.",
+      "parentUuid": "cd6b7522_66573beb",
       "range": {
         "startLine": 33,
         "startChar": 3,
