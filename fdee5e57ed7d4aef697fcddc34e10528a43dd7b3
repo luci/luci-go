@@ -239,6 +239,30 @@
     },
     {
       "key": {
+        "uuid": "294ae9a0_33100750",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T23:59:23Z",
+      "side": 1,
+      "message": "I think since we only expect this to be used by ~us, it\u0027s fine. It\u0027s weird enough that I doubt anyone will use it \u0027by accident\u0027",
+      "parentUuid": "279dd788_b25bd886",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "519164c9_8c04332c",
         "filename": "starlark/builtins/struct_test.go",
         "patchSetId": 1
