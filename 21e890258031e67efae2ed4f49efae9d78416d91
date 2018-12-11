@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a1c67c9_0df6904e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T22:21:00Z",
+      "side": 1,
+      "message": "nit: starlark supports list comprehensions",
+      "range": {
+        "startLine": 75,
+        "startChar": 2,
+        "endLine": 80,
+        "endChar": 0
+      },
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9cb6fb39_6fa8433d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/generators.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 178,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T22:21:00Z",
+      "side": 1,
+      "message": "[buidbucket_pb.Acl]\n\nto be consistent with L60",
+      "range": {
+        "startLine": 178,
+        "startChar": 30,
+        "endLine": 178,
+        "endChar": 50
+      },
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9f0894bf_3f1fb7ca",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/rules/project.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T22:21:00Z",
+      "side": 1,
+      "message": "please mention that these ACLs will be inherited by all buckets",
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e5befcbc_9cd682a1",
+        "filename": "lucicfg/testdata/full_example.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T22:21:00Z",
+      "side": 1,
+      "message": "too late to add ROLE_UNSPECIFIED :(",
+      "revId": "21e890258031e67efae2ed4f49efae9d78416d91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
