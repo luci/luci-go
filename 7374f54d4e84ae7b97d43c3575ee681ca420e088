@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "248bfe74_1e3aa490",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e4e6da89_20301810",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "e75d675f_ab0e5b0a",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -39,6 +57,30 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d6922dbe_7163edae",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e75d675f_ab0e5b0a",
+      "range": {
+        "startLine": 30,
+        "startChar": 2,
+        "endLine": 30,
+        "endChar": 7
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "b61f03cb_a1078bd2",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "54d545a5_c74023be",
+      "range": {
+        "startLine": 35,
+        "startChar": 40,
+        "endLine": 37,
+        "endChar": 32
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "05eadca3_be6da7df",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -79,6 +145,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "09353a53_96eb36bc",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "I\u0027m not sure what you mean here - but, given the change to general \"BugTemplate\" instead of \"BuildBugTemplate\" I have moved the description of the supported placeholder fields to where the specific build_bug_template is defined for the project.",
+      "parentUuid": "05eadca3_be6da7df",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -99,6 +183,24 @@
     },
     {
       "key": {
+        "uuid": "4c79c6e4_2b5647e6",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ac6bf8ac_a97e4b1e",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c16afe0_64e1afcd",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -113,6 +215,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b44a78cc_4609e5e2",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c16afe0_64e1afcd",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -133,6 +253,24 @@
     },
     {
       "key": {
+        "uuid": "e87c5dca_1e467b05",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "014db4a1_3394b34c",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "23bb3228_e3418b20",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -150,6 +288,24 @@
     },
     {
       "key": {
+        "uuid": "6c06a289_03b56c1c",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "monorail_project, done.",
+      "parentUuid": "23bb3228_e3418b20",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1d91bbf2_0b2e748b",
         "filename": "milo/api/config/project.proto",
         "patchSetId": 6
@@ -164,6 +320,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a1802c6_3796af15",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 51,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1d91bbf2_0b2e748b",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -202,6 +376,24 @@
     },
     {
       "key": {
+        "uuid": "70dec816_4996bd41",
+        "filename": "milo/api/config/project.proto",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Perhaps obvious fields that users will desire - easy to add later, I\u0027ll drop the mention from here for now.",
+      "parentUuid": "277d8d5a_99b03afd",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "401d47fd_ce7f5e15",
         "filename": "milo/common/config.go",
         "patchSetId": 6
@@ -216,6 +408,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b1015128_8fda6ae5",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "401d47fd_ce7f5e15",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -242,6 +452,30 @@
     },
     {
       "key": {
+        "uuid": "ede7ff33_a4e74c25",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done, Ryan had similar advice. I made a local type for it to define methods on it as well.",
+      "parentUuid": "3c4b2ffb_b567e817",
+      "range": {
+        "startLine": 48,
+        "startChar": 0,
+        "endLine": 53,
+        "endChar": 1
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "4581b4e4_65322899",
         "filename": "milo/common/config.go",
         "patchSetId": 6
@@ -256,6 +490,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8d8005b2_417d3ad1",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4581b4e4_65322899",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -276,6 +528,24 @@
     },
     {
       "key": {
+        "uuid": "d2061762_67b029c9",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6aee4329_fc6d19f1",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3ec8c63a_1cb3b0b8",
         "filename": "milo/common/config.go",
         "patchSetId": 6
@@ -293,6 +563,24 @@
     },
     {
       "key": {
+        "uuid": "9a753c0a_0f99233b",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done.\n\nUsed cfgclient.access.ErrNoAccess. Is this OK?",
+      "parentUuid": "3ec8c63a_1cb3b0b8",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5b98044c_2d93b550",
         "filename": "milo/common/config.go",
         "patchSetId": 6
@@ -307,6 +595,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c8f654bd_b3e38130",
+        "filename": "milo/common/config.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 542,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Much nicer!",
+      "parentUuid": "5b98044c_2d93b550",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -345,6 +651,24 @@
     },
     {
       "key": {
+        "uuid": "3ac5d91f_7f7bf774",
+        "filename": "milo/frontend/appengine/templates/includes/base.html",
+        "patchSetId": 6
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "I moved to build page location before Nodir\u0027s comment came in.\n\nAs it stands now this is pretty easy to do in either style. As we come to consensus here I can move it to the final resting place.",
+      "parentUuid": "7b87740b_95d9f290",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "cc201edd_61c94763",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -359,6 +683,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b4b26b02_b91bb0d7",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc201edd_61c94763",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -409,6 +751,30 @@
     },
     {
       "key": {
+        "uuid": "6a3c6765_b750f01f",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Mostly done - I placed the newBugTemplateDetails function directly in this file as it may be that the params.ByName for this endpoint are not the same for other endpoints. Let me know what you think.",
+      "parentUuid": "3ce48ff5_5df5be88",
+      "range": {
+        "startLine": 302,
+        "startChar": 5,
+        "endLine": 302,
+        "endChar": 14
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "23f0958f_6e1159cd",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -429,6 +795,30 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8075dd4c_319ef11a",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 307,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "23f0958f_6e1159cd",
+      "range": {
+        "startLine": 307,
+        "startChar": 5,
+        "endLine": 307,
+        "endChar": 21
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -455,6 +845,30 @@
     },
     {
       "key": {
+        "uuid": "a685ec02_55a4798e",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "I\u0027ve changed this but not sure I\u0027ve done this exactly as you would prefer. PTAL.",
+      "parentUuid": "527a08e1_e451254f",
+      "range": {
+        "startLine": 312,
+        "startChar": 81,
+        "endLine": 312,
+        "endChar": 91
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "f7a318d3_16a50ee8",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -469,6 +883,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "26414e5e_d2818fb0",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "This code is now moved to common and is changed such that these errors propagate back to logging with an Errorf invocation in this file.",
+      "parentUuid": "f7a318d3_16a50ee8",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -489,6 +921,24 @@
     },
     {
       "key": {
+        "uuid": "a843c78f_dbdca17d",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 324,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Is there already a mechanism for displaying such banner / failures to the user? If there is it is not clear to me in build.html or base.html.\n\nIf this does not yet exist I assume it would be best to punt this to a separate CL?",
+      "parentUuid": "dcdd26a0_867482e1",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7c90c3e0_0e6928b9",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -506,6 +956,24 @@
     },
     {
       "key": {
+        "uuid": "ea978682_83eecd3a",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Partially done - this code is moved to common. I\u0027m still passing a string to the making of the template function - I believe the template lib internally uses this to drop better failure messages. That is the only thing that string is used for.",
+      "parentUuid": "7c90c3e0_0e6928b9",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "50a65831_11a2f37b",
         "filename": "milo/frontend/view_build.go",
         "patchSetId": 6
@@ -520,6 +988,24 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "00603dc5_cc8c6837",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 342,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50a65831_11a2f37b",
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -567,6 +1053,30 @@
       "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ae2e6838_20eff0a3",
+        "filename": "milo/frontend/view_build.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1297361
+      },
+      "writtenOn": "2018-12-11T03:00:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06b5685f_75f952e9",
+      "range": {
+        "startLine": 345,
+        "startChar": 73,
+        "endLine": 345,
+        "endChar": 92
+      },
+      "revId": "7374f54d4e84ae7b97d43c3575ee681ca420e088",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
