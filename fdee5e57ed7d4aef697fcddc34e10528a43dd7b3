@@ -191,6 +191,30 @@
     },
     {
       "key": {
+        "uuid": "ed3cc4b5_d2feab4b",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T23:52:11Z",
+      "side": 1,
+      "message": "\u003e \u003e I guess what I\u0027m asking is why isn\u0027t this just\n\u003e \u003e \n\u003e \u003e     namedtuple(\u0027name\u0027, [\u0027list\u0027, \u0027of\u0027, \u0027fields\u0027])\n\u003e \u003e \n\u003e \u003e So that way at least the top level \u0027shape\u0027 of the struct correlates strongly with \u0027name\u0027\n\u003e \n\u003e Because this is not python. I tried avoid writing a lot of plumbing code and use what starlarkstruct already has (namely a concept of constructors). \n\u003e \n\u003e Structs in starlark are essentially immutable string-keyed dictionaries with additional value attached to them called \"constructor\". \u0027struct\u0027 function generates a struct object with default constructor \"struct\" (literal string).\n\u003e \n\u003e If you insist, namedtuple is mostly implementable, except it still will be starlarkstruct underneath, just with custom constructor that validates fields. It will have all the quirks of structs. \n\u003e \n\u003e For example, starlark structs support +. It works as union: struct(a\u003d1) + struct(b\u003d2) \u003d\u003d struct(a\u003d1, b\u003d2). Disabling this \"feature\" will require subclassing/reimplementing starlarkstruct.Struct.\n\u003e \n\u003e Starlark is not python. Trying to make python out of it is not productive.\n\nI think part of this brave new effort will be documenting and calling out these differences. Many developers have the impression that starlark is \"quite like\" python, but don\u0027t know\nwhere it\u0027s unlike python.\n\nIt sounds like starlark \u0027struct\u0027 is different than:\n  * python classes\n  * python namedtuple\n  * python `struct` module\n  * python dict\n  * basically everything else?\n\nMinimizing or documenting these differences are both valid strategies (e.g. \"struct has no 1:1 analog in python; read more: \u003clink\u003e\" would be a sufficient callout).",
+      "parentUuid": "f5226239_ffd162eb",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "519164c9_8c04332c",
         "filename": "starlark/builtins/struct_test.go",
         "patchSetId": 1
