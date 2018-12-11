@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "b8a2f61c_0fd938aa",
+        "filename": "starlark/builtins/struct.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T23:30:42Z",
+      "side": 1,
+      "message": "I cargoculted the name from starlark code, but sure, can rename it to whatever.\n\nRenamed to genstruct.",
+      "parentUuid": "60f69827_a0ba9d77",
+      "range": {
+        "startLine": 35,
+        "startChar": 31,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "572d1f6a_b893feb3",
         "filename": "starlark/builtins/struct.go",
         "patchSetId": 1
@@ -45,6 +69,30 @@
       "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "84069ec6_edf7a5e2",
+        "filename": "starlark/builtins/struct.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T23:30:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "572d1f6a_b893feb3",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 11
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     },
     {
       "key": {
@@ -119,6 +167,30 @@
     },
     {
       "key": {
+        "uuid": "f5226239_ffd162eb",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T23:30:42Z",
+      "side": 1,
+      "message": "\u003e I guess what I\u0027m asking is why isn\u0027t this just\n\u003e \n\u003e     namedtuple(\u0027name\u0027, [\u0027list\u0027, \u0027of\u0027, \u0027fields\u0027])\n\u003e \n\u003e So that way at least the top level \u0027shape\u0027 of the struct correlates strongly with \u0027name\u0027\n\nBecause this is not python. I tried avoid writing a lot of plumbing code and use what starlarkstruct already has (namely a concept of constructors). \n\nStructs in starlark are essentially immutable string-keyed dictionaries with additional value attached to them called \"constructor\". \u0027struct\u0027 function generates a struct object with default constructor \"struct\" (literal string).\n\nIf you insist, namedtuple is mostly implementable, except it still will be starlarkstruct underneath, just with custom constructor that validates fields. It will have all the quirks of structs. \n\nFor example, starlark structs support +. It works as union: struct(a\u003d1) + struct(b\u003d2) \u003d\u003d struct(a\u003d1, b\u003d2). Disabling this \"feature\" will require subclassing/reimplementing starlarkstruct.Struct.\n\nStarlark is not python. Trying to make python out of it is not productive.",
+      "parentUuid": "e6e3129a_8c3c69a0",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "519164c9_8c04332c",
         "filename": "starlark/builtins/struct_test.go",
         "patchSetId": 1
@@ -139,6 +211,30 @@
       "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "327a13fd_c6842796",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T23:30:42Z",
+      "side": 1,
+      "message": "This is how starlarkstruct in go.starlark.net is implemented. The default constructor is \"struct\" string.",
+      "parentUuid": "519164c9_8c04332c",
+      "range": {
+        "startLine": 34,
+        "startChar": 31,
+        "endLine": 34,
+        "endChar": 39
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
