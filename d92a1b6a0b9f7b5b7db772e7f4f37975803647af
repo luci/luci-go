@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bc6a49db_2edcca4e",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/validate.star",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T04:49:56Z",
+      "side": 1,
+      "message": "Otherwise e.g. [] is treated as valid value for a string-typed field. I found this confusing.",
+      "range": {
+        "startLine": 19,
+        "startChar": 5,
+        "endLine": 19,
+        "endChar": 16
+      },
+      "revId": "d92a1b6a0b9f7b5b7db772e7f4f37975803647af",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
