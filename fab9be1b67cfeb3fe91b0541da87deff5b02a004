@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "732dc16c_e9018163",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:35:44Z",
+      "side": 1,
+      "message": "example when using \u0027roles\u0027 and not \u0027role\u0027?",
+      "range": {
+        "startLine": 108,
+        "startChar": 0,
+        "endLine": 108,
+        "endChar": 10
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ef31200c_f0cd2451",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:35:44Z",
+      "side": 1,
+      "message": "hm, this is a bit awkward (though I see it\u0027s an internal api, so maybe it doesn\u0027t matter), but is there no way to allow an argument to be either a role or a list of roles?",
+      "range": {
+        "startLine": 112,
+        "startChar": 4,
+        "endLine": 117,
+        "endChar": 75
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "9f70bf0a_8c595b95",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
@@ -59,6 +105,24 @@
       "writtenOn": "2018-12-11T22:13:28Z",
       "side": 1,
       "message": "slightly related to this CL.\n\nhow is it going to be documented? would it be a separate .md file, or users would be expected to read this?",
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "92c9b1b1_0896d18d",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:35:44Z",
+      "side": 1,
+      "message": "(same question)",
+      "parentUuid": "65835de7_4984d489",
       "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
