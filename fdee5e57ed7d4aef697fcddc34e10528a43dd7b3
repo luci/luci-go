@@ -95,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "e6e3129a_8c3c69a0",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:18:07Z",
+      "side": 1,
+      "message": "I guess what I\u0027m asking is why isn\u0027t this just\n\n    namedtuple(\u0027name\u0027, [\u0027list\u0027, \u0027of\u0027, \u0027fields\u0027])\n\nSo that way at least the top level \u0027shape\u0027 of the struct correlates strongly with \u0027name\u0027",
+      "parentUuid": "423b09fa_2aaa50f7",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "519164c9_8c04332c",
         "filename": "starlark/builtins/struct_test.go",
         "patchSetId": 1
