@@ -215,6 +215,30 @@
     },
     {
       "key": {
+        "uuid": "279dd788_b25bd886",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002539
+      },
+      "writtenOn": "2018-12-11T23:58:07Z",
+      "side": 1,
+      "message": "If you think this is a big concern, we can hide all struct stuff into internal __native__ API, so that end users will have no (legit) access to it.\n\nBut I think it will be fine as is. genstruct() and ctor() are for \"advanced\" users. Most will be fine using standard struct().",
+      "parentUuid": "ed3cc4b5_d2feab4b",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "519164c9_8c04332c",
         "filename": "starlark/builtins/struct_test.go",
         "patchSetId": 1
