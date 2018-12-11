@@ -13,5 +13,6 @@
 // limitations under the License.
 
 //go:generate cproto
+//go:generate goimports -w .
 
 package internal

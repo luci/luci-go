@@ -14,6 +14,7 @@
 
 //go:generate cproto
 //go:generate proto-gae -type Console
+//go:generate goimports -w .
 
 package config
 

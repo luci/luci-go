@@ -19,3 +19,4 @@ package milo
 //go:generate cproto
 //go:generate svcdec -type BuildbotServer
 //go:generate svcdec -type BuildInfoServer
+//go:generate goimports -w .
