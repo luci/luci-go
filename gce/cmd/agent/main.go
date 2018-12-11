@@ -16,8 +16,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"os"
+	"text/template"
 
 	"github.com/maruel/subcommands"
 
@@ -28,6 +30,19 @@ import (
 	"go.chromium.org/luci/common/logging/gologger"
 	"go.chromium.org/luci/hardcoded/chromeinfra"
 )
+
+// substitute performs substitutions in a template string.
+func substitute(c context.Context, s string, subs interface{}) (string, error) {
+	t, err := template.New("tmpl").Parse(s)
+	if err != nil {
+		return "", err
+	}
+	buf := bytes.Buffer{}
+	if err = t.Execute(&buf, subs); err != nil {
+		return "", nil
+	}
+	return buf.String(), nil
+}
 
 // cmdRunBase is the base struct all subcommands should embed.
 // Implements cli.ContextModificator.
