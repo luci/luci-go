@@ -116,7 +116,7 @@ func GetSwarmingTaskID(c context.Context, buildAddress string) (host, taskId str
 
 }
 
-// simplisticBlamelist returns the ui.MiloBuild.Blame field from the
+// simplisticBlamelist returns the ui.MiloBuildLegacy.Blame field from the
 // commit/gitiles buildset (if any).
 //
 // HACK(iannucci) - Getting the frontend to render a proper blamelist will
@@ -225,7 +225,7 @@ func extractDetails(msg *bbv1.ApiCommonBuildMessage) (info string, botID string,
 // Does not make RPCs.
 // In case of an error, returns a build with a description of the error
 // and logs the error.
-func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuild, error) {
+func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*ui.MiloBuildLegacy, error) {
 	// Parse the build message into a buildbucket.Build struct, filling in the
 	// input and output properties that we expect to receive.
 	var b buildbucket.Build
@@ -252,7 +252,7 @@ func toMiloBuildInMemory(c context.Context, msg *bbv1.ApiCommonBuildMessage) (*u
 		// Maybe the build expired and never started.  Use the expiration time, if any.
 		pendingEnd = b.CompletionTime
 	}
-	result := &ui.MiloBuild{
+	result := &ui.MiloBuildLegacy{
 		Summary: ui.BuildComponent{
 			PendingTime:   ui.NewInterval(c, b.CreationTime, pendingEnd),
 			ExecutionTime: ui.NewInterval(c, b.StartTime, b.CompletionTime),
@@ -416,7 +416,7 @@ func getBlame(c context.Context, msg *bbv1.ApiCommonBuildMessage) ([]*ui.Commit,
 }
 
 // GetBuild is a shortcut for GetRawBuild and ToMiloBuild.
-func GetBuild(c context.Context, address string, fetchFull bool) (*ui.MiloBuild, error) {
+func GetBuild(c context.Context, address string, fetchFull bool) (*ui.MiloBuildLegacy, error) {
 	bbBuildMessage, err := GetRawBuild(c, address)
 	if err != nil {
 		return nil, err
@@ -432,7 +432,7 @@ func GetBuild(c context.Context, address string, fetchFull bool) (*ui.MiloBuild,
 // TODO(hinoka): Some of this can be done concurrently. Investigate if this call
 // takes >500ms on average.
 // TODO(crbug.com/850113): stop loading steps from logdog.
-func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuild, error) {
+func ToMiloBuild(c context.Context, b *bbv1.ApiCommonBuildMessage, fetchFull bool) (*ui.MiloBuildLegacy, error) {
 	mb, err := toMiloBuildInMemory(c, b)
 	if err != nil {
 		return nil, err
