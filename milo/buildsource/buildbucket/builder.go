@@ -28,7 +28,7 @@ import (
 
 	"go.chromium.org/gae/service/memcache"
 	bb "go.chromium.org/luci/buildbucket"
-	"go.chromium.org/luci/buildbucket/proto"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/clock"
 	"go.chromium.org/luci/common/data/strpair"

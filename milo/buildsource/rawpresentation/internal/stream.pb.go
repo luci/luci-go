@@ -5,9 +5,10 @@ package internal
 
 import (
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	milo "go.chromium.org/luci/common/proto/milo"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
