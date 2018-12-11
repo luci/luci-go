@@ -15,24 +15,28 @@
 package common
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"sort"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 
 	"go.chromium.org/gae/service/datastore"
 	"go.chromium.org/gae/service/info"
-
 	"go.chromium.org/luci/buildbucket/access"
+	"go.chromium.org/luci/buildbucket/proto"
 	"go.chromium.org/luci/common/api/gitiles"
 	"go.chromium.org/luci/common/data/stringset"
 	"go.chromium.org/luci/common/errors"
 	"go.chromium.org/luci/common/logging"
 	"go.chromium.org/luci/common/retry/transient"
 	configInterface "go.chromium.org/luci/config"
+	cfgclientAccess "go.chromium.org/luci/config/server/cfgclient/access"
 	"go.chromium.org/luci/config/server/cfgclient"
 	"go.chromium.org/luci/config/server/cfgclient/backend"
 	"go.chromium.org/luci/config/validation"
@@ -45,11 +49,70 @@ import (
 	_ "go.chromium.org/luci/config/appengine/gaeconfig"
 )
 
+type BugTemplate config.BugTemplate
+
+type BugTemplateDetails struct {
+	Build *buildbucketpb.Build
+}
+
+func fillTemplate(t string, details *BugTemplateDetails, name string) (string, error) {
+	tmpl, err := template.New("bug " + name).Option("missingkey=error").Parse(t)
+	if err != nil {
+		return "", err
+	}
+
+	var buffer bytes.Buffer
+	err = tmpl.Execute(&buffer, details)
+	if err != nil {
+		return "", err
+	}
+
+	return buffer.String(), nil
+}
+
+func (bt *BugTemplate) summary(details *BugTemplateDetails) (string, error) {
+	return fillTemplate(bt.Summary, details, "summary")
+}
+
+func (bt *BugTemplate) description(details *BugTemplateDetails) (string, error) {
+	return fillTemplate(bt.Description, details, "description")
+}
+
+func (bt *BugTemplate) MakeFeedbackLink(details *BugTemplateDetails) (string, error) {
+	summary, err := bt.summary(details)
+	if err != nil {
+		return "", err
+	}
+	description, err := bt.description(details)
+	if err != nil {
+		return "", err
+	}
+
+	query := url.Values{
+		"summary": {summary},
+		"description": {description},
+	}
+
+	if len(bt.Components) > 0 {
+		query.Add("components", strings.Join(bt.Components, ","))
+	}
+
+	link := url.URL{
+		Scheme: "https",
+		Host: "bugs.chromium.org",
+		Path: fmt.Sprintf("p/%s/issues/entry", url.PathEscape(bt.MonorailProject)),
+		RawQuery: query.Encode(),
+	}
+
+	return link.String(), nil
+}
+
 // Project is a datastore entity representing a single project.  Its children
 // are consoles.
 type Project struct {
-	ID      string `gae:"$id"`
-	LogoURL string
+	ID               string `gae:"$id"`
+	LogoURL          string
+	BuildBugTemplate BugTemplate `gae:",noindex"`
 }
 
 // Console is a datastore entity representing a single console.
@@ -367,6 +430,9 @@ func updateProjectConsoles(c context.Context, projectID string, cfg *configInter
 	knownConsoles := stringset.New(len(proj.Consoles))
 	// Save the project into the datastore.
 	project := Project{ID: projectID, LogoURL: proj.LogoUrl}
+	if proj.BuildBugTemplate != nil {
+		project.BuildBugTemplate = BugTemplate(*proj.BuildBugTemplate)
+	}
 	if err := datastore.Put(c, &project); err != nil {
 		return nil, err
 	}
@@ -517,6 +583,20 @@ func GetAllConsoles(c context.Context, builderID string) ([]*Console, error) {
 	})
 	con, _ := itm.([]*Console)
 	return con, err
+}
+
+func GetProject(c context.Context, project string) (*Project, error) {
+	allowed, err := IsAllowed(c, project)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, cfgclientAccess.ErrNoAccess
+	}
+	proj := Project{
+		ID: project,
+	}
+	return &proj, datastore.Get(c, &proj)
 }
 
 // GetAllProjects returns all projects the current user has access to.

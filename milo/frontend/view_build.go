@@ -9,10 +9,13 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
+	buildbucketpb "go.chromium.org/luci/buildbucket/proto"
 	bbv1 "go.chromium.org/luci/common/api/buildbucket/buildbucket/v1"
 	"go.chromium.org/luci/common/data/strpair"
 	"go.chromium.org/luci/common/errors"
@@ -20,7 +23,6 @@ import (
 	"go.chromium.org/luci/logdog/common/types"
 	"go.chromium.org/luci/server/router"
 	"go.chromium.org/luci/server/templates"
-
 	buildbotapi "go.chromium.org/luci/milo/api/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot"
 	"go.chromium.org/luci/milo/buildsource/buildbot/buildstore"
@@ -171,8 +173,9 @@ func renderBuild(c *router.Context, build *ui.MiloBuild, err error) error {
 	}
 
 	templates.MustRender(c.Context, c.Writer, "pages/build.html", templates.Args{
-		"Build":        build,
-		"TimelineJSON": timelineJSON,
+		"Build":             build,
+		"TimelineJSON":      timelineJSON,
+		"BuildFeedbackLink": makeFeedbackLink(c, build),
 	})
 	return nil
 }
@@ -289,4 +292,38 @@ func sanitizeLinkSets(linkSets []ui.LinkSet) []ui.LinkSet {
 
 func milliseconds(time time.Time) int64 {
 	return time.UnixNano() / 1e6
+}
+
+// makeFeedbackLink attempts to create the feedback link for the build page. If the
+// project is not configured for a custom feedback link or an interpolation placeholder
+// cannot be satisfied an empty string is returned. Note that buildbot builds have no
+// project configuration and thus will never have a custom feedback link.
+func makeFeedbackLink(c *router.Context, build *ui.MiloBuild) string {
+	project, err := common.GetProject(c.Context, c.Params.ByName("project"))
+	if err != nil || reflect.DeepEqual(project.BuildBugTemplate, common.BugTemplate{}) {
+		return ""
+	}
+
+	link, err := project.BuildBugTemplate.MakeFeedbackLink(&common.BugTemplateDetails{
+		Build: makeBuild(c.Params, build),
+	})
+
+	if err != nil {
+		logging.WithError(err).Errorf(c.Context, "Unable to make custom feedback link")
+		return ""
+	}
+
+	return link
+}
+
+// makeBuild partially populates a buildbucketpb.Build. Currently it attempts to
+// make available .Builder.Project, .Builder.Bucket, and .Builder.Builder.
+func makeBuild(params httprouter.Params, build *ui.MiloBuild) *buildbucketpb.Build {
+	return &buildbucketpb.Build{
+		Builder: &buildbucketpb.BuilderID{
+			Project: build.Trigger.Project,           // equivalent params.ByName("project")
+			Bucket:  params.ByName("bucket"),         // way to get from ui.MiloBuild so don't need params here?
+			Builder: build.Summary.ParentLabel.Label, // params.ByName("builder")
+		},
+	}
 }
