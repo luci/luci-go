@@ -68,6 +68,53 @@
       "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "423b09fa_2aaa50f7",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:14:47Z",
+      "side": 1,
+      "message": "It looks like the downstream CL relies on making the symbol part private to the module; so this is sort of like a context.Context symbol in go. The symbol is kept private to a module, and the only access to it is via public functions which moderate its usage.\n\nIs that accurate?",
+      "parentUuid": "6b4ea9c7_3a5ce93e",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "519164c9_8c04332c",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:14:47Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be a \u0027symbol\u0027 rather than a string?",
+      "range": {
+        "startLine": 34,
+        "startChar": 31,
+        "endLine": 34,
+        "endChar": 39
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
