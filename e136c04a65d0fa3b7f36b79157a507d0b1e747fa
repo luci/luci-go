@@ -22,6 +22,30 @@
       "revId": "e136c04a65d0fa3b7f36b79157a507d0b1e747fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "383e905b_4a137573",
+        "filename": "gce/cmd/agent/strategy_linux.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 72,
+      "author": {
+        "id": 1003211
+      },
+      "writtenOn": "2018-12-11T22:13:59Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/infra/luci/luci-go/+/1368810/1/gce/cmd/agent/strategy.go",
+      "parentUuid": "6f8a426d_62389848",
+      "range": {
+        "startLine": 72,
+        "startChar": 0,
+        "endLine": 72,
+        "endChar": 31
+      },
+      "revId": "e136c04a65d0fa3b7f36b79157a507d0b1e747fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
