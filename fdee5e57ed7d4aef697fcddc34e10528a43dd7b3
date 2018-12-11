@@ -45,6 +45,29 @@
       "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b4ea9c7_3a5ce93e",
+        "filename": "starlark/builtins/struct_test.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:12:28Z",
+      "side": 1,
+      "message": "IIUC, this is all equivalent to (ish):\n\n   s \u003d namedtuple(\u0027mystruct\u0027, \u0027a b\u0027)(1, 2)\n\n?\n\nExcept that you also get `mystruct` as a symbol which could be used to make other structs with a different shape?\n\nWhat is the reason to name structs if different structs with the same name could have different shapes?",
+      "range": {
+        "startLine": 30,
+        "startChar": 11,
+        "endLine": 31,
+        "endChar": 22
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
