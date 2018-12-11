@@ -46,8 +46,11 @@ const (
 	StepDisplayNonGreen StepDisplayPref = "non-green"
 )
 
-// MiloBuild denotes a full renderable Milo build page.
-type MiloBuild struct {
+// MiloBuildLegacy denotes a full renderable Milo build page.
+// This is slated to be deprecated in April 2019 after the BuildBot turndown.
+// This is to be replaced by a new BuildPage struct,
+// which encapsulates a Buildbucket Build Proto.
+type MiloBuildLegacy struct {
 	// Summary is a top level summary of the page.
 	Summary BuildComponent
 
@@ -64,7 +67,7 @@ type MiloBuild struct {
 	// information (luci).  This is also grouped by the "type" of property
 	// so different categories of properties can be separated and sorted.
 	//
-	// This is not a map so code that constructs MiloBuild can control the
+	// This is not a map so code that constructs MiloBuildLegacy can control the
 	// order of property groups, for example show important properties
 	// first.
 	PropertyGroup []*PropertyGroup
@@ -172,7 +175,7 @@ func fixComponentDuration(c context.Context, comp *BuildComponent) Interval {
 // * Parent step name prefix is trimmed from the nested substeps.
 // * Enforce correct values for StepDisplayPref (set to Default if incorrect).
 // * Set parent step durations to be the combination of all children.
-func (b *MiloBuild) Fix(c context.Context) {
+func (b *MiloBuildLegacy) Fix(c context.Context) {
 	if b.StepDisplayPref != StepDisplayExpanded && b.StepDisplayPref != StepDisplayNonGreen {
 		b.StepDisplayPref = StepDisplayDefault
 	}
@@ -187,9 +190,9 @@ func (b *MiloBuild) Fix(c context.Context) {
 	}
 }
 
-// BuildSummary returns the BuildSummary representation of the MiloBuild.  This
+// BuildSummary returns the BuildSummary representation of the MiloBuildLegacy.  This
 // is the subset of fields that is interesting to the builder view.
-func (b *MiloBuild) BuildSummary() *BuildSummary {
+func (b *MiloBuildLegacy) BuildSummary() *BuildSummary {
 	if b == nil {
 		return nil
 	}

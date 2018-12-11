@@ -163,7 +163,7 @@ func (as *AnnotationStream) Fetch(c context.Context) (*miloProto.Step, error) {
 	return as.cs.Step, nil
 }
 
-func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuild {
+func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuildLegacy {
 	prefix, name := as.Path.Split()
 
 	// Prepare a Streams object with only one stream.
@@ -179,7 +179,7 @@ func (as *AnnotationStream) toMiloBuild(c context.Context) *ui.MiloBuild {
 	}
 
 	var (
-		build ui.MiloBuild
+		build ui.MiloBuildLegacy
 		ub    = ViewerURLBuilder{
 			Host:    as.Client.Host,
 			Project: as.Project,
@@ -245,7 +245,7 @@ func (b *ViewerURLBuilder) BuildLink(l *miloProto.Link) *ui.Link {
 }
 
 // GetBuild returns a build from a raw annotation stream.
-func GetBuild(c context.Context, host string, project types.ProjectName, path types.StreamPath) (*ui.MiloBuild, error) {
+func GetBuild(c context.Context, host string, project types.ProjectName, path types.StreamPath) (*ui.MiloBuildLegacy, error) {
 	as := AnnotationStream{
 		Project: project,
 		Path:    path,

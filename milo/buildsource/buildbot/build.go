@@ -399,8 +399,8 @@ func sourcestamp(c context.Context, b *buildbot.Build) *ui.Trigger {
 	return ss
 }
 
-func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool) *ui.MiloBuild {
-	result := &ui.MiloBuild{
+func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool) *ui.MiloBuildLegacy {
+	result := &ui.MiloBuildLegacy{
 		Trigger: sourcestamp(c, b),
 		Summary: summary(c, b),
 		Blame:   blame(b),
@@ -413,7 +413,7 @@ func renderBuild(c context.Context, b *buildbot.Build, includeStepsAndProps bool
 }
 
 // DebugBuild fetches a debugging build for testing.
-func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*ui.MiloBuild, error) {
+func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildNum int) (*ui.MiloBuildLegacy, error) {
 	fname := fmt.Sprintf("%s.%d.json", builder, buildNum)
 	// ../buildbot below assumes that
 	// - this code is not executed by tests outside of this dir
@@ -430,8 +430,8 @@ func DebugBuild(c context.Context, relBuildbotDir string, builder string, buildN
 	return renderBuild(c, b, true), nil
 }
 
-// GetBuild fetches a buildbot build and translates it into a miloBuild.
-func GetBuild(c context.Context, id buildbot.BuildID) (*ui.MiloBuild, error) {
+// GetBuild fetches a buildbot build and translates it into a MiloBuildLegacy.
+func GetBuild(c context.Context, id buildbot.BuildID) (*ui.MiloBuildLegacy, error) {
 	if err := id.Validate(); err != nil {
 		return nil, err
 	}

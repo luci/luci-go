@@ -53,19 +53,19 @@ type testPackage struct {
 
 var (
 	allPackages = []testPackage{
-		{buildbotBuildTestData, "buildbot.build", "build.html"},
+		{buildbotBuildTestData, "buildbot.build", "build_legacy.html"},
 		{buildbotBuilderTestData, "buildbot.builder", "builder.html"},
 		{consoleTestData, "console", "console.html"},
 		{func() []common.TestBundle {
 			return swarmingTestdata.BuildTestData(
 				"../buildsource/swarming",
-				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuild, error) {
+				func(c context.Context, svc swarmingTestdata.SwarmingService, taskID string) (*ui.MiloBuildLegacy, error) {
 					build, err := swarming.SwarmingBuildImpl(c, svc, taskID)
 					build.StepDisplayPref = ui.StepDisplayExpanded
 					build.Fix(c)
 					return build, err
 				})
-		}, "swarming.build", "build.html"},
+		}, "swarming.build", "build_legacy.html"},
 		{swarmingTestdata.LogTestData, "swarming.log", "log.html"},
 		{testdata.Frontpage, "frontpage", "frontpage.html"},
 		{testdata.Search, "search", "search.html"},
