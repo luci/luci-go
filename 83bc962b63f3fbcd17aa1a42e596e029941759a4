@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a3d6c9b3_a086a69b",
+        "filename": "milo/api/config/project.pb.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T21:55:56Z",
+      "side": 1,
+      "message": "what happens if you run go generate? if it undoes this change, then this change has no effective.\neither undo this, or add goimports -w to gen.go\n\nthis applies to all dirs with protos",
+      "revId": "83bc962b63f3fbcd17aa1a42e596e029941759a4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
