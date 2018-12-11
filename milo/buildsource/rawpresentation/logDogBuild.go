@@ -195,7 +195,7 @@ func SubStepsToUI(c context.Context, ub URLBuilder, substeps []*miloProto.Step_S
 // AddLogDogToBuild takes a set of logdog streams and populate a milo build.
 // build.Summary.Finished must be set.
 func AddLogDogToBuild(
-	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuild) {
+	c context.Context, ub URLBuilder, mainAnno *miloProto.Step, build *ui.MiloBuildLegacy) {
 
 	// Now fill in each of the step components.
 	// TODO(hinoka): This is totes cachable.
