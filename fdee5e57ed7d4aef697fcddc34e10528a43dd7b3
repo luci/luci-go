@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "60f69827_a0ba9d77",
+        "filename": "starlark/builtins/struct.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T21:50:47Z",
+      "side": 1,
+      "message": "can it generate something that is not a struct? If not, this name is too generic (any symbol) for what function does (specifically a struct symbol). A function is also a symbol.\n\nplease rename to something that matches the abstraction level (something about struct).\n\ngenstruct? structsym? genctor?",
+      "range": {
+        "startLine": 35,
+        "startChar": 31,
+        "endLine": 35,
+        "endChar": 37
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "572d1f6a_b893feb3",
+        "filename": "starlark/builtins/struct.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1114299
+      },
+      "writtenOn": "2018-12-11T21:50:47Z",
+      "side": 1,
+      "message": "same here\n\nthe \"symbol\" in https://github.com/google/starlark-go/blob/master/starlarkstruct/struct_test.go\nmakes sense because the context is already about struct (by being in the package starlarkstruct).",
+      "range": {
+        "startLine": 64,
+        "startChar": 5,
+        "endLine": 64,
+        "endChar": 11
+      },
+      "revId": "fdee5e57ed7d4aef697fcddc34e10528a43dd7b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
