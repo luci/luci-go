@@ -94,6 +94,29 @@
     },
     {
       "key": {
+        "uuid": "c2e4b263_68af207b",
+        "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
+        "patchSetId": 2
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1001907
+      },
+      "writtenOn": "2018-12-11T22:44:17Z",
+      "side": 1,
+      "message": "I don\u0027t suppose we could call this \"FULL_ACCESS\" or something scarier sounding?",
+      "range": {
+        "startLine": 233,
+        "startChar": 27,
+        "endLine": 233,
+        "endChar": 33
+      },
+      "revId": "fab9be1b67cfeb3fe91b0541da87deff5b02a004",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "65835de7_4984d489",
         "filename": "lucicfg/starlark/stdlib/internal/luci/lib/acl.star",
         "patchSetId": 2
